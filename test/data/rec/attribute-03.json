@@ -1,0 +1,14 @@
+{
+  "conf": 0.799,
+  "prov": [
+    {
+      "type": "sentence",
+      "text": "provenance in a sentence."
+    },
+    {
+      "type": "table",
+      "text": "provenance in a table."
+    }
+  ],
+  "predicates": []
+}

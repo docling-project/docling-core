@@ -1,0 +1,32 @@
+{
+  "aliases": [
+    ".production",
+    "patent-uspto"
+  ],
+  "created": "2022-10-09T20:57:06.860+00:00",
+  "description": "Patents from the US Patent and Trade Office (USPTO)",
+  "source": "https://www.uspto.gov/",
+  "storage": "crn:v1:bluemix:public:cloud-object-storage:global:a/a01ec3a49b79bf6abe91ea574f0f4715:fbb68e6e-2371-48e0-bfe3-4960a445df21:bucket:foc-deepsearch-uspto-data",
+  "display_name": "Patents from USPTO",
+  "type": "Document",
+  "classification": [
+    "Public",
+    "PI"
+  ],
+  "version": [
+    {
+      "name": "docling-core",
+      "version": "1.0.1"
+    },
+    {
+      "name": "deepsearch-cxs",
+      "version": "1.0.0-alpha0.valid"
+    }
+  ],
+  "license": "https://www.uspto.gov/terms-use-uspto-websites",
+  "domain": [
+    "Science",
+    "Technology"
+  ],
+  "$ref": "ccs:schemas#/Document"
+}

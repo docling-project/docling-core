@@ -1,0 +1,5320 @@
+{
+  "_name": "Can Explainable AI Explain Unfairness? A Framework for Evaluating Explainable AI",
+  "bitmaps": [],
+  "description": {
+    "title": "Can Explainable AI Explain Unfairness? A Framework for Evaluating Explainable AI",
+    "logs": [
+      {
+        "date": "2023-10-17T23:26:28.508885+00:00",
+        "agent": "CCS",
+        "task": 1.302,
+        "comment": "parsing of documents",
+        "type": "parsing"
+      },
+      {
+        "date": "2023-10-24T08:08:37.927+00:00",
+        "agent": "CXS",
+        "task": -1,
+        "comment": "enrich",
+        "type": "text enrichment"
+      }
+    ],
+    "collection": {
+      "type": "Document",
+      "name": "arXiv full documents",
+      "alias": [
+        "arxiv"
+      ],
+      "version": "1.3.3"
+    },
+    "languages": [
+      "en"
+    ],
+    "advanced": {
+      "submitter": "Author 1",
+      "versions": [
+        {
+          "created": "2021-06-14T15:14:03.000+00:00",
+          "version": "v1"
+        }
+      ],
+      "authors": "Author 1, Author 2, Author 3, and Author 4"
+    },
+    "subjects": [
+      "cs.CY",
+      "cs.AI",
+      "cs.LG"
+    ],
+    "publishers": [
+      "Author 1"
+    ],
+    "publication_date": "2021-06-14T12:00:00.000+00:00",
+    "abstract": [
+      "Many ML models are opaque to humans, producing decisions too complex for humans to easily understand. In response, explainable artificial intelligence (XAI) tools that analyze the inner workings of a model have been created. Despite these tools' strength in translating model behavior, critiques have raised concerns about the impact of XAI tools as a tool for `fairwashing` by misleading users into trusting biased or incorrect models. In this paper, we created a framework for evaluating explainable AI tools with respect to their capabilities for detecting and addressing issues of bias and fairness as well as their capacity to communicate these results to their users clearly. We found that despite their capabilities in simplifying and explaining model behavior, many prominent XAI tools lack features that could be critical in detecting bias. Developers can use our framework to suggest modifications needed in their toolkits to reduce issues likes fairwashing."
+    ],
+    "url_refs": [
+      "https://arxiv.org/abs/2106.07483",
+      "https://arxiv.org/pdf/2106.07483.pdf"
+    ],
+    "authors": [
+      {
+        "name": "Author 1"
+      },
+      {
+        "name": "Author 2"
+      },
+      {
+        "name": "Author 3"
+      },
+      {
+        "name": "Author 4"
+      }
+    ],
+    "analytics": {
+      "lang-conf": 0.9586465358734131,
+      "lang": "en"
+    },
+    "license": {
+      "code": "CC0",
+      "text": "http://creativecommons.org/publicdomain/zero/1.0/"
+    }
+  },
+  "equations": [],
+  "figures": [
+    {
+      "bounding-box": {
+        "max": [
+          295.55615,
+          222.36401,
+          612,
+          503.8273
+        ],
+        "min": [
+          318.8113403320312,
+          237.7910766601562,
+          562.0409545898438,
+          484.6273193359375
+        ]
+      },
+      "cells": {
+        "data": [],
+        "header": [
+          "x0",
+          "y0",
+          "x1",
+          "y1",
+          "font",
+          "text"
+        ]
+      },
+      "confidence": 0.9306612610816956,
+      "created_by": "high_conf_pred",
+      "prov": [
+        {
+          "bbox": [
+            318.8113403320312,
+            237.7910766601562,
+            562.0409545898438,
+            484.6273193359375
+          ],
+          "page": 4,
+          "span": [
+            0,
+            0
+          ]
+        }
+      ],
+      "type": "picture",
+      "text": "Figure 1: Coefficient values for most influential attributes in Logistic Regression Model"
+    },
+    {
+      "bounding-box": {
+        "max": [
+          0,
+          390.95801,
+          317.95499,
+          641.61133
+        ],
+        "min": [
+          56.42976379394531,
+          409.0271606445312,
+          297.3961791992188,
+          626.7403564453125
+        ]
+      },
+      "cells": {
+        "data": [],
+        "header": [
+          "x0",
+          "y0",
+          "x1",
+          "y1",
+          "font",
+          "text"
+        ]
+      },
+      "confidence": 0.9530184268951416,
+      "created_by": "high_conf_pred",
+      "prov": [
+        {
+          "bbox": [
+            56.42976379394531,
+            409.0271606445312,
+            297.3961791992188,
+            626.7403564453125
+          ],
+          "page": 5,
+          "span": [
+            0,
+            0
+          ]
+        }
+      ],
+      "type": "picture",
+      "text": "Figure 2: Feature importance scores for variables in Random Forest Model"
+    },
+    {
+      "bounding-box": {
+        "max": [
+          0,
+          525.05804,
+          612,
+          619.6933
+        ],
+        "min": [
+          317.992919921875,
+          541.5111694335938,
+          561.2919921875,
+          607.723876953125
+        ]
+      },
+      "cells": {
+        "data": [],
+        "header": [
+          "x0",
+          "y0",
+          "x1",
+          "y1",
+          "font",
+          "text"
+        ]
+      },
+      "confidence": 0.924926221370697,
+      "created_by": "high_conf_pred",
+      "prov": [
+        {
+          "bbox": [
+            317.992919921875,
+            541.5111694335938,
+            561.2919921875,
+            607.723876953125
+          ],
+          "page": 5,
+          "span": [
+            0,
+            0
+          ]
+        }
+      ],
+      "type": "picture",
+      "text": "Figure 3: LIME Explanation generated based on the outcome of the Neural Network model."
+    }
+  ],
+  "file-info": {
+    "#-pages": 7,
+    "document-hash": "58236836873c00a90d26794f3fcc6f4c166186c1fe96b5d53c69069e5a4451ce",
+    "filename": "2106.07483.pdf",
+    "page-hashes": [
+      {
+        "hash": "1ec7dda5559d5ccf5043cc3d2f413c826b5252acccfe5aaabeeb641a44221e76",
+        "model": "model",
+        "page": 1
+      },
+      {
+        "hash": "2d5d5ff3d2dcf078901a611cef4313a160c14abc876ae368b740109a0bfd51a7",
+        "model": "model",
+        "page": 2
+      },
+      {
+        "hash": "ec36b1b36c8dc232088c64bf0b1e6018b213f9a83992c8b7397c5e3846082f50",
+        "model": "model",
+        "page": 3
+      },
+      {
+        "hash": "e9fcf09dc6486c9f238a1ddbb4811a3680fb0f402cb32bc71423c12354ff2dc3",
+        "model": "model",
+        "page": 4
+      },
+      {
+        "hash": "6f0dd98bfe1016965fc5f4b8b66ca71e4ff75a546647cb0ef100c0b42c7a1de1",
+        "model": "model",
+        "page": 5
+      },
+      {
+        "hash": "70f85f89334f4700ec01f6f634a8f996b53727b41bd7e62564b105bf7aa85968",
+        "model": "model",
+        "page": 6
+      },
+      {
+        "hash": "c8fca67e2bb98c1246874fc52da7220f3697b5555b0a7d5b99b3b3d767e1bf47",
+        "model": "model",
+        "page": 7
+      }
+    ],
+    "filename-prov": "arXiv_pdf_2106_036.tar",
+    "description": {}
+  },
+  "footnotes": [
+    {
+      "prov": [
+        {
+          "bbox": [
+            53.798,
+            83.139687,
+            213.22894,
+            89.51373291015625
+          ],
+          "page": 1,
+          "span": [
+            0,
+            65
+          ]
+        }
+      ],
+      "text": "$^{∗}$First three authors contributed equally to this research.",
+      "type": "footnote"
+    }
+  ],
+  "main-text": [
+    {
+      "text": "arXiv:2106.07483v1 [cs.CY] 14 Jun 2021",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            18.34021759033203,
+            231.99996948242188,
+            36.339778900146484,
+            578.6400146484375
+          ],
+          "page": 1,
+          "span": [
+            0,
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Can Explainable AI Explain Unfairness? A Framework for Evaluating Explainable AI",
+      "name": "title",
+      "type": "title",
+      "prov": [
+        {
+          "bbox": [
+            80.7584228515625,
+            672.0654296875,
+            532.5659790039062,
+            708.3052978515625
+          ],
+          "page": 1,
+          "span": [
+            0,
+            80
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Author 1 ∗",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            137.05332946777344,
+            650.0377197265625,
+            230.01820373535156,
+            662.9599609375
+          ],
+          "page": 1,
+          "span": [
+            0,
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "text": "University of Florida Gainesville, FL, United States",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            123.50044250488281,
+            614.6051635742188,
+            243.69265747070312,
+            649.351806640625
+          ],
+          "page": 1,
+          "span": [
+            0,
+            72
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Author 3 ∗",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            144.22698974609375,
+            592.4006958007812,
+            221.53622436523438,
+            605.595947265625
+          ],
+          "page": 1,
+          "span": [
+            0,
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "text": "University of Florida Gainesville, FL, United States",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            123.614990234375,
+            556.6295776367188,
+            242.15994262695312,
+            590.9781494140625
+          ],
+          "page": 1,
+          "span": [
+            0,
+            69
+          ]
+        }
+      ]
+    },
+    {
+      "text": "ABSTRACT",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79803466796875,
+            537.2735595703125,
+            112.91998291015625,
+            548.2280883789062
+          ],
+          "page": 1,
+          "span": [
+            0,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Many ML models are opaque to humans, producing decisions too complex for humans to easily understand. In response, explainable artificial intelligence (XAI) tools that analyze the inner workings of a model have been created. Despite these tools' strength in translating model behavior, critiques have raised concerns about the impact of XAI tools as a tool for 'fairwashing' by misleading users into trusting biased or incorrect models. In this paper, we created a framework for evaluating explainable AI tools with respect to their capabilities for detecting and addressing issues of bias and fairness as well as their capacity to communicate these results to their users clearly. We found that despite their capabilities in simplifying and explaining model behavior, many prominent XAI tools lack features that could be critical in detecting bias. Developers can use our framework to suggest modifications needed in their toolkits to reduce issues likes fairwashing.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            371.1239929199219,
+            295.5564880371094,
+            532.8650512695312
+          ],
+          "page": 1,
+          "span": [
+            0,
+            968
+          ]
+        }
+      ]
+    },
+    {
+      "text": "KEYWORDS",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            348.63922119140625,
+            115.84133911132812,
+            359.2471008300781
+          ],
+          "page": 1,
+          "span": [
+            0,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Fairness; Fair Washing; Explainability; Explainable AI; Artificial Inteligence",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            324.6812438964844,
+            294.8421936035156,
+            344.0873107910156
+          ],
+          "page": 1,
+          "span": [
+            0,
+            78
+          ]
+        }
+      ]
+    },
+    {
+      "text": "1 INTRODUCTION",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            301.01300048828125,
+            156.5476531982422,
+            311.32208251953125
+          ],
+          "page": 1,
+          "span": [
+            0,
+            14
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Today, machine learning and deep learning are vital to cutting-edge technologies in nearly every domain. By automating processes and removing humans from the equation, many ML practitioners aim to speed up processes, increase system performance by increasing accuracy, and reduce human bias. Recent failings of AI tools [21, 33], however, have reflected the complex nature of human bias and how it can influence ML. Due to the rise in ML users and applications, there has also been an increase in scrutiny of ML and its applications in terms of transparency, explainability, and fairness.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.52899932861328,
+            199.82269287109375,
+            295.0323791503906,
+            296.0461730957031
+          ],
+          "page": 1,
+          "span": [
+            0,
+            588
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Because deep ML models are difficult for humans to understand, tools to explain models and evaluate fairness have become widely discussed. While the functionality of explainable AI and fair AI tools may differ, their goals and expectations overlap considerably [1]. However, some explainable AI tools have received criticism on the basis that misusing them can lead to misleading explanations that can be used to justify incorrect models [27]. Furthermore, in a survey study conducted by Holstein et al., ML practitioners depicted a strong need for tools and metrics they could use to account for and",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.57400131225586,
+            101.58728790283203,
+            295.56060791015625,
+            197.3290557861328
+          ],
+          "page": 1,
+          "span": [
+            0,
+            600
+          ]
+        }
+      ]
+    },
+    {
+      "name": "footnote",
+      "type": "footnote",
+      "__ref": "#/footnotes/0"
+    },
+    {
+      "text": "Author 2 ∗",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            379.0810241699219,
+            650.0377197265625,
+            479.77044677734375,
+            662.9599609375
+          ],
+          "page": 1,
+          "span": [
+            0,
+            22
+          ]
+        }
+      ]
+    },
+    {
+      "text": "University of Florida Gainesville, FL, United States",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            369.5118408203125,
+            614.6051635742188,
+            489.5226745605469,
+            650.461669921875
+          ],
+          "page": 1,
+          "span": [
+            0,
+            72
+          ]
+        }
+      ]
+    },
+    {
+      "text": "University of Florida Gainesville, FL, United States",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            369.8390197753906,
+            556.6986083984375,
+            488.4317932128906,
+            603.4334106445312
+          ],
+          "page": 1,
+          "span": [
+            0,
+            81
+          ]
+        }
+      ]
+    },
+    {
+      "text": "consider fairness pro-actively while building and evaluating their algorithms. Many of the current issues of fairwashing [2] in Explainable AI (XAI) can be confronted using guidelines rooted in fairness ML [2, 19]. Moreover, another study by Brennen indicated that ML stakeholders want XAI that can detect bias issues. Therefore, as issues of fairness must be explained, a complete explainability tool should also deduce unfairness. To address the needs of both XAI and Fair AI tools, we propose that XAI tools include features for explaining fairness in machine learning models and data.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            450.8222961425781,
+            559.7131958007812,
+            546.5630493164062
+          ],
+          "page": 1,
+          "span": [
+            0,
+            588
+          ]
+        }
+      ]
+    },
+    {
+      "text": "We defined a rubric that can be used to create and evaluate XAI tools in terms of their functionality with respect to fairness. This work differs from fairness audits in that it evaluates and expands upon the existing functionalities of explainable AI. While other works solely focus on explainability or fairness, this is the first of its kind to fuse those functionalities into one tool. Our rubric was generated with the hope of creating a Fair Explainability toolkit that can be used across the diverse range of ML practitioners in evaluating their models and data with respect to fairness. Our major contributions are as follows:",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.62298583984375,
+            340.7489013671875,
+            558.5413818359375,
+            447.93304443359375
+          ],
+          "page": 1,
+          "span": [
+            0,
+            634
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· We developed a holistic fairness rubric outlining capabilities and expectations of XAI.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            333.1742248535156,
+            307.7132873535156,
+            558.6139526367188,
+            327.0893249511719
+          ],
+          "page": 1,
+          "span": [
+            0,
+            91
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· We used our rubric to examine several XAI tools.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            333.88568115234375,
+            296.7543029785156,
+            522.927001953125,
+            305.03924560546875
+          ],
+          "page": 1,
+          "span": [
+            0,
+            52
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· We outlined common gaps in functionality in regards to fairness, interpretability, and usability within these tools.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            333.1518249511719,
+            274.8363037109375,
+            559.0803833007812,
+            294.08026123046875
+          ],
+          "page": 1,
+          "span": [
+            0,
+            120
+          ]
+        }
+      ]
+    },
+    {
+      "text": "2 BACKGROUND",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.71710205078125,
+            243.0290069580078,
+            413.77783203125,
+            253.3636474609375
+          ],
+          "page": 1,
+          "span": [
+            0,
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "text": "2.1 Fairness",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.45166015625,
+            227.3380126953125,
+            384.2202453613281,
+            237.64710998535156
+          ],
+          "page": 1,
+          "span": [
+            0,
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Mitigating the bias and unfairness within the training data is a necessity, both out of ethical duty and because of the impact that perceived inaccuracies have on user trust [30, 34]. While the exact ways ML systems are subject to current discrimination laws are complex [10], ML developers should consider both legal and ethical obligations to people who may be affected by their systems. However, before we can determine if a system is fair, we first need to define fairness, a surprisingly complex term. Broadly speaking, there are two paradigms of fairness: statistical (or group) and individual [9, 13].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            115.36505126953125,
+            559.7169189453125,
+            222.28305053710938
+          ],
+          "page": 1,
+          "span": [
+            0,
+            608
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Under the statistical definition of fairness, minority groups as a whole should be treated the same as majority groups as a whole. The parity of a selected statistical measure between these groups",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.62298583984375,
+            82.637451171875,
+            559.58251953125,
+            113.02874755859375
+          ],
+          "page": 1,
+          "span": [
+            0,
+            196
+          ]
+        }
+      ]
+    },
+    {
+      "text": "is the key to preserving statistical fairness. However, different statistical measures may give contradictory results with respect to fairness, and designers are limited in the number of measures they can choose to optimize for [13]. Additionally, statistical fairness is limited by its need for clearly defined categories [9].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            652.3975830078125,
+            295.55914306640625,
+            704.4750366210938
+          ],
+          "page": 2,
+          "span": [
+            0,
+            327
+          ]
+        }
+      ]
+    },
+    {
+      "text": "On the other hand, individual fairness compares each pair of individuals according to specific sets of criteria [16]. Essentially, 'similar individuals should be treated similarly. ' This notion can be more intuitive for humans to understand, but detailed assumptions about measuring the similarity of instances and providing similar results must be made.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            586.8163452148438,
+            295.0323181152344,
+            650.0596313476562
+          ],
+          "page": 2,
+          "span": [
+            0,
+            355
+          ]
+        }
+      ]
+    },
+    {
+      "text": "In this work, we leave our framework open for users to select and use the fairness definition and metrics of their choice. We do, however, insists that designers consider the diverse definitions of fairness and the diverse needs of the users when engaging with those tools. For the example case studies in this work, we will be considering unequal treatment of both individuals and groups and we will evaluate how well each XAI depict each.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.46699905395508,
+            509.6522521972656,
+            295.03472900390625,
+            584.1104736328125
+          ],
+          "page": 2,
+          "span": [
+            0,
+            440
+          ]
+        }
+      ]
+    },
+    {
+      "text": "2.2 Explainable Artificial Intelligence",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.208492279052734,
+            486.3711242675781,
+            246.21266174316406,
+            497.0080871582031
+          ],
+          "page": 2,
+          "span": [
+            0,
+            39
+          ]
+        }
+      ]
+    },
+    {
+      "text": "The ability of models to provide the information necessary to verify its output is referred to as explainability. Explainability can also be important to ensuring that models comply with legal regulations and improve model accuracy [28]. We define an explanation as a complete and accurate description of how a model generated its output. Explanations can be local (for a single instance of a decision), or global (for understanding the model's decision-making algorithm generally).",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.52899932861328,
+            396.7424621582031,
+            295.02947998046875,
+            482.1581115722656
+          ],
+          "page": 2,
+          "span": [
+            0,
+            482
+          ]
+        }
+      ]
+    },
+    {
+      "text": "The importance of this principle has led to research efforts in industry and academia towards developing tools to help humans understand the behavior of black-box models. These tools are often referred to as explainable AI (XAI). In addition in our study, we referred to three XAI tools: LIME, AI Explainability 360, and ad-hoc explainability tools [4, 7, 11, 26].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            330.5950927734375,
+            294.29638671875,
+            394.07965087890625
+          ],
+          "page": 2,
+          "span": [
+            0,
+            364
+          ]
+        }
+      ]
+    },
+    {
+      "text": "3 RUBRIC",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            307.5512390136719,
+            112.76168823242188,
+            318.0120849609375
+          ],
+          "page": 2,
+          "span": [
+            0,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "text": "This work's main contribution is a rubric designed to assist XAI developers in building and evaluating XAI based on its ability to elucidate issues of fairness. This rubric is intended to help developers of XAI tools understand user needs; to help ML developers as they review their models for accuracy and fairness; and to help lay users critique the results of ML models [32].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.52899932861328,
+            239.7447509765625,
+            295.68194580078125,
+            302.90985107421875
+          ],
+          "page": 2,
+          "span": [
+            0,
+            378
+          ]
+        }
+      ]
+    },
+    {
+      "text": "We identified three major areas of need based on what literature suggests should be taken into account: 1) identifying issues of biased data and data processing [5, 31]; 2) reviewing the selection and optimization of the ML model under observation [31]; and 3) ensuring that the results of the XAI tool are useful and presented in a clear and comprehensible manner for any type of user. This section will focus on why these areas are frequently problematic and the ways XAI can assist users in identifying these issues.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            151.703857421875,
+            294.5840148925781,
+            236.901611328125
+          ],
+          "page": 2,
+          "span": [
+            0,
+            519
+          ]
+        }
+      ]
+    },
+    {
+      "text": "3.1 Issues with Biased data",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            128.45391845703125,
+            193.20419311523438,
+            139.01710510253906
+          ],
+          "page": 2,
+          "span": [
+            0,
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "text": "One of the most well-known and supported arguments for fair ML is the acknowledgment that poor quality data will produce poor quality results. During the process of creating, collecting, and processing data, there are many avenues where human bias can",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.74150466918945,
+            82.666015625,
+            294.674560546875,
+            124.0784912109375
+          ],
+          "page": 2,
+          "span": [
+            0,
+            251
+          ]
+        }
+      ]
+    },
+    {
+      "name": "page-header",
+      "type": "page-header",
+      "__ref": "#/page-headers/0"
+    },
+    {
+      "text": "be introduced into the model [5, 6, 14, 20, 31]. Selection bias can prevent data from being representative and diverse; intrinsic and measurement bias can prevent accurate data; and confirmation bias can prevent an auditor from catching inaccuracies.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.7929382324219,
+            663.087890625,
+            559.0703125,
+            704.4750366210938
+          ],
+          "page": 2,
+          "span": [
+            0,
+            250
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Machine learning algorithms are products of their data and data is often reflective of society, which inevitably includes society's bias. The influences of society's bias work as a feedback loop, creating data that is reflective of the discrimination and the impact of stereotypes [5]. For example, if personal biases prevented a bank owner from giving minorities loans, there would be insufficient evidence in the data to prove minorities could pay off loans. While some discrepancies like this might be easy to decipher, the long-term impact of systematic racism, sexism, etc. can be difficult to trace. With the extensive history of bias, inevitably, it will influence much of the available data.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.5249938964844,
+            542.9813232421875,
+            560.4022827148438,
+            660.6400146484375
+          ],
+          "page": 2,
+          "span": [
+            0,
+            699
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Furthermore, the data collection stage is far from objective. There are biases correlated to the attributes that are decided on, the target variable that is selected, and the samples that are chosen to be included. Issues like sample size disparity exists, a seemingly intractable dilemma where insufficient data produces inaccurate models and minorities are inherently plagued by the fact that their available data is minimal[20]. Furthermore, data collectors hold the power of deciding the composition of the data set. Their decision on which attributes are important when considering the target variable is highly dependent on their own way of life and professional preferences, which may not be an appropriate determinant for those of other backgrounds [22, 31].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.7309875488281,
+            411.0077209472656,
+            559.718017578125,
+            540.092041015625
+          ],
+          "page": 2,
+          "span": [
+            0,
+            766
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Finally, once the data is being used to create a machine learning model, it must be processed. Human biases can also influence this final stage before the creation of the algorithm. Steps like 'feature engineering', are completely subjective but highly influential to the final algorithm [31]. The choice of how to handle imperfect or missing data is also at the ML engineer's discretion and can have drastically different results on the algorithm [18].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            334.76129150390625,
+            558.6571655273438,
+            408.5850524902344
+          ],
+          "page": 2,
+          "span": [
+            0,
+            453
+          ]
+        }
+      ]
+    },
+    {
+      "text": "While an XAI tool cannot know how the data was collected, the raw and processed data's availability can allow an XAI tool to reveal imbalances that may exist. Considering the limitations of the XAI, we identified four major areas where an XAI tool could assist in identifying issues of biased data:",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.7961120605469,
+            279.7120361328125,
+            559.7141723632812,
+            332.0219421386719
+          ],
+          "page": 2,
+          "span": [
+            0,
+            298
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· The XAI tools could identify imbalances within the data as it relates to over/under-sampling;",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            332.7048645019531,
+            253.6512908935547,
+            559.5350952148438,
+            273.11822509765625
+          ],
+          "page": 2,
+          "span": [
+            0,
+            97
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· The XAI tools could identify attributes most influential in both local and global decisions;",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            332.86871337890625,
+            231.73428344726562,
+            559.3421020507812,
+            250.97825622558594
+          ],
+          "page": 2,
+          "span": [
+            0,
+            96
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· The XAI tools can identify processing issues that had a distinct impact on the final model;",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            332.8158874511719,
+            209.69158935546875,
+            559.8823852539062,
+            229.06024169921875
+          ],
+          "page": 2,
+          "span": [
+            0,
+            95
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· The XAI tools can consider the impact of user-labeled sensitive attributes on the model performance.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            332.65203857421875,
+            187.70965576171875,
+            559.9320068359375,
+            207.14224243164062
+          ],
+          "page": 2,
+          "span": [
+            0,
+            104
+          ]
+        }
+      ]
+    },
+    {
+      "text": "3.2 Issues with the Selection & Creation of ML Models",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.95501708984375,
+            150.62599182128906,
+            554.9559326171875,
+            173.88609313964844
+          ],
+          "page": 2,
+          "span": [
+            0,
+            53
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Just as the biases of the data affect the resulting algorithm, the selection of ML models and the constraint functions used to optimize the algorithm can also introduce their own unintended influences into the results [31].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.81201171875,
+            104.574462890625,
+            559.7210083007812,
+            145.57106018066406
+          ],
+          "page": 2,
+          "span": [
+            0,
+            223
+          ]
+        }
+      ]
+    },
+    {
+      "text": "To start, the selection of a model can impact the quality of the results (and the explanations that correspond). For example, the",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9537048339844,
+            82.66217041015625,
+            558.8868408203125,
+            102.00762939453125
+          ],
+          "page": 2,
+          "span": [
+            0,
+            129
+          ]
+        }
+      ]
+    },
+    {
+      "name": "page-header",
+      "type": "page-header",
+      "__ref": "#/page-headers/1"
+    },
+    {
+      "text": "relationship between variables is lost in regression models, where each variable is considered independently of all other variables [31]. Furthermore, if selection bias exists within the data, some models, like regression and Bayesian classifiers, are built to better handle such data [35]. Even more generally, the selection of a family of methods may be incorrect. Often when given labeled data, the assumption is that the labels given are correct, so supervised methods are used. However, it may be more appropriate to utilize unsupervised methods prior to, in tandem with, or in place of supervised methods [8].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.57400131225586,
+            597.7509155273438,
+            296.07525634765625,
+            704.4750366210938
+          ],
+          "page": 3,
+          "span": [
+            0,
+            615
+          ]
+        }
+      ]
+    },
+    {
+      "text": "The functions used to optimize the machine learning models during the creation can also introduce some fairness issues into the model. Just as the lack of penalty functions can lead to overfitting, failure to check for fairness metrics like classification parity and calibration can result in an algorithm that can be labeled as unfair [14]. Furthermore, evaluation metric's selection may be a reflection of the biases or motivators that the stakeholders have, such as maximizing profit or minimizing client risk.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            509.9684143066406,
+            295.0282897949219,
+            594.9627685546875
+          ],
+          "page": 3,
+          "span": [
+            0,
+            513
+          ]
+        }
+      ]
+    },
+    {
+      "text": "In addition, the selection of evaluation and optimization functions, especially with respect to fairness, is wide and choosing the best one is largely situation-dependent [17]. It is important when considering fairness that the user can select their own evaluation metric.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            455.0999450683594,
+            295.55950927734375,
+            507.2150573730469
+          ],
+          "page": 3,
+          "span": [
+            0,
+            272
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Considering these fairness issues, we highlighted two general expectations for any fairness XAI:",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            432.7303466796875,
+            294.6080017089844,
+            452.4200439453125
+          ],
+          "page": 3,
+          "span": [
+            0,
+            96
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· The XAI tools can highlight influences from model selection and optimization that impacted the final algorithm and it's performance and",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            69.70536041259766,
+            397.4356689453125,
+            294.8351745605469,
+            427.7672424316406
+          ],
+          "page": 3,
+          "span": [
+            0,
+            139
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· The XAI tools consider some metric of fairness in evaluating the global performance of the resulting algorithm.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            69.76499938964844,
+            375.64630126953125,
+            295.06036376953125,
+            395.10400390625
+          ],
+          "page": 3,
+          "span": [
+            0,
+            115
+          ]
+        }
+      ]
+    },
+    {
+      "text": "3.3 Issues involved with the presentation of XAI results",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            339.3592834472656,
+            277.7376708984375,
+            363.1380920410156
+          ],
+          "page": 3,
+          "span": [
+            0,
+            56
+          ]
+        }
+      ]
+    },
+    {
+      "text": "The final section of the rubric considers the wide variety of users that should be considered when making XAI and fairness technology. Here, XAI tools are evaluated based on how complete and intuitive their explanations are. If either from the lack of statistical background or the employment of 'black-box' models, ML practitioners employ XAI as a tool to get a better understanding both locally and globally of the behavior of their model. Furthermore, fairness tools must be built around the audience they are meant for. Machine learning experts, stakeholders, and consumers all use the technology with their own expectations of what to gain with respect to explainability [25] and fairness. It is also important that a variety of explanation types are provided to supplement the variety of fashions to which unfairness can slip into the algorithm [15].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.52899932861328,
+            194.73907470703125,
+            295.8086242675781,
+            334.82305908203125
+          ],
+          "page": 3,
+          "span": [
+            0,
+            856
+          ]
+        }
+      ]
+    },
+    {
+      "text": "As Ribeiro et al. found when implementing LIME, it was important to optimize usability features to allow all users to understand and trust, gain insights about, and improve their model [26].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            161.8367919921875,
+            295.5610656738281,
+            192.3570556640625
+          ],
+          "page": 3,
+          "span": [
+            0,
+            190
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Therefore, the final portion of the rubric allows the XAI developers to evaluate how successful their tool is as a usable device:",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.293270111083984,
+            139.68670654296875,
+            295.90240478515625,
+            159.4800567626953
+          ],
+          "page": 3,
+          "span": [
+            0,
+            129
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· Does the XAI tool clearly identify its target audience and their expectations for the tool?",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            69.37242126464844,
+            115.58329010009766,
+            295.0406188964844,
+            134.82723999023438
+          ],
+          "page": 3,
+          "span": [
+            0,
+            95
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· Is the presentation of explanations sufficient for the target audience to gain insight and improve upon their model?",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            69.76499938964844,
+            93.66529083251953,
+            294.3587646484375,
+            112.90924072265625
+          ],
+          "page": 3,
+          "span": [
+            0,
+            120
+          ]
+        }
+      ]
+    },
+    {
+      "text": "· Does the XAI tool provide a variety of types of explanations?",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            69.76499938964844,
+            82.70513916015625,
+            294.43048095703125,
+            90.99224853515625
+          ],
+          "page": 3,
+          "span": [
+            0,
+            65
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Using this set of expectations, we evaluated the four XAI tools. The study methodology can be found in the following sections.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.4100341796875,
+            684.7658081054688,
+            558.3839721679688,
+            704.4750366210938
+          ],
+          "page": 3,
+          "span": [
+            0,
+            126
+          ]
+        }
+      ]
+    },
+    {
+      "text": "4 EXPERIMENTS",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            661.3980102539062,
+            412.0828552246094,
+            671.7071533203125
+          ],
+          "page": 3,
+          "span": [
+            0,
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "text": "4.1 Dataset",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            645.7026977539062,
+            380.37982177734375,
+            656.0161743164062
+          ],
+          "page": 3,
+          "span": [
+            0,
+            11
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Through our study we used the COMPAS dataset released by ProPublica in 2016 [23]. This dataset is well known as an example of a biased dataset which can showcase the main contributions of our work. COMPAS data consists of 6167 records and eight features such as age, gender, race, prior history of arrest and, etc. Decile score is the label to predict the chance that an individual would commit the crime again [23]. According to ProPublica's study [3], there are multiple instances of racial and gender bias in this dataset [3].",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.62298583984375,
+            544.5474243164062,
+            559.7177124023438,
+            640.869384765625
+          ],
+          "page": 3,
+          "span": [
+            0,
+            529
+          ]
+        }
+      ]
+    },
+    {
+      "text": "4.2 Machine Learning Models",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            520.388916015625,
+            470.8241882324219,
+            531.171142578125
+          ],
+          "page": 3,
+          "span": [
+            0,
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "text": "We implemented random forest, logistic regression, and deep learning models on the COMPAS dataset. Logistic regression and random forest models were developed using the scikit-learn library. For both implementations, default settings were used with no parameter optimization. The logistic Regression model yielded a performance of 74.52%, while Random Forest's model scored 71.88% on the test data.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.5249938964844,
+            441.69195556640625,
+            559.7587280273438,
+            515.9796752929688
+          ],
+          "page": 3,
+          "span": [
+            0,
+            398
+          ]
+        }
+      ]
+    },
+    {
+      "text": "The model has been trained for 100 epochs with batch sizes of 10. We modeled deep neural network after the models built by ProPublica when they first detected bias in the COMPAS data set [3, 23]. The deep neural network model was built using the sequential model in Keras API [29]. We used ADAM optimizer and binary cross-entropy as optimizer and loss function, respectively. The deep neural network model reached a 73.76% accuracy.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            364.77496337890625,
+            559.7149658203125,
+            439.0950622558594
+          ],
+          "page": 3,
+          "span": [
+            0,
+            432
+          ]
+        }
+      ]
+    },
+    {
+      "text": "5 DISCUSSION",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            341.2229919433594,
+            399.44415283203125,
+            351.5320739746094
+          ],
+          "page": 3,
+          "span": [
+            0,
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Our evaluation of the four XAI tools can be seen in Table 1. It is important to note that this work does not evaluate how well each tool performs in the respective category, but rather whether or not the respective tool has a feature that satisfies that requirement. This section discusses the strengths and weaknesses of each XAI tool as they relate to our metrics of fairness.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            272.7054443359375,
+            558.7621459960938,
+            336.1690673828125
+          ],
+          "page": 3,
+          "span": [
+            0,
+            378
+          ]
+        }
+      ]
+    },
+    {
+      "text": "5.1 Logistic Regression",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            249.25599670410156,
+            438.9337463378906,
+            259.5650939941406
+          ],
+          "page": 3,
+          "span": [
+            0,
+            23
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Logistic Regression (LR) is one of the simplest machine learning models, with intrinsic interpretability that allows for ad-hoc explainability. This line-of-best-fit approach to decision modeling creates a set of coefficients that define how each feature impacts global behavior. The coefficients for the LR model created using the COMPAS data can be seen in Figure 1 in the appendix. If the user decides to, assuming they have the mathematical knowledge to do so, local explanations can be generated using the coefficients, the intercept, and the sample data. While this approach is rather easy and does explain the global behavior, it requires additional processing to properly elicit issues of bias from the explanations.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            126.089111328125,
+            559.713134765625,
+            244.2010498046875
+          ],
+          "page": 3,
+          "span": [
+            0,
+            724
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Insights from LR about COMPAS can be gathered from the coefficients shown in Figure 1 in the appendix. From looking at these results, the user may deduce that being younger than 25 and being African American are the most influential to their chance of being",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.6409912109375,
+            82.70729064941406,
+            559.7166137695312,
+            123.7998046875
+          ],
+          "page": 3,
+          "span": [
+            0,
+            257
+          ]
+        }
+      ]
+    },
+    {
+      "name": "page-footer",
+      "type": "page-footer",
+      "__ref": "#/page-footers/0"
+    },
+    {
+      "text": "Table 1: Final rubric with XAI tools being evaluated based on whether they did (+) or did not (-) include at least one example of these fairness considerations.",
+      "name": "caption",
+      "type": "caption",
+      "prov": [
+        {
+          "bbox": [
+            53.501983642578125,
+            687.61279296875,
+            560.45361328125,
+            708.706298828125
+          ],
+          "page": 4,
+          "span": [
+            0,
+            160
+          ]
+        }
+      ]
+    },
+    {
+      "name": "table",
+      "type": "table",
+      "__ref": "#/tables/0"
+    },
+    {
+      "text": "labeled as 'High Risk'. On the other hand, being older than 45, having an undefined race, or having a misdemeanor charge can reduce their chance of being labeled as 'High Risk'. Ideally, in this case, these results will encourage most users to further analyze the influence of bias in their data set. However, the existence of proxies, issues with preprocessing steps or imbalanced data could easily be neglected in these explanations.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            408.9750671386719,
+            295.13092041015625,
+            483.3050537109375
+          ],
+          "page": 4,
+          "span": [
+            0,
+            435
+          ]
+        }
+      ]
+    },
+    {
+      "text": "While LR was able to identify influential variables, it did not indicate imbalanced data, issues with preprocessing steps, or options to highlight the influence of sensitive attributes. Furthermore, LR provides little to no feedback with respect to whether it is a sufficient tool for the task at hand, nor does it allow a user to easily incorporate their own fairness metric to evaluate their model. While LR did receive credit for its intuitive explanations for users with some statistical background, the need for additional processing is definitely required to elicit issues of fairness.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            310.67864990234375,
+            295.55615234375,
+            406.592041015625
+          ],
+          "page": 4,
+          "span": [
+            0,
+            591
+          ]
+        }
+      ]
+    },
+    {
+      "text": "5.2 Random Forests",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            282.13299560546875,
+            158.84512329101562,
+            292.48052978515625
+          ],
+          "page": 4,
+          "span": [
+            0,
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Random Forest (RF) works as a bagged decision tree model where a forest of decision trees are constructed and decisions are determined in a 'majority rules' fashion. Random forest is popular due to its versatility, parallelization, high training speed, compatibility with high dimensionality, ability to handle unbalanced data, and low bias and variance. On the other hand, it also has multiple drawbacks, such as a low level of interpretability, high memory usage, and its reliance on parameter tuning to avoid overfitting.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.57400131225586,
+            191.86126708984375,
+            295.091552734375,
+            277.07806396484375
+          ],
+          "page": 4,
+          "span": [
+            0,
+            524
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Feature importance is the major feature for explainability employed by random forest. Depending on the toolkit employed, how important features are defined can be different. For our work, we employed Scikit-Learn's RandomForestClassifer [24]. Scikit-Learn defines feature importance using the methodology, known commonly as 'Gini Importance' Breiman. It is calculated using the impurity of a node and how often it is visited. Unlike Logistic Regression, understanding the mathematical theories behind Random Forest's explanations are a bit less intuitive. However, as can be seen in Figure 2 in the Appendix, certain insights can be easily gathered from",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            82.63702392578125,
+            295.5594482421875,
+            189.4070587158203
+          ],
+          "page": 4,
+          "span": [
+            0,
+            653
+          ]
+        }
+      ]
+    },
+    {
+      "name": "picture",
+      "type": "figure",
+      "__ref": "#/figures/0"
+    },
+    {
+      "text": "Figure 1: Coefficient values for most influential attributes in Logistic Regression Model",
+      "name": "caption",
+      "type": "caption",
+      "prov": [
+        {
+          "bbox": [
+            317.53326416015625,
+            202.75006103515625,
+            559.3067626953125,
+            222.364013671875
+          ],
+          "page": 4,
+          "span": [
+            0,
+            89
+          ]
+        }
+      ]
+    },
+    {
+      "text": "the feature importance. In this plot, the features are sorted from the most to the least influential. These rules are human-readable in theory, but with a large number of features and/or complex decision structures they quickly become impractical to actually interpret by scores, alone. Furthermore, the decision rules need additional evaluation to determine how they correspond to fairness.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            115.48211669921875,
+            559.0790405273438,
+            178.44805908203125
+          ],
+          "page": 4,
+          "span": [
+            0,
+            391
+          ]
+        }
+      ]
+    },
+    {
+      "text": "While RF was able to identify important variables, unlike LR, it gave no indication of whether they negatively or positively impacted an individual's chance of receiving the desired result. In",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.7593994140625,
+            82.656982421875,
+            559.7134399414062,
+            112.85528564453125
+          ],
+          "page": 4,
+          "span": [
+            0,
+            192
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Can Explainable AI Explain Unfairness? A Framework for Evaluating Explainable AI",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            723.896240234375,
+            293.8669738769531,
+            730.3330078125
+          ],
+          "page": 5,
+          "span": [
+            0,
+            80
+          ]
+        }
+      ]
+    },
+    {
+      "text": "most other aspects, RF was similar to LR. There was little feedback with respect to biased data and model-specific issues. While the explanations were easy to access and relatively intuitive, it was difficult to access the methodology Scikit-Learn utilized to define variable importance. For Random Forest, additional processing would definitely be needed to identify issues of fairness.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.46699905395508,
+            641.611328125,
+            295.5599670410156,
+            704.4750366210938
+          ],
+          "page": 5,
+          "span": [
+            0,
+            387
+          ]
+        }
+      ]
+    },
+    {
+      "name": "picture",
+      "type": "figure",
+      "__ref": "#/figures/1"
+    },
+    {
+      "text": "Figure 2: Feature importance scores for variables in Random Forest Model",
+      "name": "caption",
+      "type": "caption",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            371.5257568359375,
+            295.05035400390625,
+            390.9580078125
+          ],
+          "page": 5,
+          "span": [
+            0,
+            72
+          ]
+        }
+      ]
+    },
+    {
+      "text": "5.3 LIME",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.389652252197266,
+            336.556640625,
+            106.127197265625,
+            347.236083984375
+          ],
+          "page": 5,
+          "span": [
+            0,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "text": "While the first two examples were rather simple models, explainability is most often discussed in the context of deep neural networks with numerous hidden layers and sophisticated architecture. Therefore, when analyzing LIME and IBM's AIX360, we created neural network models and used them to assess these last two XAI.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.36800003051758,
+            279.78558349609375,
+            296.0254211425781,
+            331.89324951171875
+          ],
+          "page": 5,
+          "span": [
+            0,
+            319
+          ]
+        }
+      ]
+    },
+    {
+      "text": "LIME generates local explanations for black-box models by generating locally perturbed input data and investigating how model behavior changes toward this data. LIME is then able to distinguish which particular perturbations were the most influential in model predictions. Given a user-specified sample, LIME is able to provide explanations that detail the direction and degree of influence that each attribute had on that model's prediction for that sample. In Figure 3 in the appendix, the results of employing LIME on the COMPAS neural network can be seen. Given the output shown, a user can surmise that the individual's prior offenses, length of their jail stay, and the fact that they were not over 45 led to their label as 'High Risk'. In addition to the weights of each variable, LIME defines rules that led to the attribute's weight. For this example, the number of priors being greater than 4 attributed to the higher chance of being labeled as 'High Risk'.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.46699905395508,
+            115.58329010009766,
+            295.83758544921875,
+            277.07806396484375
+          ],
+          "page": 5,
+          "span": [
+            0,
+            967
+          ]
+        }
+      ]
+    },
+    {
+      "text": "LIME also provides local linear approximations, detailing how changing an individual value in a sample could change the prediction probabilities. LIME's usability features exceed those of the XAI",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            82.70729064941406,
+            296.2765197753906,
+            112.91058349609375
+          ],
+          "page": 5,
+          "span": [
+            0,
+            195
+          ]
+        }
+      ]
+    },
+    {
+      "text": "tools discussed thus far. With tabular data, it provides explanation in two formats for the user's understanding. However, it lacks a global explanation of model behavior which is critical when dealing with large complex data sets and identifying issues of fairness. It's score correlate very closely to logistic regression because they provide similar information to the user with respect to fairness. It still lacks the skills to detect issues of biased data and detect issues in the selection or processing of the model.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            619.6932983398438,
+            559.7205810546875,
+            704.4750366210938
+          ],
+          "page": 5,
+          "span": [
+            0,
+            523
+          ]
+        }
+      ]
+    },
+    {
+      "name": "picture",
+      "type": "figure",
+      "__ref": "#/figures/2"
+    },
+    {
+      "text": "Figure 3: LIME Explanation generated based on the outcome of the Neural Network model.",
+      "name": "caption",
+      "type": "caption",
+      "prov": [
+        {
+          "bbox": [
+            317.7642517089844,
+            505.6056823730469,
+            558.5357055664062,
+            525.0580444335938
+          ],
+          "page": 5,
+          "span": [
+            0,
+            86
+          ]
+        }
+      ]
+    },
+    {
+      "text": "5.4 IBM's AI Explainability 360",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.8909606933594,
+            472.09039306640625,
+            479.01263427734375,
+            482.5871276855469
+          ],
+          "page": 5,
+          "span": [
+            0,
+            31
+          ]
+        }
+      ]
+    },
+    {
+      "text": "IBM's Artificial Intelligence Explainability 360 (AIX360) is a leading toolkit in the XAI domain. Within its API, users have access to over 9 explainable methods. Within its tutorials, detailed information is provided, specifying which method may be optimal for which type of user. These explainable methods vary in type from ad-hoc to post-hoc and local to global. The goal of these methods also differ between them; some work solely on the data, simplifying complex data and highlighting nuances that were found. Other methods are used for the model, generating explanations for rules and patterns found within the specified classifiers.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            360.0359802246094,
+            559.304931640625,
+            467.2230529785156
+          ],
+          "page": 5,
+          "span": [
+            0,
+            639
+          ]
+        }
+      ]
+    },
+    {
+      "text": "AIX360 satisfied at least one requirement in every rubric category. It provides explanations and feedback on data in a variety of formats. Nonetheless, there is still room to expand upon the features AIX360 provides. For example, while AIX360 identifies outliers within the data that can hint at imbalances, it may miss larger imbalances like selection bias.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            294.769287109375,
+            561.1377563476562,
+            357.79498291015625
+          ],
+          "page": 5,
+          "span": [
+            0,
+            358
+          ]
+        }
+      ]
+    },
+    {
+      "text": "AIX360's higher score on the rubric is no surprise considering IBM also built the Artificial Intelligence Fairness 360 (AIF360), which works towards incorporating fairness throughout the entire data processing phase. While this work focused on XAI tools, AIF360 shows promise, especially if used in tandem with AIX360.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.62298583984375,
+            239.72869873046875,
+            560.0831909179688,
+            291.88104248046875
+          ],
+          "page": 5,
+          "span": [
+            0,
+            318
+          ]
+        }
+      ]
+    },
+    {
+      "text": "6 RECOMMENDATIONS FOR FUTURE WORK",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            218.14764404296875,
+            556.2106323242188,
+            228.60609436035156
+          ],
+          "page": 5,
+          "span": [
+            0,
+            33
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Based on our rubric categories and our experiences evaluating our models, we have several recommendations for designers of future XAI tools.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.65899658203125,
+            182.974853515625,
+            559.3367309570312,
+            213.24205017089844
+          ],
+          "page": 5,
+          "span": [
+            0,
+            140
+          ]
+        }
+      ]
+    },
+    {
+      "text": "(1) Issues with Biased Data: Allow users to select sensitive attributes that they want to focus their evaluations on. This is a key feature for explainability that has a clear purpose for evaluating fairness in regards to protected class, as well as in non-fairness-related explanations where certain features should be weighed more or less heavily in class selection than others. Additionally, it is important for XAI tools to give consideration to potential issues in pre-processing data. For example, label encoding can be misused to rank categorical",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            328.864990234375,
+            82.70729064941406,
+            560.3456420898438,
+            178.7259979248047
+          ],
+          "page": 5,
+          "span": [
+            0,
+            553
+          ]
+        }
+      ]
+    },
+    {
+      "text": "variables as if they were numerical variables, which XAI tools should identify by comparing the raw and processed data. As the performance of ML models is reliant on the data they receive, XAI tools should have insight into the data itself as well as the models.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            77.53235626220703,
+            652.328857421875,
+            295.7662658691406,
+            704.6482543945312
+          ],
+          "page": 6,
+          "span": [
+            0,
+            262
+          ]
+        }
+      ]
+    },
+    {
+      "text": "(2) Issues Involved in ML Models: Conversely, it is important for XAI tools to evaluate the choice of model, not just the model's output. Not all models are appropriate for all data sets, and identifying such an issue can be key to uncovering the underlying problems with a model. Moreover, XAI tools should allow users to compare and contrast the distribution of predictions for subgroups against each other and against the data set as a whole. This is a vital part of understanding the global perspective on a model.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            64.70800018310547,
+            553.8593139648438,
+            296.4181823730469,
+            650.6369018554688
+          ],
+          "page": 6,
+          "span": [
+            0,
+            518
+          ]
+        }
+      ]
+    },
+    {
+      "text": "(3) Issues Involved with XAI Results: XAI tools must consider their target audience and purpose. As ML permeates more areas of our society, multiple groups of people will need to evaluate ML models. These groups will have different goals and different levels of prior knowledge of ML. XAI tools with specific purposes as well as target audiences outside of ML developers will be increasingly valuable in the coming years.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            64.70800018310547,
+            465.8182067871094,
+            296.5777282714844,
+            551.4747924804688
+          ],
+          "page": 6,
+          "span": [
+            0,
+            421
+          ]
+        }
+      ]
+    },
+    {
+      "text": "7 CONCLUSION",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.68855285644531,
+            444.0249938964844,
+            141.57261657714844,
+            454.3340759277344
+          ],
+          "page": 6,
+          "span": [
+            0,
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Our evaluations reveal that while current XAI tools provide important functions for data and model analysis, they are still lacking when it comes to analyzing fairness and could easily lead to fairwashing. This is a critical gap in XAI research, given several notable scandals in recent years in regards to bias in ML [21, 33]. We hope to inspire future work into designing XAI tools that score highly on our rubric. Since ML developers and outside auditors and critics alike benefit from fairness analyses, XAI is a perfect step in the ML pipeline where we can address this need.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.46699905395508,
+            342.71356201171875,
+            296.1650695800781,
+            438.99066162109375
+          ],
+          "page": 6,
+          "span": [
+            0,
+            580
+          ]
+        }
+      ]
+    },
+    {
+      "text": "However, it is possible that datasets from other domains with different data types, particularly in areas such as natural language processing or time series data could be handled more or less effectively by the tools we studied. Additionally, we only investigated a limited number of XAI tools. This is one of the main areas we would like to expand upon in future work, by incorporating additional XAI tools, such as Google's What-If.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.50199890136719,
+            265.64825439453125,
+            295.557861328125,
+            340.341064453125
+          ],
+          "page": 6,
+          "span": [
+            0,
+            434
+          ]
+        }
+      ]
+    },
+    {
+      "text": "REFERENCES",
+      "name": "subtitle-level-1",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            244.27500915527344,
+            123.47252655029297,
+            254.5841064453125
+          ],
+          "page": 6,
+          "span": [
+            0,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[1] 2018. Transparency in Fair Machine Learning: the Case of Explainable Recommender Systems. 21-35. https://doi. org/10.1007/978-3-319-90403-0_2",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            56.58638381958008,
+            218.41021728515625,
+            295.246826171875,
+            240.84811401367188
+          ],
+          "page": 6,
+          "span": [
+            0,
+            183
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[2] 2019. Fairwashing: the risk of rationalization. In International Conference on Machine Learning. PMLR, 161-170.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            56.46622085571289,
+            194.18408203125,
+            294.81512451171875,
+            216.93710327148438
+          ],
+          "page": 6,
+          "span": [
+            0,
+            212
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[3] 2016. Machine bias. ProPublica, May 23 (2016), 2016.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            56.75735092163086,
+            178.3990478515625,
+            295.115234375,
+            193.027099609375
+          ],
+          "page": 6,
+          "span": [
+            0,
+            117
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[4] 2019. One Explanation Does Not Fit All: A Toolkit and Taxonomy of AI Explainability Techniques. arXiv:1909.03012 [cs.AI]",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            56.870296478271484,
+            130.95968627929688,
+            294.8310852050781,
+            177.0871124267578
+          ],
+          "page": 6,
+          "span": [
+            0,
+            460
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[5] 2019. Fairness and Machine Learning. fairmlbook.org. http://www.fairmlbook.org.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            57.04100036621094,
+            114.90113067626953,
+            294.0473327636719,
+            129.5584716796875
+          ],
+          "page": 6,
+          "span": [
+            0,
+            134
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[6] 2018. Big Data's Disparate Impact. SSRN Electronic Journal 104 (mar 2018), 671-732. https://doi.org/10.2139/ssrn.2477899",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            56.41465759277344,
+            98.96113586425781,
+            294.9171447753906,
+            113.42315673828125
+          ],
+          "page": 6,
+          "span": [
+            0,
+            160
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[7] 2018. AI fairness 360: An extensible toolkit for detecting, understanding, and mitigating unwanted algorithmic bias. arXiv preprint arXiv:1810.01943 (2018).",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            333.09375,
+            680.494873046875,
+            560.3529663085938,
+            703.1141357421875
+          ],
+          "page": 6,
+          "span": [
+            0,
+            186
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[8] 2019. Racial categories in machine learning. In FAT* 2019-Proceedings of the 2019 Conference on Fairness, Accountability, and Transparency. Association for Computing Machinery, Inc, 289-298. https://doi.org/10.1145/3287560.3287575 arXiv:1811.11668",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            321.197998046875,
+            649.0167236328125,
+            560.8110961914062,
+            679.2041625976562
+          ],
+          "page": 6,
+          "span": [
+            0,
+            291
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[9] 2019. On the Apparent Conflict Between Individual and Group Fairness. arXiv preprint arXiv:1912.06883 (2019).",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            320.72698974609375,
+            632.9581298828125,
+            559.6494140625,
+            647.677490234375
+          ],
+          "page": 6,
+          "span": [
+            0,
+            127
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[10] 2018. Antidiscriminatory algorithms. Ala. L. Rev. 70 (2018), 519.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.7208251953125,
+            617.13671875,
+            558.966064453125,
+            631.935302734375
+          ],
+          "page": 6,
+          "span": [
+            0,
+            91
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[11] 2001. Random Forests. Technical Report. 5-32 pages.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            609.0481567382812,
+            523.1284790039062,
+            615.590087890625
+          ],
+          "page": 6,
+          "span": [
+            0,
+            69
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[12] 2020. What Do People Really Want When They Say They Want ' Explainable AI? ' We Asked 60 Stakeholders.. In Extended Abstracts of the 2020 CHI Conference on Human Factors in Computing Systems. 1-7.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.95501708984375,
+            585.1381225585938,
+            559.9297485351562,
+            607.5789794921875
+          ],
+          "page": 6,
+          "span": [
+            0,
+            217
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[13] 2018. The frontiers of fairness in machine learning. arXiv preprint arXiv:1810.08810 (2018).",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            569.1970825195312,
+            559.331298828125,
+            583.697509765625
+          ],
+          "page": 6,
+          "span": [
+            0,
+            136
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[14] 2018. The Measure and Mismeasure of Fairness: A Critical Review of Fair Machine Learning. (jul 2018). arXiv:1808.00023 http://arxiv.org/abs/1808.00023",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            545.4057006835938,
+            559.7869873046875,
+            567.9754638671875
+          ],
+          "page": 6,
+          "span": [
+            0,
+            191
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[15] 2019. Explaining models: An empirical study of how explanations impact fairness judgment. In International Conference on Intelligent User Interfaces, Proceedings IUI, Vol. Part F147615. Association for Computing Machinery, 275-285. https://doi.org/10.1145/3301275.3302310 arXiv:1901.07694",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            505.4106140136719,
+            560.3555297851562,
+            544.0723876953125
+          ],
+          "page": 6,
+          "span": [
+            0,
+            376
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[16] 2012. Fairness through awareness. In Proceedings of the 3rd innovations in theoretical computer science conference. 214-226.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.60198974609375,
+            481.3002624511719,
+            560.4381103515625,
+            503.9171447753906
+          ],
+          "page": 6,
+          "span": [
+            0,
+            209
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[17] 2018. On Formalizing Fairness in Prediction with Machine Learning. Technical Report. arXiv:1710.03184v3",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            465.3216552734375,
+            559.7948608398438,
+            480.041748046875
+          ],
+          "page": 6,
+          "span": [
+            0,
+            146
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[18] Salvador García, Sergio Ramírez-Gallego, Julián Luengo, José Manuel Benítez, and Francisco Herrera. 2016. Big data preprocessing: methods and prospects. Big Data Analytics 1, 1 (dec 2016). https://doi.org/10.1186/s41044-016-0014-0",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.7808532714844,
+            441.3959655761719,
+            559.5576171875,
+            464.0110778808594
+          ],
+          "page": 6,
+          "span": [
+            0,
+            240
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[19] 2019. Proposed Guidelines for the Responsible Use of Explainable Machine Learning. arXiv preprint arXiv:1906.03533 (2019).",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            417.33990478515625,
+            559.2667236328125,
+            440.10009765625
+          ],
+          "page": 6,
+          "span": [
+            0,
+            177
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[20] 2014. How big data is unfair. https://medium.com/@mrtz/howbig-data-is-unfair-9aa544d739de",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.0574951171875,
+            401.41717529296875,
+            559.7091064453125,
+            416.1900939941406
+          ],
+          "page": 6,
+          "span": [
+            0,
+            108
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[21] 2018. Google's solution to accidental algorithmic racism: ban gorillas. (2018).",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.5923156738281,
+            385.9836730957031,
+            559.2721557617188,
+            400.2500915527344
+          ],
+          "page": 6,
+          "span": [
+            0,
+            95
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[22] Improving Fairness in Machine Learning Systems: What Do Industry Practitioners Need. ACM Reference Format: Kenneth Holstein ([n. d.]), 16. https://doi.org/10.1145/3290605.3300830 arXiv:1812.05239v2",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.95501708984375,
+            354.1226806640625,
+            559.4058227539062,
+            384.5787658691406
+          ],
+          "page": 6,
+          "span": [
+            0,
+            306
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[23] 2016. How we analyzed the COMPAS recidivism algorithm. ProPublica (5 2016) 9 (2016).",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.7677917480469,
+            338.06414794921875,
+            559.754638671875,
+            352.9498291015625
+          ],
+          "page": 6,
+          "span": [
+            0,
+            150
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[24] 2011. Scikit-learn: Machine Learning in Python. Journal of Machine Learning Research 12 (2011), 2825-2830.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.8367919921875,
+            306.18414306640625,
+            559.75537109375,
+            336.6728515625
+          ],
+          "page": 6,
+          "span": [
+            0,
+            319
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[25] 2018. Explanation methods in deep learning: Users, values, concerns and challenges. In Explainable and Interpretable Models in Computer Vision and Machine Learning. Springer, 19-36.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            282.27313232421875,
+            559.5925903320312,
+            304.65435791015625
+          ],
+          "page": 6,
+          "span": [
+            0,
+            240
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[26] 2016. Why should i trust you?: Explaining the predictions of any classifier. In Proceedings of the 22nd ACM SIGKDD international conference on knowledge discovery and data mining. ACM, 1135-1144.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            250.41143798828125,
+            559.2760620117188,
+            280.72967529296875
+          ],
+          "page": 6,
+          "span": [
+            0,
+            256
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[27] 2019. Stop explaining black box machine learning models for high stakes decisions and use interpretable models instead. Nature Machine Intelligence 1, 5 (2019), 206-215.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.95501708984375,
+            226.4095458984375,
+            559.4923095703125,
+            248.81809997558594
+          ],
+          "page": 6,
+          "span": [
+            0,
+            189
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[28] 2017. Explainable artificial intelligence: Understanding, visualizing and interpreting deep learning models. arXiv preprint arXiv:1708.08296 (2017).",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.82147216796875,
+            202.46881103515625,
+            558.9591674804688,
+            224.90711975097656
+          ],
+          "page": 6,
+          "span": [
+            0,
+            211
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[29] Tensorflow sequential class. https://www.tensorflow.org/api_ docs/python/tf/keras/Sequential",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.95501708984375,
+            186.46270751953125,
+            558.541015625,
+            200.99710083007812
+          ],
+          "page": 6,
+          "span": [
+            0,
+            117
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[30] 2020. The Relationship between Trust in AI and Trustworthy Machine Learning Technologies. In Proceedings of the 2020 Conference on Fairness, Accountability, and Transparency (Barcelona, Spain) (FAT* '20). Association for Computing Machinery, New York, NY, USA, 272-283. https://doi.org/10.1145/3351095.3372834",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.56500244140625,
+            138.344482421875,
+            559.5108032226562,
+            185.05711364746094
+          ],
+          "page": 6,
+          "span": [
+            0,
+            424
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[31] 2017. Fairer machine learning in the real world: Mitigating discrimination without collecting sensitive data. Big Data & Society 4, 2 (2017), 2053951717743530.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            115.0196762084961,
+            559.2889404296875,
+            137.23609924316406
+          ],
+          "page": 6,
+          "span": [
+            0,
+            196
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[32] 2019. Designing Theory-Driven User-Centric Explainable AI. In Proceedings of the 2019 CHI Conference on Human Factors in Computing Systems. ACM, 601.",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.9549865722656,
+            90.99113464355469,
+            559.211181640625,
+            113.6103515625
+          ],
+          "page": 6,
+          "span": [
+            0,
+            210
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Can Explainable AI Explain Unfairness? A Framework for Evaluating Explainable AI",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            723.896240234375,
+            293.34161376953125,
+            730.3330078125
+          ],
+          "page": 7,
+          "span": [
+            0,
+            80
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[33] 2019. Predictive Inequity in Object Detection. arXiv:1902.11097 [cs.CV]",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            688.4653930664062,
+            295.22271728515625,
+            703.1141357421875
+          ],
+          "page": 7,
+          "span": [
+            0,
+            130
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[34] 2019. Understanding the effect of accuracy on trust in machine learning models. In Proceedings of the",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            53.79800033569336,
+            672.0010375976562,
+            295.7501220703125,
+            687.1741333007812
+          ],
+          "page": 7,
+          "span": [
+            0,
+            161
+          ]
+        }
+      ]
+    },
+    {
+      "text": "2019 CHI Conference on Human Factors in Computing Systems. 1-12.",
+      "name": "text",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            333.3909912109375,
+            696.2108154296875,
+            525.1473999023438,
+            703.2047729492188
+          ],
+          "page": 7,
+          "span": [
+            0,
+            64
+          ]
+        }
+      ]
+    },
+    {
+      "text": "[35] Learning and evaluating classifiers under sample selection bias. In Proceedings, Twenty-First International Conference on Machine Learning, ICML 2004. 903-910. https://doi.org/10.1145/1015330.1015425",
+      "name": "list-item",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            317.5442199707031,
+            672.1448364257812,
+            558.9619140625,
+            695.1441650390625
+          ],
+          "page": 7,
+          "span": [
+            0,
+            227
+          ]
+        }
+      ]
+    }
+  ],
+  "page-dimensions": [
+    {
+      "height": 792,
+      "page": 1,
+      "width": 612
+    },
+    {
+      "height": 792,
+      "page": 2,
+      "width": 612
+    },
+    {
+      "height": 792.00,
+      "page": 3,
+      "width": 612.88
+    },
+    {
+      "height": 792.34,
+      "page": 4,
+      "width": 612.64
+    },
+    {
+      "height": 792,
+      "page": 5,
+      "width": 612
+    },
+    {
+      "height": 792,
+      "page": 6,
+      "width": 612
+    },
+    {
+      "height": 792,
+      "page": 7,
+      "width": 612
+    }
+  ],
+  "page-footers": [
+    {
+      "prov": [
+        {
+          "bbox": [
+            507.0991821289062,
+            723.89624,
+            560.1486206054688,
+            731.1783447265625
+          ],
+          "page": 4,
+          "span": [
+            0,
+            18
+          ]
+        }
+      ],
+      "text": " anonymous, et al.",
+      "type": "page-footer"
+    }
+  ],
+  "page-headers": [
+    {
+      "prov": [
+        {
+          "bbox": [
+            507.0874633789062,
+            723.89624,
+            558.396240234375,
+            730.33301
+          ],
+          "page": 2,
+          "span": [
+            0,
+            18
+          ]
+        }
+      ],
+      "text": " anonymous, et al.",
+      "type": "page-header"
+    },
+    {
+      "prov": [
+        {
+          "bbox": [
+            53.798,
+            723.89624,
+            293.795654296875,
+            730.33301
+          ],
+          "page": 3,
+          "span": [
+            0,
+            81
+          ]
+        }
+      ],
+      "text": " Can Explainable AI Explain Unfairness? A Framework for Evaluating Explainable AI",
+      "type": "page-header"
+    },
+    {
+      "prov": [
+        {
+          "bbox": [
+            507.153564453125,
+            723.89624,
+            559.1743774414062,
+            730.33301
+          ],
+          "page": 6,
+          "span": [
+            0,
+            18
+          ]
+        }
+      ],
+      "text": " anonymous, et al.",
+      "type": "page-header"
+    }
+  ],
+  "references": [],
+  "tables": [
+    {
+      "#-cols": 5,
+      "#-rows": 14,
+      "bounding-box": {
+        "max": [
+          0,
+          483.30505,
+          612,
+          687.61279
+        ],
+        "min": [
+          96.574997,
+          503.8273,
+          515.4256,
+          672.77301
+        ]
+      },
+      "cells": {
+        "data": [
+          [
+            235.72501,
+            664.29974,
+            297.54834,
+            672.77301,
+            "/WXRERD+LinLibertineTB",
+            "Random Forest"
+          ],
+          [
+            226.651,
+            653.34076,
+            306.62238,
+            661.81403,
+            "/WXRERD+LinLibertineTB",
+            "Feature Importance"
+          ],
+          [
+            316.58499,
+            658.70776,
+            338.57062,
+            667.18103,
+            "/WXRERD+LinLibertineTB",
+            "LIME"
+          ],
+          [
+            348.53299,
+            658.70776,
+            434.62839,
+            667.18103,
+            "/WXRERD+LinLibertineTB",
+            "AI Explainability 360"
+          ],
+          [
+            465.30301,
+            664.29974,
+            494.7128,
+            672.77301,
+            "/WXRERD+LinLibertineTB",
+            "Ad-hoc"
+          ],
+          [
+            451.078,
+            653.34076,
+            508.93817,
+            661.81403,
+            "/WXRERD+LinLibertineTB",
+            "Explainability"
+          ],
+          [
+            96.574997,
+            640.11633,
+            119.59175,
+            648.18604,
+            "/KOXVQL+LinLibertineT",
+            "Model"
+          ],
+          [
+            239.101,
+            640.11633,
+            294.17267,
+            648.18604,
+            "/KOXVQL+LinLibertineT",
+            "Random Forest"
+          ],
+          [
+            349.75601,
+            640.11633,
+            401.45627,
+            648.18604,
+            "/KOXVQL+LinLibertineT",
+            "Deep learning"
+          ],
+          [
+            444.591,
+            640.11633,
+            515.4256,
+            648.18604,
+            "/KOXVQL+LinLibertineT",
+            "Logistic Regression"
+          ],
+          [
+            258.33899,
+            628.63379,
+            353.66083,
+            637.10706,
+            "/WXRERD+LinLibertineTB",
+            "Issues with Biased Data"
+          ],
+          [
+            96.574997,
+            617.40131,
+            156.41675,
+            625.47101,
+            "/KOXVQL+LinLibertineT",
+            "Imbalanced data"
+          ],
+          [
+            265.121,
+            617.40131,
+            268.15164,
+            625.47101,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            325.112,
+            617.40131,
+            330.04352,
+            625.47101,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            389.11499,
+            617.40131,
+            394.04651,
+            625.47101,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            478.492,
+            617.40131,
+            481.52264,
+            625.47101,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            96.574997,
+            606.04431,
+            216.68889,
+            614.11401,
+            "/KOXVQL+LinLibertineT",
+            "Influential variable identification"
+          ],
+          [
+            264.17099,
+            606.04431,
+            269.10251,
+            614.11401,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            325.112,
+            606.04431,
+            330.04352,
+            614.11401,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            389.11499,
+            606.04431,
+            394.04651,
+            614.11401,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            477.54199,
+            606.04431,
+            482.47351,
+            614.11401,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            96.574997,
+            594.68732,
+            171.74033,
+            602.75702,
+            "/KOXVQL+LinLibertineT",
+            "Preprocessing issues"
+          ],
+          [
+            265.121,
+            594.68732,
+            268.15164,
+            602.75702,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            326.06201,
+            594.68732,
+            329.09265,
+            602.75702,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            390.065,
+            594.68732,
+            393.09564,
+            602.75702,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            478.492,
+            594.68732,
+            481.52264,
+            602.75702,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            96.574997,
+            583.32935,
+            166.66534,
+            591.39905,
+            "/KOXVQL+LinLibertineT",
+            "Sensitive attributes"
+          ],
+          [
+            265.121,
+            583.32935,
+            268.15164,
+            591.39905,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            326.06201,
+            583.32935,
+            329.09265,
+            591.39905,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            390.065,
+            583.32935,
+            393.09564,
+            591.39905,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            478.492,
+            583.32935,
+            481.52264,
+            591.39905,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            217.112,
+            571.8468,
+            397.13052,
+            580.32007,
+            "/WXRERD+LinLibertineTB",
+            "Issues involved in Machine Learning Models"
+          ],
+          [
+            96.574997,
+            560.61432,
+            190.22903,
+            568.68402,
+            "/KOXVQL+LinLibertineT",
+            "Model-Specific influences"
+          ],
+          [
+            265.121,
+            560.61432,
+            268.15164,
+            568.68402,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            326.06201,
+            560.61432,
+            329.09265,
+            568.68402,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            390.065,
+            560.61432,
+            393.09564,
+            568.68402,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            478.492,
+            560.61432,
+            481.52264,
+            568.68402,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            96.574997,
+            549.25732,
+            156.48848,
+            557.32703,
+            "/KOXVQL+LinLibertineT",
+            "Accuracy equity"
+          ],
+          [
+            265.121,
+            549.25732,
+            268.15164,
+            557.32703,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            326.06201,
+            549.25732,
+            329.09265,
+            557.32703,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            389.11499,
+            549.25732,
+            394.04651,
+            557.32703,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            478.492,
+            549.25732,
+            481.52264,
+            557.32703,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            240.577,
+            537.77478,
+            371.42377,
+            546.24805,
+            "/WXRERD+LinLibertineTB",
+            "Issues involved with XAI results"
+          ],
+          [
+            96.574997,
+            526.5423,
+            155.02696,
+            534.612,
+            "/KOXVQL+LinLibertineT",
+            "Target audience"
+          ],
+          [
+            265.121,
+            526.5423,
+            268.15164,
+            534.612,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            326.06201,
+            526.5423,
+            329.09265,
+            534.612,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            389.11499,
+            526.5423,
+            394.04651,
+            534.612,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            478.492,
+            526.5423,
+            481.52264,
+            534.612,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            96.574997,
+            515.1853,
+            200.97079,
+            523.255,
+            "/KOXVQL+LinLibertineT",
+            "Presentation of explanations"
+          ],
+          [
+            264.17099,
+            515.1853,
+            269.10251,
+            523.255,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            325.112,
+            515.1853,
+            330.04352,
+            523.255,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            389.11499,
+            515.1853,
+            394.04651,
+            523.255,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            477.54199,
+            515.1853,
+            482.47351,
+            523.255,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            96.574997,
+            503.8273,
+            181.54062,
+            511.89706,
+            "/KOXVQL+LinLibertineT",
+            "Variety of explanations"
+          ],
+          [
+            265.121,
+            503.8273,
+            268.15164,
+            511.89706,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            326.06201,
+            503.8273,
+            329.09265,
+            511.89706,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ],
+          [
+            389.11499,
+            503.8273,
+            394.04651,
+            511.89706,
+            "/KOXVQL+LinLibertineT",
+            "+"
+          ],
+          [
+            478.492,
+            503.8273,
+            481.52264,
+            511.89706,
+            "/KOXVQL+LinLibertineT",
+            "-"
+          ]
+        ],
+        "header": [
+          "x0",
+          "y0",
+          "x1",
+          "y1",
+          "font",
+          "text"
+        ]
+      },
+      "data": [
+        [
+          {
+            "bbox": null,
+            "spans": [
+              [
+                0,
+                0
+              ]
+            ],
+            "text": "",
+            "type": "col_header"
+          },
+          {
+            "bbox": [
+              226.651,
+              653.34076,
+              306.62238,
+              672.77301
+            ],
+            "spans": [
+              [
+                0,
+                1
+              ]
+            ],
+            "text": "Random Forest Feature Importance ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              316.58499,
+              658.70776,
+              338.57062,
+              667.18103
+            ],
+            "spans": [
+              [
+                0,
+                2
+              ]
+            ],
+            "text": "LIME ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              348.53299,
+              658.70776,
+              434.62839,
+              667.18103
+            ],
+            "spans": [
+              [
+                0,
+                3
+              ]
+            ],
+            "text": "AI Explainability 360 ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              451.078,
+              653.34076,
+              508.93817,
+              672.77301
+            ],
+            "spans": [
+              [
+                0,
+                4
+              ]
+            ],
+            "text": "Ad-hoc Explainability ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              640.11633,
+              119.59175,
+              648.18604
+            ],
+            "spans": [
+              [
+                1,
+                0
+              ]
+            ],
+            "text": "Model ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              239.101,
+              640.11633,
+              294.17267,
+              648.18604
+            ],
+            "spans": [
+              [
+                1,
+                1
+              ]
+            ],
+            "text": "Random Forest ",
+            "type": ""
+          },
+          {
+            "bbox": null,
+            "spans": [
+              [
+                1,
+                2
+              ]
+            ],
+            "text": "",
+            "type": "body"
+          },
+          {
+            "bbox": [
+              349.75601,
+              640.11633,
+              401.45627,
+              648.18604
+            ],
+            "spans": [
+              [
+                1,
+                3
+              ]
+            ],
+            "text": "Deep learning ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              444.591,
+              640.11633,
+              515.4256,
+              648.18604
+            ],
+            "spans": [
+              [
+                1,
+                4
+              ]
+            ],
+            "text": "Logistic Regression ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              258.33899,
+              628.63379,
+              353.66083,
+              637.10706
+            ],
+            "spans": [
+              [
+                2,
+                0
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                4
+              ]
+            ],
+            "text": "Issues with Biased Data ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              258.33899,
+              628.63379,
+              353.66083,
+              637.10706
+            ],
+            "spans": [
+              [
+                2,
+                0
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                4
+              ]
+            ],
+            "text": "Issues with Biased Data ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              258.33899,
+              628.63379,
+              353.66083,
+              637.10706
+            ],
+            "spans": [
+              [
+                2,
+                0
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                4
+              ]
+            ],
+            "text": "Issues with Biased Data ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              258.33899,
+              628.63379,
+              353.66083,
+              637.10706
+            ],
+            "spans": [
+              [
+                2,
+                0
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                4
+              ]
+            ],
+            "text": "Issues with Biased Data ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              258.33899,
+              628.63379,
+              353.66083,
+              637.10706
+            ],
+            "spans": [
+              [
+                2,
+                0
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                4
+              ]
+            ],
+            "text": "Issues with Biased Data ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              617.40131,
+              156.41675,
+              625.47101
+            ],
+            "spans": [
+              [
+                3,
+                0
+              ]
+            ],
+            "text": "Imbalanced data ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              265.121,
+              617.40131,
+              268.15164,
+              625.47101
+            ],
+            "spans": [
+              [
+                3,
+                1
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              325.112,
+              617.40131,
+              330.04352,
+              625.47101
+            ],
+            "spans": [
+              [
+                3,
+                2
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              389.11499,
+              617.40131,
+              394.04651,
+              625.47101
+            ],
+            "spans": [
+              [
+                3,
+                3
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              478.492,
+              617.40131,
+              481.52264,
+              625.47101
+            ],
+            "spans": [
+              [
+                3,
+                4
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              606.04431,
+              216.68889,
+              614.11401
+            ],
+            "spans": [
+              [
+                4,
+                0
+              ]
+            ],
+            "text": "Influential variable identification ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              264.17099,
+              606.04431,
+              269.10251,
+              614.11401
+            ],
+            "spans": [
+              [
+                4,
+                1
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              325.112,
+              606.04431,
+              330.04352,
+              614.11401
+            ],
+            "spans": [
+              [
+                4,
+                2
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              389.11499,
+              606.04431,
+              394.04651,
+              614.11401
+            ],
+            "spans": [
+              [
+                4,
+                3
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              477.54199,
+              606.04431,
+              482.47351,
+              614.11401
+            ],
+            "spans": [
+              [
+                4,
+                4
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              594.68732,
+              171.74033,
+              602.75702
+            ],
+            "spans": [
+              [
+                5,
+                0
+              ]
+            ],
+            "text": "Preprocessing issues ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              265.121,
+              594.68732,
+              268.15164,
+              602.75702
+            ],
+            "spans": [
+              [
+                5,
+                1
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              326.06201,
+              594.68732,
+              329.09265,
+              602.75702
+            ],
+            "spans": [
+              [
+                5,
+                2
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              390.065,
+              594.68732,
+              393.09564,
+              602.75702
+            ],
+            "spans": [
+              [
+                5,
+                3
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              478.492,
+              594.68732,
+              481.52264,
+              602.75702
+            ],
+            "spans": [
+              [
+                5,
+                4
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              583.32935,
+              166.66534,
+              591.39905
+            ],
+            "spans": [
+              [
+                6,
+                0
+              ]
+            ],
+            "text": "Sensitive attributes ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              265.121,
+              583.32935,
+              268.15164,
+              591.39905
+            ],
+            "spans": [
+              [
+                6,
+                1
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              326.06201,
+              583.32935,
+              329.09265,
+              591.39905
+            ],
+            "spans": [
+              [
+                6,
+                2
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              390.065,
+              583.32935,
+              393.09564,
+              591.39905
+            ],
+            "spans": [
+              [
+                6,
+                3
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              478.492,
+              583.32935,
+              481.52264,
+              591.39905
+            ],
+            "spans": [
+              [
+                6,
+                4
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              217.112,
+              571.8468,
+              397.13052,
+              580.32007
+            ],
+            "spans": [
+              [
+                7,
+                0
+              ],
+              [
+                7,
+                1
+              ],
+              [
+                7,
+                2
+              ],
+              [
+                7,
+                3
+              ],
+              [
+                7,
+                4
+              ]
+            ],
+            "text": "Issues involved in Machine Learning Models ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              217.112,
+              571.8468,
+              397.13052,
+              580.32007
+            ],
+            "spans": [
+              [
+                7,
+                0
+              ],
+              [
+                7,
+                1
+              ],
+              [
+                7,
+                2
+              ],
+              [
+                7,
+                3
+              ],
+              [
+                7,
+                4
+              ]
+            ],
+            "text": "Issues involved in Machine Learning Models ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              217.112,
+              571.8468,
+              397.13052,
+              580.32007
+            ],
+            "spans": [
+              [
+                7,
+                0
+              ],
+              [
+                7,
+                1
+              ],
+              [
+                7,
+                2
+              ],
+              [
+                7,
+                3
+              ],
+              [
+                7,
+                4
+              ]
+            ],
+            "text": "Issues involved in Machine Learning Models ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              217.112,
+              571.8468,
+              397.13052,
+              580.32007
+            ],
+            "spans": [
+              [
+                7,
+                0
+              ],
+              [
+                7,
+                1
+              ],
+              [
+                7,
+                2
+              ],
+              [
+                7,
+                3
+              ],
+              [
+                7,
+                4
+              ]
+            ],
+            "text": "Issues involved in Machine Learning Models ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              217.112,
+              571.8468,
+              397.13052,
+              580.32007
+            ],
+            "spans": [
+              [
+                7,
+                0
+              ],
+              [
+                7,
+                1
+              ],
+              [
+                7,
+                2
+              ],
+              [
+                7,
+                3
+              ],
+              [
+                7,
+                4
+              ]
+            ],
+            "text": "Issues involved in Machine Learning Models ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              560.61432,
+              190.22903,
+              568.68402
+            ],
+            "spans": [
+              [
+                8,
+                0
+              ]
+            ],
+            "text": "Model-Specific influences ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              265.121,
+              560.61432,
+              268.15164,
+              568.68402
+            ],
+            "spans": [
+              [
+                8,
+                1
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              326.06201,
+              560.61432,
+              329.09265,
+              568.68402
+            ],
+            "spans": [
+              [
+                8,
+                2
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              390.065,
+              560.61432,
+              393.09564,
+              568.68402
+            ],
+            "spans": [
+              [
+                8,
+                3
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              478.492,
+              560.61432,
+              481.52264,
+              568.68402
+            ],
+            "spans": [
+              [
+                8,
+                4
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              549.25732,
+              156.48848,
+              557.32703
+            ],
+            "spans": [
+              [
+                9,
+                0
+              ]
+            ],
+            "text": "Accuracy equity ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              265.121,
+              549.25732,
+              268.15164,
+              557.32703
+            ],
+            "spans": [
+              [
+                9,
+                1
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              326.06201,
+              549.25732,
+              329.09265,
+              557.32703
+            ],
+            "spans": [
+              [
+                9,
+                2
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              389.11499,
+              549.25732,
+              394.04651,
+              557.32703
+            ],
+            "spans": [
+              [
+                9,
+                3
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              478.492,
+              549.25732,
+              481.52264,
+              557.32703
+            ],
+            "spans": [
+              [
+                9,
+                4
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              240.577,
+              537.77478,
+              371.42377,
+              546.24805
+            ],
+            "spans": [
+              [
+                10,
+                0
+              ],
+              [
+                10,
+                1
+              ],
+              [
+                10,
+                2
+              ],
+              [
+                10,
+                3
+              ],
+              [
+                10,
+                4
+              ]
+            ],
+            "text": "Issues involved with XAI results ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              240.577,
+              537.77478,
+              371.42377,
+              546.24805
+            ],
+            "spans": [
+              [
+                10,
+                0
+              ],
+              [
+                10,
+                1
+              ],
+              [
+                10,
+                2
+              ],
+              [
+                10,
+                3
+              ],
+              [
+                10,
+                4
+              ]
+            ],
+            "text": "Issues involved with XAI results ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              240.577,
+              537.77478,
+              371.42377,
+              546.24805
+            ],
+            "spans": [
+              [
+                10,
+                0
+              ],
+              [
+                10,
+                1
+              ],
+              [
+                10,
+                2
+              ],
+              [
+                10,
+                3
+              ],
+              [
+                10,
+                4
+              ]
+            ],
+            "text": "Issues involved with XAI results ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              240.577,
+              537.77478,
+              371.42377,
+              546.24805
+            ],
+            "spans": [
+              [
+                10,
+                0
+              ],
+              [
+                10,
+                1
+              ],
+              [
+                10,
+                2
+              ],
+              [
+                10,
+                3
+              ],
+              [
+                10,
+                4
+              ]
+            ],
+            "text": "Issues involved with XAI results ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              240.577,
+              537.77478,
+              371.42377,
+              546.24805
+            ],
+            "spans": [
+              [
+                10,
+                0
+              ],
+              [
+                10,
+                1
+              ],
+              [
+                10,
+                2
+              ],
+              [
+                10,
+                3
+              ],
+              [
+                10,
+                4
+              ]
+            ],
+            "text": "Issues involved with XAI results ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              526.5423,
+              155.02696,
+              534.612
+            ],
+            "spans": [
+              [
+                11,
+                0
+              ]
+            ],
+            "text": "Target audience ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              265.121,
+              526.5423,
+              268.15164,
+              534.612
+            ],
+            "spans": [
+              [
+                11,
+                1
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              326.06201,
+              526.5423,
+              329.09265,
+              534.612
+            ],
+            "spans": [
+              [
+                11,
+                2
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              389.11499,
+              526.5423,
+              394.04651,
+              534.612
+            ],
+            "spans": [
+              [
+                11,
+                3
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              478.492,
+              526.5423,
+              481.52264,
+              534.612
+            ],
+            "spans": [
+              [
+                11,
+                4
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              515.1853,
+              200.97079,
+              523.255
+            ],
+            "spans": [
+              [
+                12,
+                0
+              ]
+            ],
+            "text": "Presentation of explanations ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              264.17099,
+              515.1853,
+              269.10251,
+              523.255
+            ],
+            "spans": [
+              [
+                12,
+                1
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              325.112,
+              515.1853,
+              330.04352,
+              523.255
+            ],
+            "spans": [
+              [
+                12,
+                2
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              389.11499,
+              515.1853,
+              394.04651,
+              523.255
+            ],
+            "spans": [
+              [
+                12,
+                3
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              477.54199,
+              515.1853,
+              482.47351,
+              523.255
+            ],
+            "spans": [
+              [
+                12,
+                4
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          }
+        ],
+        [
+          {
+            "bbox": [
+              96.574997,
+              503.8273,
+              181.54062,
+              511.89706
+            ],
+            "spans": [
+              [
+                13,
+                0
+              ]
+            ],
+            "text": "Variety of explanations ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              265.121,
+              503.8273,
+              268.15164,
+              511.89706
+            ],
+            "spans": [
+              [
+                13,
+                1
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              326.06201,
+              503.8273,
+              329.09265,
+              511.89706
+            ],
+            "spans": [
+              [
+                13,
+                2
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              389.11499,
+              503.8273,
+              394.04651,
+              511.89706
+            ],
+            "spans": [
+              [
+                13,
+                3
+              ]
+            ],
+            "text": "+ ",
+            "type": ""
+          },
+          {
+            "bbox": [
+              478.492,
+              503.8273,
+              481.52264,
+              511.89706
+            ],
+            "spans": [
+              [
+                13,
+                4
+              ]
+            ],
+            "text": "- ",
+            "type": ""
+          }
+        ]
+      ],
+      "confidence": 0.974884033203125,
+      "created_by": "high_conf_pred",
+      "prov": [
+        {
+          "bbox": [
+            90.82913208007812,
+            501.3171997070312,
+            521.6240844726562,
+            675.7239990234375
+          ],
+          "page": 4,
+          "span": [
+            0,
+            0
+          ]
+        }
+      ],
+      "type": "table",
+      "text": "Table 1: Final rubric with XAI tools being evaluated based on whether they did (+) or did not (-) include at least one example of these fairness considerations."
+    }
+  ],
+  "conversion_settings": {
+    "model_pipeline": {
+      "clusters": [
+        {
+          "type": "LayoutSegmentationModel",
+          "name": "LayoutSegmentationModel",
+          "version": "NA"
+        }
+      ],
+      "page": [],
+      "normalization": [],
+      "tables": [
+        {
+          "type": "TableStructureModel",
+          "name": "TableStructureModel",
+          "version": "NA"
+        }
+      ]
+    }
+  },
+  "version": 2,
+  "_s3_data": {
+    "pdf-document": [
+      {
+        "mime": "application/pdf",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFDocuments/58236836873c00a90d26794f3fcc6f4c166186c1fe96b5d53c69069e5a4451ce.pdf",
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFDocuments/58236836873c00a90d26794f3fcc6f4c166186c1fe96b5d53c69069e5a4451ce.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=3de890ecf33a890938a917060e893f77731ee5eee2e43fad2b1ddf1edee8e71c"
+      }
+    ],
+    "pdf-pages": [
+      {
+        "mime": "application/pdf",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/1ec7dda5559d5ccf5043cc3d2f413c826b5252acccfe5aaabeeb641a44221e76.pdf",
+        "page": 1,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/1ec7dda5559d5ccf5043cc3d2f413c826b5252acccfe5aaabeeb641a44221e76.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a6b603400e80bc29e629ed279daf368cc0bd0e1a3afca837905e837f5b8eec32"
+      },
+      {
+        "mime": "application/pdf",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/2d5d5ff3d2dcf078901a611cef4313a160c14abc876ae368b740109a0bfd51a7.pdf",
+        "page": 2,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/2d5d5ff3d2dcf078901a611cef4313a160c14abc876ae368b740109a0bfd51a7.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=22df2e4a43db6e3ee506b844582bc4127defdf42cddfb7a684b6756e0af1d045"
+      },
+      {
+        "mime": "application/pdf",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/ec36b1b36c8dc232088c64bf0b1e6018b213f9a83992c8b7397c5e3846082f50.pdf",
+        "page": 3,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/ec36b1b36c8dc232088c64bf0b1e6018b213f9a83992c8b7397c5e3846082f50.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d5d4cbc2871b81c3d2a687b2000f6f8ab88f826b37b8e9e3524c524a91818082"
+      },
+      {
+        "mime": "application/pdf",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/e9fcf09dc6486c9f238a1ddbb4811a3680fb0f402cb32bc71423c12354ff2dc3.pdf",
+        "page": 4,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/e9fcf09dc6486c9f238a1ddbb4811a3680fb0f402cb32bc71423c12354ff2dc3.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=0299f46abba534f5c03460f9a65129ad1225cf55a48d51eae0fa520ebe93091e"
+      },
+      {
+        "mime": "application/pdf",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/6f0dd98bfe1016965fc5f4b8b66ca71e4ff75a546647cb0ef100c0b42c7a1de1.pdf",
+        "page": 5,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/6f0dd98bfe1016965fc5f4b8b66ca71e4ff75a546647cb0ef100c0b42c7a1de1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=67ae4b78aa1ef1f36d8113aaeb56b2fcbefb3c1b8e16ea28673e83f8d5be02d4"
+      },
+      {
+        "mime": "application/pdf",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/70f85f89334f4700ec01f6f634a8f996b53727b41bd7e62564b105bf7aa85968.pdf",
+        "page": 6,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/70f85f89334f4700ec01f6f634a8f996b53727b41bd7e62564b105bf7aa85968.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b9e0c250d6531893a199aa331c0250c54fbbf7b0cf39374c2b839cf2e7fbb516"
+      },
+      {
+        "mime": "application/pdf",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/c8fca67e2bb98c1246874fc52da7220f3697b5555b0a7d5b99b3b3d767e1bf47.pdf",
+        "page": 7,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFPages/c8fca67e2bb98c1246874fc52da7220f3697b5555b0a7d5b99b3b3d767e1bf47.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=c80509e507fd7b2f60a2439cddfdeab29d170425f0df2f9f2b487f069eacddba"
+      }
+    ],
+    "pdf-images": [
+      {
+        "mime": "application/png",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/1ec7dda5559d5ccf5043cc3d2f413c826b5252acccfe5aaabeeb641a44221e76.png",
+        "page": 1,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/1ec7dda5559d5ccf5043cc3d2f413c826b5252acccfe5aaabeeb641a44221e76.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d6ed87051847ea9b20e59f5c0f43fbc69a19ac1c64bda64b640aa438c8862d4d"
+      },
+      {
+        "mime": "application/png",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/2d5d5ff3d2dcf078901a611cef4313a160c14abc876ae368b740109a0bfd51a7.png",
+        "page": 2,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/2d5d5ff3d2dcf078901a611cef4313a160c14abc876ae368b740109a0bfd51a7.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=96992f87b23261238138411434f7032e11f9df2f0770c47d2ab6231e8f9480a7"
+      },
+      {
+        "mime": "application/png",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/ec36b1b36c8dc232088c64bf0b1e6018b213f9a83992c8b7397c5e3846082f50.png",
+        "page": 3,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/ec36b1b36c8dc232088c64bf0b1e6018b213f9a83992c8b7397c5e3846082f50.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5342e14d823b8a025c2491fcfbda92d749f55f64fa51ccd1b2e6ef85969ce81f"
+      },
+      {
+        "mime": "application/png",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/e9fcf09dc6486c9f238a1ddbb4811a3680fb0f402cb32bc71423c12354ff2dc3.png",
+        "page": 4,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/e9fcf09dc6486c9f238a1ddbb4811a3680fb0f402cb32bc71423c12354ff2dc3.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=3005e9553e5364bf810b9bb6e08e5ba9f87e76b7f446c2ad31a23a2561a567fa"
+      },
+      {
+        "mime": "application/png",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/6f0dd98bfe1016965fc5f4b8b66ca71e4ff75a546647cb0ef100c0b42c7a1de1.png",
+        "page": 5,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/6f0dd98bfe1016965fc5f4b8b66ca71e4ff75a546647cb0ef100c0b42c7a1de1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=02df15e95e70aebafdd1347b8a27c73ee9a5e81f0d83cc5573061dff597f167c"
+      },
+      {
+        "mime": "application/png",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/70f85f89334f4700ec01f6f634a8f996b53727b41bd7e62564b105bf7aa85968.png",
+        "page": 6,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/70f85f89334f4700ec01f6f634a8f996b53727b41bd7e62564b105bf7aa85968.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=4e070ff3b505debb096e45caefbbc47c0244157b91dde18a9e3084f577ef78e6"
+      },
+      {
+        "mime": "application/png",
+        "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/c8fca67e2bb98c1246874fc52da7220f3697b5555b0a7d5b99b3b3d767e1bf47.png",
+        "page": 7,
+        "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/PDFImages/c8fca67e2bb98c1246874fc52da7220f3697b5555b0a7d5b99b3b3d767e1bf47.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2765529fc7f9bd71246b8aefaafcf9471cd399b8a5e28b659f27e5200f04506a"
+      }
+    ],
+    "json-document": {
+      "mime": "application/json",
+      "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/JSONDocuments/58236836873c00a90d26794f3fcc6f4c166186c1fe96b5d53c69069e5a4451ce.json",
+      "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/JSONDocuments/58236836873c00a90d26794f3fcc6f4c166186c1fe96b5d53c69069e5a4451ce.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=8ebf680fdfafd7fed991e2e1814663758f33ef6f2af3b0c2bab9c0d13fc06cc8"
+    },
+    "json-meta": {
+      "mime": "application/json",
+      "path": "cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/JSONDocuments/58236836873c00a90d26794f3fcc6f4c166186c1fe96b5d53c69069e5a4451ce.meta.json",
+      "url": "https://s3.eu-de.cloud-object-storage.appdomain.cloud/foc-deepsearch-s3-elastic/deepsearch-cxs-prod/cxs-acb80f429bbf40f6a8bdbd7df56c4b7e/JSONDocuments/58236836873c00a90d26794f3fcc6f4c166186c1fe96b5d53c69069e5a4451ce.meta.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ddd16d39861143cf8c12e5bc51da9180%2F20240706%2Feu-de-standard%2Fs3%2Faws4_request&X-Amz-Date=20240706T090338Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=fb8dd03d30a62a929583277d68fb7cc5cf7da89d39d1f1d3cad0a339e08e3848"
+    }
+  },
+  "type": "pdf-document",
+  "_content_hash": "92f01bbd9bb7210da5f66a19ebc1753f",
+  "identifiers": [
+    {
+      "_name": "arxivid#2106.07483",
+      "type": "arxivid",
+      "value": "2106.07483"
+    }
+  ]
+}

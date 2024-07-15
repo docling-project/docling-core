@@ -1,0 +1,104 @@
+{
+  "subject": {
+    "names": [
+      {
+        "_name": "chemical_name#bi2sr2cacu2o8",
+        "type": "chemical_name",
+        "value": "Bi2Sr2CaCu2O8"
+      }
+    ],
+    "identifiers": [
+      {
+        "_name": "ent_id#b94dls9d",
+        "type": "ent_id",
+        "value": "b94dls9d"
+      },
+      {
+        "_name": "sum_formula#bi(2) ca(1) cu(2) o(8) sr(2)",
+        "type": "sum_formula",
+        "value": "Bi(2) Ca(1) Cu(2) O(8) Sr(2)"
+      }
+    ],
+    "display_name": "Bi(2) Ca(1) Cu(2) O(8) Sr(2)",
+    "type": "material"
+  },
+  "conf": 1.0,
+  "predicates": [
+    {
+      "numerical_value": {
+        "val": 0.23,
+        "unit": "dimensionless",
+        "min": 0.11,
+        "err": 0.05,
+        "max": 0.35
+      },
+      "numerical_value_si": {
+        "val": 0.23,
+        "unit": "dimensionless",
+        "min": 0.11,
+        "err": 0.05,
+        "max": 0.35
+      },
+      "value": {
+        "name": "0.11 to 0.35",
+        "type": "property-value"
+      },
+      "key": {
+        "name": "hole concentration",
+        "type": "property"
+      }
+    }
+  ],
+  "type": "statement",
+  "subtype": "mat_to_prop_to_pvls",
+  "model": "Deep Search Model 0.0.0",
+  "source": "sentence.3",
+  "match": "89f0d4058c2483678b2cc4f515acf463",
+  "range": [
+    430,
+    668
+  ],
+  "prov": [
+    {
+      "text": "Here is a sentence with measurements with high-Tc superconductor, on Bi2Sr2CaCu2O8 samples with different Tc values (hole concentration of 0.11 to 0.35).",
+      "type": "sentence",
+      "reference": {
+        "_name": "arxivid#0706.0214",
+        "type": "arxivid",
+        "value": "0706.0214"
+      }
+    }
+  ],
+  "_name": "sentence.3",
+  "identifiers": [
+    {
+      "_name": "ent_id#b94dls9d",
+      "type": "ent_id",
+      "value": "b94dls9d"
+    },
+    {
+      "_name": "sum_formula#bi(2) ca(1) cu(2) o(8) sr(2)",
+      "type": "sum_formula",
+      "value": "Bi(2) Ca(1) Cu(2) O(8) Sr(2)"
+    }
+  ],
+  "file-info": {
+    "document-hash": "ff94fd78199fe714f2bf6143ab4af8379a581587fd7049aa1a62167196f8f07e",
+    "filename": "db-file.pdf",
+    "filename-prov": "db-archive.zip"
+  },
+  "description": {
+    "provenance": {
+      "source": "arXiv abstracts"
+    },
+    "publication_date": "2007-06-01T20:36:32.000+00:00",
+    "logs": [
+      {
+        "agent": "CXS",
+        "type": "parsing",
+        "comment": "statement extraction",
+        "date": "2022-12-15T13:24:51.778+00:00"
+      }
+    ]
+  }
+}

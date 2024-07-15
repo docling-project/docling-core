@@ -1,0 +1,23 @@
+{
+	"display_name": "FeSe",
+	"type": "material",
+	"names": [
+		{
+			"type": "chemical_name",
+			"value": "FeSe",
+			"_name": "chemical_name#fese"
+		},
+		{
+			"type": "sum_formula",
+			"value": "Fe(1) Se(1)",
+			"_name": "sum_formula#fe(1) se(1)"
+		}
+	],
+	"identifiers": [
+		{
+			"_name": "db#1234567",
+			"type": "db",
+			"value": "1234567"
+		}
+	]
+}

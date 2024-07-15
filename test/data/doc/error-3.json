@@ -1,0 +1,93 @@
+{
+  "description": {
+    "publication_date": "2024-07-01T12:00:00.000+00:00",
+    "languages": [
+      "en"
+    ],
+    "url_refs": [
+      "https://www.link-to-pdf-626144176a8a0616ce8c111ecda4bc30b4a.com/file.pdf"
+    ],
+    "title": "Lorem ipsum",
+    "affiliations": [
+      {
+        "name": "Affiliation Name"
+      }
+    ],
+    "abstract": [
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+    ],
+    "authors": [
+      {
+        "name": "Author 1"
+      }
+    ],
+    "publication": [
+      {
+        "id": "publication-id-12345",
+        "name": "International Conference",
+        "type": [
+          "conference"
+        ],
+        "alternate_names": [
+          "Int Conference",
+          "IC"
+        ],
+        "url": "https://en.wikipedia.org/wiki/Lorem_ipsum"
+      },
+      {
+        "name": "Lorem ipsum",
+        "pages": "130-189",
+        "volume": "87"
+      }
+    ],
+    "reference_count": -1,
+    "citation_count": "3",
+    "logs": [
+      {
+        "agent": "CXS",
+        "type": "parsing",
+        "comment": "parsing of documents",
+        "date": "2022-11-09T21:22:19.248+00:00"
+      }
+    ],
+    "collection": {
+      "name": "Sample Collection",
+      "type": "Document",
+      "version": "1.2.3",
+      "alias": [
+        "SC"
+      ]
+    }
+  },
+  "main-text": [
+    {
+      "name": "title",
+      "type": "title",
+      "text": "Lorem ipsum"
+    },
+    {
+      "name": "text",
+      "type": "paragraph",
+      "text": "Author"
+    },
+    {
+      "name": "abstract",
+      "type": "paragraph",
+      "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+    }
+  ],
+  "file-info": {
+    "document-hash": "9cdad4912f0b81298c96478626144176a8a0616fe8c101ecda4bc30b4a518374",
+    "filename": "12345",
+    "filename-prov": "12345.zip"
+  },
+  "identifiers": [
+    {
+      "_name": "collection#12345",
+      "type": "collection",
+      "value": "12345"
+    }
+  ],
+  "type": "article",
+  "_name": "Lorem ipsum"
+}

@@ -1,0 +1,104 @@
+{
+  "mappings": {
+    "dynamic": false,
+    "_size": {
+      "enabled": true
+    },
+    "_meta": {
+      "$ref": "ccs:schemas#/Document"
+    },
+    "properties": {
+      "description": {
+        "type": "object",
+        "properties": {
+          "abstract": {
+            "type": "text"
+          },
+          "affiliations": {
+            "type": "keyword"
+          },
+          "authors": {
+            "type": "keyword"
+          },
+          "title": {
+            "type": "text"
+          }
+        }
+      },
+      "figures": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "text"
+          },
+          "type": {
+            "type": "keyword"
+          },
+          "prov": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "file-info": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "text"
+          }
+        }
+      },
+      "main-text": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "text"
+          },
+          "type": {
+            "type": "keyword"
+          },
+          "name": {
+            "type": "keyword"
+          },
+          "prov": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "_name": {
+        "type": "keyword"
+      },
+      "tables": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "text"
+          },
+          "type": {
+            "type": "keyword"
+          },
+          "prov": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "type": {
+        "type": "keyword"
+      }
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "_name": "some text here",
+  "file-info": {
+    "filename": "VGRQXHF3J8VDLUA7XE92",
+    "document-hash": "f54e9703c17364ea904d2a07d3e2739ed7c7de0f86b2800ed25bdeea5871eb88",
+    "filename-prov": "20221013-0800-gleif-goldencopy-lei2-golden-copy.csv.zip"
+  },
+  "description": {
+    "publication_date": "2021-06-05T18:00:00.000Z",
+    "logs": [
+      {
+        "date": "2022-09-16T09:36:35.741+00:00",
+        "agent": "CXS",
+        "comment": "gleif parsing",
+        "type": "parsing"
+      }
+    ]
+  },
+  "conf": 1.0,
+  "prov": [
+    {
+      "type": "database",
+      "text": "Gleif golden copy"
+    }
+  ],
+  "identifiers": [
+    {
+      "type": "some_type",
+      "value": "my_id",
+      "_name": "some_type#my_id"
+    }
+  ],
+  "subject": {
+    "display_name": "INTERNATIONAL BUSINESS MACHINES CORPORATION",
+    "type": "company",
+    "names": [
+      {
+        "type": "company",
+        "value": "INTERNATIONAL BUSINESS MACHINES CORPORATION",
+        "_name": "company#international business machines corporation"
+      }
+    ],
+    "identifiers": [
+      {
+        "type": "ticker",
+        "value": "IBM:NYSE",
+        "_name": "ticker#ibm:nyse"
+      }
+    ]
+  },
+  "attributes": [
+    {
+      "predicates": [
+        {
+          "key": {
+            "type": "property",
+            "name": "legal address country"
+          },
+          "value": {
+            "type": "property-value",
+            "name": "US"
+          }
+        },
+        {
+          "key": {
+            "type": "property",
+            "name": "legal address city"
+          },
+          "value": {
+            "type": "property-value",
+            "name": "Armonk"
+          }
+        }
+      ],
+      "conf": 1.0,
+      "prov": [
+        {
+          "type": "database record",
+          "text": "VGRQXHF3J8VDLUA7XE92"
+        }
+      ]
+    }
+  ]
+}

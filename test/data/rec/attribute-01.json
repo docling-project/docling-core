@@ -1,0 +1,31 @@
+{
+  "conf": 1.0,
+  "prov": [
+    {
+      "type": "sentence",
+      "text": "FeSe has a Tc of 1K and 5K at 1GP and 5GPa respectivly."
+    }
+  ],
+  "predicates": [
+    {
+      "key": {
+        "type": "property",
+        "name": "Tc"
+      },
+      "value": {
+        "type": "property-value",
+        "name": "5K"
+      }
+    },
+    {
+      "key": {
+        "type": "property",
+        "name": "pressure"
+      },
+      "value": {
+        "type": "property-value",
+        "name": "5GPa"
+      }
+    }
+  ]
+}

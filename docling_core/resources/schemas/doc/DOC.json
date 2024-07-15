@@ -1,0 +1,300 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "_type": {
+      "type": "string"
+    },
+    "bitmaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "bounding-box": {
+            "type": "object",
+            "properties": {
+              "max": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "min": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "image-id": {
+            "type": "string"
+          },
+          "prov": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "bbox": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "span": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "description": {
+      "type": "object",
+      "properties": {
+        "abstract": {
+          "type": "string"
+        },
+        "affiliations": {
+          "type": "string"
+        },
+        "authors": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "equations": {
+      "type": "array"
+    },
+    "figures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "bounding-box": {
+            "type": "object",
+            "properties": {
+              "max": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "min": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "image-id": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "prov": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "bbox": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "span": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "file-info": {
+      "type": "object",
+      "properties": {
+        "#-pages": {
+          "type": "integer"
+        },
+        "document-hash": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "page-hashes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "hash": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "page": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "description": {
+          "type": "object",
+          "properties": {
+            "keywords": {
+              "type": "string"
+            }
+          }
+        },
+        "collection-name": {
+          "type": "string"
+        }
+      }
+    },
+    "footnotes": {
+      "type": "array"
+    },
+    "main-text": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "font": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prov": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "bbox": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "span": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "#-cols": {
+            "type": "integer"
+          },
+          "#-rows": {
+            "type": "integer"
+          },
+          "bounding-box": {
+            "type": "object",
+            "properties": {
+              "max": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "min": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "model": {
+            "type": "string"
+          },
+          "prov": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "bbox": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "span": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

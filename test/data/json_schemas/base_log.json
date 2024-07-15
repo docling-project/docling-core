@@ -1,0 +1,61 @@
+{
+  "additionalProperties": false,
+  "description": "Log entry to describe an ETL task on a document.",
+  "properties": {
+    "task": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "An identifier of this task. It may be used to identify this task from other tasks of the same agent and type.",
+      "title": "Task",
+      "x-es-ignore_above": 8191,
+      "x-es-type": "keyword"
+    },
+    "agent": {
+      "description": "The Deep Search agent that performed the task, e.g., CCS or CXS.",
+      "title": "Agent",
+      "type": "string",
+      "x-es-ignore_above": 8191,
+      "x-es-type": "keyword"
+    },
+    "type": {
+      "description": "A task category.",
+      "title": "Type",
+      "type": "string",
+      "x-es-ignore_above": 8191,
+      "x-es-type": "keyword"
+    },
+    "comment": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A description of the task or any comments in natural language.",
+      "title": "Comment"
+    },
+    "date": {
+      "description": "A string representation of the task execution datetime in ISO 8601 format.",
+      "format": "date-time",
+      "title": "Date",
+      "type": "string"
+    }
+  },
+  "required": [
+    "agent",
+    "type",
+    "date"
+  ],
+  "title": "Log",
+  "type": "object"
+}

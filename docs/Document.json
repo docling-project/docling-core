@@ -1,0 +1,1923 @@
+{
+  "$defs": {
+    "Acquisition": {
+      "additionalProperties": false,
+      "description": "Information on how the data was obtained.",
+      "properties": {
+        "type": {
+          "description": "The method to obtain the data.",
+          "enum": [
+            "API",
+            "FTP",
+            "Download",
+            "Link",
+            "Web scraping/Crawling",
+            "Other"
+          ],
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A string representation of the acquisition datetime in ISO 8601 format.",
+          "title": "Date"
+        },
+        "link": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Link to the data source of this document.",
+          "title": "Link",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Size in bytes of the raw document from the data source.",
+          "title": "Size",
+          "x-es-type": "long"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Acquisition",
+      "type": "object"
+    },
+    "Affiliation": {
+      "additionalProperties": false,
+      "description": "Affiliation.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "x-es-fields": {
+            "keyword": {
+              "ignore_above": 8191,
+              "type": "keyword"
+            },
+            "lower": {
+              "ignore_above": 8191,
+              "normalizer": "lowercase_asciifolding",
+              "type": "keyword"
+            }
+          }
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Affiliation",
+      "type": "object"
+    },
+    "Author": {
+      "additionalProperties": false,
+      "description": "Author.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "x-es-fields": {
+            "keyword": {
+              "ignore_above": 8191,
+              "type": "keyword"
+            },
+            "lower": {
+              "ignore_above": 8191,
+              "normalizer": "lowercase_asciifolding",
+              "type": "keyword"
+            }
+          },
+          "x-es-type": "text"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "affiliations": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Affiliation"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Affiliations"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Author",
+      "type": "object"
+    },
+    "BaseCell": {
+      "description": "Base cell.",
+      "properties": {
+        "bounding-box": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingBoxContainer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "x-es-suppress": true
+        },
+        "prov": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Prov"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prov"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "BaseCell",
+      "type": "object"
+    },
+    "BaseModel": {
+      "properties": {},
+      "title": "BaseModel",
+      "type": "object"
+    },
+    "BaseText": {
+      "description": "Base model for text objects.",
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string",
+          "x-es-term_vector": "with_positions_offsets"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "font": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font"
+        },
+        "prov": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Prov"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prov"
+        }
+      },
+      "required": [
+        "text",
+        "type"
+      ],
+      "title": "BaseText",
+      "type": "object"
+    },
+    "BitmapObject": {
+      "description": "Bitmap object.",
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "bounding_box": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/BoundingBoxContainer"
+            }
+          ],
+          "x-es-suppress": true
+        },
+        "prov": {
+          "$ref": "#/$defs/Prov"
+        }
+      },
+      "required": [
+        "type",
+        "bounding_box",
+        "prov"
+      ],
+      "title": "BitmapObject",
+      "type": "object"
+    },
+    "BoundingBoxContainer": {
+      "description": "Bounding box container.",
+      "properties": {
+        "min": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Min",
+          "type": "array"
+        },
+        "max": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Max",
+          "type": "array"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "BoundingBoxContainer",
+      "type": "object"
+    },
+    "CCSDocumentDescription": {
+      "description": "Description in document.",
+      "properties": {
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "abstract": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Abstract"
+        },
+        "authors": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Author"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Authors"
+        },
+        "affiliations": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Affiliation"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Affiliations"
+        },
+        "subjects": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subjects",
+          "x-es-fields": {
+            "keyword": {
+              "ignore_above": 8191,
+              "type": "keyword"
+            }
+          }
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keywords",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "publication_date": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Publication Date"
+        },
+        "languages": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Languages",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DescriptionLicense"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "publishers": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Publishers",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "url_refs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url Refs",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "references": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "References"
+        },
+        "publication": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Publication"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of publication journals or venues.",
+          "title": "Publication"
+        },
+        "reference_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Total number of documents referenced by this document.",
+          "title": "Reference Count",
+          "x-es-type": "integer"
+        },
+        "citation_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Total number of citations that this document has received (number of documents in whose bibliography this document appears).",
+          "title": "Citation Count",
+          "x-es-type": "integer"
+        },
+        "citation_date": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Last update date of the citation count.",
+          "title": "Citation Count Date"
+        },
+        "advanced": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseModel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "analytics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseModel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "logs": {
+          "items": {
+            "$ref": "#/$defs/Log"
+          },
+          "title": "Logs",
+          "type": "array"
+        },
+        "collection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CollectionDocumentInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The collection information of this document."
+        },
+        "acquisition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Acquisition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Information on how the document was obtained, for data governance purposes."
+        }
+      },
+      "required": [
+        "logs"
+      ],
+      "title": "CCSDocumentDescription",
+      "type": "object"
+    },
+    "CCSFileInfoDescription": {
+      "additionalProperties": false,
+      "description": "File info description.",
+      "properties": {
+        "author": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author"
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keywords"
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "creation_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Creation Date"
+        }
+      },
+      "title": "CCSFileInfoDescription",
+      "type": "object"
+    },
+    "CCSFileInfoObject": {
+      "additionalProperties": false,
+      "description": "File info object.",
+      "properties": {
+        "filename": {
+          "description": "The name of a persistent object that created this data object",
+          "title": "Filename",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "filename-prov": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The provenance of this data object, e.g. an archive file, a URL, or any other repository.",
+          "title": "Filename-Prov",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "document-hash": {
+          "description": "A unique identifier of this data object within a collection of a Deep Search database",
+          "title": "Document-Hash",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "#-pages": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "#-Pages"
+        },
+        "collection-name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Collection-Name",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CCSFileInfoDescription"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "x-es-suppress": true
+        },
+        "page-hashes": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/PageReference"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page-Hashes"
+        }
+      },
+      "required": [
+        "filename",
+        "document-hash"
+      ],
+      "title": "CCSFileInfoObject",
+      "type": "object"
+    },
+    "CollectionDocumentInfo": {
+      "additionalProperties": false,
+      "description": "Information of a collection of type Document.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Name of the collection.",
+          "title": "Name",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "type": {
+          "const": "Document",
+          "description": "The collection type.",
+          "enum": [
+            "Document"
+          ],
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The version of this collection model.",
+          "title": "Version",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "alias": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A list of tags (aliases) for the collection.",
+          "title": "Alias",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "CollectionDocumentInfo",
+      "type": "object"
+    },
+    "DescriptionLicense": {
+      "additionalProperties": false,
+      "description": "Licence in document description.",
+      "properties": {
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "title": "DescriptionLicense",
+      "type": "object"
+    },
+    "GlmTableCell": {
+      "description": "Glm Table cell.",
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bbox"
+        },
+        "spans": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 2,
+                "minItems": 2,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spans"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string",
+          "x-es-term_vector": "with_positions_offsets"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "col": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Col",
+          "x-es-suppress": true
+        },
+        "col-header": {
+          "default": false,
+          "title": "Col-Header",
+          "type": "boolean",
+          "x-es-suppress": true
+        },
+        "col-span": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Col-Span",
+          "x-es-suppress": true
+        },
+        "row": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Row",
+          "x-es-suppress": true
+        },
+        "row-header": {
+          "default": false,
+          "title": "Row-Header",
+          "type": "boolean",
+          "x-es-suppress": true
+        },
+        "row-span": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Row-Span",
+          "x-es-suppress": true
+        }
+      },
+      "required": [
+        "text",
+        "type"
+      ],
+      "title": "GlmTableCell",
+      "type": "object"
+    },
+    "Identifier": {
+      "additionalProperties": false,
+      "description": "Unique identifier of a Deep Search data object.",
+      "properties": {
+        "type": {
+          "description": "A string representing a collection or database that contains this data object.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "value": {
+          "description": "The identifier value of the data object within a collection or database.",
+          "title": "Value",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "_name": {
+          "description": "A unique identifier of the data object across Deep Search, consisting of the concatenation of type and value in lower case, separated by hash (#).",
+          "pattern": "^.+#.+$",
+          "title": "_Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "_name"
+      ],
+      "title": "Identifier",
+      "type": "object"
+    },
+    "Log": {
+      "additionalProperties": false,
+      "description": "Log entry to describe an ETL task on a document.",
+      "properties": {
+        "task": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An identifier of this task. It may be used to identify this task from other tasks of the same agent and type.",
+          "title": "Task",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "agent": {
+          "description": "The Deep Search agent that performed the task, e.g., CCS or CXS.",
+          "title": "Agent",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "type": {
+          "description": "A task category.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "comment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A description of the task or any comments in natural language.",
+          "title": "Comment"
+        },
+        "date": {
+          "description": "A string representation of the task execution datetime in ISO 8601 format.",
+          "format": "date-time",
+          "title": "Date",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent",
+        "type",
+        "date"
+      ],
+      "title": "Log",
+      "type": "object"
+    },
+    "PageDimensions": {
+      "description": "Page dimensions.",
+      "properties": {
+        "height": {
+          "title": "Height",
+          "type": "number"
+        },
+        "page": {
+          "title": "Page",
+          "type": "integer"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "height",
+        "page",
+        "width"
+      ],
+      "title": "PageDimensions",
+      "type": "object"
+    },
+    "PageReference": {
+      "description": "Page reference.",
+      "properties": {
+        "hash": {
+          "title": "Hash",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string",
+          "x-es-suppress": true
+        },
+        "page": {
+          "title": "Page",
+          "type": "integer",
+          "x-es-type": "short"
+        }
+      },
+      "required": [
+        "hash",
+        "model",
+        "page"
+      ],
+      "title": "PageReference",
+      "type": "object"
+    },
+    "Prov": {
+      "description": "Provenance.",
+      "properties": {
+        "bbox": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Bbox",
+          "type": "array"
+        },
+        "page": {
+          "title": "Page",
+          "type": "integer"
+        },
+        "span": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Span",
+          "type": "array"
+        },
+        "__ref_s3_data": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "  Ref S3 Data",
+          "x-es-suppress": true
+        }
+      },
+      "required": [
+        "bbox",
+        "page",
+        "span"
+      ],
+      "title": "Prov",
+      "type": "object"
+    },
+    "Publication": {
+      "additionalProperties": false,
+      "description": "Publication details of a journal or venue.",
+      "properties": {
+        "identifiers": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Unique identifiers of a publication venue.",
+          "title": "Identifiers"
+        },
+        "name": {
+          "description": "Name of the publication.",
+          "title": "Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "alternate_names": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Other names or abbreviations of this publication.",
+          "title": "Alternate Names",
+          "x-es-type": "text"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Type of publication (journal article, conference, review,...).",
+          "title": "Type",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "pages": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Page range in the publication.",
+          "title": "Pages",
+          "x-es-type": "text"
+        },
+        "issue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication issue (issue number).",
+          "title": "Issue",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication volume.",
+          "title": "Volume",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "URL on the publication site.",
+          "title": "Url",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Publication",
+      "type": "object"
+    },
+    "Ref": {
+      "description": "Reference.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "$ref"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "S3Data": {
+      "description": "Data object in a cloud object storage.",
+      "properties": {
+        "pdf-document": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/S3Resource"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pdf-Document"
+        },
+        "pdf-pages": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/S3Resource"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pdf-Pages"
+        },
+        "pdf-images": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/S3Resource"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pdf-Images"
+        },
+        "json-document": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/S3Resource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "json-meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/S3Resource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "glm-json-document": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/S3Resource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "figures": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/S3Resource"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Figures"
+        }
+      },
+      "title": "S3Data",
+      "type": "object"
+    },
+    "S3Resource": {
+      "description": "Resource in a cloud object storage.",
+      "properties": {
+        "mime": {
+          "title": "Mime",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page"
+        }
+      },
+      "required": [
+        "mime",
+        "path"
+      ],
+      "title": "S3Resource",
+      "type": "object"
+    },
+    "Table": {
+      "description": "Table.",
+      "properties": {
+        "#-cols": {
+          "title": "#-Cols",
+          "type": "integer"
+        },
+        "#-rows": {
+          "title": "#-Rows",
+          "type": "integer"
+        },
+        "bounding-box": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingBoxContainer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "x-es-suppress": true
+        },
+        "data": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/GlmTableCell"
+                    },
+                    {
+                      "$ref": "#/$defs/TableCell"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "prov": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Prov"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prov"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text",
+          "x-es-term_vector": "with_positions_offsets"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "#-cols",
+        "#-rows",
+        "type"
+      ],
+      "title": "Table",
+      "type": "object"
+    },
+    "TableCell": {
+      "description": "Table cell.",
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bbox"
+        },
+        "spans": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 2,
+                "minItems": 2,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spans"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string",
+          "x-es-term_vector": "with_positions_offsets"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "type"
+      ],
+      "title": "TableCell",
+      "type": "object"
+    }
+  },
+  "description": "Document model for Deep Search.",
+  "properties": {
+    "_name": {
+      "title": " Name",
+      "type": "string"
+    },
+    "type": {
+      "default": "pdf-document",
+      "title": "Type",
+      "type": "string",
+      "x-es-ignore_above": 8191,
+      "x-es-type": "keyword"
+    },
+    "description": {
+      "$ref": "#/$defs/CCSDocumentDescription"
+    },
+    "file-info": {
+      "$ref": "#/$defs/CCSFileInfoObject"
+    },
+    "main-text": {
+      "anyOf": [
+        {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Ref"
+              },
+              {
+                "$ref": "#/$defs/BaseText"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Main-Text"
+    },
+    "figures": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/BaseCell"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Figures"
+    },
+    "tables": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Table"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tables"
+    },
+    "bitmaps": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/BitmapObject"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Bitmaps"
+    },
+    "equations": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/BaseCell"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Equations"
+    },
+    "footnotes": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/BaseText"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Footnotes"
+    },
+    "page-dimensions": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/PageDimensions"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page-Dimensions"
+    },
+    "page-footers": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/BaseText"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page-Footers"
+    },
+    "page-headers": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/BaseText"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page-Headers"
+    },
+    "_s3_data": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/S3Data"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "identifiers": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Identifiers"
+    }
+  },
+  "required": [
+    "_name",
+    "description",
+    "file-info"
+  ],
+  "title": "ExportedCCSDocument",
+  "type": "object"
+}

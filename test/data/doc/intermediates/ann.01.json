@@ -1,0 +1,72 @@
+{
+    "annotations": [],
+    "predictions": [
+      {
+        "cells": [
+          {
+            "id": 0,
+            "rawcell_id": 0,
+            "label": "List-identifier"
+          },
+          {
+            "id": 1,
+            "rawcell_id": 1,
+            "label": "List-item"
+          },
+          {
+            "id": 2,
+            "rawcell_id": 2,
+            "label": "List-identifier"
+          },
+          {
+            "id": 3,
+            "rawcell_id": 3,
+            "label": "List-item"
+          },
+          {
+            "id": 4,
+            "rawcell_id": 4,
+            "label": "Footnote"
+          },
+          {
+            "id": 5,
+            "rawcell_id": 5,
+            "label": "Footnote"
+          },
+          {
+            "id": 6,
+            "rawcell_id": 6,
+            "label": "Footnote"
+          }
+        ],
+        "clusters": [
+          {
+            "model": "RRF-image",
+            "type": "Picture",
+            "bbox": [
+              72.0,
+              366.100006,
+              612.0,
+              720.099976
+            ],
+            "cell_ids": [],
+            "merged": false,
+            "id": 0
+          }
+        ],
+        "tables": [],
+        "source": {
+          "type": "model",
+          "info": {
+            "display_name": "Applied predictions of collection model",
+            "model_name": "CollectionModel",
+            "model_class": "models.interactive",
+            "model_version": "20171024-16:04",
+            "model_id": "a423918e-77b9-025d-a06e-56a02f2z4f3b"
+          },
+          "timestamp": 1549956870.877
+        }
+      }
+    ],
+    "reports": []
+  }

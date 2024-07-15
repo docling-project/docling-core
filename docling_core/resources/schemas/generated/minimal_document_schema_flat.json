@@ -1,0 +1,1129 @@
+{
+  "title": "MinimalDocument",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "type": {
+      "title": "Type",
+      "default": "document",
+      "type": "string"
+    },
+    "description": {
+      "title": "CCSDocumentDescription",
+      "type": "object",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "abstract": {
+          "title": "Abstract",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "authors": {
+          "title": "Authors",
+          "type": "array",
+          "items": {
+            "title": "Author",
+            "type": "object",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "x-es": {
+                  "fields": {
+                    "lower": {
+                      "normalizer": "lowercase_asciifolding",
+                      "type": "keyword"
+                    },
+                    "keyword": {
+                      "type": "keyword"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "type": "string"
+              },
+              "id": {
+                "title": "Id",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "source": {
+                "title": "Source",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "affiliations": {
+                "title": "Affiliations",
+                "type": "array",
+                "items": {
+                  "title": "Affiliation",
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "title": "Name",
+                      "x-es": {
+                        "fields": {
+                          "lower": {
+                            "normalizer": "lowercase_asciifolding",
+                            "type": "keyword"
+                          },
+                          "keyword": {
+                            "type": "keyword"
+                          }
+                        },
+                        "type": "keyword"
+                      },
+                      "type": "string"
+                    },
+                    "id": {
+                      "title": "Id",
+                      "x-es": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                      },
+                      "type": "string"
+                    },
+                    "source": {
+                      "title": "Source",
+                      "x-es": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                      },
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "id",
+                    "source"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "name",
+              "id",
+              "source",
+              "affiliations"
+            ]
+          }
+        },
+        "affiliations": {
+          "title": "Affiliations",
+          "type": "array",
+          "items": {
+            "title": "Affiliation",
+            "type": "object",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "x-es": {
+                  "fields": {
+                    "lower": {
+                      "normalizer": "lowercase_asciifolding",
+                      "type": "keyword"
+                    },
+                    "keyword": {
+                      "type": "keyword"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "type": "string"
+              },
+              "id": {
+                "title": "Id",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "source": {
+                "title": "Source",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "id",
+              "source"
+            ]
+          }
+        },
+        "subjects": {
+          "title": "Subjects",
+          "x-es": {
+            "fields": {
+              "keyword": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              }
+            }
+          },
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "keywords": {
+          "title": "Keywords",
+          "x-es": {
+            "type": "keyword",
+            "ignore_above": 8191
+          },
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "publication_date": {
+          "title": "Publication Date",
+          "x-es": {
+            "type": "date"
+          },
+          "type": "string",
+          "format": "date-time"
+        },
+        "languages": {
+          "title": "Languages",
+          "x-es": {
+            "type": "keyword",
+            "ignore_above": 8191
+          },
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "publishers": {
+          "title": "Publishers",
+          "x-es": {
+            "type": "keyword",
+            "ignore_above": 8191
+          },
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "url_refs": {
+          "title": "Url Refs",
+          "x-es": {
+            "type": "keyword",
+            "ignore_above": 8191
+          },
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "references": {
+          "title": "References",
+          "type": "array",
+          "items": {
+            "title": "Identifier",
+            "type": "object",
+            "properties": {
+              "type": {
+                "title": "Type",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "value": {
+                "title": "Value",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "_name": {
+                "title": " Name",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "value",
+              "_name"
+            ]
+          }
+        },
+        "advanced": {
+          "title": "Advanced",
+          "additionalProperties": {},
+          "properties": {},
+          "type": "object"
+        },
+        "analytics": {
+          "title": "Analytics",
+          "additionalProperties": {},
+          "properties": {},
+          "type": "object"
+        },
+        "logs": {
+          "title": "Logs",
+          "type": "array",
+          "items": {
+            "title": "Log",
+            "type": "object",
+            "properties": {
+              "agent": {
+                "title": "Agent",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "type": {
+                "title": "Type",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "comment": {
+                "title": "Comment",
+                "type": "string"
+              },
+              "date": {
+                "title": "Date",
+                "x-es": {
+                  "type": "date"
+                },
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "agent",
+              "type",
+              "comment",
+              "date"
+            ]
+          }
+        }
+      },
+      "required": [
+        "title",
+        "abstract",
+        "authors",
+        "affiliations",
+        "subjects",
+        "keywords",
+        "publication_date",
+        "languages",
+        "publishers",
+        "url_refs",
+        "references",
+        "advanced",
+        "analytics",
+        "logs"
+      ]
+    },
+    "file-info": {
+      "title": "FileInfoObject",
+      "type": "object",
+      "properties": {
+        "filename": {
+          "title": "Filename",
+          "x-es": {
+            "type": "keyword",
+            "ignore_above": 8191
+          },
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ]
+    },
+    "main-text": {
+      "title": "Main-Text",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "title": "Ref",
+            "type": "object",
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "type": {
+                "title": "Type",
+                "type": "string"
+              },
+              "__ref": {
+                "title": "  Ref",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "type",
+              "__ref"
+            ]
+          },
+          {
+            "title": "BaseList",
+            "type": "object",
+            "properties": {
+              "data": {
+                "title": "Data",
+                "type": "array",
+                "items": {
+                  "title": "ListItem",
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "title": "Text",
+                      "type": "string"
+                    },
+                    "type": {
+                      "title": "Type",
+                      "x-es": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                      },
+                      "type": "string"
+                    },
+                    "name": {
+                      "title": "Name",
+                      "x-es": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                      },
+                      "type": "string"
+                    },
+                    "font": {
+                      "title": "Font",
+                      "type": "string"
+                    },
+                    "prov": {
+                      "title": "Prov",
+                      "type": "array",
+                      "items": {
+                        "title": "Prov",
+                        "type": "object",
+                        "properties": {
+                          "bbox": {
+                            "title": "Bbox",
+                            "type": "array",
+                            "items": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "page": {
+                            "title": "Page",
+                            "type": "integer"
+                          },
+                          "span": {
+                            "title": "Span",
+                            "type": "array",
+                            "items": [
+                              {
+                                "type": "integer"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "bbox",
+                          "page",
+                          "span"
+                        ]
+                      }
+                    },
+                    "identifier": {
+                      "title": "Identifier",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "type",
+                    "identifier"
+                  ]
+                }
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "prov": {
+                "title": "Prov",
+                "type": "array",
+                "items": {
+                  "title": "Prov",
+                  "type": "object",
+                  "properties": {
+                    "bbox": {
+                      "title": "Bbox",
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "page": {
+                      "title": "Page",
+                      "type": "integer"
+                    },
+                    "span": {
+                      "title": "Span",
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "integer"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "bbox",
+                    "page",
+                    "span"
+                  ]
+                }
+              },
+              "type": {
+                "title": "Type",
+                "type": "string"
+              }
+            },
+            "required": [
+              "data",
+              "type"
+            ]
+          },
+          {
+            "title": "BaseText",
+            "type": "object",
+            "properties": {
+              "text": {
+                "title": "Text",
+                "type": "string"
+              },
+              "type": {
+                "title": "Type",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "x-es": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+                },
+                "type": "string"
+              },
+              "font": {
+                "title": "Font",
+                "type": "string"
+              },
+              "prov": {
+                "title": "Prov",
+                "type": "array",
+                "items": {
+                  "title": "Prov",
+                  "type": "object",
+                  "properties": {
+                    "bbox": {
+                      "title": "Bbox",
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "page": {
+                      "title": "Page",
+                      "type": "integer"
+                    },
+                    "span": {
+                      "title": "Span",
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "integer"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "bbox",
+                    "page",
+                    "span"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "text",
+              "type"
+            ]
+          }
+        ]
+      }
+    },
+    "figures": {
+      "title": "Figures",
+      "type": "array",
+      "items": {
+        "title": "BaseCell",
+        "type": "object",
+        "properties": {
+          "bounding-box": {
+            "title": "BoundingBoxContainer",
+            "type": "object",
+            "properties": {
+              "min": {
+                "title": "Min",
+                "type": "array",
+                "items": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "max": {
+                "title": "Max",
+                "type": "array",
+                "items": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "min",
+              "max"
+            ]
+          },
+          "cells": {
+            "title": "CellsContainer",
+            "type": "object",
+            "properties": {
+              "data": {
+                "title": "Data",
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "header": {
+                "title": "Header",
+                "default": [
+                  "x0",
+                  "y0",
+                  "x1",
+                  "y1",
+                  "font",
+                  "text"
+                ],
+                "type": "array",
+                "items": [
+                  {
+                    "enum": [
+                      "x0"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "y0"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "x1"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "y1"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "font"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "text"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "data"
+            ]
+          },
+          "prov": {
+            "title": "Prov",
+            "type": "array",
+            "items": {
+              "title": "Prov",
+              "type": "object",
+              "properties": {
+                "bbox": {
+                  "title": "Bbox",
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "page": {
+                  "title": "Page",
+                  "type": "integer"
+                },
+                "span": {
+                  "title": "Span",
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "bbox",
+                "page",
+                "span"
+              ]
+            }
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "x-es": {
+              "type": "keyword",
+              "ignore_above": 8191
+            },
+            "type": "string"
+          }
+        },
+        "required": [
+          "bounding-box",
+          "cells",
+          "text",
+          "type"
+        ]
+      }
+    },
+    "tables": {
+      "title": "Tables",
+      "type": "array",
+      "items": {
+        "title": "Table",
+        "type": "object",
+        "properties": {
+          "num_cols": {
+            "title": "Num Cols",
+            "type": "integer"
+          },
+          "num_rows": {
+            "title": "Num Rows",
+            "type": "integer"
+          },
+          "bounding_box": {
+            "title": "BoundingBoxContainer",
+            "type": "object",
+            "properties": {
+              "min": {
+                "title": "Min",
+                "type": "array",
+                "items": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "max": {
+                "title": "Max",
+                "type": "array",
+                "items": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "min",
+              "max"
+            ]
+          },
+          "cells": {
+            "title": "CellsContainer",
+            "type": "object",
+            "properties": {
+              "data": {
+                "title": "Data",
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "header": {
+                "title": "Header",
+                "default": [
+                  "x0",
+                  "y0",
+                  "x1",
+                  "y1",
+                  "font",
+                  "text"
+                ],
+                "type": "array",
+                "items": [
+                  {
+                    "enum": [
+                      "x0"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "y0"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "x1"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "y1"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "font"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "text"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "data"
+            ]
+          },
+          "data": {
+            "title": "Data",
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "title": "TableCell",
+                "type": "object",
+                "properties": {
+                  "bbox": {
+                    "title": "Bbox",
+                    "type": "array",
+                    "items": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "spans": {
+                    "title": "Spans",
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "integer"
+                        }
+                      ]
+                    }
+                  },
+                  "text": {
+                    "title": "Text",
+                    "type": "string"
+                  },
+                  "type": {
+                    "title": "Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text",
+                  "type"
+                ]
+              }
+            }
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "prov": {
+            "title": "Prov",
+            "type": "object",
+            "properties": {
+              "bbox": {
+                "title": "Bbox",
+                "type": "array",
+                "items": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "page": {
+                "title": "Page",
+                "type": "integer"
+              },
+              "span": {
+                "title": "Span",
+                "type": "array",
+                "items": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "bbox",
+              "page",
+              "span"
+            ]
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "num_cols",
+          "num_rows",
+          "data",
+          "text",
+          "type"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "file-info",
+    "main-text"
+  ]
+}

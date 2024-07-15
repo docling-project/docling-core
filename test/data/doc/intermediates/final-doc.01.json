@@ -1,0 +1,931 @@
+{
+  "page-headers": [],
+  "conversion_settings": {
+    "model_pipeline": {
+      "tables": [
+        {
+          "name": "TableStructureModel",
+          "type": "TableStructureModel",
+          "version": "NA"
+        }
+      ],
+      "normalization": [],
+      "page": [],
+      "clusters": [
+        {
+          "name": "LayoutSegmentationModel",
+          "type": "LayoutSegmentationModel",
+          "version": "NA"
+        }
+      ]
+    }
+  },
+  "bitmaps": [],
+  "page-footers": [
+    {
+      "text": " 2",
+      "type": "page-footer",
+      "prov": [
+        {
+          "bbox": [
+            302.5335083007812,
+            39.4388427734375,
+            308.8234252929688,
+            50.0029296875
+          ],
+          "page": 2,
+          "span": [
+            0,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "text": " 3",
+      "type": "page-footer",
+      "prov": [
+        {
+          "bbox": [
+            302.4818115234375,
+            38.9481201171875,
+            308.7721252441406,
+            50.13018798828125
+          ],
+          "page": 3,
+          "span": [
+            0,
+            2
+          ]
+        }
+      ]
+    }
+  ],
+  "_name": "Software Autotuning for Sustainable Performance Portability",
+  "references": [],
+  "figures": [
+    {
+      "cells": {
+        "data": [
+          [
+            500.26898,
+            453.11899,
+            511.4393,
+            462.54205,
+            "/ZJIYIR+Calibri",
+            "0% "
+          ],
+          [
+            500.26898,
+            491.75876,
+            515.35052,
+            501.18182,
+            "/ZJIYIR+Calibri",
+            "20% "
+          ],
+          [
+            500.26898,
+            530.39838,
+            515.35052,
+            539.82147,
+            "/ZJIYIR+Calibri",
+            "40% "
+          ],
+          [
+            500.26898,
+            569.03809,
+            515.35052,
+            578.46118,
+            "/ZJIYIR+Calibri",
+            "60% "
+          ],
+          [
+            500.26898,
+            607.6778,
+            515.35052,
+            617.10089,
+            "/ZJIYIR+Calibri",
+            "80% "
+          ],
+          [
+            500.26898,
+            646.3175,
+            519.26172,
+            655.7406,
+            "/ZJIYIR+Calibri",
+            "100% "
+          ],
+          [
+            500.26898,
+            684.95721,
+            519.26172,
+            694.38031,
+            "/ZJIYIR+Calibri",
+            "120% "
+          ],
+          [
+            98.018997,
+            453.11899,
+            113.44628,
+            462.54205,
+            "/ZJIYIR+Calibri",
+            "0.00 "
+          ],
+          [
+            98.018997,
+            486.23877,
+            113.44628,
+            495.66183,
+            "/ZJIYIR+Calibri",
+            "2.00 "
+          ],
+          [
+            98.018997,
+            519.35852,
+            113.44628,
+            528.78162,
+            "/ZJIYIR+Calibri",
+            "4.00 "
+          ],
+          [
+            98.018997,
+            552.47827,
+            113.44628,
+            561.90137,
+            "/ZJIYIR+Calibri",
+            "6.00 "
+          ],
+          [
+            98.018997,
+            585.59796,
+            113.44628,
+            595.02106,
+            "/ZJIYIR+Calibri",
+            "8.00 "
+          ],
+          [
+            94.160248,
+            618.71771,
+            113.49876,
+            628.14081,
+            "/ZJIYIR+Calibri",
+            "10.00 "
+          ],
+          [
+            94.160248,
+            651.83746,
+            113.49876,
+            661.26056,
+            "/ZJIYIR+Calibri",
+            "12.00 "
+          ],
+          [
+            94.160248,
+            684.95721,
+            113.49876,
+            694.38031,
+            "/ZJIYIR+Calibri",
+            "14.00 "
+          ],
+          [
+            157.93858,
+            443.58975,
+            175.25974,
+            453.01282,
+            "/ZJIYIR+Calibri",
+            "10^6 "
+          ],
+          [
+            251.47656,
+            443.58975,
+            268.79773,
+            453.01282,
+            "/ZJIYIR+Calibri",
+            "10^7 "
+          ],
+          [
+            345.01453,
+            443.58975,
+            362.33569,
+            453.01282,
+            "/ZJIYIR+Calibri",
+            "10^8 "
+          ],
+          [
+            438.55249,
+            443.58975,
+            455.87366,
+            453.01282,
+            "/ZJIYIR+Calibri",
+            "10^9 "
+          ],
+          [
+            519.92584,
+            525.84839,
+            532.04126,
+            609.1369,
+            "/GMUPMK+Calibri-Bold",
+            "Rela%ve to baseline "
+          ],
+          [
+            519.92584,
+            609.13788,
+            532.04126,
+            612.2337,
+            "/GMUPMK+Calibri-Bold",
+            "("
+          ],
+          [
+            519.92584,
+            612.22876,
+            532.04126,
+            624.79559,
+            "/GMUPMK+Calibri-Bold",
+            "%) "
+          ],
+          [
+            80.800171,
+            557.8009,
+            92.91552,
+            592.82629,
+            "/GMUPMK+Calibri-Bold",
+            "Time (s) "
+          ],
+          [
+            272.02292,
+            429.60135,
+            342.302,
+            441.71671,
+            "/GMUPMK+Calibri-Bold",
+            "Input vector size "
+          ],
+          [
+            206.92345,
+            418.02509,
+            407.38873,
+            430.14044,
+            "/GMUPMK+Calibri-Bold",
+            "Machine: 2.2GHz AMD Opteron 6274 'Bulldozer' "
+          ],
+          [
+            184.51898,
+            697.42096,
+            430.15253,
+            713.57483,
+            "/GMUPMK+Calibri-Bold",
+            "SIMD-­-based autotuning of VecWXPY: w=x+y "
+          ],
+          [
+            192.74149,
+            395.64978,
+            244.01006,
+            407.76514,
+            "/ZJIYIR+Calibri",
+            "Baseline (%) "
+          ],
+          [
+            264.04083,
+            395.64978,
+            307.04495,
+            407.76514,
+            "/ZJIYIR+Calibri",
+            "Tuned (%) "
+          ],
+          [
+            327.07947,
+            395.64978,
+            375.13611,
+            407.76514,
+            "/ZJIYIR+Calibri",
+            "Baseline (s) "
+          ],
+          [
+            395.1666,
+            395.64978,
+            434.96573,
+            407.76514,
+            "/ZJIYIR+Calibri",
+            "Tuned (s) "
+          ]
+        ],
+        "header": [
+          "x0",
+          "y0",
+          "x1",
+          "y1",
+          "font",
+          "text"
+        ]
+      },
+      "confidence": 0.9841518998146057,
+      "text": " Figure 1: Auto-vectorized (baseline) vs. autotuned kernel’s performance with Intel’s ICC 13.1.3. Each input vector size is listed with the kernel’s absolute execution time (in seconds, lines) along the left vertical axis as well as the relative speedup of autotuned kernel’s time with respect to the baseline kernel’s time for that size (in %%, bars) along the right vertical axis. The baseline kernel contains no pragmas and is compiled with ’-O3’ flag, which turns on auto-vectorization. Autotuning delivers up to 43% or 2.3x speedup.",
+      "type": "picture",
+      "created_by": "high_conf_pred",
+      "prov": [
+        {
+          "bbox": [
+            70.93731689453125,
+            388.7525634765625,
+            541.2982788085938,
+            720.7472534179688
+          ],
+          "page": 3,
+          "span": [
+            0,
+            0
+          ]
+        }
+      ],
+      "bounding-box": {
+        "min": [
+          80.800171,
+          395.64978,
+          532.04126,
+          713.57483
+        ],
+        "max": [
+          0,
+          373.30692,
+          612,
+          792
+        ]
+      }
+    }
+  ],
+  "identifiers": [
+    {
+      "_name": "arxivid#1309.1894",
+      "type": "arxivid",
+      "value": "1309.1894"
+    }
+  ],
+  "_s3_data": {
+    "pdf-document": [
+      {
+        "path": "path-to-cos.pdf",
+        "mime": "application/pdf",
+        "url": "https://www.ibm.com"
+      }
+    ],
+    "pdf-images": [
+      {
+        "path": "path-to-cos-img-1.png",
+        "mime": "application/png",
+        "page": 1,
+        "url": "https://www.ibm.com"
+      },
+      {
+        "path": "path-to-cos-img-2.png",
+        "mime": "application/png",
+        "page": 2,
+        "url": "https://www.ibm.com"
+      },
+      {
+        "path": "path-to-cos-img-3.png",
+        "mime": "application/png",
+        "page": 3,
+        "url": "https://www.ibm.com"
+      }
+    ],
+    "json-meta": {
+      "path": "path-to-cos.meta.json",
+      "mime": "application/json",
+      "url": "https://www.ibm.com"
+    },
+    "pdf-pages": [
+      {
+        "path": "path-to-cos-page-1.pdf",
+        "mime": "application/pdf",
+        "page": 1,
+        "url": "https://www.ibm.com"
+      },
+      {
+        "path": "path-to-cos-page-2.pdf",
+        "mime": "application/pdf",
+        "page": 2,
+        "url": "https://www.ibm.com"
+      },
+      {
+        "path": "path-to-cos-page-3.pdf",
+        "mime": "application/pdf",
+        "page": 3,
+        "url": "https://www.ibm.com"
+      }
+    ],
+    "json-document": {
+      "path": "path-to-cos.json",
+      "mime": "application/json",
+      "url": "https://www.ibm.com"
+    }
+  },
+  "main-text": [
+    {
+      "name": "title",
+      "text": "Software Autotuning for Sustainable Performance Portability",
+      "type": "title",
+      "prov": [
+        {
+          "bbox": [
+            94.861,
+            661.8121948242188,
+            517.13928,
+            677.2525
+          ],
+          "page": 1,
+          "span": [
+            0,
+            59
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "Azamat Mametjanov and Boyana Norris",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            200.9646606445312,
+            632.0315551757812,
+            411.3026428222656,
+            643.725341796875
+          ],
+          "page": 1,
+          "span": [
+            0,
+            35
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "Mathematics and Computer Science Division",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            187.5747375488281,
+            618.0642700195312,
+            423.9873352050781,
+            629.601318359375
+          ],
+          "page": 1,
+          "span": [
+            0,
+            41
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "Argonne National Laboratory, Argonne, IL 60439",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            179.19601,
+            604.09619140625,
+            432.80649,
+            615.39496
+          ],
+          "page": 1,
+          "span": [
+            0,
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "name": "subtitle-level-1",
+      "text": "Abstract",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            284.08203,
+            550.8294677734375,
+            327.91748,
+            559.8291015625
+          ],
+          "page": 1,
+          "span": [
+            0,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "Scientific software applications are increasingly developed by large interdiscplinary teams operating on functional modules organized around a common software framework, which is capable of integrating new functional capabilities without modifying the core of the framework. In such environment, software correctness and modularity take precedence at the expense of code performance, which is an important concern during execution on supercomputing facilities, where the allocation of core-hours is a valuable resource. To alleviate the performance problems, we propose automated performance tuning (autotuning) of software to extract the maximum performance on a given hardware platform and to enable performance portability across heterogeneous hardware platforms. The resulting code remains generic without committing to a particular software stack and yet is compile-time specializable for maximal sustained performance.",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            99.273026,
+            412.8734741210938,
+            513.8699340820312,
+            541.9525146484375
+          ],
+          "page": 1,
+          "span": [
+            0,
+            924
+          ]
+        }
+      ]
+    },
+    {
+      "name": "subtitle-level-1",
+      "text": "1 Introduction",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            71.516845703125,
+            378.1019,
+            185.1074371337891,
+            390.84134
+          ],
+          "page": 1,
+          "span": [
+            0,
+            14
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "Development, testing and debugging of a modern scientific application requires a deep software stack. The traditional toolchain includes system software such as device drivers, operating system and windowing systems, as well as development software such as compilers, debuggers, linkers and virtual machines. Increasingly, there is a greater reliance on library software that provides implementations of common data structures and recurring algorithms: e.g. BLAS, NetCDF, MPI, Boost among others. Development of a new scientific application involves multiple design choices at each level of hardware architecture, OS, programming language, compiler and library software stack levels. This creates a dependency DAG, where dependency edges flow from the lower layers of software stack to the higher level components. Each vendor of a component in this dependency stream is responsible for ensuring interoperability with upstream components while providing an API for downstream components. Multiple standard-issuing organizations are created in this software ecosystem to ensure compatibility and interoperability of components. Some system vendors take it upon themselves to resolve such issues and create integrated system modules and toolsuites that come along with the hardware: e.g. IBM compilers and Cray MPI libraries.",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            72.000023,
+            177.5947265625,
+            542.0653686523438,
+            364.5133972167969
+          ],
+          "page": 1,
+          "span": [
+            0,
+            1323
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "While standardization and vendor-specific vertical integration resolve the issues of syntactic and semantic component interoperability, performance of a scientific application is subject to substantial variation across various systems. Large system vendors and leadership-class supercomputing facilities maintain teams of performance engineers responsible for debugging, deploying, tuning and maintaining scientific applications on large supercomputing facilities. While a portion of the engineering effort goes toward intrusive source code modifications, some of the efforts are oriented toward lightweight recognition and fixes of performance affecting patterns. In addition, performance can depend on the parameters on the underlying platform: e.g. register file size, cache and",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            71.93761444091797,
+            69.37005615234375,
+            542.5187377929688,
+            174.5475463867188
+          ],
+          "page": 1,
+          "span": [
+            0,
+            781
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "arXiv:1309.1894v1 [cs.PF] 7 Sep 2013",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            18.340202,
+            241.99997,
+            36.339794,
+            565.32001
+          ],
+          "page": 1,
+          "span": [
+            0,
+            36
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "line size among many others. Source code of hotspot kernels can be specialized to these parameters to extract the maximal effective performance. We propose to automate the lower-level performance patterns and specialization using autotuning.",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            72,
+            679.4171752929688,
+            540.511962890625,
+            716.613525390625
+          ],
+          "page": 2,
+          "span": [
+            0,
+            241
+          ]
+        }
+      ]
+    },
+    {
+      "name": "subtitle-level-1",
+      "text": "2 Approach",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            71.61688232421875,
+            644.78784,
+            165.4759826660156,
+            658.0557861328125
+          ],
+          "page": 2,
+          "span": [
+            0,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "The goal of autotuning is to automatically tune the performance of a code for a given platform configuration. Because the targeted platforms can be heterogeneous, the accompanying benefit of autotuning is performance portability. Tuning is accomplished by annotating existing code with performance directives in the form of source code pragmas. The annotation-based approach does not modify the semantics of a given program, which acts as a reference implementation that can be compiled and executed to obtain reference results. The annotated code is transformed according to performance directives, compiled and executed to obtain its performance metrics and outputs for comparison with reference results. Depending on the number of parameter variations within the directives, a number of resulting code variants are compared and the highest performing variant is selected as the result of autotuning.",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            72,
+            498.3874206542969,
+            541.9779052734375,
+            630.78888
+          ],
+          "page": 2,
+          "span": [
+            0,
+            902
+          ]
+        }
+      ]
+    },
+    {
+      "name": "subtitle-level-1",
+      "text": "3 Results",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            71.72962188720703,
+            464.04833984375,
+            148.6264190673828,
+            476.86014
+          ],
+          "page": 2,
+          "span": [
+            0,
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "In previous work, we have extended Orios annotation-based approach to generate CUDA GPU code from an existing C code. Performance exploration parameters include number of threads in a block, number of blocks in a grid of threads, number of asynchronous streams, size of L1 cache and loop unroll factor among others. The result is an auto-generated CUDA code that performs better than NVIDIA's cuSPARSE and CUSP library codes [1, 2].",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            72,
+            385.4592590332031,
+            541.013427734375,
+            450.7387084960938
+          ],
+          "page": 2,
+          "span": [
+            0,
+            432
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "In the current work, we are using Orio to annotate loops for SIMD vectorization with SSE/AVX. In particular, instead of relying on a compiler to auto-vectorize the loops, we decorate loops with single-line annotations that specify a search for SIMD pragmas. Orio transforms the annotated code into a set of compiler-specific pragma-annotated code variants, guides the compiler in SIMD code generation and selects the highest performing code variant. Figure 1 illustrates initial results of autotuning compared to autovectorizing.",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            72,
+            304.2674560546875,
+            540.1292724609375,
+            382.5238342285156
+          ],
+          "page": 2,
+          "span": [
+            0,
+            529
+          ]
+        }
+      ]
+    },
+    {
+      "name": "subtitle-level-1",
+      "text": "4 Conclusion",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            71.75318145751953,
+            269.90363,
+            173.41042,
+            282.8647155761719
+          ],
+          "page": 2,
+          "span": [
+            0,
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "text": "In this paper, we have outlined an approach of achieving performance portability across various systems and system changes. The benefits of this approach are the automation of manual tuning and the specialization of programs to platforms for better performance. An accompanying benefit is the closure of the gap between theoretical and sustained performance of scientific applications on modern architectures.",
+      "type": "paragraph",
+      "prov": [
+        {
+          "bbox": [
+            72,
+            191.4492797851562,
+            540.00366,
+            255.9057
+          ],
+          "page": 2,
+          "span": [
+            0,
+            409
+          ]
+        }
+      ]
+    },
+    {
+      "name": "subtitle-level-1",
+      "text": "References",
+      "type": "subtitle-level-1",
+      "prov": [
+        {
+          "bbox": [
+            71.89459991455078,
+            156.7887573242188,
+            147.52271,
+            170.0098876953125
+          ],
+          "page": 2,
+          "span": [
+            0,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "__ref": "#/page-footers/0",
+      "name": "page-footer",
+      "type": "page-footer"
+    },
+    {
+      "__ref": "#/figures/0",
+      "name": "picture",
+      "type": "figure"
+    },
+    {
+      "name": "caption",
+      "text": "Figure 1: Auto-vectorized (baseline) vs. autotuned kernel's performance with Intel's ICC 13.1.3. Each input vector size is listed with the kernel's absolute execution time (in seconds, lines) along the left vertical axis as well as the relative speedup of autotuned kernel's time with respect to the baseline kernel's time for that size (in %%, bars) along the right vertical axis. The baseline kernel contains no pragmas and is compiled with '-O3' flag, which turns on auto-vectorization. Autotuning delivers up to 43% or 2.3x speedup.",
+      "type": "caption",
+      "prov": [
+        {
+          "bbox": [
+            72,
+            295.1991577148438,
+            541.7919311523438,
+            373.7925109863281
+          ],
+          "page": 3,
+          "span": [
+            0,
+            536
+          ]
+        }
+      ]
+    },
+    {
+      "__ref": "#/page-footers/1",
+      "name": "page-footer",
+      "type": "page-footer"
+    }
+  ],
+  "description": {
+    "languages": [
+      "en"
+    ],
+    "subjects": [
+      "cs.PF"
+    ],
+    "collection": {
+      "name": "arXiv full documents",
+      "alias": [
+        "arxiv"
+      ],
+      "type": "Document",
+      "version": "1.3.3"
+    },
+    "abstract": [
+      "Scientific software applications are increasingly developed by large interdiscplinary teams operating on functional modules organized around a common software framework, which is capable of integrating new functional capabilities without modifying the core of the framework. In such environment, software correctness and modularity take precedence at the expense of code performance, which is an important concern during execution on supercomputing facilities, where the allocation of core-hours is a valuable resource. To alleviate the performance problems, we propose automated performance tuning (autotuning) of software to extract the maximum performance on a given hardware platform and to enable performance portability across heterogeneous hardware platforms. The resulting code remains generic without committing to a particular software stack and yet is compile-time specializable for maximal sustained performance."
+    ],
+    "title": "Software Autotuning for Sustainable Performance Portability",
+    "license": {
+      "code": "CC0",
+      "text": "http://creativecommons.org/licenses/publicdomain/"
+    },
+    "publishers": [
+      "Publisher 1"
+    ],
+    "publication_date": "2013-09-07T12:00:00.000+00:00",
+    "url_refs": [
+      "https://arxiv.org/abs/1309.1894",
+      "https://arxiv.org/pdf/1309.1894.pdf"
+    ],
+    "logs": [
+      {
+        "date": "2023-08-09T04:44:28.308302+00:00",
+        "agent": "CCS",
+        "comment": "parsing of documents",
+        "type": "parsing"
+      }
+    ],
+    "authors": [
+      {
+        "name": "Author 1"
+      },
+      {
+        "name": "Author 2"
+      }
+    ]
+  },
+  "type": "pdf-document",
+  "version": 2,
+  "equations": [],
+  "page-dimensions": [
+    {
+      "width": 612,
+      "page": 1,
+      "height": 792
+    },
+    {
+      "width": 612,
+      "page": 2,
+      "height": 792
+    },
+    {
+      "width": 612,
+      "page": 3,
+      "height": 792
+    }
+  ],
+  "tables": [],
+  "file-info": {
+    "filename": "1309.1894.pdf",
+    "page-hashes": [
+      {
+        "model": "model",
+        "page": 1,
+        "hash": "18222585891d7c1b1a3764d65d73c12998d07930836c5a988c659f481050b24b"
+      },
+      {
+        "model": "model",
+        "page": 2,
+        "hash": "bdf266e6b89935751a330b8b26cb1ca4893756a71f46731c55beb54647ee5efa"
+      },
+      {
+        "model": "model",
+        "page": 3,
+        "hash": "dbf9fd41d541b93dbb6ec90aee3c9cdb4bb509354ede0140d02f847e515c34ea"
+      }
+    ],
+    "#-pages": 3,
+    "document-hash": "8fd83ae6d627eedf311ecf93ad79e02fd8a967851dfa981df5261d957e29f119"
+  },
+  "footnotes": [],
+  "_content_hash": "19d9efce46982adeee606d308c827ee6"
+}

@@ -1,0 +1,21 @@
+{
+  "display_name": "FeSe",
+  "display_image": {
+    "__ref_s3_data": "#/s3_data/figures/0"
+  },
+  "type": "material",
+  "names": [
+    {
+      "type": "chemical_name",
+      "value": "FeSe",
+      "_name": "chemical_name#fese"
+    }
+  ],
+  "identifiers": [
+    {
+      "_name": "db#1234567",
+      "type": "db",
+      "value": "1234567"
+    }
+  ]
+}

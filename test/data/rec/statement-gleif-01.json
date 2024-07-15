@@ -1,0 +1,69 @@
+{
+  "conf": 0.723,
+  "prov": [
+    {
+      "type": "sentence",
+      "reference": {
+        "_name": "report#nyse:ibm-2022q2",
+        "type": "report",
+        "value": "NYSE:IBM-2022Q2"
+      },
+      "path": "#/main-text/30",
+      "span": [
+        23,
+        67
+      ],
+      "text": "IBM Q2 2022 revenue reached $15.5 billion in the period ending June 30"
+    }
+  ],
+  "subject": {
+    "display_name": "IBM",
+    "type": "company",
+    "names": [
+      {
+        "type": "company",
+        "value": "IBM",
+        "_name": "company#ibm"
+      }
+    ],
+    "identifiers": [
+      {
+        "type": "ticker",
+        "value": "IBM:NYSE",
+        "_name": "ticker#ibm:nyse"
+      }
+    ]
+  },
+  "predicates": [
+    {
+      "key": {
+        "type": "property",
+        "name": "kpi"
+      },
+      "value": {
+        "type": "property-value",
+        "name": "$15.5 billion"
+      }
+    },
+    {
+      "key": {
+        "type": "property",
+        "name": "date"
+      },
+      "value": {
+        "type": "property-value",
+        "name": "Q2 2022"
+      }
+    },
+    {
+      "key": {
+        "type": "property",
+        "name": "reporting_period"
+      },
+      "value": {
+        "type": "property-value",
+        "name": "ending June 30"
+      }
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "required": [
+    "info",
+    "pages"
+  ],
+  "properties": {
+    "info": {},
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "height",
+          "width",
+          "dimensions",
+          "cells",
+          "paths",
+          "images",
+          "fonts"
+        ],
+        "properties": {
+          "height": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number"
+          },
+          "dimensions": {
+            "type": "object"
+          },
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "SEE_cell",
+                "SEE_confidence",
+                "angle",
+                "box",
+                "content",
+                "enumeration",
+                "font"
+              ],
+              "properties": {
+                "SEE_cell": {
+                  "type": "boolean"
+                },
+                "SEE_confidence": {
+                  "type": "number"
+                },
+                "angle": {
+                  "type": "number"
+                },
+                "box": {
+                  "type": "object",
+                  "required": [
+                    "baseline",
+                    "device"
+                  ],
+                  "properties": {
+                    "baseline": {
+                      "type": "array",
+                      "minItems": 4,
+                      "maxItems": 4,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "device": {
+                      "type": "array",
+                      "minItems": 4,
+                      "maxItems": 4,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                },
+                "content": {
+                  "type": "object",
+                  "required": [
+                    "rnormalized"
+                  ],
+                  "properties": {
+                    "rnormalized": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "enumeration": {
+                  "type": "object",
+                  "required": [
+                    "match",
+                    "type"
+                  ],
+                  "properties": {
+                    "match": {
+                      "type": "integer"
+                    },
+                    "type": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "font": {
+                  "type": "object",
+                  "required": [
+                    "color",
+                    "name",
+                    "size"
+                  ],
+                  "properties": {
+                    "color": {
+                      "type": "array",
+                      "minItems": 3,
+                      "maxItems": 4,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "size": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "paths": {
+            "type": "array",
+            "items": {}
+          },
+          "vertical-lines": {
+            "type": "array",
+            "items": {}
+          },
+          "horizontal-lines": {
+            "type": "array",
+            "items": {}
+          },
+          "images": {
+            "type": "array",
+            "items": {}
+          },
+          "fonts": {
+            "type": "array",
+            "items": {}
+          }
+        }
+      }
+    }
+  }
+}

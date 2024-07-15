@@ -1,0 +1,9 @@
+{
+  "conf": 1.0,
+  "prov": [
+    {
+      "type": "sentence",
+      "text": "FeSe has a Tc of 1K and 5K at 1GP and 5GPa respectivly."
+    }
+  ]
+}

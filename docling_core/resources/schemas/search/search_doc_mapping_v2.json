@@ -1,0 +1,256 @@
+{
+  "settings": {
+    "analysis": {
+      "normalizer": {
+        "lowercase_asciifolding": {
+          "type": "custom",
+          "filter": [
+            "lowercase",
+            "asciifolding"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": false,
+    "_size": {
+      "enabled": true
+    },
+    "_meta": {
+      "version": "1.0",
+      "$ref": "ccs:schemas#/Document"
+    },
+    "properties": {
+      "_name": {
+        "type": "text"
+      },
+      "identifiers": {
+        "properties": {
+          "_name": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "type": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "value": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "properties": {
+          "abstract": {
+            "type": "text"
+          },
+          "affiliations": {
+            "properties": {
+              "name": {
+                "type": "text",
+                "fields": {
+                  "lower": {
+                    "normalizer": "lowercase_asciifolding",
+                    "type": "keyword"
+                  },
+                  "keyword": {
+                    "type": "keyword"
+                  }
+                }
+              },
+              "id": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              },
+              "source": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              }
+            }
+          },
+          "authors": {
+            "properties": {
+              "name": {
+                "type": "text",
+                "fields": {
+                  "lower": {
+                    "normalizer": "lowercase_asciifolding",
+                    "type": "keyword"
+                  },
+                  "keyword": {
+                    "type": "keyword"
+                  }
+                }
+              },
+              "affiliations": {
+                "properties": {
+                  "name": {
+                    "type": "text",
+                    "fields": {
+                      "lower": {
+                        "normalizer": "lowercase_asciifolding",
+                        "type": "keyword"
+                      },
+                      "keyword": {
+                        "type": "keyword"
+                      }
+                    }
+                  },
+                  "id": {
+                    "ignore_above": 8191,
+                    "type": "keyword"
+                  },
+                  "source": {
+                    "ignore_above": 8191,
+                    "type": "keyword"
+                  }
+                }
+              }
+            }
+          },
+          "title": {
+            "type": "text"
+          },
+          "subjects": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              }
+            }
+          },
+          "publication_date": {
+            "type": "date"
+          },
+          "languages": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "publishers": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "url_refs": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "references": {
+            "properties": {
+              "_name": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              },
+              "type": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              },
+              "value": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              }
+            }
+          },
+          "logs": {
+            "properties": {
+              "date": {
+                "type": "date"
+              },
+              "agent": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              },
+              "comment": {
+                "type": "text"
+              },
+              "type": {
+                "ignore_above": 8191,
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      "figures": {
+        "properties": {
+          "text": {
+            "type": "text"
+          },
+          "type": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "prov": {
+            "properties": {
+              "page": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "file-info": {
+        "properties": {
+          "filename-prov": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "filename": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "document-hash": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          }
+        }
+      },
+      "main-text": {
+        "properties": {
+          "text": {
+            "type": "text"
+          },
+          "type": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "name": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "prov": {
+            "properties": {
+              "page": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "tables": {
+        "properties": {
+          "text": {
+            "type": "text"
+          },
+          "type": {
+            "ignore_above": 8191,
+            "type": "keyword"
+          },
+          "prov": {
+            "properties": {
+              "page": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "type": {
+        "ignore_above": 8191,
+        "type": "keyword"
+      }
+    }
+  }
+}

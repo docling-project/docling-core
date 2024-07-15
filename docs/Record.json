@@ -1,0 +1,969 @@
+{
+  "$defs": {
+    "Acquisition": {
+      "additionalProperties": false,
+      "description": "Information on how the data was obtained.",
+      "properties": {
+        "type": {
+          "description": "The method to obtain the data.",
+          "enum": [
+            "API",
+            "FTP",
+            "Download",
+            "Link",
+            "Web scraping/Crawling",
+            "Other"
+          ],
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A string representation of the acquisition datetime in ISO 8601 format.",
+          "title": "Date"
+        },
+        "link": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Link to the data source of this document.",
+          "title": "Link",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Size in bytes of the raw document from the data source.",
+          "title": "Size",
+          "x-es-type": "long"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Acquisition",
+      "type": "object"
+    },
+    "Attribute": {
+      "additionalProperties": false,
+      "description": "Attribute model that describes a list of characteristics.",
+      "properties": {
+        "conf": {
+          "description": "The confidence level of this attribute characteristics.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number",
+          "x-es-type": "float"
+        },
+        "prov": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The sources of this attribute characteristics.",
+          "title": "Provenance"
+        },
+        "predicates": {
+          "description": "A list of characteristics (type, value, and name).",
+          "items": {
+            "$ref": "#/$defs/Predicate__PredicateValueTypeT__PredicateKeyNameT__PredicateKeyTypeT_"
+          },
+          "title": "Predicates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "conf",
+        "predicates"
+      ],
+      "title": "Attribute",
+      "type": "object"
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "description": "Model for boolean values.",
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "boolean",
+          "x-es-type": "boolean"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "CollectionRecordInfo": {
+      "additionalProperties": false,
+      "description": "Information of a collection of type Record.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Name of the collection.",
+          "title": "Name",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "type": {
+          "const": "Record",
+          "description": "The collection type.",
+          "enum": [
+            "Record"
+          ],
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The version of this collection model.",
+          "title": "Version",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "alias": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A list of tags (aliases) for the collection.",
+          "title": "Alias",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "CollectionRecordInfo",
+      "type": "object"
+    },
+    "DatetimeValue": {
+      "additionalProperties": false,
+      "description": "Model for datetime values.",
+      "properties": {
+        "value": {
+          "format": "date-time",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "DatetimeValue",
+      "type": "object"
+    },
+    "FileInfoObject": {
+      "description": "Filing information for any data object to be stored in a Deep Search database.",
+      "properties": {
+        "filename": {
+          "description": "The name of a persistent object that created this data object",
+          "title": "Filename",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "filename-prov": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The provenance of this data object, e.g. an archive file, a URL, or any other repository.",
+          "title": "Filename-Prov",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "document-hash": {
+          "description": "A unique identifier of this data object within a collection of a Deep Search database",
+          "title": "Document-Hash",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "filename",
+        "document-hash"
+      ],
+      "title": "FileInfoObject",
+      "type": "object"
+    },
+    "GeopointValue": {
+      "additionalProperties": false,
+      "description": "A representation of a geopoint (longitude and latitude coordinates).",
+      "properties": {
+        "value": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Value",
+          "type": "array",
+          "x-es-type": "geo_point"
+        },
+        "conf": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conf",
+          "x-es-type": "float"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "GeopointValue",
+      "type": "object"
+    },
+    "Identifier": {
+      "additionalProperties": false,
+      "description": "Unique identifier of a Deep Search data object.",
+      "properties": {
+        "type": {
+          "description": "A string representing a collection or database that contains this data object.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "value": {
+          "description": "The identifier value of the data object within a collection or database.",
+          "title": "Value",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "_name": {
+          "description": "A unique identifier of the data object across Deep Search, consisting of the concatenation of type and value in lower case, separated by hash (#).",
+          "pattern": "^.+#.+$",
+          "title": "_Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "_name"
+      ],
+      "title": "Identifier",
+      "type": "object"
+    },
+    "Identifier__SubjectNameTypeT_": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "description": "A string representing a collection or database that contains this data object.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "value": {
+          "description": "The identifier value of the data object within a collection or database.",
+          "title": "Value",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "_name": {
+          "description": "A unique identifier of the data object across Deep Search, consisting of the concatenation of type and value in lower case, separated by hash (#).",
+          "pattern": "^.+#.+$",
+          "title": "_Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "_name"
+      ],
+      "title": "Identifier[~SubjectNameTypeT]",
+      "type": "object"
+    },
+    "Log": {
+      "additionalProperties": false,
+      "description": "Log entry to describe an ETL task on a document.",
+      "properties": {
+        "task": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An identifier of this task. It may be used to identify this task from other tasks of the same agent and type.",
+          "title": "Task",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "agent": {
+          "description": "The Deep Search agent that performed the task, e.g., CCS or CXS.",
+          "title": "Agent",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "type": {
+          "description": "A task category.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "comment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A description of the task or any comments in natural language.",
+          "title": "Comment"
+        },
+        "date": {
+          "description": "A string representation of the task execution datetime in ISO 8601 format.",
+          "format": "date-time",
+          "title": "Date",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent",
+        "type",
+        "date"
+      ],
+      "title": "Log",
+      "type": "object"
+    },
+    "NominalValue": {
+      "additionalProperties": false,
+      "description": "Model for nominal (categorical) values.",
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "NominalValue",
+      "type": "object"
+    },
+    "NumericalValue": {
+      "additionalProperties": false,
+      "description": "Model for numerical values.",
+      "properties": {
+        "min": {
+          "title": "Min",
+          "type": "number",
+          "x-es-type": "float"
+        },
+        "max": {
+          "title": "Max",
+          "type": "number",
+          "x-es-type": "float"
+        },
+        "val": {
+          "title": "Val",
+          "type": "number",
+          "x-es-type": "float"
+        },
+        "err": {
+          "title": "Err",
+          "type": "number",
+          "x-es-type": "float"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "min",
+        "max",
+        "val",
+        "err",
+        "unit"
+      ],
+      "title": "NumericalValue",
+      "type": "object"
+    },
+    "PredicateKey__PredicateKeyNameT__PredicateKeyTypeT_": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Name of the predicate key.",
+          "title": "Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "type": {
+          "description": "Type of predicate key.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "title": "PredicateKey[~PredicateKeyNameT, ~PredicateKeyTypeT]",
+      "type": "object"
+    },
+    "PredicateValue__PredicateValueTypeT_": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Name of the predicate value (actual value).",
+          "title": "Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "type": {
+          "description": "Type of predicate value.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "title": "PredicateValue[~PredicateValueTypeT]",
+      "type": "object"
+    },
+    "Predicate__PredicateValueTypeT__PredicateKeyNameT__PredicateKeyTypeT_": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/PredicateKey__PredicateKeyNameT__PredicateKeyTypeT_"
+        },
+        "value": {
+          "$ref": "#/$defs/PredicateValue__PredicateValueTypeT_"
+        },
+        "numerical_value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NumericalValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "numerical_value_si": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NumericalValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "nominal_value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NominalValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text_value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "boolean_value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BooleanValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "datetime_value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DatetimeValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "geopoint_value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GeopointValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ],
+      "title": "Predicate[~PredicateValueTypeT, ~PredicateKeyNameT, ~PredicateKeyTypeT]",
+      "type": "object"
+    },
+    "ProvenanceItem": {
+      "additionalProperties": false,
+      "description": "A representation of an object provenance.",
+      "properties": {
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Any string representing the type of provenance, e.g. `sentence`, `table`, or `doi`.",
+          "title": "The provenance type",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A text representing the evidence of the provenance, e.g. the sentence text or the content of a table cell",
+          "title": "Evidence of the provenance",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reference to another object, e.g. record, statement, URL, or any other object that identifies the provenance",
+          "title": "Reference to the provenance object"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A path that locates the evidence within the provenance object identified by the `reference` field using a JSON pointer notation, e.g., `#/main-text/5` to locate the `main-text` paragraph at index 5",
+          "title": "The location of the provenance within the referenced object",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "span": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "location of the item in the text/table referenced by the `path`, e.g., `[34, 67]`",
+          "title": "The location of the item in the text/table"
+        }
+      },
+      "title": "ProvenanceItem",
+      "type": "object"
+    },
+    "RecordDescription": {
+      "description": "Additional record metadata, including optional collection-specific fields.",
+      "properties": {
+        "logs": {
+          "description": "Logs that describe the ETL tasks applied to this record.",
+          "items": {
+            "$ref": "#/$defs/Log"
+          },
+          "title": "Logs",
+          "type": "array"
+        },
+        "publication_date": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The date that best represents the last publication time of a record.",
+          "title": "Publication date"
+        },
+        "collection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CollectionRecordInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The collection information of this record."
+        },
+        "acquisition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Acquisition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Information on how the document was obtained, for data governance purposes."
+        }
+      },
+      "required": [
+        "logs"
+      ],
+      "title": "RecordDescription",
+      "type": "object"
+    },
+    "S3Reference": {
+      "description": "References an s3 resource.",
+      "properties": {
+        "__ref_s3_data": {
+          "examples": [
+            "#/_s3_data/figures/0"
+          ],
+          "title": "  Ref S3 Data",
+          "type": "string"
+        }
+      },
+      "required": [
+        "__ref_s3_data"
+      ],
+      "title": "S3Reference",
+      "type": "object"
+    },
+    "Subject": {
+      "additionalProperties": false,
+      "description": "A representation of a subject.",
+      "properties": {
+        "display_name": {
+          "description": "Name of the subject in natural language. It can be used for end-user applications to display a human-readable name. For instance, `B(2) Mg(1)` for `MgB2` or `International Business Machines` for `IBM`",
+          "title": "Display Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "display_image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/S3Reference"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Image representing the subject. It can be used for end-user applications.For example, the chemical structure drawing of a compound or the eight bar IBM logo for IBM.",
+          "title": "Display Image",
+          "x-es-suppress": true
+        },
+        "type": {
+          "description": "Main subject type. For instance, `material`, `material-class`, `material-device`, `company`, or `person`.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "names": {
+          "description": "List of given names for this subject. They may not be unique across different subjects.",
+          "items": {
+            "$ref": "#/$defs/Identifier__SubjectNameTypeT_"
+          },
+          "title": "Names",
+          "type": "array"
+        },
+        "identifiers": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of unique identifiers in database. For instance, the `PubChem ID` of a record in the PubChem database.",
+          "title": "Identifiers"
+        },
+        "labels": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of labels or categories for this subject.",
+          "title": "Labels",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "display_name",
+        "type",
+        "names"
+      ],
+      "title": "Subject",
+      "type": "object"
+    },
+    "TextValue": {
+      "additionalProperties": false,
+      "description": "Model for textual values.",
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string",
+          "x-es-type": "text"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "TextValue",
+      "type": "object"
+    }
+  },
+  "description": "A representation of a structured record in an database.",
+  "properties": {
+    "conf": {
+      "description": "This value represents a score to the data item. Items originating from  databases will typically have a score 1.0, while items resulting from  an NLP model may have a value between 0.0 and 1.0.",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "The confidence of the evidence",
+      "type": "number",
+      "x-es-type": "float"
+    },
+    "prov": {
+      "description": "A list of provenance items.",
+      "items": {
+        "$ref": "#/$defs/ProvenanceItem"
+      },
+      "title": "Provenance",
+      "type": "array"
+    },
+    "file-info": {
+      "$ref": "#/$defs/FileInfoObject"
+    },
+    "description": {
+      "$ref": "#/$defs/RecordDescription"
+    },
+    "subject": {
+      "$ref": "#/$defs/Subject"
+    },
+    "attributes": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Attribute"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attributes"
+    },
+    "_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A short description or summary of the record.",
+      "title": " Name",
+      "x-es-type": "text"
+    },
+    "identifiers": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A list of unique identifiers of this record in a database.",
+      "title": "Identifiers"
+    }
+  },
+  "required": [
+    "conf",
+    "prov",
+    "file-info",
+    "description",
+    "subject"
+  ],
+  "title": "Record",
+  "type": "object"
+}

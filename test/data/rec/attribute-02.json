@@ -1,0 +1,25 @@
+{
+  "conf": 0.799,
+  "prov": [
+    {
+      "type": "sentence",
+      "text": "provenance in a sentence."
+    },
+    {
+      "type": "table",
+      "text": "provenance in a table."
+    }
+  ],
+  "predicates": [
+    {
+      "key": {
+        "type": "property",
+        "name": "Tc"
+      },
+      "value": {
+        "type": "property-value",
+        "name": "5K"
+      }
+    }
+  ]
+}

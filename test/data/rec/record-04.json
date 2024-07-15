@@ -1,0 +1,95 @@
+{
+  "_name": "some text here",
+  "file-info": {
+    "filename": "filename.pdf",
+    "document-hash": "qwertyuiop1234567890"
+  },
+  "description": {
+    "logs": [
+      {
+        "date": "2023-03-01T19:32:20.000000Z",
+        "agent": "CXS",
+        "type": "parsing"
+      }
+    ],
+    "collection": {
+      "name": "DB",
+      "type": "Record",
+      "version": "3.2.0",
+      "alias": [
+        "db"
+      ]
+    },
+    "publication_date": "2023-03-01T18:32:20.416449Z"
+  },
+  "conf": 1.0,
+  "prov": [
+    {
+      "type": "sentence",
+      "text": "FeSe has a Tc of 1K and 5K at 1GP and 5GPa respectivily."
+    }
+  ],
+  "identifiers": [
+    {
+      "_name": "db#1234567",
+      "type": "db",
+      "value": "1234567"
+    }
+  ],
+  "subject": {
+    "display_name": "FeSe",
+    "type": "material",
+    "names": [
+      {
+        "type": "chemical_name",
+        "value": "FeSe",
+        "_name": "chemical_name#fese"
+      },
+      {
+        "type": "sum_formula",
+        "value": "Fe(1) Se(1)",
+        "_name": "sum_formula#fe(1) se(1)"
+      }
+    ],
+    "identifiers": [
+      {
+        "_name": "db#1234567",
+        "type": "db",
+        "value": "1234567"
+      }
+    ]
+  },
+  "attributes": [
+    {
+      "predicates": [
+        {
+          "key": {
+            "type": "property",
+            "name": "temperature"
+          },
+          "value": {
+            "type": "property-value",
+            "name": "5K"
+          }
+        },
+        {
+          "key": {
+            "type": "property",
+            "name": "pressure"
+          },
+          "value": {
+            "type": "property-value",
+            "name": "5GPa"
+          }
+        }
+      ],
+      "conf": 1.0,
+      "prov": [
+        {
+          "type": "sentence",
+          "text": "FeSe has a Tc of 1K and 5K at 1GP and 5GPa respectivily."
+        }
+      ]
+    }
+  ]
+}

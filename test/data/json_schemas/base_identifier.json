@@ -1,0 +1,35 @@
+{
+  "title": "Identifier",
+  "description": "Unique identifier of a Deep Search data object.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "title": "Type",
+      "description": "A string representing a collection or database that contains this data object.",
+      "x-es-type": "keyword",
+      "x-es-ignore_above": 8191,
+      "type": "string"
+    },
+    "value": {
+      "title": "Value",
+      "description": "The identifier value of the data object within a collection or database.",
+      "x-es-type": "keyword",
+      "x-es-ignore_above": 8191,
+      "type": "string"
+    },
+    "_name": {
+      "title": "_Name",
+      "description": "A unique identifier of the data object across Deep Search, consisting of the concatenation of type and value in lower case, separated by hash (#).",
+      "x-es-type": "keyword",
+      "x-es-ignore_above": 8191,
+      "pattern": "^.+#.+$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "value",
+    "_name"
+  ],
+  "additionalProperties": false
+}

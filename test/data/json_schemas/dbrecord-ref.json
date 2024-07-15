@@ -1,0 +1,399 @@
+{
+   "settings": {
+      "analysis": {
+         "normalizer": {
+            "lowercase_asciifolding": {
+               "type": "custom",
+               "filter": [
+                  "lowercase",
+                  "asciifolding"
+               ]
+            }
+         }
+      }
+   },
+   "mappings": {
+      "properties": {
+         "conf": {
+            "type": "float"
+         },
+         "prov": {
+            "properties": {
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "text": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "reference": {
+                  "properties": {
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "value": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "_name": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     }
+                  }
+               },
+               "path": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "span": {
+                  "type": "integer"
+               }
+            }
+         },
+         "_name": {
+            "type": "text"
+         },
+         "file-info": {
+            "properties": {
+               "filename": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "filename-prov": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "document-hash": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               }
+            }
+         },
+         "description": {
+            "properties": {
+               "logs": {
+                  "properties": {
+                     "task": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "agent": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "comment": {
+                        "type": "text"
+                     },
+                     "date": {
+                        "type": "date"
+                     }
+                  }
+               },
+               "publication_date": {
+                  "type": "date"
+               },
+               "collection": {
+                  "properties": {
+                     "name": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "version": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "alias": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     }
+                  }
+               },
+               "acquisition": {
+                  "properties": {
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "date": {
+                        "type": "date"
+                     },
+                     "link": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "size": {
+                        "type": "long"
+                     }
+                  }
+               }
+            }
+         },
+         "subject": {
+            "properties": {
+               "display_name": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "names": {
+                  "properties": {
+                     "_name": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "value": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     }
+                  }
+               },
+               "identifiers": {
+                  "properties": {
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "value": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "_name": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     }
+                  }
+               },
+               "labels": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               }
+            }
+         },
+         "attributes": {
+            "properties": {
+               "conf": {
+                  "type": "float"
+               },
+               "prov": {
+                  "properties": {
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "text": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "reference": {
+                        "properties": {
+                           "type": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "value": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "_name": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "path": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "predicates": {
+                  "properties": {
+                     "key": {
+                        "properties": {
+                           "name": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "type": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "value": {
+                        "properties": {
+                           "name": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "type": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "numerical_value": {
+                        "properties": {
+                           "min": {
+                              "type": "float"
+                           },
+                           "max": {
+                              "type": "float"
+                           },
+                           "val": {
+                              "type": "float"
+                           },
+                           "err": {
+                              "type": "float"
+                           },
+                           "unit": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "numerical_value_si": {
+                        "properties": {
+                           "min": {
+                              "type": "float"
+                           },
+                           "max": {
+                              "type": "float"
+                           },
+                           "val": {
+                              "type": "float"
+                           },
+                           "err": {
+                              "type": "float"
+                           },
+                           "unit": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "nominal_value": {
+                        "properties": {
+                           "value": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "text_value": {
+                        "properties": {
+                           "value": {
+                              "type": "text"
+                           }
+                        }
+                     },
+                     "boolean_value": {
+                        "properties": {
+                           "value": {
+                              "type": "boolean"
+                           }
+                        }
+                     },
+                     "datetime_value": {
+                        "properties": {
+                           "value": {
+                              "type": "date"
+                           }
+                        }
+                     },
+                     "geopoint_value": {
+                        "properties": {
+                           "value": {
+                              "type": "geo_point"
+                           },
+                           "conf": {
+                              "type": "float"
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         },
+         "identifiers": {
+            "properties": {
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "value": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "_name": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               }
+            }
+         }
+      },
+      "_meta": {
+         "aliases": [
+            ".production",
+            "ccc"
+         ],
+         "created": "2022-11-03T11:22:32.432+00:00",
+         "description": "description of the collection",
+         "source": "https://ccc",
+         "storage": "storage location",
+         "display_name": "display name",
+         "type": "Record",
+         "classification": [
+            "Public",
+            "PI"
+         ],
+         "version": [
+            {
+               "name": "my-library",
+               "version": "0.1.0-post.6+ed04c14"
+            },
+            {
+               "name": "docling-core",
+               "version": "0.1.0"
+            }
+         ],
+         "document_license": {
+            "code": [
+               "NO-CC CODE",
+               "CC BY"
+            ],
+            "text": []
+         },
+         "license": "https://www.ccc",
+         "filename": "ccc-gs.json",
+         "domain": [
+            "Healthcare & Life Sciences"
+         ],
+         "$ref": "ccs:schemas#/Document"
+      },
+      "dynamic": false,
+      "_size": {
+         "enabled": true
+      }
+   }
+}

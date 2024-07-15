@@ -1,0 +1,17 @@
+{
+  "license": "",
+  "index_key": "07a32fab8e3cf827a1d6691fd530941485282dd7",
+  "created": "2023-11-28T15:10:08.226942+00:00",
+  "project_key": "9cd28d76ca3d0cc853edb23976f32b44f5739839",
+  "description": "",
+  "source": "",
+  "display_name": "",
+  "type": "Document",
+  "version": [
+    {
+      "name": "docling-core",
+      "version": "1.4.0"
+    }
+  ],
+  "$ref": "ccs:schemas#/Document"
+}

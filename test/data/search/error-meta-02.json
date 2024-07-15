@@ -1,0 +1,39 @@
+{
+  "aliases": [
+    ".production",
+    "arxiv"
+  ],
+  "created": "2022-08-15T14:10:32.768+00:00",
+  "description": "arXiv® is a curated research-sharing platform open to anyone. It stores scholarly articles in the fields of physics, mathematics, computer science, quantitative biology, quantitative finance, statistics, electrical engineering and systems science, and economics.",
+  "source": "https://arxiv.org",
+  "storage": "crn:v1:bluemix:public:cloud-object-storage:global:a/a01ec3a49b79bf6abe91ea574f0f4715:fbb68e6e-2371-48e0-bfe3-4960a445df21:bucket:foc-deepsearch-arxiv-data",
+  "display_name": "arXiv full documents",
+  "type": "Document",
+  "classification": [
+    "Public",
+    "PI"
+  ],
+  "version": [
+    {
+      "name": "docling-core",
+      "version": "beta"
+    }
+  ],
+  "license": "https://arxiv.org/about",
+  "filename": "arxiv-gs.json",
+  "domain": [
+    "Science",
+    "Banking & Finance"
+  ],
+  "$ref": "cps:schemas#/Record",
+  "ccs_s3_data": {
+    "endpoint": "s3.eu-de.cloud-object-storage.appdomain.cloud",
+    "paths": [
+      {
+        "bucket": "foc-deepsearch-s3-elastic",
+        "prefix": "deepsearch-elastic-dataplatform",
+        "infix": "cxs-8a1925c96f7b49508855ab270d0f3281"
+      }
+    ]
+  }
+}

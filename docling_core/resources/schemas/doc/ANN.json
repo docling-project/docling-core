@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "definitions": {
+    "annot+pred": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "cells",
+          "clusters",
+          "tables",
+          "source"
+        ],
+        "properties": {
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "rawcell_id",
+                "label"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "rawcell_id": {
+                  "type": "integer"
+                },
+                "label": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "clusters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "model",
+                "type",
+                "bbox",
+                "cell_ids",
+                "merged",
+                "id"
+              ],
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "bbox": {
+                  "type": "array",
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "cell_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "merged": {
+                  "type": "boolean"
+                },
+                "id": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "cell_id",
+                "label",
+                "rows",
+                "cols"
+              ],
+              "properties": {
+                "cell_id": {
+                  "type": "integer"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "cols": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "type",
+              "info",
+              "timestamp"
+            ],
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "number"
+              },
+              "info": {
+                "type": "object",
+                "required": [
+                  "display_name",
+                  "model_name",
+                  "model_class",
+                  "model_version",
+                  "model_id"
+                ],
+                "properties": {
+                  "display_name": {
+                    "type": "string"
+                  },
+                  "model_name": {
+                    "type": "string"
+                  },
+                  "model_class": {
+                    "type": "string"
+                  },
+                  "model_version": {
+                    "type": "string"
+                  },
+                  "model_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "annotations": {
+      "$ref": "#/definitions/annot+pred"
+    },
+    "predictions": {
+      "$ref": "#/definitions/annot+pred"
+    },
+    "reports": {
+      "type": "array"
+    }
+  },
+  "minProperties": 1,
+  "type": "object"
+}

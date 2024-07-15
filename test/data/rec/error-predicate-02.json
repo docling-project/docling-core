@@ -1,0 +1,17 @@
+{
+  "key": {
+    "type": "property",
+    "name": "geopoint"
+  },
+  "value": {
+    "type": "property-value",
+    "name": "41.1096169,-73.7238702"
+  },
+  "geopoint_value": {
+    "value": [
+      -73.7238702,
+      41.1096169
+    ],
+    "conf": 2.902875
+  }
+}

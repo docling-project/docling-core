@@ -1,0 +1,75 @@
+{
+  "$defs": {
+    "FileInfoObject": {
+      "description": "Filing information for any data object to be stored in a Deep Search database.",
+      "properties": {
+        "filename": {
+          "description": "The name of a persistent object that created this data object",
+          "title": "Filename",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "filename-prov": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The provenance of this data object, e.g. an archive file, a URL, or any other repository.",
+          "title": "Filename-Prov",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "document-hash": {
+          "description": "A unique identifier of this data object within a collection of a Deep Search database",
+          "title": "Document-Hash",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "filename",
+        "document-hash"
+      ],
+      "title": "FileInfoObject",
+      "type": "object"
+    }
+  },
+  "description": "A representation of a generic document.",
+  "properties": {
+    "_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A short description or summary of the document.",
+      "title": " Name",
+      "x-es-type": "text"
+    },
+    "file-info": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/FileInfoObject"
+        }
+      ],
+      "description": "Minimal identification information of the document within a collection.",
+      "title": "Document information"
+    }
+  },
+  "required": [
+    "file-info"
+  ],
+  "title": "Generic",
+  "type": "object"
+}

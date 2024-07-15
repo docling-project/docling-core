@@ -1,0 +1,18 @@
+{
+    "identifiers": [
+        {
+            "_name": "venue#12345",
+            "type": "venue",
+            "value": "12345"
+        }
+    ],
+    "name": "International Conference on Technology",
+    "type": [
+        "conference"
+    ],
+    "alternate_names": [
+        "ICoT",
+        "Random Conference on Technology"
+    ],
+    "url": "http://www.ibm.com"
+}

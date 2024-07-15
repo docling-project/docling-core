@@ -1,0 +1,705 @@
+{
+   "settings": {
+      "analysis": {
+         "normalizer": {
+            "lowercase_asciifolding": {
+               "type": "custom",
+               "filter": [
+                  "lowercase",
+                  "asciifolding"
+               ]
+            }
+         }
+      }
+   },
+   "mappings": {
+      "properties": {
+         "_name": {
+            "type": "text"
+         },
+         "type": {
+            "type": "keyword",
+            "ignore_above": 8191
+         },
+         "description": {
+            "properties": {
+               "title": {
+                  "type": "text"
+               },
+               "abstract": {
+                  "type": "text"
+               },
+               "authors": {
+                  "properties": {
+                     "name": {
+                        "type": "text",
+                        "fields": {
+                           "lower": {
+                              "normalizer": "lowercase_asciifolding",
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "keyword": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "id": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "source": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "affiliations": {
+                        "properties": {
+                           "name": {
+                              "type": "text",
+                              "fields": {
+                                 "lower": {
+                                    "normalizer": "lowercase_asciifolding",
+                                    "type": "keyword",
+                                    "ignore_above": 8191
+                                 },
+                                 "keyword": {
+                                    "type": "keyword",
+                                    "ignore_above": 8191
+                                 }
+                              }
+                           },
+                           "id": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "source": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     }
+                  }
+               },
+               "affiliations": {
+                  "properties": {
+                     "name": {
+                        "type": "text",
+                        "fields": {
+                           "lower": {
+                              "normalizer": "lowercase_asciifolding",
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "keyword": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "id": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "source": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     }
+                  }
+               },
+               "subjects": {
+                  "type": "text",
+                  "fields": {
+                     "keyword": {
+                        "ignore_above": 8191,
+                        "type": "keyword"
+                     }
+                  }
+               },
+               "keywords": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "publication_date": {
+                  "type": "date"
+               },
+               "languages": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "license": {
+                  "properties": {
+                     "code": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "text": {
+                        "type": "text"
+                     }
+                  }
+               },
+               "publishers": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "url_refs": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "references": {
+                  "properties": {
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "value": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "_name": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     }
+                  }
+               },
+               "publication": {
+                  "properties": {
+                     "identifiers": {
+                        "properties": {
+                           "type": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "value": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           },
+                           "_name": {
+                              "type": "keyword",
+                              "ignore_above": 8191
+                           }
+                        }
+                     },
+                     "name": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "alternate_names": {
+                        "type": "text"
+                     },
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "pages": {
+                        "type": "text"
+                     },
+                     "issue": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "volume": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "url": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     }
+                  }
+               },
+               "reference_count": {
+                  "type": "integer"
+               },
+               "citation_count": {
+                  "type": "integer"
+               },
+               "citation_date": {
+                  "type": "date"
+               },
+               "collection": {
+                  "properties": {
+                     "name": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "version": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "alias": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     }
+                  }
+               },
+               "acquisition": {
+                  "properties": {
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "date": {
+                        "type": "date"
+                     },
+                     "link": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "size": {
+                        "type": "long"
+                     }
+                  }
+               },
+               "logs": {
+                  "properties": {
+                     "task": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "agent": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "type": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "comment": {
+                        "type": "text"
+                     },
+                     "date": {
+                        "type": "date"
+                     }
+                  }
+               }
+            }
+         },
+         "file-info": {
+            "properties": {
+               "filename": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "document-hash": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "filename-prov": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "#-pages": {
+                  "type": "integer"
+               },
+               "collection-name": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "page-hashes": {
+                  "properties": {
+                     "hash": {
+                        "type": "keyword",
+                        "ignore_above": 8191
+                     },
+                     "page": {
+                        "type": "short"
+                     }
+                  }
+               }
+            }
+         },
+         "main-text": {
+            "properties": {
+               "name": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "$ref": {
+                  "type": "text"
+               },
+               "text": {
+                  "type": "text",
+                  "term_vector": "with_positions_offsets"
+               },
+               "font": {
+                  "type": "text"
+               },
+               "prov": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "page": {
+                        "type": "integer"
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               }
+            }
+         },
+         "figures": {
+            "properties": {
+               "prov": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "page": {
+                        "type": "integer"
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "text": {
+                  "type": "text"
+               },
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               }
+            }
+         },
+         "tables": {
+            "properties": {
+               "#-cols": {
+                  "type": "integer"
+               },
+               "#-rows": {
+                  "type": "integer"
+               },
+               "data": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "spans": {
+                        "type": "integer"
+                     },
+                     "text": {
+                        "type": "text",
+                        "term_vector": "with_positions_offsets"
+                     },
+                     "type": {
+                        "type": "text"
+                     }
+                  }
+               },
+               "model": {
+                  "type": "text"
+               },
+               "prov": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "page": {
+                        "type": "integer"
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "text": {
+                  "type": "text",
+                  "term_vector": "with_positions_offsets"
+               },
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               }
+            }
+         },
+         "bitmaps": {
+            "properties": {
+               "type": {
+                  "type": "text"
+               },
+               "prov": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "page": {
+                        "type": "integer"
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               }
+            }
+         },
+         "equations": {
+            "properties": {
+               "prov": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "page": {
+                        "type": "integer"
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "text": {
+                  "type": "text"
+               },
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               }
+            }
+         },
+         "footnotes": {
+            "properties": {
+               "text": {
+                  "type": "text",
+                  "term_vector": "with_positions_offsets"
+               },
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "name": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "font": {
+                  "type": "text"
+               },
+               "prov": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "page": {
+                        "type": "integer"
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               }
+            }
+         },
+         "page-dimensions": {
+            "properties": {
+               "height": {
+                  "type": "double"
+               },
+               "page": {
+                  "type": "integer"
+               },
+               "width": {
+                  "type": "double"
+               }
+            }
+         },
+         "page-footers": {
+            "properties": {
+               "text": {
+                  "type": "text",
+                  "term_vector": "with_positions_offsets"
+               },
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "name": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "font": {
+                  "type": "text"
+               },
+               "prov": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "page": {
+                        "type": "integer"
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               }
+            }
+         },
+         "page-headers": {
+            "properties": {
+               "text": {
+                  "type": "text",
+                  "term_vector": "with_positions_offsets"
+               },
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "name": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "font": {
+                  "type": "text"
+               },
+               "prov": {
+                  "properties": {
+                     "bbox": {
+                        "type": "double"
+                     },
+                     "page": {
+                        "type": "integer"
+                     },
+                     "span": {
+                        "type": "integer"
+                     }
+                  }
+               }
+            }
+         },
+         "_s3_data": {
+            "properties": {
+               "pdf-document": {
+                  "properties": {
+                     "mime": {
+                        "type": "text"
+                     },
+                     "path": {
+                        "type": "text"
+                     },
+                     "page": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "pdf-pages": {
+                  "properties": {
+                     "mime": {
+                        "type": "text"
+                     },
+                     "path": {
+                        "type": "text"
+                     },
+                     "page": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "pdf-images": {
+                  "properties": {
+                     "mime": {
+                        "type": "text"
+                     },
+                     "path": {
+                        "type": "text"
+                     },
+                     "page": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "json-document": {
+                  "properties": {
+                     "mime": {
+                        "type": "text"
+                     },
+                     "path": {
+                        "type": "text"
+                     },
+                     "page": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "json-meta": {
+                  "properties": {
+                     "mime": {
+                        "type": "text"
+                     },
+                     "path": {
+                        "type": "text"
+                     },
+                     "page": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "glm-json-document": {
+                  "properties": {
+                     "mime": {
+                        "type": "text"
+                     },
+                     "path": {
+                        "type": "text"
+                     },
+                     "page": {
+                        "type": "integer"
+                     }
+                  }
+               },
+               "figures": {
+                  "properties": {
+                     "mime": {
+                        "type": "text"
+                     },
+                     "path": {
+                        "type": "text"
+                     },
+                     "page": {
+                        "type": "integer"
+                     }
+                  }
+               }
+            }
+         },
+         "identifiers": {
+            "properties": {
+               "type": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "value": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               },
+               "_name": {
+                  "type": "keyword",
+                  "ignore_above": 8191
+               }
+            }
+         }
+      },
+      "_meta": {
+         "license": "",
+         "created": "2021-09-27T17:42:10.407214+00:00",
+         "description": "",
+         "source": "",
+         "display_name": "",
+         "version": "1.0",
+         "$ref": "ccs:schemas#/Document"
+      },
+      "dynamic": false,
+      "_size": {
+         "enabled": true
+      }
+   }
+}

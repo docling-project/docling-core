@@ -1,0 +1,60 @@
+{
+  "_name": "some text here",
+  "file-info": {
+    "filename": "filename.pdf",
+    "document-hash": "qwertyuiop1234567890"
+  },
+  "description": {
+    "logs": [],
+    "collection": {
+      "name": "DB",
+      "type": "Record",
+      "version": "3.2.0",
+      "alias": [
+        "db"
+      ]
+    },
+    "publication_date": "2023-03-01T18:32:20.416449Z"
+  },
+  "conf": 1.0,
+  "prov": [],
+  "identifiers": [
+    {
+      "_name": "db#1234567",
+      "type": "db",
+      "value": "1234567"
+    }
+  ],
+  "subject": {
+    "display_name": "FeSe",
+    "display_image": {
+      "__ref_s3_data": "#/_s3_data/pdf_pages/0"
+    },
+    "type": "material",
+    "names": [
+      {
+        "type": "chemical_name",
+        "value": "FeSe",
+        "_name": "chemical_name#fese"
+      }
+    ],
+    "identifiers": [
+      {
+        "_name": "db#1234567",
+        "type": "db",
+        "value": "1234567"
+      }
+    ]
+  },
+  "attributes": [],
+  "_s3_data": {
+    "pdf_pages": [
+      {
+        "mime": "application/png",
+        "path": "PDFImages/3d201262771eb38591c1112c0ad52bfdc7ef5a352.png",
+        "page": 9,
+        "url": "https://s3.somecosurl.com/3d201262771eb38591c1112c0ad52bfdc7ef5a352"
+      }
+    ]
+  }
+}

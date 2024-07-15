@@ -1,0 +1,49 @@
+{
+  "conf": 0.25,
+  "prov": [
+    {
+      "type": "sentence",
+      "text": "FeSe has a Tc of 1K and 5K at 1GP and 5GPa respectivily."
+    }
+  ],
+  "subject": {
+    "display_name": "FeSe",
+    "type": "material",
+    "names": [
+      {
+        "type": "material",
+        "value": "FeSe",
+        "_name": "material#fese"
+      }
+    ],
+    "identifiers": [
+      {
+        "type": "material",
+        "value": "Fe(1) Se(1)",
+        "_name": "material#fe(1) se(1)"
+      }
+    ]
+  },
+  "predicates": [
+    {
+      "key": {
+        "type": "property",
+        "name": "Tc"
+      },
+      "value": {
+        "type": "property-value",
+        "name": "5K"
+      }
+    },
+    {
+      "key": {
+        "type": "property",
+        "name": "pressure"
+      },
+      "value": {
+        "type": "property-value",
+        "name": "5GPa"
+      }
+    }
+  ]
+}
