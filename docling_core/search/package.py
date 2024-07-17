@@ -5,6 +5,7 @@
 
 """Models and methods to define a package model."""
 
+import importlib.metadata
 import re
 from typing import Final
 
@@ -27,7 +28,7 @@ class Package(BaseModel, extra="forbid"):
 
     name: StrictStr
     version: Annotated[str, StringConstraints(strict=True, pattern=VERSION_PATTERN)] = (
-        "0.3.0"
+        importlib.metadata.version("docling-core")
     )
 
     def __hash__(self):

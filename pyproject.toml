@@ -67,6 +67,7 @@ flake8-docstrings = "^1.6.0"
 pep8-naming = "^0.13.2"
 jsondiff = "^2.0.0"
 types-setuptools = "^70.3.0"
+python-semantic-release = "^7.32.2"
 
 [tool.setuptools.packages.find]
 where = ["docling_core/resources/schemas"]
@@ -112,3 +113,16 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = ["jsondiff.*", "jsonref.*", "jsonschema.*", "json_schema_for_humans.*"]
 ignore_missing_imports = true
+
+[tool.semantic_release]
+# for default values check:
+# https://github.com/python-semantic-release/python-semantic-release/blob/v7.32.2/semantic_release/defaults.cfg
+
+version_source = "tag_only"
+branch = "main"
+
+# configure types which should trigger minor and patch version bumps respectively
+# (note that they must be a subset of the configured allowed types):
+parser_angular_allowed_types = "build,chore,ci,docs,feat,fix,perf,style,refactor,test"
+parser_angular_minor_types = "feat"
+parser_angular_patch_types = "fix,perf"
