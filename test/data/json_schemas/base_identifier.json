@@ -1,6 +1,6 @@
 {
   "title": "Identifier",
-  "description": "Unique identifier of a Deep Search data object.",
+  "description": "Unique identifier of a Docling data object.",
   "type": "object",
   "properties": {
     "type": {
@@ -19,7 +19,7 @@
     },
     "_name": {
       "title": "_Name",
-      "description": "A unique identifier of the data object across Deep Search, consisting of the concatenation of type and value in lower case, separated by hash (#).",
+      "description": "A unique identifier of the data object across Docling, consisting of the concatenation of type and value in lower case, separated by hash (#).",
       "x-es-type": "keyword",
       "x-es-ignore_above": 8191,
       "pattern": "^.+#.+$",

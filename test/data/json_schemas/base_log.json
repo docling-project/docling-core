@@ -18,7 +18,7 @@
       "x-es-type": "keyword"
     },
     "agent": {
-      "description": "The Deep Search agent that performed the task, e.g., CCS or CXS.",
+      "description": "The Docling agent that performed the task, e.g., CCS or CXS.",
       "title": "Agent",
       "type": "string",
       "x-es-ignore_above": 8191,

@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 #
 
-from typing import ByteString
-from pydantic import ValidationError
+
 import pytest
-from docling_core.types.doc.base import S3Reference, Prov
+from pydantic import ValidationError
+
+from docling_core.types.doc.base import Prov, S3Reference
 
 
 def test_s3_reference():
@@ -20,12 +21,18 @@ def test_s3_reference():
     with pytest.raises(ValidationError, match="required"):
         S3Reference()
 
+
 def test_prov():
     prov = {
-        "bbox": [48.19645328521729, 644.2883926391602, 563.6185592651367, 737.4546043395997],
-		"page": 2,
-		"span": [0, 0]
-	}
+        "bbox": [
+            48.19645328521729,
+            644.2883926391602,
+            563.6185592651367,
+            737.4546043395997,
+        ],
+        "page": 2,
+        "span": [0, 0],
+    }
 
     assert Prov(**prov)
 

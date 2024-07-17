@@ -6,7 +6,7 @@
 """Define the model Attribute."""
 from typing import Generic, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 from typing_extensions import Annotated
 
 from docling_core.search.mapping import es_field
@@ -16,23 +16,20 @@ from docling_core.types.base import (
     PredicateKeyTypeT,
     PredicateValueTypeT,
     ProvenanceTypeT,
-    SubjectNameTypeT,
-    SubjectTypeT,
 )
 from docling_core.types.rec.base import ProvenanceItem
 from docling_core.types.rec.predicate import Predicate
+from docling_core.utils.alias import AliasModel
 
 
 class Attribute(
-    BaseModel,
+    AliasModel,
     Generic[
         IdentifierTypeT,
         PredicateValueTypeT,
         PredicateKeyNameT,
         PredicateKeyTypeT,
         ProvenanceTypeT,
-        SubjectTypeT,
-        SubjectNameTypeT,
     ],
     extra="forbid",
 ):

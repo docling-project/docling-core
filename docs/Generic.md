@@ -163,7 +163,7 @@
 | **Type**     | `string` |
 | **Required** | Yes      |
 
-**Description:** A unique identifier of this data object within a collection of a Deep Search database
+**Description:** A unique identifier of this data object within a collection of a Docling database
 
 </blockquote>
 </details>

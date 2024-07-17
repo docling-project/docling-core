@@ -4,17 +4,19 @@
 #
 
 """Test the methods in module search.json_schema_to_search_mapper."""
-from docling_core.types.doc.document import ExportedCCSDocument
-from docling_core.types.rec.record import Record
-from docling_core.search.json_schema_to_search_mapper import JsonSchemaToSearchMapper
-
 import json
 import os
+
 import jsondiff
+
+from docling_core.search.json_schema_to_search_mapper import JsonSchemaToSearchMapper
+from docling_core.types.doc.document import ExportedCCSDocument
+from docling_core.types.rec.record import Record
+
 
 def _load(filename):
     doc = {}
-    with open(filename, 'r') as fid:
+    with open(filename, "r") as fid:
         doc = json.load(fid)
     return doc
 
@@ -44,18 +46,14 @@ def test_json_schema_to_search_mapper_0():
     assert index_def is not None
 
     filename = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            'data/json_schemas/document-ref.json'
-        )
+        os.path.join(os.path.dirname(__file__), "data/json_schemas/document-ref.json")
     )
     index_ref = _load(filename)
 
     diff = jsondiff.diff(index_ref, index_def)
-    print(json.dumps(index_def,indent=2))
+    print(json.dumps(index_def, indent=2))
     print(diff)
     assert index_def == index_ref
-
 
 
 def test_json_schema_to_search_mapper_1():
@@ -64,24 +62,23 @@ def test_json_schema_to_search_mapper_1():
     print(json.dumps(s, indent=2))
 
     _meta = {
-        "aliases": [".production","ccc"],
+        "aliases": [".production", "ccc"],
         "created": "2022-11-03T11:22:32.432+00:00",
         "description": "description of the collection",
         "source": "https://ccc",
         "storage": "storage location",
         "display_name": "display name",
         "type": "Record",
-        "classification": ["Public","PI"],
-        "version": [{"name": "my-library","version": "0.1.0-post.6+ed04c14"},
-                    {"name": "docling-core","version": "0.1.0"}],
-        "document_license": {
-            "code": ["NO-CC CODE","CC BY"],
-            "text": [ ]
-        },
+        "classification": ["Public", "PI"],
+        "version": [
+            {"name": "my-library", "version": "0.1.0-post.6+ed04c14"},
+            {"name": "docling-core", "version": "0.1.0"},
+        ],
+        "document_license": {"code": ["NO-CC CODE", "CC BY"], "text": []},
         "license": "https://www.ccc",
         "filename": "ccc-gs.json",
         "domain": ["Healthcare & Life Sciences"],
-        "$ref": "ccs:schemas#/Document"
+        "$ref": "ccs:schemas#/Document",
     }
 
     mapper = JsonSchemaToSearchMapper(
@@ -97,10 +94,7 @@ def test_json_schema_to_search_mapper_1():
     assert index_def is not None
 
     filename = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            'data/json_schemas/dbrecord-ref.json'
-        )
+        os.path.join(os.path.dirname(__file__), "data/json_schemas/dbrecord-ref.json")
     )
     index_ref = _load(filename)
 

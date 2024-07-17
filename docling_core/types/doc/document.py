@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 #
 
-"""Models for the Deep Search Document data type."""
+"""Models for the Docling Document data type."""
 
 from datetime import datetime
 from typing import Generic, Optional, Union
@@ -352,7 +352,7 @@ class ExportedCCSDocument(
         CollectionNameTypeT,
     ],
 ):
-    """Document model for Deep Search."""
+    """Document model for Docling."""
 
     obj_type: StrictStr = Field(
         "pdf-document",

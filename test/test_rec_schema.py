@@ -4,17 +4,18 @@
 #
 
 """Test the pydantic models in module data_types.cxs."""
-import unittest
 import glob
-import pytest
+import unittest
 from typing import Literal
+
+import pytest
 from pydantic import ValidationError
 
-from docling_core.types.rec.predicate import Predicate
 from docling_core.types.rec.attribute import Attribute
-from docling_core.types.rec.subject import Subject
-from docling_core.types.rec.statement import Statement
+from docling_core.types.rec.predicate import Predicate
 from docling_core.types.rec.record import Record
+from docling_core.types.rec.statement import Statement
+from docling_core.types.rec.subject import Subject
 
 
 class TestCxsModel(unittest.TestCase):
@@ -31,12 +32,18 @@ class TestCxsModel(unittest.TestCase):
 
     def test_predicates_wrong(self):
         filename = "test/data/rec/error-predicate-01.json"
-        with pytest.raises(ValidationError, match="invalid latitude"), open(filename) as file_obj:
+        with (
+            pytest.raises(ValidationError, match="invalid latitude"),
+            open(filename) as file_obj,
+        ):
             file_json = file_obj.read()
             Predicate.model_validate_json(file_json)
 
         filename = "test/data/rec/error-predicate-02.json"
-        with pytest.raises(ValidationError, match="geopoint_value.conf"), open(filename) as file_obj:
+        with (
+            pytest.raises(ValidationError, match="geopoint_value.conf"),
+            open(filename) as file_obj,
+        ):
             file_json = file_obj.read()
             Predicate.model_validate_json(file_json)
 
@@ -72,7 +79,9 @@ class TestCxsModel(unittest.TestCase):
     def test_subjects2(self):
         """Validate data with Subject schema."""
         # IdentifierTypeT, SubjectTypeT, SubjectNameTypeT
-        subject = Subject[Literal["db"],Literal["material"],Literal["chemical_name","sum_formula"]]
+        subject = Subject[
+            Literal["db"], Literal["material"], Literal["chemical_name", "sum_formula"]
+        ]
         for filename in glob.glob("test/data/rec/subject-*.json"):
             try:
                 with open(filename) as file_obj:
@@ -85,17 +94,25 @@ class TestCxsModel(unittest.TestCase):
     def test_subjects_wrong(self):
         """Validate data with Subject schema."""
         # IdentifierTypeT, SubjectTypeT, SubjectNameTypeT
-        subject = Subject[Literal["db_"],Literal["material"],Literal["chemical_name","sum_formula"]]
+        subject = Subject[
+            Literal["db_"], Literal["material"], Literal["chemical_name", "sum_formula"]
+        ]
         for filename in glob.glob("test/data/rec/subject-*.json"):
             with self.assertRaises(ValidationError), open(filename) as file_obj:
                 file_json = file_obj.read()
                 subject.model_validate_json(file_json)
-        subject = Subject[Literal["db"],Literal["material_"],Literal["chemical_name","sum_formula"]]
+        subject = Subject[
+            Literal["db"], Literal["material_"], Literal["chemical_name", "sum_formula"]
+        ]
         for filename in glob.glob("test/data/rec/subject-*.json"):
             with self.assertRaises(ValidationError), open(filename) as file_obj:
                 file_json = file_obj.read()
                 subject.model_validate_json(file_json)
-        subject = Subject[Literal["db"],Literal["material"],Literal["chemical_name_","sum_formula_"]]
+        subject = Subject[
+            Literal["db"],
+            Literal["material"],
+            Literal["chemical_name_", "sum_formula_"],
+        ]
         for filename in glob.glob("test/data/rec/subject-*.json"):
             with self.assertRaises(ValidationError), open(filename) as file_obj:
                 file_json = file_obj.read()
@@ -126,14 +143,14 @@ class TestCxsModel(unittest.TestCase):
     def test_records_2(self):
         """Validate data with Record schema by passing type parameters."""
         record = Record[
-            Literal["db"], # IdentifierTypeT,
-            Literal["property-value"], # PredicateValueTypeT
-            Literal["Tc","pressure"], # PredicateKeyNameT
-            Literal["property"], # PredicateKeyTypeT
-            Literal["sentence"], # ProvenanceTypeT
-            Literal["material"], # SubjectTypeT
-            Literal["chemical_name","sum_formula"], # SubjectNameTypeT
-            Literal["DB", "Chemicals", "ChemDatabase"], # CollectionNameTypeT
+            Literal["db"],  # IdentifierTypeT,
+            Literal["property-value"],  # PredicateValueTypeT
+            Literal["Tc", "pressure"],  # PredicateKeyNameT
+            Literal["property"],  # PredicateKeyTypeT
+            Literal["sentence"],  # ProvenanceTypeT
+            Literal["material"],  # SubjectTypeT
+            Literal["chemical_name", "sum_formula"],  # SubjectNameTypeT
+            Literal["DB", "Chemicals", "ChemDatabase"],  # CollectionNameTypeT
         ]
         for filename in glob.glob("test/data/rec/record-01.json"):
             try:
@@ -147,22 +164,49 @@ class TestCxsModel(unittest.TestCase):
     def test_records_3(self):
         """Validate data with Record schema by passing complex type parameters."""
         record = Record[
-            Literal[
-                "arxivid", "cid", "cod", "doi", "db", "ent_id"],  # IdentifierTypeT
+            Literal["arxivid", "cid", "cod", "doi", "db", "ent_id"],  # IdentifierTypeT
             Literal["property-value"],  # PredicateValueTypeT
             Literal[
-                "space group", "cell symmetry", "cell length a", "cell length b", "cell length c",
-                "cell angle alpha", "cell angle beta", "cell angle gamma", "molecular weight",
-                "melting point", "boiling point", "density", "solubility", "temperature",
-                "solvent", "km_value", "turnover_number", "ph_optimum", "temperature_optimum",
-                "material-shape", "molecular", "material-state", "triangular lattice", "magnetic",
-                "hexagonal", "multi layer", "pressure",],  # PredicateKeyNameT
+                "space group",
+                "cell symmetry",
+                "cell length a",
+                "cell length b",
+                "cell length c",
+                "cell angle alpha",
+                "cell angle beta",
+                "cell angle gamma",
+                "molecular weight",
+                "melting point",
+                "boiling point",
+                "density",
+                "solubility",
+                "temperature",
+                "solvent",
+                "km_value",
+                "turnover_number",
+                "ph_optimum",
+                "temperature_optimum",
+                "material-shape",
+                "molecular",
+                "material-state",
+                "triangular lattice",
+                "magnetic",
+                "hexagonal",
+                "multi layer",
+                "pressure",
+            ],  # PredicateKeyNameT
             Literal["property"],  # PredicateKeyTypeT
             Literal["url", "sentence"],  # ProvenanceTypeT
             Literal["material"],  # SubjectTypeT
             Literal[
-                "chemical_name", "iupac_name", "sum_formula", "protein_name", "organism_name",
-                "taxon", "enzyme_class",],  # SubjectNameTypeT,
+                "chemical_name",
+                "iupac_name",
+                "sum_formula",
+                "protein_name",
+                "organism_name",
+                "taxon",
+                "enzyme_class",
+            ],  # SubjectNameTypeT,
             Literal["DB", "Chemicals", "ChemDatabase"],  # CollectionNameTypeT
         ]
         try:
@@ -174,32 +218,31 @@ class TestCxsModel(unittest.TestCase):
             print(f"Validation error in file {filename}:\n{e.json()}")
             raise
 
-
     def test_records_wrong(self):
         """Validate data with Record schema."""
         record = Record[
-            Literal["db"], # IdentifierTypeT,
-            Literal["property-value"], # PredicateValueTypeT
-            Literal["Tc","pressure"], # PredicateKeyNameT
-            Literal["property"], # PredicateKeyTypeT
-            Literal["database"], # ProvenanceTypeT
-            Literal["material"], # SubjectTypeT
-            Literal["chemical_name","sum_formula"], # SubjectNameTypeT
-            Literal["DB", "Chemicals", "ChemDatabase"], # CollectionNameTypeT
+            Literal["db"],  # IdentifierTypeT,
+            Literal["property-value"],  # PredicateValueTypeT
+            Literal["Tc", "pressure"],  # PredicateKeyNameT
+            Literal["property"],  # PredicateKeyTypeT
+            Literal["database"],  # ProvenanceTypeT
+            Literal["material"],  # SubjectTypeT
+            Literal["chemical_name", "sum_formula"],  # SubjectNameTypeT
+            Literal["DB", "Chemicals", "ChemDatabase"],  # CollectionNameTypeT
         ]
         for filename in glob.glob("test/data/rec/record-01.json"):
             with self.assertRaises(ValidationError), open(filename) as file_obj:
                 file_json = file_obj.read()
                 record.model_validate_json(file_json)
         record = Record[
-            Literal["db"], # IdentifierTypeT,
-            Literal["property-value_"], # PredicateValueTypeT
-            Literal["Tc","pressure"], # PredicateKeyNameT
-            Literal["property"], # PredicateKeyTypeT
-            Literal["sentence"], # ProvenanceTypeT
-            Literal["material"], # SubjectTypeT
-            Literal["chemical_name","sum_formula"], # SubjectNameTypeT
-            Literal["DB", "Chemicals", "ChemDatabase"], # CollectionNameTypeT
+            Literal["db"],  # IdentifierTypeT,
+            Literal["property-value_"],  # PredicateValueTypeT
+            Literal["Tc", "pressure"],  # PredicateKeyNameT
+            Literal["property"],  # PredicateKeyTypeT
+            Literal["sentence"],  # ProvenanceTypeT
+            Literal["material"],  # SubjectTypeT
+            Literal["chemical_name", "sum_formula"],  # SubjectNameTypeT
+            Literal["DB", "Chemicals", "ChemDatabase"],  # CollectionNameTypeT
         ]
         for filename in glob.glob("test/data/rec/record-01.json"):
             with self.assertRaises(ValidationError), open(filename) as file_obj:

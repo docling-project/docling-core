@@ -44,7 +44,7 @@ def _prepare_directory(folder: str, clean: bool = False) -> None:
 
 
 def generate_collection_jsonschema(folder: str):
-    """Generate the JSON schema of Deep Search collections and export them to a folder.
+    """Generate the JSON schema of Docling collections and export them to a folder.
 
     Args:
         folder: The name of the directory.
@@ -58,7 +58,7 @@ def generate_collection_jsonschema(folder: str):
 
 
 def generate_collection_html(folder: str):
-    """Generate HTML pages documenting the data model of Deep Search collections.
+    """Generate HTML pages documenting the data model of Docling collections.
 
     The JSON schemas files need to be in a folder and the generated HTML pages will be
     written in the same folder.
@@ -79,7 +79,7 @@ def generate_collection_html(folder: str):
 
 
 def generate_collection_markdown(folder: str):
-    """Generate Markdown pages documenting the data model of Deep Search collections.
+    """Generate Markdown pages documenting the data model of Docling collections.
 
     The JSON schemas files need to be in a folder and the generated markdown pages will
     be written in the same folder.
@@ -101,7 +101,7 @@ def generate_collection_markdown(folder: str):
 
 
 def main() -> None:
-    """Generate the JSON Schema of Deep Search collections and export documentation."""
+    """Generate the JSON Schema of Docling collections and export documentation."""
     argparser = argparse.ArgumentParser()
     argparser.add_argument(
         "directory",

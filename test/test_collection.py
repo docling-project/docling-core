@@ -5,37 +5,35 @@
 
 """Test the pydantic models in module types."""
 import glob
+
 import pytest
 from pydantic import ValidationError
 
-from docling_core.types import Generic, Document, Record
+from docling_core.types import Document, Generic, Record
 
 
 def test_generic():
     """Test the Generic model."""
-    input_generic_0 =  {
+    input_generic_0 = {
         "file-info": {
             "filename": "abc.xml",
             "filename-prov": "abc.xml.zip",
-            "document-hash": "123457889"
-            },
+            "document-hash": "123457889",
+        },
         "_name": "The ABC doc",
-        "custom": ["The custom ABC content 1.", "The custom ABC content 2."]
-        }
+        "custom": ["The custom ABC content 1.", "The custom ABC content 2."],
+    }
     Generic.model_validate(input_generic_0)
 
-    input_generic_1 =  {
-        "file-info": {
-            "filename": "abc.xml",
-            "document-hash": "123457889"
-            },
-        "_name": "The ABC doc"
-        }
+    input_generic_1 = {
+        "file-info": {"filename": "abc.xml", "document-hash": "123457889"},
+        "_name": "The ABC doc",
+    }
     Generic.model_validate(input_generic_1)
 
-    input_generic_2 =  {
+    input_generic_2 = {
         "_name": "The ABC doc",
-        "custom": ["The custom ABC content 1.", "The custom ABC content 2."]
+        "custom": ["The custom ABC content 1.", "The custom ABC content 2."],
     }
     with pytest.raises(ValidationError):
         Generic.model_validate(input_generic_2)

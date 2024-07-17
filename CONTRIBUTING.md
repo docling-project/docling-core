@@ -183,7 +183,7 @@ Note: Checks like `Black` and `isort` will _fail_ if they modify files. This is 
 
 ## Documentation
 
-We use [JSON Schema for Humans](https://github.com/coveooss/json-schema-for-humans) to generate Markdown pages documenting the JSON schema of the Deep Search objects.
+We use [JSON Schema for Humans](https://github.com/coveooss/json-schema-for-humans) to generate Markdown pages documenting the JSON schema of the Docling objects.
 
 The documentation pages are stored in [docs](./docs/) folder and are updated at every commit, as part of the `pre-commit` check hooks.
 To generate the documentation on-demand, run:

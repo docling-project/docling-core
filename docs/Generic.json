@@ -1,7 +1,7 @@
 {
   "$defs": {
     "FileInfoObject": {
-      "description": "Filing information for any data object to be stored in a Deep Search database.",
+      "description": "Filing information for any data object to be stored in a Docling database.",
       "properties": {
         "filename": {
           "description": "The name of a persistent object that created this data object",
@@ -26,7 +26,7 @@
           "x-es-type": "keyword"
         },
         "document-hash": {
-          "description": "A unique identifier of this data object within a collection of a Deep Search database",
+          "description": "A unique identifier of this data object within a collection of a Docling database",
           "title": "Document-Hash",
           "type": "string",
           "x-es-ignore_above": 8191,

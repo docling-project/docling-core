@@ -5,19 +5,19 @@
 
 """Test the pydantic models in module data_types.base.py."""
 import json
-
-import pytest
 from datetime import datetime, timezone
-from pydantic import BaseModel, ValidationError
 from typing import Literal
 
+import pytest
+from pydantic import BaseModel, ValidationError
+
 from docling_core.types.base import (
+    CollectionDocumentInfo,
+    CollectionInfo,
+    CollectionRecordInfo,
+    FileInfoObject,
     Identifier,
     Log,
-    FileInfoObject,
-    CollectionInfo,
-    CollectionDocumentInfo,
-    CollectionRecordInfo,
     StrictDateTime,
 )
 from docling_core.types.doc.document import CCSDocumentDescription
@@ -31,7 +31,9 @@ def test_identifier():
 
     # dict(): important to set by_alias=True, if the model has aliases
     assert data.model_dump(by_alias=True) == gold_dict
-    assert data.model_dump_json(by_alias=True, indent=2) == json.dumps(gold_dict, indent=2)
+    assert data.model_dump_json(by_alias=True, indent=2) == json.dumps(
+        gold_dict, indent=2
+    )
 
     # schema_json(): no need to set by_alias since it is True by the default
     tf = open("test/data/json_schemas/base_identifier.json")
@@ -71,16 +73,21 @@ def test_log():
     Log(agent="CXS", type="annotation", date=datetime.now())
 
     Log(
-        task="run 3", agent="CXS", type="annotation", comment="UCMI 3.10",
-        date="2021-11-03T04:42:54.844631+00:00")
+        task="run 3",
+        agent="CXS",
+        type="annotation",
+        comment="UCMI 3.10",
+        date="2021-11-03T04:42:54.844631+00:00",
+    )
     data = Log(
-        task=None, agent="CXS", type="parsing",
-        date="2021-11-03T04:42:54.844631+00:00")
+        task=None, agent="CXS", type="parsing", date="2021-11-03T04:42:54.844631+00:00"
+    )
 
     gold_dict = {
         "agent": "CXS",
         "type": "parsing",
-        "date": "2021-11-03T04:42:54.844631+00:00"}
+        "date": "2021-11-03T04:42:54.844631+00:00",
+    }
     # None values will be exported, use exclude_none=True to export clean
     assert data.model_dump() != gold_dict
     assert data.model_dump(exclude_none=True, by_alias=True) == gold_dict
@@ -90,13 +97,20 @@ def test_log():
     # Models that inherit from AliasModel will generate data with alias field names
     assert Log(**gold_dict).model_dump(exclude_unset=True) == gold_dict
     # ***Best practice***: exclude_unset=True, exclude_none=True, by_alias=True
-    assert Log(**gold_dict).model_dump(exclude_unset=True, exclude_none=True, by_alias=True) == gold_dict
+    assert (
+        Log(**gold_dict).model_dump(
+            exclude_unset=True, exclude_none=True, by_alias=True
+        )
+        == gold_dict
+    )
 
     with open("test/data/json_schemas/base_log.json") as tf:
         gold_json_schema = json.load(tf)
     assert Log.model_json_schema() == gold_json_schema
 
-    with pytest.raises(ValidationError, match="Value type must be a datetime or a non-numeric string"):
+    with pytest.raises(
+        ValidationError, match="Value type must be a datetime or a non-numeric string"
+    ):
         Log(agent="CXS", type="annotation", date=123456789)
 
 
@@ -105,7 +119,8 @@ def test_file_info_object():
     gold_dict = {
         "filename": "document.pdf",
         "filename-prov": "http:www.ibm.com",
-        "document-hash": "PnNF3Fhr22nJH4a"}
+        "document-hash": "PnNF3Fhr22nJH4a",
+    }
     data = FileInfoObject(**gold_dict)
     # dictionaries and JSON exports need to explicitly use aliases, but children from AliasModel don't.
     assert data.model_dump(by_alias=True) == gold_dict
@@ -113,7 +128,9 @@ def test_file_info_object():
 
     gold_dict.pop("filename-prov")
     gold_json = json.dumps(gold_dict)
-    FileInfoObject(**gold_dict).model_dump_json(exclude_unset=True, exclude_none=True) == gold_json
+    FileInfoObject(**gold_dict).model_dump_json(
+        exclude_unset=True, exclude_none=True
+    ) == gold_json
 
     # creating an instance with input variables requires the use of field names. Since
     # document-hash is an invalid function parameter name, 'populate_by_name' needs to
@@ -129,7 +146,7 @@ def test_collection_info():
         "name": "patent USPTO",
         "type": "Document",
         "version": "3.2.0",
-        "alias": ["patent"]
+        "alias": ["patent"],
     }
     data = CollectionInfo(**gold_dict)
     assert data.model_dump(exclude_unset=True, exclude_none=True) == gold_dict
@@ -139,7 +156,7 @@ def test_collection_info():
         "name": "patent USPTO",
         "type": "experiment",
         "version": "3.2.0",
-        "alias": ["simulation"]
+        "alias": ["simulation"],
     }
     with pytest.raises(ValidationError, match="type"):
         CollectionInfo(**gold_dict)
@@ -149,18 +166,23 @@ def test_collection_info():
         "name": "patent USPTO",
         "type": "Document",
         "version": "3.2.0",
-        "alias": None
+        "alias": None,
     }
-    clean_dict = {
-         "name": "patent USPTO",
-         "type": "Document",
-         "version": "3.2.0"
-    }
+    clean_dict = {"name": "patent USPTO", "type": "Document", "version": "3.2.0"}
     data = CollectionInfo(**input_dict)
-    assert data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) != input_dict
-    assert data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) == clean_dict
+    assert (
+        data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
+        != input_dict
+    )
+    assert (
+        data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
+        == clean_dict
+    )
     data = CollectionInfo(**clean_dict)
-    assert data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) == clean_dict
+    assert (
+        data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
+        == clean_dict
+    )
 
 
 def test_collection_document_info():
@@ -169,22 +191,30 @@ def test_collection_document_info():
         "name": "patent USPTO",
         "type": "Document",
         "version": "3.2.0",
-        "alias": ["patent"]
+        "alias": ["patent"],
     }
     data = CollectionDocumentInfo(**gold_dict)
-    assert data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) == gold_dict
+    assert (
+        data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
+        == gold_dict
+    )
 
     # within dictionary
     desc_dict = {
-        "logs": [{
-            "date": "2021-11-03T04:42:54.844631+00:00",
-		    "agent": "CXS",
-		    "type": "parsing"}],
+        "logs": [
+            {
+                "date": "2021-11-03T04:42:54.844631+00:00",
+                "agent": "CXS",
+                "type": "parsing",
+            }
+        ],
         "collection": {
             "name": "patent USPTO",
             "type": "Document",
             "version": "3.2.0",
-            "alias": ["patent"]}}
+            "alias": ["patent"],
+        },
+    }
     CCSDocumentDescription(**desc_dict)
 
     desc_dict["collection"]["type"] = "Record"
@@ -198,22 +228,30 @@ def test_collection_record_info():
         "name": "PubChem",
         "type": "Record",
         "version": "3.2.0",
-        "alias": ["chemical", "Material Sciences"]
+        "alias": ["chemical", "Material Sciences"],
     }
     data = CollectionRecordInfo(**gold_dict)
-    assert data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) == gold_dict
+    assert (
+        data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
+        == gold_dict
+    )
 
     # within dictionary
     desc_dict = {
-        "logs": [{
-            "date": "2021-11-03T04:42:54.844631+00:00",
-		    "agent": "CXS",
-		    "type": "parsing"}],
+        "logs": [
+            {
+                "date": "2021-11-03T04:42:54.844631+00:00",
+                "agent": "CXS",
+                "type": "parsing",
+            }
+        ],
         "collection": {
             "name": "PubChem",
             "type": "Record",
             "version": "3.2.0",
-            "alias": ["chemical", "Material Sciences"]}}
+            "alias": ["chemical", "Material Sciences"],
+        },
+    }
     RecordDescription(**desc_dict)
 
     desc_dict["collection"]["type"] = "Document"

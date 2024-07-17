@@ -6,8 +6,9 @@
 """Test the pydantic models in module search.metadata.py."""
 import glob
 import os
-from pydantic import ValidationError
 from typing import Literal
+
+from pydantic import ValidationError
 
 from docling_core.search.meta import Meta
 
@@ -15,7 +16,9 @@ from docling_core.search.meta import Meta
 def test_meta():
     """Validate data with Meta schema."""
     taxonomy = Literal["Public", "PI"]
-    domain = Literal["Science", "Technology", "History", "Art", "Literature", "Geography"]
+    domain = Literal[
+        "Science", "Technology", "History", "Art", "Literature", "Geography"
+    ]
 
     for filename in glob.glob("test/data/search/meta-*.json"):
         try:
@@ -43,5 +46,4 @@ def test_meta():
         except ValidationError as e:
             errors = e.errors()
             assert len(errors) == len(gold), f"Wrong number of errors in {filename}"
-            assert all(
-                errors[zdx]["loc"][0] == gold[zdx] for zdx in range(len(errors)))
+            assert all(errors[zdx]["loc"][0] == gold[zdx] for zdx in range(len(errors)))

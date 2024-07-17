@@ -781,7 +781,7 @@
           "x-es-type": "keyword"
         },
         "document-hash": {
-          "description": "A unique identifier of this data object within a collection of a Deep Search database",
+          "description": "A unique identifier of this data object within a collection of a Docling database",
           "title": "Document-Hash",
           "type": "string",
           "x-es-ignore_above": 8191,
@@ -1086,7 +1086,7 @@
     },
     "Identifier": {
       "additionalProperties": false,
-      "description": "Unique identifier of a Deep Search data object.",
+      "description": "Unique identifier of a Docling data object.",
       "properties": {
         "type": {
           "description": "A string representing a collection or database that contains this data object.",
@@ -1103,7 +1103,7 @@
           "x-es-type": "keyword"
         },
         "_name": {
-          "description": "A unique identifier of the data object across Deep Search, consisting of the concatenation of type and value in lower case, separated by hash (#).",
+          "description": "A unique identifier of the data object across Docling, consisting of the concatenation of type and value in lower case, separated by hash (#).",
           "pattern": "^.+#.+$",
           "title": "_Name",
           "type": "string",
@@ -1139,7 +1139,7 @@
           "x-es-type": "keyword"
         },
         "agent": {
-          "description": "The Deep Search agent that performed the task, e.g., CCS or CXS.",
+          "description": "The Docling agent that performed the task, e.g., CCS or CXS.",
           "title": "Agent",
           "type": "string",
           "x-es-ignore_above": 8191,
@@ -1725,7 +1725,7 @@
       "type": "object"
     }
   },
-  "description": "Document model for Deep Search.",
+  "description": "Document model for Docling.",
   "properties": {
     "_name": {
       "title": " Name",

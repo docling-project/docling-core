@@ -4,13 +4,14 @@
 #
 
 """Test the pydantic models in module data_types.nlp.qa.py"""
-import unittest
 import glob
+import unittest
+
 import pytest
-from typing import Literal
 from pydantic import ValidationError
 
 from docling_core.types.nlp.qa import QAPair
+
 
 class TestQAPair(unittest.TestCase):
     """Test QAPair model."""
@@ -29,11 +30,17 @@ class TestQAPair(unittest.TestCase):
     def test_qapair_wrong(self):
         """Validates wrong format from files."""
         filename = "test/data/nlp/error-qa-1.json"
-        with pytest.raises(ValidationError, match="Input should be a valid string"), open(filename) as file_obj:
+        with (
+            pytest.raises(ValidationError, match="Input should be a valid string"),
+            open(filename) as file_obj,
+        ):
             file_json = file_obj.read()
             QAPair.model_validate_json(file_json)
 
         filename = "test/data/nlp/error-qa-3.json"
-        with pytest.raises(ValidationError, match="List must be unique"), open(filename) as file_obj:
+        with (
+            pytest.raises(ValidationError, match="List must be unique"),
+            open(filename) as file_obj,
+        ):
             file_json = file_obj.read()
             QAPair.model_validate_json(file_json)

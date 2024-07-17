@@ -80,8 +80,6 @@ class Record(
                 PredicateKeyNameT,
                 PredicateKeyTypeT,
                 ProvenanceTypeT,
-                SubjectTypeT,
-                SubjectNameTypeT,
             ]
         ]
     ] = None

@@ -5,7 +5,7 @@
 
 """Define the model Predicate."""
 from datetime import datetime
-from typing import Annotated, Generic, Optional, TypeVar
+from typing import Annotated, Generic, Optional
 
 from pydantic import (
     BaseModel,
@@ -17,15 +17,13 @@ from pydantic import (
 )
 
 from docling_core.search.mapping import es_field
+from docling_core.types.base import (
+    Coordinates,
+    PredicateKeyNameT,
+    PredicateKeyTypeT,
+    PredicateValueTypeT,
+)
 from docling_core.utils.alias import AliasModel
-
-PredicateValueTypeT = TypeVar("PredicateValueTypeT", bound=str)
-PredicateKeyNameT = TypeVar("PredicateKeyNameT", bound=str)
-PredicateKeyTypeT = TypeVar("PredicateKeyTypeT", bound=str)
-Coordinates = Annotated[
-    list[float],
-    Field(min_length=2, max_length=2, json_schema_extra=es_field(type="geo_point")),
-]
 
 
 class NumericalValue(BaseModel, extra="forbid"):
@@ -117,7 +115,7 @@ class PredicateValue(AliasModel, Generic[PredicateValueTypeT], extra="forbid"):
 
 
 class Predicate(
-    BaseModel,
+    AliasModel,
     Generic[PredicateValueTypeT, PredicateKeyNameT, PredicateKeyTypeT],
     extra="forbid",
 ):

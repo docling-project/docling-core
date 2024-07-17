@@ -110,5 +110,5 @@ python_version = "3.9"
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["jsonref.*", "jsonschema.*", "json_schema_for_humans.*"]
+module = ["jsondiff.*", "jsonref.*", "jsonschema.*", "json_schema_for_humans.*"]
 ignore_missing_imports = true

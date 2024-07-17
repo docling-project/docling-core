@@ -51,7 +51,7 @@
   ],
   "type": "statement",
   "subtype": "mat_to_prop_to_pvls",
-  "model": "Deep Search Model 0.0.0",
+  "model": "Docling Model 0.0.0",
   "source": "sentence.3",
   "match": "89f0d4058c2483678b2cc4f515acf463",
   "range": [

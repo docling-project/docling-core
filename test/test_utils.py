@@ -5,11 +5,11 @@
 
 """Test the pydantic models in package utils."""
 import json
-import pytest
 
-from pydantic import Field, ValidationError
+from pydantic import Field
 
 from docling_core.utils.alias import AliasModel
+
 
 def test_alias_model():
     """Test the functionality of AliasModel."""

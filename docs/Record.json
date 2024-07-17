@@ -103,7 +103,7 @@
         "predicates": {
           "description": "A list of characteristics (type, value, and name).",
           "items": {
-            "$ref": "#/$defs/Predicate__PredicateValueTypeT__PredicateKeyNameT__PredicateKeyTypeT_"
+            "$ref": "#/$defs/Predicate"
           },
           "title": "Predicates",
           "type": "array"
@@ -220,7 +220,7 @@
       "type": "object"
     },
     "FileInfoObject": {
-      "description": "Filing information for any data object to be stored in a Deep Search database.",
+      "description": "Filing information for any data object to be stored in a Docling database.",
       "properties": {
         "filename": {
           "description": "The name of a persistent object that created this data object",
@@ -245,7 +245,7 @@
           "x-es-type": "keyword"
         },
         "document-hash": {
-          "description": "A unique identifier of this data object within a collection of a Deep Search database",
+          "description": "A unique identifier of this data object within a collection of a Docling database",
           "title": "Document-Hash",
           "type": "string",
           "x-es-ignore_above": 8191,
@@ -297,7 +297,7 @@
     },
     "Identifier": {
       "additionalProperties": false,
-      "description": "Unique identifier of a Deep Search data object.",
+      "description": "Unique identifier of a Docling data object.",
       "properties": {
         "type": {
           "description": "A string representing a collection or database that contains this data object.",
@@ -314,7 +314,7 @@
           "x-es-type": "keyword"
         },
         "_name": {
-          "description": "A unique identifier of the data object across Deep Search, consisting of the concatenation of type and value in lower case, separated by hash (#).",
+          "description": "A unique identifier of the data object across Docling, consisting of the concatenation of type and value in lower case, separated by hash (#).",
           "pattern": "^.+#.+$",
           "title": "_Name",
           "type": "string",
@@ -328,40 +328,6 @@
         "_name"
       ],
       "title": "Identifier",
-      "type": "object"
-    },
-    "Identifier__SubjectNameTypeT_": {
-      "additionalProperties": false,
-      "properties": {
-        "type": {
-          "description": "A string representing a collection or database that contains this data object.",
-          "title": "Type",
-          "type": "string",
-          "x-es-ignore_above": 8191,
-          "x-es-type": "keyword"
-        },
-        "value": {
-          "description": "The identifier value of the data object within a collection or database.",
-          "title": "Value",
-          "type": "string",
-          "x-es-ignore_above": 8191,
-          "x-es-type": "keyword"
-        },
-        "_name": {
-          "description": "A unique identifier of the data object across Deep Search, consisting of the concatenation of type and value in lower case, separated by hash (#).",
-          "pattern": "^.+#.+$",
-          "title": "_Name",
-          "type": "string",
-          "x-es-ignore_above": 8191,
-          "x-es-type": "keyword"
-        }
-      },
-      "required": [
-        "type",
-        "value",
-        "_name"
-      ],
-      "title": "Identifier[~SubjectNameTypeT]",
       "type": "object"
     },
     "Log": {
@@ -384,7 +350,7 @@
           "x-es-type": "keyword"
         },
         "agent": {
-          "description": "The Deep Search agent that performed the task, e.g., CCS or CXS.",
+          "description": "The Docling agent that performed the task, e.g., CCS or CXS.",
           "title": "Agent",
           "type": "string",
           "x-es-ignore_above": 8191,
@@ -483,64 +449,15 @@
       "title": "NumericalValue",
       "type": "object"
     },
-    "PredicateKey__PredicateKeyNameT__PredicateKeyTypeT_": {
+    "Predicate": {
       "additionalProperties": false,
-      "properties": {
-        "name": {
-          "description": "Name of the predicate key.",
-          "title": "Name",
-          "type": "string",
-          "x-es-ignore_above": 8191,
-          "x-es-type": "keyword"
-        },
-        "type": {
-          "description": "Type of predicate key.",
-          "title": "Type",
-          "type": "string",
-          "x-es-ignore_above": 8191,
-          "x-es-type": "keyword"
-        }
-      },
-      "required": [
-        "name",
-        "type"
-      ],
-      "title": "PredicateKey[~PredicateKeyNameT, ~PredicateKeyTypeT]",
-      "type": "object"
-    },
-    "PredicateValue__PredicateValueTypeT_": {
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "description": "Name of the predicate value (actual value).",
-          "title": "Name",
-          "type": "string",
-          "x-es-ignore_above": 8191,
-          "x-es-type": "keyword"
-        },
-        "type": {
-          "description": "Type of predicate value.",
-          "title": "Type",
-          "type": "string",
-          "x-es-ignore_above": 8191,
-          "x-es-type": "keyword"
-        }
-      },
-      "required": [
-        "name",
-        "type"
-      ],
-      "title": "PredicateValue[~PredicateValueTypeT]",
-      "type": "object"
-    },
-    "Predicate__PredicateValueTypeT__PredicateKeyNameT__PredicateKeyTypeT_": {
-      "additionalProperties": false,
+      "description": "Model for a predicate.",
       "properties": {
         "key": {
-          "$ref": "#/$defs/PredicateKey__PredicateKeyNameT__PredicateKeyTypeT_"
+          "$ref": "#/$defs/PredicateKey"
         },
         "value": {
-          "$ref": "#/$defs/PredicateValue__PredicateValueTypeT_"
+          "$ref": "#/$defs/PredicateValue"
         },
         "numerical_value": {
           "anyOf": [
@@ -624,7 +541,59 @@
         "key",
         "value"
       ],
-      "title": "Predicate[~PredicateValueTypeT, ~PredicateKeyNameT, ~PredicateKeyTypeT]",
+      "title": "Predicate",
+      "type": "object"
+    },
+    "PredicateKey": {
+      "additionalProperties": false,
+      "description": "Model for the key (unique identifier) of a predicate.",
+      "properties": {
+        "name": {
+          "description": "Name of the predicate key.",
+          "title": "Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "type": {
+          "description": "Type of predicate key.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "title": "PredicateKey",
+      "type": "object"
+    },
+    "PredicateValue": {
+      "additionalProperties": false,
+      "description": "Model for the value of a predicate.",
+      "properties": {
+        "name": {
+          "description": "Name of the predicate value (actual value).",
+          "title": "Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "type": {
+          "description": "Type of predicate value.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "title": "PredicateValue",
       "type": "object"
     },
     "ProvenanceItem": {
@@ -819,7 +788,7 @@
         "names": {
           "description": "List of given names for this subject. They may not be unique across different subjects.",
           "items": {
-            "$ref": "#/$defs/Identifier__SubjectNameTypeT_"
+            "$ref": "#/$defs/SubjectNameIdentifier"
           },
           "title": "Names",
           "type": "array"
@@ -865,6 +834,41 @@
         "names"
       ],
       "title": "Subject",
+      "type": "object"
+    },
+    "SubjectNameIdentifier": {
+      "additionalProperties": false,
+      "description": "Identifier of subject names.",
+      "properties": {
+        "type": {
+          "description": "A string representing a collection or database that contains this data object.",
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "value": {
+          "description": "The identifier value of the data object within a collection or database.",
+          "title": "Value",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "_name": {
+          "description": "A unique identifier of the data object across Docling, consisting of the concatenation of type and value in lower case, separated by hash (#).",
+          "pattern": "^.+#.+$",
+          "title": "_Name",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "_name"
+      ],
+      "title": "SubjectNameIdentifier",
       "type": "object"
     },
     "TextValue": {

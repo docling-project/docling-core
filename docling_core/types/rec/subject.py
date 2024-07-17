@@ -19,6 +19,10 @@ from docling_core.types.doc.base import S3Reference
 from docling_core.utils.alias import AliasModel
 
 
+class SubjectNameIdentifier(Identifier[SubjectNameTypeT], Generic[SubjectNameTypeT]):
+    """Identifier of subject names.""" ""
+
+
 class Subject(
     AliasModel,
     Generic[IdentifierTypeT, SubjectTypeT, SubjectNameTypeT],
@@ -53,7 +57,7 @@ class Subject(
         ),
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
-    names: list[Identifier[SubjectNameTypeT]] = Field(
+    names: list[SubjectNameIdentifier[SubjectNameTypeT]] = Field(
         description=(
             "List of given names for this subject. They may not be unique across "
             "different subjects."

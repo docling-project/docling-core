@@ -4,12 +4,12 @@
 #
 
 """Test the pydantic models in module data_types.ccs."""
-from pydantic import ValidationError
 import json
 
-from docling_core.types.doc.document import (
-    CCSDocument,
-)
+from pydantic import ValidationError
+
+from docling_core.types.doc.document import CCSDocument
+
 
 def test_ccs_document_update():
     """Validate data with CCSDocument extract."""
