@@ -1,3 +1,9 @@
+## [v1.1.0](https://github.com/DS4SD/docling-core/releases/tag/v1.1.0) - 2024-07-18
+
+### Feature
+
+* Add document Markdown export ([#4](https://github.com/DS4SD/docling-core/issues/4)) ([`d0ffc85`](https://github.com/DS4SD/docling-core/commit/d0ffc85e0c2b49d201f5359c4dc4efb5cd5716b0))
+
 ## [v1.0.0](https://github.com/DS4SD/docling-core/releases/tag/v1.0.0) - 2024-07-17
 
 ### Feature
