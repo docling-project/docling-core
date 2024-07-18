@@ -16,6 +16,7 @@ from pydantic import (
     StrictStr,
     model_validator,
 )
+from tabulate import tabulate
 
 from docling_core.search.mapping import es_field
 from docling_core.types.base import (
@@ -391,3 +392,111 @@ class ExportedCCSDocument(
                     item["$ref"] = ref
 
         return data
+
+    def _resolve_ref(self, item: Ref) -> Optional[Table]:
+        """Return the resolved reference in case of table reference, otherwise None."""
+        result: Optional[Table] = None
+
+        # NOTE: currently only resolves table refs & makes assumptions on ref parts
+        if item.obj_type == "table" and self.tables:
+            parts = item.ref.split("/")
+            result = self.tables[int(parts[2])]
+
+        return result
+
+    def export_to_markdown(
+        self,
+        delim: str = "\n\n",
+        main_text_start: int = 0,
+        main_text_stop: Optional[int] = None,
+    ) -> str:
+        r"""Serialize to Markdown.
+
+        Operates on a slice of the document's main_text as defined through arguments
+        main_text_start and main_text_stop; defaulting to the whole main_text.
+
+        Args:
+            delim (str, optional): Delimiter to use when concatenating the various
+                Markdown parts. Defaults to "\n\n".
+            main_text_start (int, optional): Main-text slicing start index (inclusive).
+                Defaults to 0.
+            main_text_end (Optional[int], optional): Main-text slicing stop index
+                (exclusive). Defaults to None.
+
+        Returns:
+            str: The exported Markdown representation.
+        """
+        has_title = False
+        prev_text = ""
+        md_texts: list[str] = []
+
+        if self.main_text is not None:
+            for orig_item in self.main_text[main_text_start:main_text_stop]:
+                markdown_text = ""
+
+                item = (
+                    self._resolve_ref(orig_item)
+                    if isinstance(orig_item, Ref)
+                    else orig_item
+                )
+                if item is None:
+                    continue
+
+                item_type = item.obj_type
+                if isinstance(item, BaseText) and item_type in {
+                    "title",
+                    "subtitle-level-1",
+                    "paragraph",
+                    "caption",
+                }:
+                    text = item.text
+
+                    # ignore repeated text
+                    if prev_text == text:
+                        continue
+                    else:
+                        prev_text = text
+
+                    # first title match
+                    if item_type == "title" and not has_title:
+                        markdown_text = f"# {text}"
+                        has_title = True
+
+                    # secondary titles
+                    elif item_type in {"title", "subtitle-level-1"} or (
+                        has_title and item_type == "title"
+                    ):
+                        markdown_text = f"## {text}"
+
+                    # normal text
+                    else:
+                        markdown_text = text
+
+                elif isinstance(item, Table) and item.data:
+                    table = []
+                    for row in item.data:
+                        tmp = []
+                        for col in row:
+                            tmp.append(col.text)
+                        table.append(tmp)
+
+                    if len(table) > 1 and len(table[0]) > 0:
+                        try:
+                            md_table = tabulate(
+                                table[1:], headers=table[0], tablefmt="github"
+                            )
+                        except ValueError:
+                            md_table = tabulate(
+                                table[1:],
+                                headers=table[0],
+                                tablefmt="github",
+                                disable_numparse=True,
+                            )
+
+                        markdown_text = md_table
+
+                if markdown_text:
+                    md_texts.append(markdown_text)
+
+        result = delim.join(md_texts)
+        return result

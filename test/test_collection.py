@@ -47,6 +47,19 @@ def test_document():
         Document.model_validate_json(file_json)
 
 
+def test_document_md_export():
+    """Test the Document Markdown export."""
+    with open("test/data/doc/md-export.json") as src_obj:
+        src_data = src_obj.read()
+    doc = Document.model_validate_json(src_data)
+    md = doc.export_to_markdown()
+
+    with open("test/data/doc/md-export.md") as gold_obj:
+        gold_data = gold_obj.read().strip()
+
+    assert md == gold_data
+
+
 def test_record():
     """Test the Document model."""
     for filename in glob.glob("test/data/rec/record-*.json"):
