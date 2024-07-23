@@ -26,7 +26,7 @@ class Package(BaseModel, extra="forbid"):
     The version needs to comply with Semantic Versioning 2.0.0.
     """
 
-    name: StrictStr
+    name: StrictStr = "docling-core"
     version: Annotated[str, StringConstraints(strict=True, pattern=VERSION_PATTERN)] = (
         importlib.metadata.version("docling-core")
     )
