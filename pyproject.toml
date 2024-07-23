@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "docling-core"
-version = "1.1.0"
+version = "1.1.1"
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 authors = [
