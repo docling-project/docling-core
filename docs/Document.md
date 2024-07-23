@@ -36,11 +36,42 @@
 
 **Title:** Type
 
-|              |                  |
-| ------------ | ---------------- |
-| **Type**     | `string`         |
-| **Required** | No               |
-| **Default**  | `"pdf-document"` |
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `"pdf-document"`                                                          |
+
+<blockquote>
+
+| Any of(Option)           |
+| ------------------------ |
+| [item 0](#type_anyOf_i0) |
+| [item 1](#type_anyOf_i1) |
+
+<blockquote>
+
+### <a name="type_anyOf_i0"></a>2.1. Property `ExportedCCSDocument > type > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+### <a name="type_anyOf_i1"></a>2.2. Property `ExportedCCSDocument > type > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
 
 </blockquote>
 </details>

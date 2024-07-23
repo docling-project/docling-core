@@ -1,0 +1,167 @@
+{
+    "_name": "2023 IBM International Business Machines Corp.",
+    "bitmaps": [],
+    "description": {
+      "logs": [
+        {
+          "date": "2024-04-15T09:18:31.855017+00:00",
+          "agent": "CCS",
+          "comment": "parsing of documents",
+          "type": "parsing"
+        },
+        {
+          "date": "2024-04-15T09:43:18.651+00:00",
+          "agent": "CXS",
+          "task": "task 12345",
+          "comment": "enrichment of documents",
+          "type": "text enrichment"
+        }
+      ],
+      "collection": {
+        "type": "Document",
+        "name": "ESG Reports",
+        "alias": [
+          "esg-report"
+        ],
+        "version": "2.0.2"
+      },
+      "languages": [
+        "en"
+      ],
+      "advanced": {
+        "website": [
+          "http://www.ibm.com/"
+        ],
+        "year": 2023
+      },
+      "subjects": [
+        "Technology"
+      ],
+      "publication_date": "2023-01-01T12:00:00.000+00:00",
+      "affiliations": [
+        {
+          "name": "International Business Machines Corp.",
+          "id": "ibm",
+          "source": "nyse"
+        }
+      ],
+      "title": "2023 ESG Report",
+      "type": "ESG report"
+    },
+    "equations": [],
+    "figures": [],
+    "file-info": {
+      "#-pages": 1,
+      "document-hash": "776531b533f5970d81de684e84b25cb13bafbab2cf520fddf7bac2ba25233dcb",
+      "filename": "IBM_2023.pdf",
+      "page-hashes": [
+        {
+          "hash": "49319ad44d1997ea392d043a3b5c5fb044c9da0f16ab917326b14da4482bb39e",
+          "model": "model",
+          "page": 1
+        }
+      ]
+    },
+    "footnotes": [],
+    "main-text": [
+      {
+        "$ref": "#/figures/0",
+        "name": "picture",
+        "type": "figure"
+      },
+      {
+        "text": "-------------------------___, _ IXI",
+        "name": "text",
+        "type": "paragraph",
+        "prov": [
+          {
+            "bbox": [
+              896.1026000976562,
+              30.518247604370117,
+              972.6661987304688,
+              77.09062957763672
+            ],
+            "page": 1,
+            "span": [
+              0,
+              35
+            ]
+          }
+        ]
+      }
+    ],
+    "page-dimensions": [
+      {
+        "height": 612,
+        "page": 1,
+        "width": 1008
+      }
+    ],
+    "page-footers": [],
+    "page-headers": [],
+    "references": [],
+    "tables": [],
+    "conversion_settings": {
+      "model_pipeline": {
+        "clusters": [
+          {
+            "type": "LayoutSegmentationModel",
+            "name": "LayoutSegmentationModel",
+            "version": "NA"
+          }
+        ],
+        "page": [],
+        "normalization": [],
+        "tables": [
+          {
+            "type": "TableStructureModel",
+            "name": "TableStructureModel",
+            "version": "NA"
+          }
+        ]
+      }
+    },
+    "version": 2,
+    "_s3_data": {
+      "pdf-document": [
+        {
+          "mime": "application/pdf",
+          "path": "index-code/PDFDocuments/776531b533f5970d81de684e84b25cb13bafbab2cf520fddf7bac2ba25233dcb.pdf"
+        }
+      ],
+      "pdf-pages": [
+        {
+          "mime": "application/pdf",
+          "path": "index-code/PDFPages/49319ad44d1997ea392d043a3b5c5fb044c9da0f16ab917326b14da4482bb39e.pdf",
+          "page": 1
+        }
+      ],
+      "markdown-document": [
+        {
+          "mime": "text/markdown",
+          "path": "index-code/MD/776531b533f5970d81de684e84b25cb13bafbab2cf520fddf7bac2ba25233dcb.md"
+        }
+      ],
+      "json-document": {
+        "mime": "application/json",
+        "path": "index-code/JSONDocuments/776531b533f5970d81de684e84b25cb13bafbab2cf520fddf7bac2ba25233dcb.json"
+      },
+      "json-meta": {
+        "mime": "application/json",
+        "path": "index-code/JSONDocuments/776531b533f5970d81de684e84b25cb13bafbab2cf520fddf7bac2ba25233dcb.meta.json"
+      },
+      "glm-json-document": {
+        "mime": "application/json",
+        "path": "index-code/JSONDocuments/776531b533f5970d81de684e84b25cb13bafbab2cf520fddf7bac2ba25233dcb.glm.json"
+      }
+    },
+    "type": null,
+    "_content_hash": "84be138c500936cbbc70628ceb4e4f82",
+    "identifiers": [
+      {
+        "_name": "esg_report#ibm_2023",
+        "type": "esg_report",
+        "value": "ibm_2023"
+      }
+    ]
+  }

@@ -263,7 +263,7 @@ class MinimalDocument(
     """Minimal model for a document."""
 
     name: StrictStr = Field(alias="_name")
-    obj_type: StrictStr = Field("document", alias="type")
+    obj_type: Optional[StrictStr] = Field("document", alias="type")
     description: CCSDocumentDescription[
         DescriptionAdvancedT,
         DescriptionAnalyticsT,
@@ -291,7 +291,7 @@ class CCSDocument(
 ):
     """Model for a CCS-generated document."""
 
-    obj_type: StrictStr = Field("pdf-document", alias="type")
+    obj_type: Optional[StrictStr] = Field("pdf-document", alias="type")
     bitmaps: Optional[list[BitmapObject]] = None
     equations: Optional[list[BaseCell]] = None
     footnotes: Optional[list[BaseText]] = None
@@ -355,7 +355,7 @@ class ExportedCCSDocument(
 ):
     """Document model for Docling."""
 
-    obj_type: StrictStr = Field(
+    obj_type: Optional[StrictStr] = Field(
         "pdf-document",
         alias="type",
         json_schema_extra=es_field(type="keyword", ignore_above=8191),

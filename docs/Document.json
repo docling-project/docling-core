@@ -1732,9 +1732,16 @@
       "type": "string"
     },
     "type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
       "default": "pdf-document",
       "title": "Type",
-      "type": "string",
       "x-es-ignore_above": 8191,
       "x-es-type": "keyword"
     },
