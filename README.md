@@ -1,33 +1,32 @@
+# Docling Core
+
 [![PyPI version](https://img.shields.io/pypi/v/docling-core)](https://pypi.org/project/docling-core/)
-![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)
+![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-[![License MIT](https://img.shields.io/github/license/ds4sd/deepsearch-toolkit)](https://opensource.org/licenses/MIT)
-
-# Docling Core
+[![License MIT](https://img.shields.io/github/license/ds4sd/docling-core)](https://opensource.org/licenses/MIT)
 
 Docling Core is a library that defines the data types in [Docling](https://ds4sd.github.io), leveraging pydantic models.
 
 ## Installation
 
-Using [Poetry](https://python-poetry.org), create and activate a virtual environment.
-
+To use Docling Core, simply install `docling-core` from your package manager, e.g. pip:
+```bash
+pip install docling-core
 ```
-poetry shell
-```
 
-Install the defined dependencies of the project.
+### Development setup
 
-```
+To develop for Docling Core, you need Python 3.9 / 3.10 / 3.11 / 3.12 and Poetry. You can then install from your local clone's root dir:
+```bash
 poetry install
 ```
 
-Test the installation running the pytest suite.
-
+To run the pytest suite, execute:
 ```
 poetry run pytest test
 ```
@@ -77,7 +76,7 @@ Please read [Contributing to Docling Core](./CONTRIBUTING.md) for details.
 
 ## References
 
-If you use `Docling Core` in your projects, please consider citing the following:
+If you use Docling Core in your projects, please consider citing the following:
 
 ```bib
 @software{Docling,
@@ -92,5 +91,5 @@ year = {2024}
 
 ## License
 
-The `Docling Core` codebase is under MIT license.
+The Docling Core codebase is under MIT license.
 For individual model usage, please refer to the model licenses found in the original packages.
