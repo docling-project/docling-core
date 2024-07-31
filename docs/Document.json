@@ -1188,6 +1188,7 @@
           "type": "number"
         },
         "page": {
+          "exclusiveMinimum": 0,
           "title": "Page",
           "type": "integer"
         },
@@ -1219,6 +1220,7 @@
           "x-es-suppress": true
         },
         "page": {
+          "exclusiveMinimum": 0,
           "title": "Page",
           "type": "integer",
           "x-es-type": "short"
@@ -1245,6 +1247,7 @@
           "type": "array"
         },
         "page": {
+          "exclusiveMinimum": 0,
           "title": "Page",
           "type": "integer"
         },
@@ -1547,6 +1550,7 @@
         "page": {
           "anyOf": [
             {
+              "exclusiveMinimum": 0,
               "type": "integer"
             },
             {

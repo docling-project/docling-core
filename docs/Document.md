@@ -3598,6 +3598,10 @@ Must be one of:
 | **Type**     | `integer` |
 | **Required** | Yes       |
 
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
+
 </blockquote>
 </details>
 
@@ -3994,6 +3998,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | Yes       |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 </details>
@@ -4403,6 +4411,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | Yes       |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 </details>
@@ -5732,6 +5744,10 @@ Must be one of:
 | **Type**     | `integer` |
 | **Required** | Yes       |
 
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
+
 </blockquote>
 </details>
 
@@ -6149,6 +6165,10 @@ Must be one of:
 | **Type**     | `integer` |
 | **Required** | Yes       |
 
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
+
 </blockquote>
 </details>
 
@@ -6539,6 +6559,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | Yes       |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 </details>
@@ -7020,6 +7044,10 @@ Must be one of:
 | **Type**     | `integer` |
 | **Required** | Yes       |
 
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
+
 </blockquote>
 </details>
 
@@ -7227,6 +7255,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | Yes       |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 </details>
@@ -7556,6 +7588,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | Yes       |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 </details>
@@ -7971,6 +8007,10 @@ Must be one of:
 | **Type**     | `integer` |
 | **Required** | Yes       |
 
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
+
 </blockquote>
 </details>
 
@@ -8248,6 +8288,10 @@ Must be one of:
 | **Type**     | `integer` |
 | **Required** | No        |
 
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
+
 </blockquote>
 <blockquote>
 
@@ -8402,6 +8446,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | No        |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 <blockquote>
@@ -8558,6 +8606,10 @@ Must be one of:
 | **Type**     | `integer` |
 | **Required** | No        |
 
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
+
 </blockquote>
 <blockquote>
 
@@ -8691,6 +8743,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | No        |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 <blockquote>
@@ -8826,6 +8882,10 @@ Must be one of:
 | **Type**     | `integer` |
 | **Required** | No        |
 
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
+
 </blockquote>
 <blockquote>
 
@@ -8959,6 +9019,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | No        |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 <blockquote>
@@ -9114,6 +9178,10 @@ Must be one of:
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | No        |
+
+| Restrictions |        |
+| ------------ | ------ |
+| **Minimum**  | &gt; 0 |
 
 </blockquote>
 <blockquote>

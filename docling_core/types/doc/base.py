@@ -6,7 +6,7 @@
 """Define common models across CCS objects."""
 from typing import Annotated, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, StrictStr
+from pydantic import BaseModel, Field, PositiveInt, StrictStr
 
 from docling_core.search.mapping import es_field
 from docling_core.utils.alias import AliasModel
@@ -39,7 +39,7 @@ class S3Resource(BaseModel):
 
     mime: str
     path: str
-    page: Optional[int] = None
+    page: Optional[PositiveInt] = None
 
 
 class S3Data(AliasModel):
@@ -68,7 +68,7 @@ class Prov(AliasModel):
     """Provenance."""
 
     bbox: BoundingBox
-    page: int
+    page: PositiveInt
     span: Span
     ref_s3_data: Optional[StrictStr] = Field(
         default=None, alias="__ref_s3_data", json_schema_extra=es_field(suppress=True)
@@ -96,7 +96,7 @@ class PageDimensions(BaseModel):
     """Page dimensions."""
 
     height: float
-    page: int
+    page: PositiveInt
     width: float
 
 
@@ -196,4 +196,4 @@ class PageReference(BaseModel):
 
     hash: str = Field(json_schema_extra=es_field(type="keyword", ignore_above=8191))
     model: str = Field(json_schema_extra=es_field(suppress=True))
-    page: int = Field(json_schema_extra=es_field(type="short"))
+    page: PositiveInt = Field(json_schema_extra=es_field(type="short"))
