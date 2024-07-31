@@ -1,3 +1,9 @@
+## [v1.1.2](https://github.com/DS4SD/docling-core/releases/tag/v1.1.2) - 2024-07-31
+
+### Fix
+
+* Make page number strictly positive ([#8](https://github.com/DS4SD/docling-core/issues/8)) ([`ec3cff9`](https://github.com/DS4SD/docling-core/commit/ec3cff97e5079251087cd7b4b42e8c509cd244f3))
+
 ## [v1.1.1](https://github.com/DS4SD/docling-core/releases/tag/v1.1.1) - 2024-07-23
 
 ### Fix
