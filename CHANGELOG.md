@@ -1,3 +1,9 @@
+## [v1.1.3](https://github.com/DS4SD/docling-core/releases/tag/v1.1.3) - 2024-08-28
+
+### Fix
+
+* Use same base type for all components ([#10](https://github.com/DS4SD/docling-core/issues/10)) ([`f450c8c`](https://github.com/DS4SD/docling-core/commit/f450c8cbfd623bf5c7013bae956d23618004f43d))
+
 ## [v1.1.2](https://github.com/DS4SD/docling-core/releases/tag/v1.1.2) - 2024-07-31
 
 ### Fix
