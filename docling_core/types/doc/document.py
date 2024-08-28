@@ -393,14 +393,28 @@ class ExportedCCSDocument(
 
         return data
 
-    def _resolve_ref(self, item: Ref) -> Optional[Table]:
-        """Return the resolved reference in case of table reference, otherwise None."""
-        result: Optional[Table] = None
+    def _resolve_ref(self, item: Ref) -> Optional[Union[BaseCell, BaseText]]:
+        """Return the resolved reference.
 
-        # NOTE: currently only resolves table refs & makes assumptions on ref parts
+        Resolved the Ref object within the document.
+        If the object is not found, None is returned.
+        """
+        result: Optional[Union[BaseCell, BaseText]] = None
+
+        # NOTE: currently only resolves refs explicitely, such that we can make
+        # assumptions on ref parts
         if item.obj_type == "table" and self.tables:
             parts = item.ref.split("/")
             result = self.tables[int(parts[2])]
+        elif item.obj_type == "figure" and self.figures:
+            parts = item.ref.split("/")
+            result = self.figures[int(parts[2])]
+        elif item.obj_type == "equation" and self.equations:
+            parts = item.ref.split("/")
+            result = self.equations[int(parts[2])]
+        elif item.obj_type == "footnote" and self.footnotes:
+            parts = item.ref.split("/")
+            result = self.footnotes[int(parts[2])]
 
         return result
 

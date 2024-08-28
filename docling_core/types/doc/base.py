@@ -128,26 +128,6 @@ class GlmTableCell(TableCell):
     )
 
 
-class Table(AliasModel):
-    """Table."""
-
-    num_cols: int = Field(alias="#-cols")
-    num_rows: int = Field(alias="#-rows")
-    bounding_box: Optional[BoundingBoxContainer] = Field(
-        default=None, alias="bounding-box", json_schema_extra=es_field(suppress=True)
-    )
-    data: Optional[list[list[Union[GlmTableCell, TableCell]]]] = None
-    model: Optional[str] = None
-    prov: Optional[list[Prov]] = None
-    text: Optional[str] = Field(
-        default=None, json_schema_extra=es_field(term_vector="with_positions_offsets")
-    )
-    obj_type: str = Field(
-        alias="type",
-        json_schema_extra=es_field(type="keyword", ignore_above=8191),
-    )
-
-
 class BaseCell(AliasModel):
     """Base cell."""
 
@@ -155,10 +135,21 @@ class BaseCell(AliasModel):
         default=None, alias="bounding-box", json_schema_extra=es_field(suppress=True)
     )
     prov: Optional[list[Prov]] = None
-    text: Optional[str] = None
+    text: Optional[str] = Field(
+        default=None, json_schema_extra=es_field(term_vector="with_positions_offsets")
+    )
     obj_type: str = Field(
         alias="type", json_schema_extra=es_field(type="keyword", ignore_above=8191)
     )
+
+
+class Table(BaseCell):
+    """Table."""
+
+    num_cols: int = Field(alias="#-cols")
+    num_rows: int = Field(alias="#-rows")
+    data: Optional[list[list[Union[GlmTableCell, TableCell]]]] = None
+    model: Optional[str] = None
 
 
 class BaseText(AliasModel):

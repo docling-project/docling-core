@@ -236,7 +236,8 @@
             }
           ],
           "default": null,
-          "title": "Text"
+          "title": "Text",
+          "x-es-term_vector": "with_positions_offsets"
         },
         "type": {
           "title": "Type",
@@ -1571,14 +1572,6 @@
     "Table": {
       "description": "Table.",
       "properties": {
-        "#-cols": {
-          "title": "#-Cols",
-          "type": "integer"
-        },
-        "#-rows": {
-          "title": "#-Rows",
-          "type": "integer"
-        },
         "bounding-box": {
           "anyOf": [
             {
@@ -1590,6 +1583,48 @@
           ],
           "default": null,
           "x-es-suppress": true
+        },
+        "prov": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Prov"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prov"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text",
+          "x-es-term_vector": "with_positions_offsets"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        },
+        "#-cols": {
+          "title": "#-Cols",
+          "type": "integer"
+        },
+        "#-rows": {
+          "title": "#-Rows",
+          "type": "integer"
         },
         "data": {
           "anyOf": [
@@ -1627,46 +1662,12 @@
           ],
           "default": null,
           "title": "Model"
-        },
-        "prov": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/Prov"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Prov"
-        },
-        "text": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Text",
-          "x-es-term_vector": "with_positions_offsets"
-        },
-        "type": {
-          "title": "Type",
-          "type": "string",
-          "x-es-ignore_above": 8191,
-          "x-es-type": "keyword"
         }
       },
       "required": [
+        "type",
         "#-cols",
-        "#-rows",
-        "type"
+        "#-rows"
       ],
       "title": "Table",
       "type": "object"
