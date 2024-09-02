@@ -10,7 +10,7 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![License MIT](https://img.shields.io/github/license/ds4sd/docling-core)](https://opensource.org/licenses/MIT)
 
-Docling Core is a library that defines the data types in [Docling](https://ds4sd.github.io), leveraging pydantic models.
+Docling Core is a library that defines the data types in [Docling](https://github.com/DS4SD/docling), leveraging pydantic models.
 
 ## Installation
 
@@ -79,13 +79,15 @@ Please read [Contributing to Docling Core](./CONTRIBUTING.md) for details.
 If you use Docling Core in your projects, please consider citing the following:
 
 ```bib
-@software{Docling,
-author = {Deep Search Team},
-month = {7},
-title = {{Docling}},
-url = {https://github.com/DS4SD/docling},
-version = {main},
-year = {2024}
+@techreport{Docling,
+  author = "Deep Search Team",
+  month = 8,
+  title = "Docling Technical Report",
+  url = "https://arxiv.org/abs/2408.09869",
+  eprint = "2408.09869",
+  doi = "10.48550/arXiv.2408.09869",
+  version = "1.0.0",
+  year = 2024
 }
 ```
 
