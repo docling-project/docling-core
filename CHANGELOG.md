@@ -1,3 +1,13 @@
+## [v1.1.4](https://github.com/DS4SD/docling-core/releases/tag/v1.1.4) - 2024-09-06
+
+### Fix
+
+* Validate_model() could be called with other types rather than dict ([#14](https://github.com/DS4SD/docling-core/issues/14)) ([`235b2cd`](https://github.com/DS4SD/docling-core/commit/235b2cd10b595c813c03db5b4effbc7cc2feaaf0))
+
+### Documentation
+
+* Update link to Docling ([#12](https://github.com/DS4SD/docling-core/issues/12)) ([`aaf17fe`](https://github.com/DS4SD/docling-core/commit/aaf17fe0f6eae7ee21c54c56fded05f24ec936b1))
+
 ## [v1.1.3](https://github.com/DS4SD/docling-core/releases/tag/v1.1.3) - 2024-08-28
 
 ### Fix
