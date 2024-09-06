@@ -311,6 +311,8 @@ class CCSDocument(
     @classmethod
     def from_dict(cls, data):
         """Validates and fixes the input data."""
+        if not isinstance(data, dict):
+            return data
         description_collection = data["description"].get("collection")
         if not description_collection:
             data["description"].setdefault("collection", {})
@@ -386,6 +388,8 @@ class ExportedCCSDocument(
     @classmethod
     def from_dict(cls, data):
         """Fix ref in main-text."""
+        if not isinstance(data, dict):
+            return data
         if data.get("main-text"):
             for item in data["main-text"]:
                 if ref := item.pop("__ref", None):
