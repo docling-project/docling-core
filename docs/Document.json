@@ -954,6 +954,62 @@
       "title": "DescriptionLicense",
       "type": "object"
     },
+    "Figure": {
+      "description": "Figure.",
+      "properties": {
+        "bounding-box": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingBoxContainer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "x-es-suppress": true
+        },
+        "prov": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Prov"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prov"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text",
+          "x-es-term_vector": "with_positions_offsets"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "x-es-ignore_above": 8191,
+          "x-es-type": "keyword"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Figure",
+      "type": "object"
+    },
     "GlmTableCell": {
       "description": "Glm Table cell.",
       "properties": {
@@ -1782,7 +1838,7 @@
       "anyOf": [
         {
           "items": {
-            "$ref": "#/$defs/BaseCell"
+            "$ref": "#/$defs/Figure"
           },
           "type": "array"
         },

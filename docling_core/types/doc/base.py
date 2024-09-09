@@ -131,6 +131,7 @@ class GlmTableCell(TableCell):
 class BaseCell(AliasModel):
     """Base cell."""
 
+    # FIXME: we need to check why we have bounding_box (this should be in prov)
     bounding_box: Optional[BoundingBoxContainer] = Field(
         default=None, alias="bounding-box", json_schema_extra=es_field(suppress=True)
     )
@@ -150,6 +151,11 @@ class Table(BaseCell):
     num_rows: int = Field(alias="#-rows")
     data: Optional[list[list[Union[GlmTableCell, TableCell]]]] = None
     model: Optional[str] = None
+
+
+# FIXME: let's add some figure specific data-types later
+class Figure(BaseCell):
+    """Figure."""
 
 
 class BaseText(AliasModel):

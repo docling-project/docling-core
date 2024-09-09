@@ -213,4 +213,3 @@ Secondly, OTSL has more inherent structure and a significantly restricted vocabu
 22. Zhong, X., ShafieiBavani, E., Jimeno Yepes, A.: Image-based table recognition: Data, model, and evaluation. In: Vedaldi, A., Bischof, H., Brox, T., Frahm, J.M. (eds.) Computer Vision-ECCV 2020. pp. 564-580. Springer International Publishing, Cham (2020)
 
 23. Zhong, X., Tang, J., Yepes, A.J.: Publaynet: largest dataset ever for document layout analysis. In: 2019 International Conference on Document Analysis and Recognition (ICDAR). pp. 1015-1022. IEEE (2019)
-
