@@ -1,3 +1,9 @@
+## [v1.2.0](https://github.com/DS4SD/docling-core/releases/tag/v1.2.0) - 2024-09-10
+
+### Feature
+
+* Added the XML export ([#16](https://github.com/DS4SD/docling-core/issues/16)) ([`acdf816`](https://github.com/DS4SD/docling-core/commit/acdf81608134c23969c9e620085f4fff4f42a12f))
+
 ## [v1.1.4](https://github.com/DS4SD/docling-core/releases/tag/v1.1.4) - 2024-09-06
 
 ### Fix
