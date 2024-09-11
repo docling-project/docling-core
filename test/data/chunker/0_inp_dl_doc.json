@@ -1,0 +1,503 @@
+{
+    "name": "",
+    "description": {
+        "logs": []
+    },
+    "main_text": [
+        {
+            "text": "This paragraph is marginally long enough for getting accepted as a chunk.",
+            "type": "paragraph",
+            "name": "Text",
+            "prov": [
+                {
+                    "bbox": [
+                        0,
+                        1,
+                        2,
+                        3
+                    ],
+                    "page": 1,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "text": "This one is too short to be accepted as a chunk.",
+            "type": "paragraph",
+            "name": "Text",
+            "prov": [
+                {
+                    "bbox": [
+                        1,
+                        2,
+                        3,
+                        4
+                    ],
+                    "page": 1,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "text": "Some subtitle",
+            "type": "subtitle-level-1",
+            "name": "Section-header",
+            "prov": [
+                {
+                    "bbox": [
+                        3,
+                        4,
+                        5,
+                        6
+                    ],
+                    "page": 2,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "text": "Still too short, despite the subtitle above...",
+            "type": "paragraph",
+            "name": "Text",
+            "prov": [
+                {
+                    "bbox": [
+                        4,
+                        5,
+                        6,
+                        7
+                    ],
+                    "page": 2,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "text": "This one should also include the subtitle above since it is long enough.",
+            "type": "paragraph",
+            "name": "Text",
+            "prov": [
+                {
+                    "bbox": [
+                        5,
+                        6,
+                        7,
+                        8
+                    ],
+                    "page": 3,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "text": "Acquisitions",
+            "type": "subtitle-level-1",
+            "name": "Section-header",
+            "prov": [
+                {
+                    "bbox": [
+                        6,
+                        7,
+                        8,
+                        9
+                    ],
+                    "page": 3,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "table",
+            "name": "Table",
+            "$ref": "#/tables/0"
+        },
+        {
+            "text": "This paragraph should actually include the latest subtitle.",
+            "type": "paragraph",
+            "name": "Text",
+            "prov": [
+                {
+                    "bbox": [
+                        7,
+                        8,
+                        9,
+                        10
+                    ],
+                    "page": 4,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "text": "This paragraph is right before the list.",
+            "type": "paragraph",
+            "name": "Text",
+            "prov": [
+                {
+                    "bbox": [
+                        8,
+                        9,
+                        10,
+                        11
+                    ],
+                    "page": 4,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "text": "Some first bullet content here.",
+            "type": "paragraph",
+            "name": "List-item",
+            "prov": [
+                {
+                    "bbox": [
+                        9,
+                        10,
+                        11,
+                        12
+                    ],
+                    "page": 4,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "text": "And then some second bullet content here.",
+            "type": "paragraph",
+            "name": "List-item",
+            "prov": [
+                {
+                    "bbox": [
+                        10,
+                        11,
+                        12,
+                        13
+                    ],
+                    "page": 4,
+                    "span": [
+                        0,
+                        1
+                    ]
+                }
+            ]
+        }
+    ],
+    "tables": [
+        {
+            "#-cols": 3,
+            "#-rows": 3,
+            "confidence": 0.99,
+            "created_by": "high_conf_pred",
+            "type": "table",
+            "cells": [],
+            "data": [
+                [
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 0,
+                        "col-header": false,
+                        "col-span": [
+                            0,
+                            1
+                        ],
+                        "row": 0,
+                        "row-header": false,
+                        "row-span": [
+                            0,
+                            1
+                        ],
+                        "spans": [
+                            [
+                                0,
+                                0
+                            ]
+                        ],
+                        "text": "Ignored",
+                        "type": ""
+                    },
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 1,
+                        "col-header": false,
+                        "col-span": [
+                            1,
+                            2
+                        ],
+                        "row": 0,
+                        "row-header": false,
+                        "row-span": [
+                            0,
+                            1
+                        ],
+                        "spans": [
+                            [
+                                0,
+                                1
+                            ]
+                        ],
+                        "text": "Business",
+                        "type": ""
+                    },
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 2,
+                        "col-header": false,
+                        "col-span": [
+                            2,
+                            3
+                        ],
+                        "row": 0,
+                        "row-header": false,
+                        "row-span": [
+                            0,
+                            1
+                        ],
+                        "spans": [
+                            [
+                                0,
+                                2
+                            ]
+                        ],
+                        "text": "Country",
+                        "type": ""
+                    }
+                ],
+                [
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 0,
+                        "col-header": false,
+                        "col-span": [
+                            0,
+                            1
+                        ],
+                        "row": 1,
+                        "row-header": false,
+                        "row-span": [
+                            1,
+                            2
+                        ],
+                        "spans": [
+                            [
+                                1,
+                                0
+                            ]
+                        ],
+                        "text": "Atomic Vision",
+                        "type": ""
+                    },
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 1,
+                        "col-header": false,
+                        "col-span": [
+                            1,
+                            2
+                        ],
+                        "row": 1,
+                        "row-header": false,
+                        "row-span": [
+                            1,
+                            2
+                        ],
+                        "spans": [
+                            [
+                                1,
+                                1
+                            ]
+                        ],
+                        "text": "Website design",
+                        "type": ""
+                    },
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 2,
+                        "col-header": false,
+                        "col-span": [
+                            2,
+                            3
+                        ],
+                        "row": 1,
+                        "row-header": false,
+                        "row-span": [
+                            1,
+                            2
+                        ],
+                        "spans": [
+                            [
+                                1,
+                                2
+                            ]
+                        ],
+                        "text": "United States",
+                        "type": ""
+                    }
+                ],
+                [
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 0,
+                        "col-header": false,
+                        "col-span": [
+                            0,
+                            1
+                        ],
+                        "row": 2,
+                        "row-header": false,
+                        "row-span": [
+                            2,
+                            3
+                        ],
+                        "spans": [
+                            [
+                                2,
+                                0
+                            ]
+                        ],
+                        "text": "Delix Computer GmbH",
+                        "type": ""
+                    },
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 1,
+                        "col-header": false,
+                        "col-span": [
+                            1,
+                            2
+                        ],
+                        "row": 2,
+                        "row-header": false,
+                        "row-span": [
+                            2,
+                            3
+                        ],
+                        "spans": [
+                            [
+                                2,
+                                1
+                            ]
+                        ],
+                        "text": "Computers and software",
+                        "type": ""
+                    },
+                    {
+                        "bbox": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "col": 2,
+                        "col-header": false,
+                        "col-span": [
+                            2,
+                            3
+                        ],
+                        "row": 2,
+                        "row-header": false,
+                        "row-span": [
+                            2,
+                            3
+                        ],
+                        "spans": [
+                            [
+                                2,
+                                2
+                            ]
+                        ],
+                        "text": "Germany",
+                        "type": ""
+                    }
+                ]
+            ],
+            "text": "",
+            "prov": [
+                {
+                    "bbox": [
+                        8,
+                        9,
+                        10,
+                        11
+                    ],
+                    "page": 4,
+                    "span": [
+                        0,
+                        0
+                    ]
+                }
+            ]
+        }
+    ],
+    "file_info": {
+        "filename": "",
+        "document_hash": ""
+    }
+}
