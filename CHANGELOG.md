@@ -1,3 +1,9 @@
+## [v1.3.0](https://github.com/DS4SD/docling-core/releases/tag/v1.3.0) - 2024-09-11
+
+### Feature
+
+* Add hierarchical chunker ([#18](https://github.com/DS4SD/docling-core/issues/18)) ([`9698d30`](https://github.com/DS4SD/docling-core/commit/9698d30288df17ecde67f170848f1be47cd97d33))
+
 ## [v1.2.0](https://github.com/DS4SD/docling-core/releases/tag/v1.2.0) - 2024-09-10
 
 ### Feature
