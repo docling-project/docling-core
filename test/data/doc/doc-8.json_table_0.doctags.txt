@@ -1,0 +1,7 @@
+<table>
+<location><page_4><loc_44><loc_67><loc_67><loc_79></location>
+<row_0><col_0><location><page_4><loc_44><loc_77><loc_59><loc_79></location>Letter from Our Chairman and CEO</col_0><col_1><location><page_4><loc_66><loc_77><loc_67><loc_79></location>5</col_1></row_0>
+<row_1><col_0><location><page_4><loc_44><loc_74><loc_51><loc_76></location>Our ESG Goals</col_0><col_1><location><page_4><loc_66><loc_74><loc_67><loc_76></location>7</col_1></row_1>
+<row_2><col_0><location><page_4><loc_44><loc_71><loc_57><loc_73></location>Accountability for ESG at IBM</col_0><col_1><location><page_4><loc_66><loc_71><loc_67><loc_73></location>9</col_1></row_2>
+<row_3><col_0><location><page_4><loc_44><loc_67><loc_54><loc_69></location>Human Rights at IBM</col_0><col_1><location><page_4><loc_66><loc_67><loc_67><loc_69></location>10</col_1></row_3>
+</table>

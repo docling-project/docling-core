@@ -6,8 +6,7 @@
 """Models for the Docling Document data type."""
 
 from datetime import datetime
-from enum import Enum
-from typing import Generic, Optional, Tuple, Union
+from typing import Generic, Optional, Union
 
 from pydantic import (
     AnyHttpUrl,
@@ -43,6 +42,7 @@ from docling_core.types.doc.base import (
     S3Data,
     Table,
 )
+from docling_core.types.doc.tokens import DocumentToken
 from docling_core.utils.alias import AliasModel
 
 
@@ -347,107 +347,6 @@ class CCSDocument(
         return data
 
 
-class DocumentToken(Enum):
-    """Class to represent an LLM friendly representation of a Document."""
-
-    BEG_DOCUMENT = "<document>"
-    END_DOCUMENT = "</document>"
-
-    BEG_TITLE = "<title>"
-    END_TITLE = "</title>"
-
-    BEG_ABSTRACT = "<abstract>"
-    END_ABSTRACT = "</abstract>"
-
-    BEG_DOI = "<doi>"
-    END_DOI = "</doi>"
-    BEG_DATE = "<date>"
-    END_DATE = "</date>"
-
-    BEG_AUTHORS = "<authors>"
-    END_AUTHORS = "</authors>"
-    BEG_AUTHOR = "<author>"
-    END_AUTHOR = "</author>"
-
-    BEG_AFFILIATIONS = "<affiliations>"
-    END_AFFILIATIONS = "</affiliations>"
-    BEG_AFFILIATION = "<affiliation>"
-    END_AFFILIATION = "</affiliation>"
-
-    BEG_HEADER = "<section-header>"
-    END_HEADER = "</section-header>"
-    BEG_TEXT = "<text>"
-    END_TEXT = "</text>"
-    BEG_PARAGRAPH = "<paragraph>"
-    END_PARAGRAPH = "</paragraph>"
-    BEG_TABLE = "<table>"
-    END_TABLE = "</table>"
-    BEG_FIGURE = "<figure>"
-    END_FIGURE = "</figure>"
-    BEG_CAPTION = "<caption>"
-    END_CAPTION = "</caption>"
-    BEG_EQUATION = "<equation>"
-    END_EQUATION = "</equation>"
-    BEG_LIST = "<list>"
-    END_LIST = "</list>"
-    BEG_LISTITEM = "<list-item>"
-    END_LISTITEM = "</list-item>"
-
-    BEG_LOCATION = "<location>"
-    END_LOCATION = "</location>"
-    BEG_GROUP = "<group>"
-    END_GROUP = "</group>"
-
-    @classmethod
-    def get_special_tokens(
-        cls,
-        max_rows: int = 100,
-        max_cols: int = 100,
-        max_pages: int = 1000,
-        page_dimension: Tuple[int, int] = (100, 100),
-    ):
-        """Function to get all special document tokens."""
-        special_tokens = [token.value for token in cls]
-
-        # Adding dynamically generated row and col tokens
-        for i in range(0, max_rows + 1):
-            special_tokens += [f"<row_{i}>", f"</row_{i}>"]
-
-        for i in range(0, max_cols + 1):
-            special_tokens += [f"<col_{i}>", f"</col_{i}>"]
-
-        for i in range(6):
-            special_tokens += [f"<section-header-{i}>", f"</section-header-{i}>"]
-
-        # Adding dynamically generated page-tokens
-        for i in range(0, max_pages + 1):
-            special_tokens.append(f"<page_{i}>")
-
-        # Adding dynamically generated location-tokens
-        for i in range(0, max(page_dimension[0] + 1, page_dimension[1] + 1)):
-            special_tokens.append(f"<loc_{i}>")
-
-        return special_tokens
-
-    @staticmethod
-    def get_page_token(page: int):
-        """Function to get page tokens."""
-        return f"<page_{page}>"
-
-    @staticmethod
-    def get_location_token(val: float, rnorm: int = 100):
-        """Function to get location tokens."""
-        val_ = round(rnorm * val)
-
-        if val_ < 0:
-            return "<loc_0>"
-
-        if val_ > rnorm:
-            return f"<loc_{rnorm}>"
-
-        return f"<loc_{val_}>"
-
-
 class ExportedCCSDocument(
     MinimalDocument,
     Generic[
@@ -525,6 +424,16 @@ class ExportedCCSDocument(
 
         return result
 
+    def get_map_to_page_dimensions(self):
+        """Get a map from page-index (start at 1) to page-dim [width, height]."""
+        pagedims = {}
+
+        if self.page_dimensions is not None:
+            for _ in self.page_dimensions:
+                pagedims[_.page] = [_.width, _.height]
+
+        return pagedims
+
     def export_to_markdown(
         self,
         delim: str = "\n\n",
@@ -576,7 +485,7 @@ class ExportedCCSDocument(
                     text = item.text
 
                     # ignore repeated text
-                    if prev_text == text:
+                    if prev_text == text or text is None:
                         continue
                     else:
                         prev_text = text
@@ -649,47 +558,31 @@ class ExportedCCSDocument(
             "table",
             "figure",
         ],
-        page_tagging: bool = True,
-        location_tagging: bool = True,
-        location_dimensions: Tuple[int, int] = (100, 100),
-        add_new_line: bool = True,
+        xsize: int = 100,
+        ysize: int = 100,
+        add_location: bool = True,
+        add_content: bool = True,
+        add_page_index: bool = True,
+        # table specific flags
+        add_table_cell_location: bool = False,
+        add_table_cell_label: bool = True,
+        add_table_cell_text: bool = True,
     ) -> str:
         r"""Exports the document content to an DocumentToken format.
 
         Operates on a slice of the document's main_text as defined through arguments
         main_text_start and main_text_stop; defaulting to the whole main_text.
 
-        Args:
-            delim (str, optional): The delimiter used to separate text blocks in the
-                exported XML. Default is two newline characters ("\n\n").
-            main_text_start (int, optional): The starting index of the main text to
-                be included in the XML. Default is 0 (the beginning of the text).
-            main_text_stop (Optional[int], optional): The stopping index of the main
-                text. If set to None, the export includes text up to the end.
-                Default is None.
-            main_text_labels (list[str], optional): A list of text labels that
-                categorize the different sections of the document (e.g., "title",
-                "subtitle-level-1", "paragraph", "caption"). Default labels are
-                "title", "subtitle-level-1", "paragraph", and "caption".
-            location_tagging (bool, optional): Determines whether to include
-                location-based tagging in the XML. If True, the exported XML will
-                contain information about the locations of the text elements.
-                Default is True.
-            location_dimensions (Tuple[int, int], optional): Specifies the dimensions
-                (width and height) for the location tagging, if enabled.
-                Default is [100, 100].
-            add_new_line (bool, optional): Whether to add new line characters after
-                each text block. If True, a new line is added after each block of
-                text in the XML. Default is True.
-
         Returns:
-            str: The content of the document formatted as an XML string.
+            str: The content of the document formatted as a DocTags string.
         """
-        xml_str = DocumentToken.BEG_DOCUMENT.value
-
         new_line = ""
-        if add_new_line:
+        if delim:
             new_line = "\n"
+
+        doctags = f"{DocumentToken.BEG_DOCUMENT.value}{new_line}"
+
+        # pagedims = self.get_map_to_page_dimensions()
 
         if self.main_text is not None:
             for orig_item in self.main_text[main_text_start:main_text_stop]:
@@ -705,87 +598,68 @@ class ExportedCCSDocument(
 
                 prov = item.prov
 
-                loc_str = ""  # default is zero
+                page_i = -1
+                page_w = 0.0
+                page_h = 0.0
+
                 if (
-                    location_tagging
+                    add_location
                     and self.page_dimensions is not None
                     and prov is not None
                     and len(prov) > 0
                 ):
 
-                    page = prov[0].page
-                    page_dim = self.page_dimensions[page - 1]
+                    page_i = prov[0].page
+                    page_dim = self.page_dimensions[page_i - 1]
 
                     page_w = float(page_dim.width)
                     page_h = float(page_dim.height)
 
-                    x0 = float(prov[0].bbox[0]) / float(page_w)
-                    y0 = float(prov[0].bbox[1]) / float(page_h)
-                    x1 = float(prov[0].bbox[2]) / float(page_w)
-                    y1 = float(prov[0].bbox[3]) / float(page_h)
-
-                    page_tok = ""
-                    if page_tagging:
-                        page_tok = DocumentToken.get_page_token(page=page)
-
-                    x0_tok = DocumentToken.get_location_token(
-                        val=min(x0, x1), rnorm=location_dimensions[0]
-                    )
-                    y0_tok = DocumentToken.get_location_token(
-                        val=min(y0, y1), rnorm=location_dimensions[1]
-                    )
-                    x1_tok = DocumentToken.get_location_token(
-                        val=max(x0, x1), rnorm=location_dimensions[0]
-                    )
-                    y1_tok = DocumentToken.get_location_token(
-                        val=max(y0, y1), rnorm=location_dimensions[1]
-                    )
-
-                    # update
-                    loc_str = f"{DocumentToken.BEG_LOCATION.value}"
-                    loc_str += f"{page_tok}"
-                    loc_str += f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
-                    loc_str += f"{DocumentToken.END_LOCATION.value}"
-
                 item_type = item.obj_type
                 if isinstance(item, BaseText) and (item_type in main_text_labels):
-                    text = item.text
 
-                    xml_str += f"<{item_type}>{loc_str}{text}</{item_type}>{new_line}"
+                    doctags += item.export_to_document_tokens(
+                        new_line=new_line,
+                        page_w=page_w,
+                        page_h=page_h,
+                        xsize=xsize,
+                        ysize=ysize,
+                        add_location=add_location,
+                        add_content=add_content,
+                        add_page_index=add_page_index,
+                    )
 
                 elif isinstance(item, Table) and (item_type in main_text_labels):
 
-                    xml_str += f"<{item_type}>{loc_str}"
-
-                    if item.text is not None and len(item.text) > 0:
-                        xml_str += f"{DocumentToken.BEG_CAPTION.value}"
-                        xml_str += (
-                            f"{item.text}{DocumentToken.END_CAPTION.value}{new_line}"
-                        )
-
-                    if item.data is not None and len(item.data) > 0:
-                        for i, row in enumerate(item.data):
-                            xml_str += f"<row_{i}>"
-                            for j, col in enumerate(row):
-                                text = col.text
-                                xml_str += f"<col_{j}>{text}</col_{j}>"
-
-                            xml_str += f"</row_{i}>{new_line}"
-
-                    xml_str += f"</{item_type}>{new_line}"
+                    doctags += item.export_to_document_tokens(
+                        new_line=new_line,
+                        page_w=page_w,
+                        page_h=page_h,
+                        xsize=xsize,
+                        ysize=ysize,
+                        add_caption=True,
+                        add_location=add_location,
+                        add_content=add_content,
+                        add_cell_location=add_table_cell_location,
+                        add_cell_label=add_table_cell_label,
+                        add_cell_text=add_table_cell_text,
+                        add_page_index=add_page_index,
+                    )
 
                 elif isinstance(item, Figure) and (item_type in main_text_labels):
 
-                    xml_str += f"<{item_type}>{loc_str}"
+                    doctags += item.export_to_document_tokens(
+                        new_line=new_line,
+                        page_w=page_w,
+                        page_h=page_h,
+                        xsize=xsize,
+                        ysize=ysize,
+                        add_caption=True,
+                        add_location=add_location,
+                        add_content=add_content,
+                        add_page_index=add_page_index,
+                    )
 
-                    if item.text is not None and len(item.text) > 0:
-                        xml_str += f"{DocumentToken.BEG_CAPTION.value}"
-                        xml_str += (
-                            f"{item.text}{DocumentToken.END_CAPTION.value}{new_line}"
-                        )
+        doctags += DocumentToken.END_DOCUMENT.value
 
-                    xml_str += f"</{item_type}>{new_line}"
-
-        xml_str += DocumentToken.END_DOCUMENT.value
-
-        return xml_str
+        return doctags

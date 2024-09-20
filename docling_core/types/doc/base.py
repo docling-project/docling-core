@@ -10,6 +10,7 @@ import pandas as pd
 from pydantic import BaseModel, Field, PositiveInt, StrictStr
 
 from docling_core.search.mapping import es_field
+from docling_core.types.doc.tokens import DocumentToken
 from docling_core.utils.alias import AliasModel
 
 CellData = tuple[float, float, float, float, str, str]
@@ -132,10 +133,6 @@ class GlmTableCell(TableCell):
 class BaseCell(AliasModel):
     """Base cell."""
 
-    # FIXME: we need to check why we have bounding_box (this should be in prov)
-    bounding_box: Optional[BoundingBoxContainer] = Field(
-        default=None, alias="bounding-box", json_schema_extra=es_field(suppress=True)
-    )
     prov: Optional[list[Prov]] = None
     text: Optional[str] = Field(
         default=None, json_schema_extra=es_field(term_vector="with_positions_offsets")
@@ -143,6 +140,38 @@ class BaseCell(AliasModel):
     obj_type: str = Field(
         alias="type", json_schema_extra=es_field(type="keyword", ignore_above=8191)
     )
+
+    def get_location_tokens(
+        self,
+        new_line: str,
+        page_w: float,
+        page_h: float,
+        xsize: int = 100,
+        ysize: int = 100,
+        add_page_index: bool = True,
+    ) -> str:
+        """Get the location string for the BaseCell."""
+        if self.prov is None:
+            return ""
+
+        location = ""
+        for prov in self.prov:
+
+            page_i = -1
+            if add_page_index:
+                page_i = prov.page
+
+            loc_str = DocumentToken.get_location(
+                bbox=prov.bbox,
+                page_w=page_w,
+                page_h=page_h,
+                xsize=xsize,
+                ysize=ysize,
+                page_i=page_i,
+            )
+            location += f"{loc_str}{new_line}"
+
+        return location
 
 
 class Table(BaseCell):
@@ -152,6 +181,11 @@ class Table(BaseCell):
     num_rows: int = Field(alias="#-rows")
     data: Optional[list[list[Union[GlmTableCell, TableCell]]]] = None
     model: Optional[str] = None
+
+    # FIXME: we need to check why we have bounding_box (this should be in prov)
+    bounding_box: Optional[BoundingBoxContainer] = Field(
+        default=None, alias="bounding-box", json_schema_extra=es_field(suppress=True)
+    )
 
     def _get_tablecell_span(self, cell: TableCell, ix: int):
         if cell.spans is None:
@@ -249,26 +283,185 @@ class Table(BaseCell):
 
         return body
 
+    def export_to_document_tokens(
+        self,
+        new_line: str = "\n",
+        page_w: float = 0.0,
+        page_h: float = 0.0,
+        xsize: int = 100,
+        ysize: int = 100,
+        add_location: bool = True,
+        add_caption: bool = True,
+        add_content: bool = True,
+        add_cell_location: bool = True,
+        add_cell_label: bool = True,
+        add_cell_text: bool = True,
+        add_page_index: bool = True,
+    ):
+        """Export table to document tokens format."""
+        body = f"{DocumentToken.BEG_TABLE.value}{new_line}"
+
+        if add_location:
+            body += self.get_location_tokens(
+                new_line=new_line,
+                page_w=page_w,
+                page_h=page_h,
+                xsize=xsize,
+                ysize=ysize,
+                add_page_index=add_page_index,
+            )
+
+        if add_caption and self.text is not None and len(self.text) > 0:
+            body += f"{DocumentToken.BEG_CAPTION.value}"
+            body += f"{self.text.strip()}"
+            body += f"{DocumentToken.END_CAPTION.value}"
+            body += f"{new_line}"
+
+        if add_content and self.data is not None and len(self.data) > 0:
+            for i, row in enumerate(self.data):
+                body += f"<row_{i}>"
+                for j, col in enumerate(row):
+
+                    text = ""
+                    if add_cell_text:
+                        text = col.text.strip()
+
+                    cell_loc = ""
+                    if (
+                        col.bbox is not None
+                        and add_cell_location
+                        and add_page_index
+                        and self.prov is not None
+                        and len(self.prov) > 0
+                    ):
+                        cell_loc = DocumentToken.get_location(
+                            bbox=col.bbox,
+                            page_w=page_w,
+                            page_h=page_h,
+                            xsize=xsize,
+                            ysize=ysize,
+                            page_i=self.prov[0].page,
+                        )
+                    elif (
+                        col.bbox is not None
+                        and add_cell_location
+                        and not add_page_index
+                    ):
+                        cell_loc = DocumentToken.get_location(
+                            bbox=col.bbox,
+                            page_w=page_w,
+                            page_h=page_h,
+                            xsize=xsize,
+                            ysize=ysize,
+                            page_i=-1,
+                        )
+
+                    cell_label = ""
+                    if (
+                        add_cell_label
+                        and col.obj_type is not None
+                        and len(col.obj_type) > 0
+                    ):
+                        cell_label = f"<{col.obj_type}>"
+
+                    body += f"<col_{j}>{cell_loc}{cell_label}{text}</col_{j}>"
+
+                body += f"</row_{i}>{new_line}"
+
+        body += f"{DocumentToken.END_TABLE.value}{new_line}"
+
+        return body
+
 
 # FIXME: let's add some figure specific data-types later
 class Figure(BaseCell):
     """Figure."""
 
+    # FIXME: we need to check why we have bounding_box (this should be in prov)
+    bounding_box: Optional[BoundingBoxContainer] = Field(
+        default=None, alias="bounding-box", json_schema_extra=es_field(suppress=True)
+    )
 
-class BaseText(AliasModel):
+    def export_to_document_tokens(
+        self,
+        new_line: str = "\n",
+        page_w: float = 0.0,
+        page_h: float = 0.0,
+        xsize: int = 100,
+        ysize: int = 100,
+        add_location: bool = True,
+        add_caption: bool = True,
+        add_content: bool = True,  # not used at the moment
+        add_page_index: bool = True,
+    ):
+        """Export figure to document tokens format."""
+        body = f"{DocumentToken.BEG_FIGURE.value}{new_line}"
+
+        if add_location:
+            body += self.get_location_tokens(
+                new_line=new_line,
+                page_w=page_w,
+                page_h=page_h,
+                xsize=xsize,
+                ysize=ysize,
+                add_page_index=add_page_index,
+            )
+
+        if add_caption and self.text is not None and len(self.text) > 0:
+            body += f"{DocumentToken.BEG_CAPTION.value}"
+            body += f"{self.text.strip()}"
+            body += f"{DocumentToken.END_CAPTION.value}"
+            body += f"{new_line}"
+
+        body += f"{DocumentToken.END_FIGURE.value}{new_line}"
+
+        return body
+
+
+class BaseText(BaseCell):
     """Base model for text objects."""
 
-    text: StrictStr = Field(
-        json_schema_extra=es_field(term_vector="with_positions_offsets")
-    )
-    obj_type: StrictStr = Field(
-        alias="type", json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    # FIXME: do we need these ???
     name: Optional[StrictStr] = Field(
         default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
     )
     font: Optional[str] = None
-    prov: Optional[list[Prov]] = None
+
+    def export_to_document_tokens(
+        self,
+        new_line: str = "\n",
+        page_w: float = 0.0,
+        page_h: float = 0.0,
+        xsize: int = 100,
+        ysize: int = 100,
+        add_location: bool = True,
+        add_content: bool = True,
+        add_page_index: bool = True,
+    ):
+        """Export text element to document tokens format."""
+        body = f"<{self.obj_type}>"
+        # body = f"<{self.name}>"
+
+        assert DocumentToken.is_known_token(
+            body
+        ), f"failed DocumentToken.is_known_token({body})"
+
+        if add_location:
+            body += self.get_location_tokens(
+                new_line="",
+                page_w=page_w,
+                page_h=page_h,
+                xsize=xsize,
+                ysize=ysize,
+                add_page_index=add_page_index,
+            )
+
+        if add_content and self.text is not None:
+            body += self.text.strip()
+
+        body += f"</{self.obj_type}>{new_line}"
+
+        return body
 
 
 class ListItem(BaseText):

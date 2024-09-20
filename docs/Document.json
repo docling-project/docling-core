@@ -199,18 +199,6 @@
     "BaseCell": {
       "description": "Base cell.",
       "properties": {
-        "bounding-box": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/BoundingBoxContainer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "x-es-suppress": true
-        },
         "prov": {
           "anyOf": [
             {
@@ -260,9 +248,32 @@
     "BaseText": {
       "description": "Base model for text objects.",
       "properties": {
+        "prov": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Prov"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prov"
+        },
         "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
           "title": "Text",
-          "type": "string",
           "x-es-term_vector": "with_positions_offsets"
         },
         "type": {
@@ -296,25 +307,9 @@
           ],
           "default": null,
           "title": "Font"
-        },
-        "prov": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/Prov"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Prov"
         }
       },
       "required": [
-        "text",
         "type"
       ],
       "title": "BaseText",
@@ -957,18 +952,6 @@
     "Figure": {
       "description": "Figure.",
       "properties": {
-        "bounding-box": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/BoundingBoxContainer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "x-es-suppress": true
-        },
         "prov": {
           "anyOf": [
             {
@@ -1002,6 +985,18 @@
           "type": "string",
           "x-es-ignore_above": 8191,
           "x-es-type": "keyword"
+        },
+        "bounding-box": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingBoxContainer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "x-es-suppress": true
         }
       },
       "required": [
@@ -1628,18 +1623,6 @@
     "Table": {
       "description": "Table.",
       "properties": {
-        "bounding-box": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/BoundingBoxContainer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "x-es-suppress": true
-        },
         "prov": {
           "anyOf": [
             {
@@ -1718,6 +1701,18 @@
           ],
           "default": null,
           "title": "Model"
+        },
+        "bounding-box": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingBoxContainer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "x-es-suppress": true
         }
       },
       "required": [

@@ -3764,139 +3764,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_text"></a>5.1.1.2.1. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > text</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Text
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_type"></a>5.1.1.2.2. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > type</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Type
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_name"></a>5.1.1.2.3. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > name</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Name
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                             |
-| ---------------------------------------------------------- |
-| [item 0](#main-text_anyOf_i0_items_anyOf_i1_name_anyOf_i0) |
-| [item 1](#main-text_anyOf_i0_items_anyOf_i1_name_anyOf_i1) |
-
-<blockquote>
-
-###### <a name="main-text_anyOf_i0_items_anyOf_i1_name_anyOf_i0"></a>5.1.1.2.3.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > name > anyOf > item 0`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-</blockquote>
-<blockquote>
-
-###### <a name="main-text_anyOf_i0_items_anyOf_i1_name_anyOf_i1"></a>5.1.1.2.3.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > name > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_font"></a>5.1.1.2.4. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > font</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Font
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                             |
-| ---------------------------------------------------------- |
-| [item 0](#main-text_anyOf_i0_items_anyOf_i1_font_anyOf_i0) |
-| [item 1](#main-text_anyOf_i0_items_anyOf_i1_font_anyOf_i1) |
-
-<blockquote>
-
-###### <a name="main-text_anyOf_i0_items_anyOf_i1_font_anyOf_i0"></a>5.1.1.2.4.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > font > anyOf > item 0`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-</blockquote>
-<blockquote>
-
-###### <a name="main-text_anyOf_i0_items_anyOf_i1_font_anyOf_i1"></a>5.1.1.2.4.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > font > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov"></a>5.1.1.2.5. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov</strong>  
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov"></a>5.1.1.2.1. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov</strong>  
 
 </summary>
 <blockquote>
@@ -3919,7 +3787,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0"></a>5.1.1.2.5.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0`
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0"></a>5.1.1.2.1.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0`
 
 |              |         |
 | ------------ | ------- |
@@ -3938,7 +3806,7 @@ Must be one of:
 | -------------------------------------------------------------- | ----------- |
 | [Prov](#main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items) | Provenance. |
 
-###### <a name="autogenerated_heading_21"></a>5.1.1.2.5.1.1. ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov
+###### <a name="autogenerated_heading_21"></a>5.1.1.2.1.1.1. ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -3951,7 +3819,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items_bbox"></a>5.1.1.2.5.1.1.1. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > bbox</strong>  
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items_bbox"></a>5.1.1.2.1.1.1.1. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -3975,7 +3843,7 @@ Must be one of:
 | ------------------------------------------------------------------------------- | ----------- |
 | [bbox items](#main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items_bbox_items) | -           |
 
-###### <a name="autogenerated_heading_22"></a>5.1.1.2.5.1.1.1.1. ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > bbox > bbox items
+###### <a name="autogenerated_heading_22"></a>5.1.1.2.1.1.1.1.1. ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > bbox > bbox items
 
 |              |          |
 | ------------ | -------- |
@@ -3987,7 +3855,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items_page"></a>5.1.1.2.5.1.1.2. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > page</strong>  
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items_page"></a>5.1.1.2.1.1.1.2. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > page</strong>  
 
 </summary>
 <blockquote>
@@ -4008,7 +3876,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items_span"></a>5.1.1.2.5.1.1.3. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > span</strong>  
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items_span"></a>5.1.1.2.1.1.1.3. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > span</strong>  
 
 </summary>
 <blockquote>
@@ -4032,7 +3900,7 @@ Must be one of:
 | ------------------------------------------------------------------------------- | ----------- |
 | [span items](#main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items_span_items) | -           |
 
-###### <a name="autogenerated_heading_23"></a>5.1.1.2.5.1.1.3.1. ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > span > span items
+###### <a name="autogenerated_heading_23"></a>5.1.1.2.1.1.1.3.1. ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > span > span items
 
 |              |           |
 | ------------ | --------- |
@@ -4044,7 +3912,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items___ref_s3_data"></a>5.1.1.2.5.1.1.4. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items___ref_s3_data"></a>5.1.1.2.1.1.1.4. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
 
 </summary>
 <blockquote>
@@ -4067,7 +3935,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>5.1.1.2.5.1.1.4.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>5.1.1.2.1.1.1.4.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -4077,7 +3945,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>5.1.1.2.5.1.1.4.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>5.1.1.2.1.1.1.4.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -4094,7 +3962,171 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i1"></a>5.1.1.2.5.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 1`
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_prov_anyOf_i1"></a>5.1.1.2.1.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > prov > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_text"></a>5.1.1.2.2. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > text</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Text
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                             |
+| ---------------------------------------------------------- |
+| [item 0](#main-text_anyOf_i0_items_anyOf_i1_text_anyOf_i0) |
+| [item 1](#main-text_anyOf_i0_items_anyOf_i1_text_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_text_anyOf_i0"></a>5.1.1.2.2.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > text > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_text_anyOf_i1"></a>5.1.1.2.2.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > text > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_type"></a>5.1.1.2.3. [Required] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > type</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Type
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_name"></a>5.1.1.2.4. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > name</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Name
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                             |
+| ---------------------------------------------------------- |
+| [item 0](#main-text_anyOf_i0_items_anyOf_i1_name_anyOf_i0) |
+| [item 1](#main-text_anyOf_i0_items_anyOf_i1_name_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_name_anyOf_i0"></a>5.1.1.2.4.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > name > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_name_anyOf_i1"></a>5.1.1.2.4.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > name > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="main-text_anyOf_i0_items_anyOf_i1_font"></a>5.1.1.2.5. [Optional] Property ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > font</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Font
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                             |
+| ---------------------------------------------------------- |
+| [item 0](#main-text_anyOf_i0_items_anyOf_i1_font_anyOf_i0) |
+| [item 1](#main-text_anyOf_i0_items_anyOf_i1_font_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_font_anyOf_i0"></a>5.1.1.2.5.1. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > font > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="main-text_anyOf_i0_items_anyOf_i1_font_anyOf_i1"></a>5.1.1.2.5.2. Property `ExportedCCSDocument > main-text > anyOf > item 0 > item 0 items > anyOf > BaseText > font > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -4186,130 +4218,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="figures_anyOf_i0_items_bounding-box"></a>6.1.1.1. [Optional] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box</strong>  
-
-</summary>
-<blockquote>
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                                        |
-| --------------------------------------------------------------------- |
-| [BoundingBoxContainer](#figures_anyOf_i0_items_bounding-box_anyOf_i0) |
-| [item 1](#figures_anyOf_i0_items_bounding-box_anyOf_i1)               |
-
-<blockquote>
-
-###### <a name="figures_anyOf_i0_items_bounding-box_anyOf_i0"></a>6.1.1.1.1. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer`
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Defined in**            | #/$defs/BoundingBoxContainer                                              |
-
-**Description:** Bounding box container.
-
-<details>
-<summary>
-<strong> <a name="figures_anyOf_i0_items_bounding-box_anyOf_i0_min"></a>6.1.1.1.1.1. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer > min</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Min
-
-|              |                   |
-| ------------ | ----------------- |
-| **Type**     | `array of number` |
-| **Required** | Yes               |
-
-|                      | Array restrictions |
-| -------------------- | ------------------ |
-| **Min items**        | 4                  |
-| **Max items**        | 4                  |
-| **Items unicity**    | False              |
-| **Additional items** | False              |
-| **Tuple validation** | See below          |
-
-| Each item of this array must be                                      | Description |
-| -------------------------------------------------------------------- | ----------- |
-| [min items](#figures_anyOf_i0_items_bounding-box_anyOf_i0_min_items) | -           |
-
-###### <a name="autogenerated_heading_25"></a>6.1.1.1.1.1.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer > min > min items
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `number` |
-| **Required** | No       |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="figures_anyOf_i0_items_bounding-box_anyOf_i0_max"></a>6.1.1.1.1.2. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer > max</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Max
-
-|              |                   |
-| ------------ | ----------------- |
-| **Type**     | `array of number` |
-| **Required** | Yes               |
-
-|                      | Array restrictions |
-| -------------------- | ------------------ |
-| **Min items**        | 4                  |
-| **Max items**        | 4                  |
-| **Items unicity**    | False              |
-| **Additional items** | False              |
-| **Tuple validation** | See below          |
-
-| Each item of this array must be                                      | Description |
-| -------------------------------------------------------------------- | ----------- |
-| [max items](#figures_anyOf_i0_items_bounding-box_anyOf_i0_max_items) | -           |
-
-###### <a name="autogenerated_heading_26"></a>6.1.1.1.1.2.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer > max > max items
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `number` |
-| **Required** | No       |
-
-</blockquote>
-</details>
-
-</blockquote>
-<blockquote>
-
-###### <a name="figures_anyOf_i0_items_bounding-box_anyOf_i1"></a>6.1.1.1.2. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="figures_anyOf_i0_items_prov"></a>6.1.1.2. [Optional] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov</strong>  
+<strong> <a name="figures_anyOf_i0_items_prov"></a>6.1.1.1. [Optional] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov</strong>  
 
 </summary>
 <blockquote>
@@ -4332,7 +4241,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="figures_anyOf_i0_items_prov_anyOf_i0"></a>6.1.1.2.1. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0`
+###### <a name="figures_anyOf_i0_items_prov_anyOf_i0"></a>6.1.1.1.1. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0`
 
 |              |         |
 | ------------ | ------- |
@@ -4351,7 +4260,7 @@ Must be one of:
 | --------------------------------------------------- | ----------- |
 | [Prov](#figures_anyOf_i0_items_prov_anyOf_i0_items) | Provenance. |
 
-###### <a name="autogenerated_heading_27"></a>6.1.1.2.1.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov
+###### <a name="autogenerated_heading_25"></a>6.1.1.1.1.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -4364,7 +4273,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="figures_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>6.1.1.2.1.1.1. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > bbox</strong>  
+<strong> <a name="figures_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>6.1.1.1.1.1.1. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -4388,7 +4297,7 @@ Must be one of:
 | -------------------------------------------------------------------- | ----------- |
 | [bbox items](#figures_anyOf_i0_items_prov_anyOf_i0_items_bbox_items) | -           |
 
-###### <a name="autogenerated_heading_28"></a>6.1.1.2.1.1.1.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > bbox > bbox items
+###### <a name="autogenerated_heading_26"></a>6.1.1.1.1.1.1.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > bbox > bbox items
 
 |              |          |
 | ------------ | -------- |
@@ -4400,7 +4309,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="figures_anyOf_i0_items_prov_anyOf_i0_items_page"></a>6.1.1.2.1.1.2. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > page</strong>  
+<strong> <a name="figures_anyOf_i0_items_prov_anyOf_i0_items_page"></a>6.1.1.1.1.1.2. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > page</strong>  
 
 </summary>
 <blockquote>
@@ -4421,7 +4330,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="figures_anyOf_i0_items_prov_anyOf_i0_items_span"></a>6.1.1.2.1.1.3. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > span</strong>  
+<strong> <a name="figures_anyOf_i0_items_prov_anyOf_i0_items_span"></a>6.1.1.1.1.1.3. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > span</strong>  
 
 </summary>
 <blockquote>
@@ -4445,7 +4354,7 @@ Must be one of:
 | -------------------------------------------------------------------- | ----------- |
 | [span items](#figures_anyOf_i0_items_prov_anyOf_i0_items_span_items) | -           |
 
-###### <a name="autogenerated_heading_29"></a>6.1.1.2.1.1.3.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > span > span items
+###### <a name="autogenerated_heading_27"></a>6.1.1.1.1.1.3.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > span > span items
 
 |              |           |
 | ------------ | --------- |
@@ -4457,7 +4366,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="figures_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>6.1.1.2.1.1.4. [Optional] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
+<strong> <a name="figures_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>6.1.1.1.1.1.4. [Optional] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
 
 </summary>
 <blockquote>
@@ -4480,7 +4389,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="figures_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>6.1.1.2.1.1.4.1. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
+###### <a name="figures_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>6.1.1.1.1.1.4.1. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -4490,7 +4399,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="figures_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>6.1.1.2.1.1.4.2. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
+###### <a name="figures_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>6.1.1.1.1.1.4.2. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -4507,7 +4416,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="figures_anyOf_i0_items_prov_anyOf_i1"></a>6.1.1.2.2. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 1`
+###### <a name="figures_anyOf_i0_items_prov_anyOf_i1"></a>6.1.1.1.2. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > prov > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -4523,7 +4432,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="figures_anyOf_i0_items_text"></a>6.1.1.3. [Optional] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > text</strong>  
+<strong> <a name="figures_anyOf_i0_items_text"></a>6.1.1.2. [Optional] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > text</strong>  
 
 </summary>
 <blockquote>
@@ -4546,7 +4455,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="figures_anyOf_i0_items_text_anyOf_i0"></a>6.1.1.3.1. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > text > anyOf > item 0`
+###### <a name="figures_anyOf_i0_items_text_anyOf_i0"></a>6.1.1.2.1. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > text > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -4556,7 +4465,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="figures_anyOf_i0_items_text_anyOf_i1"></a>6.1.1.3.2. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > text > anyOf > item 1`
+###### <a name="figures_anyOf_i0_items_text_anyOf_i1"></a>6.1.1.2.2. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > text > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -4572,7 +4481,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="figures_anyOf_i0_items_type"></a>6.1.1.4. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > type</strong>  
+<strong> <a name="figures_anyOf_i0_items_type"></a>6.1.1.3. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > type</strong>  
 
 </summary>
 <blockquote>
@@ -4583,6 +4492,129 @@ Must be one of:
 | ------------ | -------- |
 | **Type**     | `string` |
 | **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="figures_anyOf_i0_items_bounding-box"></a>6.1.1.4. [Optional] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box</strong>  
+
+</summary>
+<blockquote>
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                                        |
+| --------------------------------------------------------------------- |
+| [BoundingBoxContainer](#figures_anyOf_i0_items_bounding-box_anyOf_i0) |
+| [item 1](#figures_anyOf_i0_items_bounding-box_anyOf_i1)               |
+
+<blockquote>
+
+###### <a name="figures_anyOf_i0_items_bounding-box_anyOf_i0"></a>6.1.1.4.1. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer`
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `object`                                                                  |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Defined in**            | #/$defs/BoundingBoxContainer                                              |
+
+**Description:** Bounding box container.
+
+<details>
+<summary>
+<strong> <a name="figures_anyOf_i0_items_bounding-box_anyOf_i0_min"></a>6.1.1.4.1.1. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer > min</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Min
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of number` |
+| **Required** | Yes               |
+
+|                      | Array restrictions |
+| -------------------- | ------------------ |
+| **Min items**        | 4                  |
+| **Max items**        | 4                  |
+| **Items unicity**    | False              |
+| **Additional items** | False              |
+| **Tuple validation** | See below          |
+
+| Each item of this array must be                                      | Description |
+| -------------------------------------------------------------------- | ----------- |
+| [min items](#figures_anyOf_i0_items_bounding-box_anyOf_i0_min_items) | -           |
+
+###### <a name="autogenerated_heading_28"></a>6.1.1.4.1.1.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer > min > min items
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="figures_anyOf_i0_items_bounding-box_anyOf_i0_max"></a>6.1.1.4.1.2. [Required] Property ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer > max</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Max
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of number` |
+| **Required** | Yes               |
+
+|                      | Array restrictions |
+| -------------------- | ------------------ |
+| **Min items**        | 4                  |
+| **Max items**        | 4                  |
+| **Items unicity**    | False              |
+| **Additional items** | False              |
+| **Tuple validation** | See below          |
+
+| Each item of this array must be                                      | Description |
+| -------------------------------------------------------------------- | ----------- |
+| [max items](#figures_anyOf_i0_items_bounding-box_anyOf_i0_max_items) | -           |
+
+###### <a name="autogenerated_heading_29"></a>6.1.1.4.1.2.1. ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > BoundingBoxContainer > max > max items
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+</blockquote>
+</details>
+
+</blockquote>
+<blockquote>
+
+###### <a name="figures_anyOf_i0_items_bounding-box_anyOf_i1"></a>6.1.1.4.2. Property `ExportedCCSDocument > figures > anyOf > item 0 > Figure > bounding-box > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
 
 </blockquote>
 </details>
@@ -4661,130 +4693,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_bounding-box"></a>7.1.1.1. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box</strong>  
-
-</summary>
-<blockquote>
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                                       |
-| -------------------------------------------------------------------- |
-| [BoundingBoxContainer](#tables_anyOf_i0_items_bounding-box_anyOf_i0) |
-| [item 1](#tables_anyOf_i0_items_bounding-box_anyOf_i1)               |
-
-<blockquote>
-
-###### <a name="tables_anyOf_i0_items_bounding-box_anyOf_i0"></a>7.1.1.1.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer`
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Defined in**            | #/$defs/BoundingBoxContainer                                              |
-
-**Description:** Bounding box container.
-
-<details>
-<summary>
-<strong> <a name="tables_anyOf_i0_items_bounding-box_anyOf_i0_min"></a>7.1.1.1.1.1. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer > min</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Min
-
-|              |                   |
-| ------------ | ----------------- |
-| **Type**     | `array of number` |
-| **Required** | Yes               |
-
-|                      | Array restrictions |
-| -------------------- | ------------------ |
-| **Min items**        | 4                  |
-| **Max items**        | 4                  |
-| **Items unicity**    | False              |
-| **Additional items** | False              |
-| **Tuple validation** | See below          |
-
-| Each item of this array must be                                     | Description |
-| ------------------------------------------------------------------- | ----------- |
-| [min items](#tables_anyOf_i0_items_bounding-box_anyOf_i0_min_items) | -           |
-
-###### <a name="autogenerated_heading_31"></a>7.1.1.1.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer > min > min items
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `number` |
-| **Required** | No       |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="tables_anyOf_i0_items_bounding-box_anyOf_i0_max"></a>7.1.1.1.1.2. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer > max</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Max
-
-|              |                   |
-| ------------ | ----------------- |
-| **Type**     | `array of number` |
-| **Required** | Yes               |
-
-|                      | Array restrictions |
-| -------------------- | ------------------ |
-| **Min items**        | 4                  |
-| **Max items**        | 4                  |
-| **Items unicity**    | False              |
-| **Additional items** | False              |
-| **Tuple validation** | See below          |
-
-| Each item of this array must be                                     | Description |
-| ------------------------------------------------------------------- | ----------- |
-| [max items](#tables_anyOf_i0_items_bounding-box_anyOf_i0_max_items) | -           |
-
-###### <a name="autogenerated_heading_32"></a>7.1.1.1.1.2.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer > max > max items
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `number` |
-| **Required** | No       |
-
-</blockquote>
-</details>
-
-</blockquote>
-<blockquote>
-
-###### <a name="tables_anyOf_i0_items_bounding-box_anyOf_i1"></a>7.1.1.1.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="tables_anyOf_i0_items_prov"></a>7.1.1.2. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov</strong>  
+<strong> <a name="tables_anyOf_i0_items_prov"></a>7.1.1.1. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov</strong>  
 
 </summary>
 <blockquote>
@@ -4807,7 +4716,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_prov_anyOf_i0"></a>7.1.1.2.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_prov_anyOf_i0"></a>7.1.1.1.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0`
 
 |              |         |
 | ------------ | ------- |
@@ -4826,7 +4735,7 @@ Must be one of:
 | -------------------------------------------------- | ----------- |
 | [Prov](#tables_anyOf_i0_items_prov_anyOf_i0_items) | Provenance. |
 
-###### <a name="autogenerated_heading_33"></a>7.1.1.2.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov
+###### <a name="autogenerated_heading_31"></a>7.1.1.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -4839,7 +4748,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>7.1.1.2.1.1.1. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > bbox</strong>  
+<strong> <a name="tables_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>7.1.1.1.1.1.1. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -4863,7 +4772,7 @@ Must be one of:
 | ------------------------------------------------------------------- | ----------- |
 | [bbox items](#tables_anyOf_i0_items_prov_anyOf_i0_items_bbox_items) | -           |
 
-###### <a name="autogenerated_heading_34"></a>7.1.1.2.1.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > bbox > bbox items
+###### <a name="autogenerated_heading_32"></a>7.1.1.1.1.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > bbox > bbox items
 
 |              |          |
 | ------------ | -------- |
@@ -4875,7 +4784,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_prov_anyOf_i0_items_page"></a>7.1.1.2.1.1.2. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > page</strong>  
+<strong> <a name="tables_anyOf_i0_items_prov_anyOf_i0_items_page"></a>7.1.1.1.1.1.2. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > page</strong>  
 
 </summary>
 <blockquote>
@@ -4896,7 +4805,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_prov_anyOf_i0_items_span"></a>7.1.1.2.1.1.3. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > span</strong>  
+<strong> <a name="tables_anyOf_i0_items_prov_anyOf_i0_items_span"></a>7.1.1.1.1.1.3. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > span</strong>  
 
 </summary>
 <blockquote>
@@ -4920,7 +4829,7 @@ Must be one of:
 | ------------------------------------------------------------------- | ----------- |
 | [span items](#tables_anyOf_i0_items_prov_anyOf_i0_items_span_items) | -           |
 
-###### <a name="autogenerated_heading_35"></a>7.1.1.2.1.1.3.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > span > span items
+###### <a name="autogenerated_heading_33"></a>7.1.1.1.1.1.3.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > span > span items
 
 |              |           |
 | ------------ | --------- |
@@ -4932,7 +4841,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>7.1.1.2.1.1.4. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
+<strong> <a name="tables_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>7.1.1.1.1.1.4. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
 
 </summary>
 <blockquote>
@@ -4955,7 +4864,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>7.1.1.2.1.1.4.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>7.1.1.1.1.1.4.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -4965,7 +4874,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>7.1.1.2.1.1.4.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>7.1.1.1.1.1.4.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -4982,7 +4891,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_prov_anyOf_i1"></a>7.1.1.2.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_prov_anyOf_i1"></a>7.1.1.1.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > prov > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -4998,7 +4907,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_text"></a>7.1.1.3. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > text</strong>  
+<strong> <a name="tables_anyOf_i0_items_text"></a>7.1.1.2. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > text</strong>  
 
 </summary>
 <blockquote>
@@ -5021,7 +4930,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_text_anyOf_i0"></a>7.1.1.3.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > text > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_text_anyOf_i0"></a>7.1.1.2.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > text > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -5031,7 +4940,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_text_anyOf_i1"></a>7.1.1.3.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > text > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_text_anyOf_i1"></a>7.1.1.2.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > text > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5047,7 +4956,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_type"></a>7.1.1.4. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > type</strong>  
+<strong> <a name="tables_anyOf_i0_items_type"></a>7.1.1.3. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > type</strong>  
 
 </summary>
 <blockquote>
@@ -5064,7 +4973,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_-cols"></a>7.1.1.5. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > #-cols</strong>  
+<strong> <a name="tables_anyOf_i0_items_-cols"></a>7.1.1.4. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > #-cols</strong>  
 
 </summary>
 <blockquote>
@@ -5081,7 +4990,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_-rows"></a>7.1.1.6. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > #-rows</strong>  
+<strong> <a name="tables_anyOf_i0_items_-rows"></a>7.1.1.5. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > #-rows</strong>  
 
 </summary>
 <blockquote>
@@ -5098,7 +5007,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data"></a>7.1.1.7. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data</strong>  
+<strong> <a name="tables_anyOf_i0_items_data"></a>7.1.1.6. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data</strong>  
 
 </summary>
 <blockquote>
@@ -5121,7 +5030,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0"></a>7.1.1.7.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0"></a>7.1.1.6.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0`
 
 |              |                  |
 | ------------ | ---------------- |
@@ -5140,7 +5049,7 @@ Must be one of:
 | ---------------------------------------------------------- | ----------- |
 | [item 0 items](#tables_anyOf_i0_items_data_anyOf_i0_items) | -           |
 
-###### <a name="autogenerated_heading_36"></a>7.1.1.7.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items
+###### <a name="autogenerated_heading_34"></a>7.1.1.6.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items
 
 |              |         |
 | ------------ | ------- |
@@ -5159,7 +5068,7 @@ Must be one of:
 | ---------------------------------------------------------------------- | ----------- |
 | [item 0 items items](#tables_anyOf_i0_items_data_anyOf_i0_items_items) | -           |
 
-###### <a name="autogenerated_heading_37"></a>7.1.1.7.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items
+###### <a name="autogenerated_heading_35"></a>7.1.1.6.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -5176,7 +5085,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0"></a>7.1.1.7.1.1.1.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0"></a>7.1.1.6.1.1.1.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell`
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -5189,7 +5098,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_bbox"></a>7.1.1.7.1.1.1.1.1. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > bbox</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_bbox"></a>7.1.1.6.1.1.1.1.1. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -5212,7 +5121,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_bbox_anyOf_i0"></a>7.1.1.7.1.1.1.1.1.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > bbox > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_bbox_anyOf_i0"></a>7.1.1.6.1.1.1.1.1.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > bbox > anyOf > item 0`
 
 |              |                   |
 | ------------ | ----------------- |
@@ -5231,7 +5140,7 @@ Must be one of:
 | --------------------------------------------------------------------------------------------- | ----------- |
 | [item 0 items](#tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_bbox_anyOf_i0_items) | -           |
 
-###### <a name="autogenerated_heading_38"></a>7.1.1.7.1.1.1.1.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > bbox > anyOf > item 0 > item 0 items
+###### <a name="autogenerated_heading_36"></a>7.1.1.6.1.1.1.1.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > bbox > anyOf > item 0 > item 0 items
 
 |              |          |
 | ------------ | -------- |
@@ -5241,7 +5150,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_bbox_anyOf_i1"></a>7.1.1.7.1.1.1.1.1.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > bbox > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_bbox_anyOf_i1"></a>7.1.1.6.1.1.1.1.1.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > bbox > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5257,7 +5166,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_spans"></a>7.1.1.7.1.1.1.1.2. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_spans"></a>7.1.1.6.1.1.1.1.2. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans</strong>  
 
 </summary>
 <blockquote>
@@ -5280,7 +5189,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_spans_anyOf_i0"></a>7.1.1.7.1.1.1.1.2.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_spans_anyOf_i0"></a>7.1.1.6.1.1.1.1.2.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans > anyOf > item 0`
 
 |              |                  |
 | ------------ | ---------------- |
@@ -5299,7 +5208,7 @@ Must be one of:
 | ---------------------------------------------------------------------------------------------- | ----------- |
 | [item 0 items](#tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_spans_anyOf_i0_items) | -           |
 
-###### <a name="autogenerated_heading_39"></a>7.1.1.7.1.1.1.1.2.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans > anyOf > item 0 > item 0 items
+###### <a name="autogenerated_heading_37"></a>7.1.1.6.1.1.1.1.2.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans > anyOf > item 0 > item 0 items
 
 |              |                    |
 | ------------ | ------------------ |
@@ -5318,7 +5227,7 @@ Must be one of:
 | ---------------------------------------------------------------------------------------------------------- | ----------- |
 | [item 0 items items](#tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_spans_anyOf_i0_items_items) | -           |
 
-###### <a name="autogenerated_heading_40"></a>7.1.1.7.1.1.1.1.2.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans > anyOf > item 0 > item 0 items > item 0 items items
+###### <a name="autogenerated_heading_38"></a>7.1.1.6.1.1.1.1.2.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans > anyOf > item 0 > item 0 items > item 0 items items
 
 |              |           |
 | ------------ | --------- |
@@ -5328,7 +5237,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_spans_anyOf_i1"></a>7.1.1.7.1.1.1.1.2.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_spans_anyOf_i1"></a>7.1.1.6.1.1.1.1.2.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > spans > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5344,7 +5253,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_text"></a>7.1.1.7.1.1.1.1.3. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > text</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_text"></a>7.1.1.6.1.1.1.1.3. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > text</strong>  
 
 </summary>
 <blockquote>
@@ -5361,7 +5270,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_type"></a>7.1.1.7.1.1.1.1.4. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > type</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_type"></a>7.1.1.6.1.1.1.1.4. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > type</strong>  
 
 </summary>
 <blockquote>
@@ -5378,7 +5287,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col"></a>7.1.1.7.1.1.1.1.5. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col"></a>7.1.1.6.1.1.1.1.5. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col</strong>  
 
 </summary>
 <blockquote>
@@ -5401,7 +5310,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col_anyOf_i0"></a>7.1.1.7.1.1.1.1.5.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col_anyOf_i0"></a>7.1.1.6.1.1.1.1.5.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col > anyOf > item 0`
 
 |              |           |
 | ------------ | --------- |
@@ -5411,7 +5320,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col_anyOf_i1"></a>7.1.1.7.1.1.1.1.5.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col_anyOf_i1"></a>7.1.1.6.1.1.1.1.5.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5427,7 +5336,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-header"></a>7.1.1.7.1.1.1.1.6. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-header</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-header"></a>7.1.1.6.1.1.1.1.6. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-header</strong>  
 
 </summary>
 <blockquote>
@@ -5445,7 +5354,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-span"></a>7.1.1.7.1.1.1.1.7. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-span</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-span"></a>7.1.1.6.1.1.1.1.7. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-span</strong>  
 
 </summary>
 <blockquote>
@@ -5468,7 +5377,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-span_anyOf_i0"></a>7.1.1.7.1.1.1.1.7.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-span > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-span_anyOf_i0"></a>7.1.1.6.1.1.1.1.7.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-span > anyOf > item 0`
 
 |              |                    |
 | ------------ | ------------------ |
@@ -5487,7 +5396,7 @@ Must be one of:
 | ------------------------------------------------------------------------------------------------- | ----------- |
 | [item 0 items](#tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-span_anyOf_i0_items) | -           |
 
-###### <a name="autogenerated_heading_41"></a>7.1.1.7.1.1.1.1.7.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-span > anyOf > item 0 > item 0 items
+###### <a name="autogenerated_heading_39"></a>7.1.1.6.1.1.1.1.7.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-span > anyOf > item 0 > item 0 items
 
 |              |           |
 | ------------ | --------- |
@@ -5497,7 +5406,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-span_anyOf_i1"></a>7.1.1.7.1.1.1.1.7.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-span > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_col-span_anyOf_i1"></a>7.1.1.6.1.1.1.1.7.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > col-span > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5513,7 +5422,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row"></a>7.1.1.7.1.1.1.1.8. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row"></a>7.1.1.6.1.1.1.1.8. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row</strong>  
 
 </summary>
 <blockquote>
@@ -5536,7 +5445,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row_anyOf_i0"></a>7.1.1.7.1.1.1.1.8.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row_anyOf_i0"></a>7.1.1.6.1.1.1.1.8.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row > anyOf > item 0`
 
 |              |           |
 | ------------ | --------- |
@@ -5546,7 +5455,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row_anyOf_i1"></a>7.1.1.7.1.1.1.1.8.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row_anyOf_i1"></a>7.1.1.6.1.1.1.1.8.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5562,7 +5471,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-header"></a>7.1.1.7.1.1.1.1.9. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-header</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-header"></a>7.1.1.6.1.1.1.1.9. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-header</strong>  
 
 </summary>
 <blockquote>
@@ -5580,7 +5489,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-span"></a>7.1.1.7.1.1.1.1.10. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-span</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-span"></a>7.1.1.6.1.1.1.1.10. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-span</strong>  
 
 </summary>
 <blockquote>
@@ -5603,7 +5512,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-span_anyOf_i0"></a>7.1.1.7.1.1.1.1.10.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-span > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-span_anyOf_i0"></a>7.1.1.6.1.1.1.1.10.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-span > anyOf > item 0`
 
 |              |                    |
 | ------------ | ------------------ |
@@ -5622,7 +5531,7 @@ Must be one of:
 | ------------------------------------------------------------------------------------------------- | ----------- |
 | [item 0 items](#tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-span_anyOf_i0_items) | -           |
 
-###### <a name="autogenerated_heading_42"></a>7.1.1.7.1.1.1.1.10.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-span > anyOf > item 0 > item 0 items
+###### <a name="autogenerated_heading_40"></a>7.1.1.6.1.1.1.1.10.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-span > anyOf > item 0 > item 0 items
 
 |              |           |
 | ------------ | --------- |
@@ -5632,7 +5541,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-span_anyOf_i1"></a>7.1.1.7.1.1.1.1.10.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-span > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i0_row-span_anyOf_i1"></a>7.1.1.6.1.1.1.1.10.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > GlmTableCell > row-span > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5649,7 +5558,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1"></a>7.1.1.7.1.1.1.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1"></a>7.1.1.6.1.1.1.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell`
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -5662,7 +5571,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_bbox"></a>7.1.1.7.1.1.1.2.1. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > bbox</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_bbox"></a>7.1.1.6.1.1.1.2.1. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -5685,7 +5594,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_bbox_anyOf_i0"></a>7.1.1.7.1.1.1.2.1.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > bbox > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_bbox_anyOf_i0"></a>7.1.1.6.1.1.1.2.1.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > bbox > anyOf > item 0`
 
 |              |                   |
 | ------------ | ----------------- |
@@ -5704,7 +5613,7 @@ Must be one of:
 | --------------------------------------------------------------------------------------------- | ----------- |
 | [item 0 items](#tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_bbox_anyOf_i0_items) | -           |
 
-###### <a name="autogenerated_heading_43"></a>7.1.1.7.1.1.1.2.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > bbox > anyOf > item 0 > item 0 items
+###### <a name="autogenerated_heading_41"></a>7.1.1.6.1.1.1.2.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > bbox > anyOf > item 0 > item 0 items
 
 |              |          |
 | ------------ | -------- |
@@ -5714,7 +5623,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_bbox_anyOf_i1"></a>7.1.1.7.1.1.1.2.1.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > bbox > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_bbox_anyOf_i1"></a>7.1.1.6.1.1.1.2.1.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > bbox > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5730,7 +5639,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_spans"></a>7.1.1.7.1.1.1.2.2. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_spans"></a>7.1.1.6.1.1.1.2.2. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans</strong>  
 
 </summary>
 <blockquote>
@@ -5753,7 +5662,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_spans_anyOf_i0"></a>7.1.1.7.1.1.1.2.2.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_spans_anyOf_i0"></a>7.1.1.6.1.1.1.2.2.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans > anyOf > item 0`
 
 |              |                  |
 | ------------ | ---------------- |
@@ -5772,7 +5681,7 @@ Must be one of:
 | ---------------------------------------------------------------------------------------------- | ----------- |
 | [item 0 items](#tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_spans_anyOf_i0_items) | -           |
 
-###### <a name="autogenerated_heading_44"></a>7.1.1.7.1.1.1.2.2.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans > anyOf > item 0 > item 0 items
+###### <a name="autogenerated_heading_42"></a>7.1.1.6.1.1.1.2.2.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans > anyOf > item 0 > item 0 items
 
 |              |                    |
 | ------------ | ------------------ |
@@ -5791,7 +5700,7 @@ Must be one of:
 | ---------------------------------------------------------------------------------------------------------- | ----------- |
 | [item 0 items items](#tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_spans_anyOf_i0_items_items) | -           |
 
-###### <a name="autogenerated_heading_45"></a>7.1.1.7.1.1.1.2.2.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans > anyOf > item 0 > item 0 items > item 0 items items
+###### <a name="autogenerated_heading_43"></a>7.1.1.6.1.1.1.2.2.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans > anyOf > item 0 > item 0 items > item 0 items items
 
 |              |           |
 | ------------ | --------- |
@@ -5801,7 +5710,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_spans_anyOf_i1"></a>7.1.1.7.1.1.1.2.2.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_spans_anyOf_i1"></a>7.1.1.6.1.1.1.2.2.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > spans > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5817,7 +5726,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_text"></a>7.1.1.7.1.1.1.2.3. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > text</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_text"></a>7.1.1.6.1.1.1.2.3. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > text</strong>  
 
 </summary>
 <blockquote>
@@ -5834,7 +5743,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_type"></a>7.1.1.7.1.1.1.2.4. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > type</strong>  
+<strong> <a name="tables_anyOf_i0_items_data_anyOf_i0_items_items_anyOf_i1_type"></a>7.1.1.6.1.1.1.2.4. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 0 > item 0 items > item 0 items items > anyOf > TableCell > type</strong>  
 
 </summary>
 <blockquote>
@@ -5856,7 +5765,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_data_anyOf_i1"></a>7.1.1.7.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_data_anyOf_i1"></a>7.1.1.6.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > data > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -5872,7 +5781,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="tables_anyOf_i0_items_model"></a>7.1.1.8. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > model</strong>  
+<strong> <a name="tables_anyOf_i0_items_model"></a>7.1.1.7. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > model</strong>  
 
 </summary>
 <blockquote>
@@ -5895,7 +5804,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_model_anyOf_i0"></a>7.1.1.8.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > model > anyOf > item 0`
+###### <a name="tables_anyOf_i0_items_model_anyOf_i0"></a>7.1.1.7.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > model > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -5905,7 +5814,130 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="tables_anyOf_i0_items_model_anyOf_i1"></a>7.1.1.8.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > model > anyOf > item 1`
+###### <a name="tables_anyOf_i0_items_model_anyOf_i1"></a>7.1.1.7.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > model > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="tables_anyOf_i0_items_bounding-box"></a>7.1.1.8. [Optional] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box</strong>  
+
+</summary>
+<blockquote>
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                                       |
+| -------------------------------------------------------------------- |
+| [BoundingBoxContainer](#tables_anyOf_i0_items_bounding-box_anyOf_i0) |
+| [item 1](#tables_anyOf_i0_items_bounding-box_anyOf_i1)               |
+
+<blockquote>
+
+###### <a name="tables_anyOf_i0_items_bounding-box_anyOf_i0"></a>7.1.1.8.1. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer`
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `object`                                                                  |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Defined in**            | #/$defs/BoundingBoxContainer                                              |
+
+**Description:** Bounding box container.
+
+<details>
+<summary>
+<strong> <a name="tables_anyOf_i0_items_bounding-box_anyOf_i0_min"></a>7.1.1.8.1.1. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer > min</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Min
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of number` |
+| **Required** | Yes               |
+
+|                      | Array restrictions |
+| -------------------- | ------------------ |
+| **Min items**        | 4                  |
+| **Max items**        | 4                  |
+| **Items unicity**    | False              |
+| **Additional items** | False              |
+| **Tuple validation** | See below          |
+
+| Each item of this array must be                                     | Description |
+| ------------------------------------------------------------------- | ----------- |
+| [min items](#tables_anyOf_i0_items_bounding-box_anyOf_i0_min_items) | -           |
+
+###### <a name="autogenerated_heading_44"></a>7.1.1.8.1.1.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer > min > min items
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="tables_anyOf_i0_items_bounding-box_anyOf_i0_max"></a>7.1.1.8.1.2. [Required] Property ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer > max</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Max
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of number` |
+| **Required** | Yes               |
+
+|                      | Array restrictions |
+| -------------------- | ------------------ |
+| **Min items**        | 4                  |
+| **Max items**        | 4                  |
+| **Items unicity**    | False              |
+| **Additional items** | False              |
+| **Tuple validation** | See below          |
+
+| Each item of this array must be                                     | Description |
+| ------------------------------------------------------------------- | ----------- |
+| [max items](#tables_anyOf_i0_items_bounding-box_anyOf_i0_max_items) | -           |
+
+###### <a name="autogenerated_heading_45"></a>7.1.1.8.1.2.1. ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > BoundingBoxContainer > max > max items
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+</blockquote>
+</details>
+
+</blockquote>
+<blockquote>
+
+###### <a name="tables_anyOf_i0_items_bounding-box_anyOf_i1"></a>7.1.1.8.2. Property `ExportedCCSDocument > tables > anyOf > item 0 > Table > bounding-box > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -6334,130 +6366,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="equations_anyOf_i0_items_bounding-box"></a>9.1.1.1. [Optional] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > bounding-box</strong>  
-
-</summary>
-<blockquote>
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                                          |
-| ----------------------------------------------------------------------- |
-| [BoundingBoxContainer](#equations_anyOf_i0_items_bounding-box_anyOf_i0) |
-| [item 1](#equations_anyOf_i0_items_bounding-box_anyOf_i1)               |
-
-<blockquote>
-
-###### <a name="equations_anyOf_i0_items_bounding-box_anyOf_i0"></a>9.1.1.1.1. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > bounding-box > anyOf > BoundingBoxContainer`
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Defined in**            | #/$defs/BoundingBoxContainer                                              |
-
-**Description:** Bounding box container.
-
-<details>
-<summary>
-<strong> <a name="equations_anyOf_i0_items_bounding-box_anyOf_i0_min"></a>9.1.1.1.1.1. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > bounding-box > anyOf > BoundingBoxContainer > min</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Min
-
-|              |                   |
-| ------------ | ----------------- |
-| **Type**     | `array of number` |
-| **Required** | Yes               |
-
-|                      | Array restrictions |
-| -------------------- | ------------------ |
-| **Min items**        | 4                  |
-| **Max items**        | 4                  |
-| **Items unicity**    | False              |
-| **Additional items** | False              |
-| **Tuple validation** | See below          |
-
-| Each item of this array must be                                        | Description |
-| ---------------------------------------------------------------------- | ----------- |
-| [min items](#equations_anyOf_i0_items_bounding-box_anyOf_i0_min_items) | -           |
-
-###### <a name="autogenerated_heading_52"></a>9.1.1.1.1.1.1. ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > bounding-box > anyOf > BoundingBoxContainer > min > min items
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `number` |
-| **Required** | No       |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="equations_anyOf_i0_items_bounding-box_anyOf_i0_max"></a>9.1.1.1.1.2. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > bounding-box > anyOf > BoundingBoxContainer > max</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Max
-
-|              |                   |
-| ------------ | ----------------- |
-| **Type**     | `array of number` |
-| **Required** | Yes               |
-
-|                      | Array restrictions |
-| -------------------- | ------------------ |
-| **Min items**        | 4                  |
-| **Max items**        | 4                  |
-| **Items unicity**    | False              |
-| **Additional items** | False              |
-| **Tuple validation** | See below          |
-
-| Each item of this array must be                                        | Description |
-| ---------------------------------------------------------------------- | ----------- |
-| [max items](#equations_anyOf_i0_items_bounding-box_anyOf_i0_max_items) | -           |
-
-###### <a name="autogenerated_heading_53"></a>9.1.1.1.1.2.1. ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > bounding-box > anyOf > BoundingBoxContainer > max > max items
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `number` |
-| **Required** | No       |
-
-</blockquote>
-</details>
-
-</blockquote>
-<blockquote>
-
-###### <a name="equations_anyOf_i0_items_bounding-box_anyOf_i1"></a>9.1.1.1.2. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > bounding-box > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="equations_anyOf_i0_items_prov"></a>9.1.1.2. [Optional] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov</strong>  
+<strong> <a name="equations_anyOf_i0_items_prov"></a>9.1.1.1. [Optional] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov</strong>  
 
 </summary>
 <blockquote>
@@ -6480,7 +6389,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="equations_anyOf_i0_items_prov_anyOf_i0"></a>9.1.1.2.1. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0`
+###### <a name="equations_anyOf_i0_items_prov_anyOf_i0"></a>9.1.1.1.1. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0`
 
 |              |         |
 | ------------ | ------- |
@@ -6499,7 +6408,7 @@ Must be one of:
 | ----------------------------------------------------- | ----------- |
 | [Prov](#equations_anyOf_i0_items_prov_anyOf_i0_items) | Provenance. |
 
-###### <a name="autogenerated_heading_54"></a>9.1.1.2.1.1. ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov
+###### <a name="autogenerated_heading_52"></a>9.1.1.1.1.1. ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -6512,7 +6421,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="equations_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>9.1.1.2.1.1.1. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > bbox</strong>  
+<strong> <a name="equations_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>9.1.1.1.1.1.1. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -6536,7 +6445,7 @@ Must be one of:
 | ---------------------------------------------------------------------- | ----------- |
 | [bbox items](#equations_anyOf_i0_items_prov_anyOf_i0_items_bbox_items) | -           |
 
-###### <a name="autogenerated_heading_55"></a>9.1.1.2.1.1.1.1. ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > bbox > bbox items
+###### <a name="autogenerated_heading_53"></a>9.1.1.1.1.1.1.1. ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > bbox > bbox items
 
 |              |          |
 | ------------ | -------- |
@@ -6548,7 +6457,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="equations_anyOf_i0_items_prov_anyOf_i0_items_page"></a>9.1.1.2.1.1.2. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > page</strong>  
+<strong> <a name="equations_anyOf_i0_items_prov_anyOf_i0_items_page"></a>9.1.1.1.1.1.2. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > page</strong>  
 
 </summary>
 <blockquote>
@@ -6569,7 +6478,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="equations_anyOf_i0_items_prov_anyOf_i0_items_span"></a>9.1.1.2.1.1.3. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > span</strong>  
+<strong> <a name="equations_anyOf_i0_items_prov_anyOf_i0_items_span"></a>9.1.1.1.1.1.3. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > span</strong>  
 
 </summary>
 <blockquote>
@@ -6593,7 +6502,7 @@ Must be one of:
 | ---------------------------------------------------------------------- | ----------- |
 | [span items](#equations_anyOf_i0_items_prov_anyOf_i0_items_span_items) | -           |
 
-###### <a name="autogenerated_heading_56"></a>9.1.1.2.1.1.3.1. ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > span > span items
+###### <a name="autogenerated_heading_54"></a>9.1.1.1.1.1.3.1. ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > span > span items
 
 |              |           |
 | ------------ | --------- |
@@ -6605,7 +6514,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="equations_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>9.1.1.2.1.1.4. [Optional] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
+<strong> <a name="equations_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>9.1.1.1.1.1.4. [Optional] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
 
 </summary>
 <blockquote>
@@ -6628,7 +6537,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="equations_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>9.1.1.2.1.1.4.1. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
+###### <a name="equations_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>9.1.1.1.1.1.4.1. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -6638,7 +6547,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="equations_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>9.1.1.2.1.1.4.2. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
+###### <a name="equations_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>9.1.1.1.1.1.4.2. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -6655,7 +6564,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="equations_anyOf_i0_items_prov_anyOf_i1"></a>9.1.1.2.2. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 1`
+###### <a name="equations_anyOf_i0_items_prov_anyOf_i1"></a>9.1.1.1.2. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > prov > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -6671,7 +6580,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="equations_anyOf_i0_items_text"></a>9.1.1.3. [Optional] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > text</strong>  
+<strong> <a name="equations_anyOf_i0_items_text"></a>9.1.1.2. [Optional] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > text</strong>  
 
 </summary>
 <blockquote>
@@ -6694,7 +6603,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="equations_anyOf_i0_items_text_anyOf_i0"></a>9.1.1.3.1. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > text > anyOf > item 0`
+###### <a name="equations_anyOf_i0_items_text_anyOf_i0"></a>9.1.1.2.1. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > text > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -6704,7 +6613,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="equations_anyOf_i0_items_text_anyOf_i1"></a>9.1.1.3.2. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > text > anyOf > item 1`
+###### <a name="equations_anyOf_i0_items_text_anyOf_i1"></a>9.1.1.2.2. Property `ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > text > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -6720,7 +6629,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="equations_anyOf_i0_items_type"></a>9.1.1.4. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > type</strong>  
+<strong> <a name="equations_anyOf_i0_items_type"></a>9.1.1.3. [Required] Property ExportedCCSDocument > equations > anyOf > item 0 > BaseCell > type</strong>  
 
 </summary>
 <blockquote>
@@ -6796,7 +6705,7 @@ Must be one of:
 | ------------------------------------- | ---------------------------- |
 | [BaseText](#footnotes_anyOf_i0_items) | Base model for text objects. |
 
-#### <a name="autogenerated_heading_57"></a>10.1.1. ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText
+#### <a name="autogenerated_heading_55"></a>10.1.1. ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -6809,139 +6718,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="footnotes_anyOf_i0_items_text"></a>10.1.1.1. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > text</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Text
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="footnotes_anyOf_i0_items_type"></a>10.1.1.2. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > type</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Type
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="footnotes_anyOf_i0_items_name"></a>10.1.1.3. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > name</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Name
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                    |
-| ------------------------------------------------- |
-| [item 0](#footnotes_anyOf_i0_items_name_anyOf_i0) |
-| [item 1](#footnotes_anyOf_i0_items_name_anyOf_i1) |
-
-<blockquote>
-
-###### <a name="footnotes_anyOf_i0_items_name_anyOf_i0"></a>10.1.1.3.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > name > anyOf > item 0`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-</blockquote>
-<blockquote>
-
-###### <a name="footnotes_anyOf_i0_items_name_anyOf_i1"></a>10.1.1.3.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > name > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="footnotes_anyOf_i0_items_font"></a>10.1.1.4. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > font</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Font
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                    |
-| ------------------------------------------------- |
-| [item 0](#footnotes_anyOf_i0_items_font_anyOf_i0) |
-| [item 1](#footnotes_anyOf_i0_items_font_anyOf_i1) |
-
-<blockquote>
-
-###### <a name="footnotes_anyOf_i0_items_font_anyOf_i0"></a>10.1.1.4.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > font > anyOf > item 0`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-</blockquote>
-<blockquote>
-
-###### <a name="footnotes_anyOf_i0_items_font_anyOf_i1"></a>10.1.1.4.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > font > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="footnotes_anyOf_i0_items_prov"></a>10.1.1.5. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov</strong>  
+<strong> <a name="footnotes_anyOf_i0_items_prov"></a>10.1.1.1. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov</strong>  
 
 </summary>
 <blockquote>
@@ -6964,7 +6741,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="footnotes_anyOf_i0_items_prov_anyOf_i0"></a>10.1.1.5.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0`
+###### <a name="footnotes_anyOf_i0_items_prov_anyOf_i0"></a>10.1.1.1.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0`
 
 |              |         |
 | ------------ | ------- |
@@ -6983,7 +6760,7 @@ Must be one of:
 | ----------------------------------------------------- | ----------- |
 | [Prov](#footnotes_anyOf_i0_items_prov_anyOf_i0_items) | Provenance. |
 
-###### <a name="autogenerated_heading_58"></a>10.1.1.5.1.1. ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov
+###### <a name="autogenerated_heading_56"></a>10.1.1.1.1.1. ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -6996,7 +6773,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>10.1.1.5.1.1.1. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox</strong>  
+<strong> <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>10.1.1.1.1.1.1. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -7020,7 +6797,7 @@ Must be one of:
 | ---------------------------------------------------------------------- | ----------- |
 | [bbox items](#footnotes_anyOf_i0_items_prov_anyOf_i0_items_bbox_items) | -           |
 
-###### <a name="autogenerated_heading_59"></a>10.1.1.5.1.1.1.1. ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox > bbox items
+###### <a name="autogenerated_heading_57"></a>10.1.1.1.1.1.1.1. ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox > bbox items
 
 |              |          |
 | ------------ | -------- |
@@ -7032,7 +6809,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items_page"></a>10.1.1.5.1.1.2. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > page</strong>  
+<strong> <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items_page"></a>10.1.1.1.1.1.2. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > page</strong>  
 
 </summary>
 <blockquote>
@@ -7053,7 +6830,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items_span"></a>10.1.1.5.1.1.3. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span</strong>  
+<strong> <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items_span"></a>10.1.1.1.1.1.3. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span</strong>  
 
 </summary>
 <blockquote>
@@ -7077,7 +6854,7 @@ Must be one of:
 | ---------------------------------------------------------------------- | ----------- |
 | [span items](#footnotes_anyOf_i0_items_prov_anyOf_i0_items_span_items) | -           |
 
-###### <a name="autogenerated_heading_60"></a>10.1.1.5.1.1.3.1. ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span > span items
+###### <a name="autogenerated_heading_58"></a>10.1.1.1.1.1.3.1. ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span > span items
 
 |              |           |
 | ------------ | --------- |
@@ -7089,7 +6866,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>10.1.1.5.1.1.4. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
+<strong> <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>10.1.1.1.1.1.4. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
 
 </summary>
 <blockquote>
@@ -7112,7 +6889,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>10.1.1.5.1.1.4.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
+###### <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>10.1.1.1.1.1.4.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -7122,7 +6899,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>10.1.1.5.1.1.4.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
+###### <a name="footnotes_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>10.1.1.1.1.1.4.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -7139,7 +6916,171 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="footnotes_anyOf_i0_items_prov_anyOf_i1"></a>10.1.1.5.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 1`
+###### <a name="footnotes_anyOf_i0_items_prov_anyOf_i1"></a>10.1.1.1.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > prov > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="footnotes_anyOf_i0_items_text"></a>10.1.1.2. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > text</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Text
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                    |
+| ------------------------------------------------- |
+| [item 0](#footnotes_anyOf_i0_items_text_anyOf_i0) |
+| [item 1](#footnotes_anyOf_i0_items_text_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="footnotes_anyOf_i0_items_text_anyOf_i0"></a>10.1.1.2.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > text > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="footnotes_anyOf_i0_items_text_anyOf_i1"></a>10.1.1.2.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > text > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="footnotes_anyOf_i0_items_type"></a>10.1.1.3. [Required] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > type</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Type
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="footnotes_anyOf_i0_items_name"></a>10.1.1.4. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > name</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Name
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                    |
+| ------------------------------------------------- |
+| [item 0](#footnotes_anyOf_i0_items_name_anyOf_i0) |
+| [item 1](#footnotes_anyOf_i0_items_name_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="footnotes_anyOf_i0_items_name_anyOf_i0"></a>10.1.1.4.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > name > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="footnotes_anyOf_i0_items_name_anyOf_i1"></a>10.1.1.4.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > name > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="footnotes_anyOf_i0_items_font"></a>10.1.1.5. [Optional] Property ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > font</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Font
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                    |
+| ------------------------------------------------- |
+| [item 0](#footnotes_anyOf_i0_items_font_anyOf_i0) |
+| [item 1](#footnotes_anyOf_i0_items_font_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="footnotes_anyOf_i0_items_font_anyOf_i0"></a>10.1.1.5.1. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > font > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="footnotes_anyOf_i0_items_font_anyOf_i1"></a>10.1.1.5.2. Property `ExportedCCSDocument > footnotes > anyOf > item 0 > BaseText > font > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -7214,7 +7155,7 @@ Must be one of:
 | ------------------------------------------------- | ---------------- |
 | [PageDimensions](#page-dimensions_anyOf_i0_items) | Page dimensions. |
 
-#### <a name="autogenerated_heading_61"></a>11.1.1. ExportedCCSDocument > page-dimensions > anyOf > item 0 > PageDimensions
+#### <a name="autogenerated_heading_59"></a>11.1.1. ExportedCCSDocument > page-dimensions > anyOf > item 0 > PageDimensions
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -7341,7 +7282,7 @@ Must be one of:
 | ---------------------------------------- | ---------------------------- |
 | [BaseText](#page-footers_anyOf_i0_items) | Base model for text objects. |
 
-#### <a name="autogenerated_heading_62"></a>12.1.1. ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText
+#### <a name="autogenerated_heading_60"></a>12.1.1. ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -7354,139 +7295,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-footers_anyOf_i0_items_text"></a>12.1.1.1. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > text</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Text
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="page-footers_anyOf_i0_items_type"></a>12.1.1.2. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > type</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Type
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="page-footers_anyOf_i0_items_name"></a>12.1.1.3. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > name</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Name
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                       |
-| ---------------------------------------------------- |
-| [item 0](#page-footers_anyOf_i0_items_name_anyOf_i0) |
-| [item 1](#page-footers_anyOf_i0_items_name_anyOf_i1) |
-
-<blockquote>
-
-###### <a name="page-footers_anyOf_i0_items_name_anyOf_i0"></a>12.1.1.3.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > name > anyOf > item 0`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-</blockquote>
-<blockquote>
-
-###### <a name="page-footers_anyOf_i0_items_name_anyOf_i1"></a>12.1.1.3.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > name > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="page-footers_anyOf_i0_items_font"></a>12.1.1.4. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > font</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Font
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                       |
-| ---------------------------------------------------- |
-| [item 0](#page-footers_anyOf_i0_items_font_anyOf_i0) |
-| [item 1](#page-footers_anyOf_i0_items_font_anyOf_i1) |
-
-<blockquote>
-
-###### <a name="page-footers_anyOf_i0_items_font_anyOf_i0"></a>12.1.1.4.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > font > anyOf > item 0`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-</blockquote>
-<blockquote>
-
-###### <a name="page-footers_anyOf_i0_items_font_anyOf_i1"></a>12.1.1.4.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > font > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="page-footers_anyOf_i0_items_prov"></a>12.1.1.5. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov</strong>  
+<strong> <a name="page-footers_anyOf_i0_items_prov"></a>12.1.1.1. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov</strong>  
 
 </summary>
 <blockquote>
@@ -7509,7 +7318,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="page-footers_anyOf_i0_items_prov_anyOf_i0"></a>12.1.1.5.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0`
+###### <a name="page-footers_anyOf_i0_items_prov_anyOf_i0"></a>12.1.1.1.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0`
 
 |              |         |
 | ------------ | ------- |
@@ -7528,7 +7337,7 @@ Must be one of:
 | -------------------------------------------------------- | ----------- |
 | [Prov](#page-footers_anyOf_i0_items_prov_anyOf_i0_items) | Provenance. |
 
-###### <a name="autogenerated_heading_63"></a>12.1.1.5.1.1. ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov
+###### <a name="autogenerated_heading_61"></a>12.1.1.1.1.1. ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -7541,7 +7350,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>12.1.1.5.1.1.1. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox</strong>  
+<strong> <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>12.1.1.1.1.1.1. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -7565,7 +7374,7 @@ Must be one of:
 | ------------------------------------------------------------------------- | ----------- |
 | [bbox items](#page-footers_anyOf_i0_items_prov_anyOf_i0_items_bbox_items) | -           |
 
-###### <a name="autogenerated_heading_64"></a>12.1.1.5.1.1.1.1. ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox > bbox items
+###### <a name="autogenerated_heading_62"></a>12.1.1.1.1.1.1.1. ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox > bbox items
 
 |              |          |
 | ------------ | -------- |
@@ -7577,7 +7386,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items_page"></a>12.1.1.5.1.1.2. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > page</strong>  
+<strong> <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items_page"></a>12.1.1.1.1.1.2. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > page</strong>  
 
 </summary>
 <blockquote>
@@ -7598,7 +7407,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items_span"></a>12.1.1.5.1.1.3. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span</strong>  
+<strong> <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items_span"></a>12.1.1.1.1.1.3. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span</strong>  
 
 </summary>
 <blockquote>
@@ -7622,7 +7431,7 @@ Must be one of:
 | ------------------------------------------------------------------------- | ----------- |
 | [span items](#page-footers_anyOf_i0_items_prov_anyOf_i0_items_span_items) | -           |
 
-###### <a name="autogenerated_heading_65"></a>12.1.1.5.1.1.3.1. ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span > span items
+###### <a name="autogenerated_heading_63"></a>12.1.1.1.1.1.3.1. ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span > span items
 
 |              |           |
 | ------------ | --------- |
@@ -7634,7 +7443,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>12.1.1.5.1.1.4. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
+<strong> <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>12.1.1.1.1.1.4. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
 
 </summary>
 <blockquote>
@@ -7657,7 +7466,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>12.1.1.5.1.1.4.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
+###### <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>12.1.1.1.1.1.4.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -7667,7 +7476,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>12.1.1.5.1.1.4.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
+###### <a name="page-footers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>12.1.1.1.1.1.4.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -7684,7 +7493,171 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="page-footers_anyOf_i0_items_prov_anyOf_i1"></a>12.1.1.5.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 1`
+###### <a name="page-footers_anyOf_i0_items_prov_anyOf_i1"></a>12.1.1.1.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > prov > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="page-footers_anyOf_i0_items_text"></a>12.1.1.2. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > text</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Text
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                       |
+| ---------------------------------------------------- |
+| [item 0](#page-footers_anyOf_i0_items_text_anyOf_i0) |
+| [item 1](#page-footers_anyOf_i0_items_text_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="page-footers_anyOf_i0_items_text_anyOf_i0"></a>12.1.1.2.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > text > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="page-footers_anyOf_i0_items_text_anyOf_i1"></a>12.1.1.2.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > text > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="page-footers_anyOf_i0_items_type"></a>12.1.1.3. [Required] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > type</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Type
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="page-footers_anyOf_i0_items_name"></a>12.1.1.4. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > name</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Name
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                       |
+| ---------------------------------------------------- |
+| [item 0](#page-footers_anyOf_i0_items_name_anyOf_i0) |
+| [item 1](#page-footers_anyOf_i0_items_name_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="page-footers_anyOf_i0_items_name_anyOf_i0"></a>12.1.1.4.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > name > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="page-footers_anyOf_i0_items_name_anyOf_i1"></a>12.1.1.4.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > name > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="page-footers_anyOf_i0_items_font"></a>12.1.1.5. [Optional] Property ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > font</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Font
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                       |
+| ---------------------------------------------------- |
+| [item 0](#page-footers_anyOf_i0_items_font_anyOf_i0) |
+| [item 1](#page-footers_anyOf_i0_items_font_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="page-footers_anyOf_i0_items_font_anyOf_i0"></a>12.1.1.5.1. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > font > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="page-footers_anyOf_i0_items_font_anyOf_i1"></a>12.1.1.5.2. Property `ExportedCCSDocument > page-footers > anyOf > item 0 > BaseText > font > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -7759,7 +7732,7 @@ Must be one of:
 | ---------------------------------------- | ---------------------------- |
 | [BaseText](#page-headers_anyOf_i0_items) | Base model for text objects. |
 
-#### <a name="autogenerated_heading_66"></a>13.1.1. ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText
+#### <a name="autogenerated_heading_64"></a>13.1.1. ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -7772,139 +7745,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-headers_anyOf_i0_items_text"></a>13.1.1.1. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > text</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Text
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="page-headers_anyOf_i0_items_type"></a>13.1.1.2. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > type</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Type
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="page-headers_anyOf_i0_items_name"></a>13.1.1.3. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > name</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Name
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                       |
-| ---------------------------------------------------- |
-| [item 0](#page-headers_anyOf_i0_items_name_anyOf_i0) |
-| [item 1](#page-headers_anyOf_i0_items_name_anyOf_i1) |
-
-<blockquote>
-
-###### <a name="page-headers_anyOf_i0_items_name_anyOf_i0"></a>13.1.1.3.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > name > anyOf > item 0`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-</blockquote>
-<blockquote>
-
-###### <a name="page-headers_anyOf_i0_items_name_anyOf_i1"></a>13.1.1.3.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > name > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="page-headers_anyOf_i0_items_font"></a>13.1.1.4. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > font</strong>  
-
-</summary>
-<blockquote>
-
-**Title:** Font
-
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `combining`                                                               |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Default**               | `null`                                                                    |
-
-<blockquote>
-
-| Any of(Option)                                       |
-| ---------------------------------------------------- |
-| [item 0](#page-headers_anyOf_i0_items_font_anyOf_i0) |
-| [item 1](#page-headers_anyOf_i0_items_font_anyOf_i1) |
-
-<blockquote>
-
-###### <a name="page-headers_anyOf_i0_items_font_anyOf_i0"></a>13.1.1.4.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > font > anyOf > item 0`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-</blockquote>
-<blockquote>
-
-###### <a name="page-headers_anyOf_i0_items_font_anyOf_i1"></a>13.1.1.4.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > font > anyOf > item 1`
-
-|              |        |
-| ------------ | ------ |
-| **Type**     | `null` |
-| **Required** | No     |
-
-</blockquote>
-
-</blockquote>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="page-headers_anyOf_i0_items_prov"></a>13.1.1.5. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov</strong>  
+<strong> <a name="page-headers_anyOf_i0_items_prov"></a>13.1.1.1. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov</strong>  
 
 </summary>
 <blockquote>
@@ -7927,7 +7768,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="page-headers_anyOf_i0_items_prov_anyOf_i0"></a>13.1.1.5.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0`
+###### <a name="page-headers_anyOf_i0_items_prov_anyOf_i0"></a>13.1.1.1.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0`
 
 |              |         |
 | ------------ | ------- |
@@ -7946,7 +7787,7 @@ Must be one of:
 | -------------------------------------------------------- | ----------- |
 | [Prov](#page-headers_anyOf_i0_items_prov_anyOf_i0_items) | Provenance. |
 
-###### <a name="autogenerated_heading_67"></a>13.1.1.5.1.1. ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov
+###### <a name="autogenerated_heading_65"></a>13.1.1.1.1.1. ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -7959,7 +7800,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>13.1.1.5.1.1.1. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox</strong>  
+<strong> <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items_bbox"></a>13.1.1.1.1.1.1. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox</strong>  
 
 </summary>
 <blockquote>
@@ -7983,7 +7824,7 @@ Must be one of:
 | ------------------------------------------------------------------------- | ----------- |
 | [bbox items](#page-headers_anyOf_i0_items_prov_anyOf_i0_items_bbox_items) | -           |
 
-###### <a name="autogenerated_heading_68"></a>13.1.1.5.1.1.1.1. ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox > bbox items
+###### <a name="autogenerated_heading_66"></a>13.1.1.1.1.1.1.1. ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > bbox > bbox items
 
 |              |          |
 | ------------ | -------- |
@@ -7995,7 +7836,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items_page"></a>13.1.1.5.1.1.2. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > page</strong>  
+<strong> <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items_page"></a>13.1.1.1.1.1.2. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > page</strong>  
 
 </summary>
 <blockquote>
@@ -8016,7 +7857,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items_span"></a>13.1.1.5.1.1.3. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span</strong>  
+<strong> <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items_span"></a>13.1.1.1.1.1.3. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span</strong>  
 
 </summary>
 <blockquote>
@@ -8040,7 +7881,7 @@ Must be one of:
 | ------------------------------------------------------------------------- | ----------- |
 | [span items](#page-headers_anyOf_i0_items_prov_anyOf_i0_items_span_items) | -           |
 
-###### <a name="autogenerated_heading_69"></a>13.1.1.5.1.1.3.1. ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span > span items
+###### <a name="autogenerated_heading_67"></a>13.1.1.1.1.1.3.1. ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > span > span items
 
 |              |           |
 | ------------ | --------- |
@@ -8052,7 +7893,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>13.1.1.5.1.1.4. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
+<strong> <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data"></a>13.1.1.1.1.1.4. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data</strong>  
 
 </summary>
 <blockquote>
@@ -8075,7 +7916,7 @@ Must be one of:
 
 <blockquote>
 
-###### <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>13.1.1.5.1.1.4.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
+###### <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i0"></a>13.1.1.1.1.1.4.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 0`
 
 |              |          |
 | ------------ | -------- |
@@ -8085,7 +7926,7 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>13.1.1.5.1.1.4.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
+###### <a name="page-headers_anyOf_i0_items_prov_anyOf_i0_items___ref_s3_data_anyOf_i1"></a>13.1.1.1.1.1.4.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 0 > Prov > __ref_s3_data > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -8102,7 +7943,171 @@ Must be one of:
 </blockquote>
 <blockquote>
 
-###### <a name="page-headers_anyOf_i0_items_prov_anyOf_i1"></a>13.1.1.5.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 1`
+###### <a name="page-headers_anyOf_i0_items_prov_anyOf_i1"></a>13.1.1.1.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > prov > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="page-headers_anyOf_i0_items_text"></a>13.1.1.2. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > text</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Text
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                       |
+| ---------------------------------------------------- |
+| [item 0](#page-headers_anyOf_i0_items_text_anyOf_i0) |
+| [item 1](#page-headers_anyOf_i0_items_text_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="page-headers_anyOf_i0_items_text_anyOf_i0"></a>13.1.1.2.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > text > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="page-headers_anyOf_i0_items_text_anyOf_i1"></a>13.1.1.2.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > text > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="page-headers_anyOf_i0_items_type"></a>13.1.1.3. [Required] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > type</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Type
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="page-headers_anyOf_i0_items_name"></a>13.1.1.4. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > name</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Name
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                       |
+| ---------------------------------------------------- |
+| [item 0](#page-headers_anyOf_i0_items_name_anyOf_i0) |
+| [item 1](#page-headers_anyOf_i0_items_name_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="page-headers_anyOf_i0_items_name_anyOf_i0"></a>13.1.1.4.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > name > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="page-headers_anyOf_i0_items_name_anyOf_i1"></a>13.1.1.4.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > name > anyOf > item 1`
+
+|              |        |
+| ------------ | ------ |
+| **Type**     | `null` |
+| **Required** | No     |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="page-headers_anyOf_i0_items_font"></a>13.1.1.5. [Optional] Property ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > font</strong>  
+
+</summary>
+<blockquote>
+
+**Title:** Font
+
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `combining`                                                               |
+| **Required**              | No                                                                        |
+| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+| **Default**               | `null`                                                                    |
+
+<blockquote>
+
+| Any of(Option)                                       |
+| ---------------------------------------------------- |
+| [item 0](#page-headers_anyOf_i0_items_font_anyOf_i0) |
+| [item 1](#page-headers_anyOf_i0_items_font_anyOf_i1) |
+
+<blockquote>
+
+###### <a name="page-headers_anyOf_i0_items_font_anyOf_i0"></a>13.1.1.5.1. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > font > anyOf > item 0`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+<blockquote>
+
+###### <a name="page-headers_anyOf_i0_items_font_anyOf_i1"></a>13.1.1.5.2. Property `ExportedCCSDocument > page-headers > anyOf > item 0 > BaseText > font > anyOf > item 1`
 
 |              |        |
 | ------------ | ------ |
@@ -8211,7 +8216,7 @@ Must be one of:
 | ----------------------------------------------------------- | ----------------------------------- |
 | [S3Resource](#s3_data_anyOf_i0_pdf-document_anyOf_i0_items) | Resource in a cloud object storage. |
 
-###### <a name="autogenerated_heading_70"></a>14.1.1.1.1. ExportedCCSDocument > _s3_data > anyOf > S3Data > pdf-document > anyOf > item 0 > S3Resource
+###### <a name="autogenerated_heading_68"></a>14.1.1.1.1. ExportedCCSDocument > _s3_data > anyOf > S3Data > pdf-document > anyOf > item 0 > S3Resource
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -8370,7 +8375,7 @@ Must be one of:
 | -------------------------------------------------------- | ----------------------------------- |
 | [S3Resource](#s3_data_anyOf_i0_pdf-pages_anyOf_i0_items) | Resource in a cloud object storage. |
 
-###### <a name="autogenerated_heading_71"></a>14.1.2.1.1. ExportedCCSDocument > _s3_data > anyOf > S3Data > pdf-pages > anyOf > item 0 > S3Resource
+###### <a name="autogenerated_heading_69"></a>14.1.2.1.1. ExportedCCSDocument > _s3_data > anyOf > S3Data > pdf-pages > anyOf > item 0 > S3Resource
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -8529,7 +8534,7 @@ Must be one of:
 | --------------------------------------------------------- | ----------------------------------- |
 | [S3Resource](#s3_data_anyOf_i0_pdf-images_anyOf_i0_items) | Resource in a cloud object storage. |
 
-###### <a name="autogenerated_heading_72"></a>14.1.3.1.1. ExportedCCSDocument > _s3_data > anyOf > S3Data > pdf-images > anyOf > item 0 > S3Resource
+###### <a name="autogenerated_heading_70"></a>14.1.3.1.1. ExportedCCSDocument > _s3_data > anyOf > S3Data > pdf-images > anyOf > item 0 > S3Resource
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -9102,7 +9107,7 @@ Must be one of:
 | ------------------------------------------------------ | ----------------------------------- |
 | [S3Resource](#s3_data_anyOf_i0_figures_anyOf_i0_items) | Resource in a cloud object storage. |
 
-###### <a name="autogenerated_heading_73"></a>14.1.7.1.1. ExportedCCSDocument > _s3_data > anyOf > S3Data > figures > anyOf > item 0 > S3Resource
+###### <a name="autogenerated_heading_71"></a>14.1.7.1.1. ExportedCCSDocument > _s3_data > anyOf > S3Data > figures > anyOf > item 0 > S3Resource
 
 |                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -9278,7 +9283,7 @@ Must be one of:
 | ----------------------------------------- | ------------------------------------------- |
 | [Identifier](#identifiers_anyOf_i0_items) | Unique identifier of a Docling data object. |
 
-#### <a name="autogenerated_heading_74"></a>15.1.1. ExportedCCSDocument > identifiers > anyOf > item 0 > Identifier
+#### <a name="autogenerated_heading_72"></a>15.1.1. ExportedCCSDocument > identifiers > anyOf > item 0 > Identifier
 
 |                           |                                                         |
 | ------------------------- | ------------------------------------------------------- |

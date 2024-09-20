@@ -11,6 +11,8 @@ from pydantic import ValidationError
 
 from docling_core.types import Document, Generic, Record
 
+GENERATE = False
+
 
 def test_generic():
     """Test the Generic model."""
@@ -47,39 +49,95 @@ def test_document():
         Document.model_validate_json(file_json)
 
 
-def test_export_document_to_md():
+def test_table_export_to_tokens():
+    """Test the Table Tokens export."""
+
+    for filename in glob.glob("test/data/doc/doc-*.json"):
+        with open(filename) as file_obj:
+            file_json = file_obj.read()
+
+        doc = Document.model_validate_json(file_json)
+
+        if doc.tables is not None and doc.page_dimensions is not None:
+
+            pagedims = doc.get_map_to_page_dimensions()
+
+            if doc.tables is not None:
+                for i, table in enumerate(doc.tables):
+                    page = table.prov[0].page
+                    out = table.export_to_document_tokens(
+                        page_w=pagedims[page][0], page_h=pagedims[page][1]
+                    )
+
+                    fname = f"{filename}_table_{i}.doctags.txt"
+                    if GENERATE:
+                        print(f"writing {fname}")
+                        with open(fname, "w") as gold_obj:
+                            gold_obj.write(out)
+
+                    with open(fname, "r") as gold_obj:
+                        gold_data = gold_obj.read()
+
+                    assert out == gold_data
+
+                    # we only test on the first table
+                    break
+
+        elif doc.tables is not None and doc.page_dimensions is None:
+
+            if doc.tables is not None:
+                for i, table in enumerate(doc.tables):
+                    page = table.prov[0].page
+                    out = table.export_to_document_tokens(
+                        add_table_location=False, add_cell_location=False
+                    )
+
+                    fname = f"{filename}_table_{i}.doctags.txt"
+                    if GENERATE:
+                        print(f"writing {fname}")
+                        with open(fname, "w") as gold_obj:
+                            gold_obj.write(out)
+
+                    with open(fname, "r") as gold_obj:
+                        gold_data = gold_obj.read()
+
+                    assert out == gold_data
+
+                    # we only test on the first table
+                    break
+
+
+def test_document_export_to_md():
     """Test the Document Markdown export."""
-    with open("test/data/doc/md-export.json") as src_obj:
+    with open("test/data/doc/doc-export.json") as src_obj:
         src_data = src_obj.read()
     doc = Document.model_validate_json(src_data)
 
     md = doc.export_to_markdown()
 
-    """
-    with open("test/data/doc/md-export.md", "w") as gold_obj:
-        gold_obj.write(md)
-    """
+    if GENERATE:
+        with open("test/data/doc/doc-export.md", "w") as gold_obj:
+            gold_obj.write(md)
 
-    with open("test/data/doc/md-export.md") as gold_obj:
+    with open("test/data/doc/doc-export.md") as gold_obj:
         gold_data = gold_obj.read().strip()
 
     assert md == gold_data
 
 
-def test_export_to_document_tokens():
-    """Test the Document Markdown export."""
-    with open("test/data/doc/md-export.json") as src_obj:
+def test_document_export_to_tokens():
+    """Test the Document Tokens export."""
+    with open("test/data/doc/doc-export.json") as src_obj:
         src_data = src_obj.read()
 
     doc = Document.model_validate_json(src_data)
-    xml = doc.export_to_document_tokens(add_new_line=True)
+    xml = doc.export_to_document_tokens(delim=True)
 
-    """
-    with open("test/data/doc/md-export.xml", "w") as gold_obj:
-        gold_obj.write(xml)
-    """
+    if GENERATE:
+        with open("test/data/doc/doc-export.doctags.txt", "w") as gold_obj:
+            gold_obj.write(xml)
 
-    with open("test/data/doc/md-export.xml", "r") as gold_obj:
+    with open("test/data/doc/doc-export.doctags.txt", "r") as gold_obj:
         gold_data = gold_obj.read().strip()
 
     assert xml == gold_data
