@@ -1,3 +1,10 @@
+## [v1.5.0](https://github.com/DS4SD/docling-core/releases/tag/v1.5.0) - 2024-09-20
+
+### Feature
+
+* Add export to doctags for document components ([#25](https://github.com/DS4SD/docling-core/issues/25)) ([`891530f`](https://github.com/DS4SD/docling-core/commit/891530f595dbf656bbc2708fb25a05aa1ec65afa))
+* Add file source resolution utility ([#22](https://github.com/DS4SD/docling-core/issues/22)) ([`752cbc3`](https://github.com/DS4SD/docling-core/commit/752cbc3e89461fa633277cfe3887bc5a6fa5c2b0))
+
 ## [v1.4.1](https://github.com/DS4SD/docling-core/releases/tag/v1.4.1) - 2024-09-18
 
 ### Fix
