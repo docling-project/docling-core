@@ -434,7 +434,7 @@ class ExportedCCSDocument(
 
         return pagedims
 
-    def export_to_markdown(
+    def export_to_markdown(  # noqa: C901
         self,
         delim: str = "\n\n",
         main_text_start: int = 0,
@@ -445,8 +445,10 @@ class ExportedCCSDocument(
             "paragraph",
             "caption",
             "table",
+            "figure",
         ],
         strict_text: bool = False,
+        image_placeholder: str = "<!-- image -->",
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -460,6 +462,12 @@ class ExportedCCSDocument(
                 Defaults to 0.
             main_text_end (Optional[int], optional): Main-text slicing stop index
                 (exclusive). Defaults to None.
+            main_text_labels (list[str], optional): The labels to include in the
+                markdown.
+            strict_text (bool, optional): if true, the output will be only plain text
+                without any markdown styling. Defaults to False.
+            image_placeholder (str, optional): the placeholder to include to position
+                images in the markdown. Defaults to a markdown comment "<!-- image -->".
 
         Returns:
             str: The exported Markdown representation.
@@ -538,6 +546,14 @@ class ExportedCCSDocument(
                             )
 
                         markdown_text = md_table
+
+                elif isinstance(item, Figure) and item_type in main_text_labels:
+
+                    markdown_text = ""
+                    if not strict_text:
+                        markdown_text = f"{image_placeholder}"
+                    if item.text:
+                        markdown_text += "\n" + item.text
 
                 if markdown_text:
                     md_texts.append(markdown_text)
