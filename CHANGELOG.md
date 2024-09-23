@@ -1,3 +1,9 @@
+## [v1.6.0](https://github.com/DS4SD/docling-core/releases/tag/v1.6.0) - 2024-09-23
+
+### Feature
+
+* Add figures in markdown export ([#27](https://github.com/DS4SD/docling-core/issues/27)) ([`b843ae6`](https://github.com/DS4SD/docling-core/commit/b843ae6688a20e68e2da59b2f68fd61f8d4beacb))
+
 ## [v1.5.0](https://github.com/DS4SD/docling-core/releases/tag/v1.5.0) - 2024-09-20
 
 ### Feature
