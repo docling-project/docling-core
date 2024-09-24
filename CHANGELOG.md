@@ -1,3 +1,9 @@
+## [v1.6.1](https://github.com/DS4SD/docling-core/releases/tag/v1.6.1) - 2024-09-24
+
+### Fix
+
+* Remove unnecessary package dependency ([#30](https://github.com/DS4SD/docling-core/issues/30)) ([`e706d68`](https://github.com/DS4SD/docling-core/commit/e706d686db159f6480439d214c85b1664f38e28f))
+
 ## [v1.6.0](https://github.com/DS4SD/docling-core/releases/tag/v1.6.0) - 2024-09-23
 
 ### Feature
