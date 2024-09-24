@@ -477,6 +477,26 @@ class ExportedCCSDocument(
         md_texts: list[str] = []
 
         if self.main_text is not None:
+            # collect all captions embedded in table and figure objects
+            # to avoid repeating them
+            embedded_captions = set()
+            for orig_item in self.main_text[main_text_start:main_text_stop]:
+                item = (
+                    self._resolve_ref(orig_item)
+                    if isinstance(orig_item, Ref)
+                    else orig_item
+                )
+                if item is None:
+                    continue
+
+                if (
+                    isinstance(item, (Table, Figure))
+                    and item.text
+                    and item.obj_type in main_text_labels
+                ):
+                    embedded_captions.add(item.text)
+
+            # serialize document to markdown
             for orig_item in self.main_text[main_text_start:main_text_stop]:
                 markdown_text = ""
 
@@ -491,6 +511,11 @@ class ExportedCCSDocument(
                 item_type = item.obj_type
                 if isinstance(item, BaseText) and item_type in main_text_labels:
                     text = item.text
+
+                    # skip captions of they are embedded in the actual
+                    # floating object
+                    if item_type == "caption" and text in embedded_captions:
+                        continue
 
                     # ignore repeated text
                     if prev_text == text or text is None:
@@ -523,8 +548,9 @@ class ExportedCCSDocument(
                     isinstance(item, Table)
                     and item.data
                     and item_type in main_text_labels
-                    and not strict_text
                 ):
+
+                    md_table = ""
                     table = []
                     for row in item.data:
                         tmp = []
@@ -545,15 +571,19 @@ class ExportedCCSDocument(
                                 disable_numparse=True,
                             )
 
-                        markdown_text = md_table
+                    markdown_text = ""
+                    if item.text:
+                        markdown_text = item.text
+                    if not strict_text:
+                        markdown_text += "\n" + md_table
 
                 elif isinstance(item, Figure) and item_type in main_text_labels:
 
                     markdown_text = ""
-                    if not strict_text:
-                        markdown_text = f"{image_placeholder}"
                     if item.text:
-                        markdown_text += "\n" + item.text
+                        markdown_text = item.text
+                    if not strict_text:
+                        markdown_text += f"\n{image_placeholder}"
 
                 if markdown_text:
                     md_texts.append(markdown_text)
