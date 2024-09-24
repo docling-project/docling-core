@@ -1,3 +1,9 @@
+## [v1.6.2](https://github.com/DS4SD/docling-core/releases/tag/v1.6.2) - 2024-09-24
+
+### Fix
+
+* Remove duplicate captions in markdown ([#31](https://github.com/DS4SD/docling-core/issues/31)) ([`a334b9f`](https://github.com/DS4SD/docling-core/commit/a334b9fc721a2e1efc9f12b585cff17363875d57))
+
 ## [v1.6.1](https://github.com/DS4SD/docling-core/releases/tag/v1.6.1) - 2024-09-24
 
 ### Fix
