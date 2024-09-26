@@ -8,7 +8,7 @@ import re
 from copy import deepcopy
 from typing import Any, Optional, Pattern, Tuple, TypedDict
 
-from jsonref import JsonRef
+from jsonref import replace_refs
 
 
 class SearchIndexDefinition(TypedDict):
@@ -95,7 +95,11 @@ class JsonSchemaToSearchMapper:
         which define the fields, their data types, and other specifications to index
         JSON documents into a Lucene index.
         """
-        mapping = JsonRef.replace_refs(schema)
+        mapping = deepcopy(schema)
+
+        mapping = self._suppress(mapping, self._suppress_key)
+
+        mapping = replace_refs(mapping)
 
         mapping = self._merge_unions(mapping)
 
@@ -104,8 +108,6 @@ class JsonSchemaToSearchMapper:
         mapping = self._collapse_arrays(mapping)
 
         mapping = self._remove_keys(mapping, self._rm_keys)
-
-        mapping = self._suppress(mapping, self._suppress_key)
 
         mapping = self._translate_keys_re(mapping)
 

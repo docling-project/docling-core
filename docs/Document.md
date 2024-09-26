@@ -6052,7 +6052,7 @@ Must be one of:
 | **Type**                  | `object`                                                                  |
 | **Required**              | Yes                                                                       |
 | **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Defined in**            |                                                                           |
+| **Defined in**            | #/$defs/BoundingBoxContainer                                              |
 
 **Description:** Bounding box container.
 

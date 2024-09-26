@@ -75,7 +75,7 @@
 | **Type**                  | `object`                                                                  |
 | **Required**              | Yes                                                                       |
 | **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Defined in**            |                                                                           |
+| **Defined in**            | #/$defs/FileInfoObject                                                    |
 
 **Description:** Minimal identification information of the document within a collection.
 
