@@ -1,3 +1,9 @@
+## [v1.6.3](https://github.com/DS4SD/docling-core/releases/tag/v1.6.3) - 2024-09-26
+
+### Fix
+
+* Change order of JSON Schema to search mapper transformations ([#32](https://github.com/DS4SD/docling-core/issues/32)) ([`a4ddd14`](https://github.com/DS4SD/docling-core/commit/a4ddd142eef864c55b62c8815d38dbff14f4caa7))
+
 ## [v1.6.2](https://github.com/DS4SD/docling-core/releases/tag/v1.6.2) - 2024-09-24
 
 ### Fix
