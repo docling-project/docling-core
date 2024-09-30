@@ -22,8 +22,9 @@ class Chunk(BaseModel):
 class ChunkWithMetadata(Chunk):
     """Data model for Chunk including metadata."""
 
-    page: Optional[int]
-    bbox: Optional[BoundingBox]
+    page: Optional[int] = None
+    bbox: Optional[BoundingBox] = None
+    heading: Optional[str] = None
 
 
 class BaseChunker(BaseModel, ABC):

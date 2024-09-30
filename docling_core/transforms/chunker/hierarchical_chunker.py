@@ -26,6 +26,7 @@ class HierarchicalChunker(BaseChunker):
     """Chunker implementation leveraging the document layout."""
 
     include_metadata: bool = True
+    heading_as_metadata: bool = False
     min_chunk_len: PositiveInt = 64
 
     class _NodeType(str, Enum):
@@ -184,7 +185,7 @@ class HierarchicalChunker(BaseChunker):
 
     def _build_chunk_impl(
         self, doc: DLDocument, doc_map: _DocContext, idx: int, rec: bool = False
-    ) -> list[_TextEntry]:
+    ) -> tuple[list[_TextEntry], Optional[str]]:
         if doc.main_text:
             item = doc.main_text[idx]
             item_type = _HC._norm(item.obj_type)
@@ -193,7 +194,7 @@ class HierarchicalChunker(BaseChunker):
                 item_type not in self._allowed_types
                 or item_name in self._disallowed_names_by_type.get(item_type, [])
             ):
-                return []
+                return [], None
 
             c2p = doc_map.dmap
 
@@ -219,7 +220,7 @@ class HierarchicalChunker(BaseChunker):
                         else []
                     )
                 else:
-                    return []
+                    return [], None
             elif isinstance(item, BaseText):
                 text_entries = [
                     self._TextEntry(
@@ -248,21 +249,29 @@ class HierarchicalChunker(BaseChunker):
                     _HC._NodeName.LIST_ITEM,
                     _HC._NodeName.SUBTITLE_LEVEL_1,
                 ]:
-                    return []
+                    return [], None
 
             if (parent := c2p[idx].parent) is not None:
                 # prepend with ancestors
+
+                parent_res = self._build_chunk_impl(
+                    doc=doc, doc_map=doc_map, idx=parent, rec=True
+                )
                 return (
-                    self._build_chunk_impl(
-                        doc=doc, doc_map=doc_map, idx=parent, rec=True
-                    )
-                    + text_entries
+                    parent_res[0] + text_entries,  # expanded text
+                    parent_res[1],  # heading
                 )
             else:
-                # if root, augment with title (if available and different)
-                return text_entries
+                if (
+                    self.heading_as_metadata
+                    and isinstance(item, BaseText)
+                    and _HC._norm(item.obj_type) == _HC._NodeType.SUBTITLE_LEVEL_1
+                ):
+                    return [], text_entries[0].text
+                else:
+                    return text_entries, None
         else:
-            return []
+            return [], None
 
     def _build_chunk(
         self,
@@ -272,7 +281,9 @@ class HierarchicalChunker(BaseChunker):
         delim: str,
         rec: bool = False,
     ) -> Optional[Chunk]:
-        texts = self._build_chunk_impl(doc=doc, doc_map=doc_map, idx=idx, rec=rec)
+        res = self._build_chunk_impl(doc=doc, doc_map=doc_map, idx=idx, rec=rec)
+        texts = res[0]
+        heading = res[1]
         concat = delim.join([t.text for t in texts if t.text])
         assert doc.main_text is not None
         if len(concat) >= self.min_chunk_len:
@@ -295,6 +306,7 @@ class HierarchicalChunker(BaseChunker):
                     path=path,
                     page=item.prov[0].page if item.prov else None,
                     bbox=item.prov[0].bbox if item.prov else None,
+                    heading=heading,
                 )
             else:
                 return Chunk(
@@ -315,6 +327,11 @@ class HierarchicalChunker(BaseChunker):
         Yields:
             Iterator[Chunk]: iterator over extracted chunks
         """
+        if (not self.include_metadata) and self.heading_as_metadata:
+            raise RuntimeError(
+                "To enable `heading_as_metadata`, also `include_metadata` must be True."
+            )
+
         if dl_doc.main_text:
             # extract doc structure incl. metadata for
             # each item (e.g. parent, children)
