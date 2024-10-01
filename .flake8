@@ -1,4 +1,5 @@
 [flake8]
+per-file-ignores = __init__.py:F401
 max-line-length = 88
 exclude = test/*
 max-complexity = 18

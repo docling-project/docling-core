@@ -1,0 +1,179 @@
+captions: []
+children: []
+data:
+  grid:
+  - - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 1
+      end_row_offset_idx: 1
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 0
+      start_row_offset_idx: 0
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 2
+      end_row_offset_idx: 1
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 1
+      start_row_offset_idx: 0
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 3
+      end_row_offset_idx: 1
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 2
+      start_row_offset_idx: 0
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 4
+      end_row_offset_idx: 1
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 3
+      start_row_offset_idx: 0
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 5
+      end_row_offset_idx: 1
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 4
+      start_row_offset_idx: 0
+      text: ''
+  - - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 1
+      end_row_offset_idx: 2
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 0
+      start_row_offset_idx: 1
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 2
+      end_row_offset_idx: 2
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 1
+      start_row_offset_idx: 1
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 3
+      end_row_offset_idx: 2
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 2
+      start_row_offset_idx: 1
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 4
+      end_row_offset_idx: 2
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 3
+      start_row_offset_idx: 1
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 5
+      end_row_offset_idx: 2
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 4
+      start_row_offset_idx: 1
+      text: ''
+  - - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 1
+      end_row_offset_idx: 3
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 0
+      start_row_offset_idx: 2
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 2
+      end_row_offset_idx: 3
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 1
+      start_row_offset_idx: 2
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 3
+      end_row_offset_idx: 3
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 2
+      start_row_offset_idx: 2
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 4
+      end_row_offset_idx: 3
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 3
+      start_row_offset_idx: 2
+      text: ''
+    - bbox: null
+      col_span: 1
+      column_header: false
+      end_col_offset_idx: 5
+      end_row_offset_idx: 3
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 4
+      start_row_offset_idx: 2
+      text: ''
+  num_cols: 5
+  num_rows: 3
+  table_cells: []
+footnotes: []
+image: null
+label: table
+parent: null
+prov: []
+references: []
+self_ref: '#'

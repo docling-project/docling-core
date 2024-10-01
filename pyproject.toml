@@ -96,6 +96,7 @@ include_trailing_comma = true
 
 [tool.autoflake]
 in-place = true
+ignore-init-module-imports = true
 remove-all-unused-imports = true
 remove-unused-variables = true
 expand-star-imports = true
@@ -119,6 +120,7 @@ module = [
     "pandas.*",
     "requests.*",
     "tabulate.*",
+    "yaml.*",
 ]
 ignore_missing_imports = true
 

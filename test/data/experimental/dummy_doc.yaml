@@ -1,0 +1,177 @@
+---
+## Document with content + optional layout info
+description: { } # DescriptionType - TBD
+name: "dummy_doc"
+origin:
+  binary_hash: 7954723514066505909
+  filename: dummy_doc.pdf
+  mimetype: application/pdf
+  uri: null
+
+# Root element for any headers, footers, framing, navigation elements, all other non-body text, type GroupItem
+furniture:
+  name: "_root_"
+  self_ref: "#/furniture"
+  parent: null # Only root elements have no parent.
+  children: # only the first-level children appear here, as references (RefItem)
+    - $ref: "#/texts/0"
+
+# Root element for anything in the document body, type GroupItem
+body:
+  name: "_root_"
+  self_ref: "#/body"
+  parent: null # Only root elements have no parent.
+  children: # only the first-level children appear here, as references (RefItem)
+    - $ref: "#/texts/1"
+    - $ref: "#/pictures/0"
+    - $ref: "#/texts/3"
+    - $ref: "#/tables/0"
+
+# All groups of items nested deeper in body or furniture roots, type List[GroupItem]
+groups: [] # The parent + children relations capture nesting and reading-order.
+
+# All elements that have a text-string representation, type TextItem.
+# This is a flat list of all elements without implied order.
+texts:
+  - orig: "arXiv:2206.01062v1 [cs.CV] 2 Jun 2022"
+    text: "arXiv:2206.01062v1 [cs.CV] 2 Jun 2022"
+    self_ref: "#/texts/0"
+    label: "page_header"
+    parent:
+      $ref: "#/furniture"
+    children: []
+    prov:
+      - page_no: 1
+        bbox:
+          l: 21.3
+          t: 52.3
+          b: 476.2
+          r: 35.2
+        charspan: [ 1,423 ] # 2-tuple, references to "orig"
+  - orig: "DocLayNet: A Large Human-Annotated Dataset for\nDocument-Layout Analysis"
+    text: "DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis"
+    self_ref: "#/texts/1"
+    label: "title"
+    parent:
+      $ref: "#/body"
+    children: [ ]
+    prov: # must exist, can be empty
+      - page_no: 1
+        bbox:
+          l: 65.0
+          t: 30.1
+          b: 53.4
+          r: 623.2
+        charspan: [ 1,423 ] # 2-tuple, references to "orig"
+  - orig: "OPERATION (cont.)" # nested inside the figure
+    text: "OPERATION (cont.)"
+    self_ref: "#/texts/2"
+    label: "section_header"
+    parent:
+      $ref: "#/pictures/0"
+    children: [ ]
+    prov:
+      - page_no: 1
+        bbox:
+          l: 323.0
+          t: 354.3
+          b: 334.4
+          r: 376.0
+          coord_origin: BOTTOMLEFT
+        charspan: [ 0,734 ]
+  - orig: "Figure 1: Four examples of complex page layouts across dif-\nferent document categories" # nested inside the figure
+    text: "Figure 1: Four examples of complex page layouts across different document categories"
+    self_ref: "#/texts/3"
+    label: "caption"
+    parent:
+      $ref: "#/body"
+    children: [ ]
+    prov:
+      - page_no: 1
+        bbox:
+          l: 323.0
+          t: 354.3
+          b: 334.4
+          r: 376.0
+          coord_origin: BOTTOMLEFT
+        charspan: [ 1,423 ] # 2-tuple, references to "orig"
+
+
+tables: # All tables...
+  - self_ref: "#/table/0"
+    label: "table"
+    parent:
+      $ref: "#/body"
+    children: [ ]
+    image:
+      mimetype: image/png
+      dpi: 72
+      size:
+        width: 231
+        height: 351
+      uri: "file:///dummy_doc/tables/0.png"
+      #alternatives: base64 encoded striong
+    data: # TableData Type
+      table_cells: [] # flat list of TableCell type
+      grid: [[]] # list-of-list of TableCell type
+      otsl: "<fcel><ecel>..." # OTSL token string
+      html: "" # ??
+    prov:
+      - page_no: 1
+        bbox:
+          l: 323.0
+          t: 354.3
+          b: 334.4
+          r: 376.0
+          coord_origin: BOTTOMLEFT
+        charspan: [ 1,423 ] # 2-tuple, references to "orig"
+
+pictures: # All pictures...
+  - self_ref: "#/pictures/0"
+    label: "picture"
+    parent:
+      $ref: "#/body"
+    captions:
+      - $ref: "#/texts/3"
+    data: # BaseFigureData Type
+      classification: "illustration"
+      confidence: 0.78
+      description: "...."
+      # content structure?
+    image:
+      mimetype: image/png
+      dpi: 72
+      size:
+        width: 231
+        height: 351
+      uri: "file:///dummy_doc/pictures/0.png"
+      #alternatives: base64 encoded striong
+    children:
+      - $ref: "#/texts/2" # This text element appears inside the figure, hence it is a child.
+    prov:
+      - page_no: 1
+        bbox:
+          l: 456.3
+          t: 145.8
+          b: 623.4
+          r: 702.5
+        charspan: [ 0,288 ]
+
+key_value_items: [ ] # All KV-items
+
+# We should consider this for pages
+pages: # Optional, for layout documents
+  1:
+    size:
+      width: 768.23
+      height: 583.15
+    image:
+      mimetype: image/png
+      dpi: 144
+      size:
+        width: 1536
+        height: 1166
+      uri: "file:///dummy_doc/pages/1.png"
+      #alternatives: base64 encoded string
+    num_elements: 23
+    page_no: 1

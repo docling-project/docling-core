@@ -440,7 +440,6 @@ class BaseText(BaseCell):
     ):
         """Export text element to document tokens format."""
         body = f"<{self.obj_type}>"
-        # body = f"<{self.name}>"
 
         assert DocumentToken.is_known_token(
             body
