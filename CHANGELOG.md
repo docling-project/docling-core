@@ -1,3 +1,11 @@
+## [v1.7.0](https://github.com/DS4SD/docling-core/releases/tag/v1.7.0) - 2024-10-01
+
+### Feature
+
+* (experimental) introduce new document format ([#21](https://github.com/DS4SD/docling-core/issues/21)) ([`688789e`](https://github.com/DS4SD/docling-core/commit/688789ea751d75c15a6957dba4ba496b899e9d11))
+* Add doc metadata extractor and ID generator classes ([#34](https://github.com/DS4SD/docling-core/issues/34)) ([`b76780c`](https://github.com/DS4SD/docling-core/commit/b76780c3b21a89d407b6afb5e72cd4f46dbcf569))
+* Support heading as chunk metadata ([#36](https://github.com/DS4SD/docling-core/issues/36)) ([`4bde515`](https://github.com/DS4SD/docling-core/commit/4bde51528d23be9bed797030a75991f6acdb241f))
+
 ## [v1.6.3](https://github.com/DS4SD/docling-core/releases/tag/v1.6.3) - 2024-09-26
 
 ### Fix
