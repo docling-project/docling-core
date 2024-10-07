@@ -1,3 +1,10 @@
+## [v1.7.1](https://github.com/DS4SD/docling-core/releases/tag/v1.7.1) - 2024-10-07
+
+### Fix
+
+* Make doc metadata keys pure strings ([#38](https://github.com/DS4SD/docling-core/issues/38)) ([`246627f`](https://github.com/DS4SD/docling-core/commit/246627f4f6aef1121dd4211cc223f356a133c60e))
+* Align chunk ref format with one used in Document ([#37](https://github.com/DS4SD/docling-core/issues/37)) ([`b5592ad`](https://github.com/DS4SD/docling-core/commit/b5592ad747a061cb6b47c86228063371a80a9b44))
+
 ## [v1.7.0](https://github.com/DS4SD/docling-core/releases/tag/v1.7.0) - 2024-10-01
 
 ### Feature
