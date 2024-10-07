@@ -6,13 +6,13 @@
 """Simple metadata extractor module."""
 
 
-from typing import Any
+from typing import Any, Final
 
 from docling_core.transforms.metadata_extractor import BaseMetadataExtractor
 from docling_core.types import Document as DLDocument
 
-_DL_DOC_HASH = "dl_doc_hash"
-_ORIGIN = "origin"
+_DL_DOC_HASH: Final[str] = "dl_doc_hash"
+_ORIGIN: Final[str] = "origin"
 
 
 class SimpleMetadataExtractor(BaseMetadataExtractor):

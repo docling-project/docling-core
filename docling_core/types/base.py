@@ -6,7 +6,7 @@
 """Define common models across types."""
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Generic, Hashable, List, Literal, Optional, TypeVar
+from typing import Final, Generic, Hashable, List, Literal, Optional, TypeVar
 
 from pydantic import (
     AfterValidator,
@@ -27,6 +27,9 @@ from docling_core.search.mapping import es_field
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.utils.alias import AliasModel
 from docling_core.utils.validators import validate_datetime, validate_unique_list
+
+# (subset of) JSON Pointer URI fragment id format, e.g. "#/main-text/84":
+_JSON_POINTER_REGEX: Final[str] = r"^#(?:/([\w-]+)(?:/(\d+))?)?$"
 
 LanguageT = TypeVar("LanguageT", bound=str)
 IdentifierTypeT = TypeVar("IdentifierTypeT", bound=str)

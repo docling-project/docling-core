@@ -4,12 +4,17 @@
 #
 
 """Define base classes for chunking."""
+import re
 from abc import ABC, abstractmethod
-from typing import Iterator, Optional
+from typing import Final, Iterator, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from docling_core.types import BoundingBox, Document
+from docling_core.types.base import _JSON_POINTER_REGEX
+
+# (subset of) JSONPath format, e.g. "$.main-text[84]" (for migration purposes)
+_DEPRECATED_JSON_PATH_PATTERN: Final = re.compile(r"^\$\.([\w-]+)\[(\d+)\]$")
 
 
 def _create_path(pos: int, path_prefix: str = "main-text") -> str:
@@ -19,21 +24,21 @@ def _create_path(pos: int, path_prefix: str = "main-text") -> str:
 class Chunk(BaseModel):
     """Data model for Chunk."""
 
-    path: str
+    path: str = Field(pattern=_JSON_POINTER_REGEX)
     text: str
     heading: Optional[str] = None
 
-    @model_validator(mode="before")
+    @field_validator("path", mode="before")
     @classmethod
-    def _json_pointer_from_json_path(cls, data):
-        path = data.get("path")
-        if path.startswith("$."):
-            parts = path.split("[")
-            data["path"] = _create_path(
-                pos=parts[1][:-1],
-                path_prefix=parts[0][2:],
-            )
-        return data
+    def _json_pointer_from_json_path(cls, path: str):
+        if (match := _DEPRECATED_JSON_PATH_PATTERN.match(path)) is not None:
+            groups = match.groups()
+            if len(groups) == 2 and groups[0] is not None and groups[1] is not None:
+                return _create_path(
+                    pos=int(groups[1]),
+                    path_prefix=groups[0],
+                )
+        return path
 
 
 class ChunkWithMetadata(Chunk):

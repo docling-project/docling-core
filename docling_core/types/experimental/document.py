@@ -20,6 +20,7 @@ from tabulate import tabulate
 from typing_extensions import Annotated
 
 from docling_core.search.package import VERSION_PATTERN
+from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc.tokens import DocumentToken
 from docling_core.types.experimental import BoundingBox, Size
 from docling_core.types.experimental.labels import DocItemLabel, GroupLabel
@@ -27,9 +28,6 @@ from docling_core.types.experimental.labels import DocItemLabel, GroupLabel
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
 CURRENT_VERSION: Final = "1.0.0"
-
-# (subset of) JSON Pointer URI fragment identifier format:
-_JSON_POINTER_REGEX = r"^#(/[\w\-]+(/\d+)?)?$"
 
 
 class BasePictureData(BaseModel):  # TBD
