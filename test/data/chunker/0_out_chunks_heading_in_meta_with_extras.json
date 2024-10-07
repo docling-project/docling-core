@@ -1,7 +1,7 @@
 {
     "root": [
         {
-            "path": "$.main-text[0]",
+            "path": "#/main-text/0",
             "text": "This paragraph is marginally long enough for getting accepted as a chunk.",
             "page": 1,
             "bbox": [
@@ -12,40 +12,40 @@
             ]
         },
         {
-            "path": "$.main-text[4]",
+            "path": "#/main-text/4",
             "text": "This one should also include the subtitle above since it is long enough.",
+            "heading": "Some subtitle",
             "page": 3,
             "bbox": [
                 5.0,
                 6.0,
                 7.0,
                 8.0
-            ],
-            "heading": "Some subtitle"
+            ]
         },
         {
-            "path": "$.tables[0]",
+            "path": "#/tables/0",
             "text": "Atomic Vision, Business = Website design. Atomic Vision, Country = United States. Delix Computer GmbH, Business = Computers and software. Delix Computer GmbH, Country = Germany",
+            "heading": "Acquisitions",
             "page": 4,
             "bbox": [
                 8.0,
                 9.0,
                 10.0,
                 11.0
-            ],
-            "heading": "Acquisitions"
+            ]
         },
         {
-            "path": "$.main-text[8]",
+            "path": "#/main-text/8",
             "text": "This paragraph is right before the list.\nSome first bullet content here.\nAnd then some second bullet content here.",
+            "heading": "Acquisitions",
             "page": 4,
             "bbox": [
                 8.0,
                 9.0,
                 10.0,
                 11.0
-            ],
-            "heading": "Acquisitions"
+            ]
         }
     ]
 }

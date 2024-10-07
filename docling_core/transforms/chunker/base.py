@@ -7,9 +7,13 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from docling_core.types import BoundingBox, Document
+
+
+def _create_path(pos: int, path_prefix: str = "main-text") -> str:
+    return f"#/{path_prefix}/{pos}"
 
 
 class Chunk(BaseModel):
@@ -17,6 +21,19 @@ class Chunk(BaseModel):
 
     path: str
     text: str
+    heading: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _json_pointer_from_json_path(cls, data):
+        path = data.get("path")
+        if path.startswith("$."):
+            parts = path.split("[")
+            data["path"] = _create_path(
+                pos=parts[1][:-1],
+                path_prefix=parts[0][2:],
+            )
+        return data
 
 
 class ChunkWithMetadata(Chunk):
@@ -24,7 +41,6 @@ class ChunkWithMetadata(Chunk):
 
     page: Optional[int] = None
     bbox: Optional[BoundingBox] = None
-    heading: Optional[str] = None
 
 
 class BaseChunker(BaseModel, ABC):
@@ -44,3 +60,10 @@ class BaseChunker(BaseModel, ABC):
             Iterator[Chunk]: iterator over extracted chunks
         """
         raise NotImplementedError()
+
+    @classmethod
+    def _create_path(cls, pos: int, path_prefix: str = "main-text") -> str:
+        return _create_path(
+            pos=pos,
+            path_prefix=path_prefix,
+        )

@@ -12,7 +12,7 @@ from enum import Enum
 from typing import Any, Iterator, Optional, Union
 
 import pandas as pd
-from pydantic import BaseModel, PositiveInt
+from pydantic import BaseModel, Field, PositiveInt
 
 from docling_core.transforms.chunker import BaseChunker, Chunk, ChunkWithMetadata
 from docling_core.types import BaseText
@@ -25,9 +25,17 @@ _logger = logging.getLogger(__name__)
 class HierarchicalChunker(BaseChunker):
     """Chunker implementation leveraging the document layout."""
 
-    include_metadata: bool = True
-    heading_as_metadata: bool = False
-    min_chunk_len: PositiveInt = 64
+    heading_as_metadata: bool = Field(
+        default=False,
+        description="Whether heading should be in metadata (instead of text)",
+    )
+    include_metadata: bool = Field(
+        default=True,
+        description="Whether to include extras in the metadata",
+    )
+    min_chunk_len: PositiveInt = Field(
+        default=64, description="Minimum chunk text length to consider (in chars)"
+    )
 
     class _NodeType(str, Enum):
         PARAGRAPH = "paragraph"
@@ -82,10 +90,6 @@ class HierarchicalChunker(BaseChunker):
             output_text = ". ".join(texts)
 
         return output_text
-
-    @classmethod
-    def _create_path(cls, pos: int, path_prefix: str = "main-text") -> str:
-        return f"$.{path_prefix}[{pos}]"
 
     class _MainTextItemNode(BaseModel):
         parent: Optional[int] = None
@@ -304,14 +308,15 @@ class HierarchicalChunker(BaseChunker):
                 return ChunkWithMetadata(
                     text=concat,
                     path=path,
+                    heading=heading,
                     page=item.prov[0].page if item.prov else None,
                     bbox=item.prov[0].bbox if item.prov else None,
-                    heading=heading,
                 )
             else:
                 return Chunk(
                     text=concat,
                     path=path,
+                    heading=heading,
                 )
         else:
             return None
@@ -327,11 +332,6 @@ class HierarchicalChunker(BaseChunker):
         Yields:
             Iterator[Chunk]: iterator over extracted chunks
         """
-        if (not self.include_metadata) and self.heading_as_metadata:
-            raise RuntimeError(
-                "To enable `heading_as_metadata`, also `include_metadata` must be True."
-            )
-
         if dl_doc.main_text:
             # extract doc structure incl. metadata for
             # each item (e.g. parent, children)
