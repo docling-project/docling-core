@@ -83,7 +83,7 @@ class HierarchicalChunker(BaseChunker):
             nrows = table_df.shape[0]
             ncols = table_df.shape[1]
             texts = [
-                f"{rows[i]}, {cols[j]} = {table_df.iloc[i, j].strip()}"
+                f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
                 for i in range(1, nrows)
                 for j in range(1, ncols)
             ]

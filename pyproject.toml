@@ -52,7 +52,7 @@ pydantic = "^2.6.0"
 jsonref = "^1.1.0"
 json-schema-for-humans = "^1.0.0"
 tabulate = "^0.9.0"
-pandas = "^2.2.2"
+pandas = "^2.1.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
@@ -68,6 +68,7 @@ pep8-naming = "^0.13.2"
 jsondiff = "^2.0.0"
 types-setuptools = "^70.3.0"
 python-semantic-release = "^7.32.2"
+pandas-stubs = "^2.1.4.231227"
 
 [tool.setuptools.packages.find]
 where = ["docling_core/resources/schemas"]
@@ -117,7 +118,6 @@ module = [
     "jsonref.*",
     "jsonschema.*",
     "json_schema_for_humans.*",
-    "pandas.*",
     "requests.*",
     "tabulate.*",
     "yaml.*",
