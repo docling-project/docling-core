@@ -1,3 +1,9 @@
+## [v1.7.2](https://github.com/DS4SD/docling-core/releases/tag/v1.7.2) - 2024-10-09
+
+### Fix
+
+* Loosen pandas version ([#40](https://github.com/DS4SD/docling-core/issues/40)) ([`aec1a41`](https://github.com/DS4SD/docling-core/commit/aec1a41402d64c2c216923b40d4521f8d46540b7))
+
 ## [v1.7.1](https://github.com/DS4SD/docling-core/releases/tag/v1.7.1) - 2024-10-07
 
 ### Fix
