@@ -1,3 +1,13 @@
+## [v2.0.0](https://github.com/DS4SD/docling-core/releases/tag/v2.0.0) - 2024-10-16
+
+### Feature
+
+* Expose DoclingDocument as main type, move old typing to legacy ([#41](https://github.com/DS4SD/docling-core/issues/41)) ([`03df97f`](https://github.com/DS4SD/docling-core/commit/03df97fa73db2499682613ff17dff9fe996a1bdc))
+
+### Breaking
+
+* Expose DoclingDocument as main type, move old typing to legacy ([#41](https://github.com/DS4SD/docling-core/issues/41)) ([`03df97f`](https://github.com/DS4SD/docling-core/commit/03df97fa73db2499682613ff17dff9fe996a1bdc))
+
 ## [v1.7.2](https://github.com/DS4SD/docling-core/releases/tag/v1.7.2) - 2024-10-09
 
 ### Fix
