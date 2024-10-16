@@ -8,12 +8,12 @@ import json
 
 from pydantic import ValidationError
 
-from docling_core.types.doc.document import CCSDocument
+from docling_core.types.legacy_doc.document import CCSDocument
 
 
 def test_ccs_document_update():
     """Validate data with CCSDocument extract."""
-    filename = "test/data/doc/ext-1.json"
+    filename = "test/data/legacy_doc/ext-1.json"
     try:
         with open(filename) as f:
             raw_doc = json.load(f)

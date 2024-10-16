@@ -4,71 +4,58 @@
 #
 
 """Define base classes for chunking."""
-import re
 from abc import ABC, abstractmethod
-from typing import Final, Iterator, Optional
+from typing import Any, ClassVar, Iterator
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
-from docling_core.types import BoundingBox, Document
-from docling_core.types.base import _JSON_POINTER_REGEX
-
-# (subset of) JSONPath format, e.g. "$.main-text[84]" (for migration purposes)
-_DEPRECATED_JSON_PATH_PATTERN: Final = re.compile(r"^\$\.([\w-]+)\[(\d+)\]$")
+from docling_core.types.doc import DoclingDocument as DLDocument
 
 
-def _create_path(pos: int, path_prefix: str = "main-text") -> str:
-    return f"#/{path_prefix}/{pos}"
+class BaseMeta(BaseModel):
+    """Metadata base class."""
+
+    excluded_embed: ClassVar[list[str]] = []
+    excluded_llm: ClassVar[list[str]] = []
+
+    def export_json_dict(self) -> dict[str, Any]:
+        """Helper method for exporting non-None keys to JSON mode.
+
+        Returns:
+            dict[str, Any]: The exported dictionary.
+        """
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
-class Chunk(BaseModel):
-    """Data model for Chunk."""
+class BaseChunk(BaseModel):
+    """Chunk base class."""
 
-    path: str = Field(pattern=_JSON_POINTER_REGEX)
     text: str
-    heading: Optional[str] = None
+    meta: BaseMeta
 
-    @field_validator("path", mode="before")
-    @classmethod
-    def _json_pointer_from_json_path(cls, path: str):
-        if (match := _DEPRECATED_JSON_PATH_PATTERN.match(path)) is not None:
-            groups = match.groups()
-            if len(groups) == 2 and groups[0] is not None and groups[1] is not None:
-                return _create_path(
-                    pos=int(groups[1]),
-                    path_prefix=groups[0],
-                )
-        return path
+    def export_json_dict(self) -> dict[str, Any]:
+        """Helper method for exporting non-None keys to JSON mode.
 
-
-class ChunkWithMetadata(Chunk):
-    """Data model for Chunk including metadata."""
-
-    page: Optional[int] = None
-    bbox: Optional[BoundingBox] = None
+        Returns:
+            dict[str, Any]: The exported dictionary.
+        """
+        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
 class BaseChunker(BaseModel, ABC):
-    """Base class for Chunker."""
+    """Chunker base class."""
 
     @abstractmethod
-    def chunk(self, dl_doc: Document, **kwargs) -> Iterator[Chunk]:
+    def chunk(self, dl_doc: DLDocument, **kwargs) -> Iterator[BaseChunk]:
         """Chunk the provided document.
 
         Args:
-            dl_doc (Document): document to chunk
+            dl_doc (DLDocument): document to chunk
 
         Raises:
             NotImplementedError: in this abstract implementation
 
         Yields:
-            Iterator[Chunk]: iterator over extracted chunks
+            Iterator[BaseChunk]: iterator over extracted chunks
         """
         raise NotImplementedError()
-
-    @classmethod
-    def _create_path(cls, pos: int, path_prefix: str = "main-text") -> str:
-        return _create_path(
-            pos=pos,
-            path_prefix=path_prefix,
-        )

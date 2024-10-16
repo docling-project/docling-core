@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Literal
 
 from pydantic import BaseModel, Field
 
-from docling_core.types.doc.base import BoundingBox
+from docling_core.types.legacy_doc.base import BoundingBox
 from docling_core.utils.alias import AliasModel
 
 CoordsOrder = Literal["x1", "y1", "x2", "y2"]

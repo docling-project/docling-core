@@ -10,7 +10,7 @@ import os
 import jsondiff
 
 from docling_core.search.json_schema_to_search_mapper import JsonSchemaToSearchMapper
-from docling_core.types.doc.document import ExportedCCSDocument
+from docling_core.types.legacy_doc.document import ExportedCCSDocument
 from docling_core.types.rec.record import Record
 
 

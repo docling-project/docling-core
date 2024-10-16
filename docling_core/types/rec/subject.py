@@ -15,7 +15,7 @@ from docling_core.types.base import (
     SubjectNameTypeT,
     SubjectTypeT,
 )
-from docling_core.types.doc.base import S3Reference
+from docling_core.types.legacy_doc.base import S3Reference
 from docling_core.utils.alias import AliasModel
 
 

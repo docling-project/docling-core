@@ -6,7 +6,7 @@
 """Generate the JSON Schema of pydantic models and export them to files.
 
 Example:
-    python docling_core/utils/ds_generate_jsonschema.py doc.base.TableCell
+    python docling_core/utils/generate_jsonschema.py doc.document.TableCell
 
 """
 import argparse
@@ -27,10 +27,10 @@ def _import_class(class_reference: str) -> Any:
 
 
 def generate_json_schema(class_reference: str) -> Union[dict, None]:
-    """Generate a jsonable dict of a model's schema from DS data types.
+    """Generate a jsonable dict of a model's schema from a data type.
 
     Args:
-        class_reference: The reference to a class in 'src.data_types'.
+        class_reference: The reference to a class in 'docling_core.types'.
 
     Returns:
         A jsonable dict of the model's schema.
@@ -48,7 +48,7 @@ def main() -> None:
     """Print the JSON Schema of a model."""
     argparser = argparse.ArgumentParser()
     argparser.add_argument(
-        "class_ref", help="Class reference, e.g., doc.base.TableCell"
+        "class_ref", help="Class reference, e.g., doc.document.TableCell"
     )
     args = argparser.parse_args()
 

@@ -22,19 +22,19 @@ def test_generic():
             "filename-prov": "abc.xml.zip",
             "document-hash": "123457889",
         },
-        "_name": "The ABC doc",
+        "_name": "The ABC legacy_doc",
         "custom": ["The custom ABC content 1.", "The custom ABC content 2."],
     }
     Generic.model_validate(input_generic_0)
 
     input_generic_1 = {
         "file-info": {"filename": "abc.xml", "document-hash": "123457889"},
-        "_name": "The ABC doc",
+        "_name": "The ABC legacy_doc",
     }
     Generic.model_validate(input_generic_1)
 
     input_generic_2 = {
-        "_name": "The ABC doc",
+        "_name": "The ABC legacy_doc",
         "custom": ["The custom ABC content 1.", "The custom ABC content 2."],
     }
     with pytest.raises(ValidationError):
@@ -43,7 +43,7 @@ def test_generic():
 
 def test_document():
     """Test the Document model."""
-    for filename in glob.glob("test/data/doc/doc-*.json"):
+    for filename in glob.glob("test/data/legacy_doc/doc-*.json"):
         with open(filename) as file_obj:
             file_json = file_obj.read()
         Document.model_validate_json(file_json)
@@ -52,7 +52,7 @@ def test_document():
 def test_table_export_to_tokens():
     """Test the Table Tokens export."""
 
-    for filename in glob.glob("test/data/doc/doc-*.json"):
+    for filename in glob.glob("test/data/legacy_doc/doc-*.json"):
         with open(filename) as file_obj:
             file_json = file_obj.read()
 
@@ -109,17 +109,17 @@ def test_table_export_to_tokens():
 
 def test_document_export_to_md():
     """Test the Document Markdown export."""
-    with open("test/data/doc/doc-export.json") as src_obj:
+    with open("test/data/legacy_doc/doc-export.json") as src_obj:
         src_data = src_obj.read()
     doc = Document.model_validate_json(src_data)
 
     md = doc.export_to_markdown()
 
     if GENERATE:
-        with open("test/data/doc/doc-export.md", "w") as gold_obj:
+        with open("test/data/legacy_doc/doc-export.md", "w") as gold_obj:
             gold_obj.write(md)
 
-    with open("test/data/doc/doc-export.md") as gold_obj:
+    with open("test/data/legacy_doc/doc-export.md") as gold_obj:
         gold_data = gold_obj.read().strip()
 
     assert md == gold_data
@@ -127,17 +127,17 @@ def test_document_export_to_md():
 
 def test_document_export_to_tokens():
     """Test the Document Tokens export."""
-    with open("test/data/doc/doc-export.json") as src_obj:
+    with open("test/data/legacy_doc/doc-export.json") as src_obj:
         src_data = src_obj.read()
 
     doc = Document.model_validate_json(src_data)
     xml = doc.export_to_document_tokens(delim=True)
 
     if GENERATE:
-        with open("test/data/doc/doc-export.doctags.txt", "w") as gold_obj:
+        with open("test/data/legacy_doc/doc-export.doctags.txt", "w") as gold_obj:
             gold_obj.write(xml)
 
-    with open("test/data/doc/doc-export.doctags.txt", "r") as gold_obj:
+    with open("test/data/legacy_doc/doc-export.doctags.txt", "r") as gold_obj:
         gold_data = gold_obj.read().strip()
 
     assert xml == gold_data

@@ -20,7 +20,7 @@ from docling_core.types.base import (
     Log,
     StrictDateTime,
 )
-from docling_core.types.doc.document import CCSDocumentDescription
+from docling_core.types.legacy_doc.document import CCSDocumentDescription
 from docling_core.types.rec.record import RecordDescription
 
 

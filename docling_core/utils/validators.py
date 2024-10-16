@@ -38,7 +38,7 @@ def validate_raw_schema(file_: dict) -> tuple[bool, str]:
 
     schema_txt = (
         resources.files("docling_core")
-        .joinpath("resources/schemas/doc/RAW.json")
+        .joinpath("resources/schemas/legacy_doc/RAW.json")
         .read_text("utf-8")
     )
     schema = json.loads(schema_txt)
@@ -52,7 +52,7 @@ def validate_ann_schema(file_: dict) -> tuple[bool, str]:
 
     schema_txt = (
         resources.files("docling_core")
-        .joinpath("resources/schemas/doc/ANN.json")
+        .joinpath("resources/schemas/legacy_doc/ANN.json")
         .read_text("utf-8")
     )
     schema = json.loads(schema_txt)
@@ -66,7 +66,7 @@ def validate_ocr_schema(file_: dict) -> tuple[bool, str]:
 
     schema_txt = (
         resources.files("docling_core")
-        .joinpath("resources/schemas/doc/OCR-output.json")
+        .joinpath("resources/schemas/legacy_doc/OCR-output.json")
         .read_text("utf-8")
     )
     schema = json.loads(schema_txt)

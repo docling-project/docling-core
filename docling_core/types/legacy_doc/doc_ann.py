@@ -8,7 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from docling_core.types.doc.base import BoundingBox
+from docling_core.types.legacy_doc.base import BoundingBox
 
 AnnotationReport = Any  # TODO
 

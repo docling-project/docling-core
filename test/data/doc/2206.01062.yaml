@@ -216,7 +216,7 @@ pictures:
 - captions:
   - $ref: '#/texts/12'
   children: []
-  data: {}
+  annotations: []
   footnotes: []
   image: null
   label: picture
@@ -238,7 +238,7 @@ pictures:
 - captions:
   - $ref: '#/texts/39'
   children: []
-  data: {}
+  annotations: []
   footnotes: []
   image: null
   label: picture
@@ -260,7 +260,7 @@ pictures:
 - captions:
   - $ref: '#/texts/70'
   children: []
-  data: {}
+  annotations: []
   footnotes: []
   image: null
   label: picture
@@ -282,7 +282,7 @@ pictures:
 - captions:
   - $ref: '#/texts/76'
   children: []
-  data: {}
+  annotations: []
   footnotes: []
   image: null
   label: picture
@@ -304,7 +304,7 @@ pictures:
 - captions:
   - $ref: '#/texts/117'
   children: []
-  data: {}
+  annotations: []
   footnotes: []
   image: null
   label: picture

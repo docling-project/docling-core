@@ -7,7 +7,7 @@
 import pytest
 from pydantic import ValidationError
 
-from docling_core.types.doc.base import Prov, S3Reference
+from docling_core.types.legacy_doc.base import Prov, S3Reference
 
 
 def test_s3_reference():

@@ -1,7 +1,7 @@
 # Docling Core
 
 [![PyPI version](https://img.shields.io/pypi/v/docling-core)](https://pypi.org/project/docling-core/)
-![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
+![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%20%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
@@ -21,7 +21,7 @@ pip install docling-core
 
 ### Development setup
 
-To develop for Docling Core, you need Python 3.9 / 3.10 / 3.11 / 3.12 and Poetry. You can then install from your local clone's root dir:
+To develop for Docling Core, you need Python 3.9 / 3.10 / 3.11 / 3.12 / 3.13 and Poetry. You can then install from your local clone's root dir:
 ```bash
 poetry install
 ```
@@ -45,14 +45,14 @@ poetry run pytest test
   Document.model_validate_json(data_str)
   ```
 
-- You can generate the JSON schema of a model with the script `ds_generate_jsonschema`.
+- You can generate the JSON schema of a model with the script `generate_jsonschema`.
 
   ```py
   # for the `Document` type
-  ds_generate_jsonschema Document
+  generate_jsonschema Document
 
   # for the use `Record` type
-  ds_generate_jsonschema Record
+  generate_jsonschema Record
   ```
 
 ## Documentation
@@ -61,12 +61,12 @@ Docling supports 3 main data types:
 
 - **Document** for publications like books, articles, reports, or patents. When Docling converts an unstructured PDF document, the generated JSON follows this schema.
   The Document type also models the metadata that may be attached to the converted document.
-  Check [Document](docs/Document.md) for the full JSON schema. 
+  Check [Document](docs/Document.json) for the full JSON schema. 
 - **Record** for structured database records, centered on an entity or _subject_ that is provided with a list of attributes.
   Related to records, the statements can represent annotations on text by Natural Language Processing (NLP) tools.
-  Check [Record](docs/Record.md) for the full JSON schema. 
+  Check [Record](docs/Record.json) for the full JSON schema. 
 - **Generic** for any data representation, ensuring minimal configuration and maximum flexibility.
-  Check [Generic](docs/Generic.md) for the full JSON schema. 
+  Check [Generic](docs/Generic.json) for the full JSON schema. 
 
 The data schemas are defined using [pydantic](https://pydantic-docs.helpmanual.io/) models, which provide built-in processes to support the creation of data that adhere to those models.
 

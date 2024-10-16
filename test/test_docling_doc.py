@@ -2,24 +2,35 @@ from collections import deque
 
 import pytest
 import yaml
+from PIL import Image as PILImage
 from pydantic import ValidationError
 
-from docling_core.types.experimental.document import (
+from docling_core.types.doc.document import (
     CURRENT_VERSION,
-    BasePictureData,
-    BaseTableData,
-    DescriptionItem,
     DocItem,
     DoclingDocument,
+    DocumentOrigin,
     FloatingItem,
+    ImageRef,
     KeyValueItem,
+    ListItem,
     PictureItem,
     SectionHeaderItem,
     TableCell,
+    TableData,
     TableItem,
     TextItem,
 )
-from docling_core.types.experimental.labels import DocItemLabel, GroupLabel
+from docling_core.types.doc.labels import DocItemLabel, GroupLabel
+
+
+def test_doc_origin():
+
+    doc_origin = DocumentOrigin(
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename="myfile.pdf",
+        binary_hash="50115d582a0897fe1dd520a6876ec3f9321690ed0f6cfdc99a8d09019be073e8",
+    )
 
 
 def test_docitems():
@@ -52,9 +63,9 @@ def test_docitems():
         return gold
 
     def verify(dc, obj):
-        pred = serialise(obj)
+        pred = serialise(obj).strip()
         # print(f"\t{dc.__name__}:\n {pred}")
-        gold = read(dc.__name__)
+        gold = read(dc.__name__).strip()
 
         assert pred == gold, f"pred!=gold for {dc.__name__}"
 
@@ -70,7 +81,15 @@ def test_docitems():
                 self_ref="#",
             )
             verify(dc, obj)
-
+        elif dc is ListItem:
+            obj = dc(
+                text="whatever",
+                orig="whatever",
+                marker="(1)",
+                enumerated=True,
+                self_ref="#",
+            )
+            verify(dc, obj)
         elif dc is FloatingItem:
             obj = dc(
                 label=DocItemLabel.TEXT,
@@ -98,14 +117,13 @@ def test_docitems():
         elif dc is PictureItem:
             obj = dc(
                 self_ref="#",
-                data=BasePictureData(),
             )
             verify(dc, obj)
 
         elif dc is TableItem:
             obj = dc(
                 self_ref="#",
-                data=BaseTableData(num_rows=3, num_cols=5, table_cells=[]),
+                data=TableData(num_rows=3, num_cols=5, table_cells=[]),
             )
             verify(dc, obj)
 
@@ -116,7 +134,7 @@ def test_docitems():
 
 def test_reference_doc():
     # Read YAML file of manual reference doc
-    with open("test/data/experimental/dummy_doc.yaml", "r") as fp:
+    with open("test/data/doc/dummy_doc.yaml", "r") as fp:
         dict_from_yaml = yaml.safe_load(fp)
 
     doc = DoclingDocument.model_validate(dict_from_yaml)
@@ -153,7 +171,7 @@ def test_reference_doc():
 
 def test_parse_doc():
     with open(
-        "test/data/experimental/2206.01062.experimental.yaml",
+        "test/data/doc/2206.01062.yaml",
         "r",
     ) as fp:
         dict_from_yaml = yaml.safe_load(fp)
@@ -194,7 +212,7 @@ def _test_serialize_and_reload(doc):
     assert doc_reload is not doc  # can't be identical
 
 
-def _test_export_methods(doc):
+def _test_export_methods(doc: DoclingDocument):
     ### Iterate all elements
     doc.print_element_tree()
     ## Export stuff
@@ -209,7 +227,7 @@ def _test_export_methods(doc):
 
 
 def _construct_bad_doc():
-    doc = DoclingDocument(description=DescriptionItem(), name="Bad doc")
+    doc = DoclingDocument(name="Bad doc")
 
     title = doc.add_text(label=DocItemLabel.TITLE, text="This is the title")
     group = doc.add_group(parent=title, name="chapter 1")
@@ -226,7 +244,7 @@ def _construct_bad_doc():
 
 
 def _construct_doc() -> DoclingDocument:
-    doc = DoclingDocument(description=DescriptionItem(), name="Untitled 1")
+    doc = DoclingDocument(name="Untitled 1")
     # group, heading, paragraph, table, figure, title, list, provenance
     doc.add_text(label=DocItemLabel.TEXT, text="Author 1\nAffiliation 1")
     doc.add_text(label=DocItemLabel.TEXT, text="Author 2\nAffiliation 2")
@@ -326,54 +344,66 @@ def _construct_doc() -> DoclingDocument:
             text="695944",
         )
     )
-    table_el = BaseTableData(num_rows=3, num_cols=3, table_cells=table_cells)
+    table_el = TableData(num_rows=3, num_cols=3, table_cells=table_cells)
     doc.add_table(data=table_el)
 
     fig_caption = doc.add_text(
         label=DocItemLabel.CAPTION, text="This is the caption of figure 1."
     )
-    fig_item = doc.add_picture(data=BasePictureData(), caption=fig_caption)
+    fig_item = doc.add_picture(caption=fig_caption)
 
+    fig2_image = PILImage.new(mode="RGB", size=(2, 2), color=(0, 0, 0))
+    fig2_item = doc.add_picture(image=ImageRef.from_pil(image=fig2_image, dpi=72))
     return doc
+
+
+def test_pil_image():
+    doc = DoclingDocument(name="Untitled 1")
+    fig_image = PILImage.new(mode="RGB", size=(2, 2), color=(0, 0, 0))
+    fig_item = doc.add_picture(image=ImageRef.from_pil(image=fig_image, dpi=72))
+
+    ### Serialize and deserialize the document
+    yaml_dump = yaml.safe_dump(doc.model_dump(mode="json", by_alias=True))
+    doc_reload = DoclingDocument.model_validate(yaml.safe_load(yaml_dump))
+    reloaded_fig = doc_reload.pictures[0]
+    reloaded_image = reloaded_fig.image.pil_image
+
+    assert reloaded_image.size == fig_image.size
+    assert reloaded_image.mode == fig_image.mode
+    assert reloaded_image.tobytes() == fig_image.tobytes()
 
 
 def test_version_doc():
 
     # default version
-    doc = DoclingDocument(description=DescriptionItem(), name="Untitled 1")
+    doc = DoclingDocument(name="Untitled 1")
     assert doc.version == CURRENT_VERSION
 
-    with open("test/data/experimental/dummy_doc.yaml") as fp:
+    with open("test/data/doc/dummy_doc.yaml") as fp:
         dict_from_yaml = yaml.safe_load(fp)
     doc = DoclingDocument.model_validate(dict_from_yaml)
     assert doc.version == CURRENT_VERSION
 
     # invalid version
     with pytest.raises(ValidationError, match="NoneType"):
-        DoclingDocument(description=DescriptionItem(), name="Untitled 1", version=None)
+        DoclingDocument(name="Untitled 1", version=None)
     with pytest.raises(ValidationError, match="pattern"):
-        DoclingDocument(description=DescriptionItem(), name="Untitled 1", version="abc")
+        DoclingDocument(name="Untitled 1", version="abc")
 
     # incompatible version (major)
     major_split = CURRENT_VERSION.split(".", 1)
     new_version = f"{int(major_split[0]) + 1}.{major_split[1]}"
     with pytest.raises(ValidationError, match="incompatible"):
-        DoclingDocument(
-            description=DescriptionItem(), name="Untitled 1", version=new_version
-        )
+        DoclingDocument(name="Untitled 1", version=new_version)
 
     # incompatible version (minor)
     minor_split = major_split[1].split(".", 1)
     new_version = f"{major_split[0]}.{int(minor_split[0]) + 1}.{minor_split[1]}"
     with pytest.raises(ValidationError, match="incompatible"):
-        DoclingDocument(
-            description=DescriptionItem(), name="Untitled 1", version=new_version
-        )
+        DoclingDocument(name="Untitled 1", version=new_version)
 
     # compatible version (equal or lower minor)
     patch_split = minor_split[1].split(".", 1)
     comp_version = f"{major_split[0]}.{minor_split[0]}.{int(patch_split[0]) + 1}"
-    doc = DoclingDocument(
-        description=DescriptionItem(), name="Untitled 1", version=comp_version
-    )
+    doc = DoclingDocument(name="Untitled 1", version=comp_version)
     assert doc.version == CURRENT_VERSION

@@ -34,7 +34,10 @@ class GroupLabel(str, Enum):
     """GroupLabel."""
 
     UNSPECIFIED = "unspecified"
-    LIST = "list"  # group label for list container (not the list-items)
+    LIST = (
+        "list"  # group label for list container (not the list-items) (e.g. HTML <ul/>)
+    )
+    ORDERED_LIST = "ordered_list"  # List with enumeration (e.g. HTML <ol/>)
     CHAPTER = "chapter"
     SECTION = "section"
     SHEET = "sheet"

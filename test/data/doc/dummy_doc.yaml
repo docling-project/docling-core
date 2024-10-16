@@ -133,10 +133,27 @@ pictures: # All pictures...
       $ref: "#/body"
     captions:
       - $ref: "#/texts/3"
-    data: # BaseFigureData Type
-      classification: "illustration"
-      confidence: 0.78
-      description: "...."
+    annotations: # PictureData Type
+      - kind: classification
+        provenance: model1
+        predicted_classes:
+          - class_name: "illustration"
+            confidence: 0.78
+      - kind: description
+        text: "..."
+        provenance: "model2"
+      - kind: molecule_data
+        smi: "..."
+        confidence: 0.98
+        class_name: "chemistry_molecular_structure"
+        segmentation: [[0,0],[1,0],[0,1],[1,1]]
+        provenance: "model3-1.0.0"
+      - kind: misc
+        content:
+          myanalysis:
+            prediction: "abc"
+          something_else:
+            text: "aaa"
       # content structure?
     image:
       mimetype: image/png
@@ -156,6 +173,19 @@ pictures: # All pictures...
           b: 623.4
           r: 702.5
         charspan: [ 0,288 ]
+  - self_ref: "#/pictures/1"
+    label: "picture"
+    parent:
+      $ref: "#/body"
+    annotations: []
+    image:
+      mimetype: image/png
+      dpi: 72
+      size:
+        width: 2.0
+        height: 2.0
+      uri: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+    prov: []
 
 key_value_items: [ ] # All KV-items
 

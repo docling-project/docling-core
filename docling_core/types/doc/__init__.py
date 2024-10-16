@@ -4,3 +4,28 @@
 #
 
 """Package for models defined by the Document type."""
+
+from .base import BoundingBox, CoordOrigin, Size
+from .document import (
+    DocItem,
+    DoclingDocument,
+    DocumentOrigin,
+    FloatingItem,
+    GroupItem,
+    ImageRef,
+    KeyValueItem,
+    NodeItem,
+    PageItem,
+    PictureClassificationClass,
+    PictureClassificationData,
+    PictureDataType,
+    PictureItem,
+    ProvenanceItem,
+    RefItem,
+    SectionHeaderItem,
+    TableCell,
+    TableData,
+    TableItem,
+    TextItem,
+)
+from .labels import DocItemLabel, GroupLabel, TableCellLabel

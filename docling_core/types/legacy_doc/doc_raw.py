@@ -9,7 +9,7 @@ from typing import Any, List, Optional
 from pydantic import BaseModel, Field
 from typing_extensions import Annotated
 
-from docling_core.types.doc.base import BoundingBox
+from docling_core.types.legacy_doc.base import BoundingBox
 from docling_core.utils.alias import AliasModel
 
 FontDifferences = dict[str, Any]
