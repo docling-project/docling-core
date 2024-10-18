@@ -214,6 +214,7 @@ class DocumentOrigin(BaseModel):
         "application/vnd.openxmlformats-officedocument.presentationml.template",
         "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/asciidoc",
     ]
 
     @field_validator("binary_hash", mode="before")
