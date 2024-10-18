@@ -36,20 +36,20 @@ poetry run pytest test
 - You can validate your JSON objects using the pydantic class definition.
 
   ```py
-  from docling_core.types import Document
+  from docling_core.types import DoclingDocument
 
   data_dict = {...}  # here the object you want to validate, as a dictionary
-  Document.model_validate(data_dict)
+  DoclingDocument.model_validate(data_dict)
 
   data_str = {...}  # here the object as a JSON string
-  Document.model_validate_json(data_str)
+  DoclingDocument.model_validate_json(data_str)
   ```
 
 - You can generate the JSON schema of a model with the script `generate_jsonschema`.
 
   ```py
-  # for the `Document` type
-  generate_jsonschema Document
+  # for the `DoclingDocument` type
+  generate_jsonschema DoclingDocument
 
   # for the use `Record` type
   generate_jsonschema Record
@@ -57,16 +57,16 @@ poetry run pytest test
 
 ## Documentation
 
-Docling supports 3 main data types:
+Docling Core contains 3 top-level data types:
 
-- **Document** for publications like books, articles, reports, or patents. When Docling converts an unstructured PDF document, the generated JSON follows this schema.
-  The Document type also models the metadata that may be attached to the converted document.
-  Check [Document](docs/Document.json) for the full JSON schema. 
+- **DoclingDocument** for publications like books, articles, reports, or patents. When Docling converts an unstructured PDF document, the generated JSON follows this schema.
+  The DoclingDocument type also models the metadata that may be attached to the converted document.
+  Check [DoclingDocument](docs/DoclingDocument.json) for the full JSON schema.
 - **Record** for structured database records, centered on an entity or _subject_ that is provided with a list of attributes.
   Related to records, the statements can represent annotations on text by Natural Language Processing (NLP) tools.
-  Check [Record](docs/Record.json) for the full JSON schema. 
+  Check [Record](docs/Record.json) for the full JSON schema.
 - **Generic** for any data representation, ensuring minimal configuration and maximum flexibility.
-  Check [Generic](docs/Generic.json) for the full JSON schema. 
+  Check [Generic](docs/Generic.json) for the full JSON schema.
 
 The data schemas are defined using [pydantic](https://pydantic-docs.helpmanual.io/) models, which provide built-in processes to support the creation of data that adhere to those models.
 

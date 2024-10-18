@@ -18,7 +18,7 @@ from typing import Final
 
 from docling_core.utils.generate_jsonschema import generate_json_schema
 
-MODELS: Final = ["Document", "Record", "Generic"]
+MODELS: Final = ["DoclingDocument", "Record", "Generic"]
 
 
 def _prepare_directory(folder: str, clean: bool = False) -> None:

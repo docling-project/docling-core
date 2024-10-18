@@ -1,0 +1,1115 @@
+{
+  "$defs": {
+    "BoundingBox": {
+      "description": "BoundingBox.",
+      "properties": {
+        "l": {
+          "title": "L",
+          "type": "number"
+        },
+        "t": {
+          "title": "T",
+          "type": "number"
+        },
+        "r": {
+          "title": "R",
+          "type": "number"
+        },
+        "b": {
+          "title": "B",
+          "type": "number"
+        },
+        "coord_origin": {
+          "$ref": "#/$defs/CoordOrigin",
+          "default": "TOPLEFT"
+        }
+      },
+      "required": [
+        "l",
+        "t",
+        "r",
+        "b"
+      ],
+      "title": "BoundingBox",
+      "type": "object"
+    },
+    "CoordOrigin": {
+      "description": "CoordOrigin.",
+      "enum": [
+        "TOPLEFT",
+        "BOTTOMLEFT"
+      ],
+      "title": "CoordOrigin",
+      "type": "string"
+    },
+    "DocItemLabel": {
+      "description": "DocItemLabel.",
+      "enum": [
+        "caption",
+        "footnote",
+        "formula",
+        "list_item",
+        "page_footer",
+        "page_header",
+        "picture",
+        "section_header",
+        "table",
+        "text",
+        "title",
+        "document_index",
+        "code",
+        "checkbox_selected",
+        "checkbox_unselected",
+        "form",
+        "key_value_region",
+        "paragraph",
+        "reference"
+      ],
+      "title": "DocItemLabel",
+      "type": "string"
+    },
+    "DocumentOrigin": {
+      "description": "FileSource.",
+      "properties": {
+        "mimetype": {
+          "title": "Mimetype",
+          "type": "string"
+        },
+        "binary_hash": {
+          "maximum": 18446744073709551615,
+          "minimum": 0,
+          "title": "Binary Hash",
+          "type": "integer"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "uri": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uri"
+        }
+      },
+      "required": [
+        "mimetype",
+        "binary_hash",
+        "filename"
+      ],
+      "title": "DocumentOrigin",
+      "type": "object"
+    },
+    "GroupItem": {
+      "additionalProperties": false,
+      "description": "GroupItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "name": {
+          "default": "group",
+          "title": "Name",
+          "type": "string"
+        },
+        "label": {
+          "$ref": "#/$defs/GroupLabel",
+          "default": "unspecified"
+        }
+      },
+      "required": [
+        "self_ref"
+      ],
+      "title": "GroupItem",
+      "type": "object"
+    },
+    "GroupLabel": {
+      "description": "GroupLabel.",
+      "enum": [
+        "unspecified",
+        "list",
+        "ordered_list",
+        "chapter",
+        "section",
+        "sheet",
+        "slide"
+      ],
+      "title": "GroupLabel",
+      "type": "string"
+    },
+    "ImageRef": {
+      "description": "ImageRef.",
+      "properties": {
+        "mimetype": {
+          "title": "Mimetype",
+          "type": "string"
+        },
+        "dpi": {
+          "title": "Dpi",
+          "type": "integer"
+        },
+        "size": {
+          "$ref": "#/$defs/Size"
+        },
+        "uri": {
+          "format": "uri",
+          "minLength": 1,
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mimetype",
+        "dpi",
+        "size",
+        "uri"
+      ],
+      "title": "ImageRef",
+      "type": "object"
+    },
+    "KeyValueItem": {
+      "additionalProperties": false,
+      "description": "KeyValueItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "label": {
+          "$ref": "#/$defs/DocItemLabel"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        }
+      },
+      "required": [
+        "self_ref",
+        "label"
+      ],
+      "title": "KeyValueItem",
+      "type": "object"
+    },
+    "ListItem": {
+      "additionalProperties": false,
+      "description": "SectionItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "label": {
+          "const": "list_item",
+          "default": "list_item",
+          "enum": [
+            "list_item"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "orig": {
+          "title": "Orig",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "enumerated": {
+          "default": false,
+          "title": "Enumerated",
+          "type": "boolean"
+        },
+        "marker": {
+          "title": "Marker",
+          "type": "string"
+        }
+      },
+      "required": [
+        "self_ref",
+        "orig",
+        "text",
+        "marker"
+      ],
+      "title": "ListItem",
+      "type": "object"
+    },
+    "PageItem": {
+      "description": "PageItem.",
+      "properties": {
+        "size": {
+          "$ref": "#/$defs/Size"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "page_no": {
+          "title": "Page No",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "size",
+        "page_no"
+      ],
+      "title": "PageItem",
+      "type": "object"
+    },
+    "PictureClassificationClass": {
+      "description": "PictureClassificationData.",
+      "properties": {
+        "class_name": {
+          "title": "Class Name",
+          "type": "string"
+        },
+        "confidence": {
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "class_name",
+        "confidence"
+      ],
+      "title": "PictureClassificationClass",
+      "type": "object"
+    },
+    "PictureClassificationData": {
+      "description": "PictureClassificationData.",
+      "properties": {
+        "kind": {
+          "const": "classification",
+          "default": "classification",
+          "enum": [
+            "classification"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "provenance": {
+          "title": "Provenance",
+          "type": "string"
+        },
+        "predicted_classes": {
+          "items": {
+            "$ref": "#/$defs/PictureClassificationClass"
+          },
+          "title": "Predicted Classes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "provenance",
+        "predicted_classes"
+      ],
+      "title": "PictureClassificationData",
+      "type": "object"
+    },
+    "PictureDescriptionData": {
+      "description": "PictureDescriptionData.",
+      "properties": {
+        "kind": {
+          "const": "description",
+          "default": "description",
+          "enum": [
+            "description"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "provenance": {
+          "title": "Provenance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "provenance"
+      ],
+      "title": "PictureDescriptionData",
+      "type": "object"
+    },
+    "PictureItem": {
+      "additionalProperties": false,
+      "description": "PictureItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "label": {
+          "const": "picture",
+          "default": "picture",
+          "enum": [
+            "picture"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "captions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Captions",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "footnotes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Footnotes",
+          "type": "array"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "annotations": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "classification": "#/$defs/PictureClassificationData",
+                "description": "#/$defs/PictureDescriptionData",
+                "misc": "#/$defs/PictureMiscData",
+                "molecule_data": "#/$defs/PictureMoleculeData"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/PictureClassificationData"
+              },
+              {
+                "$ref": "#/$defs/PictureDescriptionData"
+              },
+              {
+                "$ref": "#/$defs/PictureMoleculeData"
+              },
+              {
+                "$ref": "#/$defs/PictureMiscData"
+              }
+            ]
+          },
+          "title": "Annotations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "self_ref"
+      ],
+      "title": "PictureItem",
+      "type": "object"
+    },
+    "PictureMiscData": {
+      "description": "PictureMiscData.",
+      "properties": {
+        "kind": {
+          "const": "misc",
+          "default": "misc",
+          "enum": [
+            "misc"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "content": {
+          "title": "Content",
+          "type": "object"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "PictureMiscData",
+      "type": "object"
+    },
+    "PictureMoleculeData": {
+      "description": "PictureMoleculeData.",
+      "properties": {
+        "kind": {
+          "const": "molecule_data",
+          "default": "molecule_data",
+          "enum": [
+            "molecule_data"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "smi": {
+          "title": "Smi",
+          "type": "string"
+        },
+        "confidence": {
+          "title": "Confidence",
+          "type": "number"
+        },
+        "class_name": {
+          "title": "Class Name",
+          "type": "string"
+        },
+        "segmentation": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Segmentation",
+          "type": "array"
+        },
+        "provenance": {
+          "title": "Provenance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "smi",
+        "confidence",
+        "class_name",
+        "segmentation",
+        "provenance"
+      ],
+      "title": "PictureMoleculeData",
+      "type": "object"
+    },
+    "ProvenanceItem": {
+      "description": "ProvenanceItem.",
+      "properties": {
+        "page_no": {
+          "title": "Page No",
+          "type": "integer"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BoundingBox"
+        },
+        "charspan": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Charspan",
+          "type": "array"
+        }
+      },
+      "required": [
+        "page_no",
+        "bbox",
+        "charspan"
+      ],
+      "title": "ProvenanceItem",
+      "type": "object"
+    },
+    "RefItem": {
+      "description": "RefItem.",
+      "properties": {
+        "$ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "RefItem",
+      "type": "object"
+    },
+    "SectionHeaderItem": {
+      "additionalProperties": false,
+      "description": "SectionItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "label": {
+          "const": "section_header",
+          "default": "section_header",
+          "enum": [
+            "section_header"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "orig": {
+          "title": "Orig",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "level": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "self_ref",
+        "orig",
+        "text",
+        "level"
+      ],
+      "title": "SectionHeaderItem",
+      "type": "object"
+    },
+    "Size": {
+      "description": "Size.",
+      "properties": {
+        "width": {
+          "default": 0.0,
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "default": 0.0,
+          "title": "Height",
+          "type": "number"
+        }
+      },
+      "title": "Size",
+      "type": "object"
+    },
+    "TableCell": {
+      "description": "TableCell.",
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingBox"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "row_span": {
+          "default": 1,
+          "title": "Row Span",
+          "type": "integer"
+        },
+        "col_span": {
+          "default": 1,
+          "title": "Col Span",
+          "type": "integer"
+        },
+        "start_row_offset_idx": {
+          "title": "Start Row Offset Idx",
+          "type": "integer"
+        },
+        "end_row_offset_idx": {
+          "title": "End Row Offset Idx",
+          "type": "integer"
+        },
+        "start_col_offset_idx": {
+          "title": "Start Col Offset Idx",
+          "type": "integer"
+        },
+        "end_col_offset_idx": {
+          "title": "End Col Offset Idx",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "column_header": {
+          "default": false,
+          "title": "Column Header",
+          "type": "boolean"
+        },
+        "row_header": {
+          "default": false,
+          "title": "Row Header",
+          "type": "boolean"
+        },
+        "row_section": {
+          "default": false,
+          "title": "Row Section",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "start_row_offset_idx",
+        "end_row_offset_idx",
+        "start_col_offset_idx",
+        "end_col_offset_idx",
+        "text"
+      ],
+      "title": "TableCell",
+      "type": "object"
+    },
+    "TableData": {
+      "description": "BaseTableData.",
+      "properties": {
+        "table_cells": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TableCell"
+          },
+          "title": "Table Cells",
+          "type": "array"
+        },
+        "num_rows": {
+          "default": 0,
+          "title": "Num Rows",
+          "type": "integer"
+        },
+        "num_cols": {
+          "default": 0,
+          "title": "Num Cols",
+          "type": "integer"
+        }
+      },
+      "title": "TableData",
+      "type": "object"
+    },
+    "TableItem": {
+      "additionalProperties": false,
+      "description": "TableItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "label": {
+          "const": "table",
+          "default": "table",
+          "enum": [
+            "table"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "captions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Captions",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "footnotes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Footnotes",
+          "type": "array"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "data": {
+          "$ref": "#/$defs/TableData"
+        }
+      },
+      "required": [
+        "self_ref",
+        "data"
+      ],
+      "title": "TableItem",
+      "type": "object"
+    },
+    "TextItem": {
+      "additionalProperties": false,
+      "description": "TextItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "label": {
+          "$ref": "#/$defs/DocItemLabel"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "orig": {
+          "title": "Orig",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "self_ref",
+        "label",
+        "orig",
+        "text"
+      ],
+      "title": "TextItem",
+      "type": "object"
+    }
+  },
+  "description": "DoclingDocument.",
+  "properties": {
+    "schema_name": {
+      "const": "DoclingDocument",
+      "default": "DoclingDocument",
+      "enum": [
+        "DoclingDocument"
+      ],
+      "title": "Schema Name",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0.0",
+      "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "title": "Version",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "origin": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DocumentOrigin"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "furniture": {
+      "$ref": "#/$defs/GroupItem",
+      "default": {
+        "self_ref": "#/furniture",
+        "parent": null,
+        "children": [],
+        "name": "_root_",
+        "label": "unspecified"
+      }
+    },
+    "body": {
+      "$ref": "#/$defs/GroupItem",
+      "default": {
+        "self_ref": "#/body",
+        "parent": null,
+        "children": [],
+        "name": "_root_",
+        "label": "unspecified"
+      }
+    },
+    "groups": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/GroupItem"
+      },
+      "title": "Groups",
+      "type": "array"
+    },
+    "texts": {
+      "default": [],
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/SectionHeaderItem"
+          },
+          {
+            "$ref": "#/$defs/ListItem"
+          },
+          {
+            "$ref": "#/$defs/TextItem"
+          }
+        ]
+      },
+      "title": "Texts",
+      "type": "array"
+    },
+    "pictures": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PictureItem"
+      },
+      "title": "Pictures",
+      "type": "array"
+    },
+    "tables": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/TableItem"
+      },
+      "title": "Tables",
+      "type": "array"
+    },
+    "key_value_items": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/KeyValueItem"
+      },
+      "title": "Key Value Items",
+      "type": "array"
+    },
+    "pages": {
+      "additionalProperties": {
+        "$ref": "#/$defs/PageItem"
+      },
+      "default": {},
+      "title": "Pages",
+      "type": "object"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "title": "DoclingDocument",
+  "type": "object"
+}
