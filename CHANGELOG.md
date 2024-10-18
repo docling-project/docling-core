@@ -1,3 +1,10 @@
+## [v2.0.1](https://github.com/DS4SD/docling-core/releases/tag/v2.0.1) - 2024-10-18
+
+### Fix
+
+* Fix legacy doc ref ([#48](https://github.com/DS4SD/docling-core/issues/48)) ([`e12d6a7`](https://github.com/DS4SD/docling-core/commit/e12d6a70c383a8d3f0c3d73aa6c5eec62a0c3251))
+* Add-mimetype-for-asciidocs-markdown ([#47](https://github.com/DS4SD/docling-core/issues/47)) ([`0aab007`](https://github.com/DS4SD/docling-core/commit/0aab0073bbeabe62b2a19e872e108438c199f6c0))
+
 ## [v2.0.0](https://github.com/DS4SD/docling-core/releases/tag/v2.0.0) - 2024-10-16
 
 ### Feature
