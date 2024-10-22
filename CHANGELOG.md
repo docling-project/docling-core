@@ -1,3 +1,10 @@
+## [v2.1.0](https://github.com/DS4SD/docling-core/releases/tag/v2.1.0) - 2024-10-22
+
+### Feature
+
+* Improve markdown export of DoclingDocument ([#50](https://github.com/DS4SD/docling-core/issues/50)) ([`328778e`](https://github.com/DS4SD/docling-core/commit/328778ed036540ee5fdf0bb16a1b656e5122c5f0))
+* Extend chunk meta with schema, version, origin ([#49](https://github.com/DS4SD/docling-core/issues/49)) ([`d09fe7e`](https://github.com/DS4SD/docling-core/commit/d09fe7ed44282b286f9c2588482e515bf40e0fca))
+
 ## [v2.0.1](https://github.com/DS4SD/docling-core/releases/tag/v2.0.1) - 2024-10-18
 
 ### Fix
