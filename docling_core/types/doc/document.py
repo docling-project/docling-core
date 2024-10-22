@@ -3,6 +3,7 @@
 import base64
 import mimetypes
 import re
+import sys
 import typing
 from io import BytesIO
 from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
@@ -25,6 +26,7 @@ from typing_extensions import Annotated, Self
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
+from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.labels import DocItemLabel, GroupLabel
 from docling_core.types.legacy_doc.tokens import DocumentToken
 
@@ -215,6 +217,7 @@ class DocumentOrigin(BaseModel):
         "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         "text/asciidoc",
+        "text/markdown",
     ]
 
     @field_validator("binary_hash", mode="before")
@@ -1108,12 +1111,14 @@ class DoclingDocument(BaseModel):
 
     def export_to_markdown(  # noqa: C901
         self,
-        delim: str = "\n\n",
+        delim: str = "\n",
         from_element: int = 0,
-        to_element: Optional[int] = None,
+        to_element: int = sys.maxsize,
         labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
         strict_text: bool = False,
         image_placeholder: str = "<!-- image -->",
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        indent: int = 4,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -1143,136 +1148,150 @@ class DoclingDocument(BaseModel):
         :param strict_text: bool:  (Default value = False)
         :param image_placeholder str:  (Default value = "<!-- image -->")
             the placeholder to include to position images in the markdown.
+        :param indent: int (default=4): indent of the nested lists
         :returns: The exported Markdown representation.
         :rtype: str
         """
-        has_title = False
-        prev_text = ""
-        md_texts: list[str] = []
+        mdtexts: list[str] = []
+        list_nesting_level = 0  # Track the current list nesting level
+        previous_level = 0  # Track the previous item's level
+        in_list = False  # Track if we're currently processing list items
 
-        # collect all captions embedded in table and figure objects
-        # to avoid repeating them
-        embedded_captions = set()
-        skip_count = 0
-        for ix, (item, level) in enumerate(self.iterate_items(self.body)):
-            if skip_count < from_element:
-                skip_count += 1
+        for ix, (item, level) in enumerate(
+            self.iterate_items(self.body, with_groups=True)
+        ):
+            # If we've moved to a lower level, we're exiting one or more groups
+            if level < previous_level:
+                # Calculate how many levels we've exited
+                level_difference = previous_level - level
+                # Decrement list_nesting_level for each list group we've exited
+                list_nesting_level = max(0, list_nesting_level - level_difference)
+
+            previous_level = level  # Update previous_level for next iteration
+
+            if ix < from_element and to_element <= ix:
                 continue  # skip as many items as you want
 
-            if to_element and ix >= to_element:
-                break
-
+            # Handle newlines between different types of content
             if (
-                isinstance(item, (TableItem, PictureItem))
-                and len(item.captions) > 0
-                and item.label in labels
+                len(mdtexts) > 0
+                and not isinstance(item, (ListItem, GroupItem))
+                and in_list
             ):
-                caption = item.caption_text(self)
-                if caption:
-                    embedded_captions.add(caption)
+                mdtexts[-1] += "\n"
+                in_list = False
 
-        skip_count = 0
-        for ix, (item, level) in enumerate(self.iterate_items(self.body)):
-            if skip_count < from_element:
-                skip_count += 1
-                continue  # skip as many items as you want
+            if isinstance(item, GroupItem) and item.label in [
+                GroupLabel.LIST,
+                GroupLabel.ORDERED_LIST,
+            ]:
 
-            if to_element and ix >= to_element:
-                break
+                if list_nesting_level == 0:  # Check if we're on the top level.
+                    # In that case a new list starts directly after another list.
+                    mdtexts.append("\n")  # Add a blank line
 
-            markdown_text = ""
+                # Increment list nesting level when entering a new list
+                list_nesting_level += 1
+                in_list = True
+                continue
 
-            if isinstance(item, DocItem):
-                item_type = item.label
+            elif isinstance(item, GroupItem):
+                continue
 
-                if isinstance(item, TextItem) and item_type in labels:
-                    text = item.text
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
+                in_list = False
+                marker = "" if strict_text else "#"
+                text = f"{marker} {item.text}\n"
+                mdtexts.append(text.strip())
 
-                    # skip captions of they are embedded in the actual
-                    # floating object
-                    if item_type == DocItemLabel.CAPTION and text in embedded_captions:
-                        continue
+            elif (
+                isinstance(item, TextItem)
+                and item.label in [DocItemLabel.SECTION_HEADER]
+            ) or isinstance(item, SectionHeaderItem):
+                in_list = False
+                marker = ""
+                if not strict_text:
+                    marker = "#" * level
+                    if len(marker) < 2:
+                        marker = "##"
+                text = f"{marker} {item.text}\n"
+                mdtexts.append(text.strip() + "\n")
 
-                    # ignore repeated text
-                    if prev_text == text or text is None:
-                        continue
-                    else:
-                        prev_text = text
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CODE]:
+                in_list = False
+                text = f"```\n{item.text}\n```\n"
+                mdtexts.append(text)
 
-                    # first title match
-                    if item_type == DocItemLabel.TITLE and not has_title:
-                        if strict_text:
-                            markdown_text = f"{text}"
-                        else:
-                            markdown_text = f"# {text}"
-                        has_title = True
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CAPTION]:
+                # captions are printed in picture and table ... skipping for now
+                continue
 
-                    # secondary titles
-                    elif item_type in {
-                        DocItemLabel.TITLE,
-                        DocItemLabel.SECTION_HEADER,
-                    } or (has_title and item_type == DocItemLabel.TITLE):
-                        if strict_text:
-                            markdown_text = f"{text}"
-                        else:
-                            markdown_text = f"## {text}"
+            elif isinstance(item, ListItem) and item.label in [DocItemLabel.LIST_ITEM]:
+                in_list = True
+                # Calculate indent based on list_nesting_level
+                # -1 because level 1 needs no indent
+                list_indent = " " * (indent * (list_nesting_level - 1))
 
-                    # secondary titles
-                    elif isinstance(item, ListItem):
-                        if item.enumerated:
-                            marker = item.marker
-                        else:
-                            marker = "-"
+                marker = ""
+                if strict_text:
+                    marker = ""
+                elif item.enumerated:
+                    marker = item.marker
+                else:
+                    marker = "-"  # Markdown needs only dash as item marker.
 
-                        markdown_text = f"{marker} {text}"
+                text = f"{list_indent}{marker} {item.text}"
+                mdtexts.append(text)
 
-                    # normal text
-                    else:
-                        markdown_text = text
+            elif isinstance(item, TextItem) and item.label in labels:
+                in_list = False
+                if len(item.text):
+                    text = f"{item.text}\n"
+                    mdtexts.append(text)
 
-                elif isinstance(item, TableItem) and item.data and item_type in labels:
-                    parts = []
+            elif isinstance(item, TableItem) and not strict_text:
+                in_list = False
+                mdtexts.append(item.caption_text(self))
+                md_table = item.export_to_markdown()
+                mdtexts.append("\n" + md_table + "\n")
 
-                    # Compute the caption
-                    if caption := item.caption_text(self):
-                        parts.append(caption)
-                        parts.append("\n")
+            elif isinstance(item, PictureItem) and not strict_text:
+                in_list = False
+                mdtexts.append(item.caption_text(self))
 
-                    # Rendered the item
-                    if not strict_text:
-                        md_table = item.export_to_markdown()
-                        if md_table:
-                            parts.append(item.export_to_markdown())
+                if image_mode == ImageRefMode.PLACEHOLDER:
+                    mdtexts.append("\n" + image_placeholder + "\n")
+                elif image_mode == ImageRefMode.EMBEDDED and isinstance(
+                    item.image, ImageRef
+                ):
+                    text = f"![Local Image]({item.image.uri})\n"
+                    mdtexts.append(text)
+                elif image_mode == ImageRefMode.EMBEDDED and not isinstance(
+                    item.image, ImageRef
+                ):
+                    text = (
+                        "<!-- 🖼️❌ Image not available. "
+                        "Please use `PdfPipelineOptions(generate_picture_images=True)`"
+                        " --> "
+                    )
+                    mdtexts.append(text)
 
-                    # Combine parts
-                    markdown_text = "\n".join(parts)
+            elif isinstance(item, DocItem) and item.label in labels:
+                in_list = False
+                text = "<missing-text>"
+                mdtexts.append(text)
 
-                elif isinstance(item, PictureItem) and item_type in labels:
-                    parts = []
-
-                    # Compute the caption
-                    if caption := item.caption_text(self):
-                        parts.append(caption)
-                        parts.append("\n")
-
-                    # Rendered the item
-                    if not strict_text:
-                        parts.append(f"{image_placeholder}")
-
-                    # Combine parts
-                    markdown_text = "\n".join(parts)
-
-            if markdown_text:
-                md_texts.append(markdown_text)
-
-        result = delim.join(md_texts)
-        return result
+        mdtext = (delim.join(mdtexts)).strip()
+        mdtext = re.sub(
+            r"\n\n\n+", "\n\n", mdtext
+        )  # remove cases of double or more empty lines.
+        return mdtext
 
     def export_to_text(  # noqa: C901
         self,
         delim: str = "\n\n",
         from_element: int = 0,
-        to_element: Optional[int] = None,
+        to_element: int = 1000000,
         labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
     ) -> str:
         """export_to_text."""
@@ -1398,6 +1417,121 @@ class DoclingDocument(BaseModel):
         doctags += DocumentToken.END_DOCUMENT.value
 
         return doctags
+
+    def _export_to_indented_text(
+        self, indent="  ", max_text_len: int = -1, explicit_tables: bool = False
+    ):
+        """Export the document to indented text to expose hierarchy."""
+        result = []
+
+        def get_text(text: str, max_text_len: int):
+
+            middle = " ... "
+
+            if max_text_len == -1:
+                return text
+            elif len(text) < max_text_len + len(middle):
+                return text
+            else:
+                tbeg = int((max_text_len - len(middle)) / 2)
+                tend = int(max_text_len - tbeg)
+
+                return text[0:tbeg] + middle + text[-tend:]
+
+        for i, (item, level) in enumerate(self.iterate_items(with_groups=True)):
+            if isinstance(item, GroupItem):
+                result.append(
+                    indent * level
+                    + f"item-{i} at level {level}: {item.label}: group {item.name}"
+                )
+
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
+                text = get_text(text=item.text, max_text_len=max_text_len)
+
+                result.append(
+                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                )
+
+            elif isinstance(item, SectionHeaderItem):
+                text = get_text(text=item.text, max_text_len=max_text_len)
+
+                result.append(
+                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                )
+
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CODE]:
+                text = get_text(text=item.text, max_text_len=max_text_len)
+
+                result.append(
+                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                )
+
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CAPTION]:
+                # captions are printed in picture and table ... skipping for now
+                continue
+
+            elif isinstance(item, ListItem) and item.label in [DocItemLabel.LIST_ITEM]:
+                text = get_text(text=item.text, max_text_len=max_text_len)
+
+                result.append(
+                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                )
+
+            elif isinstance(item, TextItem):
+                text = get_text(text=item.text, max_text_len=max_text_len)
+
+                result.append(
+                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                )
+
+            elif isinstance(item, TableItem):
+
+                result.append(
+                    indent * level
+                    + f"item-{i} at level {level}: {item.label} with "
+                    + f"[{item.data.num_rows}x{item.data.num_cols}]"
+                )
+
+                for _ in item.captions:
+                    caption = _.resolve(self)
+                    result.append(
+                        indent * (level + 1)
+                        + f"item-{i} at level {level + 1}: {caption.label}: "
+                        + f"{caption.text}"
+                    )
+
+                if explicit_tables:
+                    grid: list[list[str]] = []
+                    for i, row in enumerate(item.data.grid):
+                        grid.append([])
+                        for j, cell in enumerate(row):
+                            if j < 10:
+                                text = get_text(text=cell.text, max_text_len=16)
+                                grid[-1].append(text)
+
+                    result.append("\n" + tabulate(grid) + "\n")
+
+            elif isinstance(item, PictureItem):
+
+                result.append(
+                    indent * level + f"item-{i} at level {level}: {item.label}"
+                )
+
+                for _ in item.captions:
+                    caption = _.resolve(self)
+                    result.append(
+                        indent * (level + 1)
+                        + f"item-{i} at level {level + 1}: {caption.label}: "
+                        + f"{caption.text}"
+                    )
+
+            elif isinstance(item, DocItem):
+                result.append(
+                    indent * (level + 1)
+                    + f"item-{i} at level {level}: {item.label}: ignored"
+                )
+
+        return "\n".join(result)
 
     def add_page(
         self, page_no: int, size: Size, image: Optional[ImageRef] = None

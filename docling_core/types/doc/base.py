@@ -7,6 +7,13 @@ from typing import Tuple
 from pydantic import BaseModel
 
 
+class ImageRefMode(str, Enum):
+    """ImageRefMode."""
+
+    PLACEHOLDER = "placeholder"
+    EMBEDDED = "embedded"
+
+
 class CoordOrigin(str, Enum):
     """CoordOrigin."""
 
