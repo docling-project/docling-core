@@ -13,7 +13,7 @@ from docling_core.types.doc import DoclingDocument as DLDocument
 
 
 class BaseMeta(BaseModel):
-    """Metadata base class."""
+    """Chunk metadata base class."""
 
     excluded_embed: ClassVar[list[str]] = []
     excluded_llm: ClassVar[list[str]] = []
