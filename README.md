@@ -59,7 +59,7 @@ poetry run pytest test
 
 Docling Core contains 3 top-level data types:
 
-- **DoclingDocument** for publications like books, articles, reports, or patents. When Docling converts an unstructured PDF document, the generated JSON follows this schema.
+- **DoclingDocument** for publications like books, articles, reports, or patents. The JSON that can be exported using Docling follows this schema.
   The DoclingDocument type also models the metadata that may be attached to the converted document.
   Check [DoclingDocument](docs/DoclingDocument.json) for the full JSON schema.
 - **Record** for structured database records, centered on an entity or _subject_ that is provided with a list of attributes.
