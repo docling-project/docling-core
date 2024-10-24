@@ -591,7 +591,13 @@ class TableItem(FloatingItem):
         for row in self.data.grid:
             tmp = []
             for col in row:
-                tmp.append(col.text)
+
+                # make sure that md tables are not broken
+                # due to newline chars in the text
+                text = col.text
+                text = text.replace("\n", " ")
+                tmp.append(text)
+
             table.append(tmp)
 
         md_table = ""
