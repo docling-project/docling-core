@@ -41,7 +41,7 @@ def resolve_file_source(source: Union[Path, AnyHttpUrl, str]) -> Path:
                     break
         # otherwise, use name from URL:
         if fname is None:
-            fname = Path(http_url.path or "file").name
+            fname = Path(http_url.path or "").name or "file"
         local_path = Path(tempfile.mkdtemp()) / fname
         with open(local_path, "wb") as f:
             for chunk in res.iter_content(chunk_size=1024):  # using 1-KB chunks
