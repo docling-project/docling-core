@@ -1,3 +1,13 @@
+## [v2.2.0](https://github.com/DS4SD/docling-core/releases/tag/v2.2.0) - 2024-10-24
+
+### Feature
+
+* Add headers argument and a custom user-agents for http requests ([#53](https://github.com/DS4SD/docling-core/issues/53)) ([`44941b5`](https://github.com/DS4SD/docling-core/commit/44941b5591fe7db5a2b987f5d2b35785fab386db))
+
+### Fix
+
+* Fix resolution in case of URL without path ([#55](https://github.com/DS4SD/docling-core/issues/55)) ([`2c88e56`](https://github.com/DS4SD/docling-core/commit/2c88e56f8ccb5902457c1749c64c8de6cc963739))
+
 ## [v2.1.0](https://github.com/DS4SD/docling-core/releases/tag/v2.1.0) - 2024-10-22
 
 ### Feature
