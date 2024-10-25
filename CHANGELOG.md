@@ -1,3 +1,9 @@
+## [v2.2.1](https://github.com/DS4SD/docling-core/releases/tag/v2.2.1) - 2024-10-25
+
+### Fix
+
+* Escaping underscore characters in md export ([#57](https://github.com/DS4SD/docling-core/issues/57)) ([`c344d0f`](https://github.com/DS4SD/docling-core/commit/c344d0fc63ac55068dac5846772e3369f71c771b))
+
 ## [v2.2.0](https://github.com/DS4SD/docling-core/releases/tag/v2.2.0) - 2024-10-24
 
 ### Feature
