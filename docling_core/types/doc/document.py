@@ -1291,6 +1291,18 @@ class DoclingDocument(BaseModel):
         mdtext = re.sub(
             r"\n\n\n+", "\n\n", mdtext
         )  # remove cases of double or more empty lines.
+
+        # Our export markdown doesn't contain any emphasis styling:
+        # Bold, Italic, or Bold-Italic
+        # Hence, any underscore that we print into Markdown is coming from document text
+        # That means we need to escape it, to properly reflect content in the markdown
+        def escape_underscores(text):
+            # Replace "_" with "\_" only if it's not already escaped
+            escaped_text = re.sub(r"(?<!\\)_", r"\_", text)
+            return escaped_text
+
+        mdtext = escape_underscores(mdtext)
+
         return mdtext
 
     def export_to_text(  # noqa: C901
