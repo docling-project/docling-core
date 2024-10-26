@@ -1,3 +1,9 @@
+## [v2.2.2](https://github.com/DS4SD/docling-core/releases/tag/v2.2.2) - 2024-10-26
+
+### Fix
+
+* Fix non-string table cell handling in chunker ([#58](https://github.com/DS4SD/docling-core/issues/58)) ([`b5d07b2`](https://github.com/DS4SD/docling-core/commit/b5d07b2fa5e865939b9b93a8582eb3207bc48249))
+
 ## [v2.2.1](https://github.com/DS4SD/docling-core/releases/tag/v2.2.1) - 2024-10-25
 
 ### Fix
