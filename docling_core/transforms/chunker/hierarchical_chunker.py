@@ -129,8 +129,8 @@ class HierarchicalChunker(BaseChunker):
         table_df.index = table_df.index + 1
         table_df = table_df.sort_index()
 
-        rows = [item.strip() for item in table_df.iloc[:, 0].to_list()]
-        cols = [item.strip() for item in table_df.iloc[0, :].to_list()]
+        rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
+        cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
 
         nrows = table_df.shape[0]
         ncols = table_df.shape[1]
