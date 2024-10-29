@@ -4,6 +4,7 @@ import base64
 import mimetypes
 import re
 import sys
+import textwrap
 import typing
 from io import BytesIO
 from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
@@ -1125,6 +1126,7 @@ class DoclingDocument(BaseModel):
         image_placeholder: str = "<!-- image -->",
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
+        text_width: int = -1,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -1207,8 +1209,8 @@ class DoclingDocument(BaseModel):
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
                 in_list = False
                 marker = "" if strict_text else "#"
-                text = f"{marker} {item.text}\n"
-                mdtexts.append(text.strip())
+                text = f"{marker} {item.text}"
+                mdtexts.append(text.strip() + "\n")
 
             elif (
                 isinstance(item, TextItem)
@@ -1251,7 +1253,10 @@ class DoclingDocument(BaseModel):
 
             elif isinstance(item, TextItem) and item.label in labels:
                 in_list = False
-                if len(item.text):
+                if len(item.text) and text_width > 0:
+                    wrapped_text = textwrap.fill(text, width=text_width)
+                    mdtexts.append(wrapped_text + "\n")
+                elif len(item.text):
                     text = f"{item.text}\n"
                     mdtexts.append(text)
 
