@@ -1,3 +1,9 @@
+## [v2.3.0](https://github.com/DS4SD/docling-core/releases/tag/v2.3.0) - 2024-10-29
+
+### Feature
+
+* Added pydantic models to store charts data (pie, bar, stacked bar, line, scatter) ([#52](https://github.com/DS4SD/docling-core/issues/52)) ([`36b7bea`](https://github.com/DS4SD/docling-core/commit/36b7bea53a291fdd8ffa5fc6cdbe4256d16c8710))
+
 ## [v2.2.3](https://github.com/DS4SD/docling-core/releases/tag/v2.2.3) - 2024-10-29
 
 ### Fix
