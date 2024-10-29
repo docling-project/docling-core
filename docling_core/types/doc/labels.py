@@ -29,6 +29,10 @@ class DocItemLabel(str, Enum):
     PARAGRAPH = "paragraph"  # explicitly a paragraph and not arbitrary text
     REFERENCE = "reference"
 
+    def __str__(self):
+        """Get string value."""
+        return str(self.value)
+
 
 class GroupLabel(str, Enum):
     """GroupLabel."""
@@ -43,6 +47,10 @@ class GroupLabel(str, Enum):
     SHEET = "sheet"
     SLIDE = "slide"
 
+    def __str__(self):
+        """Get string value."""
+        return str(self.value)
+
 
 class TableCellLabel(str, Enum):
     """TableCellLabel."""
@@ -51,3 +59,7 @@ class TableCellLabel(str, Enum):
     ROW_HEADER = "row_header"
     ROW_SECTION = "row_section"
     BODY = "body"
+
+    def __str__(self):
+        """Get string value."""
+        return str(self.value)
