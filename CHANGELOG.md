@@ -1,3 +1,10 @@
+## [v2.2.3](https://github.com/DS4SD/docling-core/releases/tag/v2.2.3) - 2024-10-29
+
+### Fix
+
+* Str representation of enum across python versions ([#60](https://github.com/DS4SD/docling-core/issues/60)) ([`8528918`](https://github.com/DS4SD/docling-core/commit/8528918ae24eb1e50b97935b1136e8e8e2d9717b))
+* Title for export to markdown and add text_width parameter ([#59](https://github.com/DS4SD/docling-core/issues/59)) ([`4993c34`](https://github.com/DS4SD/docling-core/commit/4993c3403d0dac869033c38349b785e5c78ac1d9))
+
 ## [v2.2.2](https://github.com/DS4SD/docling-core/releases/tag/v2.2.2) - 2024-10-26
 
 ### Fix
