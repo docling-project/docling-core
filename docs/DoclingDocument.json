@@ -33,6 +33,135 @@
       "title": "BoundingBox",
       "type": "object"
     },
+    "ChartBar": {
+      "description": "Represents a bar in a bar chart.\n\nAttributes:\n    label (str): The label for the bar.\n    values (float): The value associated with the bar.",
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "values": {
+          "title": "Values",
+          "type": "number"
+        }
+      },
+      "required": [
+        "label",
+        "values"
+      ],
+      "title": "ChartBar",
+      "type": "object"
+    },
+    "ChartLine": {
+      "description": "Represents a line in a line chart.\n\nAttributes:\n    label (str): The label for the line.\n    values (List[Tuple[float, float]]): A list of (x, y) coordinate pairs\n        representing the line's data points.",
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "label",
+        "values"
+      ],
+      "title": "ChartLine",
+      "type": "object"
+    },
+    "ChartPoint": {
+      "description": "Represents a point in a scatter chart.\n\nAttributes:\n    value (Tuple[float, float]): A (x, y) coordinate pair representing a point in a\n        chart.",
+      "properties": {
+        "value": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "ChartPoint",
+      "type": "object"
+    },
+    "ChartSlice": {
+      "description": "Represents a slice in a pie chart.\n\nAttributes:\n    label (str): The label for the slice.\n    value (float): The value represented by the slice.",
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "title": "ChartSlice",
+      "type": "object"
+    },
+    "ChartStackedBar": {
+      "description": "Represents a stacked bar in a stacked bar chart.\n\nAttributes:\n    label (List[str]): The labels for the stacked bars. Multiple values are stored\n        in cases where the chart is \"double stacked,\" meaning bars are stacked both\n        horizontally and vertically.\n    values (List[Tuple[str, int]]): A list of values representing different segments\n        of the stacked bar along with their label.",
+      "properties": {
+        "label": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Label",
+          "type": "array"
+        },
+        "values": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "label",
+        "values"
+      ],
+      "title": "ChartStackedBar",
+      "type": "object"
+    },
     "CoordOrigin": {
       "description": "CoordOrigin.",
       "enum": [
@@ -344,6 +473,47 @@
       "title": "PageItem",
       "type": "object"
     },
+    "PictureBarChartData": {
+      "description": "Represents data of a bar chart.\n\nAttributes:\n    kind (Literal[\"bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    bars (List[ChartBar]): A list of bars in the chart.",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "const": "bar_chart_data",
+          "default": "bar_chart_data",
+          "enum": [
+            "bar_chart_data"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "x_axis_label": {
+          "title": "X Axis Label",
+          "type": "string"
+        },
+        "y_axis_label": {
+          "title": "Y Axis Label",
+          "type": "string"
+        },
+        "bars": {
+          "items": {
+            "$ref": "#/$defs/ChartBar"
+          },
+          "title": "Bars",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "x_axis_label",
+        "y_axis_label",
+        "bars"
+      ],
+      "title": "PictureBarChartData",
+      "type": "object"
+    },
     "PictureClassificationClass": {
       "description": "PictureClassificationData.",
       "properties": {
@@ -507,10 +677,15 @@
           "items": {
             "discriminator": {
               "mapping": {
+                "bar_chart_data": "#/$defs/PictureBarChartData",
                 "classification": "#/$defs/PictureClassificationData",
                 "description": "#/$defs/PictureDescriptionData",
+                "line_chart_data": "#/$defs/PictureLineChartData",
                 "misc": "#/$defs/PictureMiscData",
-                "molecule_data": "#/$defs/PictureMoleculeData"
+                "molecule_data": "#/$defs/PictureMoleculeData",
+                "pie_chart_data": "#/$defs/PicturePieChartData",
+                "scatter_chart_data": "#/$defs/PictureScatterChartData",
+                "stacked_bar_chart_data": "#/$defs/PictureStackedBarChartData"
               },
               "propertyName": "kind"
             },
@@ -526,6 +701,21 @@
               },
               {
                 "$ref": "#/$defs/PictureMiscData"
+              },
+              {
+                "$ref": "#/$defs/PictureLineChartData"
+              },
+              {
+                "$ref": "#/$defs/PictureBarChartData"
+              },
+              {
+                "$ref": "#/$defs/PictureStackedBarChartData"
+              },
+              {
+                "$ref": "#/$defs/PicturePieChartData"
+              },
+              {
+                "$ref": "#/$defs/PictureScatterChartData"
               }
             ]
           },
@@ -537,6 +727,47 @@
         "self_ref"
       ],
       "title": "PictureItem",
+      "type": "object"
+    },
+    "PictureLineChartData": {
+      "description": "Represents data of a line chart.\n\nAttributes:\n    kind (Literal[\"line_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    lines (List[ChartLine]): A list of lines in the chart.",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "const": "line_chart_data",
+          "default": "line_chart_data",
+          "enum": [
+            "line_chart_data"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "x_axis_label": {
+          "title": "X Axis Label",
+          "type": "string"
+        },
+        "y_axis_label": {
+          "title": "Y Axis Label",
+          "type": "string"
+        },
+        "lines": {
+          "items": {
+            "$ref": "#/$defs/ChartLine"
+          },
+          "title": "Lines",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "x_axis_label",
+        "y_axis_label",
+        "lines"
+      ],
+      "title": "PictureLineChartData",
       "type": "object"
     },
     "PictureMiscData": {
@@ -616,6 +847,119 @@
         "provenance"
       ],
       "title": "PictureMoleculeData",
+      "type": "object"
+    },
+    "PicturePieChartData": {
+      "description": "Represents data of a pie chart.\n\nAttributes:\n    kind (Literal[\"pie_chart_data\"]): The type of the chart.\n    slices (List[ChartSlice]): A list of slices in the pie chart.",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "const": "pie_chart_data",
+          "default": "pie_chart_data",
+          "enum": [
+            "pie_chart_data"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "slices": {
+          "items": {
+            "$ref": "#/$defs/ChartSlice"
+          },
+          "title": "Slices",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "slices"
+      ],
+      "title": "PicturePieChartData",
+      "type": "object"
+    },
+    "PictureScatterChartData": {
+      "description": "Represents data of a scatter chart.\n\nAttributes:\n    kind (Literal[\"scatter_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    points (List[ChartPoint]): A list of points in the scatter chart.",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "const": "scatter_chart_data",
+          "default": "scatter_chart_data",
+          "enum": [
+            "scatter_chart_data"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "x_axis_label": {
+          "title": "X Axis Label",
+          "type": "string"
+        },
+        "y_axis_label": {
+          "title": "Y Axis Label",
+          "type": "string"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/ChartPoint"
+          },
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "x_axis_label",
+        "y_axis_label",
+        "points"
+      ],
+      "title": "PictureScatterChartData",
+      "type": "object"
+    },
+    "PictureStackedBarChartData": {
+      "description": "Represents data of a stacked bar chart.\n\nAttributes:\n    kind (Literal[\"stacked_bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    stacked_bars (List[ChartStackedBar]): A list of stacked bars in the chart.",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "const": "stacked_bar_chart_data",
+          "default": "stacked_bar_chart_data",
+          "enum": [
+            "stacked_bar_chart_data"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "x_axis_label": {
+          "title": "X Axis Label",
+          "type": "string"
+        },
+        "y_axis_label": {
+          "title": "Y Axis Label",
+          "type": "string"
+        },
+        "stacked_bars": {
+          "items": {
+            "$ref": "#/$defs/ChartStackedBar"
+          },
+          "title": "Stacked Bars",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "x_axis_label",
+        "y_axis_label",
+        "stacked_bars"
+      ],
+      "title": "PictureStackedBarChartData",
       "type": "object"
     },
     "ProvenanceItem": {
