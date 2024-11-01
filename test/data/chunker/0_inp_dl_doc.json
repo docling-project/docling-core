@@ -547,7 +547,7 @@
                 "$ref": "#/body"
             },
             "children": [],
-            "label": "section_header",
+            "label": "title",
             "prov": [
                 {
                     "page_no": 1,
@@ -652,7 +652,7 @@
             },
             "children": [],
             "label": "section_header",
-            "level": 2,
+            "level": 1,
             "prov": [
                 {
                     "page_no": 1,
@@ -705,6 +705,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 1,
             "prov": [
                 {
                     "page_no": 1,
@@ -1017,6 +1018,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 1,
             "prov": [
                 {
                     "page_no": 2,
@@ -1147,6 +1149,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 1,
             "prov": [
                 {
                     "page_no": 2,
@@ -1199,6 +1202,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 2,
             "prov": [
                 {
                     "page_no": 2,
@@ -1381,6 +1385,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 2,
             "prov": [
                 {
                     "page_no": 3,
@@ -1433,6 +1438,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 3,
             "prov": [
                 {
                     "page_no": 3,
@@ -1511,6 +1517,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 3,
             "prov": [
                 {
                     "page_no": 3,
@@ -1615,6 +1622,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 3,
             "prov": [
                 {
                     "page_no": 4,
@@ -1693,6 +1701,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 2,
             "prov": [
                 {
                     "page_no": 4,
@@ -1745,6 +1754,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 2,
             "prov": [
                 {
                     "page_no": 4,
@@ -1823,6 +1833,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 1,
             "prov": [
                 {
                     "page_no": 4,
@@ -2005,6 +2016,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 1,
             "prov": [
                 {
                     "page_no": 5,
@@ -2057,6 +2069,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 1,
             "prov": [
                 {
                     "page_no": 5,
@@ -2135,6 +2148,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 1,
             "prov": [
                 {
                     "page_no": 5,
@@ -2655,6 +2669,7 @@
             },
             "children": [],
             "label": "section_header",
+            "level": 1,
             "prov": [
                 {
                     "page_no": 7,

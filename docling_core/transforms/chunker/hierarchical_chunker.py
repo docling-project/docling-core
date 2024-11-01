@@ -183,14 +183,15 @@ class HierarchicalChunker(BaseChunker):
                         )
                         list_items = []  # reset
 
-                if isinstance(
-                    item, SectionHeaderItem
-                ) or (  # TODO remove when all captured as SectionHeaderItem:
+                if isinstance(item, SectionHeaderItem) or (
                     isinstance(item, TextItem)
-                    and item.label == DocItemLabel.SECTION_HEADER
+                    and item.label in [DocItemLabel.SECTION_HEADER, DocItemLabel.TITLE]
                 ):
-                    # TODO second branch not needed once cleanup above complete:
-                    level = item.level if isinstance(item, SectionHeaderItem) else 1
+                    level = (
+                        item.level
+                        if isinstance(item, SectionHeaderItem)
+                        else (0 if item.label == DocItemLabel.TITLE else 1)
+                    )
                     heading_by_level[level] = item.text
 
                     # remove headings of higher level as they just went out of scope
