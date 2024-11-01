@@ -1,3 +1,9 @@
+## [v2.3.1](https://github.com/DS4SD/docling-core/releases/tag/v2.3.1) - 2024-11-01
+
+### Fix
+
+* Include titles to chunk heading metadata ([#62](https://github.com/DS4SD/docling-core/issues/62)) ([`bfeb2db`](https://github.com/DS4SD/docling-core/commit/bfeb2db24b70550693911af6aee01db8c74d464a))
+
 ## [v2.3.0](https://github.com/DS4SD/docling-core/releases/tag/v2.3.0) - 2024-10-29
 
 ### Feature
