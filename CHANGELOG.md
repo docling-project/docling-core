@@ -1,3 +1,9 @@
+## [v2.3.2](https://github.com/DS4SD/docling-core/releases/tag/v2.3.2) - 2024-11-11
+
+### Fix
+
+* Fixed selection logic for a slice of the document ([#66](https://github.com/DS4SD/docling-core/issues/66)) ([`dfdc76b`](https://github.com/DS4SD/docling-core/commit/dfdc76bf55a1442d4321b577904c0b4748158b55))
+
 ## [v2.3.1](https://github.com/DS4SD/docling-core/releases/tag/v2.3.1) - 2024-11-01
 
 ### Fix
