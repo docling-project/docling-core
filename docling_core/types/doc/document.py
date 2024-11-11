@@ -1284,8 +1284,8 @@ class DoclingDocument(BaseModel):
     ) -> str:
         r"""Serialize to Markdown.
 
-        Operates on a slice of the document's main_text as defined through arguments
-        main_text_start and main_text_stop; defaulting to the whole main_text.
+        Operates on a slice of the document's body as defined through arguments
+        from_element and to_element; defaulting to the whole document.
 
         :param delim: Delimiter to use when concatenating the various
                 Markdown parts. Defaults to "\n\n".
@@ -1294,11 +1294,9 @@ class DoclingDocument(BaseModel):
                 Defaults to 0.
         :type from_element: int
         :param to_element: Body slicing stop index
-                (exclusive). Defaults to None.
-        :type to_element: Optional[int]
+                (exclusive). Defaults to 0maxint.
+        :type to_element: int
         :param delim: str:  (Default value = "\n\n")
-        :param from_element: int:  (Default value = 0)
-        :param to_element: Optional[int]:  (Default value = None)
         :param labels: set[DocItemLabel]
         :param "subtitle-level-1":
         :param "paragraph":
@@ -1306,7 +1304,6 @@ class DoclingDocument(BaseModel):
         :param "table":
         :param "Text":
         :param "text":
-        :param ]:
         :param strict_text: bool:  (Default value = False)
         :param image_placeholder str:  (Default value = "<!-- image -->")
             the placeholder to include to position images in the markdown.
@@ -1331,7 +1328,7 @@ class DoclingDocument(BaseModel):
 
             previous_level = level  # Update previous_level for next iteration
 
-            if ix < from_element and to_element <= ix:
+            if ix < from_element or to_element <= ix:
                 continue  # skip as many items as you want
 
             # Handle newlines between different types of content
