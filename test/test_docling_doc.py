@@ -1,4 +1,5 @@
 from collections import deque
+from unittest.mock import Mock
 
 import pytest
 import yaml
@@ -7,6 +8,7 @@ from pydantic import ValidationError
 
 from docling_core.types.doc.document import (
     CURRENT_VERSION,
+    BoundingBox,
     DocItem,
     DoclingDocument,
     DocumentOrigin,
@@ -15,7 +17,9 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     ListItem,
     PictureItem,
+    ProvenanceItem,
     SectionHeaderItem,
+    Size,
     TableCell,
     TableData,
     TableItem,
@@ -407,3 +411,127 @@ def test_version_doc():
     comp_version = f"{major_split[0]}.{minor_split[0]}.{int(patch_split[0]) + 1}"
     doc = DoclingDocument(name="Untitled 1", version=comp_version)
     assert doc.version == CURRENT_VERSION
+
+
+def test_docitem_get_image():
+    # Prepare the document
+    doc = DoclingDocument(name="Dummy")
+
+    page1_image = PILImage.new(mode="RGB", size=(200, 400), color=(0, 0, 0))
+    doc_item_image = PILImage.new(mode="RGB", size=(20, 40), color=(255, 0, 0))
+    page1_image.paste(doc_item_image, box=(20, 40))
+
+    doc.add_page(  # With image
+        page_no=1,
+        size=Size(width=20, height=40),
+        image=ImageRef.from_pil(page1_image, dpi=72),
+    )
+    doc.add_page(page_no=2, size=Size(width=20, height=40), image=None)  # Without image
+
+    # DocItem with no provenance
+    doc_item = DocItem(self_ref="#", label=DocItemLabel.TEXT, prov=[])
+    assert doc_item.get_image(doc=doc) is None
+
+    # DocItem on an invalid page
+    doc_item = DocItem(
+        self_ref="#",
+        label=DocItemLabel.TEXT,
+        prov=[ProvenanceItem(page_no=3, bbox=Mock(spec=BoundingBox), charspan=(1, 2))],
+    )
+    assert doc_item.get_image(doc=doc) is None
+
+    # DocItem on a page without page image
+    doc_item = DocItem(
+        self_ref="#",
+        label=DocItemLabel.TEXT,
+        prov=[ProvenanceItem(page_no=2, bbox=Mock(spec=BoundingBox), charspan=(1, 2))],
+    )
+    assert doc_item.get_image(doc=doc) is None
+
+    # DocItem on a page with valid page image
+    doc_item = DocItem(
+        self_ref="#",
+        label=DocItemLabel.TEXT,
+        prov=[
+            ProvenanceItem(
+                page_no=1, bbox=BoundingBox(l=2, t=4, r=4, b=8), charspan=(1, 2)
+            )
+        ],
+    )
+    returned_doc_item_image = doc_item.get_image(doc=doc)
+    assert (
+        returned_doc_item_image is not None
+        and returned_doc_item_image.tobytes() == doc_item_image.tobytes()
+    )
+
+
+def test_floatingitem_get_image():
+    # Prepare the document
+    doc = DoclingDocument(name="Dummy")
+
+    page1_image = PILImage.new(mode="RGB", size=(200, 400), color=(0, 0, 0))
+    floating_item_image = PILImage.new(mode="RGB", size=(20, 40), color=(255, 0, 0))
+    page1_image.paste(floating_item_image, box=(20, 40))
+
+    doc.add_page(  # With image
+        page_no=1,
+        size=Size(width=20, height=40),
+        image=ImageRef.from_pil(page1_image, dpi=72),
+    )
+    doc.add_page(page_no=2, size=Size(width=20, height=40), image=None)  # Without image
+
+    # FloatingItem with explicit image different from image based on provenance
+    new_image = PILImage.new(mode="RGB", size=(40, 80), color=(0, 255, 0))
+    floating_item = FloatingItem(
+        self_ref="#",
+        label=DocItemLabel.PICTURE,
+        prov=[
+            ProvenanceItem(
+                page_no=1, bbox=BoundingBox(l=2, t=4, r=6, b=12), charspan=(1, 2)
+            )
+        ],
+        image=ImageRef.from_pil(image=new_image, dpi=72),
+    )
+    retured_image = floating_item.get_image(doc=doc)
+    assert retured_image is not None and retured_image.tobytes() == new_image.tobytes()
+
+    # FloatingItem without explicit image and no provenance
+    floating_item = FloatingItem(
+        self_ref="#", label=DocItemLabel.PICTURE, prov=[], image=None
+    )
+    assert floating_item.get_image(doc=doc) is None
+
+    # FloatingItem without explicit image on invalid page
+    floating_item = FloatingItem(
+        self_ref="#",
+        label=DocItemLabel.PICTURE,
+        prov=[ProvenanceItem(page_no=3, bbox=Mock(spec=BoundingBox), charspan=(1, 2))],
+        image=None,
+    )
+    assert floating_item.get_image(doc=doc) is None
+
+    # FloatingItem without explicit image on a page without page image
+    floating_item = FloatingItem(
+        self_ref="#",
+        label=DocItemLabel.PICTURE,
+        prov=[ProvenanceItem(page_no=2, bbox=Mock(spec=BoundingBox), charspan=(1, 2))],
+        image=None,
+    )
+    assert floating_item.get_image(doc=doc) is None
+
+    # FloatingItem without explicit image on a page with page image
+    floating_item = FloatingItem(
+        self_ref="#",
+        label=DocItemLabel.PICTURE,
+        prov=[
+            ProvenanceItem(
+                page_no=1, bbox=BoundingBox(l=2, t=4, r=4, b=8), charspan=(1, 2)
+            )
+        ],
+        image=None,
+    )
+    retured_image = floating_item.get_image(doc=doc)
+    assert (
+        retured_image is not None
+        and retured_image.tobytes() == floating_item_image.tobytes()
+    )

@@ -551,6 +551,28 @@ class DocItem(
 
         return location
 
+    def get_image(self, doc: "DoclingDocument") -> Optional[PILImage.Image]:
+        """Returns the image of this DocItem.
+
+        The function returns None if this DocItem has no valid provenance or
+        if a valid image of the page containing this DocItem is not available
+        in doc.
+        """
+        if not len(self.prov):
+            return None
+
+        page = doc.pages.get(self.prov[0].page_no)
+        if page is None or page.size is None or page.image is None:
+            return None
+
+        page_image = page.image.pil_image
+        crop_bbox = (
+            self.prov[0]
+            .bbox.to_top_left_origin(page_height=page.size.height)
+            .scaled(scale=page_image.height / page.size.height)
+        )
+        return page_image.crop(crop_bbox.as_tuple())
+
 
 class TextItem(DocItem):
     """TextItem."""
@@ -632,6 +654,20 @@ class FloatingItem(DocItem):
         for cap in self.captions:
             text += cap.resolve(doc).text
         return text
+
+    def get_image(self, doc: "DoclingDocument") -> Optional[PILImage.Image]:
+        """Returns the image corresponding to this FloatingItem.
+
+        This function returns the PIL image from self.image if one is available.
+        Otherwise, it uses DocItem.get_image to get an image of this FloatingItem.
+
+        In particular, when self.image is None, the function returns None if this
+        FloatingItem has no valid provenance or the doc does not contain a valid image
+        for the required page.
+        """
+        if self.image is not None:
+            return self.image.pil_image
+        return super().get_image(doc=doc)
 
 
 class PictureItem(FloatingItem):
