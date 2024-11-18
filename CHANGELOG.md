@@ -1,3 +1,10 @@
+## [v2.4.0](https://github.com/DS4SD/docling-core/releases/tag/v2.4.0) - 2024-11-18
+
+### Feature
+
+* Add get_image for all DocItem ([#67](https://github.com/DS4SD/docling-core/issues/67)) ([`9d7e831`](https://github.com/DS4SD/docling-core/commit/9d7e831fb23c5069361bcb6be8d562f36393398b))
+* Allow exporting a specific page to md. ([#63](https://github.com/DS4SD/docling-core/issues/63)) ([`1a201bc`](https://github.com/DS4SD/docling-core/commit/1a201bc65a32c88bae705b65998ab486b8a4302d))
+
 ## [v2.3.2](https://github.com/DS4SD/docling-core/releases/tag/v2.3.2) - 2024-11-11
 
 ### Fix
