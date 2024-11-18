@@ -1255,7 +1255,10 @@ class DoclingDocument(BaseModel):
                 # If the child is a NodeItem, recursively traverse it
                 if not isinstance(child, PictureItem) or traverse_pictures:
                     yield from self.iterate_items(
-                        child, _level=_level + 1, with_groups=with_groups
+                        child,
+                        _level=_level + 1,
+                        with_groups=with_groups,
+                        page_no=page_no,
                     )
 
     def print_element_tree(self):
@@ -1281,6 +1284,7 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
         text_width: int = -1,
+        page_no: Optional[int] = None,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -1317,7 +1321,7 @@ class DoclingDocument(BaseModel):
         in_list = False  # Track if we're currently processing list items
 
         for ix, (item, level) in enumerate(
-            self.iterate_items(self.body, with_groups=True)
+            self.iterate_items(self.body, with_groups=True, page_no=page_no)
         ):
             # If we've moved to a lower level, we're exiting one or more groups
             if level < previous_level:
