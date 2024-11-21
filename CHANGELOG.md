@@ -1,3 +1,9 @@
+## [v2.4.1](https://github.com/DS4SD/docling-core/releases/tag/v2.4.1) - 2024-11-21
+
+### Fix
+
+* Temporarily force pydantic < 2.10 ([#70](https://github.com/DS4SD/docling-core/issues/70)) ([`289b629`](https://github.com/DS4SD/docling-core/commit/289b629dc9451678885ae30bbcc286290bed5d87))
+
 ## [v2.4.0](https://github.com/DS4SD/docling-core/releases/tag/v2.4.0) - 2024-11-18
 
 ### Feature
