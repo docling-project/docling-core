@@ -1,3 +1,9 @@
+## [v2.5.0](https://github.com/DS4SD/docling-core/releases/tag/v2.5.0) - 2024-11-27
+
+### Feature
+
+* Adding HTML export to DoclingDocument, adding export of images in png with links to Markdown & HTML ([#69](https://github.com/DS4SD/docling-core/issues/69)) ([`ef49fd3`](https://github.com/DS4SD/docling-core/commit/ef49fd3f34ce140af20dff8cf48676df20a9502e))
+
 ## [v2.4.1](https://github.com/DS4SD/docling-core/releases/tag/v2.4.1) - 2024-11-21
 
 ### Fix
