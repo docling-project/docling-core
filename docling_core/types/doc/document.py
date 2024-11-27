@@ -2037,7 +2037,7 @@ class DoclingDocument(BaseModel):
         if artifacts_dir is None:
             # Remove the extension and add '_pictures'
             artifacts_dir = filename.with_suffix("")
-            artifacts_dir = artifacts_dir.with_name(artifacts_dir.stem + "_artifacts")
+            artifacts_dir = artifacts_dir.with_name(artifacts_dir.name + "_artifacts")
         if artifacts_dir.is_absolute():
             reference_path = None
         else:
