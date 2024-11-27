@@ -10,8 +10,9 @@ from pydantic import BaseModel
 class ImageRefMode(str, Enum):
     """ImageRefMode."""
 
-    PLACEHOLDER = "placeholder"
-    EMBEDDED = "embedded"
+    PLACEHOLDER = "placeholder"  # just a place-holder
+    EMBEDDED = "embedded"  # embed the image as a base64
+    REFERENCED = "referenced"  # reference the image via uri
 
 
 class CoordOrigin(str, Enum):

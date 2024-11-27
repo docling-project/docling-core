@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+    table {
+    border-collapse: separate;
+    /* Maintain separate borders */
+    border-spacing: 5px; /*
+    Space between cells */
+    width: 50%;
+    }
+    th, td {
+    border: 1px solid black;
+    /* Add lines etween cells */
+    padding: 8px; }
+    </style>
+    </head>
+<h1>This is the title</h1>
+<h2>This is the first section</h2>
+</html>

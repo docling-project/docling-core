@@ -1,0 +1,405 @@
+body:
+  children:
+  - $ref: '#/texts/0'
+  - $ref: '#/groups/0'
+  - $ref: '#/texts/12'
+  - $ref: '#/tables/0'
+  - $ref: '#/texts/13'
+  - $ref: '#/pictures/0'
+  - $ref: '#/texts/14'
+  - $ref: '#/pictures/1'
+  label: unspecified
+  name: _root_
+  self_ref: '#/body'
+furniture:
+  children: []
+  label: unspecified
+  name: _root_
+  self_ref: '#/furniture'
+groups:
+- children:
+  - $ref: '#/texts/3'
+  - $ref: '#/texts/4'
+  - $ref: '#/groups/1'
+  label: chapter
+  name: Introduction
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/0'
+- children:
+  - $ref: '#/texts/5'
+  - $ref: '#/texts/6'
+  - $ref: '#/texts/7'
+  - $ref: '#/groups/2'
+  - $ref: '#/texts/11'
+  label: list
+  name: group
+  parent:
+    $ref: '#/groups/0'
+  self_ref: '#/groups/1'
+- children:
+  - $ref: '#/texts/8'
+  - $ref: '#/texts/9'
+  - $ref: '#/texts/10'
+  label: ordered_list
+  name: group
+  parent:
+    $ref: '#/groups/1'
+  self_ref: '#/groups/2'
+key_value_items: []
+name: Untitled 1
+pages: {}
+pictures:
+- annotations: []
+  captions:
+  - $ref: '#/texts/13'
+  children: []
+  footnotes: []
+  label: picture
+  parent:
+    $ref: '#/body'
+  prov: []
+  references: []
+  self_ref: '#/pictures/0'
+- annotations: []
+  captions:
+  - $ref: '#/texts/14'
+  children: []
+  footnotes: []
+  image:
+    dpi: 72
+    mimetype: image/png
+    size:
+      height: 64.0
+      width: 64.0
+    uri: constructed_images/image_000001_ccb4cbe7039fe17892f3d611cfb71eafff1d4d230b19b10779334cc4b63c98bc.png
+  label: picture
+  parent:
+    $ref: '#/body'
+  prov: []
+  references: []
+  self_ref: '#/pictures/1'
+schema_name: DoclingDocument
+tables:
+- captions:
+  - $ref: '#/texts/12'
+  children: []
+  data:
+    grid:
+    - - col_span: 1
+        column_header: false
+        end_col_offset_idx: 1
+        end_row_offset_idx: 2
+        row_header: false
+        row_section: false
+        row_span: 2
+        start_col_offset_idx: 0
+        start_row_offset_idx: 0
+        text: Product
+      - col_span: 2
+        column_header: false
+        end_col_offset_idx: 3
+        end_row_offset_idx: 1
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 1
+        start_row_offset_idx: 0
+        text: Years
+      - col_span: 2
+        column_header: false
+        end_col_offset_idx: 3
+        end_row_offset_idx: 1
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 1
+        start_row_offset_idx: 0
+        text: Years
+    - - col_span: 1
+        column_header: false
+        end_col_offset_idx: 1
+        end_row_offset_idx: 2
+        row_header: false
+        row_section: false
+        row_span: 2
+        start_col_offset_idx: 0
+        start_row_offset_idx: 0
+        text: Product
+      - col_span: 1
+        column_header: false
+        end_col_offset_idx: 2
+        end_row_offset_idx: 2
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 1
+        start_row_offset_idx: 1
+        text: '2016'
+      - col_span: 1
+        column_header: false
+        end_col_offset_idx: 3
+        end_row_offset_idx: 2
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 2
+        start_row_offset_idx: 1
+        text: '2017'
+    - - col_span: 1
+        column_header: false
+        end_col_offset_idx: 1
+        end_row_offset_idx: 3
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 0
+        start_row_offset_idx: 2
+        text: Apple
+      - col_span: 1
+        column_header: false
+        end_col_offset_idx: 2
+        end_row_offset_idx: 3
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 1
+        start_row_offset_idx: 2
+        text: '49823'
+      - col_span: 1
+        column_header: false
+        end_col_offset_idx: 3
+        end_row_offset_idx: 3
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 2
+        start_row_offset_idx: 2
+        text: '695944'
+    num_cols: 3
+    num_rows: 3
+    table_cells:
+    - col_span: 1
+      column_header: false
+      end_col_offset_idx: 1
+      end_row_offset_idx: 2
+      row_header: false
+      row_section: false
+      row_span: 2
+      start_col_offset_idx: 0
+      start_row_offset_idx: 0
+      text: Product
+    - col_span: 2
+      column_header: false
+      end_col_offset_idx: 3
+      end_row_offset_idx: 1
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 1
+      start_row_offset_idx: 0
+      text: Years
+    - col_span: 1
+      column_header: false
+      end_col_offset_idx: 2
+      end_row_offset_idx: 2
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 1
+      start_row_offset_idx: 1
+      text: '2016'
+    - col_span: 1
+      column_header: false
+      end_col_offset_idx: 3
+      end_row_offset_idx: 2
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 2
+      start_row_offset_idx: 1
+      text: '2017'
+    - col_span: 1
+      column_header: false
+      end_col_offset_idx: 1
+      end_row_offset_idx: 3
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 0
+      start_row_offset_idx: 2
+      text: Apple
+    - col_span: 1
+      column_header: false
+      end_col_offset_idx: 2
+      end_row_offset_idx: 3
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 1
+      start_row_offset_idx: 2
+      text: '49823'
+    - col_span: 1
+      column_header: false
+      end_col_offset_idx: 3
+      end_row_offset_idx: 3
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 2
+      start_row_offset_idx: 2
+      text: '695944'
+  footnotes: []
+  label: table
+  parent:
+    $ref: '#/body'
+  prov: []
+  references: []
+  self_ref: '#/tables/0'
+texts:
+- children:
+  - $ref: '#/texts/1'
+  - $ref: '#/texts/2'
+  label: title
+  orig: Title of the Document
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/0'
+  text: Title of the Document
+- children: []
+  label: text
+  orig: 'Author 1
+
+    Affiliation 1'
+  parent:
+    $ref: '#/texts/0'
+  prov: []
+  self_ref: '#/texts/1'
+  text: 'Author 1
+
+    Affiliation 1'
+- children: []
+  label: text
+  orig: 'Author 2
+
+    Affiliation 2'
+  parent:
+    $ref: '#/texts/0'
+  prov: []
+  self_ref: '#/texts/2'
+  text: 'Author 2
+
+    Affiliation 2'
+- children: []
+  label: section_header
+  level: 1
+  orig: 1. Introduction
+  parent:
+    $ref: '#/groups/0'
+  prov: []
+  self_ref: '#/texts/3'
+  text: 1. Introduction
+- children: []
+  label: text
+  orig: This paper introduces the biggest invention ever made. ...
+  parent:
+    $ref: '#/groups/0'
+  prov: []
+  self_ref: '#/texts/4'
+  text: This paper introduces the biggest invention ever made. ...
+- children: []
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: list item 1
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/5'
+  text: list item 1
+- children: []
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: list item 2
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/6'
+  text: list item 2
+- children: []
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: list item 3
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/7'
+  text: list item 3
+- children: []
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: list item 3.a
+  parent:
+    $ref: '#/groups/2'
+  prov: []
+  self_ref: '#/texts/8'
+  text: list item 3.a
+- children: []
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: list item 3.b
+  parent:
+    $ref: '#/groups/2'
+  prov: []
+  self_ref: '#/texts/9'
+  text: list item 3.b
+- children: []
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: list item 3.c
+  parent:
+    $ref: '#/groups/2'
+  prov: []
+  self_ref: '#/texts/10'
+  text: list item 3.c
+- children: []
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: list item 4
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/11'
+  text: list item 4
+- children: []
+  label: caption
+  orig: This is the caption of table 1.
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/12'
+  text: This is the caption of table 1.
+- children: []
+  label: caption
+  orig: This is the caption of figure 1.
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/13'
+  text: This is the caption of figure 1.
+- children: []
+  label: caption
+  orig: This is the caption of figure 2.
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/14'
+  text: This is the caption of figure 2.
+version: 1.0.0

@@ -109,8 +109,9 @@ tables: # All tables...
       size:
         width: 231
         height: 351
-      uri: "file:///dummy_doc/tables/0.png"
+      #uri: "file:///dummy_doc/tables/0.png"
       #alternatives: base64 encoded striong
+      uri: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
     data: # TableData Type
       table_cells: [] # flat list of TableCell type
       grid: [[]] # list-of-list of TableCell type
@@ -161,8 +162,9 @@ pictures: # All pictures...
       size:
         width: 231
         height: 351
-      uri: "file:///dummy_doc/pictures/0.png"
-      #alternatives: base64 encoded striong
+      #uri: "file:///dummy_doc/pictures/0.png"
+      #alternatives: base64 encoded strong
+      uri: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
     children:
       - $ref: "#/texts/2" # This text element appears inside the figure, hence it is a child.
     prov:
@@ -201,7 +203,8 @@ pages: # Optional, for layout documents
       size:
         width: 1536
         height: 1166
-      uri: "file:///dummy_doc/pages/1.png"
+      #uri: "file:///dummy_doc/pages/1.png"
       #alternatives: base64 encoded string
+      uri: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
     num_elements: 23
     page_no: 1

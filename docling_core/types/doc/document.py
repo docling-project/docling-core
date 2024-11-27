@@ -1,15 +1,22 @@
 """Models for the Docling Document data type."""
 
 import base64
+import copy
+import hashlib
+import json
 import mimetypes
+import os
 import re
 import sys
 import textwrap
 import typing
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
+from urllib.parse import unquote
 
 import pandas as pd
+import yaml
 from PIL import Image as PILImage
 from pydantic import (
     AnyUrl,
@@ -30,6 +37,7 @@ from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.labels import DocItemLabel, GroupLabel
 from docling_core.types.legacy_doc.tokens import DocumentToken
+from docling_core.utils.file import relative_path
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
@@ -436,21 +444,25 @@ class ImageRef(BaseModel):
     mimetype: str
     dpi: int
     size: Size
-    uri: AnyUrl
+    uri: Union[AnyUrl, Path]
     _pil: Optional[PILImage.Image] = None
 
     @property
-    def pil_image(self) -> PILImage.Image:
+    def pil_image(self) -> Optional[PILImage.Image]:
         """Return the PIL Image."""
         if self._pil is not None:
             return self._pil
 
-        if str(self.uri).startswith("data:"):
-            encoded_img = str(self.uri).split(",")[1]
-            decoded_img = base64.b64decode(encoded_img)
-            self._pil = PILImage.open(BytesIO(decoded_img))
-        else:
-            self._pil = PILImage.open(str(self.uri))
+        if isinstance(self.uri, AnyUrl):
+            if self.uri.scheme == "data":
+                encoded_img = str(self.uri).split(",")[1]
+                decoded_img = base64.b64decode(encoded_img)
+                self._pil = PILImage.open(BytesIO(decoded_img))
+            elif self.uri.scheme == "file":
+                self._pil = PILImage.open(unquote(str(self.uri.path)))
+            # else: Handle http request or other protocols...
+        elif isinstance(self.uri, Path):
+            self._pil = PILImage.open(self.uri)
 
         return self._pil
 
@@ -566,6 +578,8 @@ class DocItem(
             return None
 
         page_image = page.image.pil_image
+        if not page_image:
+            return None
         crop_bbox = (
             self.prov[0]
             .bbox.to_top_left_origin(page_height=page.size.height)
@@ -631,6 +645,50 @@ class SectionHeaderItem(TextItem):
     label: typing.Literal[DocItemLabel.SECTION_HEADER] = DocItemLabel.SECTION_HEADER
     level: LevelNumber
 
+    def export_to_document_tokens(
+        self,
+        doc: "DoclingDocument",
+        new_line: str = "\n",
+        xsize: int = 100,
+        ysize: int = 100,
+        add_location: bool = True,
+        add_content: bool = True,
+        add_page_index: bool = True,
+    ):
+        r"""Export text element to document tokens format.
+
+        :param doc: "DoclingDocument":
+        :param new_line: str:  (Default value = "\n")
+        :param xsize: int:  (Default value = 100)
+        :param ysize: int:  (Default value = 100)
+        :param add_location: bool:  (Default value = True)
+        :param add_content: bool:  (Default value = True)
+        :param add_page_index: bool:  (Default value = True)
+
+        """
+        body = f"<{self.label.value}_level_{self.level}>"
+
+        # TODO: This must be done through an explicit mapping.
+        # assert DocumentToken.is_known_token(
+        #    body
+        # ), f"failed DocumentToken.is_known_token({body})"
+
+        if add_location:
+            body += self.get_location_tokens(
+                doc=doc,
+                new_line="",
+                xsize=xsize,
+                ysize=ysize,
+                add_page_index=add_page_index,
+            )
+
+        if add_content and self.text is not None:
+            body += self.text.strip()
+
+        body += f"</{self.label.value}_level_{self.level}>{new_line}"
+
+        return body
+
 
 class ListItem(TextItem):
     """SectionItem."""
@@ -676,6 +734,152 @@ class PictureItem(FloatingItem):
     label: typing.Literal[DocItemLabel.PICTURE] = DocItemLabel.PICTURE
 
     annotations: List[PictureDataType] = []
+
+    # Convert the image to Base64
+    def _image_to_base64(self, pil_image, format="PNG"):
+        """Base64 representation of the image."""
+        buffered = BytesIO()
+        pil_image.save(buffered, format=format)  # Save the image to the byte stream
+        img_bytes = buffered.getvalue()  # Get the byte data
+        img_base64 = base64.b64encode(img_bytes).decode(
+            "utf-8"
+        )  # Encode to Base64 and decode to string
+        return img_base64
+
+    def _image_to_hexhash(self) -> Optional[str]:
+        """Hexash from the image."""
+        if self.image is not None and self.image._pil is not None:
+            # Convert the image to raw bytes
+            image_bytes = self.image._pil.tobytes()
+
+            # Create a hash object (e.g., SHA-256)
+            hasher = hashlib.sha256()
+
+            # Feed the image bytes into the hash object
+            hasher.update(image_bytes)
+
+            # Get the hexadecimal representation of the hash
+            return hasher.hexdigest()
+
+        return None
+
+    def export_to_markdown(
+        self,
+        doc: "DoclingDocument",
+        add_caption: bool = True,
+        image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
+        image_placeholder: str = "<!-- image -->",
+    ) -> str:
+        """Export picture to Markdown format."""
+        default_response = "\n" + image_placeholder + "\n"
+        error_response = (
+            "\n<!-- 🖼️❌ Image not available. "
+            "Please use `PdfPipelineOptions(generate_picture_images=True)`"
+            " --> \n"
+        )
+
+        if image_mode == ImageRefMode.PLACEHOLDER:
+            return default_response
+
+        elif image_mode == ImageRefMode.EMBEDDED:
+
+            # short-cut: we already have the image in base64
+            if (
+                isinstance(self.image, ImageRef)
+                and isinstance(self.image.uri, AnyUrl)
+                and self.image.uri.scheme == "data"
+            ):
+                text = f"\n![Image]({self.image.uri})\n"
+                return text
+
+            # get the self.image._pil or crop it out of the page-image
+            img = self.get_image(doc)
+
+            if img is not None:
+                imgb64 = self._image_to_base64(img)
+                text = f"\n![Image]({imgb64})\n"
+
+                return text
+            else:
+                return error_response
+
+        elif image_mode == ImageRefMode.REFERENCED:
+            if not isinstance(self.image, ImageRef) or (
+                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "data"
+            ):
+                return default_response
+
+            if (
+                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "file"
+            ) or isinstance(self.image.uri, Path):
+                text = f"\n![Image]({str(self.image.uri)})\n"
+                return text
+
+            else:
+                return default_response
+
+        else:
+            return default_response
+
+    def export_to_html(
+        self,
+        doc: "DoclingDocument",
+        add_caption: bool = True,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+    ) -> str:
+        """Export picture to HTML format."""
+        text = ""
+        if add_caption and len(self.captions):
+            text = self.caption_text(doc)
+
+        caption_text = ""
+        if len(text) > 0:
+            caption_text = f"<figcaption>{text}</figcaption>"
+
+        default_response = f"<figure>{caption_text}</figure>"
+
+        if image_mode == ImageRefMode.PLACEHOLDER:
+            return default_response
+
+        elif image_mode == ImageRefMode.EMBEDDED:
+            # short-cut: we already have the image in base64
+            if (
+                isinstance(self.image, ImageRef)
+                and isinstance(self.image.uri, AnyUrl)
+                and self.image.uri.scheme == "data"
+            ):
+                img_text = f'<img src="{self.image.uri}">'
+                return f"<figure>{caption_text}{img_text}</figure>"
+
+            # get the self.image._pil or crop it out of the page-image
+            img = self.get_image(doc)
+
+            if img is not None:
+                imgb64 = self._image_to_base64(img)
+                img_text = f'<img src="data:image/png;base64,{imgb64}">'
+
+                return f"<figure>{caption_text}{img_text}</figure>"
+            else:
+                return default_response
+
+        elif image_mode == ImageRefMode.REFERENCED:
+
+            if not isinstance(self.image, ImageRef) or (
+                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "data"
+            ):
+                return default_response
+
+            if (
+                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "file"
+            ) or isinstance(self.image.uri, Path):
+                img_text = f'<img src="{str(self.image.uri)}">'
+                return f"<figure>{caption_text}{img_text}</figure>"
+
+            else:
+                return default_response
+
+        else:
+            return default_response
 
     def export_to_document_tokens(
         self,
@@ -804,14 +1008,21 @@ class TableItem(FloatingItem):
                 )
         return md_table
 
-    def export_to_html(self) -> str:
+    def export_to_html(self, doc: "DoclingDocument", add_caption: bool = True) -> str:
         """Export the table as html."""
         body = ""
         nrows = self.data.num_rows
         ncols = self.data.num_cols
 
-        if not len(self.data.table_cells):
+        text = ""
+        if add_caption and len(self.captions):
+            text = self.caption_text(doc)
+
+        if len(self.data.table_cells) == 0:
             return ""
+
+        body = ""
+
         for i in range(nrows):
             body += "<tr>"
             for j in range(ncols):
@@ -844,7 +1055,15 @@ class TableItem(FloatingItem):
 
                 body += f"<{opening_tag}>{content}</{celltag}>"
             body += "</tr>"
-        body = f"<table>{body}</table>"
+
+        if len(text) > 0 and len(body) > 0:
+            body = f"<table><caption>{text}</caption><tbody>{body}</tbody></table>"
+        elif len(text) == 0 and len(body) > 0:
+            body = f"<table><tbody>{body}</tbody></table>"
+        elif len(text) > 0 and len(body) == 0:
+            body = f"<table><caption>{text}</caption></table>"
+        else:
+            body = "<table></table>"
 
         return body
 
@@ -981,6 +1200,23 @@ class PageItem(BaseModel):
 class DoclingDocument(BaseModel):
     """DoclingDocument."""
 
+    _HTML_DEFAULT_HEAD: str = r"""<head>
+    <meta charset="UTF-8">
+    <style>
+    table {
+    border-collapse: separate;
+    /* Maintain separate borders */
+    border-spacing: 5px; /*
+    Space between cells */
+    width: 50%;
+    }
+    th, td {
+    border: 1px solid black;
+    /* Add lines etween cells */
+    padding: 8px; }
+    </style>
+    </head>"""
+
     schema_name: typing.Literal["DoclingDocument"] = "DoclingDocument"
     version: Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)] = (
         CURRENT_VERSION
@@ -1045,7 +1281,7 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[GroupItem] = None,
     ):
-        """add_paragraph.
+        """add_list_item.
 
         :param label: str:
         :param text: str:
@@ -1088,7 +1324,7 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[GroupItem] = None,
     ):
-        """add_paragraph.
+        """add_text.
 
         :param label: str:
         :param text: str:
@@ -1097,28 +1333,41 @@ class DoclingDocument(BaseModel):
         :param parent: Optional[GroupItem]:  (Default value = None)
 
         """
-        if not parent:
-            parent = self.body
+        # Catch a few cases that are in principle allowed
+        # but that will create confusion down the road
+        if label in [DocItemLabel.TITLE]:
+            return self.add_title(text=text, orig=orig, prov=prov, parent=parent)
 
-        if not orig:
-            orig = text
+        elif label in [DocItemLabel.LIST_ITEM]:
+            return self.add_list_item(text=text, orig=orig, prov=prov, parent=parent)
 
-        text_index = len(self.texts)
-        cref = f"#/texts/{text_index}"
-        text_item = TextItem(
-            label=label,
-            text=text,
-            orig=orig,
-            self_ref=cref,
-            parent=parent.get_ref(),
-        )
-        if prov:
-            text_item.prov.append(prov)
+        elif label in [DocItemLabel.SECTION_HEADER]:
+            return self.add_heading(text=text, orig=orig, prov=prov, parent=parent)
 
-        self.texts.append(text_item)
-        parent.children.append(RefItem(cref=cref))
+        else:
 
-        return text_item
+            if not parent:
+                parent = self.body
+
+            if not orig:
+                orig = text
+
+            text_index = len(self.texts)
+            cref = f"#/texts/{text_index}"
+            text_item = TextItem(
+                label=label,
+                text=text,
+                orig=orig,
+                self_ref=cref,
+                parent=parent.get_ref(),
+            )
+            if prov:
+                text_item.prov.append(prov)
+
+            self.texts.append(text_item)
+            parent.children.append(RefItem(cref=cref))
+
+            return text_item
 
     def add_table(
         self,
@@ -1170,7 +1419,6 @@ class DoclingDocument(BaseModel):
         :param RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[GroupItem]:  (Default value = None)
-
         """
         if not parent:
             parent = self.body
@@ -1195,6 +1443,43 @@ class DoclingDocument(BaseModel):
 
         return fig_item
 
+    def add_title(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[GroupItem] = None,
+    ):
+        """add_title.
+
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[GroupItem]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        text_item = TextItem(
+            label=DocItemLabel.TITLE,
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if prov:
+            text_item.prov.append(prov)
+
+        self.texts.append(text_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return text_item
+
     def add_heading(
         self,
         text: str,
@@ -1211,7 +1496,6 @@ class DoclingDocument(BaseModel):
         :param level: LevelNumber:  (Default value = 1)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[GroupItem]:  (Default value = None)
-
         """
         if not parent:
             parent = self.body
@@ -1297,17 +1581,220 @@ class DoclingDocument(BaseModel):
                         page_no=page_no,
                     )
 
+    def _clear_picture_pil_cache(self):
+        """Clear cache storage of all images."""
+        for item, level in self.iterate_items(with_groups=False):
+            if isinstance(item, PictureItem):
+                if item.image is not None and item.image._pil is not None:
+                    item.image._pil.close()
+
+    def _list_images_on_disk(self) -> List[Path]:
+        """List all images on disk."""
+        result: List[Path] = []
+
+        for item, level in self.iterate_items(with_groups=False):
+            if isinstance(item, PictureItem):
+                if item.image is not None:
+                    if (
+                        isinstance(item.image.uri, AnyUrl)
+                        and item.image.uri.scheme == "file"
+                        and item.image.uri.path is not None
+                    ):
+                        local_path = Path(unquote(item.image.uri.path))
+                        result.append(local_path)
+                    elif isinstance(item.image.uri, Path):
+                        result.append(item.image.uri)
+
+        return result
+
+    def _with_embedded_pictures(self) -> "DoclingDocument":
+        """Document with embedded images.
+
+        Creates a copy of this document where all pictures referenced
+        through a file URI are turned into base64 embedded form.
+        """
+        result: DoclingDocument = copy.deepcopy(self)
+
+        for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
+            if isinstance(item, PictureItem):
+
+                if item.image is not None:
+                    if (
+                        isinstance(item.image.uri, AnyUrl)
+                        and item.image.uri.scheme == "file"
+                    ):
+                        assert isinstance(item.image.uri.path, str)
+                        tmp_image = PILImage.open(str(unquote(item.image.uri.path)))
+                        item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
+
+                    elif isinstance(item.image.uri, Path):
+                        tmp_image = PILImage.open(str(item.image.uri))
+                        item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
+
+        return result
+
+    def _with_pictures_refs(
+        self, image_dir: Path, reference_path: Optional[Path] = None
+    ) -> "DoclingDocument":
+        """Document with images as refs.
+
+        Creates a copy of this document where all picture data is
+        saved to image_dir and referenced through file URIs.
+        """
+        result: DoclingDocument = copy.deepcopy(self)
+
+        img_count = 0
+        image_dir.mkdir(parents=True, exist_ok=True)
+
+        if image_dir.is_dir():
+            for item, level in result.iterate_items(with_groups=False):
+                if isinstance(item, PictureItem):
+
+                    if (
+                        item.image is not None
+                        and isinstance(item.image.uri, AnyUrl)
+                        and item.image.uri.scheme == "data"
+                        and item.image.pil_image is not None
+                    ):
+                        img = item.image.pil_image
+
+                        hexhash = item._image_to_hexhash()
+
+                        # loc_path = image_dir / f"image_{img_count:06}.png"
+                        if hexhash is not None:
+                            loc_path = image_dir / f"image_{img_count:06}_{hexhash}.png"
+
+                            img.save(loc_path)
+                            if reference_path is not None:
+                                obj_path = relative_path(
+                                    reference_path.resolve(), loc_path.resolve()
+                                )
+                            else:
+                                obj_path = loc_path
+
+                            item.image.uri = Path(obj_path)
+
+                        # if item.image._pil is not None:
+                        #    item.image._pil.close()
+
+                    img_count += 1
+
+        return result
+
     def print_element_tree(self):
-        """print_element_tree."""
+        """Print_element_tree."""
         for ix, (item, level) in enumerate(self.iterate_items(with_groups=True)):
             if isinstance(item, GroupItem):
                 print(" " * level, f"{ix}: {item.label.value} with name={item.name}")
             elif isinstance(item, DocItem):
                 print(" " * level, f"{ix}: {item.label.value}")
 
-    def export_to_dict(self) -> Dict:
-        """export_to_dict."""
-        return self.model_dump(mode="json", by_alias=True, exclude_none=True)
+    def export_to_element_tree(self) -> str:
+        """Export_to_element_tree."""
+        texts = []
+        for ix, (item, level) in enumerate(self.iterate_items(with_groups=True)):
+            if isinstance(item, GroupItem):
+                texts.append(
+                    " " * level + f"{ix}: {item.label.value} with name={item.name}"
+                )
+            elif isinstance(item, DocItem):
+                texts.append(" " * level + f"{ix}: {item.label.value}")
+
+        return "\n".join(texts)
+
+    def save_as_json(
+        self,
+        filename: Path,
+        artifacts_dir: Optional[Path] = None,
+        image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
+        indent: int = 2,
+    ):
+        """Save as json."""
+        artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
+
+        if image_mode == ImageRefMode.REFERENCED:
+            os.makedirs(artifacts_dir, exist_ok=True)
+
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir, image_mode, reference_path=reference_path
+        )
+
+        out = new_doc.export_to_dict()
+        with open(filename, "w") as fw:
+            json.dump(out, fw, indent=indent)
+
+    def save_as_yaml(
+        self,
+        filename: Path,
+        artifacts_dir: Optional[Path] = None,
+        image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
+        default_flow_style: bool = False,
+    ):
+        """Save as yaml."""
+        artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
+
+        if image_mode == ImageRefMode.REFERENCED:
+            os.makedirs(artifacts_dir, exist_ok=True)
+
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir, image_mode, reference_path=reference_path
+        )
+
+        out = new_doc.export_to_dict()
+        with open(filename, "w") as fw:
+            yaml.dump(out, fw, default_flow_style=default_flow_style)
+
+    def export_to_dict(
+        self,
+        mode: str = "json",
+        by_alias: bool = True,
+        exclude_none: bool = True,
+    ) -> Dict:
+        """Export to dict."""
+        out = self.model_dump(mode=mode, by_alias=by_alias, exclude_none=exclude_none)
+
+        return out
+
+    def save_as_markdown(
+        self,
+        filename: Path,
+        artifacts_dir: Optional[Path] = None,
+        delim: str = "\n",
+        from_element: int = 0,
+        to_element: int = sys.maxsize,
+        labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
+        strict_text: bool = False,
+        image_placeholder: str = "<!-- image -->",
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        indent: int = 4,
+        text_width: int = -1,
+        page_no: Optional[int] = None,
+    ):
+        """Save to markdown."""
+        artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
+
+        if image_mode == ImageRefMode.REFERENCED:
+            os.makedirs(artifacts_dir, exist_ok=True)
+
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir, image_mode, reference_path=reference_path
+        )
+
+        md_out = new_doc.export_to_markdown(
+            delim=delim,
+            from_element=from_element,
+            to_element=to_element,
+            labels=labels,
+            strict_text=strict_text,
+            image_placeholder=image_placeholder,
+            image_mode=image_mode,
+            indent=indent,
+            text_width=text_width,
+            page_no=page_no,
+        )
+
+        with open(filename, "w") as fw:
+            fw.write(md_out)
 
     def export_to_markdown(  # noqa: C901
         self,
@@ -1461,22 +1948,13 @@ class DoclingDocument(BaseModel):
                 in_list = False
                 mdtexts.append(item.caption_text(self))
 
-                if image_mode == ImageRefMode.PLACEHOLDER:
-                    mdtexts.append("\n" + image_placeholder + "\n")
-                elif image_mode == ImageRefMode.EMBEDDED and isinstance(
-                    item.image, ImageRef
-                ):
-                    text = f"![Local Image]({item.image.uri})\n"
-                    mdtexts.append(text)
-                elif image_mode == ImageRefMode.EMBEDDED and not isinstance(
-                    item.image, ImageRef
-                ):
-                    text = (
-                        "<!-- 🖼️❌ Image not available. "
-                        "Please use `PdfPipelineOptions(generate_picture_images=True)`"
-                        " --> "
-                    )
-                    mdtexts.append(text)
+                line = item.export_to_markdown(
+                    doc=self,
+                    image_placeholder=image_placeholder,
+                    image_mode=image_mode,
+                )
+
+                mdtexts.append(line)
 
             elif isinstance(item, DocItem) and item.label in labels:
                 in_list = False
@@ -1518,11 +1996,246 @@ class DoclingDocument(BaseModel):
             image_placeholder="",
         )
 
-    def export_to_document_tokens(
+    def save_as_html(
         self,
+        filename: Path,
+        artifacts_dir: Optional[Path] = None,
+        from_element: int = 0,
+        to_element: int = sys.maxsize,
+        labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        page_no: Optional[int] = None,
+        html_lang: str = "en",
+        html_head: str = _HTML_DEFAULT_HEAD,
+    ):
+        """Save to HTML."""
+        artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
+
+        if image_mode == ImageRefMode.REFERENCED:
+            os.makedirs(artifacts_dir, exist_ok=True)
+
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir, image_mode, reference_path=reference_path
+        )
+
+        html_out = new_doc.export_to_html(
+            from_element=from_element,
+            to_element=to_element,
+            labels=labels,
+            image_mode=image_mode,
+            page_no=page_no,
+            html_lang=html_lang,
+            html_head=html_head,
+        )
+
+        with open(filename, "w") as fw:
+            fw.write(html_out)
+
+    def _get_output_paths(
+        self, filename: Path, artifacts_dir: Optional[Path] = None
+    ) -> Tuple[Path, Optional[Path]]:
+        if artifacts_dir is None:
+            # Remove the extension and add '_pictures'
+            artifacts_dir = filename.with_suffix("")
+            artifacts_dir = artifacts_dir.with_name(artifacts_dir.stem + "_artifacts")
+        if artifacts_dir.is_absolute():
+            reference_path = None
+        else:
+            reference_path = filename.parent
+        return artifacts_dir, reference_path
+
+    def _make_copy_with_refmode(
+        self,
+        artifacts_dir: Path,
+        image_mode: ImageRefMode,
+        reference_path: Optional[Path] = None,
+    ):
+        new_doc = None
+        if image_mode == ImageRefMode.PLACEHOLDER:
+            new_doc = self
+        elif image_mode == ImageRefMode.REFERENCED:
+            new_doc = self._with_pictures_refs(
+                image_dir=artifacts_dir, reference_path=reference_path
+            )
+        elif image_mode == ImageRefMode.EMBEDDED:
+            new_doc = self._with_embedded_pictures()
+        else:
+            raise ValueError("Unsupported ImageRefMode")
+        return new_doc
+
+    def export_to_html(  # noqa: C901
+        self,
+        from_element: int = 0,
+        to_element: int = sys.maxsize,
+        labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        page_no: Optional[int] = None,
+        html_lang: str = "en",
+        html_head: str = _HTML_DEFAULT_HEAD,
+    ) -> str:
+        r"""Serialize to HTML."""
+
+        def close_lists(
+            curr_level: int,
+            prev_level: int,
+            in_ordered_list: List[bool],
+            html_texts: list[str],
+        ):
+
+            if len(in_ordered_list) == 0:
+                return (in_ordered_list, html_texts)
+
+            while curr_level < prev_level and len(in_ordered_list) > 0:
+                if in_ordered_list[-1]:
+                    html_texts.append("</ol>")
+                else:
+                    html_texts.append("</ul>")
+
+                prev_level -= 1
+                in_ordered_list.pop()  # = in_ordered_list[:-1]
+
+            return (in_ordered_list, html_texts)
+
+        head_lines = ["<!DOCTYPE html>", f'<html lang="{html_lang}">', html_head]
+        html_texts: list[str] = []
+
+        prev_level = 0  # Track the previous item's level
+
+        in_ordered_list: List[bool] = []  # False
+
+        for ix, (item, curr_level) in enumerate(
+            self.iterate_items(self.body, with_groups=True, page_no=page_no)
+        ):
+            # If we've moved to a lower level, we're exiting one or more groups
+            if curr_level < prev_level and len(in_ordered_list) > 0:
+                # Calculate how many levels we've exited
+                # level_difference = previous_level - level
+                # Decrement list_nesting_level for each list group we've exited
+                # list_nesting_level = max(0, list_nesting_level - level_difference)
+
+                in_ordered_list, html_texts = close_lists(
+                    curr_level=curr_level,
+                    prev_level=prev_level,
+                    in_ordered_list=in_ordered_list,
+                    html_texts=html_texts,
+                )
+
+            prev_level = curr_level  # Update previous_level for next iteration
+
+            if ix < from_element or to_element <= ix:
+                continue  # skip as many items as you want
+
+            if (isinstance(item, DocItem)) and (item.label not in labels):
+                continue  # skip any label that is not whitelisted
+
+            if isinstance(item, GroupItem) and item.label in [
+                GroupLabel.ORDERED_LIST,
+            ]:
+
+                text = "<ol>"
+                html_texts.append(text.strip())
+
+                # Increment list nesting level when entering a new list
+                in_ordered_list.append(True)
+
+            elif isinstance(item, GroupItem) and item.label in [
+                GroupLabel.LIST,
+            ]:
+
+                text = "<ul>"
+                html_texts.append(text.strip())
+
+                # Increment list nesting level when entering a new list
+                in_ordered_list.append(False)
+
+            elif isinstance(item, GroupItem):
+                continue
+
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
+
+                text = f"<h1>{item.text}</h1>"
+                html_texts.append(text.strip())
+
+            elif isinstance(item, SectionHeaderItem):
+
+                section_level: int = item.level + 1
+
+                text = f"<h{(section_level)}>{item.text}</h{(section_level)}>"
+                html_texts.append(text.strip())
+
+            elif isinstance(item, TextItem) and item.label in [
+                DocItemLabel.SECTION_HEADER
+            ]:
+
+                section_level = curr_level
+
+                if section_level <= 1:
+                    section_level = 2
+
+                if section_level >= 6:
+                    section_level = 6
+
+                text = f"<h{section_level}>{item.text}</h{section_level}>"
+                html_texts.append(text.strip())
+
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CODE]:
+
+                text = f"<pre>{item.text}</pre>"
+                html_texts.append(text)
+
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CAPTION]:
+                # captions are printed in picture and table ... skipping for now
+                continue
+
+            elif isinstance(item, ListItem):
+
+                text = f"<li>{item.text}</li>"
+                html_texts.append(text)
+
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.LIST_ITEM]:
+
+                text = f"<li>{item.text}</li>"
+                html_texts.append(text)
+
+            elif isinstance(item, TextItem) and item.label in labels:
+
+                text = f"<p>{item.text}</p>"
+                html_texts.append(text.strip())
+
+            elif isinstance(item, TableItem):
+
+                text = item.export_to_html(doc=self, add_caption=True)
+                html_texts.append(text)
+
+            elif isinstance(item, PictureItem):
+
+                html_texts.append(
+                    item.export_to_html(
+                        doc=self, add_caption=True, image_mode=image_mode
+                    )
+                )
+
+            elif isinstance(item, DocItem) and item.label in labels:
+                continue
+
+        html_texts.append("</html>")
+
+        lines = []
+        lines.extend(head_lines)
+        for i, line in enumerate(html_texts):
+            lines.append(line.replace("\n", "<br>"))
+
+        delim = "\n"
+        html_text = (delim.join(lines)).strip()
+
+        return html_text
+
+    def save_as_document_tokens(
+        self,
+        filename: Path,
         delim: str = "\n\n",
         from_element: int = 0,
-        to_element: Optional[int] = None,
+        to_element: int = sys.maxsize,
         labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
         xsize: int = 100,
         ysize: int = 100,
@@ -1533,8 +2246,54 @@ class DoclingDocument(BaseModel):
         add_table_cell_location: bool = False,
         add_table_cell_label: bool = True,
         add_table_cell_text: bool = True,
+        # specifics
+        page_no: Optional[int] = None,
+        with_groups: bool = True,
+    ):
+        r"""Save the document content to a DocumentToken format."""
+        out = self.export_to_document_tokens(
+            delim=delim,
+            from_element=from_element,
+            to_element=to_element,
+            labels=labels,
+            xsize=xsize,
+            ysize=ysize,
+            add_location=add_location,
+            add_content=add_content,
+            add_page_index=add_page_index,
+            # table specific flags
+            add_table_cell_location=add_table_cell_location,
+            add_table_cell_label=add_table_cell_label,
+            add_table_cell_text=add_table_cell_text,
+            # specifics
+            page_no=page_no,
+            with_groups=with_groups,
+        )
+
+        with open(filename, "w") as fw:
+            fw.write(out)
+
+    def export_to_document_tokens(
+        self,
+        delim: str = "\n",
+        from_element: int = 0,
+        to_element: int = sys.maxsize,
+        labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
+        xsize: int = 100,
+        ysize: int = 100,
+        add_location: bool = True,
+        add_content: bool = True,
+        add_page_index: bool = True,
+        # table specific flags
+        add_table_cell_location: bool = False,
+        add_table_cell_label: bool = True,
+        add_table_cell_text: bool = True,
+        # specifics
+        page_no: Optional[int] = None,
+        with_groups: bool = True,
+        newline: bool = True,
     ) -> str:
-        r"""Exports the document content to an DocumentToken format.
+        r"""Exports the document content to a DocumentToken format.
 
         Operates on a slice of the document's body as defined through arguments
         from_element and to_element; defaulting to the whole main_text.
@@ -1554,44 +2313,90 @@ class DoclingDocument(BaseModel):
         :returns: The content of the document formatted as a DocTags string.
         :rtype: str
         """
-        new_line = ""
-        if delim:
-            new_line = "\n"
 
-        doctags = f"{DocumentToken.BEG_DOCUMENT.value}{new_line}"
+        def close_lists(
+            curr_level: int,
+            prev_level: int,
+            in_ordered_list: List[bool],
+            result: str,
+            delim: str,
+        ):
 
-        # pagedims = self.get_map_to_page_dimensions()
+            if len(in_ordered_list) == 0:
+                return (in_ordered_list, result)
 
-        skip_count = 0
-        for ix, (item, level) in enumerate(self.iterate_items(self.body)):
-            if skip_count < from_element:
-                skip_count += 1
+            while curr_level < prev_level and len(in_ordered_list) > 0:
+                if in_ordered_list[-1]:
+                    result += f"</ordered_list>{delim}"
+                else:
+                    result += f"</unordered_list>{delim}"
+
+                prev_level -= 1
+                in_ordered_list.pop()  # = in_ordered_list[:-1]
+
+            return (in_ordered_list, result)
+
+        if newline:
+            delim = "\n"
+        else:
+            delim = ""
+
+        prev_level = 0  # Track the previous item's level
+
+        in_ordered_list: List[bool] = []  # False
+
+        result = f"{DocumentToken.BEG_DOCUMENT.value}{delim}"
+
+        for ix, (item, curr_level) in enumerate(
+            self.iterate_items(self.body, with_groups=True)
+        ):
+
+            # If we've moved to a lower level, we're exiting one or more groups
+            if curr_level < prev_level and len(in_ordered_list) > 0:
+                # Calculate how many levels we've exited
+                # level_difference = previous_level - level
+                # Decrement list_nesting_level for each list group we've exited
+                # list_nesting_level = max(0, list_nesting_level - level_difference)
+
+                in_ordered_list, result = close_lists(
+                    curr_level=curr_level,
+                    prev_level=prev_level,
+                    in_ordered_list=in_ordered_list,
+                    result=result,
+                    delim=delim,
+                )
+
+            prev_level = curr_level  # Update previous_level for next iteration
+
+            if ix < from_element or to_element <= ix:
                 continue  # skip as many items as you want
 
-            if to_element and ix >= to_element:
-                break
+            if (isinstance(item, DocItem)) and (item.label not in labels):
+                continue  # skip any label that is not whitelisted
 
-            if not isinstance(item, DocItem):
+            if isinstance(item, GroupItem) and item.label in [
+                GroupLabel.ORDERED_LIST,
+            ]:
+
+                result += f"<ordered_list>{delim}"
+                in_ordered_list.append(True)
+
+            elif isinstance(item, GroupItem) and item.label in [
+                GroupLabel.LIST,
+            ]:
+
+                result += f"<unordered_list>{delim}"
+                in_ordered_list.append(False)
+
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CAPTION]:
+                # captions are printed in picture and table ... skipping for now
                 continue
 
-            prov = item.prov
+            elif isinstance(item, SectionHeaderItem):
 
-            page_i = -1
-
-            if add_location and len(self.pages) and len(prov) > 0:
-
-                page_i = prov[0].page_no
-                page_dim = self.pages[page_i].size
-
-                float(page_dim.width)
-                float(page_dim.height)
-
-            item_type = item.label
-            if isinstance(item, TextItem) and (item_type in labels):
-
-                doctags += item.export_to_document_tokens(
+                result += item.export_to_document_tokens(
                     doc=self,
-                    new_line=new_line,
+                    new_line=delim,
                     xsize=xsize,
                     ysize=ysize,
                     add_location=add_location,
@@ -1599,11 +2404,23 @@ class DoclingDocument(BaseModel):
                     add_page_index=add_page_index,
                 )
 
-            elif isinstance(item, TableItem) and (item_type in labels):
+            elif isinstance(item, TextItem) and (item.label in labels):
 
-                doctags += item.export_to_document_tokens(
+                result += item.export_to_document_tokens(
                     doc=self,
-                    new_line=new_line,
+                    new_line=delim,
+                    xsize=xsize,
+                    ysize=ysize,
+                    add_location=add_location,
+                    add_content=add_content,
+                    add_page_index=add_page_index,
+                )
+
+            elif isinstance(item, TableItem) and (item.label in labels):
+
+                result += item.export_to_document_tokens(
+                    doc=self,
+                    new_line=delim,
                     xsize=xsize,
                     ysize=ysize,
                     add_caption=True,
@@ -1615,11 +2432,11 @@ class DoclingDocument(BaseModel):
                     add_page_index=add_page_index,
                 )
 
-            elif isinstance(item, PictureItem) and (item_type in labels):
+            elif isinstance(item, PictureItem) and (item.label in labels):
 
-                doctags += item.export_to_document_tokens(
+                result += item.export_to_document_tokens(
                     doc=self,
-                    new_line=new_line,
+                    new_line=delim,
                     xsize=xsize,
                     ysize=ysize,
                     add_caption=True,
@@ -1628,9 +2445,9 @@ class DoclingDocument(BaseModel):
                     add_page_index=add_page_index,
                 )
 
-        doctags += DocumentToken.END_DOCUMENT.value
+        result += DocumentToken.END_DOCUMENT.value
 
-        return doctags
+        return result
 
     def _export_to_indented_text(
         self, indent="  ", max_text_len: int = -1, explicit_tables: bool = False

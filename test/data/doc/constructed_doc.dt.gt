@@ -1,0 +1,32 @@
+<document>
+<title>Title of the Document</title>
+<text>Author 1
+Affiliation 1</text>
+<text>Author 2
+Affiliation 2</text>
+<section_header_level_1>1. Introduction</section_header_level_1>
+<text>This paper introduces the biggest invention ever made. ...</text>
+<unordered_list>
+<list_item>list item 1</list_item>
+<list_item>list item 2</list_item>
+<list_item>list item 3</list_item>
+<ordered_list>
+<list_item>list item 3.a</list_item>
+<list_item>list item 3.b</list_item>
+<list_item>list item 3.c</list_item>
+</ordered_list>
+<list_item>list item 4</list_item>
+</unordered_list>
+<table>
+<caption>This is the caption of table 1.</caption>
+<row_0><col_0><body>Product</col_0><col_1><body>Years</col_1><col_2><body>Years</col_2></row_0>
+<row_1><col_0><body>Product</col_0><col_1><body>2016</col_1><col_2><body>2017</col_2></row_1>
+<row_2><col_0><body>Apple</col_0><col_1><body>49823</col_1><col_2><body>695944</col_2></row_2>
+</table>
+<figure>
+<caption>This is the caption of figure 1.</caption>
+</figure>
+<figure>
+<caption>This is the caption of figure 2.</caption>
+</figure>
+</document>

@@ -1,0 +1,22 @@
+0: unspecified with name=_root_
+ 1: title
+  2: text
+  3: text
+ 4: chapter with name=Introduction
+  5: section_header
+  6: text
+  7: list with name=group
+   8: list_item
+   9: list_item
+   10: list_item
+   11: ordered_list with name=group
+    12: list_item
+    13: list_item
+    14: list_item
+   15: list_item
+ 16: caption
+ 17: table
+ 18: caption
+ 19: picture
+ 20: caption
+ 21: picture

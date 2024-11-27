@@ -310,10 +310,18 @@
           "$ref": "#/$defs/Size"
         },
         "uri": {
-          "format": "uri",
-          "minLength": 1,
-          "title": "Uri",
-          "type": "string"
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "format": "path",
+              "type": "string"
+            }
+          ],
+          "title": "Uri"
         }
       },
       "required": [

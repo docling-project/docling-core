@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+    table {
+    border-collapse: separate;
+    /* Maintain separate borders */
+    border-spacing: 5px; /*
+    Space between cells */
+    width: 50%;
+    }
+    th, td {
+    border: 1px solid black;
+    /* Add lines etween cells */
+    padding: 8px; }
+    </style>
+    </head>
+<h1>Title of the Document</h1>
+<p>Author 1<br>Affiliation 1</p>
+<p>Author 2<br>Affiliation 2</p>
+<h2>1. Introduction</h2>
+<p>This paper introduces the biggest invention ever made. ...</p>
+<ul>
+<li>list item 1</li>
+<li>list item 2</li>
+<li>list item 3</li>
+<ol>
+<li>list item 3.a</li>
+<li>list item 3.b</li>
+<li>list item 3.c</li>
+</ol>
+<li>list item 4</li>
+</ul>
+<table><caption>This is the caption of table 1.</caption><tbody><tr><td rowspan="2">Product</td><td colspan="2">Years</td></tr><tr><td>2016</td><td>2017</td></tr><tr><td>Apple</td><td>49823</td><td>695944</td></tr></tbody></table>
+<figure><figcaption>This is the caption of figure 1.</figcaption></figure>
+<figure><figcaption>This is the caption of figure 2.</figcaption><img src="constructed_images/image_000001_ccb4cbe7039fe17892f3d611cfb71eafff1d4d230b19b10779334cc4b63c98bc.png"></figure>
+</html>

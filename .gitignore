@@ -3,6 +3,12 @@ node_modules/
 .idea/
 *~
 *.DS_Store
+test/data/constructed_images*
+test/data/doc/constructed_doc*.html
+test/data/doc/constructed_doc*.yaml
+test/data/doc/constructed_doc*.json
+test/data/doc/constructed_doc*.dt
+test/data/doc/constructed_doc*.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
