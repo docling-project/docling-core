@@ -1213,16 +1213,26 @@ class DoclingDocument(BaseModel):
     _HTML_DEFAULT_HEAD: str = r"""<head>
     <meta charset="UTF-8">
     <style>
-    table {
-    border-collapse: separate;
-    /* Maintain separate borders */
-    border-spacing: 5px; /*
-    Space between cells */
-    width: 50%;
+    html {
+    margin:    0 auto;
+    width: 800px;
+    background-color: LightGray;
+    }
+    body {
+    padding: 30px;
+    background-color: White;
+    font-family: Arial, sans-serif;
+    box-shadow: 10px 10px 10px grey;
+    }
+    table {min-width:500px;
+    border-collapse: collapse;
+    cell-padding: 5px;
+    }
+    img {
+    margin: 10px;
     }
     th, td {
     border: 1px solid black;
-    /* Add lines etween cells */
     padding: 8px; }
     </style>
     </head>"""
