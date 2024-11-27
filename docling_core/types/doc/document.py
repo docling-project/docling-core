@@ -10,6 +10,7 @@ import re
 import sys
 import textwrap
 import typing
+import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
@@ -1008,14 +1009,23 @@ class TableItem(FloatingItem):
                 )
         return md_table
 
-    def export_to_html(self, doc: "DoclingDocument", add_caption: bool = True) -> str:
+    def export_to_html(
+        self, doc: Optional["DoclingDocument"] = None, add_caption: bool = True
+    ) -> str:
         """Export the table as html."""
+        if doc is None:
+            warnings.warn(
+                "The `doc` argument will be mandatory in a future version. "
+                "It must be provided to include a caption.",
+                DeprecationWarning,
+            )
+
         body = ""
         nrows = self.data.num_rows
         ncols = self.data.num_cols
 
         text = ""
-        if add_caption and len(self.captions):
+        if doc is not None and add_caption and len(self.captions):
             text = self.caption_text(doc)
 
         if len(self.data.table_cells) == 0:
