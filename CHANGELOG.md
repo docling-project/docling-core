@@ -1,3 +1,10 @@
+## [v2.5.1](https://github.com/DS4SD/docling-core/releases/tag/v2.5.1) - 2024-11-27
+
+### Fix
+
+* Hotfix for TableItem.export_to_html args ([#76](https://github.com/DS4SD/docling-core/issues/76)) ([`ae2f131`](https://github.com/DS4SD/docling-core/commit/ae2f1317255938d102c716efaf2db6adbc724bd1))
+* Artifacts dir double stem ([#75](https://github.com/DS4SD/docling-core/issues/75)) ([`f93332b`](https://github.com/DS4SD/docling-core/commit/f93332b402c1e175a2df3cad7c254b23591eea34))
+
 ## [v2.5.0](https://github.com/DS4SD/docling-core/releases/tag/v2.5.0) - 2024-11-27
 
 ### Feature
