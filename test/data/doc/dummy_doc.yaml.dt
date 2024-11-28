@@ -1,33 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <style>
-    html {
-    margin:    0 auto;
-    width: 800px;
-    background-color: LightGray;
-    }
-    body {
-    padding: 30px;
-    background-color: White;
-    font-family: Arial, sans-serif;
-    box-shadow: 10px 10px 10px grey;
-    }
-    table {min-width:500px;
-    border-collapse: collapse;
-    cell-padding: 5px;
-    }
-    img {
-    margin: 10px;
-    }
-    th, td {
-    border: 1px solid black;
-    padding: 8px; }
-    </style>
-    </head>
-<h1>DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis</h1>
-<figure><figcaption>Figure 1: Four examples of complex page layouts across different document categories</figcaption></figure>
-<h2>OPERATION (cont.)</h2>
-
-</html>
+<document>
+<title><location><page_1><loc_8><loc_91><loc_81><loc_95></location>DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis</title>
+<figure>
+<location><page_1><loc_59><loc_0><loc_91><loc_75></location>
+<caption>Figure 1: Four examples of complex page layouts across different document categories</caption>
+</figure>
+<section_header><location><page_1><loc_42><loc_57><loc_49><loc_61></location>OPERATION (cont.)</section_header>
+<table>
+<location><page_1><loc_42><loc_57><loc_49><loc_61></location>
+</table>
+</document>

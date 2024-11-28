@@ -271,8 +271,8 @@ def _test_export_methods(doc: DoclingDocument, filename: str):
     _verify_regression_test(html_pred, filename=filename, ext="html")
 
     # Test DocTags export ...
-    doc.export_to_document_tokens()
-    _verify_regression_test(html_pred, filename=filename, ext="dt")
+    dt_pred = doc.export_to_document_tokens()
+    _verify_regression_test(dt_pred, filename=filename, ext="dt")
 
     # Test Tables export ...
     for table in doc.tables:
