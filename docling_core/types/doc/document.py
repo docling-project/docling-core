@@ -810,14 +810,8 @@ class PictureItem(FloatingItem):
             ):
                 return default_response
 
-            if (
-                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "file"
-            ) or isinstance(self.image.uri, Path):
-                text = f"\n![Image]({str(self.image.uri)})\n"
-                return text
-
-            else:
-                return default_response
+            text = f"\n![Image]({str(self.image.uri)})\n"
+            return text
 
         else:
             return default_response
@@ -870,14 +864,8 @@ class PictureItem(FloatingItem):
             ):
                 return default_response
 
-            if (
-                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "file"
-            ) or isinstance(self.image.uri, Path):
-                img_text = f'<img src="{str(self.image.uri)}">'
-                return f"<figure>{caption_text}{img_text}</figure>"
-
-            else:
-                return default_response
+            img_text = f'<img src="{str(self.image.uri)}">'
+            return f"<figure>{caption_text}{img_text}</figure>"
 
         else:
             return default_response
