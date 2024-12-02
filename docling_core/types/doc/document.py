@@ -1760,6 +1760,20 @@ class DoclingDocument(BaseModel):
         with open(filename, "w") as fw:
             json.dump(out, fw, indent=indent)
 
+    @classmethod
+    def load_from_json(cls, filename: Path) -> "DoclingDocument":
+        """load_from_json.
+
+        :param filename: The filename to load a saved DoclingDocument from a .json.
+        :type filename: Path
+
+        :returns: The loaded DoclingDocument.
+        :rtype: DoclingDocument
+
+        """
+        with open(filename, "r") as f:
+            return cls.model_validate(json.loads(f.read()))
+
     def save_as_yaml(
         self,
         filename: Path,
@@ -1852,26 +1866,28 @@ class DoclingDocument(BaseModel):
         from_element and to_element; defaulting to the whole document.
 
         :param delim: Delimiter to use when concatenating the various
-                Markdown parts. Defaults to "\n\n".
-        :type delim: str
+                Markdown parts. (Default value = "\n").
+        :type delim: str = "\n"
         :param from_element: Body slicing start index (inclusive).
-                Defaults to 0.
-        :type from_element: int
+                (Default value = 0).
+        :type from_element: int = 0
         :param to_element: Body slicing stop index
-                (exclusive). Defaults to 0maxint.
-        :type to_element: int
-        :param delim: str:  (Default value = "\n\n")
-        :param labels: set[DocItemLabel]
-        :param "subtitle-level-1":
-        :param "paragraph":
-        :param "caption":
-        :param "table":
-        :param "Text":
-        :param "text":
-        :param strict_text: bool:  (Default value = False)
-        :param image_placeholder str:  (Default value = "<!-- image -->")
-            the placeholder to include to position images in the markdown.
-        :param indent: int (default=4): indent of the nested lists
+                (exclusive). (Default value = maxint).
+        :type to_element: int = sys.maxsize
+        :param labels: The set of document labels to include in the export.
+        :type labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS
+        :param strict_text: bool: Whether to only include the text content
+            of the document. (Default value = False).
+        :type strict_text: bool = False
+        :param image_placeholder: The placeholder to include to position
+            images in the markdown. (Default value = "\<!-- image --\>").
+        :type image_placeholder: str = "<!-- image -->"
+        :param image_mode: The mode to use for including images in the
+            markdown. (Default value = ImageRefMode.PLACEHOLDER).
+        :type image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
+        :param indent: The indent in spaces of the nested lists.
+            (Default value = 4).
+        :type indent: int = 4
         :returns: The exported Markdown representation.
         :rtype: str
         """
