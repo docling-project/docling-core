@@ -1,3 +1,9 @@
+## [v2.6.1](https://github.com/DS4SD/docling-core/releases/tag/v2.6.1) - 2024-12-02
+
+### Fix
+
+* Fix circular import ([#87](https://github.com/DS4SD/docling-core/issues/87)) ([`63e6c01`](https://github.com/DS4SD/docling-core/commit/63e6c01863cbf8d71e1636f3dca8226f6bdf63e2))
+
 ## [v2.6.0](https://github.com/DS4SD/docling-core/releases/tag/v2.6.0) - 2024-12-02
 
 ### Feature
