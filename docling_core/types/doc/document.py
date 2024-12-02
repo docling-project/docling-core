@@ -37,8 +37,8 @@ from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.labels import DocItemLabel, GroupLabel
+from docling_core.types.doc.utils import relative_path
 from docling_core.types.legacy_doc.tokens import DocumentToken
-from docling_core.utils.file import relative_path
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
