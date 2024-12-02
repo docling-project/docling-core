@@ -1,3 +1,15 @@
+## [v2.6.0](https://github.com/DS4SD/docling-core/releases/tag/v2.6.0) - 2024-12-02
+
+### Feature
+
+* Extend source resolution with streams and workdir ([#79](https://github.com/DS4SD/docling-core/issues/79)) ([`9a74d13`](https://github.com/DS4SD/docling-core/commit/9a74d13fd60334bd0a4b4687fd5deaaf79b89001))
+* Simple method to load DoclingDocument from .json files ([#71](https://github.com/DS4SD/docling-core/issues/71)) ([`fc1cfb0`](https://github.com/DS4SD/docling-core/commit/fc1cfb0fe02914f7c86e357909221ab143d74d4c))
+
+### Fix
+
+* Allow all url types in referenced exports ([#82](https://github.com/DS4SD/docling-core/issues/82)) ([`3bd83bc`](https://github.com/DS4SD/docling-core/commit/3bd83bcfc401f09ed07e7c7f20c51403bf6484d6))
+* Even better style for HTML export ([#78](https://github.com/DS4SD/docling-core/issues/78)) ([`8422ad4`](https://github.com/DS4SD/docling-core/commit/8422ad4fbf6ed8372815e0fa9393951f04a759d5))
+
 ## [v2.5.1](https://github.com/DS4SD/docling-core/releases/tag/v2.5.1) - 2024-11-27
 
 ### Fix
