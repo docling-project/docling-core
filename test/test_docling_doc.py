@@ -36,7 +36,6 @@ GENERATE = False
 
 
 def test_doc_origin():
-
     doc_origin = DocumentOrigin(
         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename="myfile.pdf",

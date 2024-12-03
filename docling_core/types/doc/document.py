@@ -37,8 +37,8 @@ from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.labels import DocItemLabel, GroupLabel
+from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import relative_path
-from docling_core.types.legacy_doc.tokens import DocumentToken
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
@@ -1008,7 +1008,6 @@ class TableItem(FloatingItem):
                 DeprecationWarning,
             )
 
-        body = ""
         nrows = self.data.num_rows
         ncols = self.data.num_cols
 
@@ -1064,6 +1063,99 @@ class TableItem(FloatingItem):
             body = "<table></table>"
 
         return body
+
+    def export_to_otsl(
+        self,
+        doc: "DoclingDocument",
+        add_cell_location: bool = True,
+        add_cell_text: bool = True,
+        xsize: int = 100,
+        ysize: int = 100,
+    ) -> str:
+        """Export the table as OTSL."""
+        # Possible OTSL tokens...
+        #
+        # Empty and full cells:
+        # "ecel", "fcel"
+        #
+        # Cell spans (horisontal, vertical, 2d):
+        # "lcel", "ucel", "xcel"
+        #
+        # New line:
+        # "nl"
+        #
+        # Headers (column, row, section row):
+        # "ched", "rhed", "srow"
+
+        body = []
+        nrows = self.data.num_rows
+        ncols = self.data.num_cols
+        if len(self.data.table_cells) == 0:
+            return ""
+
+        page_no = 0
+        if len(self.prov) > 0:
+            page_no = self.prov[0].page_no
+
+        for i in range(nrows):
+            for j in range(ncols):
+                cell: TableCell = self.data.grid[i][j]
+                content = cell.text.strip()
+                rowspan, rowstart = (
+                    cell.row_span,
+                    cell.start_row_offset_idx,
+                )
+                colspan, colstart = (
+                    cell.col_span,
+                    cell.start_col_offset_idx,
+                )
+
+                if len(doc.pages.keys()):
+                    page_w, page_h = doc.pages[page_no].size.as_tuple()
+                cell_loc = ""
+                if cell.bbox is not None:
+                    cell_loc = DocumentToken.get_location(
+                        bbox=cell.bbox.to_bottom_left_origin(page_h).as_tuple(),
+                        page_w=page_w,
+                        page_h=page_h,
+                        xsize=xsize,
+                        ysize=ysize,
+                        page_i=page_no,
+                    )
+
+                if rowstart == i and colstart == j:
+                    if len(content) > 0:
+                        if cell.column_header:
+                            body.append(str(TableToken.OTSL_CHED.value))
+                        elif cell.row_header:
+                            body.append(str(TableToken.OTSL_RHED.value))
+                        elif cell.row_section:
+                            body.append(str(TableToken.OTSL_SROW.value))
+                        else:
+                            body.append(str(TableToken.OTSL_FCEL.value))
+                        if add_cell_location:
+                            body.append(str(cell_loc))
+                        if add_cell_text:
+                            body.append(str(content))
+                    else:
+                        body.append(str(TableToken.OTSL_ECEL.value))
+                else:
+                    add_cross_cell = False
+                    if rowstart != i:
+                        if colspan == 1:
+                            body.append(str(TableToken.OTSL_UCEL.value))
+                        else:
+                            add_cross_cell = True
+                    if colstart != j:
+                        if rowspan == 1:
+                            body.append(str(TableToken.OTSL_LCEL.value))
+                        else:
+                            add_cross_cell = True
+                    if add_cross_cell:
+                        body.append(str(TableToken.OTSL_XCEL.value))
+            body.append(str(TableToken.OTSL_NL.value))
+            body_str = "".join(body)
+        return body_str
 
     def export_to_document_tokens(
         self,
