@@ -411,9 +411,6 @@
         "label": {
           "const": "list_item",
           "default": "list_item",
-          "enum": [
-            "list_item"
-          ],
           "title": "Label",
           "type": "string"
         },
@@ -491,9 +488,6 @@
         "kind": {
           "const": "bar_chart_data",
           "default": "bar_chart_data",
-          "enum": [
-            "bar_chart_data"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -547,9 +541,6 @@
         "kind": {
           "const": "classification",
           "default": "classification",
-          "enum": [
-            "classification"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -578,9 +569,6 @@
         "kind": {
           "const": "description",
           "default": "description",
-          "enum": [
-            "description"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -631,9 +619,6 @@
         "label": {
           "const": "picture",
           "default": "picture",
-          "enum": [
-            "picture"
-          ],
           "title": "Label",
           "type": "string"
         },
@@ -747,9 +732,6 @@
         "kind": {
           "const": "line_chart_data",
           "default": "line_chart_data",
-          "enum": [
-            "line_chart_data"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -784,9 +766,6 @@
         "kind": {
           "const": "misc",
           "default": "misc",
-          "enum": [
-            "misc"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -807,9 +786,6 @@
         "kind": {
           "const": "molecule_data",
           "default": "molecule_data",
-          "enum": [
-            "molecule_data"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -867,9 +843,6 @@
         "kind": {
           "const": "pie_chart_data",
           "default": "pie_chart_data",
-          "enum": [
-            "pie_chart_data"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -898,9 +871,6 @@
         "kind": {
           "const": "scatter_chart_data",
           "default": "scatter_chart_data",
-          "enum": [
-            "scatter_chart_data"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -939,9 +909,6 @@
         "kind": {
           "const": "stacked_bar_chart_data",
           "default": "stacked_bar_chart_data",
-          "enum": [
-            "stacked_bar_chart_data"
-          ],
           "title": "Kind",
           "type": "string"
         },
@@ -1049,9 +1016,6 @@
         "label": {
           "const": "section_header",
           "default": "section_header",
-          "enum": [
-            "section_header"
-          ],
           "title": "Label",
           "type": "string"
         },
@@ -1230,9 +1194,6 @@
         "label": {
           "const": "table",
           "default": "table",
-          "enum": [
-            "table"
-          ],
           "title": "Label",
           "type": "string"
         },
@@ -1353,9 +1314,6 @@
     "schema_name": {
       "const": "DoclingDocument",
       "default": "DoclingDocument",
-      "enum": [
-        "DoclingDocument"
-      ],
       "title": "Schema Name",
       "type": "string"
     },

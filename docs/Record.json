@@ -154,9 +154,6 @@
         "type": {
           "const": "Record",
           "description": "The collection type.",
-          "enum": [
-            "Record"
-          ],
           "title": "Type",
           "type": "string",
           "x-es-ignore_above": 8191,
@@ -743,7 +740,7 @@
           "examples": [
             "#/_s3_data/figures/0"
           ],
-          "title": "  Ref S3 Data",
+          "title": "Ref S3 Data",
           "type": "string"
         }
       },
@@ -941,7 +938,7 @@
       ],
       "default": null,
       "description": "A short description or summary of the record.",
-      "title": " Name",
+      "title": "Name",
       "x-es-type": "text"
     },
     "identifiers": {

@@ -54,7 +54,7 @@
       ],
       "default": null,
       "description": "A short description or summary of the document.",
-      "title": " Name",
+      "title": "Name",
       "x-es-type": "text"
     },
     "file-info": {
