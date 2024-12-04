@@ -1,3 +1,9 @@
+## [v2.7.0](https://github.com/DS4SD/docling-core/releases/tag/v2.7.0) - 2024-12-04
+
+### Feature
+
+* Export to OTSL method for docling doc tables ([#86](https://github.com/DS4SD/docling-core/issues/86)) ([`180e294`](https://github.com/DS4SD/docling-core/commit/180e294aada4d97ceeb61556b5f7f310bd078c5f))
+
 ## [v2.6.1](https://github.com/DS4SD/docling-core/releases/tag/v2.6.1) - 2024-12-02
 
 ### Fix
