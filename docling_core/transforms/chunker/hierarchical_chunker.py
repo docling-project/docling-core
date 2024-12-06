@@ -104,7 +104,7 @@ class DocMeta(BaseMeta):
 
 
 class DocChunk(BaseChunk):
-    """Data model for Hierarchical Chunker chunks."""
+    """Data model for document chunks."""
 
     meta: DocMeta
 
@@ -119,7 +119,6 @@ class HierarchicalChunker(BaseChunker):
     """
 
     merge_list_items: bool = True
-    delim: str = "\n"
 
     @classmethod
     def _triplet_serialize(cls, table_df: DataFrame) -> str:

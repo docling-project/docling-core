@@ -55,6 +55,11 @@ pandas = "^2.1.4"
 pillow = "^10.3.0"
 pyyaml = ">=5.1,<7.0.0"
 typing-extensions = "^4.12.2"
+transformers = { version = "^4.34.0", optional = true }
+semchunk = { version = "^2.2.0", optional = true }
+
+[tool.poetry.extras]
+chunking = ["transformers", "semchunk"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
@@ -121,6 +126,7 @@ module = [
     "jsonschema.*",
     "requests.*",
     "tabulate.*",
+    "transformers.*",
     "yaml.*",
 ]
 ignore_missing_imports = true

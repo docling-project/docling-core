@@ -1,0 +1,1139 @@
+{
+    "root": [
+        {
+            "text": "Note prior to title.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.700626373291016,
+                                    "t": 755.9879760742188,
+                                    "r": 152.50633239746094,
+                                    "b": 741.3359985351562,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    21
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "International Business Machines Corporation (using the trademark IBM), nicknamed Big Blue, is an American multinational technology company headquartered in Armonk, New York and present in over 175 countries.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/2",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.26164627075195,
+                                    "t": 692.8679809570312,
+                                    "r": 558.7176513671875,
+                                    "b": 644.135986328125,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    207
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "It is a publicly traded company and one of the 30 companies in the Dow Jones Industrial Average.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/3",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.40343475341797,
+                                    "t": 633.8280029296875,
+                                    "r": 533.4302368164062,
+                                    "b": 619.1759643554688,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    96
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "IBM is the largest industrial research organization in the world, with 19 research facilities across a dozen countries, having held the record for most annual U.S. patents generated by a business for 29 consecutive years from 1993 to 2021.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/4",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.35490036010742,
+                                    "t": 608.8679809570312,
+                                    "r": 570.1190185546875,
+                                    "b": 560.3759765625,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    239
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "IBM was founded in 1911 as the Computing-Tabulating-Recording Company (CTR), a holding company of manufacturers of record-keeping and measuring systems. It was renamed \"International Business Machines\" in 1924 and soon became the leading manufacturer of punch-card tabulating systems. During the 1960s and 1970s, the",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/5",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.12310028076172,
+                                    "t": 550.0679931640625,
+                                    "r": 576.0472412109375,
+                                    "b": 450.45599365234375,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    513
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "IBM mainframe, exemplified by the System/360, was the world's dominant computing platform, with the company producing 80 percent of computers in the U.S. and 70 percent of computers worldwide.[11]",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/5",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.12310028076172,
+                                    "t": 550.0679931640625,
+                                    "r": 576.0472412109375,
+                                    "b": 450.45599365234375,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    513
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "IBM debuted in the microcomputer market in 1981 with the IBM Personal Computer, - its DOS software provided by Microsoft, - which became the basis for the majority of personal computers to the present day.[12] The company later also found success in the portable space with the ThinkPad. Since the 1990s,",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/6",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.3751106262207,
+                                    "t": 440.14801025390625,
+                                    "r": 575.099365234375,
+                                    "b": 340.7760009765625,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    595
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "IBM has concentrated on computer services, software, supercomputers, and scientific research; it sold its microcomputer division to Lenovo in 2005. IBM continues to develop mainframes, and its supercomputers have consistently ranked among the most powerful in the world in the 21st century.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/6",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.3751106262207,
+                                    "t": 440.14801025390625,
+                                    "r": 575.099365234375,
+                                    "b": 340.7760009765625,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    595
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "As one of the world's oldest and largest technology companies, IBM has been responsible for several technological innovations, including the automated teller machine (ATM), dynamic random-access memory (DRAM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database, the SQL programming",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/7",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.03644943237305,
+                                    "t": 330.4679870605469,
+                                    "r": 562.7945556640625,
+                                    "b": 214.05599975585938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    642
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "language, and the UPC barcode. The company has made inroads in advanced computer chips, quantum computing, artificial intelligence, and data infrastructure.[13][14][15] IBM employees and alumni have won various recognitions for their scientific research and inventions, including six Nobel Prizes and six Turing",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/7",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.03644943237305,
+                                    "t": 330.4679870605469,
+                                    "r": 562.7945556640625,
+                                    "b": 214.05599975585938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    642
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "Awards.[16]",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/7",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.03644943237305,
+                                    "t": 330.4679870605469,
+                                    "r": 562.7945556640625,
+                                    "b": 214.05599975585938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    642
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "This is the history.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/9",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.21895217895508,
+                                    "t": 161.50799560546875,
+                                    "r": 130.17039489746094,
+                                    "b": 146.85598754882812,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    20
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "IBM originated with several technological innovations developed and commercialized in the late 19th century. Julius E. Pitrap patented the computing scale in 1885;[17] Alexander Dey invented the dial recorder (1888);[18] Herman Hollerith patented the Electric Tabulating Machine",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/11",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 34.930843353271484,
+                                    "t": 715.427978515625,
+                                    "r": 578.233154296875,
+                                    "b": 581.9760131835938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    789
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "(1889);[19] and Willard Bundy invented a time clock to record workers' arrival and departure times on a paper tape (1889).[20] On June 16, 1911, their four companies were amalgamated in New York State by Charles Ranlett Flint forming a fifth company,",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/11",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 34.930843353271484,
+                                    "t": 715.427978515625,
+                                    "r": 578.233154296875,
+                                    "b": 581.9760131835938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    789
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "the Computing-Tabulating-Recording Company (CTR) based in Endicott, New York.[1][21] The five companies had 1,300 employees and oiices and plants in Endicott and Binghamton, New York; Dayton, Ohio; Detroit,",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/11",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 34.930843353271484,
+                                    "t": 715.427978515625,
+                                    "r": 578.233154296875,
+                                    "b": 581.9760131835938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    789
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "Michigan; Washington, D.C.; and Toronto, Canada.[22]",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/11",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 34.930843353271484,
+                                    "t": 715.427978515625,
+                                    "r": 578.233154296875,
+                                    "b": 581.9760131835938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    789
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "Collectively, the companies manufactured a wide array of machinery for sale and lease, ranging from commercial scales and industrial time recorders, meat and cheese slicers, to tabulators and punched cards. Thomas J. Watson, Sr., fired from the National Cash Register Company by John Henry Patterson,",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "called on Flint and, in 1914, was oiered a position at CTR.[23] Watson joined CTR as general manager and then, 11 months later, was made President when antitrust cases relating to his time at NCR were resolved.[24] Having learned",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "Patterson's pioneering business practices, Watson proceeded to put the stamp of NCR onto CTR's companies.[23]:105 He implemented sales conventions, \"generous sales incentives, a focus on customer service, an insistence on well-groomed, dark-suited salesmen and had",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "an evangelical fervor for instilling company pride and loyalty in every worker\".[25][26] His favorite slogan, \"THINK\", became a mantra for each company's employees.[25] During Watson's first four years, revenues reached $9 million",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "($158 million today) and the company's operations expanded to Europe, South America, Asia and Australia.[25] Watson never liked the clumsy hyphenated name \"ComputingTabulating-Recording Company\" and chose to replace it with the more expansive title \"International Business",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "Machines\" which had previously been used as the name of CTR's Canadian Division;[27] the name was changed on February 14, 1924.[28] By 1933, most of the subsidiaries had been merged into one company, IBM.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "In 1961, IBM developed the SABRE reservation system for American Airlines and introduced the highly successful Selectric typewriter.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/14",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.268577575683594,
+                                    "t": 255.58798217773438,
+                                    "r": 558.6287841796875,
+                                    "b": 223.89599609375,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    132
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1960-1980s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "These are the trends",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/17",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 35.282737731933594,
+                                    "t": 693.1079711914062,
+                                    "r": 143.0375518798828,
+                                    "b": 678.4559936523438,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    20
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "Corporate affairs",
+                    "Business trends"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/tables/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "table",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 35.2087516784668,
+                                    "t": 668.6718139648438,
+                                    "r": 275.7712707519531,
+                                    "b": 574.5380859375,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "Corporate affairs",
+                    "Business trends"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "(US$ bn) = 13.1. 2015, Employees = 377,757",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/tables/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "table",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 35.2087516784668,
+                                    "t": 668.6718139648438,
+                                    "r": 275.7712707519531,
+                                    "b": 574.5380859375,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "Corporate affairs",
+                    "Business trends"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "A last paragraph is down here, after the results table.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/18",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 35.09879684448242,
+                                    "t": 549.3479614257812,
+                                    "r": 308.0433654785156,
+                                    "b": 534.6959838867188,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    55
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "Corporate affairs",
+                    "Business trends"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        }
+    ]
+}

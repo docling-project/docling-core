@@ -4,12 +4,15 @@
 #
 
 """Define base classes for chunking."""
+import json
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Iterator
 
 from pydantic import BaseModel
 
 from docling_core.types.doc import DoclingDocument as DLDocument
+
+DFLT_DELIM = "\n"
 
 
 class BaseMeta(BaseModel):
@@ -45,6 +48,8 @@ class BaseChunk(BaseModel):
 class BaseChunker(BaseModel, ABC):
     """Chunker base class."""
 
+    delim: str = DFLT_DELIM
+
     @abstractmethod
     def chunk(self, dl_doc: DLDocument, **kwargs) -> Iterator[BaseChunk]:
         """Chunk the provided document.
@@ -59,3 +64,32 @@ class BaseChunker(BaseModel, ABC):
             Iterator[BaseChunk]: iterator over extracted chunks
         """
         raise NotImplementedError()
+
+    def serialize(self, chunk: BaseChunk) -> str:
+        """Serialize the given chunk. This base implementation is embedding-targeted.
+
+        Args:
+            chunk: chunk to serialize
+
+        Returns:
+            str: the serialized form of the chunk
+        """
+        meta = chunk.meta.export_json_dict()
+
+        items = []
+        for k in meta:
+            if k not in chunk.meta.excluded_embed:
+                if isinstance(meta[k], list):
+                    items.append(
+                        self.delim.join(
+                            [
+                                d if isinstance(d, str) else json.dumps(d)
+                                for d in meta[k]
+                            ]
+                        )
+                    )
+                else:
+                    items.append(json.dumps(meta[k]))
+        items.append(chunk.text)
+
+        return self.delim.join(items)
