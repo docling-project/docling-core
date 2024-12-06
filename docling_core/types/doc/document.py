@@ -798,7 +798,7 @@ class PictureItem(FloatingItem):
 
             if img is not None:
                 imgb64 = self._image_to_base64(img)
-                text = f"\n![Image]({imgb64})\n"
+                text = f"\n![Image](data:image/png;base64,{imgb64})\n"
 
                 return text
             else:
