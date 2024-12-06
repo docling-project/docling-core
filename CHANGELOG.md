@@ -1,3 +1,9 @@
+## [v2.7.1](https://github.com/DS4SD/docling-core/releases/tag/v2.7.1) - 2024-12-06
+
+### Fix
+
+* Multimodal output ([#96](https://github.com/DS4SD/docling-core/issues/96)) ([`2133af6`](https://github.com/DS4SD/docling-core/commit/2133af61121d202a4df04ef9a28308b82d7c87cb))
+
 ## [v2.7.0](https://github.com/DS4SD/docling-core/releases/tag/v2.7.0) - 2024-12-04
 
 ### Feature
