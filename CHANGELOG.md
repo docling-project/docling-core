@@ -1,3 +1,9 @@
+## [v2.8.0](https://github.com/DS4SD/docling-core/releases/tag/v2.8.0) - 2024-12-06
+
+### Feature
+
+* Add hybrid chunker ([#68](https://github.com/DS4SD/docling-core/issues/68)) ([`628ab67`](https://github.com/DS4SD/docling-core/commit/628ab679cbcbf4d708619111cd391ff62dc9d080))
+
 ## [v2.7.1](https://github.com/DS4SD/docling-core/releases/tag/v2.7.1) - 2024-12-06
 
 ### Fix
