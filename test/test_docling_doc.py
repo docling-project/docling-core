@@ -670,7 +670,6 @@ def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
 
     for p in paths:
         instr = instr.replace(str(p), str(p.name))
-        instr = instr.replace(str(p).replace("_", "\\_"), str(p.name))
 
     return instr
 

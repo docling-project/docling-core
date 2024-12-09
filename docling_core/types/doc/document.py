@@ -2115,10 +2115,30 @@ class DoclingDocument(BaseModel):
         # Bold, Italic, or Bold-Italic
         # Hence, any underscore that we print into Markdown is coming from document text
         # That means we need to escape it, to properly reflect content in the markdown
+        # However, we need to preserve underscores in image URLs
+        # to maintain their validity
+        # For example: ![image](path/to_image.png) should remain unchanged
         def escape_underscores(text):
-            # Replace "_" with "\_" only if it's not already escaped
-            escaped_text = re.sub(r"(?<!\\)_", r"\_", text)
-            return escaped_text
+            """Escape underscores but leave them intact in the URL.."""
+            # Firstly, identify all the URL patterns.
+            url_pattern = r"!\[.*?\]\((.*?)\)"
+            parts = []
+            last_end = 0
+
+            for match in re.finditer(url_pattern, text):
+                # Text to add before the URL (needs to be escaped)
+                before_url = text[last_end : match.start()]
+                parts.append(re.sub(r"(?<!\\)_", r"\_", before_url))
+
+                # Add the full URL part (do not escape)
+                parts.append(match.group(0))
+                last_end = match.end()
+
+            # Add the final part of the text (which needs to be escaped)
+            if last_end < len(text):
+                parts.append(re.sub(r"(?<!\\)_", r"\_", text[last_end:]))
+
+            return "".join(parts)
 
         mdtext = escape_underscores(mdtext)
 
