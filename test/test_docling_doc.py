@@ -693,6 +693,18 @@ def _verify_saved_output(filename: str, paths: List[Path]):
         assert pred == gt, f"pred!=gt for {filename}"
 
 
+def _verify_loaded_output(filename: str, pred=None):
+    gt = DoclingDocument.load_from_json(Path(str(filename) + ".gt"))
+
+    pred = pred or DoclingDocument.load_from_json(Path(filename))
+    assert isinstance(pred, DoclingDocument)
+
+    assert (
+        pred.export_to_dict() == gt.export_to_dict()
+    ), f"pred.export_to_dict() != gt.export_to_dict() for {filename}"
+    assert pred == gt, f"pred!=gt for {filename}"
+
+
 def test_save_to_disk():
 
     doc: DoclingDocument = _construct_doc()
@@ -761,11 +773,17 @@ def test_save_to_disk():
     )
     _verify_saved_output(filename=filename, paths=paths)
 
+    doc_emb_loaded = DoclingDocument.load_from_json(filename)
+    _verify_loaded_output(filename=filename, pred=doc_emb_loaded)
+
     filename = Path("test/data/doc/constructed_doc.referenced.json")
     doc.save_as_json(
         filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED
     )
     _verify_saved_output(filename=filename, paths=paths)
+
+    doc_ref_loaded = DoclingDocument.load_from_json(filename)
+    _verify_loaded_output(filename=filename, pred=doc_ref_loaded)
 
     ### YAML
 

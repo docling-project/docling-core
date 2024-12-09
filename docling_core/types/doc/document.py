@@ -445,7 +445,7 @@ class ImageRef(BaseModel):
     mimetype: str
     dpi: int
     size: Size
-    uri: Union[AnyUrl, Path]
+    uri: Union[AnyUrl, Path] = Field(union_mode="left_to_right")
     _pil: Optional[PILImage.Image] = None
 
     @property
@@ -1864,7 +1864,7 @@ class DoclingDocument(BaseModel):
 
         """
         with open(filename, "r") as f:
-            return cls.model_validate(json.loads(f.read()))
+            return cls.model_validate_json(f.read())
 
     def save_as_yaml(
         self,
