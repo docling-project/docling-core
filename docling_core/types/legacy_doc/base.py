@@ -140,6 +140,7 @@ class BaseCell(AliasModel):
     obj_type: str = Field(
         alias="type", json_schema_extra=es_field(type="keyword", ignore_above=8191)
     )
+    payload: Optional[dict] = None
 
     def get_location_tokens(
         self,

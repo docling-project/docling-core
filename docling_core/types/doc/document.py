@@ -1668,7 +1668,7 @@ class DoclingDocument(BaseModel):
         self,
         root: Optional[NodeItem] = None,
         with_groups: bool = False,
-        traverse_pictures: bool = True,
+        traverse_pictures: bool = False,
         page_no: Optional[int] = None,
         _level: int = 0,  # fixed parameter, carries through the node nesting level
     ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
@@ -1685,30 +1685,31 @@ class DoclingDocument(BaseModel):
         if not root:
             root = self.body
 
+        # Yield non-group items or group items when with_groups=True
         if not isinstance(root, GroupItem) or with_groups:
             if isinstance(root, DocItem):
-                if page_no is not None:
-                    for prov in root.prov:
-                        if prov.page_no == page_no:
-                            yield root, _level
-                else:
+                if page_no is None or any(
+                    prov.page_no == page_no for prov in root.prov
+                ):
                     yield root, _level
             else:
                 yield root, _level
 
+        # Handle picture traversal - only traverse children if requested
+        if isinstance(root, PictureItem) and not traverse_pictures:
+            return
+
         # Traverse children
         for child_ref in root.children:
             child = child_ref.resolve(self)
-
             if isinstance(child, NodeItem):
-                # If the child is a NodeItem, recursively traverse it
-                if not isinstance(child, PictureItem) or traverse_pictures:
-                    yield from self.iterate_items(
-                        child,
-                        _level=_level + 1,
-                        with_groups=with_groups,
-                        page_no=page_no,
-                    )
+                yield from self.iterate_items(
+                    child,
+                    with_groups=with_groups,
+                    traverse_pictures=traverse_pictures,
+                    page_no=page_no,
+                    _level=_level + 1,
+                )
 
     def _clear_picture_pil_cache(self):
         """Clear cache storage of all images."""
