@@ -1,3 +1,13 @@
+## [v2.9.0](https://github.com/DS4SD/docling-core/releases/tag/v2.9.0) - 2024-12-09
+
+### Feature
+
+* Utilities converting document formats ([#91](https://github.com/DS4SD/docling-core/issues/91)) ([`437c498`](https://github.com/DS4SD/docling-core/commit/437c498f77c71cce49c139a25e0803acde429b90))
+
+### Fix
+
+* **markdown:** Preserve underscores in image URLs during markdown export ([#98](https://github.com/DS4SD/docling-core/issues/98)) ([`fd7529f`](https://github.com/DS4SD/docling-core/commit/fd7529f4096ecc5c7809b884c5fef2df9818801f))
+
 ## [v2.8.0](https://github.com/DS4SD/docling-core/releases/tag/v2.8.0) - 2024-12-06
 
 ### Feature
