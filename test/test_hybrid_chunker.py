@@ -114,3 +114,22 @@ def test_chunk_with_model_name():
     with open(EXPECTED_OUT_FILE) as f:
         exp_data = json.load(fp=f)
     assert exp_data == act_data
+
+
+def test_chunk_default():
+    EXPECTED_OUT_FILE = "test/data/chunker/2c_out_chunks.json"
+
+    with open(INPUT_FILE) as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker()
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+    )
+    with open(EXPECTED_OUT_FILE) as f:
+        exp_data = json.load(fp=f)
+    assert exp_data == act_data

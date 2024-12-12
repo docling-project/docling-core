@@ -44,7 +44,9 @@ class HybridChunker(BaseChunker):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tokenizer: Union[PreTrainedTokenizerBase, str]
+    tokenizer: Union[PreTrainedTokenizerBase, str] = (
+        "sentence-transformers/all-MiniLM-L6-v2"
+    )
     max_tokens: int = None  # type: ignore[assignment]
     merge_peers: bool = True
 
