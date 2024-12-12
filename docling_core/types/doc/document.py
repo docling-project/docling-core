@@ -49,7 +49,6 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.DOCUMENT_INDEX,
     DocItemLabel.SECTION_HEADER,
     DocItemLabel.PARAGRAPH,
-    DocItemLabel.CAPTION,
     DocItemLabel.TABLE,
     DocItemLabel.PICTURE,
     DocItemLabel.FORMULA,
@@ -58,6 +57,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TEXT,
     DocItemLabel.LIST_ITEM,
     DocItemLabel.CODE,
+    DocItemLabel.REFERENCE,
 }
 
 
@@ -2055,10 +2055,6 @@ class DoclingDocument(BaseModel):
                 text = f"```\n{item.text}\n```\n"
                 mdtexts.append(text)
 
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CAPTION]:
-                # captions are printed in picture and table ... skipping for now
-                continue
-
             elif isinstance(item, ListItem) and item.label in [DocItemLabel.LIST_ITEM]:
                 in_list = True
                 # Calculate indent based on list_nesting_level
@@ -2350,10 +2346,6 @@ class DoclingDocument(BaseModel):
                 text = f"<pre>{item.text}</pre>"
                 html_texts.append(text)
 
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CAPTION]:
-                # captions are printed in picture and table ... skipping for now
-                continue
-
             elif isinstance(item, ListItem):
 
                 text = f"<li>{item.text}</li>"
@@ -2555,10 +2547,6 @@ class DoclingDocument(BaseModel):
                 result += f"<unordered_list>{delim}"
                 in_ordered_list.append(False)
 
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CAPTION]:
-                # captions are printed in picture and table ... skipping for now
-                continue
-
             elif isinstance(item, SectionHeaderItem):
 
                 result += item.export_to_document_tokens(
@@ -2663,10 +2651,6 @@ class DoclingDocument(BaseModel):
                 result.append(
                     indent * level + f"item-{i} at level {level}: {item.label}: {text}"
                 )
-
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CAPTION]:
-                # captions are printed in picture and table ... skipping for now
-                continue
 
             elif isinstance(item, ListItem) and item.label in [DocItemLabel.LIST_ITEM]:
                 text = get_text(text=item.text, max_text_len=max_text_len)
