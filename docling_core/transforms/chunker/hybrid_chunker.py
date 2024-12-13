@@ -98,6 +98,7 @@ class HybridChunker(BaseChunker):
             doc_items=doc_chunk.meta.doc_items[window_start : window_end + 1],
             headings=doc_chunk.meta.headings,
             captions=doc_chunk.meta.captions,
+            origin=doc_chunk.meta.origin,
         )
         new_chunk = DocChunk(text=window_text, meta=meta)
         return new_chunk
@@ -244,6 +245,7 @@ class HybridChunker(BaseChunker):
                         doc_items=window_items,
                         headings=current_headings_and_captions[0],
                         captions=current_headings_and_captions[1],
+                        origin=chunk.meta.origin,
                     )
                     new_chunk = DocChunk(
                         text=window_text,
