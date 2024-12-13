@@ -1,3 +1,17 @@
+## [v2.10.0](https://github.com/DS4SD/docling-core/releases/tag/v2.10.0) - 2024-12-13
+
+### Feature
+
+* Add legacy to DoclingDocument utility ([#108](https://github.com/DS4SD/docling-core/issues/108)) ([`b31e0a3`](https://github.com/DS4SD/docling-core/commit/b31e0a3d05cbcf450a4d287484761fc447d3e2ec))
+* Add DoclingDocument viewer to CLI ([#99](https://github.com/DS4SD/docling-core/issues/99)) ([`9628d19`](https://github.com/DS4SD/docling-core/commit/9628d19c24ed92834636973c9e272c9a21864604))
+* Add default tokenizer to HybridChunker ([#107](https://github.com/DS4SD/docling-core/issues/107)) ([`2591c70`](https://github.com/DS4SD/docling-core/commit/2591c70c66d1615050f47d045c4bc6092f99ebad))
+
+### Fix
+
+* Improve doc item typing ([#105](https://github.com/DS4SD/docling-core/issues/105)) ([`047a196`](https://github.com/DS4SD/docling-core/commit/047a1960afbaed4613b8d305d8dff4988a97c2d9))
+* Set origin when merging chunks ([#109](https://github.com/DS4SD/docling-core/issues/109)) ([`b546c0a`](https://github.com/DS4SD/docling-core/commit/b546c0a50d11152f0ad65a1bc59e33478bc11052))
+* Add REFERENCE to exported labels and remove CAPTION ([#106](https://github.com/DS4SD/docling-core/issues/106)) ([`a66b0bb`](https://github.com/DS4SD/docling-core/commit/a66b0bb6f8d821bbad738c1bd9fc52317304579f))
+
 ## [v2.9.0](https://github.com/DS4SD/docling-core/releases/tag/v2.9.0) - 2024-12-09
 
 ### Feature
