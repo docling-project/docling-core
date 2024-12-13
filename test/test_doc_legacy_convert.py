@@ -1,7 +1,15 @@
+from pathlib import Path
+
 import yaml
 
 from docling_core.types.doc import DoclingDocument
-from docling_core.utils.legacy import docling_document_to_legacy
+from docling_core.types.legacy_doc.document import ExportedCCSDocument as DsDocument
+from docling_core.utils.legacy import (
+    docling_document_to_legacy,
+    legacy_to_docling_document,
+)
+
+GENERATE = False
 
 
 def test_new_to_old():
@@ -13,3 +21,20 @@ def test_new_to_old():
     doc = DoclingDocument.model_validate(dict_from_yaml)
 
     docling_document_to_legacy(doc)
+
+
+def test_old_to_new():
+    filepath = Path("test/data/legacy_doc/doc-export.json")
+    leg_doc = DsDocument.model_validate_json(filepath.read_text())
+
+    doc = legacy_to_docling_document(leg_doc)
+
+    gt_filepath = Path(filepath.with_suffix(".docling.yaml.gt"))
+    if GENERATE:
+        doc.save_as_yaml(gt_filepath)
+
+    with gt_filepath.open() as gt_fp:
+        gt_dict = yaml.safe_load(gt_fp)
+        gt_doc = DoclingDocument.model_validate(gt_dict)
+
+    assert doc == gt_doc
