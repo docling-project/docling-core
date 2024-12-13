@@ -171,32 +171,6 @@
       "title": "CoordOrigin",
       "type": "string"
     },
-    "DocItemLabel": {
-      "description": "DocItemLabel.",
-      "enum": [
-        "caption",
-        "footnote",
-        "formula",
-        "list_item",
-        "page_footer",
-        "page_header",
-        "picture",
-        "section_header",
-        "table",
-        "text",
-        "title",
-        "document_index",
-        "code",
-        "checkbox_selected",
-        "checkbox_unselected",
-        "form",
-        "key_value_region",
-        "paragraph",
-        "reference"
-      ],
-      "title": "DocItemLabel",
-      "type": "string"
-    },
     "DocumentOrigin": {
       "description": "FileSource.",
       "properties": {
@@ -362,7 +336,10 @@
           "type": "array"
         },
         "label": {
-          "$ref": "#/$defs/DocItemLabel"
+          "const": "key_value_region",
+          "default": "key_value_region",
+          "title": "Label",
+          "type": "string"
         },
         "prov": {
           "default": [],
@@ -374,8 +351,7 @@
         }
       },
       "required": [
-        "self_ref",
-        "label"
+        "self_ref"
       ],
       "title": "KeyValueItem",
       "type": "object"
@@ -436,6 +412,7 @@
           "type": "boolean"
         },
         "marker": {
+          "default": "-",
           "title": "Marker",
           "type": "string"
         }
@@ -443,8 +420,7 @@
       "required": [
         "self_ref",
         "orig",
-        "text",
-        "marker"
+        "text"
       ],
       "title": "ListItem",
       "type": "object"
@@ -1036,6 +1012,7 @@
           "type": "string"
         },
         "level": {
+          "default": 1,
           "maximum": 100,
           "minimum": 1,
           "title": "Level",
@@ -1045,8 +1022,7 @@
       "required": [
         "self_ref",
         "orig",
-        "text",
-        "level"
+        "text"
       ],
       "title": "SectionHeaderItem",
       "type": "object"
@@ -1192,8 +1168,11 @@
           "type": "array"
         },
         "label": {
-          "const": "table",
           "default": "table",
+          "enum": [
+            "document_index",
+            "table"
+          ],
           "title": "Label",
           "type": "string"
         },
@@ -1280,7 +1259,22 @@
           "type": "array"
         },
         "label": {
-          "$ref": "#/$defs/DocItemLabel"
+          "enum": [
+            "caption",
+            "checkbox_selected",
+            "checkbox_unselected",
+            "code",
+            "footnote",
+            "formula",
+            "page_footer",
+            "page_header",
+            "paragraph",
+            "reference",
+            "text",
+            "title"
+          ],
+          "title": "Label",
+          "type": "string"
         },
         "prov": {
           "default": [],

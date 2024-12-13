@@ -109,7 +109,7 @@ def test_docitems():
 
         elif dc is KeyValueItem:
             obj = dc(
-                label=DocItemLabel.TEXT,
+                label=DocItemLabel.KEY_VALUE_REGION,
                 self_ref="#",
             )
             verify(dc, obj)
@@ -138,8 +138,7 @@ def test_docitems():
             verify(dc, obj)
 
         else:
-            # print(f"{dc.__name__} is not known")
-            assert False, "new derived class detected {dc.__name__}: {e}"
+            raise RuntimeError(f"New derived class detected {dc.__name__}")
 
 
 def test_reference_doc():
@@ -235,7 +234,7 @@ def _test_serialize_and_reload(doc):
     for item, level in doc.iterate_items():
         if isinstance(item, PictureItem):
             _ = item.get_image(doc)
-        
+
     assert doc_reload == doc  # must be equal
     """
 
@@ -252,8 +251,6 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
     else:
         with open(filename + f".{ext}", "w") as fw:
             fw.write(pred)
-
-        assert True, "generating the ground-truth for regression test"
 
 
 def _test_export_methods(doc: DoclingDocument, filename: str):

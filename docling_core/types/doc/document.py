@@ -593,6 +593,21 @@ class DocItem(
 class TextItem(DocItem):
     """TextItem."""
 
+    label: typing.Literal[
+        DocItemLabel.CAPTION,
+        DocItemLabel.CHECKBOX_SELECTED,
+        DocItemLabel.CHECKBOX_UNSELECTED,
+        DocItemLabel.CODE,
+        DocItemLabel.FOOTNOTE,
+        DocItemLabel.FORMULA,
+        DocItemLabel.PAGE_FOOTER,
+        DocItemLabel.PAGE_HEADER,
+        DocItemLabel.PARAGRAPH,
+        DocItemLabel.REFERENCE,
+        DocItemLabel.TEXT,
+        DocItemLabel.TITLE,
+    ]
+
     orig: str  # untreated representation
     text: str  # sanitized representation
 
@@ -644,8 +659,10 @@ class TextItem(DocItem):
 class SectionHeaderItem(TextItem):
     """SectionItem."""
 
-    label: typing.Literal[DocItemLabel.SECTION_HEADER] = DocItemLabel.SECTION_HEADER
-    level: LevelNumber
+    label: typing.Literal[DocItemLabel.SECTION_HEADER] = (
+        DocItemLabel.SECTION_HEADER  # type: ignore[assignment]
+    )
+    level: LevelNumber = 1
 
     def export_to_document_tokens(
         self,
@@ -695,9 +712,11 @@ class SectionHeaderItem(TextItem):
 class ListItem(TextItem):
     """SectionItem."""
 
-    label: typing.Literal[DocItemLabel.LIST_ITEM] = DocItemLabel.LIST_ITEM
+    label: typing.Literal[DocItemLabel.LIST_ITEM] = (
+        DocItemLabel.LIST_ITEM  # type: ignore[assignment]
+    )
     enumerated: bool = False
-    marker: str  # The bullet or number symbol that prefixes this list item
+    marker: str = "-"  # The bullet or number symbol that prefixes this list item
 
 
 class FloatingItem(DocItem):
@@ -923,7 +942,10 @@ class TableItem(FloatingItem):
     """TableItem."""
 
     data: TableData
-    label: typing.Literal[DocItemLabel.TABLE] = DocItemLabel.TABLE
+    label: typing.Literal[
+        DocItemLabel.DOCUMENT_INDEX,
+        DocItemLabel.TABLE,
+    ] = DocItemLabel.TABLE
 
     def export_to_dataframe(self) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
@@ -1272,9 +1294,19 @@ class TableItem(FloatingItem):
 class KeyValueItem(DocItem):
     """KeyValueItem."""
 
+    label: typing.Literal[DocItemLabel.KEY_VALUE_REGION] = DocItemLabel.KEY_VALUE_REGION
 
-ContentItem = Union[
-    TextItem, SectionHeaderItem, ListItem, PictureItem, TableItem, KeyValueItem
+
+ContentItem = Annotated[
+    Union[
+        TextItem,
+        SectionHeaderItem,
+        ListItem,
+        PictureItem,
+        TableItem,
+        KeyValueItem,
+    ],
+    Field(discriminator="label"),
 ]
 
 
@@ -1505,14 +1537,15 @@ class DoclingDocument(BaseModel):
         caption: Optional[Union[TextItem, RefItem]] = None,  # This is not cool yet.
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[GroupItem] = None,
+        label: DocItemLabel = DocItemLabel.TABLE,
     ):
         """add_table.
 
-        :param data: BaseTableData:
-        :param caption: Optional[Union[TextItem:
-        :param RefItem]]:  (Default value = None)
-        :param # This is not cool yet.prov: Optional[ProvenanceItem]
+        :param data: TableData:
+        :param caption: Optional[Union[TextItem, RefItem]]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[GroupItem]:  (Default value = None)
+        :param label: DocItemLabel:  (Default value = DocItemLabel.TABLE)
 
         """
         if not parent:
@@ -1522,7 +1555,7 @@ class DoclingDocument(BaseModel):
         cref = f"#/tables/{table_index}"
 
         tbl_item = TableItem(
-            label=DocItemLabel.TABLE, data=data, self_ref=cref, parent=parent.get_ref()
+            label=label, data=data, self_ref=cref, parent=parent.get_ref()
         )
         if prov:
             tbl_item.prov.append(prov)
