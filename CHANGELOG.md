@@ -1,3 +1,9 @@
+## [v2.11.0](https://github.com/DS4SD/docling-core/releases/tag/v2.11.0) - 2024-12-16
+
+### Feature
+
+* Add group labels for form and key-value areas ([#110](https://github.com/DS4SD/docling-core/issues/110)) ([`aeaf89d`](https://github.com/DS4SD/docling-core/commit/aeaf89de106201c53066c16963a9d6ba4467e51c))
+
 ## [v2.10.0](https://github.com/DS4SD/docling-core/releases/tag/v2.10.0) - 2024-12-13
 
 ### Feature
