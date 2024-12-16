@@ -264,7 +264,9 @@
         "chapter",
         "section",
         "sheet",
-        "slide"
+        "slide",
+        "form_area",
+        "key_value_area"
       ],
       "title": "GroupLabel",
       "type": "string"
