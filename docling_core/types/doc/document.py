@@ -1884,7 +1884,7 @@ class DoclingDocument(BaseModel):
         )
 
         out = new_doc.export_to_dict()
-        with open(filename, "w") as fw:
+        with open(filename, "w", encoding="utf-8") as fw:
             json.dump(out, fw, indent=indent)
 
     @classmethod
@@ -1898,7 +1898,7 @@ class DoclingDocument(BaseModel):
         :rtype: DoclingDocument
 
         """
-        with open(filename, "r") as f:
+        with open(filename, "r", encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
 
     def save_as_yaml(
@@ -1919,7 +1919,7 @@ class DoclingDocument(BaseModel):
         )
 
         out = new_doc.export_to_dict()
-        with open(filename, "w") as fw:
+        with open(filename, "w", encoding="utf-8") as fw:
             yaml.dump(out, fw, default_flow_style=default_flow_style)
 
     def export_to_dict(
@@ -1971,7 +1971,7 @@ class DoclingDocument(BaseModel):
             page_no=page_no,
         )
 
-        with open(filename, "w") as fw:
+        with open(filename, "w", encoding="utf-8") as fw:
             fw.write(md_out)
 
     def export_to_markdown(  # noqa: C901
@@ -2224,7 +2224,7 @@ class DoclingDocument(BaseModel):
             html_head=html_head,
         )
 
-        with open(filename, "w") as fw:
+        with open(filename, "w", encoding="utf-8") as fw:
             fw.write(html_out)
 
     def _get_output_paths(
@@ -2462,7 +2462,7 @@ class DoclingDocument(BaseModel):
             with_groups=with_groups,
         )
 
-        with open(filename, "w") as fw:
+        with open(filename, "w", encoding="utf-8") as fw:
             fw.write(out)
 
     def export_to_document_tokens(

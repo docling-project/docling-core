@@ -21,7 +21,7 @@ TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
 def test_chunk_merge_peers():
     EXPECTED_OUT_FILE = "test/data/chunker/2a_out_chunks.json"
 
-    with open(INPUT_FILE) as f:
+    with open(INPUT_FILE, encoding="utf-8") as f:
         data_json = f.read()
     dl_doc = DLDocument.model_validate_json(data_json)
 
@@ -36,7 +36,7 @@ def test_chunk_merge_peers():
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
-    with open(EXPECTED_OUT_FILE) as f:
+    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
         exp_data = json.load(fp=f)
     assert exp_data == act_data
 
@@ -44,7 +44,7 @@ def test_chunk_merge_peers():
 def test_chunk_no_merge_peers():
     EXPECTED_OUT_FILE = "test/data/chunker/2b_out_chunks.json"
 
-    with open(INPUT_FILE) as f:
+    with open(INPUT_FILE, encoding="utf-8") as f:
         data_json = f.read()
     dl_doc = DLDocument.model_validate_json(data_json)
 
@@ -58,7 +58,7 @@ def test_chunk_no_merge_peers():
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
-    with open(EXPECTED_OUT_FILE) as f:
+    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
         exp_data = json.load(fp=f)
     assert exp_data == act_data
 
@@ -66,7 +66,7 @@ def test_chunk_no_merge_peers():
 def test_serialize():
     EXPECTED_OUT_FILE = "test/data/chunker/2a_out_ser_chunks.json"
 
-    with open(INPUT_FILE) as f:
+    with open(INPUT_FILE, encoding="utf-8") as f:
         data_json = f.read()
     dl_doc = DLDocument.model_validate_json(data_json)
 
@@ -88,7 +88,7 @@ def test_serialize():
             for chunk in chunks
         ]
     )
-    with open(EXPECTED_OUT_FILE) as f:
+    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
         exp_data = json.load(fp=f)
     assert exp_data == act_data
 
@@ -96,7 +96,7 @@ def test_serialize():
 def test_chunk_with_model_name():
     EXPECTED_OUT_FILE = "test/data/chunker/2a_out_chunks.json"
 
-    with open(INPUT_FILE) as f:
+    with open(INPUT_FILE, encoding="utf-8") as f:
         data_json = f.read()
     dl_doc = DLDocument.model_validate_json(data_json)
 
@@ -111,7 +111,7 @@ def test_chunk_with_model_name():
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
-    with open(EXPECTED_OUT_FILE) as f:
+    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
         exp_data = json.load(fp=f)
     assert exp_data == act_data
 
@@ -119,7 +119,7 @@ def test_chunk_with_model_name():
 def test_chunk_default():
     EXPECTED_OUT_FILE = "test/data/chunker/2c_out_chunks.json"
 
-    with open(INPUT_FILE) as f:
+    with open(INPUT_FILE, encoding="utf-8") as f:
         data_json = f.read()
     dl_doc = DLDocument.model_validate_json(data_json)
 
@@ -130,6 +130,6 @@ def test_chunk_default():
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
-    with open(EXPECTED_OUT_FILE) as f:
+    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
         exp_data = json.load(fp=f)
     assert exp_data == act_data

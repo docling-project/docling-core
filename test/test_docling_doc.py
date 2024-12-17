@@ -64,11 +64,15 @@ def test_docitems():
         return yaml.safe_dump(obj.model_dump(mode="json", by_alias=True))
 
     def write(name: str, serialisation: str):
-        with open(f"./test/data/docling_document/unit/{name}.yaml", "w") as fw:
+        with open(
+            f"./test/data/docling_document/unit/{name}.yaml", "w", encoding="utf-8"
+        ) as fw:
             fw.write(serialisation)
 
     def read(name: str):
-        with open(f"./test/data/docling_document/unit/{name}.yaml", "r") as fr:
+        with open(
+            f"./test/data/docling_document/unit/{name}.yaml", "r", encoding="utf-8"
+        ) as fr:
             gold = fr.read()
         return gold
 
@@ -146,7 +150,7 @@ def test_reference_doc():
     filename = "test/data/doc/dummy_doc.yaml"
 
     # Read YAML file of manual reference doc
-    with open(filename, "r") as fp:
+    with open(filename, "r", encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
 
     doc = DoclingDocument.model_validate(dict_from_yaml)
@@ -186,7 +190,7 @@ def test_parse_doc():
 
     filename = "test/data/doc/2206.01062.yaml"
 
-    with open(filename, "r") as fp:
+    with open(filename, "r", encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
 
     doc = DoclingDocument.model_validate(dict_from_yaml)
@@ -244,12 +248,12 @@ def _test_serialize_and_reload(doc):
 def _verify_regression_test(pred: str, filename: str, ext: str):
 
     if os.path.exists(filename + f".{ext}") and not GENERATE:
-        with open(filename + f".{ext}", "r") as fr:
+        with open(filename + f".{ext}", "r", encoding="utf-8") as fr:
             gt_true = fr.read()
 
         assert gt_true == pred, f"Does not pass regression-test for {filename}.{ext}"
     else:
-        with open(filename + f".{ext}", "w") as fw:
+        with open(filename + f".{ext}", "w", encoding="utf-8") as fw:
             fw.write(pred)
 
 
@@ -499,7 +503,7 @@ def test_version_doc():
     doc = DoclingDocument(name="Untitled 1")
     assert doc.version == CURRENT_VERSION
 
-    with open("test/data/doc/dummy_doc.yaml") as fp:
+    with open("test/data/doc/dummy_doc.yaml", encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
     doc = DoclingDocument.model_validate(dict_from_yaml)
     assert doc.version == CURRENT_VERSION
@@ -674,17 +678,17 @@ def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
 def _verify_saved_output(filename: str, paths: List[Path]):
 
     pred = ""
-    with open(filename, "r") as fr:
+    with open(filename, "r", encoding="utf-8") as fr:
         pred = fr.read()
 
     pred = _normalise_string_wrt_filepaths(pred, paths=paths)
 
     if GENERATE:
-        with open(str(filename) + ".gt", "w") as fw:
+        with open(str(filename) + ".gt", "w", encoding="utf-8") as fw:
             fw.write(pred)
     else:
         gt = ""
-        with open(str(filename) + ".gt", "r") as fr:
+        with open(str(filename) + ".gt", "r", encoding="utf-8") as fr:
             gt = fr.read()
 
         assert pred == gt, f"pred!=gt for {filename}"

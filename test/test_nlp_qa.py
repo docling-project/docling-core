@@ -20,7 +20,7 @@ class TestQAPair(unittest.TestCase):
         """Validate data read from files."""
         for filename in glob.glob("test/data/nlp/qa-*.json"):
             try:
-                with open(filename) as file_obj:
+                with open(filename, encoding="utf-8") as file_obj:
                     file_json = file_obj.read()
                 QAPair.model_validate_json(file_json)
             except ValidationError as e:
@@ -32,7 +32,7 @@ class TestQAPair(unittest.TestCase):
         filename = "test/data/nlp/error-qa-1.json"
         with (
             pytest.raises(ValidationError, match="Input should be a valid string"),
-            open(filename) as file_obj,
+            open(filename, encoding="utf-8") as file_obj,
         ):
             file_json = file_obj.read()
             QAPair.model_validate_json(file_json)
@@ -40,7 +40,7 @@ class TestQAPair(unittest.TestCase):
         filename = "test/data/nlp/error-qa-3.json"
         with (
             pytest.raises(ValidationError, match="List must be unique"),
-            open(filename) as file_obj,
+            open(filename, encoding="utf-8") as file_obj,
         ):
             file_json = file_obj.read()
             QAPair.model_validate_json(file_json)

@@ -16,7 +16,7 @@ from docling_core.types.rec.record import Record
 
 def _load(filename):
     doc = {}
-    with open(filename, "r") as fid:
+    with open(filename, "r", encoding="utf-8") as fid:
         doc = json.load(fid)
     return doc
 

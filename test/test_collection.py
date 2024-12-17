@@ -45,7 +45,7 @@ def test_generic():
 def test_document():
     """Test the Document model."""
     for filename in glob.glob("test/data/legacy_doc/doc-*.json"):
-        with open(filename) as file_obj:
+        with open(filename, encoding="utf-8") as file_obj:
             file_json = file_obj.read()
         Document.model_validate_json(file_json)
 
@@ -54,7 +54,7 @@ def test_table_export_to_tokens():
     """Test the Table Tokens export."""
 
     for filename in glob.glob("test/data/legacy_doc/doc-*.json"):
-        with open(filename) as file_obj:
+        with open(filename, encoding="utf-8") as file_obj:
             file_json = file_obj.read()
 
         doc = Document.model_validate_json(file_json)
@@ -73,10 +73,10 @@ def test_table_export_to_tokens():
                     fname = f"{filename}_table_{i}.doctags.txt"
                     if GENERATE:
                         print(f"writing {fname}")
-                        with open(fname, "w") as gold_obj:
+                        with open(fname, "w", encoding="utf-8") as gold_obj:
                             gold_obj.write(out)
 
-                    with open(fname, "r") as gold_obj:
+                    with open(fname, "r", encoding="utf-8") as gold_obj:
                         gold_data = gold_obj.read()
 
                     assert out == gold_data
@@ -96,10 +96,10 @@ def test_table_export_to_tokens():
                     fname = f"{filename}_table_{i}.doctags.txt"
                     if GENERATE:
                         print(f"writing {fname}")
-                        with open(fname, "w") as gold_obj:
+                        with open(fname, "w", encoding="utf-8") as gold_obj:
                             gold_obj.write(out)
 
-                    with open(fname, "r") as gold_obj:
+                    with open(fname, "r", encoding="utf-8") as gold_obj:
                         gold_data = gold_obj.read()
 
                     assert out == gold_data
@@ -110,17 +110,19 @@ def test_table_export_to_tokens():
 
 def test_document_export_to_md():
     """Test the Document Markdown export."""
-    with open("test/data/legacy_doc/doc-export.json") as src_obj:
+    with open("test/data/legacy_doc/doc-export.json", encoding="utf-8") as src_obj:
         src_data = src_obj.read()
     doc = Document.model_validate_json(src_data)
 
     md = doc.export_to_markdown()
 
     if GENERATE:
-        with open("test/data/legacy_doc/doc-export.md", "w") as gold_obj:
+        with open(
+            "test/data/legacy_doc/doc-export.md", "w", encoding="utf-8"
+        ) as gold_obj:
             gold_obj.write(md)
 
-    with open("test/data/legacy_doc/doc-export.md") as gold_obj:
+    with open("test/data/legacy_doc/doc-export.md", encoding="utf-8") as gold_obj:
         gold_data = gold_obj.read().strip()
 
     assert md == gold_data
@@ -128,17 +130,21 @@ def test_document_export_to_md():
 
 def test_document_export_to_tokens():
     """Test the Document Tokens export."""
-    with open("test/data/legacy_doc/doc-export.json") as src_obj:
+    with open("test/data/legacy_doc/doc-export.json", encoding="utf-8") as src_obj:
         src_data = src_obj.read()
 
     doc = Document.model_validate_json(src_data)
     xml = doc.export_to_document_tokens(delim=True)
 
     if GENERATE:
-        with open("test/data/legacy_doc/doc-export.doctags.txt", "w") as gold_obj:
+        with open(
+            "test/data/legacy_doc/doc-export.doctags.txt", "w", encoding="utf-8"
+        ) as gold_obj:
             gold_obj.write(xml)
 
-    with open("test/data/legacy_doc/doc-export.doctags.txt", "r") as gold_obj:
+    with open(
+        "test/data/legacy_doc/doc-export.doctags.txt", "r", encoding="utf-8"
+    ) as gold_obj:
         gold_data = gold_obj.read().strip()
 
     assert xml == gold_data
@@ -147,6 +153,6 @@ def test_document_export_to_tokens():
 def test_record():
     """Test the Document model."""
     for filename in glob.glob("test/data/rec/record-*.json"):
-        with open(filename) as file_obj:
+        with open(filename, encoding="utf-8") as file_obj:
             file_json = file_obj.read()
         Record.model_validate_json(file_json)

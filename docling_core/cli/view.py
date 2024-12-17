@@ -57,7 +57,7 @@ def view(
     doc = DoclingDocument.load_from_json(filename=path)
     target_path = Path(tempfile.mkdtemp()) / "out.html"
     html_output = doc.export_to_html(image_mode=ImageRefMode.EMBEDDED)
-    with open(target_path, "w") as f:
+    with open(target_path, "w", encoding="utf-8") as f:
         f.write(html_output)
     webbrowser.open(url=f"file://{target_path.absolute().resolve()}")
 

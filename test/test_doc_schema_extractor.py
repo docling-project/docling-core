@@ -15,7 +15,7 @@ def test_ccs_document_update():
     """Validate data with CCSDocument extract."""
     filename = "test/data/legacy_doc/ext-1.json"
     try:
-        with open(filename) as f:
+        with open(filename, encoding="utf-8") as f:
             raw_doc = json.load(f)
             for item in raw_doc["main-text"]:
                 if "$ref" in item:

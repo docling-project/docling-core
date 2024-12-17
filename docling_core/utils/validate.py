@@ -38,7 +38,7 @@ def run():
     """Run the validation of a file containing a Document."""
     file_format, input_file = parse_arguments()
 
-    with open(input_file, "r") as fd:
+    with open(input_file, "r", encoding="utf-8") as fd:
         file_ = json.load(fd)
 
     result = (False, "Empty result")

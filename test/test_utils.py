@@ -67,7 +67,7 @@ def test_resolve_source_to_path_url_wout_path(monkeypatch):
         lambda *args, **kwargs: [expected_bytes],
     )
     path = resolve_source_to_path("https://pypi.org")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         text = f.read()
     assert text == expected_str
 

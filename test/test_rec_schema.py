@@ -23,7 +23,7 @@ class TestCxsModel(unittest.TestCase):
         """Validate data with Predicate schema."""
         for filename in glob.glob("test/data/rec/predicate-*.json"):
             try:
-                with open(filename) as file_obj:
+                with open(filename, encoding="utf-8") as file_obj:
                     file_json = file_obj.read()
                 Predicate.model_validate_json(file_json)
             except ValidationError as e:
@@ -34,7 +34,7 @@ class TestCxsModel(unittest.TestCase):
         filename = "test/data/rec/error-predicate-01.json"
         with (
             pytest.raises(ValidationError, match="invalid latitude"),
-            open(filename) as file_obj,
+            open(filename, encoding="utf-8") as file_obj,
         ):
             file_json = file_obj.read()
             Predicate.model_validate_json(file_json)
@@ -42,7 +42,7 @@ class TestCxsModel(unittest.TestCase):
         filename = "test/data/rec/error-predicate-02.json"
         with (
             pytest.raises(ValidationError, match="geopoint_value.conf"),
-            open(filename) as file_obj,
+            open(filename, encoding="utf-8") as file_obj,
         ):
             file_json = file_obj.read()
             Predicate.model_validate_json(file_json)
@@ -51,7 +51,7 @@ class TestCxsModel(unittest.TestCase):
         """Validate data with Attribute schema."""
         for filename in glob.glob("test/data/rec/attribute-*.json"):
             try:
-                with open(filename) as file_obj:
+                with open(filename, encoding="utf-8") as file_obj:
                     file_json = file_obj.read()
                 Attribute.model_validate_json(file_json)
             except ValidationError as e:
@@ -61,7 +61,10 @@ class TestCxsModel(unittest.TestCase):
     def test_attributes_wrong(self):
         """Validate data with Attribute schema."""
         for filename in glob.glob("test/data/rec/error-attribute-*.json"):
-            with pytest.raises(ValidationError), open(filename) as file_obj:
+            with (
+                pytest.raises(ValidationError),
+                open(filename, encoding="utf-8") as file_obj,
+            ):
                 file_json = file_obj.read()
                 Attribute.model_validate_json(file_json)
 
@@ -69,7 +72,7 @@ class TestCxsModel(unittest.TestCase):
         """Validate data with Subject schema."""
         for filename in glob.glob("test/data/rec/subject-*.json"):
             try:
-                with open(filename) as file_obj:
+                with open(filename, encoding="utf-8") as file_obj:
                     file_json = file_obj.read()
                 Subject.model_validate_json(file_json)
             except ValidationError as e:
@@ -84,7 +87,7 @@ class TestCxsModel(unittest.TestCase):
         ]
         for filename in glob.glob("test/data/rec/subject-*.json"):
             try:
-                with open(filename) as file_obj:
+                with open(filename, encoding="utf-8") as file_obj:
                     file_json = file_obj.read()
                 subject.model_validate_json(file_json)
             except ValidationError as e:
@@ -98,14 +101,20 @@ class TestCxsModel(unittest.TestCase):
             Literal["db_"], Literal["material"], Literal["chemical_name", "sum_formula"]
         ]
         for filename in glob.glob("test/data/rec/subject-*.json"):
-            with self.assertRaises(ValidationError), open(filename) as file_obj:
+            with (
+                self.assertRaises(ValidationError),
+                open(filename, encoding="utf-8") as file_obj,
+            ):
                 file_json = file_obj.read()
                 subject.model_validate_json(file_json)
         subject = Subject[
             Literal["db"], Literal["material_"], Literal["chemical_name", "sum_formula"]
         ]
         for filename in glob.glob("test/data/rec/subject-*.json"):
-            with self.assertRaises(ValidationError), open(filename) as file_obj:
+            with (
+                self.assertRaises(ValidationError),
+                open(filename, encoding="utf-8") as file_obj,
+            ):
                 file_json = file_obj.read()
                 subject.model_validate_json(file_json)
         subject = Subject[
@@ -114,7 +123,10 @@ class TestCxsModel(unittest.TestCase):
             Literal["chemical_name_", "sum_formula_"],
         ]
         for filename in glob.glob("test/data/rec/subject-*.json"):
-            with self.assertRaises(ValidationError), open(filename) as file_obj:
+            with (
+                self.assertRaises(ValidationError),
+                open(filename, encoding="utf-8") as file_obj,
+            ):
                 file_json = file_obj.read()
                 subject.model_validate_json(file_json)
 
@@ -122,7 +134,7 @@ class TestCxsModel(unittest.TestCase):
         """Validate data with Statement schema."""
         for filename in glob.glob("test/data/rec/statement-*.json"):
             try:
-                with open(filename) as file_obj:
+                with open(filename, encoding="utf-8") as file_obj:
                     file_json = file_obj.read()
                 Statement.model_validate_json(file_json)
             except ValidationError as e:
@@ -133,7 +145,7 @@ class TestCxsModel(unittest.TestCase):
         """Validate data with Record schema."""
         for filename in glob.glob("test/data/rec/record-*.json"):
             try:
-                with open(filename) as file_obj:
+                with open(filename, encoding="utf-8") as file_obj:
                     file_json = file_obj.read()
                 Record.model_validate_json(file_json)
             except ValidationError as e:
@@ -154,7 +166,7 @@ class TestCxsModel(unittest.TestCase):
         ]
         for filename in glob.glob("test/data/rec/record-01.json"):
             try:
-                with open(filename) as file_obj:
+                with open(filename, encoding="utf-8") as file_obj:
                     file_json = file_obj.read()
                 record.model_validate_json(file_json)
             except ValidationError as e:
@@ -211,7 +223,7 @@ class TestCxsModel(unittest.TestCase):
         ]
         try:
             filename = "test/data/rec/record-04.json"
-            with open(filename) as file_obj:
+            with open(filename, encoding="utf-8") as file_obj:
                 file_json = file_obj.read()
             record.model_validate_json(file_json)
         except ValidationError as e:
@@ -231,7 +243,10 @@ class TestCxsModel(unittest.TestCase):
             Literal["DB", "Chemicals", "ChemDatabase"],  # CollectionNameTypeT
         ]
         for filename in glob.glob("test/data/rec/record-01.json"):
-            with self.assertRaises(ValidationError), open(filename) as file_obj:
+            with (
+                self.assertRaises(ValidationError),
+                open(filename, encoding="utf-8") as file_obj,
+            ):
                 file_json = file_obj.read()
                 record.model_validate_json(file_json)
         record = Record[
@@ -245,6 +260,9 @@ class TestCxsModel(unittest.TestCase):
             Literal["DB", "Chemicals", "ChemDatabase"],  # CollectionNameTypeT
         ]
         for filename in glob.glob("test/data/rec/record-01.json"):
-            with self.assertRaises(ValidationError), open(filename) as file_obj:
+            with (
+                self.assertRaises(ValidationError),
+                open(filename, encoding="utf-8") as file_obj,
+            ):
                 file_json = file_obj.read()
                 record.model_validate_json(file_json)

@@ -22,7 +22,7 @@ def test_meta():
 
     for filename in glob.glob("test/data/search/meta-*.json"):
         try:
-            with open(filename) as file_obj:
+            with open(filename, encoding="utf-8") as file_obj:
                 file_json = file_obj.read()
             Meta[taxonomy, domain].model_validate_json(file_json)
         except ValidationError as e:
@@ -39,7 +39,7 @@ def test_meta():
     for filename in glob.glob("test/data/search/error-meta-*.json"):
         gold = gold_errors[os.path.basename(filename)]
         try:
-            with open(filename) as file_obj:
+            with open(filename, encoding="utf-8") as file_obj:
                 file_json = file_obj.read()
             Meta[taxonomy, domain].model_validate_json(file_json)
             assert False, f"File {filename} should be an invalid metadata"

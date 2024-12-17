@@ -27,7 +27,7 @@ from docling_core.types.legacy_doc.document import (
 def test_ccs_document():
     """Validate data with CCSDocument schema."""
     for filename in glob.glob("test/data/legacy_doc/doc-*.json"):
-        with open(filename) as file_obj:
+        with open(filename, encoding="utf-8") as file_obj:
             file_json = file_obj.read()
         try:
             # do not pass strict=True, since date input values are not an instance of datetime.
@@ -41,7 +41,7 @@ def test_ccs_document():
 
     # check doc-error-1 is invalid in logs
     try:
-        with open("test/data/legacy_doc/error-1.json") as file_obj:
+        with open("test/data/legacy_doc/error-1.json", encoding="utf-8") as file_obj:
             file_json = file_obj.read()
         CCSDocument.model_validate_json(file_json)
         assert False, f"Data in file {filename} should be invalid for CCSDocument model"
@@ -55,7 +55,7 @@ def test_ccs_document():
     # check doc-error-2 is invalid for missing page-hashes
     with (
         pytest.raises(ValidationError, match="page-hashes"),
-        open("test/data/legacy_doc/error-2.json") as file_obj,
+        open("test/data/legacy_doc/error-2.json", encoding="utf-8") as file_obj,
     ):
         file_json = file_obj.read()
         CCSDocument.model_validate_json(file_json)
@@ -63,7 +63,7 @@ def test_ccs_document():
     # check doc-error-3 is invalid for wrong types in citation_count and reference_count
     with (
         pytest.raises(ValidationError, match="count"),
-        open("test/data/legacy_doc/error-3.json") as file_obj,
+        open("test/data/legacy_doc/error-3.json", encoding="utf-8") as file_obj,
     ):
         file_json = file_obj.read()
         CCSDocument.model_validate_json(file_json)
@@ -72,7 +72,7 @@ def test_ccs_document():
 def test_publication_journal():
     """ "Validate data with Publication model."""
     for filename in glob.glob("test/data/legacy_doc/intermediates/publication_*.json"):
-        with open(filename) as file_obj:
+        with open(filename, encoding="utf-8") as file_obj:
             file_json = file_obj.read()
             file_dict = json.loads(file_json)
         try:
@@ -85,7 +85,7 @@ def test_publication_journal():
 def test_description_advanced_t():
     """Validate data with different DescriptionAdvancedT instances."""
     # without description.advanced
-    with open("test/data/legacy_doc/doc-5.json") as file_obj:
+    with open("test/data/legacy_doc/doc-5.json", encoding="utf-8") as file_obj:
         desc = json.load(file_obj)["description"]
 
     # without advanced
