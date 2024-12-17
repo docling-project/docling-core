@@ -266,7 +266,8 @@
         "sheet",
         "slide",
         "form_area",
-        "key_value_area"
+        "key_value_area",
+        "comment_section"
       ],
       "title": "GroupLabel",
       "type": "string"
