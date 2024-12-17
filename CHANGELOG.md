@@ -1,3 +1,9 @@
+## [v2.12.1](https://github.com/DS4SD/docling-core/releases/tag/v2.12.1) - 2024-12-17
+
+### Fix
+
+* Fixes for legacy-doc handling ([#115](https://github.com/DS4SD/docling-core/issues/115)) ([`b116c46`](https://github.com/DS4SD/docling-core/commit/b116c465a2af6327cffa95de0745506404cb39f9))
+
 ## [v2.12.0](https://github.com/DS4SD/docling-core/releases/tag/v2.12.0) - 2024-12-17
 
 ### Feature
