@@ -550,17 +550,18 @@ class ExportedCCSDocument(
 
                 elif (
                     isinstance(item, Table)
-                    and item.data
+                    and (item.data or item.text)
                     and item_type in main_text_labels
                 ):
 
                     md_table = ""
                     table = []
-                    for row in item.data:
-                        tmp = []
-                        for col in row:
-                            tmp.append(col.text)
-                        table.append(tmp)
+                    if item.data is not None:
+                        for row in item.data:
+                            tmp = []
+                            for col in row:
+                                tmp.append(col.text)
+                            table.append(tmp)
 
                     if len(table) > 1 and len(table[0]) > 0:
                         try:
@@ -579,7 +580,9 @@ class ExportedCCSDocument(
                     if item.text:
                         markdown_text = item.text
                     if not strict_text:
-                        markdown_text += "\n\n" + md_table
+                        markdown_text += (
+                            "\n\n" if len(markdown_text) > 0 else ""
+                        ) + md_table
 
                 elif isinstance(item, Figure) and item_type in main_text_labels:
 
@@ -587,7 +590,9 @@ class ExportedCCSDocument(
                     if item.text:
                         markdown_text = item.text
                     if not strict_text:
-                        markdown_text += f"\n{image_placeholder}"
+                        markdown_text += (
+                            "\n" if len(markdown_text) > 0 else ""
+                        ) + image_placeholder
 
                 if markdown_text:
                     md_texts.append(markdown_text)
