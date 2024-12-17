@@ -2038,6 +2038,9 @@ class DoclingDocument(BaseModel):
             if ix < from_element or to_element <= ix:
                 continue  # skip as many items as you want
 
+            if (isinstance(item, DocItem)) and (item.label not in labels):
+                continue  # skip any label that is not whitelisted
+
             # Handle newlines between different types of content
             if (
                 len(mdtexts) > 0
