@@ -1,3 +1,14 @@
+## [v2.12.0](https://github.com/DS4SD/docling-core/releases/tag/v2.12.0) - 2024-12-17
+
+### Feature
+
+* Added the new label comment_section in the groups ([#114](https://github.com/DS4SD/docling-core/issues/114)) ([`5101dd8`](https://github.com/DS4SD/docling-core/commit/5101dd8845dcfc098c7009556e7468478393ea5e))
+
+### Fix
+
+* Skip labels not included in the allow-list ([#113](https://github.com/DS4SD/docling-core/issues/113)) ([`d147c25`](https://github.com/DS4SD/docling-core/commit/d147c2565f635e851b73cd6b97cc78617372b57f))
+* Always write with utf8 encoding ([#111](https://github.com/DS4SD/docling-core/issues/111)) ([`268c294`](https://github.com/DS4SD/docling-core/commit/268c294cc95abb36fc491521e39c7bf6e6a45abc))
+
 ## [v2.11.0](https://github.com/DS4SD/docling-core/releases/tag/v2.11.0) - 2024-12-16
 
 ### Feature
