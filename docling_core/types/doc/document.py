@@ -14,7 +14,7 @@ import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 import pandas as pd
 import yaml
@@ -830,7 +830,7 @@ class PictureItem(FloatingItem):
             ):
                 return default_response
 
-            text = f"\n![Image]({str(self.image.uri)})\n"
+            text = f"\n![Image]({quote(str(self.image.uri))})\n"
             return text
 
         else:
@@ -884,7 +884,7 @@ class PictureItem(FloatingItem):
             ):
                 return default_response
 
-            img_text = f'<img src="{str(self.image.uri)}">'
+            img_text = f'<img src="{quote(str(self.image.uri))}">'
             return f"<figure>{caption_text}{img_text}</figure>"
 
         else:
