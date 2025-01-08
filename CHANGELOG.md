@@ -1,3 +1,13 @@
+## [v2.13.0](https://github.com/DS4SD/docling-core/releases/tag/v2.13.0) - 2025-01-08
+
+### Feature
+
+* Add mapping to colors into DocItemLabel ([#123](https://github.com/DS4SD/docling-core/issues/123)) ([`639f122`](https://github.com/DS4SD/docling-core/commit/639f12226d4d413c5f95dc4989391a209cca1ae6))
+
+### Fix
+
+* Quote referenced URIs in markdown and html ([#122](https://github.com/DS4SD/docling-core/issues/122)) ([`127dd2f`](https://github.com/DS4SD/docling-core/commit/127dd2f6f8862e2c74f821cdb3a1995ee0a243cc))
+
 ## [v2.12.1](https://github.com/DS4SD/docling-core/releases/tag/v2.12.1) - 2024-12-17
 
 ### Fix
