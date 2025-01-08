@@ -1,3 +1,9 @@
+## [v2.13.1](https://github.com/DS4SD/docling-core/releases/tag/v2.13.1) - 2025-01-08
+
+### Fix
+
+* Restore proper string serialization of DocItemLabel ([#124](https://github.com/DS4SD/docling-core/issues/124)) ([`a52bb88`](https://github.com/DS4SD/docling-core/commit/a52bb88f78146a5777246d3fc04b04d0db1c1631))
+
 ## [v2.13.0](https://github.com/DS4SD/docling-core/releases/tag/v2.13.0) - 2025-01-08
 
 ### Feature
