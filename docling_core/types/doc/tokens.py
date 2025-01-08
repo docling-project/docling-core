@@ -6,9 +6,7 @@
 """Tokens used in the docling document model."""
 
 from enum import Enum
-from typing import Annotated, Tuple
-
-from pydantic import Field
+from typing import Tuple
 
 
 class TableToken(Enum):
@@ -169,8 +167,7 @@ class DocumentToken(Enum):
 
     @staticmethod
     def get_location(
-        # bbox: Tuple[float, float, float, float],
-        bbox: Annotated[list[float], Field(min_length=4, max_length=4)],
+        bbox: tuple[float, float, float, float],
         page_w: float,
         page_h: float,
         xsize: int = 100,

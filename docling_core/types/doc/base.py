@@ -81,7 +81,7 @@ class BoundingBox(BaseModel):
 
         return out_bbox
 
-    def as_tuple(self):
+    def as_tuple(self) -> Tuple[float, float, float, float]:
         """as_tuple."""
         if self.coord_origin == CoordOrigin.TOPLEFT:
             return (self.l, self.t, self.r, self.b)
@@ -143,7 +143,7 @@ class BoundingBox(BaseModel):
 
         return width * height
 
-    def to_bottom_left_origin(self, page_height) -> "BoundingBox":
+    def to_bottom_left_origin(self, page_height: float) -> "BoundingBox":
         """to_bottom_left_origin.
 
         :param page_height:
@@ -160,7 +160,7 @@ class BoundingBox(BaseModel):
                 coord_origin=CoordOrigin.BOTTOMLEFT,
             )
 
-    def to_top_left_origin(self, page_height):
+    def to_top_left_origin(self, page_height: float) -> "BoundingBox":
         """to_top_left_origin.
 
         :param page_height:
