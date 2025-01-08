@@ -1,12 +1,12 @@
 """Models for the labels types."""
 
 from enum import Enum
+from typing import Tuple
 
 
 class DocItemLabel(str, Enum):
     """DocItemLabel."""
 
-    # DocLayNet v2
     CAPTION = "caption"
     FOOTNOTE = "footnote"
     FORMULA = "formula"
@@ -26,12 +26,34 @@ class DocItemLabel(str, Enum):
     KEY_VALUE_REGION = "key_value_region"
 
     # Additional labels for markup-based formats (e.g. HTML, Word)
-    PARAGRAPH = "paragraph"  # explicitly a paragraph and not arbitrary text
+    PARAGRAPH = "paragraph"
     REFERENCE = "reference"
 
-    def __str__(self):
-        """Get string value."""
-        return str(self.value)
+    @staticmethod
+    def get_color(label: "DocItemLabel") -> Tuple[int, int, int]:
+        """Return the RGB color associated with a given label."""
+        color_map = {
+            DocItemLabel.CAPTION: (255, 204, 153),
+            DocItemLabel.FOOTNOTE: (200, 200, 255),
+            DocItemLabel.FORMULA: (192, 192, 192),
+            DocItemLabel.LIST_ITEM: (153, 153, 255),
+            DocItemLabel.PAGE_FOOTER: (204, 255, 204),
+            DocItemLabel.PAGE_HEADER: (204, 255, 204),
+            DocItemLabel.PICTURE: (255, 204, 164),
+            DocItemLabel.SECTION_HEADER: (255, 153, 153),
+            DocItemLabel.TABLE: (255, 204, 204),
+            DocItemLabel.TEXT: (255, 255, 153),
+            DocItemLabel.TITLE: (255, 153, 153),
+            DocItemLabel.DOCUMENT_INDEX: (220, 220, 220),
+            DocItemLabel.CODE: (125, 125, 125),
+            DocItemLabel.CHECKBOX_SELECTED: (255, 182, 193),
+            DocItemLabel.CHECKBOX_UNSELECTED: (255, 182, 193),
+            DocItemLabel.FORM: (200, 255, 255),
+            DocItemLabel.KEY_VALUE_REGION: (183, 65, 14),
+            DocItemLabel.PARAGRAPH: (255, 255, 153),
+            DocItemLabel.REFERENCE: (176, 224, 230),
+        }
+        return color_map[label]
 
 
 class GroupLabel(str, Enum):
