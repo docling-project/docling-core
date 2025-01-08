@@ -29,6 +29,10 @@ class DocItemLabel(str, Enum):
     PARAGRAPH = "paragraph"
     REFERENCE = "reference"
 
+    def __str__(self):
+        """Get string value."""
+        return str(self.value)
+
     @staticmethod
     def get_color(label: "DocItemLabel") -> Tuple[int, int, int]:
         """Return the RGB color associated with a given label."""
