@@ -1710,7 +1710,7 @@ class DoclingDocument(BaseModel):
 
         :param root: Optional[NodeItem]:  (Default value = None)
         :param with_groups: bool:  (Default value = False)
-        :param traverse_pictures: bool:  (Default value = True)
+        :param traverse_pictures: bool:  (Default value = False)
         :param page_no: Optional[int]:  (Default value = None)
         :param _level:  (Default value = 0)
         :param # fixed parameter:
