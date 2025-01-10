@@ -1,3 +1,9 @@
+## [v2.14.0](https://github.com/DS4SD/docling-core/releases/tag/v2.14.0) - 2025-01-10
+
+### Feature
+
+* Dev/add labels for pictures-classes ([#127](https://github.com/DS4SD/docling-core/issues/127)) ([`078cd61`](https://github.com/DS4SD/docling-core/commit/078cd61b31c36bec553f64c411012e361683bd35))
+
 ## [v2.13.1](https://github.com/DS4SD/docling-core/releases/tag/v2.13.1) - 2025-01-08
 
 ### Fix
