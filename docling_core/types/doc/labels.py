@@ -81,6 +81,52 @@ class GroupLabel(str, Enum):
         return str(self.value)
 
 
+class PictureClassificationLabel(str, Enum):
+    """PictureClassificationLabel."""
+
+    OTHER = "other"
+
+    # If more than one picture is grouped together, it
+    # is generally not possible to assign a label
+    PICTURE_GROUP = "picture_group"
+
+    # General
+    PIE_CHART = "pie_chart"
+    BAR_CHART = "bar_chart"
+    LINE_CHART = "line_chart"
+    FLOW_CHART = "flow_chart"
+    SCATTER_CHART = "scatter_chart"
+    HEATMAP = "heatmap"
+    REMOTE_SENSING = "remote_sensing"
+
+    NATURAL_IMAGE = "natural_image"
+
+    # Chemistry
+    MOLECULAR_STRUCTURE = "chemistry_molecular_structure"
+    MARKUSH_STRUCTURE = "chemistry_markush_structure"
+
+    # Company
+    ICON = "icon"
+    LOGO = "logo"
+    SIGNATURE = "signature"
+    STAMP = "stamp"
+    QR_CODE = "qr_code"
+    BAR_CODE = "bat_code"
+    SCREENSHOT = "screenshot"
+
+    # Geology/Geography
+    GEOGRAPHIC_MAP = "map"
+    STRATIGRAPHIC_CHART = "stratigraphic_chart"
+
+    # Engineering
+    CAD_DRAWING = "cad_drawing"
+    ELECTRICAL_DIAGRAM = "electrical_diagram"
+
+    def __str__(self):
+        """Get string value."""
+        return str(self.value)
+
+
 class TableCellLabel(str, Enum):
     """TableCellLabel."""
 
