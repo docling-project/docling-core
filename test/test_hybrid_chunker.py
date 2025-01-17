@@ -133,3 +133,31 @@ def test_chunk_default():
     with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
         exp_data = json.load(fp=f)
     assert exp_data == act_data
+
+
+def test_serialize_altered_delim():
+    EXPECTED_OUT_FILE = "test/data/chunker/2d_out_ser_chunks.json"
+
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=TOKENIZER, max_tokens=MAX_TOKENS, merge_peers=True, delim="####"
+    )
+
+    chunks = chunker.chunk(dl_doc=dl_doc)
+
+    act_data = dict(
+        root=[
+            dict(
+                text=chunk.text,
+                ser_text=(ser_text := chunker.serialize(chunk)),
+                num_tokens=len(TOKENIZER.tokenize(ser_text, max_length=None)),
+            )
+            for chunk in chunks
+        ]
+    )
+    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
+        exp_data = json.load(fp=f)
+    assert exp_data == act_data
