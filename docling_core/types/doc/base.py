@@ -150,7 +150,7 @@ class BoundingBox(BaseModel):
 
         """
         if self.coord_origin == CoordOrigin.BOTTOMLEFT:
-            return self
+            return self.model_copy()
         elif self.coord_origin == CoordOrigin.TOPLEFT:
             return BoundingBox(
                 l=self.l,
@@ -167,7 +167,7 @@ class BoundingBox(BaseModel):
 
         """
         if self.coord_origin == CoordOrigin.TOPLEFT:
-            return self
+            return self.model_copy()
         elif self.coord_origin == CoordOrigin.BOTTOMLEFT:
             return BoundingBox(
                 l=self.l,
