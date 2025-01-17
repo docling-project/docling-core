@@ -14,6 +14,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CURRENT_VERSION,
     BoundingBox,
+    CodeItem,
     DocItem,
     DoclingDocument,
     DocumentOrigin,
@@ -140,7 +141,14 @@ def test_docitems():
                 data=TableData(num_rows=3, num_cols=5, table_cells=[]),
             )
             verify(dc, obj)
-
+        elif dc is CodeItem:
+            obj = dc(
+                self_ref="#",
+                orig="whatever",
+                text="print(Hello World!)",
+                code_language="Python",
+            )
+            verify(dc, obj)
         else:
             raise RuntimeError(f"New derived class detected {dc.__name__}")
 

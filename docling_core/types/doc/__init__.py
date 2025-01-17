@@ -7,6 +7,7 @@
 
 from .base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from .document import (
+    CodeItem,
     DocItem,
     DoclingDocument,
     DocumentOrigin,

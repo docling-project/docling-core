@@ -36,7 +36,7 @@ from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.labels import DocItemLabel, GroupLabel
+from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel, GroupLabel
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import relative_path
 
@@ -597,7 +597,6 @@ class TextItem(DocItem):
         DocItemLabel.CAPTION,
         DocItemLabel.CHECKBOX_SELECTED,
         DocItemLabel.CHECKBOX_UNSELECTED,
-        DocItemLabel.CODE,
         DocItemLabel.FOOTNOTE,
         DocItemLabel.FORMULA,
         DocItemLabel.PAGE_FOOTER,
@@ -654,6 +653,15 @@ class TextItem(DocItem):
         body += f"</{self.label.value}>{new_line}"
 
         return body
+
+
+class CodeItem(TextItem):
+    """CodeItem."""
+
+    label: typing.Literal[DocItemLabel.CODE] = (
+        DocItemLabel.CODE  # type: ignore[assignment]
+    )
+    code_language: CodeLanguageLabel = CodeLanguageLabel.UNKNOWN
 
 
 class SectionHeaderItem(TextItem):
@@ -1302,6 +1310,7 @@ ContentItem = Annotated[
         TextItem,
         SectionHeaderItem,
         ListItem,
+        CodeItem,
         PictureItem,
         TableItem,
         KeyValueItem,
@@ -1397,7 +1406,7 @@ class DoclingDocument(BaseModel):
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
     groups: List[GroupItem] = []
-    texts: List[Union[SectionHeaderItem, ListItem, TextItem]] = []
+    texts: List[Union[SectionHeaderItem, ListItem, TextItem, CodeItem]] = []
     pictures: List[PictureItem] = []
     tables: List[TableItem] = []
     key_value_items: List[KeyValueItem] = []
@@ -1642,6 +1651,46 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return text_item
+
+    def add_code(
+        self,
+        text: str,
+        code_language: Optional[CodeLanguageLabel] = None,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+    ):
+        """add_code.
+
+        :param text: str:
+        :param code_language: Optional[str]: (Default value = None)
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        code_item = CodeItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if code_language:
+            code_item.code_language = code_language
+        if prov:
+            code_item.prov.append(prov)
+
+        self.texts.append(code_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return code_item
 
     def add_heading(
         self,
@@ -2086,7 +2135,7 @@ class DoclingDocument(BaseModel):
                 text = f"{marker} {item.text}\n"
                 mdtexts.append(text.strip() + "\n")
 
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CODE]:
+            elif isinstance(item, CodeItem) and item.label in labels:
                 in_list = False
                 text = f"```\n{item.text}\n```\n"
                 mdtexts.append(text)
@@ -2392,11 +2441,14 @@ class DoclingDocument(BaseModel):
                 text = f"<li>{item.text}</li>"
                 html_texts.append(text)
 
+            elif isinstance(item, CodeItem) and item.label in labels:
+                text = f"<pre><code>{item.text}</code></pre>"
+                html_texts.append(text.strip())
+
             elif isinstance(item, TextItem) and item.label in labels:
 
                 text = f"<p>{item.text}</p>"
                 html_texts.append(text.strip())
-
             elif isinstance(item, TableItem):
 
                 text = item.export_to_html(doc=self, add_caption=True)
@@ -2584,6 +2636,17 @@ class DoclingDocument(BaseModel):
                 in_ordered_list.append(False)
 
             elif isinstance(item, SectionHeaderItem):
+
+                result += item.export_to_document_tokens(
+                    doc=self,
+                    new_line=delim,
+                    xsize=xsize,
+                    ysize=ysize,
+                    add_location=add_location,
+                    add_content=add_content,
+                    add_page_index=add_page_index,
+                )
+            elif isinstance(item, CodeItem) and (item.label in labels):
 
                 result += item.export_to_document_tokens(
                     doc=self,
