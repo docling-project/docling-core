@@ -51,7 +51,7 @@ class BaseChunker(BaseModel, ABC):
     delim: str = DFLT_DELIM
 
     @abstractmethod
-    def chunk(self, dl_doc: DLDocument, **kwargs) -> Iterator[BaseChunk]:
+    def chunk(self, dl_doc: DLDocument, **kwargs: Any) -> Iterator[BaseChunk]:
         """Chunk the provided document.
 
         Args:

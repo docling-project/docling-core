@@ -6,7 +6,7 @@
 """Hybrid chunker implementation leveraging both doc structure & token awareness."""
 
 import warnings
-from typing import Iterable, Iterator, Optional, Union
+from typing import Any, Iterable, Iterator, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, PositiveInt, TypeAdapter, model_validator
 from typing_extensions import Self
@@ -231,7 +231,7 @@ class HybridChunker(BaseChunker):
 
         return output_chunks
 
-    def chunk(self, dl_doc: DoclingDocument, **kwargs) -> Iterator[BaseChunk]:
+    def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
         r"""Chunk the provided document.
 
         Args:
