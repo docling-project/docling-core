@@ -1,3 +1,14 @@
+## [v2.15.0](https://github.com/DS4SD/docling-core/releases/tag/v2.15.0) - 2025-01-21
+
+### Feature
+
+* Add CodeItem as pydantic type, update export methods and APIs ([#129](https://github.com/DS4SD/docling-core/issues/129)) ([`c940aa5`](https://github.com/DS4SD/docling-core/commit/c940aa5ca9b345333e3e95d8c0ec32ddfa227385))
+
+### Fix
+
+* Fix hybrid chunker token constraint ([#131](https://github.com/DS4SD/docling-core/issues/131)) ([`b741eea`](https://github.com/DS4SD/docling-core/commit/b741eeaab437781e36f9d356478ef525ef54867b))
+* Always return a new bbox when changing origin ([#128](https://github.com/DS4SD/docling-core/issues/128)) ([`841668f`](https://github.com/DS4SD/docling-core/commit/841668f416f2079afc6f8ab07e5507aacce59de3))
+
 ## [v2.14.0](https://github.com/DS4SD/docling-core/releases/tag/v2.14.0) - 2025-01-10
 
 ### Feature
