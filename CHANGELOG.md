@@ -1,3 +1,9 @@
+## [v2.15.1](https://github.com/DS4SD/docling-core/releases/tag/v2.15.1) - 2025-01-21
+
+### Fix
+
+* Backward compatible add_text() ([#132](https://github.com/DS4SD/docling-core/issues/132)) ([`7e45817`](https://github.com/DS4SD/docling-core/commit/7e458179d8ec46017fd90114a55360daf419f926))
+
 ## [v2.15.0](https://github.com/DS4SD/docling-core/releases/tag/v2.15.0) - 2025-01-21
 
 ### Feature
