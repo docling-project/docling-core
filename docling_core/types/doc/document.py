@@ -1515,6 +1515,9 @@ class DoclingDocument(BaseModel):
         elif label in [DocItemLabel.SECTION_HEADER]:
             return self.add_heading(text=text, orig=orig, prov=prov, parent=parent)
 
+        elif label in [DocItemLabel.CODE]:
+            return self.add_code(text=text, orig=orig, prov=prov, parent=parent)
+
         else:
 
             if not parent:
