@@ -2167,6 +2167,10 @@ class DoclingDocument(BaseModel):
                 text = f"{list_indent}{marker} {item.text}"
                 mdtexts.append(text)
 
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.FORMULA]:
+                in_list = False
+                mdtexts.append(f"$${item.text}$$")
+
             elif isinstance(item, TextItem) and item.label in labels:
                 in_list = False
                 if len(item.text) and text_width > 0:
@@ -2215,10 +2219,14 @@ class DoclingDocument(BaseModel):
             """Escape underscores but leave them intact in the URL.."""
             # Firstly, identify all the URL patterns.
             url_pattern = r"!\[.*?\]\((.*?)\)"
+            # Matches both inline ($...$) and block ($$...$$) LaTeX equations:
+            latex_pattern = r"\$\$?(?:\\.|[^$\\])*\$\$?"
+            combined_pattern = f"({url_pattern})|({latex_pattern})"
+
             parts = []
             last_end = 0
 
-            for match in re.finditer(url_pattern, text):
+            for match in re.finditer(combined_pattern, text):
                 # Text to add before the URL (needs to be escaped)
                 before_url = text[last_end : match.start()]
                 parts.append(re.sub(r"(?<!\\)_", r"\_", before_url))
