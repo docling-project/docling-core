@@ -585,7 +585,8 @@ class DocItem(
         crop_bbox = (
             self.prov[0]
             .bbox.to_top_left_origin(page_height=page.size.height)
-            .scaled(scale=page_image.height / page.size.height)
+            .scale_to_size(old_size=page.size, new_size=page.image.size)
+            # .scaled(scale=page_image.height / page.size.height)
         )
         return page_image.crop(crop_bbox.as_tuple())
 
