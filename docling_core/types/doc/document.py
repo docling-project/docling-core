@@ -2169,7 +2169,7 @@ class DoclingDocument(BaseModel):
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.FORMULA]:
                 in_list = False
-                mdtexts.append(f"$${item.text}$$")
+                mdtexts.append(f"$${item.text}$$\n")
 
             elif isinstance(item, TextItem) and item.label in labels:
                 in_list = False
