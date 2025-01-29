@@ -1,14 +1,10 @@
-## [v3.0.0](https://github.com/DS4SD/docling-core/releases/tag/v3.0.0) - 2025-01-29
+## [v3.16.0](https://github.com/DS4SD/docling-core/releases/tag/v2.16.0) - 2025-01-29
 
 ### Feature
 
 * Escape underscores that are within latex equations ([#137](https://github.com/DS4SD/docling-core/issues/137)) ([`0d5cd11`](https://github.com/DS4SD/docling-core/commit/0d5cd11326d8521360add6ffaa3de845bf72abe2))
 * Add escaping_underscores option to markdown export ([#135](https://github.com/DS4SD/docling-core/issues/135)) ([`c9739b2`](https://github.com/DS4SD/docling-core/commit/c9739b2c6cf0686747fbda5331e1fd1a174bb91f))
 * Added the geometric operations to BoundingBox ([#136](https://github.com/DS4SD/docling-core/issues/136)) ([`f02bbae`](https://github.com/DS4SD/docling-core/commit/f02bbaea47ebbfe98265f530b0b62dd2a6ac1ecd))
-
-### Breaking
-
-* export to text no longer escapes underscores. ([`c9739b2`](https://github.com/DS4SD/docling-core/commit/c9739b2c6cf0686747fbda5331e1fd1a174bb91f))
 
 ## [v2.15.1](https://github.com/DS4SD/docling-core/releases/tag/v2.15.1) - 2025-01-21
 
