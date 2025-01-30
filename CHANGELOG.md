@@ -1,3 +1,9 @@
+## [v2.16.1](https://github.com/DS4SD/docling-core/releases/tag/v2.16.1) - 2025-01-30
+
+### Fix
+
+* Add newline to md formula export ([#142](https://github.com/DS4SD/docling-core/issues/142)) ([`d07a87e`](https://github.com/DS4SD/docling-core/commit/d07a87e1fbc777cd6d01c7646d714a44a69bc123))
+
 ## [v3.16.0](https://github.com/DS4SD/docling-core/releases/tag/v2.16.0) - 2025-01-29
 
 ### Feature
