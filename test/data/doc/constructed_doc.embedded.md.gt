@@ -27,7 +27,7 @@ This is the caption of table 1.
 
 This is the caption of figure 1.
 
-<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate\_picture\_images=True)` --> 
+<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate_picture_images=True)` --> 
 
 This is the caption of figure 2.
 
