@@ -16,7 +16,10 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
 from urllib.parse import quote, unquote
+from xml.etree.cElementTree import SubElement, tostring
+from xml.sax.saxutils import unescape
 
+import latex2mathml.converter
 import pandas as pd
 import yaml
 from PIL import Image as PILImage
@@ -1387,6 +1390,9 @@ class DoclingDocument(BaseModel):
     table tr:nth-child(even) td{
     background-color: LightGray;
     }
+    math annotation {
+    display: none;
+    }
     </style>
     </head>"""
 
@@ -2282,6 +2288,7 @@ class DoclingDocument(BaseModel):
         to_element: int = sys.maxsize,
         labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        formula_to_mathml: bool = True,
         page_no: Optional[int] = None,
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
@@ -2301,6 +2308,7 @@ class DoclingDocument(BaseModel):
             to_element=to_element,
             labels=labels,
             image_mode=image_mode,
+            formula_to_mathml=formula_to_mathml,
             page_no=page_no,
             html_lang=html_lang,
             html_head=html_head,
@@ -2347,6 +2355,7 @@ class DoclingDocument(BaseModel):
         to_element: int = sys.maxsize,
         labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        formula_to_mathml: bool = True,
         page_no: Optional[int] = None,
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
@@ -2381,9 +2390,13 @@ class DoclingDocument(BaseModel):
 
         in_ordered_list: List[bool] = []  # False
 
-        def _sanitize_text(text: str, do_escape_html=True) -> str:
+        def _prepare_tag_content(
+            text: str, do_escape_html=True, do_replace_newline=True
+        ) -> str:
             if do_escape_html:
                 text = html.escape(text, quote=False)
+            if do_replace_newline:
+                text = text.replace("\n", "<br>")
             return text
 
         for ix, (item, curr_level) in enumerate(
@@ -2416,7 +2429,7 @@ class DoclingDocument(BaseModel):
             ]:
 
                 text = "<ol>"
-                html_texts.append(text.strip())
+                html_texts.append(text)
 
                 # Increment list nesting level when entering a new list
                 in_ordered_list.append(True)
@@ -2426,7 +2439,7 @@ class DoclingDocument(BaseModel):
             ]:
 
                 text = "<ul>"
-                html_texts.append(text.strip())
+                html_texts.append(text)
 
                 # Increment list nesting level when entering a new list
                 in_ordered_list.append(False)
@@ -2436,63 +2449,62 @@ class DoclingDocument(BaseModel):
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
 
-                text = f"<h1>{_sanitize_text(item.text)}</h1>"
-                html_texts.append(text.strip())
+                text = f"<h1>{_prepare_tag_content(item.text)}</h1>"
+                html_texts.append(text)
 
             elif isinstance(item, SectionHeaderItem):
 
-                section_level: int = item.level + 1
+                section_level: int = min(item.level + 1, 6)
 
                 text = (
                     f"<h{(section_level)}>"
-                    f"{_sanitize_text(item.text)}</h{(section_level)}>"
+                    f"{_prepare_tag_content(item.text)}</h{(section_level)}>"
                 )
-                html_texts.append(text.strip())
+                html_texts.append(text)
 
-            elif isinstance(item, TextItem) and item.label in [
-                DocItemLabel.SECTION_HEADER
-            ]:
+            elif isinstance(item, TextItem) and item.label in [DocItemLabel.FORMULA]:
 
-                section_level = curr_level
-
-                if section_level <= 1:
-                    section_level = 2
-
-                if section_level >= 6:
-                    section_level = 6
-
-                text = (
-                    f"<h{section_level}>{_sanitize_text(item.text)}</h{section_level}>"
+                math_formula = _prepare_tag_content(
+                    item.text, do_escape_html=False, do_replace_newline=False
                 )
-                html_texts.append(text.strip())
+                if formula_to_mathml:
+                    # Building a math equation in MathML format
+                    # ref https://www.w3.org/TR/wai-aria-1.1/#math
+                    mathml_element = latex2mathml.converter.convert_to_element(
+                        math_formula, display="block"
+                    )
+                    annotation = SubElement(
+                        mathml_element, "annotation", dict(encoding="TeX")
+                    )
+                    annotation.text = math_formula
+                    mathml = unescape(tostring(mathml_element, encoding="unicode"))
+                    text = f"<div>{mathml}</div>"
 
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.CODE]:
-
-                text = f"<pre>{_sanitize_text(item.text, do_escape_html=False)}</pre>"
+                else:
+                    text = f"<pre>{math_formula}</pre>"
                 html_texts.append(text)
 
             elif isinstance(item, ListItem):
 
-                text = f"<li>{_sanitize_text(item.text)}</li>"
+                text = f"<li>{_prepare_tag_content(item.text)}</li>"
                 html_texts.append(text)
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.LIST_ITEM]:
 
-                text = f"<li>{_sanitize_text(item.text)}</li>"
+                text = f"<li>{_prepare_tag_content(item.text)}</li>"
                 html_texts.append(text)
 
-            elif isinstance(item, CodeItem) and item.label in labels:
-                text = (
-                    "<pre><code>"
-                    f"{_sanitize_text(item.text, do_escape_html=False)}"
-                    "</code></pre>"
+            elif isinstance(item, CodeItem):
+                code_text = _prepare_tag_content(
+                    item.text, do_escape_html=False, do_replace_newline=False
                 )
-                html_texts.append(text.strip())
+                text = f"<pre><code>{code_text}</code></pre>"
+                html_texts.append(text)
 
-            elif isinstance(item, TextItem) and item.label in labels:
+            elif isinstance(item, TextItem):
 
-                text = f"<p>{_sanitize_text(item.text)}</p>"
-                html_texts.append(text.strip())
+                text = f"<p>{_prepare_tag_content(item.text)}</p>"
+                html_texts.append(text)
             elif isinstance(item, TableItem):
 
                 text = item.export_to_html(doc=self, add_caption=True)
@@ -2513,8 +2525,7 @@ class DoclingDocument(BaseModel):
 
         lines = []
         lines.extend(head_lines)
-        for i, line in enumerate(html_texts):
-            lines.append(line.replace("\n", "<br>"))
+        lines.extend(html_texts)
 
         delim = "\n"
         html_text = (delim.join(lines)).strip()

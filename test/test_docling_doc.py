@@ -661,6 +661,20 @@ def test_version_doc():
     assert doc.version == CURRENT_VERSION
 
 
+def test_formula_mathml():
+    doc = DoclingDocument(name="Dummy")
+    equation = "\\frac{1}{x}"
+    doc.add_text(label=DocItemLabel.FORMULA, text=equation)
+
+    doc_html = doc.export_to_html(formula_to_mathml=True, html_head="")
+
+    gt_html = Path("test/data/docling_document/export/formula_mathml.html").read_text(
+        encoding="utf8"
+    )
+
+    assert doc_html == gt_html
+
+
 def test_docitem_get_image():
     # Prepare the document
     doc = DoclingDocument(name="Dummy")
