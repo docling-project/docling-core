@@ -1393,6 +1393,17 @@ class DoclingDocument(BaseModel):
     math annotation {
     display: none;
     }
+    .formula-not-decoded {
+    background: repeating-linear-gradient(
+    45deg, /* Angle of the stripes */
+    LightGray, /* First color */
+    LightGray 10px, /* Length of the first color */
+    White 10px, /* Second color */
+    White 20px /* Length of the second color */
+    );
+    margin: 0;
+    text-align: center;
+    }
     </style>
     </head>"""
 
@@ -2216,11 +2227,18 @@ class DoclingDocument(BaseModel):
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.FORMULA]:
                 in_list = False
-                _append_text(
-                    f"$${item.text}$$\n",
-                    do_escape_underscores=False,
-                    do_escape_html=False,
-                )
+                if item.text != "":
+                    _append_text(
+                        f"$${item.text}$$\n",
+                        do_escape_underscores=False,
+                        do_escape_html=False,
+                    )
+                elif item.orig != "":
+                    _append_text(
+                        "<!-- formula-not-decoded -->\n",
+                        do_escape_underscores=False,
+                        do_escape_html=False,
+                    )
 
             elif isinstance(item, TextItem) and item.label in labels:
                 in_list = False
@@ -2467,9 +2485,27 @@ class DoclingDocument(BaseModel):
                 math_formula = _prepare_tag_content(
                     item.text, do_escape_html=False, do_replace_newline=False
                 )
-                if formula_to_mathml:
-                    # Building a math equation in MathML format
-                    # ref https://www.w3.org/TR/wai-aria-1.1/#math
+                text = ""
+
+                # If the formula is not processed correcty, use its image
+                if (
+                    item.text == ""
+                    and item.orig != ""
+                    and image_mode == ImageRefMode.EMBEDDED
+                    and len(item.prov) > 0
+                ):
+                    item_image = item.get_image(doc=self)
+                    if item_image is not None:
+                        img_ref = ImageRef.from_pil(item_image, dpi=72)
+                        text = (
+                            "<figure>"
+                            f'<img src="{img_ref.uri}" alt="{item.orig}" />'
+                            "</figure>"
+                        )
+
+                # Building a math equation in MathML format
+                # ref https://www.w3.org/TR/wai-aria-1.1/#math
+                elif formula_to_mathml:
                     mathml_element = latex2mathml.converter.convert_to_element(
                         math_formula, display="block"
                     )
@@ -2480,9 +2516,15 @@ class DoclingDocument(BaseModel):
                     mathml = unescape(tostring(mathml_element, encoding="unicode"))
                     text = f"<div>{mathml}</div>"
 
-                else:
+                elif math_formula != "":
                     text = f"<pre>{math_formula}</pre>"
-                html_texts.append(text)
+
+                if text != "":
+                    html_texts.append(text)
+                else:
+                    html_texts.append(
+                        '<div class="formula-not-decoded">Formula not decoded</div>'
+                    )
 
             elif isinstance(item, ListItem):
 
