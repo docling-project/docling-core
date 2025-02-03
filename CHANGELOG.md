@@ -1,3 +1,14 @@
+## [v2.17.0](https://github.com/DS4SD/docling-core/releases/tag/v2.17.0) - 2025-02-03
+
+### Feature
+
+* **HTML:** Fallback showing formulas as images ([#146](https://github.com/DS4SD/docling-core/issues/146)) ([`23477f7`](https://github.com/DS4SD/docling-core/commit/23477f76741b3593734287776fdf5e0761558c2d))
+* **HTML:** Export formulas with mathml ([#144](https://github.com/DS4SD/docling-core/issues/144)) ([`ed36437`](https://github.com/DS4SD/docling-core/commit/ed36437346177b9249c98df3eb5ddeadef004c59))
+
+### Fix
+
+* Add html escape in md export and fix formula escapes ([#143](https://github.com/DS4SD/docling-core/issues/143)) ([`c6590e8`](https://github.com/DS4SD/docling-core/commit/c6590e83e28626e4a6b62fdbd270cb794bf10918))
+
 ## [v2.16.1](https://github.com/DS4SD/docling-core/releases/tag/v2.16.1) - 2025-01-30
 
 ### Fix
