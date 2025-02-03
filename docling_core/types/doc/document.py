@@ -5,6 +5,7 @@ import copy
 import hashlib
 import html
 import json
+import logging
 import mimetypes
 import os
 import re
@@ -20,6 +21,7 @@ from xml.etree.cElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
 import latex2mathml.converter
+import latex2mathml.exceptions
 import pandas as pd
 import yaml
 from PIL import Image as PILImage
@@ -43,6 +45,8 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel, GroupLabel
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import relative_path
+
+_logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
@@ -2487,6 +2491,16 @@ class DoclingDocument(BaseModel):
                 )
                 text = ""
 
+                def _image_fallback(item: TextItem):
+                    item_image = item.get_image(doc=self)
+                    if item_image is not None:
+                        img_ref = ImageRef.from_pil(item_image, dpi=72)
+                        return (
+                            "<figure>"
+                            f'<img src="{img_ref.uri}" alt="{item.orig}" />'
+                            "</figure>"
+                        )
+
                 # If the formula is not processed correcty, use its image
                 if (
                     item.text == ""
@@ -2494,27 +2508,30 @@ class DoclingDocument(BaseModel):
                     and image_mode == ImageRefMode.EMBEDDED
                     and len(item.prov) > 0
                 ):
-                    item_image = item.get_image(doc=self)
-                    if item_image is not None:
-                        img_ref = ImageRef.from_pil(item_image, dpi=72)
-                        text = (
-                            "<figure>"
-                            f'<img src="{img_ref.uri}" alt="{item.orig}" />'
-                            "</figure>"
-                        )
+                    text = _image_fallback(item)
 
                 # Building a math equation in MathML format
                 # ref https://www.w3.org/TR/wai-aria-1.1/#math
                 elif formula_to_mathml:
-                    mathml_element = latex2mathml.converter.convert_to_element(
-                        math_formula, display="block"
-                    )
-                    annotation = SubElement(
-                        mathml_element, "annotation", dict(encoding="TeX")
-                    )
-                    annotation.text = math_formula
-                    mathml = unescape(tostring(mathml_element, encoding="unicode"))
-                    text = f"<div>{mathml}</div>"
+                    try:
+                        mathml_element = latex2mathml.converter.convert_to_element(
+                            math_formula, display="block"
+                        )
+                        annotation = SubElement(
+                            mathml_element, "annotation", dict(encoding="TeX")
+                        )
+                        annotation.text = math_formula
+                        mathml = unescape(tostring(mathml_element, encoding="unicode"))
+                        text = f"<div>{mathml}</div>"
+                    except Exception as err:
+                        _logger.warning(
+                            "Malformed formula cannot be rendered. "
+                            f"Error {err.__class__.__name__}, formula={math_formula}"
+                        )
+                        if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0:
+                            text = _image_fallback(item)
+                        else:
+                            text = f"<pre>{math_formula}</pre>"
 
                 elif math_formula != "":
                     text = f"<pre>{math_formula}</pre>"
