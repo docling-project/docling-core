@@ -1,3 +1,9 @@
+## [v2.17.1](https://github.com/DS4SD/docling-core/releases/tag/v2.17.1) - 2025-02-03
+
+### Fix
+
+* Image fallback for malformed equations ([#149](https://github.com/DS4SD/docling-core/issues/149)) ([`eb9b4b3`](https://github.com/DS4SD/docling-core/commit/eb9b4b39a1a2f81baf72d3fa3bbc7cd8ed594c1c))
+
 ## [v2.17.0](https://github.com/DS4SD/docling-core/releases/tag/v2.17.0) - 2025-02-03
 
 ### Feature
