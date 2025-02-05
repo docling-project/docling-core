@@ -5,6 +5,7 @@
 
 """Utils for document types."""
 
+import unicodedata
 from pathlib import Path
 
 
@@ -46,3 +47,29 @@ def relative_path(src: Path, target: Path) -> Path:
 
     # Combine and return the result
     return Path(*up_segments, *down_segments)
+
+
+def get_html_tag_with_text_direction(html_tag: str, text: str) -> str:
+    """Form the HTML element with tag, text, and optional dir attribute."""
+    text_dir = get_text_direction(text)
+
+    if text_dir == "ltr":
+        return f"<{html_tag}>{text}</{html_tag}>"
+    else:
+        return f'<{html_tag} dir="{text_dir}">{text}</{html_tag}>'
+
+
+def get_text_direction(text: str) -> str:
+    """Determine the text direction of a given string as LTR or RTL script."""
+    if not text:
+        return "ltr"  # Default for empty input
+
+    rtl_scripts = {"R", "AL"}
+    rtl_chars = sum(unicodedata.bidirectional(c) in rtl_scripts for c in text)
+
+    return (
+        "rtl"
+        if unicodedata.bidirectional(text[0]) in rtl_scripts
+        or rtl_chars > len(text) / 2
+        else "ltr"
+    )

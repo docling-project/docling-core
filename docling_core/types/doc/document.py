@@ -44,7 +44,11 @@ from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel, GroupLabel
 from docling_core.types.doc.tokens import DocumentToken, TableToken
-from docling_core.types.doc.utils import relative_path
+from docling_core.types.doc.utils import (
+    get_html_tag_with_text_direction,
+    get_text_direction,
+    relative_path,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -866,7 +870,9 @@ class PictureItem(FloatingItem):
 
         caption_text = ""
         if len(text) > 0:
-            caption_text = f"<figcaption>{text}</figcaption>"
+            caption_text = get_html_tag_with_text_direction(
+                html_tag="figcaption", text=text
+            )
 
         default_response = f"<figure>{caption_text}</figure>"
 
@@ -1090,15 +1096,28 @@ class TableItem(FloatingItem):
                 if colspan > 1:
                     opening_tag += f' colspan="{colspan}"'
 
+                text_dir = get_text_direction(content)
+                if text_dir == "rtl":
+                    opening_tag += f' dir="{dir}"'
+
                 body += f"<{opening_tag}>{content}</{celltag}>"
             body += "</tr>"
 
+        # dir = get_text_direction(text)
+
         if len(text) > 0 and len(body) > 0:
-            body = f"<table><caption>{text}</caption><tbody>{body}</tbody></table>"
+            caption_text = get_html_tag_with_text_direction(
+                html_tag="caption", text=text
+            )
+            body = f"<table>{caption_text}<tbody>{body}</tbody></table>"
+
         elif len(text) == 0 and len(body) > 0:
             body = f"<table><tbody>{body}</tbody></table>"
         elif len(text) > 0 and len(body) == 0:
-            body = f"<table><caption>{text}</caption></table>"
+            caption_text = get_html_tag_with_text_direction(
+                html_tag="caption", text=text
+            )
+            body = f"<table>{caption_text}</table>"
         else:
             body = "<table></table>"
 
@@ -2470,17 +2489,17 @@ class DoclingDocument(BaseModel):
                 continue
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
+                text_inner = _prepare_tag_content(item.text)
+                text = get_html_tag_with_text_direction(html_tag="h1", text=text_inner)
 
-                text = f"<h1>{_prepare_tag_content(item.text)}</h1>"
                 html_texts.append(text)
 
             elif isinstance(item, SectionHeaderItem):
 
                 section_level: int = min(item.level + 1, 6)
 
-                text = (
-                    f"<h{(section_level)}>"
-                    f"{_prepare_tag_content(item.text)}</h{(section_level)}>"
+                text = get_html_tag_with_text_direction(
+                    html_tag=f"h{section_level}", text=_prepare_tag_content(item.text)
                 )
                 html_texts.append(text)
 
@@ -2544,13 +2563,15 @@ class DoclingDocument(BaseModel):
                     )
 
             elif isinstance(item, ListItem):
-
-                text = f"<li>{_prepare_tag_content(item.text)}</li>"
+                text = get_html_tag_with_text_direction(
+                    html_tag="li", text=_prepare_tag_content(item.text)
+                )
                 html_texts.append(text)
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.LIST_ITEM]:
-
-                text = f"<li>{_prepare_tag_content(item.text)}</li>"
+                text = get_html_tag_with_text_direction(
+                    html_tag="li", text=_prepare_tag_content(item.text)
+                )
                 html_texts.append(text)
 
             elif isinstance(item, CodeItem):
@@ -2562,8 +2583,11 @@ class DoclingDocument(BaseModel):
 
             elif isinstance(item, TextItem):
 
-                text = f"<p>{_prepare_tag_content(item.text)}</p>"
+                text = get_html_tag_with_text_direction(
+                    html_tag="p", text=_prepare_tag_content(item.text)
+                )
                 html_texts.append(text)
+
             elif isinstance(item, TableItem):
 
                 text = item.export_to_html(doc=self, add_caption=True)
