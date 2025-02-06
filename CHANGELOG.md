@@ -1,3 +1,9 @@
+## [v2.17.2](https://github.com/DS4SD/docling-core/releases/tag/v2.17.2) - 2025-02-06
+
+### Fix
+
+* Define LTR/RTL text direction in HTML export ([#152](https://github.com/DS4SD/docling-core/issues/152)) ([`3cf31cb`](https://github.com/DS4SD/docling-core/commit/3cf31cbe384e3f77a375aa057ef61d156d990b23))
+
 ## [v2.17.1](https://github.com/DS4SD/docling-core/releases/tag/v2.17.1) - 2025-02-03
 
 ### Fix
