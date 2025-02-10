@@ -1,3 +1,9 @@
+## [v2.18.0](https://github.com/DS4SD/docling-core/releases/tag/v2.18.0) - 2025-02-10
+
+### Feature
+
+* Add ContentLayer attribute to designate items to body or furniture ([#148](https://github.com/DS4SD/docling-core/issues/148)) ([`786f0c6`](https://github.com/DS4SD/docling-core/commit/786f0c68336a7b9cced5fb0cb66427b050955e32))
+
 ## [v2.17.2](https://github.com/DS4SD/docling-core/releases/tag/v2.17.2) - 2025-02-06
 
 ### Fix
