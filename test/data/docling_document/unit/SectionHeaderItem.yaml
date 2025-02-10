@@ -6,3 +6,4 @@ parent: null
 prov: []
 self_ref: '#'
 text: whatever
+content_layer: body

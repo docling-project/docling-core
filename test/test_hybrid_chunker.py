@@ -11,11 +11,24 @@ from docling_core.transforms.chunker.hierarchical_chunker import DocChunk
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.types.doc import DoclingDocument as DLDocument
 
+from .test_data_gen_flag import GEN_TEST_DATA
+
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
 MAX_TOKENS = 64
 INPUT_FILE = "test/data/chunker/2_inp_dl_doc.json"
 
 TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
+
+
+def _process(act_data, exp_path_str):
+    if GEN_TEST_DATA:
+        with open(exp_path_str, mode="w", encoding="utf-8") as f:
+            json.dump(act_data, fp=f, indent=4)
+            f.write("\n")
+    else:
+        with open(exp_path_str, encoding="utf-8") as f:
+            exp_data = json.load(fp=f)
+        assert exp_data == act_data
 
 
 def test_chunk_merge_peers():
@@ -36,9 +49,10 @@ def test_chunk_merge_peers():
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
-    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
-        exp_data = json.load(fp=f)
-    assert exp_data == act_data
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
 
 
 def test_chunk_no_merge_peers():
@@ -58,9 +72,10 @@ def test_chunk_no_merge_peers():
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
-    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
-        exp_data = json.load(fp=f)
-    assert exp_data == act_data
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
 
 
 def test_serialize():
@@ -88,9 +103,10 @@ def test_serialize():
             for chunk in chunks
         ]
     )
-    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
-        exp_data = json.load(fp=f)
-    assert exp_data == act_data
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
 
 
 def test_chunk_with_model_name():
@@ -111,9 +127,10 @@ def test_chunk_with_model_name():
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
-    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
-        exp_data = json.load(fp=f)
-    assert exp_data == act_data
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
 
 
 def test_chunk_default():
@@ -130,9 +147,10 @@ def test_chunk_default():
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
-    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
-        exp_data = json.load(fp=f)
-    assert exp_data == act_data
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
 
 
 def test_serialize_altered_delim():
@@ -158,6 +176,7 @@ def test_serialize_altered_delim():
             for chunk in chunks
         ]
     )
-    with open(EXPECTED_OUT_FILE, encoding="utf-8") as f:
-        exp_data = json.load(fp=f)
-    assert exp_data == act_data
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )

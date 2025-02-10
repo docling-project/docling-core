@@ -1,10 +1,11 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Untitled 1",
   "furniture": {
     "self_ref": "#/furniture",
     "children": [],
+    "content_layer": "furniture",
     "name": "_root_",
     "label": "unspecified"
   },
@@ -36,6 +37,7 @@
         "$ref": "#/pictures/1"
       }
     ],
+    "content_layer": "body",
     "name": "_root_",
     "label": "unspecified"
   },
@@ -56,6 +58,7 @@
           "$ref": "#/groups/1"
         }
       ],
+      "content_layer": "body",
       "name": "Introduction",
       "label": "chapter"
     },
@@ -81,6 +84,7 @@
           "$ref": "#/texts/11"
         }
       ],
+      "content_layer": "body",
       "name": "group",
       "label": "list"
     },
@@ -100,6 +104,7 @@
           "$ref": "#/texts/10"
         }
       ],
+      "content_layer": "body",
       "name": "group",
       "label": "ordered_list"
     }
@@ -118,6 +123,7 @@
           "$ref": "#/texts/2"
         }
       ],
+      "content_layer": "body",
       "label": "title",
       "prov": [],
       "orig": "Title of the Document",
@@ -129,6 +135,7 @@
         "$ref": "#/texts/0"
       },
       "children": [],
+      "content_layer": "body",
       "label": "text",
       "prov": [],
       "orig": "Author 1\nAffiliation 1",
@@ -140,6 +147,7 @@
         "$ref": "#/texts/0"
       },
       "children": [],
+      "content_layer": "body",
       "label": "text",
       "prov": [],
       "orig": "Author 2\nAffiliation 2",
@@ -151,6 +159,7 @@
         "$ref": "#/groups/0"
       },
       "children": [],
+      "content_layer": "body",
       "label": "section_header",
       "prov": [],
       "orig": "1. Introduction",
@@ -163,6 +172,7 @@
         "$ref": "#/groups/0"
       },
       "children": [],
+      "content_layer": "body",
       "label": "text",
       "prov": [],
       "orig": "This paper introduces the biggest invention ever made. ...",
@@ -174,6 +184,7 @@
         "$ref": "#/groups/1"
       },
       "children": [],
+      "content_layer": "body",
       "label": "list_item",
       "prov": [],
       "orig": "list item 1",
@@ -187,6 +198,7 @@
         "$ref": "#/groups/1"
       },
       "children": [],
+      "content_layer": "body",
       "label": "list_item",
       "prov": [],
       "orig": "list item 2",
@@ -200,6 +212,7 @@
         "$ref": "#/groups/1"
       },
       "children": [],
+      "content_layer": "body",
       "label": "list_item",
       "prov": [],
       "orig": "list item 3",
@@ -213,6 +226,7 @@
         "$ref": "#/groups/2"
       },
       "children": [],
+      "content_layer": "body",
       "label": "list_item",
       "prov": [],
       "orig": "list item 3.a",
@@ -226,6 +240,7 @@
         "$ref": "#/groups/2"
       },
       "children": [],
+      "content_layer": "body",
       "label": "list_item",
       "prov": [],
       "orig": "list item 3.b",
@@ -239,6 +254,7 @@
         "$ref": "#/groups/2"
       },
       "children": [],
+      "content_layer": "body",
       "label": "list_item",
       "prov": [],
       "orig": "list item 3.c",
@@ -252,6 +268,7 @@
         "$ref": "#/groups/1"
       },
       "children": [],
+      "content_layer": "body",
       "label": "list_item",
       "prov": [],
       "orig": "list item 4",
@@ -265,6 +282,7 @@
         "$ref": "#/body"
       },
       "children": [],
+      "content_layer": "body",
       "label": "caption",
       "prov": [],
       "orig": "This is the caption of table 1.",
@@ -276,6 +294,7 @@
         "$ref": "#/body"
       },
       "children": [],
+      "content_layer": "body",
       "label": "caption",
       "prov": [],
       "orig": "This is the caption of figure 1.",
@@ -287,6 +306,7 @@
         "$ref": "#/body"
       },
       "children": [],
+      "content_layer": "body",
       "label": "caption",
       "prov": [],
       "orig": "This is the caption of figure 2.",
@@ -300,6 +320,7 @@
         "$ref": "#/body"
       },
       "children": [],
+      "content_layer": "body",
       "label": "picture",
       "prov": [],
       "captions": [
@@ -317,6 +338,7 @@
         "$ref": "#/body"
       },
       "children": [],
+      "content_layer": "body",
       "label": "picture",
       "prov": [],
       "captions": [
@@ -345,6 +367,7 @@
         "$ref": "#/body"
       },
       "children": [],
+      "content_layer": "body",
       "label": "table",
       "prov": [],
       "captions": [

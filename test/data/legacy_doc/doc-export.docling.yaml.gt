@@ -124,11 +124,13 @@ body:
   - $ref: '#/texts/121'
   - $ref: '#/texts/122'
   - $ref: '#/texts/123'
+  content_layer: body
   label: unspecified
   name: _root_
   self_ref: '#/body'
 furniture:
   children: []
+  content_layer: furniture
   label: unspecified
   name: _root_
   self_ref: '#/furniture'
@@ -136,6 +138,7 @@ groups:
 - children:
   - $ref: '#/texts/46'
   - $ref: '#/texts/47'
+  content_layer: body
   label: list
   name: list
   parent:
@@ -143,6 +146,7 @@ groups:
   self_ref: '#/groups/0'
 - children:
   - $ref: '#/texts/58'
+  content_layer: body
   label: list
   name: list
   parent:
@@ -150,6 +154,7 @@ groups:
   self_ref: '#/groups/1'
 - children:
   - $ref: '#/texts/98'
+  content_layer: body
   label: list
   name: list
   parent:
@@ -157,6 +162,7 @@ groups:
   self_ref: '#/groups/2'
 - children:
   - $ref: '#/texts/120'
+  content_layer: body
   label: list
   name: list
   parent:
@@ -243,6 +249,7 @@ pictures:
 - annotations: []
   captions: []
   children: []
+  content_layer: body
   footnotes: []
   label: picture
   parent:
@@ -265,6 +272,7 @@ pictures:
   - $ref: '#/texts/30'
   children:
   - $ref: '#/texts/30'
+  content_layer: body
   footnotes: []
   label: picture
   parent:
@@ -287,6 +295,7 @@ pictures:
   - $ref: '#/texts/51'
   children:
   - $ref: '#/texts/51'
+  content_layer: body
   footnotes: []
   label: picture
   parent:
@@ -309,6 +318,7 @@ pictures:
   - $ref: '#/texts/69'
   children:
   - $ref: '#/texts/69'
+  content_layer: body
   footnotes: []
   label: picture
   parent:
@@ -331,6 +341,7 @@ pictures:
   - $ref: '#/texts/85'
   children:
   - $ref: '#/texts/85'
+  content_layer: body
   footnotes: []
   label: picture
   parent:
@@ -353,6 +364,7 @@ pictures:
   - $ref: '#/texts/90'
   children:
   - $ref: '#/texts/90'
+  content_layer: body
   footnotes: []
   label: picture
   parent:
@@ -376,6 +388,7 @@ tables:
   - $ref: '#/texts/76'
   children:
   - $ref: '#/texts/76'
+  content_layer: body
   data:
     grid:
     - - bbox:
@@ -1882,6 +1895,7 @@ tables:
   - $ref: '#/texts/82'
   children:
   - $ref: '#/texts/82'
+  content_layer: body
   data:
     grid:
     - - bbox:
@@ -3582,6 +3596,7 @@ tables:
   self_ref: '#/tables/1'
 texts:
 - children: []
+  content_layer: body
   label: page_header
   orig: arXiv:2305.03393v1 [cs.CV] 5 May 2023
   parent:
@@ -3600,6 +3615,7 @@ texts:
   self_ref: '#/texts/0'
   text: arXiv:2305.03393v1 [cs.CV] 5 May 2023
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: Optimized Table Tokenization for Table Structure Recognition
@@ -3619,6 +3635,7 @@ texts:
   self_ref: '#/texts/1'
   text: Optimized Table Tokenization for Table Structure Recognition
 - children: []
+  content_layer: body
   label: text
   orig: Maksym Lysak [0000-0002-3723-$^{6960]}$, Ahmed Nassar[0000-0002-9468-$^{0822]}$,
     Nikolaos Livathinos [0000-0001-8513-$^{3491]}$, Christoph Auer[0000-0001-5761-$^{0422]}$,
@@ -3641,6 +3658,7 @@ texts:
     Nikolaos Livathinos [0000-0001-8513-$^{3491]}$, Christoph Auer[0000-0001-5761-$^{0422]}$,
     and Peter Staar [0000-0002-8088-0823]
 - children: []
+  content_layer: body
   label: text
   orig: IBM Research {mly,ahn,nli,cau,taa}@zurich.ibm.com
   parent:
@@ -3659,6 +3677,7 @@ texts:
   self_ref: '#/texts/3'
   text: IBM Research {mly,ahn,nli,cau,taa}@zurich.ibm.com
 - children: []
+  content_layer: body
   label: text
   orig: Abstract. Extracting tables from documents is a crucial task in any document
     conversion pipeline. Recently, transformer-based models have demonstrated that
@@ -3705,6 +3724,7 @@ texts:
     in turn eliminates most post-processing needs. Popular table structure data-sets
     will be published in OTSL format to the community.
 - children: []
+  content_layer: body
   label: text
   orig: "Keywords: Table Structure Recognition \xB7 Data Representation \xB7 Transformers\
     \ \xB7 Optimization."
@@ -3725,6 +3745,7 @@ texts:
   text: "Keywords: Table Structure Recognition \xB7 Data Representation \xB7 Transformers\
     \ \xB7 Optimization."
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 1 Introduction
@@ -3744,6 +3765,7 @@ texts:
   self_ref: '#/texts/6'
   text: 1 Introduction
 - children: []
+  content_layer: body
   label: text
   orig: Tables are ubiquitous in documents such as scientific papers, patents, reports,
     manuals, specification sheets or marketing material. They often encode highly
@@ -3772,6 +3794,7 @@ texts:
     difficult to recover their correct structure with simple analytical methods. Therefore,
     accurate table extraction is achieved these days with machine-learning based methods.
 - children: []
+  content_layer: body
   label: text
   orig: In modern document understanding systems [1,15], table extraction is typically
     a two-step process. Firstly, every table on a page is located with a bounding
@@ -3794,6 +3817,7 @@ texts:
     a two-step process. Firstly, every table on a page is located with a bounding
     box, and secondly, their logical row and column structure is recognized. As of
 - children: []
+  content_layer: body
   label: page_header
   orig: '2'
   parent:
@@ -3812,6 +3836,7 @@ texts:
   self_ref: '#/texts/9'
   text: '2'
 - children: []
+  content_layer: body
   label: page_header
   orig: M. Lysak, et al.
   parent:
@@ -3830,6 +3855,7 @@ texts:
   self_ref: '#/texts/10'
   text: M. Lysak, et al.
 - children: []
+  content_layer: body
   label: text
   orig: 'Fig. 1. Comparison between HTML and OTSL table structure representation:
     (A) table-example with complex row and column headers, including a 2D empty span,
@@ -3862,6 +3888,7 @@ texts:
     structure (variable token sequence length per row in HTML versus a fixed length
     of rows in OTSL).'
 - children: []
+  content_layer: body
   label: text
   orig: today, table detection in documents is a well understood problem, and the
     latest state-of-the-art (SOTA) object detection methods provide an accuracy comparable
@@ -3888,6 +3915,7 @@ texts:
     recognition (TSR) is a lot more challenging and remains a very active area of
     research, in which many novel machine learning algorithms are being explored [3,4,5,9,11,12,13,14,17,18,21,22].
 - children: []
+  content_layer: body
   label: text
   orig: Recently emerging SOTA methods for table structure recognition employ transformer-based
     models, in which an image of the table is provided to the network in order to
@@ -3928,6 +3956,7 @@ texts:
     Central), popularized primarily the use of HTML as ground-truth representation
     format for TSR.
 - children: []
+  content_layer: body
   label: page_header
   orig: Optimized Table Tokenization for Table Structure Recognition
   parent:
@@ -3946,6 +3975,7 @@ texts:
   self_ref: '#/texts/14'
   text: Optimized Table Tokenization for Table Structure Recognition
 - children: []
+  content_layer: body
   label: page_header
   orig: '3'
   parent:
@@ -3964,6 +3994,7 @@ texts:
   self_ref: '#/texts/15'
   text: '3'
 - children: []
+  content_layer: body
   label: text
   orig: While the majority of research in TSR is currently focused on the development
     and application of novel neural model architectures, the table structure representation
@@ -3996,6 +4027,7 @@ texts:
     state-of-the-art Im2Seq model is TableFormer [9], we select this model to perform
     our experiments.
 - children: []
+  content_layer: body
   label: text
   orig: The main contribution of this paper is the introduction of a new optimised
     table structure language (OTSL), specifically designed to describe table-structure
@@ -4030,6 +4062,7 @@ texts:
     syntax validation during inference and ensures a syntactically correct table-structure.
     These OTSL features are illustrated in Figure 1, in comparison to HTML.
 - children: []
+  content_layer: body
   label: text
   orig: The paper is structured as follows. In section 2, we give an overview of the
     latest developments in table-structure reconstruction. In section 3 we review
@@ -4062,6 +4095,7 @@ texts:
     on HTML and ultimately demonstrate the advantages of using OTSL. Finally, in section
     6 we conclude our work and outline next potential steps.
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 2 Related Work
@@ -4081,6 +4115,7 @@ texts:
   self_ref: '#/texts/19'
   text: 2 Related Work
 - children: []
+  content_layer: body
   label: text
   orig: 'Approaches to formalize the logical structure and layout of tables in electronic
     documents date back more than two decades [16]. In the recent past, a wide variety
@@ -4127,6 +4162,7 @@ texts:
     the relationship between the nodes, e.g. if they belong to the same column, row,
     or table cell.'
 - children: []
+  content_layer: body
   label: page_header
   orig: 4 M. Lysak, et al.
   parent:
@@ -4145,6 +4181,7 @@ texts:
   self_ref: '#/texts/21'
   text: 4 M. Lysak, et al.
 - children: []
+  content_layer: body
   label: text
   orig: Other work [20] aims at predicting a grid for each table and deciding which
     cells must be merged using an attention network. Im2Seq methods cast the problem
@@ -4185,6 +4222,7 @@ texts:
     sequence, some post-processing needs to be performed to ensure a syntactically
     valid (let alone correct) sequence.
 - children: []
+  content_layer: body
   label: text
   orig: Within the Im2Seq method, we find several popular models, namely the encoder-dual-decoder
     model (EDD) [22], TableFormer [9], Tabsplitter[2] and Ye et. al. [19]. EDD uses
@@ -4235,6 +4273,7 @@ texts:
     using bidirectional LSTMs to predict LaTeX code. Kayal [5] introduces Gated ResNet
     transformers to predict LaTeX code, and a separate OCR module to extract content.
 - children: []
+  content_layer: body
   label: text
   orig: Im2Seq approaches have shown to be well-suited for the TSR task and allow
     a full end-to-end network design that can output the final table structure without
@@ -4267,6 +4306,7 @@ texts:
     this is a necessary step before further improving neural network architectures
     for this task.
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 3 Problem Statement
@@ -4286,6 +4326,7 @@ texts:
   self_ref: '#/texts/25'
   text: 3 Problem Statement
 - children: []
+  content_layer: body
   label: text
   orig: All known Im2Seq based models for TSR fundamentally work in similar ways.
     Given an image of a table, the Im2Seq model predicts the structure of the table
@@ -4308,6 +4349,7 @@ texts:
     Given an image of a table, the Im2Seq model predicts the structure of the table
     by generating a sequence of tokens. These tokens originate from a finite vocab-
 - children: []
+  content_layer: body
   label: page_header
   orig: Optimized Table Tokenization for Table Structure Recognition
   parent:
@@ -4326,6 +4368,7 @@ texts:
   self_ref: '#/texts/27'
   text: Optimized Table Tokenization for Table Structure Recognition
 - children: []
+  content_layer: body
   label: page_header
   orig: '5'
   parent:
@@ -4344,6 +4387,7 @@ texts:
   self_ref: '#/texts/28'
   text: '5'
 - children: []
+  content_layer: body
   label: text
   orig: ulary and can be interpreted as a table structure. For example, with the HTML
     tokens <table>, </table>, <tr>, </tr>, <td> and </td>, one can construct simple
@@ -4372,6 +4416,7 @@ texts:
     documents [21,22], due to a variety of spanning cells definitions in the HTML
     token vocabulary.
 - children: []
+  content_layer: body
   label: caption
   orig: Fig. 2. Frequency of tokens in HTML and OTSL as they appear in PubTabNet.
   parent:
@@ -4390,6 +4435,7 @@ texts:
   self_ref: '#/texts/30'
   text: Fig. 2. Frequency of tokens in HTML and OTSL as they appear in PubTabNet.
 - children: []
+  content_layer: body
   label: text
   orig: Obviously, HTML and other general-purpose markup languages were not designed
     for Im2Seq models. As such, they have some serious drawbacks. First, the token
@@ -4432,6 +4478,7 @@ texts:
     of tokens in combination with variable token row-length makes it challenging for
     models to learn the HTML structure.
 - children: []
+  content_layer: body
   label: text
   orig: Additionally, it would be desirable if the representation would easily allow
     an early detection of invalid sequences on-the-go, before the prediction of the
@@ -4456,6 +4503,7 @@ texts:
     entire table structure is completed. HTML is not well-suited for this purpose
     as the verification of incomplete sequences is non-trivial or even impossible.
 - children: []
+  content_layer: body
   label: text
   orig: In a valid HTML table, the token sequence must describe a 2D grid of table
     cells, serialised in row-major ordering, where each row and each column have the
@@ -4486,6 +4534,7 @@ texts:
     especially for large tables with many row-and column-spans, it is complex to verify
     the consistency of predicted structures during sequence
 - children: []
+  content_layer: body
   label: page_header
   orig: '6'
   parent:
@@ -4504,6 +4553,7 @@ texts:
   self_ref: '#/texts/34'
   text: '6'
 - children: []
+  content_layer: body
   label: page_header
   orig: M. Lysak, et al.
   parent:
@@ -4522,6 +4572,7 @@ texts:
   self_ref: '#/texts/35'
   text: M. Lysak, et al.
 - children: []
+  content_layer: body
   label: text
   orig: generation. Implicitly, this also means that Im2Seq models need to learn these
     complex syntax rules, simply to deliver valid output.
@@ -4542,6 +4593,7 @@ texts:
   text: generation. Implicitly, this also means that Im2Seq models need to learn these
     complex syntax rules, simply to deliver valid output.
 - children: []
+  content_layer: body
   label: text
   orig: In practice, we observe two major issues with prediction quality when training
     Im2Seq models on HTML table structure generation from images. On the one hand,
@@ -4582,6 +4634,7 @@ texts:
     model performance, since they reflect not only in the task of pure structure recognition
     but also in the equally crucial recognition or matching of table cell content.
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 4 Optimised Table Structure Language
@@ -4601,6 +4654,7 @@ texts:
   self_ref: '#/texts/38'
   text: 4 Optimised Table Structure Language
 - children: []
+  content_layer: body
   label: text
   orig: To mitigate the issues with HTML in Im2Seq-based TSR models laid out before,
     we propose here our Optimised Table Structure Language (OTSL). OTSL is designed
@@ -4631,6 +4685,7 @@ texts:
     demonstrate how the compact structure representation and minimized sequence length
     improves prediction accuracy and inference time in the TableFormer architecture.
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 4.1 Language Definition
@@ -4650,6 +4705,7 @@ texts:
   self_ref: '#/texts/40'
   text: 4.1 Language Definition
 - children: []
+  content_layer: body
   label: text
   orig: In Figure 3, we illustrate how the OTSL is defined. In essence, the OTSL defines
     only 5 tokens that directly describe a tabular structure based on an atomic 2D
@@ -4672,6 +4728,7 @@ texts:
     only 5 tokens that directly describe a tabular structure based on an atomic 2D
     grid.
 - children: []
+  content_layer: body
   label: text
   orig: 'The OTSL vocabulary is comprised of the following tokens:'
   parent:
@@ -4690,6 +4747,7 @@ texts:
   self_ref: '#/texts/42'
   text: 'The OTSL vocabulary is comprised of the following tokens:'
 - children: []
+  content_layer: body
   label: text
   orig: -'C ' cell a new table cell that either has or does not have cell content
   parent:
@@ -4708,6 +4766,7 @@ texts:
   self_ref: '#/texts/43'
   text: -'C ' cell a new table cell that either has or does not have cell content
 - children: []
+  content_layer: body
   label: text
   orig: -'L ' cell left-looking cell, merging with the left neighbor cell to create
     a span
@@ -4728,6 +4787,7 @@ texts:
   text: -'L ' cell left-looking cell, merging with the left neighbor cell to create
     a span
 - children: []
+  content_layer: body
   label: text
   orig: -'U ' cell up-looking cell, merging with the upper neighbor cell to create
     a span
@@ -4748,6 +4808,7 @@ texts:
   text: -'U ' cell up-looking cell, merging with the upper neighbor cell to create
     a span
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -4768,6 +4829,7 @@ texts:
   self_ref: '#/texts/46'
   text: -'X ' cell cross cell, to merge with both left and upper neighbor cells
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -4788,6 +4850,7 @@ texts:
   self_ref: '#/texts/47'
   text: -'NL ' new-line, switch to the next row.
 - children: []
+  content_layer: body
   label: text
   orig: A notable attribute of OTSL is that it has the capability of achieving lossless
     conversion to HTML.
@@ -4808,6 +4871,7 @@ texts:
   text: A notable attribute of OTSL is that it has the capability of achieving lossless
     conversion to HTML.
 - children: []
+  content_layer: body
   label: page_header
   orig: Optimized Table Tokenization for Table Structure Recognition
   parent:
@@ -4826,6 +4890,7 @@ texts:
   self_ref: '#/texts/49'
   text: Optimized Table Tokenization for Table Structure Recognition
 - children: []
+  content_layer: body
   label: page_header
   orig: '7'
   parent:
@@ -4844,6 +4909,7 @@ texts:
   self_ref: '#/texts/50'
   text: '7'
 - children: []
+  content_layer: body
   label: caption
   orig: 'Fig. 3. OTSL description of table structure: A-table example; B-graphical
     representation of table structure; C-mapping structure on a grid; D-OTSL structure
@@ -4866,6 +4932,7 @@ texts:
     representation of table structure; C-mapping structure on a grid; D-OTSL structure
     encoding; E-explanation on cell encoding'
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 4.2 Language Syntax
@@ -4885,6 +4952,7 @@ texts:
   self_ref: '#/texts/52'
   text: 4.2 Language Syntax
 - children: []
+  content_layer: body
   label: text
   orig: 'The OTSL representation follows these syntax rules:'
   parent:
@@ -4903,6 +4971,7 @@ texts:
   self_ref: '#/texts/53'
   text: 'The OTSL representation follows these syntax rules:'
 - children: []
+  content_layer: body
   label: text
   orig: '1. Left-looking cell rule : The left neighbour of an ''L '' cell must be
     either another ''L '' cell or a ''C '' cell.'
@@ -4923,6 +4992,7 @@ texts:
   text: '1. Left-looking cell rule : The left neighbour of an ''L '' cell must be
     either another ''L '' cell or a ''C '' cell.'
 - children: []
+  content_layer: body
   label: text
   orig: '2. Up-looking cell rule : The upper neighbour of a ''U '' cell must be either
     another ''U '' cell or a ''C '' cell.'
@@ -4943,6 +5013,7 @@ texts:
   text: '2. Up-looking cell rule : The upper neighbour of a ''U '' cell must be either
     another ''U '' cell or a ''C '' cell.'
 - children: []
+  content_layer: body
   label: text
   orig: '3. Cross cell rule : The left neighbour of an ''X '' cell must be either
     another ''X '' cell or a ''U '' cell, and the upper neighbour of an ''X '' cell
@@ -4965,6 +5036,7 @@ texts:
     another ''X '' cell or a ''U '' cell, and the upper neighbour of an ''X '' cell
     must be either another ''X '' cell or an ''L '' cell.'
 - children: []
+  content_layer: body
   label: text
   orig: '4. First row rule : Only ''L '' cells and ''C '' cells are allowed in the
     first row.'
@@ -4985,6 +5057,7 @@ texts:
   text: '4. First row rule : Only ''L '' cells and ''C '' cells are allowed in the
     first row.'
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -5007,6 +5080,7 @@ texts:
   text: '5. First column rule : Only ''U '' cells and ''C '' cells are allowed in
     the first column.'
 - children: []
+  content_layer: body
   label: text
   orig: '6. Rectangular rule : The table representation is always rectangular-all
     rows must have an equal number of tokens, terminated with ''NL '' token.'
@@ -5027,6 +5101,7 @@ texts:
   text: '6. Rectangular rule : The table representation is always rectangular-all
     rows must have an equal number of tokens, terminated with ''NL '' token.'
 - children: []
+  content_layer: body
   label: text
   orig: 'The application of these rules gives OTSL a set of unique properties. First
     of all, the OTSL enforces a strictly rectangular structure representation, where
@@ -5065,6 +5140,7 @@ texts:
     generation by looking at the previously predicted sequence. As such, OTSL can
     guarantee that every predicted sequence is syntactically valid.'
 - children: []
+  content_layer: body
   label: text
   orig: These characteristics can be easily learned by sequence generator networks,
     as we demonstrate further below. We find strong indications that this pattern
@@ -5085,6 +5161,7 @@ texts:
   text: These characteristics can be easily learned by sequence generator networks,
     as we demonstrate further below. We find strong indications that this pattern
 - children: []
+  content_layer: body
   label: page_header
   orig: '8'
   parent:
@@ -5103,6 +5180,7 @@ texts:
   self_ref: '#/texts/62'
   text: '8'
 - children: []
+  content_layer: body
   label: page_header
   orig: M. Lysak, et al.
   parent:
@@ -5121,6 +5199,7 @@ texts:
   self_ref: '#/texts/63'
   text: M. Lysak, et al.
 - children: []
+  content_layer: body
   label: text
   orig: reduces significantly the column drift seen in the HTML based models (see
     Figure 5).
@@ -5141,6 +5220,7 @@ texts:
   text: reduces significantly the column drift seen in the HTML based models (see
     Figure 5).
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 4.3 Error-detection and-mitigation
@@ -5160,6 +5240,7 @@ texts:
   self_ref: '#/texts/65'
   text: 4.3 Error-detection and-mitigation
 - children: []
+  content_layer: body
   label: text
   orig: The design of OTSL allows to validate a table structure easily on an unfinished
     sequence. The detection of an invalid sequence token is a clear indication of
@@ -5196,6 +5277,7 @@ texts:
     prediction confidence invalidates the predicted sequence, and replace it by the
     token with the next highest confidence until OTSL rules are satisfied.
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 5 Experiments
@@ -5215,6 +5297,7 @@ texts:
   self_ref: '#/texts/67'
   text: 5 Experiments
 - children: []
+  content_layer: body
   label: text
   orig: 'To evaluate the impact of OTSL on prediction accuracy and inference times,
     we conducted a series of experiments based on the TableFormer model (Figure 4)
@@ -5249,6 +5332,7 @@ texts:
     truth (GT) from all data sets has been converted into OTSL format for this purpose,
     and will be made publicly available.'
 - children: []
+  content_layer: body
   label: caption
   orig: Fig. 4. Architecture sketch of the TableFormer model, which is a representative
     for the Im2Seq approach.
@@ -5269,6 +5353,7 @@ texts:
   text: Fig. 4. Architecture sketch of the TableFormer model, which is a representative
     for the Im2Seq approach.
 - children: []
+  content_layer: body
   label: text
   orig: We rely on standard metrics such as Tree Edit Distance score (TEDs) for table
     structure prediction, and Mean Average Precision (mAP) with 0.75 Intersection
@@ -5293,6 +5378,7 @@ texts:
     Over Union (IOU) threshold for the bounding-box predictions of table cells. The
     predicted OTSL structures were converted back to HTML format in
 - children: []
+  content_layer: body
   label: page_header
   orig: Optimized Table Tokenization for Table Structure Recognition
   parent:
@@ -5311,6 +5397,7 @@ texts:
   self_ref: '#/texts/71'
   text: Optimized Table Tokenization for Table Structure Recognition
 - children: []
+  content_layer: body
   label: page_header
   orig: '9'
   parent:
@@ -5329,6 +5416,7 @@ texts:
   self_ref: '#/texts/72'
   text: '9'
 - children: []
+  content_layer: body
   label: text
   orig: order to compute the TED score. Inference timing results for all experiments
     were obtained from the same machine on a single core with AMD EPYC 7763 CPU @2.45
@@ -5351,6 +5439,7 @@ texts:
     were obtained from the same machine on a single core with AMD EPYC 7763 CPU @2.45
     GHz.
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 5.1 Hyper Parameter Optimization
@@ -5370,6 +5459,7 @@ texts:
   self_ref: '#/texts/74'
   text: 5.1 Hyper Parameter Optimization
 - children: []
+  content_layer: body
   label: text
   orig: We have chosen the PubTabNet data set to perform HPO, since it includes a
     highly diverse set of tables. Also we report TED scores separately for simple
@@ -5398,6 +5488,7 @@ texts:
     better mAP scores in comparison to HTML. However OTSL yields a 2x speed up in
     the inference runtime over HTML.
 - children: []
+  content_layer: body
   label: caption
   orig: 'Table 1. HPO performed in OTSL and HTML representation on the same transformer-based
     TableFormer [9] architecture, trained only on PubTabNet [22]. Effects of reducing
@@ -5424,6 +5515,7 @@ texts:
     trained on OTSL perform better, especially in recognizing complex table structures,
     and maintain a much higher mAP score than the HTML counterpart.'
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 5.2 Quantitative Results
@@ -5443,6 +5535,7 @@ texts:
   self_ref: '#/texts/77'
   text: 5.2 Quantitative Results
 - children: []
+  content_layer: body
   label: text
   orig: 'We picked the model parameter configuration that produced the best prediction
     quality (enc=6, dec=6, heads=8) with PubTabNet alone, then independently trained
@@ -5473,6 +5566,7 @@ texts:
     outperforms HTML across the board, keeping high TEDs and mAP scores even on difficult
     financial tables (FinTabNet) that contain sparse and large tables.'
 - children: []
+  content_layer: body
   label: text
   orig: Additionally, the results show that OTSL has an advantage over HTML when applied
     on a bigger data set like PubTables-1M and achieves significantly improved scores.
@@ -5497,6 +5591,7 @@ texts:
     Finally, OTSL achieves faster inference due to fewer decoding steps which is a
     result of the reduced sequence representation.
 - children: []
+  content_layer: body
   label: page_header
   orig: '10'
   parent:
@@ -5515,6 +5610,7 @@ texts:
   self_ref: '#/texts/80'
   text: '10'
 - children: []
+  content_layer: body
   label: page_header
   orig: M. Lysak, et al.
   parent:
@@ -5533,6 +5629,7 @@ texts:
   self_ref: '#/texts/81'
   text: M. Lysak, et al.
 - children: []
+  content_layer: body
   label: caption
   orig: Table 2. TSR and cell detection results compared between OTSL and HTML on
     the PubTabNet [22], FinTabNet [21] and PubTables-1M [14] data sets using Table-Former
@@ -5555,6 +5652,7 @@ texts:
     the PubTabNet [22], FinTabNet [21] and PubTables-1M [14] data sets using Table-Former
     [9] (with enc=6, dec=6, heads=8).
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 5.3 Qualitative Results
@@ -5574,6 +5672,7 @@ texts:
   self_ref: '#/texts/83'
   text: 5.3 Qualitative Results
 - children: []
+  content_layer: body
   label: text
   orig: To illustrate the qualitative differences between OTSL and HTML, Figure 5
     demonstrates less overlap and more accurate bounding boxes with OTSL. In Figure
@@ -5598,6 +5697,7 @@ texts:
     6, OTSL proves to be more effective in handling tables with longer token sequences,
     resulting in even more precise structure prediction and bounding boxes.
 - children: []
+  content_layer: body
   label: caption
   orig: "Fig. 5. The OTSL model produces more accurate bounding boxes with less overlap\
     \ (E) than the HTML model (D), when predicting the structure of a sparse table\
@@ -5622,6 +5722,7 @@ texts:
     \ (A), at twice the inference speed because of shorter sequence length (B),(C).\
     \ 'PMC2807444_006_00.png ' PubTabNet. \u03BC"
 - children: []
+  content_layer: body
   label: text
   orig: "\u03BC"
   parent:
@@ -5640,6 +5741,7 @@ texts:
   self_ref: '#/texts/86'
   text: "\u03BC"
 - children: []
+  content_layer: body
   label: text
   orig: "\u2265"
   parent:
@@ -5658,6 +5760,7 @@ texts:
   self_ref: '#/texts/87'
   text: "\u2265"
 - children: []
+  content_layer: body
   label: page_header
   orig: Optimized Table Tokenization for Table Structure Recognition
   parent:
@@ -5676,6 +5779,7 @@ texts:
   self_ref: '#/texts/88'
   text: Optimized Table Tokenization for Table Structure Recognition
 - children: []
+  content_layer: body
   label: page_header
   orig: '11'
   parent:
@@ -5694,6 +5798,7 @@ texts:
   self_ref: '#/texts/89'
   text: '11'
 - children: []
+  content_layer: body
   label: caption
   orig: Fig. 6. Visualization of predicted structure and detected bounding boxes on
     a complex table with many rows. The OTSL model (B) captured repeating pattern
@@ -5720,6 +5825,7 @@ texts:
     model also didn't complete the HTML sequence correctly and displayed a lot more
     of drift and overlap of bounding boxes. 'PMC5406406_003_01.png ' PubTabNet.
 - children: []
+  content_layer: body
   label: page_header
   orig: 12 M. Lysak, et al.
   parent:
@@ -5738,6 +5844,7 @@ texts:
   self_ref: '#/texts/91'
   text: 12 M. Lysak, et al.
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 6 Conclusion
@@ -5757,6 +5864,7 @@ texts:
   self_ref: '#/texts/92'
   text: 6 Conclusion
 - children: []
+  content_layer: body
   label: text
   orig: We demonstrated that representing tables in HTML for the task of table structure
     recognition with Im2Seq models is ill-suited and has serious limitations. Furthermore,
@@ -5781,6 +5889,7 @@ texts:
     we presented in this paper an Optimized Table Structure Language (OTSL) which,
     when compared to commonly used general purpose languages, has several key benefits.
 - children: []
+  content_layer: body
   label: text
   orig: First and foremost, given the same network configuration, inference time for
     a table-structure prediction is about 2 times faster compared to the conventional
@@ -5817,6 +5926,7 @@ texts:
     in OTSL with prediction quality comparable to models trained on HTML (see Table
     1).
 - children: []
+  content_layer: body
   label: text
   orig: Secondly, OTSL has more inherent structure and a significantly restricted
     vocabulary size. This allows autoregressive models to perform better in the TED
@@ -5857,6 +5967,7 @@ texts:
     mistakes. This in return allows to perform structural error detection and correction
     on-the-fly during sequence generation.
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: References
@@ -5876,6 +5987,7 @@ texts:
   self_ref: '#/texts/96'
   text: References
 - children: []
+  content_layer: body
   label: reference
   orig: '1. Auer, C., Dolfi, M., Carvalho, A., Ramis, C.B., Staar, P.W.J.: Delivering
     document conversion as a cloud service with high throughput and responsiveness.
@@ -5898,6 +6010,7 @@ texts:
     document conversion as a cloud service with high throughput and responsiveness.
     CoRR abs/2206.00785 (2022). https://doi.org/10.48550/arXiv.2206.00785, https://doi.org/10.48550/arXiv.2206.00785'
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -5924,6 +6037,7 @@ texts:
     \ In: Porwal, U., Forn\xE9s, A., Shafait, F. (eds.) Frontiers in Handwriting Recognition.\
     \ pp. 545-561. Springer International Publishing, Cham (2022)"
 - children: []
+  content_layer: body
   label: reference
   orig: '3. Chi, Z., Huang, H., Xu, H.D., Yu, H., Yin, W., Mao, X.L.: Complicated
     table structure recognition. arXiv preprint arXiv:1908.04729 (2019)'
@@ -5944,6 +6058,7 @@ texts:
   text: '3. Chi, Z., Huang, H., Xu, H.D., Yu, H., Yin, W., Mao, X.L.: Complicated
     table structure recognition. arXiv preprint arXiv:1908.04729 (2019)'
 - children: []
+  content_layer: body
   label: reference
   orig: '4. Deng, Y., Rosenberg, D., Mann, G.: Challenges in end-to-end neural scientific
     table recognition. In: 2019 International Conference on Document Analysis and
@@ -5966,6 +6081,7 @@ texts:
     table recognition. In: 2019 International Conference on Document Analysis and
     Recognition (ICDAR). pp. 894-901. IEEE (2019)'
 - children: []
+  content_layer: body
   label: page_header
   orig: Optimized Table Tokenization for Table Structure Recognition
   parent:
@@ -5984,6 +6100,7 @@ texts:
   self_ref: '#/texts/101'
   text: Optimized Table Tokenization for Table Structure Recognition
 - children: []
+  content_layer: body
   label: page_header
   orig: '13'
   parent:
@@ -6002,6 +6119,7 @@ texts:
   self_ref: '#/texts/102'
   text: '13'
 - children: []
+  content_layer: body
   label: reference
   orig: '5. Kayal, P., Anand, M., Desai, H., Singh, M.: Tables to latex: structure
     and content extraction from scientific tables. International Journal on Document
@@ -6024,6 +6142,7 @@ texts:
     and content extraction from scientific tables. International Journal on Document
     Analysis and Recognition (IJDAR) pp. 1-10 (2022)'
 - children: []
+  content_layer: body
   label: reference
   orig: '6. Lee, E., Kwon, J., Yang, H., Park, J., Lee, S., Koo, H.I., Cho, N.I.:
     Table structure recognition based on grid shape graph. In: 2022 Asia-Pacific Signal
@@ -6048,6 +6167,7 @@ texts:
     and Information Processing Association Annual Summit and Conference (APSIPA ASC).
     pp. 1868-1873. IEEE (2022)'
 - children: []
+  content_layer: body
   label: reference
   orig: '7. Li, M., Cui, L., Huang, S., Wei, F., Zhou, M., Li, Z.: Tablebank: A benchmark
     dataset for table detection and recognition (2019)'
@@ -6068,6 +6188,7 @@ texts:
   text: '7. Li, M., Cui, L., Huang, S., Wei, F., Zhou, M., Li, Z.: Tablebank: A benchmark
     dataset for table detection and recognition (2019)'
 - children: []
+  content_layer: body
   label: reference
   orig: '8. Livathinos, N., Berrospi, C., Lysak, M., Kuropiatnyk, V., Nassar, A.,
     Carvalho, A., Dolfi, M., Auer, C., Dinkla, K., Staar, P.: Robust pdf document
@@ -6094,6 +6215,7 @@ texts:
     on Artificial Intelligence 35 (17), 15137-15145 (May 2021), https://ojs.aaai.org/index.php/
     AAAI/article/view/17777'
 - children: []
+  content_layer: body
   label: reference
   orig: '9. Nassar, A., Livathinos, N., Lysak, M., Staar, P.: Tableformer: Table structure
     understanding with transformers. In: Proceedings of the IEEE/CVF Conference on
@@ -6116,6 +6238,7 @@ texts:
     understanding with transformers. In: Proceedings of the IEEE/CVF Conference on
     Computer Vision and Pattern Recognition (CVPR). pp. 4614-4623 (June 2022)'
 - children: []
+  content_layer: body
   label: reference
   orig: '10. Pfitzmann, B., Auer, C., Dolfi, M., Nassar, A.S., Staar, P.W.J.: Doclaynet:
     A large human-annotated dataset for document-layout segmentation. In: Zhang, A.,
@@ -6142,6 +6265,7 @@ texts:
     and Data Mining, Washington, DC, USA, August 14-18, 2022. pp. 3743-3751. ACM (2022).
     https://doi.org/10.1145/3534678.3539043, https:// doi.org/10.1145/3534678.3539043'
 - children: []
+  content_layer: body
   label: reference
   orig: '11. Prasad, D., Gadpal, A., Kapadni, K., Visave, M., Sultanpure, K.: Cascadetabnet:
     An approach for end to end table detection and structure recognition from imagebased
@@ -6166,6 +6290,7 @@ texts:
     documents. In: Proceedings of the IEEE/CVF conference on computer vision and pattern
     recognition workshops. pp. 572-573 (2020)'
 - children: []
+  content_layer: body
   label: reference
   orig: '12. Schreiber, S., Agne, S., Wolf, I., Dengel, A., Ahmed, S.: Deepdesrt:
     Deep learning for detection and structure recognition of tables in document images.
@@ -6190,6 +6315,7 @@ texts:
     In: 2017 14th IAPR international conference on document analysis and recognition
     (ICDAR). vol. 1, pp. 1162-1167. IEEE (2017)'
 - children: []
+  content_layer: body
   label: reference
   orig: '13. Siddiqui, S.A., Fateh, I.A., Rizvi, S.T.R., Dengel, A., Ahmed, S.: Deeptabstr:
     Deep learning based table structure recognition. In: 2019 International Conference
@@ -6212,6 +6338,7 @@ texts:
     Deep learning based table structure recognition. In: 2019 International Conference
     on Document Analysis and Recognition (ICDAR). pp. 1403-1409 (2019). https:// doi.org/10.1109/ICDAR.2019.00226'
 - children: []
+  content_layer: body
   label: reference
   orig: '14. Smock, B., Pesala, R., Abraham, R.: PubTables-1M: Towards comprehensive
     table extraction from unstructured documents. In: Proceedings of the IEEE/CVF
@@ -6236,6 +6363,7 @@ texts:
     Conference on Computer Vision and Pattern Recognition (CVPR). pp. 4634-4642 (June
     2022)'
 - children: []
+  content_layer: body
   label: reference
   orig: '15. Staar, P.W.J., Dolfi, M., Auer, C., Bekas, C.: Corpus conversion service:
     A machine learning platform to ingest documents at scale. In: Proceedings of the
@@ -6262,6 +6390,7 @@ texts:
     pp. 774-782. KDD ''18, Association for Computing Machinery, New York, NY, USA
     (2018). https://doi.org/10.1145/3219819.3219834, https://doi.org/10. 1145/3219819.3219834'
 - children: []
+  content_layer: body
   label: reference
   orig: '16. Wang, X.: Tabular Abstraction, Editing, and Formatting. Ph.D. thesis,
     CAN (1996), aAINN09397'
@@ -6282,6 +6411,7 @@ texts:
   text: '16. Wang, X.: Tabular Abstraction, Editing, and Formatting. Ph.D. thesis,
     CAN (1996), aAINN09397'
 - children: []
+  content_layer: body
   label: reference
   orig: '17. Xue, W., Li, Q., Tao, D.: Res2tim: Reconstruct syntactic structures from
     table images. In: 2019 International Conference on Document Analysis and Recognition
@@ -6304,6 +6434,7 @@ texts:
     table images. In: 2019 International Conference on Document Analysis and Recognition
     (ICDAR). pp. 749-755. IEEE (2019)'
 - children: []
+  content_layer: body
   label: page_header
   orig: '14'
   parent:
@@ -6322,6 +6453,7 @@ texts:
   self_ref: '#/texts/116'
   text: '14'
 - children: []
+  content_layer: body
   label: page_header
   orig: M. Lysak, et al.
   parent:
@@ -6340,6 +6472,7 @@ texts:
   self_ref: '#/texts/117'
   text: M. Lysak, et al.
 - children: []
+  content_layer: body
   label: reference
   orig: '18. Xue, W., Yu, B., Wang, W., Tao, D., Li, Q.: Tgrnet: A table graph reconstruction
     network for table structure recognition. In: Proceedings of the IEEE/CVF International
@@ -6362,6 +6495,7 @@ texts:
     network for table structure recognition. In: Proceedings of the IEEE/CVF International
     Conference on Computer Vision. pp. 1295-1304 (2021)'
 - children: []
+  content_layer: body
   label: reference
   orig: '19. Ye, J., Qi, X., He, Y., Chen, Y., Gu, D., Gao, P., Xiao, R.: Pingan-vcgroup''s
     solution for icdar 2021 competition on scientific literature parsing task b: Table
@@ -6384,6 +6518,7 @@ texts:
     solution for icdar 2021 competition on scientific literature parsing task b: Table
     recognition to html (2021). https://doi.org/10.48550/ARXIV.2105.01848, https://arxiv.org/abs/2105.01848'
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -6406,6 +6541,7 @@ texts:
   text: '20. Zhang, Z., Zhang, J., Du, J., Wang, F.: Split, embed and merge: An accurate
     table structure recognizer. Pattern Recognition 126, 108565 (2022)'
 - children: []
+  content_layer: body
   label: reference
   orig: '21. Zheng, X., Burdick, D., Popa, L., Zhong, X., Wang, N.X.R.: Global table
     extractor (gte): A framework for joint table identification and cell structure
@@ -6432,6 +6568,7 @@ texts:
     of Computer Vision (WACV). pp. 697-706 (2021). https://doi.org/10.1109/WACV48630.2021.
     00074'
 - children: []
+  content_layer: body
   label: reference
   orig: '22. Zhong, X., ShafieiBavani, E., Jimeno Yepes, A.: Image-based table recognition:
     Data, model, and evaluation. In: Vedaldi, A., Bischof, H., Brox, T., Frahm, J.M.
@@ -6456,6 +6593,7 @@ texts:
     (eds.) Computer Vision-ECCV 2020. pp. 564-580. Springer International Publishing,
     Cham (2020)'
 - children: []
+  content_layer: body
   label: reference
   orig: '23. Zhong, X., Tang, J., Yepes, A.J.: Publaynet: largest dataset ever for
     document layout analysis. In: 2019 International Conference on Document Analysis
@@ -6477,4 +6615,4 @@ texts:
   text: '23. Zhong, X., Tang, J., Yepes, A.J.: Publaynet: largest dataset ever for
     document layout analysis. In: 2019 International Conference on Document Analysis
     and Recognition (ICDAR). pp. 1015-1022. IEEE (2019)'
-version: 1.0.0
+version: 1.1.0

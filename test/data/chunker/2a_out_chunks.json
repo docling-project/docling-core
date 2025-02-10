@@ -12,6 +12,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -50,6 +51,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -74,6 +76,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -115,6 +118,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -156,6 +160,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -197,6 +202,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -238,6 +244,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -279,6 +286,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -320,6 +328,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -361,6 +370,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -402,6 +412,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -443,6 +454,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -485,6 +497,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -528,6 +541,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -571,6 +585,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -614,6 +629,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -657,6 +673,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -700,6 +717,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -743,6 +761,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -786,6 +805,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -829,6 +849,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -872,6 +893,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -915,6 +937,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -958,6 +981,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -982,6 +1006,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "table",
                         "prov": [
                             {
@@ -1025,6 +1050,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "table",
                         "prov": [
                             {
@@ -1049,6 +1075,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {

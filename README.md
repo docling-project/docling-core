@@ -23,7 +23,7 @@ pip install docling-core
 
 To develop for Docling Core, you need Python 3.9 / 3.10 / 3.11 / 3.12 / 3.13 and Poetry. You can then install from your local clone's root dir:
 ```bash
-poetry install
+poetry install --all-extras
 ```
 
 To run the pytest suite, execute:

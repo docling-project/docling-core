@@ -25,7 +25,7 @@ from docling_core.types.doc import (
     TableItem,
     TextItem,
 )
-from docling_core.types.doc.document import GroupItem, ListItem, TableData
+from docling_core.types.doc.document import ContentLayer, GroupItem, ListItem, TableData
 from docling_core.types.doc.labels import GroupLabel
 from docling_core.types.legacy_doc.base import (
     BaseCell,
@@ -400,7 +400,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
             doc.add_text(
                 label=DocItemLabel.PAGE_HEADER,
                 text=text_item.text,
-                parent=doc.furniture,
+                content_layer=ContentLayer.FURNITURE,
             )
 
     # page footers
@@ -412,7 +412,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
             doc.add_text(
                 label=DocItemLabel.PAGE_FOOTER,
                 text=text_item.text,
-                parent=doc.furniture,
+                content_layer=ContentLayer.FURNITURE,
             )
 
     # footnotes

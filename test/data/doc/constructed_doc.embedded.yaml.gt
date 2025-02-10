@@ -8,11 +8,13 @@ body:
   - $ref: '#/pictures/0'
   - $ref: '#/texts/14'
   - $ref: '#/pictures/1'
+  content_layer: body
   label: unspecified
   name: _root_
   self_ref: '#/body'
 furniture:
   children: []
+  content_layer: furniture
   label: unspecified
   name: _root_
   self_ref: '#/furniture'
@@ -21,6 +23,7 @@ groups:
   - $ref: '#/texts/3'
   - $ref: '#/texts/4'
   - $ref: '#/groups/1'
+  content_layer: body
   label: chapter
   name: Introduction
   parent:
@@ -32,6 +35,7 @@ groups:
   - $ref: '#/texts/7'
   - $ref: '#/groups/2'
   - $ref: '#/texts/11'
+  content_layer: body
   label: list
   name: group
   parent:
@@ -41,6 +45,7 @@ groups:
   - $ref: '#/texts/8'
   - $ref: '#/texts/9'
   - $ref: '#/texts/10'
+  content_layer: body
   label: ordered_list
   name: group
   parent:
@@ -54,6 +59,7 @@ pictures:
   captions:
   - $ref: '#/texts/13'
   children: []
+  content_layer: body
   footnotes: []
   label: picture
   parent:
@@ -65,6 +71,7 @@ pictures:
   captions:
   - $ref: '#/texts/14'
   children: []
+  content_layer: body
   footnotes: []
   image:
     dpi: 72
@@ -84,6 +91,7 @@ tables:
 - captions:
   - $ref: '#/texts/12'
   children: []
+  content_layer: body
   data:
     grid:
     - - col_span: 1
@@ -260,6 +268,7 @@ texts:
 - children:
   - $ref: '#/texts/1'
   - $ref: '#/texts/2'
+  content_layer: body
   label: title
   orig: Title of the Document
   parent:
@@ -268,6 +277,7 @@ texts:
   self_ref: '#/texts/0'
   text: Title of the Document
 - children: []
+  content_layer: body
   label: text
   orig: 'Author 1
 
@@ -280,6 +290,7 @@ texts:
 
     Affiliation 1'
 - children: []
+  content_layer: body
   label: text
   orig: 'Author 2
 
@@ -292,6 +303,7 @@ texts:
 
     Affiliation 2'
 - children: []
+  content_layer: body
   label: section_header
   level: 1
   orig: 1. Introduction
@@ -301,6 +313,7 @@ texts:
   self_ref: '#/texts/3'
   text: 1. Introduction
 - children: []
+  content_layer: body
   label: text
   orig: This paper introduces the biggest invention ever made. ...
   parent:
@@ -309,6 +322,7 @@ texts:
   self_ref: '#/texts/4'
   text: This paper introduces the biggest invention ever made. ...
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -319,6 +333,7 @@ texts:
   self_ref: '#/texts/5'
   text: list item 1
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -329,6 +344,7 @@ texts:
   self_ref: '#/texts/6'
   text: list item 2
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -339,6 +355,7 @@ texts:
   self_ref: '#/texts/7'
   text: list item 3
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -349,6 +366,7 @@ texts:
   self_ref: '#/texts/8'
   text: list item 3.a
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -359,6 +377,7 @@ texts:
   self_ref: '#/texts/9'
   text: list item 3.b
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -369,6 +388,7 @@ texts:
   self_ref: '#/texts/10'
   text: list item 3.c
 - children: []
+  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -379,6 +399,7 @@ texts:
   self_ref: '#/texts/11'
   text: list item 4
 - children: []
+  content_layer: body
   label: caption
   orig: This is the caption of table 1.
   parent:
@@ -387,6 +408,7 @@ texts:
   self_ref: '#/texts/12'
   text: This is the caption of table 1.
 - children: []
+  content_layer: body
   label: caption
   orig: This is the caption of figure 1.
   parent:
@@ -395,6 +417,7 @@ texts:
   self_ref: '#/texts/13'
   text: This is the caption of figure 1.
 - children: []
+  content_layer: body
   label: caption
   orig: This is the caption of figure 2.
   parent:
@@ -402,4 +425,4 @@ texts:
   prov: []
   self_ref: '#/texts/14'
   text: This is the caption of figure 2.
-version: 1.0.0
+version: 1.1.0

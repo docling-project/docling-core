@@ -14,6 +14,7 @@ from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, 
 from docling_core.types.doc.document import (  # BoundingBox,
     CURRENT_VERSION,
     CodeItem,
+    ContentLayer,
     DocItem,
     DoclingDocument,
     DocumentOrigin,
@@ -195,12 +196,14 @@ def test_docitems():
             f"./test/data/docling_document/unit/{name}.yaml", "r", encoding="utf-8"
         ) as fr:
             gold = fr.read()
-        return gold
+        return yaml.safe_load(gold)
 
     def verify(dc, obj):
         pred = serialise(obj).strip()
+        pred = yaml.safe_load(pred)
+
         # print(f"\t{dc.__name__}:\n {pred}")
-        gold = read(dc.__name__).strip()
+        gold = read(dc.__name__)
 
         assert pred == gold, f"pred!=gold for {dc.__name__}"
 
@@ -623,6 +626,13 @@ def test_image_ref():
     image = ImageRef.model_validate(data_path)
     assert isinstance(image.uri, Path)
     assert image.uri.name == "image.png"
+
+
+def test_upgrade_content_layer_from_1_0_0():
+    doc = DoclingDocument.load_from_json("test/data/doc/2206.01062-1.0.0.json")
+
+    assert doc.version == CURRENT_VERSION
+    assert doc.texts[0].content_layer == ContentLayer.FURNITURE
 
 
 def test_version_doc():

@@ -1,44 +1,6 @@
 {
     "root": [
         {
-            "text": "arXiv:2408.09869v3 [cs.CL] 30 Aug 2024",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/0",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_header",
-                        "prov": [
-                            {
-                                "page_no": 1,
-                                "bbox": {
-                                    "l": 17.088111877441406,
-                                    "t": 583.2296752929688,
-                                    "r": 36.339778900146484,
-                                    "b": 231.99996948242188,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    38
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "Version 1.0",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -50,6 +12,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -91,6 +54,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -132,6 +96,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -173,6 +138,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -215,6 +181,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -257,6 +224,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -288,90 +256,6 @@
             }
         },
         {
-            "text": "Docling Technical Report",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/10",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 1,
-                                "bbox": {
-                                    "l": 107.10411071777344,
-                                    "t": 58.48394775390625,
-                                    "r": 200.8249969482422,
-                                    "b": 49.8505859375,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    24
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "1 Introduction"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
-            "text": "1",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/11",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 1,
-                                "bbox": {
-                                    "l": 303.50897216796875,
-                                    "t": 49.50579833984375,
-                                    "r": 308.4902648925781,
-                                    "b": 39.960147857666016,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "1 Introduction"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "Here is what Docling delivers today:",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -383,6 +267,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -425,6 +310,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -467,6 +353,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -509,6 +396,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -551,6 +439,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -593,6 +482,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -635,6 +525,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -677,6 +568,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -719,6 +611,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -761,6 +654,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "code",
                         "prov": [
                             {
@@ -803,6 +697,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -845,6 +740,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -887,6 +783,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -930,6 +827,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "footnote",
                         "prov": [
                             {
@@ -962,49 +860,6 @@
             }
         },
         {
-            "text": "2",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/29",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 2,
-                                "bbox": {
-                                    "l": 302.96832275390625,
-                                    "t": 49.7403564453125,
-                                    "r": 308.49029541015625,
-                                    "b": 39.960079193115234,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "3 Processing pipeline",
-                    "3.1 PDF backends"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "Figure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -1016,6 +871,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "caption",
                         "prov": [
                             {
@@ -1059,6 +915,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1102,6 +959,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1145,6 +1003,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1188,6 +1047,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1232,6 +1092,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1276,6 +1137,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1309,50 +1171,6 @@
             }
         },
         {
-            "text": "3",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/40",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 3,
-                                "bbox": {
-                                    "l": 302.7810974121094,
-                                    "t": 49.40008544921875,
-                                    "r": 308.4903259277344,
-                                    "b": 39.96010971069336,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "3 Processing pipeline",
-                    "3.2 AI models",
-                    "Table Structure Recognition"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "The Docling pipeline feeds all table objects detected in the layout analysis to the TableFormer model, by providing an image-crop of the table and the included text cells. TableFormer structure predictions are matched back to the PDF cells in post-processing to avoid expensive re-transcription text in the table image. Typical tables require between 2 and 6 seconds to be processed on a standard CPU, strongly depending on the amount of included table cells.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -1364,6 +1182,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1408,6 +1227,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1452,6 +1272,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1496,6 +1317,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1539,6 +1361,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1582,6 +1405,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1625,6 +1449,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1667,6 +1492,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1709,6 +1535,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1740,48 +1567,6 @@
             }
         },
         {
-            "text": "4",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/54",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 4,
-                                "bbox": {
-                                    "l": 302.41058349609375,
-                                    "t": 49.65472412109375,
-                                    "r": 308.49029541015625,
-                                    "b": 39.960079193115234,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "4 Performance"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "torch runtimes backing the Docling pipeline. We will deliver updates on this topic at in a future version of this report.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -1793,6 +1578,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1835,6 +1621,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "caption",
                         "prov": [
                             {
@@ -1877,6 +1664,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "table",
                         "prov": [
                             {
@@ -1922,6 +1710,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -1964,6 +1753,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -2006,6 +1796,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -2048,6 +1839,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2090,6 +1882,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2121,48 +1914,6 @@
             }
         },
         {
-            "text": "5",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/65",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 5,
-                                "bbox": {
-                                    "l": 302.7286376953125,
-                                    "t": 49.4200439453125,
-                                    "r": 308.49029541015625,
-                                    "b": 39.96018600463867,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "References"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "machine learning through dynamic python bytecode transformation and graph compilation. In Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2 (ASPLOS '24) . ACM, 4 2024. doi: 10.1145/3620665.3640366. URL https://pytorch.org/assets/pytorch2-2.pdf .",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -2174,6 +1925,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -2216,6 +1968,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2258,6 +2011,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2300,6 +2054,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2342,6 +2097,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2384,6 +2140,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2426,6 +2183,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2468,6 +2226,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2510,6 +2269,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2552,6 +2312,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2594,6 +2355,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2636,6 +2398,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2678,6 +2441,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2720,6 +2484,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2762,6 +2527,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "list_item",
                         "prov": [
                             {
@@ -2793,48 +2559,6 @@
             }
         },
         {
-            "text": "6",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/81",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 6,
-                                "bbox": {
-                                    "l": 302.7389221191406,
-                                    "t": 49.36236572265625,
-                                    "r": 308.5960998535156,
-                                    "b": 39.96012496948242,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "References"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "In this section, we illustrate a few examples of Docling' s output in Markdown and JSON.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -2846,6 +2570,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -2888,6 +2613,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -2930,6 +2656,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -2972,6 +2699,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3014,6 +2742,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3056,6 +2785,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3098,6 +2828,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3140,6 +2871,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3182,6 +2914,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3224,6 +2957,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3266,6 +3000,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3308,6 +3043,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3350,6 +3086,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3392,6 +3129,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3434,6 +3172,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3476,6 +3215,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3518,6 +3258,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3560,6 +3301,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3602,6 +3344,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3644,6 +3387,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3686,6 +3430,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3728,6 +3473,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "caption",
                         "prov": [
                             {
@@ -3770,6 +3516,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3812,6 +3559,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3854,6 +3602,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3896,6 +3645,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -3927,90 +3677,6 @@
             }
         },
         {
-            "text": "7",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/119",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 7,
-                                "bbox": {
-                                    "l": 302.8258056640625,
-                                    "t": 49.2652587890625,
-                                    "r": 308.49029541015625,
-                                    "b": 39.960079193115234,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "ACM Reference Format:"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
-            "text": "arXiv:2206.01062v1 [cs.CV] 2 Jun 2022",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/120",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_header",
-                        "prov": [
-                            {
-                                "page_no": 7,
-                                "bbox": {
-                                    "l": 110.2352066040039,
-                                    "t": 618.2011108398438,
-                                    "r": 118.32157135009766,
-                                    "b": 492.749267578125,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    37
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "ACM Reference Format:"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "KDD '22, August 14-18, 2022, Washington, DC, USA Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ahmed S. Nassar, and Peter Staar",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -4022,6 +3688,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4064,6 +3731,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "caption",
                         "prov": [
                             {
@@ -4106,6 +3774,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "table",
                         "prov": [
                             {
@@ -4151,6 +3820,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4193,6 +3863,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4235,6 +3906,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "caption",
                         "prov": [
                             {
@@ -4277,6 +3949,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4319,6 +3992,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4361,6 +4035,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4403,6 +4078,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4445,6 +4121,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4487,6 +4164,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "table",
                         "prov": [
                             {
@@ -4529,6 +4207,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4571,6 +4250,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4613,6 +4293,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4655,6 +4336,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4697,6 +4379,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4739,6 +4422,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4770,48 +4454,6 @@
             }
         },
         {
-            "text": "8",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/141",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 8,
-                                "bbox": {
-                                    "l": 303.0059509277344,
-                                    "t": 48.90887451171875,
-                                    "r": 308.49029541015625,
-                                    "b": 39.960079193115234,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "Baselines for Object Detection"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "KDD '22, August 14-18, 2022, Washington, DC, USA Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ahmed S. Nassar, and Peter Staar",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -4823,6 +4465,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -4865,6 +4508,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "caption",
                         "prov": [
                             {
@@ -4907,6 +4551,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "table",
                         "prov": [
                             {
@@ -4952,6 +4597,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "caption",
                         "prov": [
                             {
@@ -4994,6 +4640,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -5036,6 +4683,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -5078,6 +4726,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "text",
                         "prov": [
                             {
@@ -5120,6 +4769,7 @@
                             "$ref": "#/body"
                         },
                         "children": [],
+                        "content_layer": "body",
                         "label": "paragraph",
                         "prov": [
                             {
@@ -5134,48 +4784,6 @@
                                 "charspan": [
                                     0,
                                     737
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "Baselines for Object Detection"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
-            "text": "9",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/149",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "label": "page_footer",
-                        "prov": [
-                            {
-                                "page_no": 9,
-                                "bbox": {
-                                    "l": 302.54315185546875,
-                                    "t": 49.2738037109375,
-                                    "r": 308.49029541015625,
-                                    "b": 39.96010971069336,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    1
                                 ]
                             }
                         ]
