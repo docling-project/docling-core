@@ -1,3 +1,9 @@
+## [v2.18.1](https://github.com/DS4SD/docling-core/releases/tag/v2.18.1) - 2025-02-13
+
+### Fix
+
+* Update Pillow constraints ([#157](https://github.com/DS4SD/docling-core/issues/157)) ([`a9afeda`](https://github.com/DS4SD/docling-core/commit/a9afeda6d1251900142571f7bff3d00d871d5915))
+
 ## [v2.18.0](https://github.com/DS4SD/docling-core/releases/tag/v2.18.0) - 2025-02-10
 
 ### Feature
