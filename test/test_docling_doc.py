@@ -377,7 +377,6 @@ def _test_serialize_and_reload(doc):
 
 
 def _verify_regression_test(pred: str, filename: str, ext: str):
-
     if os.path.exists(filename + f".{ext}") and not GENERATE:
         with open(filename + f".{ext}", "r", encoding="utf-8") as fr:
             gt_true = fr.read()
@@ -389,15 +388,15 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
 
 
 def _test_export_methods(doc: DoclingDocument, filename: str):
-    ### Iterate all elements
+    # Iterate all elements
     et_pred = doc.export_to_element_tree()
     _verify_regression_test(et_pred, filename=filename, ext="et")
 
-    ## Export stuff
+    # Export stuff
     md_pred = doc.export_to_markdown()
     _verify_regression_test(md_pred, filename=filename, ext="md")
 
-    # Test HTML export ...
+    # Test sHTML export ...
     html_pred = doc.export_to_html()
     _verify_regression_test(html_pred, filename=filename, ext="html")
 

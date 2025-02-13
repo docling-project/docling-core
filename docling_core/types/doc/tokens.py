@@ -8,13 +8,15 @@
 from enum import Enum
 from typing import Tuple
 
+from docling_core.types.doc.labels import PictureClassificationLabel
+
 
 class TableToken(Enum):
     """Class to represent an LLM friendly representation of a Table."""
 
     CELL_LABEL_COLUMN_HEADER = "<column_header>"
     CELL_LABEL_ROW_HEADER = "<row_header>"
-    CELL_LABEL_SECTION_HEADERE = "<section_header>"
+    CELL_LABEL_SECTION_HEADER = "<shed>"
     CELL_LABEL_DATA = "<data>"
 
     OTSL_ECEL = "<ecel>"  # empty cell
@@ -42,8 +44,8 @@ class TableToken(Enum):
 class DocumentToken(Enum):
     """Class to represent an LLM friendly representation of a Document."""
 
-    BEG_DOCUMENT = "<document>"
-    END_DOCUMENT = "</document>"
+    BEG_DOCUMENT = "<doctag>"
+    END_DOCUMENT = "</doctag>"
 
     BEG_TITLE = "<title>"
     END_TITLE = "</title>"
@@ -65,30 +67,34 @@ class DocumentToken(Enum):
     END_AFFILIATIONS = "</affiliations>"
     BEG_AFFILIATION = "<affiliation>"
     END_AFFILIATION = "</affiliation>"
-
-    BEG_HEADER = "<section-header>"
-    END_HEADER = "</section-header>"
     BEG_TEXT = "<text>"
     END_TEXT = "</text>"
     BEG_PARAGRAPH = "<paragraph>"
     END_PARAGRAPH = "</paragraph>"
     BEG_TABLE = "<table>"
     END_TABLE = "</table>"
-    BEG_FIGURE = "<figure>"
-    END_FIGURE = "</figure>"
+    BEG_OTSL = "<otsl>"
+    END_OTSL = "</otsl>"
+    BEG_PICTURE = "<picture>"
+    END_PICTURE = "</picture>"
     BEG_CAPTION = "<caption>"
     END_CAPTION = "</caption>"
-    BEG_EQUATION = "<equation>"
-    END_EQUATION = "</equation>"
+    BEG_EQUATION = "<formula>"
+    END_EQUATION = "</formula>"
+    BEG_CODE = "<code>"
+    END_CODE = "</code>"
     BEG_LIST = "<list>"
     END_LIST = "</list>"
     BEG_LISTITEM = "<list-item>"
     END_LISTITEM = "</list-item>"
-
+    BEG_LINE_NUMBER = "<line_number>"
+    END_LINE_NUMBER = "</line_number>"
     BEG_LOCATION = "<location>"
     END_LOCATION = "</location>"
     BEG_GROUP = "<group>"
     END_GROUP = "</group>"
+
+    PAGE_BREAK = "<page_break>"
 
     @classmethod
     def get_special_tokens(
@@ -109,16 +115,14 @@ class DocumentToken(Enum):
             special_tokens += [f"<col_{i}>", f"</col_{i}>"]
 
         for i in range(6):
-            special_tokens += [f"<section-header-{i}>", f"</section-header-{i}>"]
+            special_tokens += [
+                f"<section_header_level_{i}>",
+                f"</section_header_level_{i}>",
+            ]
 
-        # FIXME: this is synonym of section header
-        for i in range(6):
-            special_tokens += [f"<subtitle-level-{i}>", f"</subtitle-level-{i}>"]
-
-        # Adding dynamically generated page-tokens
-        for i in range(0, max_pages + 1):
-            special_tokens.append(f"<page_{i}>")
-            special_tokens.append(f"</page_{i}>")
+        # Add dynamically picture classification tokens
+        for _, member in PictureClassificationLabel.__members__.items():
+            special_tokens.append(f"<{member}>")
 
         # Adding dynamically generated location-tokens
         for i in range(0, max(page_dimension[0] + 1, page_dimension[1] + 1)):
@@ -148,9 +152,9 @@ class DocumentToken(Enum):
             return f"</col_{col}>"
 
     @staticmethod
-    def get_page_token(page: int):
-        """Function to get page tokens."""
-        return f"<page_{page}>"
+    def get_picture_classification_token(classification: str) -> str:
+        """Function to get picture classification tokens."""
+        return f"<{classification}>"
 
     @staticmethod
     def get_location_token(val: float, rnorm: int = 100):
@@ -172,7 +176,6 @@ class DocumentToken(Enum):
         page_h: float,
         xsize: int = 100,
         ysize: int = 100,
-        page_i: int = -1,
     ):
         """Get the location string give bbox and page-dim."""
         assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"
@@ -183,17 +186,11 @@ class DocumentToken(Enum):
         x1 = bbox[2] / page_w
         y1 = bbox[3] / page_h
 
-        page_tok = ""
-        if page_i != -1:
-            page_tok = DocumentToken.get_page_token(page=page_i)
-
         x0_tok = DocumentToken.get_location_token(val=min(x0, x1), rnorm=xsize)
         y0_tok = DocumentToken.get_location_token(val=min(y0, y1), rnorm=ysize)
         x1_tok = DocumentToken.get_location_token(val=max(x0, x1), rnorm=xsize)
         y1_tok = DocumentToken.get_location_token(val=max(y0, y1), rnorm=ysize)
 
-        loc_str = f"{DocumentToken.BEG_LOCATION.value}"
-        loc_str += f"{page_tok}{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
-        loc_str += f"{DocumentToken.END_LOCATION.value}"
+        loc_str = f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
 
         return loc_str

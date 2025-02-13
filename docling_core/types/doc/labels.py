@@ -111,7 +111,7 @@ class PictureClassificationLabel(str, Enum):
     SIGNATURE = "signature"
     STAMP = "stamp"
     QR_CODE = "qr_code"
-    BAR_CODE = "bat_code"
+    BAR_CODE = "bar_code"
     SCREENSHOT = "screenshot"
 
     # Geology/Geography
