@@ -19,6 +19,7 @@ from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, BaseMeta
 from docling_core.types import DoclingDocument as DLDocument
 from docling_core.types.doc.document import (
+    CodeItem,
     DocItem,
     DocumentOrigin,
     LevelNumber,
@@ -199,8 +200,10 @@ class HierarchicalChunker(BaseChunker):
                         heading_by_level.pop(k, None)
                     continue
 
-                if isinstance(item, TextItem) or (
-                    (not self.merge_list_items) and isinstance(item, ListItem)
+                if (
+                    isinstance(item, TextItem)
+                    or ((not self.merge_list_items) and isinstance(item, ListItem))
+                    or isinstance(item, CodeItem)
                 ):
                     text = item.text
                 elif isinstance(item, TableItem):

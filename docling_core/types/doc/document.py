@@ -677,51 +677,6 @@ class TextItem(DocItem):
         return body
 
 
-class CodeItem(TextItem):
-    """CodeItem."""
-
-    label: typing.Literal[DocItemLabel.CODE] = (
-        DocItemLabel.CODE  # type: ignore[assignment]
-    )
-    code_language: CodeLanguageLabel = CodeLanguageLabel.UNKNOWN
-
-    def export_to_document_tokens(
-        self,
-        doc: "DoclingDocument",
-        new_line: str = "",
-        xsize: int = 500,
-        ysize: int = 500,
-        add_location: bool = True,
-        add_content: bool = True,
-    ):
-        r"""Export text element to document tokens format.
-
-        :param doc: "DoclingDocument":
-        :param new_line: str (Default value = "")
-        :param xsize: int:  (Default value = 500)
-        :param ysize: int:  (Default value = 500)
-        :param add_location: bool:  (Default value = True)
-        :param add_content: bool:  (Default value = True)
-
-        """
-        body = f"{DocumentToken.BEG_CODE.value}{new_line}"
-
-        if add_location:
-            body += self.get_location_tokens(
-                doc=doc,
-                new_line=new_line,
-                xsize=xsize,
-                ysize=ysize,
-            )
-
-        if add_content and self.text is not None:
-            body += f"<_{self.code_language.value}_>{self.text}{new_line}"
-
-        body += f"{DocumentToken.END_CODE.value}\n"
-
-        return body
-
-
 class SectionHeaderItem(TextItem):
     """SectionItem."""
 
@@ -810,6 +765,53 @@ class FloatingItem(DocItem):
         if self.image is not None:
             return self.image.pil_image
         return super().get_image(doc=doc)
+
+
+class CodeItem(FloatingItem):
+    """CodeItem."""
+
+    label: typing.Literal[DocItemLabel.CODE] = (
+        DocItemLabel.CODE  # type: ignore[assignment]
+    )
+    orig: str  # untreated representation
+    text: str  # sanitized representation
+    code_language: CodeLanguageLabel = CodeLanguageLabel.UNKNOWN
+
+    def export_to_document_tokens(
+        self,
+        doc: "DoclingDocument",
+        new_line: str = "",
+        xsize: int = 500,
+        ysize: int = 500,
+        add_location: bool = True,
+        add_content: bool = True,
+    ):
+        r"""Export text element to document tokens format.
+
+        :param doc: "DoclingDocument":
+        :param new_line: str (Default value = "")
+        :param xsize: int:  (Default value = 500)
+        :param ysize: int:  (Default value = 500)
+        :param add_location: bool:  (Default value = True)
+        :param add_content: bool:  (Default value = True)
+
+        """
+        body = f"{DocumentToken.BEG_CODE.value}{new_line}"
+
+        if add_location:
+            body += self.get_location_tokens(
+                doc=doc,
+                new_line=new_line,
+                xsize=xsize,
+                ysize=ysize,
+            )
+
+        if add_content and self.text is not None:
+            body += f"<_{self.code_language.value}_>{self.text}{new_line}"
+
+        body += f"{DocumentToken.END_CODE.value}\n"
+
+        return body
 
 
 class PictureItem(FloatingItem):
@@ -1763,6 +1765,7 @@ class DoclingDocument(BaseModel):
         text: str,
         code_language: Optional[CodeLanguageLabel] = None,
         orig: Optional[str] = None,
+        caption: Optional[Union[TextItem, RefItem]] = None,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
@@ -1772,6 +1775,8 @@ class DoclingDocument(BaseModel):
         :param text: str:
         :param code_language: Optional[str]: (Default value = None)
         :param orig: Optional[str]:  (Default value = None)
+        :param caption: Optional[Union[TextItem:
+        :param RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[NodeItem]:  (Default value = None)
         """
@@ -1795,6 +1800,8 @@ class DoclingDocument(BaseModel):
             code_item.content_layer = content_layer
         if prov:
             code_item.prov.append(prov)
+        if caption:
+            code_item.captions.append(caption.get_ref())
 
         self.texts.append(code_item)
         parent.children.append(RefItem(cref=cref))
