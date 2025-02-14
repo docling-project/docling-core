@@ -767,14 +767,12 @@ class FloatingItem(DocItem):
         return super().get_image(doc=doc)
 
 
-class CodeItem(FloatingItem):
+class CodeItem(FloatingItem, TextItem):
     """CodeItem."""
 
     label: typing.Literal[DocItemLabel.CODE] = (
         DocItemLabel.CODE  # type: ignore[assignment]
     )
-    orig: str  # untreated representation
-    text: str  # sanitized representation
     code_language: CodeLanguageLabel = CodeLanguageLabel.UNKNOWN
 
     def export_to_document_tokens(

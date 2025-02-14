@@ -208,6 +208,14 @@
           "title": "Prov",
           "type": "array"
         },
+        "orig": {
+          "title": "Orig",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
         "captions": {
           "default": [],
           "items": {
@@ -242,14 +250,6 @@
             }
           ],
           "default": null
-        },
-        "orig": {
-          "title": "Orig",
-          "type": "string"
-        },
-        "text": {
-          "title": "Text",
-          "type": "string"
         },
         "code_language": {
           "$ref": "#/$defs/CodeLanguageLabel",
