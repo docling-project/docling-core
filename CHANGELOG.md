@@ -1,3 +1,15 @@
+## [v2.19.0](https://github.com/DS4SD/docling-core/releases/tag/v2.19.0) - 2025-02-17
+
+### Feature
+
+* Redefine CodeItem as floating object with captions ([#160](https://github.com/DS4SD/docling-core/issues/160)) ([`916323f`](https://github.com/DS4SD/docling-core/commit/916323fb55274753aa1d6a4928388a35417f94b6))
+* Implementation of doc tags ([#138](https://github.com/DS4SD/docling-core/issues/138)) ([`f751b45`](https://github.com/DS4SD/docling-core/commit/f751b45b62fb318929f8131ab82fa17db98e8e44))
+
+### Fix
+
+* Document Tokens (doc tags) clean up, fix iterate_items for content_layer ([#161](https://github.com/DS4SD/docling-core/issues/161)) ([`58ed6c8`](https://github.com/DS4SD/docling-core/commit/58ed6c8ab75ba179faf1598b9877662cdcc4c1d3))
+* Fix inheritance of CodeItem for backward compatibility ([#162](https://github.com/DS4SD/docling-core/issues/162)) ([`7267c3f`](https://github.com/DS4SD/docling-core/commit/7267c3f5716d3f292592d3b11ddd2b0db4392c20))
+
 ## [v2.18.1](https://github.com/DS4SD/docling-core/releases/tag/v2.18.1) - 2025-02-13
 
 ### Fix
