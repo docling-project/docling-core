@@ -2126,6 +2126,7 @@ class DoclingDocument(BaseModel):
         indent: int = 4,
         text_width: int = -1,
         page_no: Optional[int] = None,
+        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
     ):
         """Save to markdown."""
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
@@ -2149,6 +2150,7 @@ class DoclingDocument(BaseModel):
             indent=indent,
             text_width=text_width,
             page_no=page_no,
+            included_content_layers=included_content_layers,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -2167,6 +2169,7 @@ class DoclingDocument(BaseModel):
         indent: int = 4,
         text_width: int = -1,
         page_no: Optional[int] = None,
+        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -2248,7 +2251,12 @@ class DoclingDocument(BaseModel):
             mdtexts.append(text)
 
         for ix, (item, level) in enumerate(
-            self.iterate_items(self.body, with_groups=True, page_no=page_no)
+            self.iterate_items(
+                self.body,
+                with_groups=True,
+                page_no=page_no,
+                included_content_layers=included_content_layers,
+            )
         ):
             # If we've moved to a lower level, we're exiting one or more groups
             if level < previous_level:
@@ -2417,6 +2425,7 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
+        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
     ):
         """Save to HTML."""
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
@@ -2437,6 +2446,7 @@ class DoclingDocument(BaseModel):
             page_no=page_no,
             html_lang=html_lang,
             html_head=html_head,
+            included_content_layers=included_content_layers,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -2484,6 +2494,7 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
+        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
     ) -> str:
         r"""Serialize to HTML."""
 
@@ -2525,7 +2536,12 @@ class DoclingDocument(BaseModel):
             return text
 
         for ix, (item, curr_level) in enumerate(
-            self.iterate_items(self.body, with_groups=True, page_no=page_no)
+            self.iterate_items(
+                self.body,
+                with_groups=True,
+                page_no=page_no,
+                included_content_layers=included_content_layers,
+            )
         ):
             # If we've moved to a lower level, we're exiting one or more groups
             if curr_level < prev_level and len(in_ordered_list) > 0:
