@@ -1,3 +1,9 @@
+## [v2.19.1](https://github.com/DS4SD/docling-core/releases/tag/v2.19.1) - 2025-02-17
+
+### Fix
+
+* Expose included_content_layers arg in export/save methods for MD+HTML ([#164](https://github.com/DS4SD/docling-core/issues/164)) ([`c46995b`](https://github.com/DS4SD/docling-core/commit/c46995bca39fbaa2a9d1fb68c5c9cb5beb6d6722))
+
 ## [v2.19.0](https://github.com/DS4SD/docling-core/releases/tag/v2.19.0) - 2025-02-17
 
 ### Feature
