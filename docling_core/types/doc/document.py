@@ -794,7 +794,7 @@ class CodeItem(FloatingItem, TextItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        body = f"{DocumentToken.BEG_CODE.value}{new_line}"
+        body = f"<{self.label.value}{new_line}"
 
         if add_location:
             body += self.get_location_tokens(
@@ -807,7 +807,7 @@ class CodeItem(FloatingItem, TextItem):
         if add_content and self.text is not None:
             body += f"<_{self.code_language.value}_>{self.text}{new_line}"
 
-        body += f"{DocumentToken.END_CODE.value}\n"
+        body += f"</{self.label.value}\n"
 
         return body
 
@@ -977,8 +977,7 @@ class PictureItem(FloatingItem):
         :param # not used at the moment
 
         """
-        body = f"{DocumentToken.BEG_PICTURE.value}{new_line}"
-
+        body = f"<{self.label.value}>{new_line}"
         if add_location:
             body += self.get_location_tokens(
                 doc=doc,
@@ -1002,7 +1001,7 @@ class PictureItem(FloatingItem):
             text = self.caption_text(doc)
 
             if len(text):
-                body += f"{DocumentToken.BEG_CAPTION.value}"
+                body += f"<{DocItemLabel.CAPTION.value}>"
                 for caption in self.captions:
                     body += caption.resolve(doc).get_location_tokens(
                         doc=doc,
@@ -1011,10 +1010,10 @@ class PictureItem(FloatingItem):
                         ysize=ysize,
                     )
                 body += f"{text.strip()}"
-                body += f"{DocumentToken.END_CAPTION.value}"
+                body += f"</{DocItemLabel.CAPTION.value}>"
                 body += f"{new_line}"
 
-        body += f"{DocumentToken.END_PICTURE.value}\n"
+        body += f"</{self.label.value}>\n"
 
         return body
 
@@ -1294,8 +1293,11 @@ class TableItem(FloatingItem):
         :param add_cell_location: bool:  (Default value = True)
         :param add_cell_text: bool:  (Default value = True)
         :param add_caption: bool:  (Default value = True)
+
         """
-        body = f"{DocumentToken.BEG_OTSL.value}{new_line}"
+        otsl_tag = DocumentToken.OTSL.value
+
+        body = f"<{otsl_tag}>{new_line}"
 
         if add_location:
             body += self.get_location_tokens(
@@ -1311,7 +1313,7 @@ class TableItem(FloatingItem):
             text = self.caption_text(doc)
 
             if len(text):
-                body += f"{DocumentToken.BEG_CAPTION.value}"
+                body += f"<{DocItemLabel.CAPTION.value}>"
                 for caption in self.captions:
                     body += caption.resolve(doc).get_location_tokens(
                         doc=doc,
@@ -1320,10 +1322,10 @@ class TableItem(FloatingItem):
                         ysize=ysize,
                     )
                 body += f"{text.strip()}"
-                body += f"{DocumentToken.END_CAPTION.value}"
+                body += f"</{DocItemLabel.CAPTION.value}>"
                 body += f"{new_line}"
 
-        body += f"{DocumentToken.END_OTSL.value}\n"
+        body += f"</{otsl_tag}>\n"
 
         return body
 
@@ -2777,9 +2779,9 @@ class DoclingDocument(BaseModel):
             while current_level < previous_level and ordered_list_stack:
                 last_is_ordered = ordered_list_stack.pop()
                 if last_is_ordered:
-                    output_parts.append("</ordered_list>\n")
+                    output_parts.append(f"</{DocumentToken.ORDERED_LIST.value}>\n")
                 else:
-                    output_parts.append("</unordered_list>\n")
+                    output_parts.append(f"</{DocumentToken.UNORDERED_LIST.value}>\n")
                 previous_level -= 1
             return ordered_list_stack
 
@@ -2806,7 +2808,7 @@ class DoclingDocument(BaseModel):
                 return output_parts, current_page_no
 
             if current_page_no != prev_page_no:
-                output_parts.append(f"{DocumentToken.PAGE_BREAK.value}\n")
+                output_parts.append(f"<{DocumentToken.PAGE_BREAK.value}>\n")
 
             return output_parts, current_page_no
 
@@ -2832,7 +2834,7 @@ class DoclingDocument(BaseModel):
         standalone_captions = _get_standalone_captions(self.body)
 
         # Begin document
-        output_parts.append(f"{DocumentToken.BEG_DOCUMENT.value}{delim}")
+        output_parts.append(f"<{DocumentToken.DOCUMENT.value}>{delim}")
 
         for ix, (item, current_level) in enumerate(
             self.iterate_items(
@@ -2868,10 +2870,12 @@ class DoclingDocument(BaseModel):
             # Handle list groups
             if isinstance(item, GroupItem):
                 if item.label == GroupLabel.ORDERED_LIST:
-                    output_parts.append(f"<ordered_list>{delim}")
+                    output_parts.append(f"<{DocumentToken.ORDERED_LIST.value}>{delim}")
                     ordered_list_stack.append(True)
                 elif item.label == GroupLabel.LIST:
-                    output_parts.append(f"<unordered_list>{delim}")
+                    output_parts.append(
+                        f"<{DocumentToken.UNORDERED_LIST.value}>{delim}"
+                    )
                     ordered_list_stack.append(False)
                 continue
 
@@ -2945,7 +2949,7 @@ class DoclingDocument(BaseModel):
         )
 
         # End document
-        output_parts.append(DocumentToken.END_DOCUMENT.value)
+        output_parts.append(f"</{DocumentToken.DOCUMENT.value}>")
 
         return "".join(output_parts)
 
