@@ -140,6 +140,29 @@ class TableCellLabel(str, Enum):
         return str(self.value)
 
 
+class GraphCellLabel(str, Enum):
+    """GraphCellLabel."""
+
+    UNSPECIFIED = "unspecified"
+
+    KEY = "key"
+    VALUE = "value"
+
+    CHECKBOX = "checkbox"
+
+
+class GraphLinkLabel(str, Enum):
+    """GraphLinkLabel."""
+
+    UNSPECIFIED = "unspecified"
+
+    TO_VALUE = "to_value"
+    TO_KEY = "to_key"
+
+    TO_PARENT = "to_parent"
+    TO_CHILD = "to_child"
+
+
 class CodeLanguageLabel(str, Enum):
     """CodeLanguageLabel."""
 

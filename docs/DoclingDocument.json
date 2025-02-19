@@ -386,6 +386,215 @@
       "title": "DocumentOrigin",
       "type": "object"
     },
+    "FormItem": {
+      "additionalProperties": false,
+      "description": "FormItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "label": {
+          "const": "form",
+          "default": "form",
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "captions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Captions",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "footnotes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Footnotes",
+          "type": "array"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "graph": {
+          "$ref": "#/$defs/GraphData"
+        }
+      },
+      "required": [
+        "self_ref",
+        "graph"
+      ],
+      "title": "FormItem",
+      "type": "object"
+    },
+    "GraphCell": {
+      "description": "GraphCell.",
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/GraphCellLabel"
+        },
+        "cell_id": {
+          "title": "Cell Id",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "orig": {
+          "title": "Orig",
+          "type": "string"
+        },
+        "prov": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProvenanceItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "item_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "label",
+        "cell_id",
+        "text",
+        "orig"
+      ],
+      "title": "GraphCell",
+      "type": "object"
+    },
+    "GraphCellLabel": {
+      "description": "GraphCellLabel.",
+      "enum": [
+        "unspecified",
+        "key",
+        "value",
+        "checkbox"
+      ],
+      "title": "GraphCellLabel",
+      "type": "string"
+    },
+    "GraphData": {
+      "description": "GraphData.",
+      "properties": {
+        "cells": {
+          "items": {
+            "$ref": "#/$defs/GraphCell"
+          },
+          "title": "Cells",
+          "type": "array"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/$defs/GraphLink"
+          },
+          "title": "Links",
+          "type": "array"
+        }
+      },
+      "title": "GraphData",
+      "type": "object"
+    },
+    "GraphLink": {
+      "description": "GraphLink.",
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/GraphLinkLabel"
+        },
+        "source_cell_id": {
+          "title": "Source Cell Id",
+          "type": "integer"
+        },
+        "target_cell_id": {
+          "title": "Target Cell Id",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "label",
+        "source_cell_id",
+        "target_cell_id"
+      ],
+      "title": "GraphLink",
+      "type": "object"
+    },
+    "GraphLinkLabel": {
+      "description": "GraphLinkLabel.",
+      "enum": [
+        "unspecified",
+        "to_value",
+        "to_key",
+        "to_parent",
+        "to_child"
+      ],
+      "title": "GraphLinkLabel",
+      "type": "string"
+    },
     "GroupItem": {
       "additionalProperties": false,
       "description": "GroupItem.",
@@ -534,10 +743,49 @@
           },
           "title": "Prov",
           "type": "array"
+        },
+        "captions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Captions",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "footnotes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Footnotes",
+          "type": "array"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "graph": {
+          "$ref": "#/$defs/GraphData"
         }
       },
       "required": [
-        "self_ref"
+        "self_ref",
+        "graph"
       ],
       "title": "KeyValueItem",
       "type": "object"
@@ -1611,6 +1859,14 @@
         "$ref": "#/$defs/KeyValueItem"
       },
       "title": "Key Value Items",
+      "type": "array"
+    },
+    "form_items": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FormItem"
+      },
+      "title": "Form Items",
       "type": "array"
     },
     "pages": {

@@ -19,6 +19,10 @@ from docling_core.types.doc.document import (  # BoundingBox,
     DoclingDocument,
     DocumentOrigin,
     FloatingItem,
+    FormItem,
+    GraphCell,
+    GraphData,
+    GraphLink,
     ImageRef,
     KeyValueItem,
     ListItem,
@@ -31,7 +35,12 @@ from docling_core.types.doc.document import (  # BoundingBox,
     TableItem,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel, GroupLabel
+from docling_core.types.doc.labels import (
+    DocItemLabel,
+    GraphCellLabel,
+    GraphLinkLabel,
+    GroupLabel,
+)
 
 GENERATE = False
 
@@ -200,6 +209,10 @@ def test_docitems():
 
     def verify(dc, obj):
         pred = serialise(obj).strip()
+
+        if dc is KeyValueItem or dc is FormItem:
+            write(dc.__name__, pred)
+
         pred = yaml.safe_load(pred)
 
         # print(f"\t{dc.__name__}:\n {pred}")
@@ -236,8 +249,73 @@ def test_docitems():
             verify(dc, obj)
 
         elif dc is KeyValueItem:
+
+            graph = GraphData(
+                cells=[
+                    GraphCell(
+                        label=GraphCellLabel.KEY,
+                        cell_id=0,
+                        text="number",
+                        orig="#",
+                    ),
+                    GraphCell(
+                        label=GraphCellLabel.VALUE,
+                        cell_id=1,
+                        text="1",
+                        orig="1",
+                    ),
+                ],
+                links=[
+                    GraphLink(
+                        label=GraphLinkLabel.TO_VALUE,
+                        source_cell_id=0,
+                        target_cell_id=1,
+                    ),
+                    GraphLink(
+                        label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0
+                    ),
+                ],
+            )
+
             obj = dc(
                 label=DocItemLabel.KEY_VALUE_REGION,
+                graph=graph,
+                self_ref="#",
+            )
+            verify(dc, obj)
+
+        elif dc is FormItem:
+
+            graph = GraphData(
+                cells=[
+                    GraphCell(
+                        label=GraphCellLabel.KEY,
+                        cell_id=0,
+                        text="number",
+                        orig="#",
+                    ),
+                    GraphCell(
+                        label=GraphCellLabel.VALUE,
+                        cell_id=1,
+                        text="1",
+                        orig="1",
+                    ),
+                ],
+                links=[
+                    GraphLink(
+                        label=GraphLinkLabel.TO_VALUE,
+                        source_cell_id=0,
+                        target_cell_id=1,
+                    ),
+                    GraphLink(
+                        label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0
+                    ),
+                ],
+            )
+
+            obj = dc(
+                label=DocItemLabel.FORM,
+                graph=graph,
                 self_ref="#",
             )
             verify(dc, obj)
@@ -272,6 +350,8 @@ def test_docitems():
                 code_language="Python",
             )
             verify(dc, obj)
+        elif dc is GraphData:  # we skip this on purpose
+            continue
         else:
             raise RuntimeError(f"New derived class detected {dc.__name__}")
 
@@ -573,8 +653,19 @@ def _construct_doc() -> DoclingDocument:
     fig2_image = PILImage.new("RGB", size, "black")
 
     # Draw a red disk touching the borders
-    draw = ImageDraw.Draw(fig2_image)
-    draw.ellipse((0, 0, size[0] - 1, size[1] - 1), fill="red")
+    # draw = ImageDraw.Draw(fig2_image)
+    # draw.ellipse((0, 0, size[0] - 1, size[1] - 1), fill="red")
+
+    # Create a drawing object
+    ImageDraw.Draw(fig2_image)
+
+    # Define the coordinates of the red square (x1, y1, x2, y2)
+    square_size = 20  # Adjust as needed
+    x1, y1 = 22, 22  # Adjust position
+    x2, y2 = x1 + square_size, y1 + square_size
+
+    # Draw the red square
+    # draw.rectangle([x1, y1, x2, y2], fill="red")
 
     fig_caption_2 = doc.add_text(
         label=DocItemLabel.CAPTION, text="This is the caption of figure 2."

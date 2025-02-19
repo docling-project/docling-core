@@ -12,6 +12,7 @@ body:
   label: unspecified
   name: _root_
   self_ref: '#/body'
+form_items: []
 furniture:
   children: []
   content_layer: furniture
@@ -79,7 +80,7 @@ pictures:
     size:
       height: 64.0
       width: 64.0
-    uri: constructed_images/image_000001_ccb4cbe7039fe17892f3d611cfb71eafff1d4d230b19b10779334cc4b63c98bc.png
+    uri: constructed_images/image_000001_f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a.png
   label: picture
   parent:
     $ref: '#/body'

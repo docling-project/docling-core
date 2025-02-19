@@ -1,7 +1,7 @@
 """Models for the base data types."""
 
 from enum import Enum
-from typing import Tuple
+from typing import List, Tuple
 
 from pydantic import BaseModel
 
@@ -365,3 +365,30 @@ class BoundingBox(BaseModel):
             raise ValueError("BoundingBoxes have different CoordOrigin")
 
         return False
+
+    @classmethod
+    def enclosing_bbox(cls, boxes: List["BoundingBox"]) -> "BoundingBox":
+        """Create a bounding box that covers all of the given boxes."""
+        if not boxes:
+            raise ValueError("No bounding boxes provided for union.")
+
+        origin = boxes[0].coord_origin
+        if any(box.coord_origin != origin for box in boxes):
+            raise ValueError(
+                "All bounding boxes must have the same \
+                CoordOrigin to compute their union."
+            )
+
+        left = min(box.l for box in boxes)
+        right = max(box.r for box in boxes)
+
+        if origin == CoordOrigin.TOPLEFT:
+            top = min(box.t for box in boxes)
+            bottom = max(box.b for box in boxes)
+        elif origin == CoordOrigin.BOTTOMLEFT:
+            top = max(box.t for box in boxes)
+            bottom = min(box.b for box in boxes)
+        else:
+            raise ValueError("BoundingBoxes have different CoordOrigin")
+
+        return cls(l=left, t=top, r=right, b=bottom, coord_origin=origin)

@@ -43,7 +43,13 @@ from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel, GroupLabel
+from docling_core.types.doc.labels import (
+    CodeLanguageLabel,
+    DocItemLabel,
+    GraphCellLabel,
+    GraphLinkLabel,
+    GroupLabel,
+)
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import (
     get_html_tag_with_text_direction,
@@ -1101,7 +1107,9 @@ class TableItem(FloatingItem):
         return md_table
 
     def export_to_html(
-        self, doc: Optional["DoclingDocument"] = None, add_caption: bool = True
+        self,
+        doc: Optional["DoclingDocument"] = None,
+        add_caption: bool = True,
     ) -> str:
         """Export the table as html."""
         if doc is None:
@@ -1330,10 +1338,72 @@ class TableItem(FloatingItem):
         return body
 
 
-class KeyValueItem(DocItem):
+class GraphCell(BaseModel):
+    """GraphCell."""
+
+    label: GraphCellLabel
+
+    cell_id: int
+
+    text: str  # sanitized text
+    orig: str  # text as seen on document
+
+    prov: Optional[ProvenanceItem] = None
+
+    # in case you have a text, table or picture item
+    item_ref: Optional[RefItem] = None
+
+
+class GraphLink(BaseModel):
+    """GraphLink."""
+
+    label: GraphLinkLabel
+
+    source_cell_id: int
+    target_cell_id: int
+
+
+class GraphData(BaseModel):
+    """GraphData."""
+
+    cells: List[GraphCell] = Field(default_factory=list)
+    links: List[GraphLink] = Field(default_factory=list)
+
+    @field_validator("links")
+    @classmethod
+    def validate_links(cls, links, info):
+        """Ensure that each link is valid."""
+        cells = info.data.get("cells", [])
+
+        valid_cell_ids = {cell.cell_id for cell in cells}
+
+        for link in links:
+            if link.source_cell_id not in valid_cell_ids:
+                raise ValueError(
+                    f"Invalid source_cell_id {link.source_cell_id} in GraphLink"
+                )
+            if link.target_cell_id not in valid_cell_ids:
+                raise ValueError(
+                    f"Invalid target_cell_id {link.target_cell_id} in GraphLink"
+                )
+
+        return links
+
+
+class KeyValueItem(FloatingItem):
     """KeyValueItem."""
 
     label: typing.Literal[DocItemLabel.KEY_VALUE_REGION] = DocItemLabel.KEY_VALUE_REGION
+
+    graph: GraphData
+
+
+class FormItem(FloatingItem):
+    """FormItem."""
+
+    label: typing.Literal[DocItemLabel.FORM] = DocItemLabel.FORM
+
+    graph: GraphData
 
 
 ContentItem = Annotated[
@@ -1446,7 +1516,9 @@ class DoclingDocument(BaseModel):
     )
 
     furniture: Annotated[GroupItem, Field(deprecated=True)] = GroupItem(
-        name="_root_", self_ref="#/furniture", content_layer=ContentLayer.FURNITURE
+        name="_root_",
+        self_ref="#/furniture",
+        content_layer=ContentLayer.FURNITURE,
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
@@ -1455,6 +1527,7 @@ class DoclingDocument(BaseModel):
     pictures: List[PictureItem] = []
     tables: List[TableItem] = []
     key_value_items: List[KeyValueItem] = []
+    form_items: List[FormItem] = []
 
     pages: Dict[int, PageItem] = {}  # empty as default
 
@@ -1851,6 +1924,68 @@ class DoclingDocument(BaseModel):
 
         return section_header_item
 
+    def add_key_values(
+        self,
+        graph: GraphData,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+    ):
+        """add_key_values.
+
+        :param graph: GraphData:
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        key_value_index = len(self.key_value_items)
+        cref = f"#/key_value_items/{key_value_index}"
+
+        kv_item = KeyValueItem(
+            graph=graph,
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if prov:
+            kv_item.prov.append(prov)
+
+        self.key_value_items.append(kv_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return kv_item
+
+    def add_form(
+        self,
+        graph: GraphData,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+    ):
+        """add_form.
+
+        :param graph: GraphData:
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        form_index = len(self.form_items)
+        cref = f"#/form_items/{form_index}"
+
+        form_item = FormItem(
+            graph=graph,
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if prov:
+            form_item.prov.append(prov)
+
+        self.form_items.append(form_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return form_item
+
     def num_pages(self):
         """num_pages."""
         return len(self.pages.values())
@@ -2009,7 +2144,8 @@ class DoclingDocument(BaseModel):
                             img.save(loc_path)
                             if reference_path is not None:
                                 obj_path = relative_path(
-                                    reference_path.resolve(), loc_path.resolve()
+                                    reference_path.resolve(),
+                                    loc_path.resolve(),
                                 )
                             else:
                                 obj_path = loc_path
@@ -2027,7 +2163,10 @@ class DoclingDocument(BaseModel):
         """Print_element_tree."""
         for ix, (item, level) in enumerate(self.iterate_items(with_groups=True)):
             if isinstance(item, GroupItem):
-                print(" " * level, f"{ix}: {item.label.value} with name={item.name}")
+                print(
+                    " " * level,
+                    f"{ix}: {item.label.value} with name={item.name}",
+                )
             elif isinstance(item, DocItem):
                 print(" " * level, f"{ix}: {item.label.value}")
 
@@ -2519,7 +2658,11 @@ class DoclingDocument(BaseModel):
 
             return (in_ordered_list, html_texts)
 
-        head_lines = ["<!DOCTYPE html>", f'<html lang="{html_lang}">', html_head]
+        head_lines = [
+            "<!DOCTYPE html>",
+            f'<html lang="{html_lang}">',
+            html_head,
+        ]
         html_texts: list[str] = []
 
         prev_level = 0  # Track the previous item's level
@@ -2599,7 +2742,8 @@ class DoclingDocument(BaseModel):
                 section_level: int = min(item.level + 1, 6)
 
                 text = get_html_tag_with_text_direction(
-                    html_tag=f"h{section_level}", text=_prepare_tag_content(item.text)
+                    html_tag=f"h{section_level}",
+                    text=_prepare_tag_content(item.text),
                 )
                 html_texts.append(text)
 
@@ -2856,13 +3000,19 @@ class DoclingDocument(BaseModel):
             self.iterate_items(
                 self.body,
                 with_groups=True,
-                included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
+                included_content_layers={
+                    ContentLayer.BODY,
+                    ContentLayer.FURNITURE,
+                },
             )
         ):
             # Close lists if we've moved to a lower nesting level
             if current_level < previous_level and ordered_list_stack:
                 ordered_list_stack = _close_lists(
-                    current_level, previous_level, ordered_list_stack, output_parts
+                    current_level,
+                    previous_level,
+                    ordered_list_stack,
+                    output_parts,
                 )
             previous_level = current_level
 
@@ -2970,7 +3120,10 @@ class DoclingDocument(BaseModel):
         return "".join(output_parts)
 
     def _export_to_indented_text(
-        self, indent="  ", max_text_len: int = -1, explicit_tables: bool = False
+        self,
+        indent="  ",
+        max_text_len: int = -1,
+        explicit_tables: bool = False,
     ):
         """Export the document to indented text to expose hierarchy."""
         result = []
