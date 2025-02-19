@@ -1482,7 +1482,7 @@ class KeyValueItem(FloatingItem):
         for cell in self.graph.cells:
             body += f"<{cell.label.value} id='{cell.cell_id}'>{new_line}"
             if cell.prov is not None:
-                body = self.get_location_tokens(
+                body += self.get_location_tokens(
                     doc=doc,
                     new_line=new_line,
                     xsize=xsize,
@@ -1498,7 +1498,7 @@ class KeyValueItem(FloatingItem):
 
             body += f"<{cell.label.value} id='{cell.cell_id}'>{new_line}"
 
-        body += f"</{self.label.value}>\n"
+        body += f"</{self.label.value}>{new_line}"
 
         return body
 
