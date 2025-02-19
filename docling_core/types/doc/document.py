@@ -79,6 +79,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.REFERENCE,
     DocItemLabel.PAGE_HEADER,
     DocItemLabel.PAGE_FOOTER,
+    DocItemLabel.KEY_VALUE_REGION,
 }
 
 DOCUMENT_TOKENS_EXPORT_LABELS = DEFAULT_EXPORT_LABELS.copy()
@@ -1480,7 +1481,7 @@ class KeyValueItem(FloatingItem):
             )
 
         for cell in self.graph.cells:
-            body += f"<{cell.label.value} id='{cell.cell_id}'>{new_line}"
+            body += f"<{cell.label.value}_{cell.cell_id}>{new_line}"
             if cell.prov is not None:
                 body += self.get_location_tokens(
                     doc=doc,
@@ -1493,10 +1494,10 @@ class KeyValueItem(FloatingItem):
 
             if cell.cell_id in source_to_targets:
                 targets = source_to_targets[cell.cell_id]
-                targets_str = ",".join(str(t) for t in targets)
-                body += f"<links='{targets_str}'/>{new_line}"
+                for target in targets:
+                    body += f"<link_{target}>{new_line}"
 
-            body += f"<{cell.label.value} id='{cell.cell_id}'>{new_line}"
+            body += f"</{cell.label.value}_{cell.cell_id}>{new_line}"
 
         body += f"</{self.label.value}>{new_line}"
 
