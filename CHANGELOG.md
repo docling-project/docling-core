@@ -1,3 +1,9 @@
+## [v2.20.0](https://github.com/DS4SD/docling-core/releases/tag/v2.20.0) - 2025-02-19
+
+### Feature
+
+* Introduce Key-Value and Forms items ([#158](https://github.com/DS4SD/docling-core/issues/158)) ([`d622800`](https://github.com/DS4SD/docling-core/commit/d6228007502fc1f27400059eae7bb768209c0a6f))
+
 ## [v2.19.1](https://github.com/DS4SD/docling-core/releases/tag/v2.19.1) - 2025-02-17
 
 ### Fix
