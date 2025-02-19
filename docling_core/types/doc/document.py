@@ -1443,6 +1443,65 @@ class KeyValueItem(FloatingItem):
 
     graph: GraphData
 
+    def export_to_document_tokens(
+        self,
+        doc: "DoclingDocument",
+        new_line: str = "",
+        xsize: int = 500,
+        ysize: int = 500,
+        add_location: bool = True,
+        add_content: bool = True,
+    ):
+        r"""Export key value item to document tokens format.
+
+        :param doc: "DoclingDocument":
+        :param new_line: str (Default value = "")
+        :param xsize: int:  (Default value = 500)
+        :param ysize: int:  (Default value = 500)
+        :param add_location: bool:  (Default value = True)
+        :param add_content: bool:  (Default value = True)
+
+        """
+        body = f"<{self.label.value}>{new_line}"
+
+        if add_location:
+            body += self.get_location_tokens(
+                doc=doc,
+                new_line=new_line,
+                xsize=xsize,
+                ysize=ysize,
+            )
+
+        # mapping from source_cell_id to a list of target_cell_ids
+        source_to_targets: Dict[int, List[int]] = {}
+        for link in self.graph.links:
+            source_to_targets.setdefault(link.source_cell_id, []).append(
+                link.target_cell_id
+            )
+
+        for cell in self.graph.cells:
+            body += f"<{cell.label.value} id='{cell.cell_id}'>{new_line}"
+            if cell.prov is not None:
+                body = self.get_location_tokens(
+                    doc=doc,
+                    new_line=new_line,
+                    xsize=xsize,
+                    ysize=ysize,
+                )
+            if add_content:
+                body += f"{cell.text.strip()}{new_line}"
+
+            if cell.cell_id in source_to_targets:
+                targets = source_to_targets[cell.cell_id]
+                targets_str = ",".join(str(t) for t in targets)
+                body += f"<links='{targets_str}'/>{new_line}"
+
+            body += f"<{cell.label.value} id='{cell.cell_id}'>{new_line}"
+
+        body += f"</{self.label.value}>\n"
+
+        return body
+
 
 class FormItem(FloatingItem):
     """FormItem."""
