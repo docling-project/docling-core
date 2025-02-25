@@ -1465,6 +1465,10 @@ class KeyValueItem(FloatingItem):
         """
         body = f"<{self.label.value}>{new_line}"
 
+        page_no = 0
+        if len(self.prov) > 0:
+            page_no = self.prov[0].page_no
+
         if add_location:
             body += self.get_location_tokens(
                 doc=doc,
@@ -1483,12 +1487,15 @@ class KeyValueItem(FloatingItem):
         for cell in self.graph.cells:
             body += f"<{cell.label.value}_{cell.cell_id}>{new_line}"
             if cell.prov is not None:
-                body += self.get_location_tokens(
-                    doc=doc,
-                    new_line=new_line,
-                    xsize=xsize,
-                    ysize=ysize,
-                )
+                if len(doc.pages.keys()):
+                    page_w, page_h = doc.pages[page_no].size.as_tuple()
+                    body += DocumentToken.get_location(
+                        bbox=cell.prov.bbox.to_bottom_left_origin(page_h).as_tuple(),
+                        page_w=page_w,
+                        page_h=page_h,
+                        xsize=xsize,
+                        ysize=ysize,
+                    )
             if add_content:
                 body += f"{cell.text.strip()}{new_line}"
 
