@@ -2764,14 +2764,17 @@ class DoclingDocument(BaseModel):
                             "</figure>"
                         )
 
+                img_fallback = _image_fallback(item)
+
                 # If the formula is not processed correcty, use its image
                 if (
                     item.text == ""
                     and item.orig != ""
                     and image_mode == ImageRefMode.EMBEDDED
                     and len(item.prov) > 0
+                    and img_fallback is not None
                 ):
-                    text = _image_fallback(item)
+                    text = img_fallback
 
                 # Building a math equation in MathML format
                 # ref https://www.w3.org/TR/wai-aria-1.1/#math
@@ -2791,9 +2794,13 @@ class DoclingDocument(BaseModel):
                             "Malformed formula cannot be rendered. "
                             f"Error {err.__class__.__name__}, formula={math_formula}"
                         )
-                        if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0:
-                            text = _image_fallback(item)
-                        else:
+                        if (
+                            image_mode == ImageRefMode.EMBEDDED
+                            and len(item.prov) > 0
+                            and img_fallback is not None
+                        ):
+                            text = img_fallback
+                        elif len(math_formula) > 0:
                             text = f"<pre>{math_formula}</pre>"
 
                 elif math_formula != "":

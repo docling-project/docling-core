@@ -775,6 +775,25 @@ def test_formula_mathml():
     assert doc_html == gt_html
 
 
+def test_formula_with_missing_fallback():
+    doc = DoclingDocument(name="Dummy")
+    bbox = BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT)
+    prov = ProvenanceItem(page_no=1, bbox=bbox, charspan=(0, 2))
+    doc.add_text(label=DocItemLabel.FORMULA, text="", orig="(II.24) 2 Imar", prov=prov)
+
+    actual = doc.export_to_html(
+        formula_to_mathml=True, html_head="", image_mode=ImageRefMode.EMBEDDED
+    )
+
+    expected = """<!DOCTYPE html>
+<html lang="en">
+
+<div class="formula-not-decoded">Formula not decoded</div>
+</html>"""
+
+    assert actual == expected
+
+
 def test_docitem_get_image():
     # Prepare the document
     doc = DoclingDocument(name="Dummy")
