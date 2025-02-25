@@ -16,6 +16,7 @@ This paper introduces the biggest invention ever made. ...
     - list item 3.a
     - list item 3.b
     - list item 3.c
+        - list item 3.c.i
 - list item 4
 
 This is the caption of table 1.
@@ -32,3 +33,29 @@ This is the caption of figure 1.
 This is the caption of figure 2.
 
 <!-- image -->
+
+- subitem of list
+- item 1 of list
+- item 2 of list
+
+- item 1 of neighboring list
+- item 2 of neighboring list
+    - item 1 of sub list
+    - Here a code snippet: `print("Hello world")` (to be displayed inline)
+    - Here a formula: $E=mc^2$ (to be displayed inline)
+
+Here a code block:
+
+```
+print("Hello world")
+```
+
+Here a formula block:
+
+$$E=mc^2$$
+
+<!-- missing-key-value-item -->
+
+<!-- missing-form-item -->
+
+The end.

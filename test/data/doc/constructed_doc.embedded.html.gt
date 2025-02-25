@@ -82,10 +82,38 @@
 <li>list item 3.a</li>
 <li>list item 3.b</li>
 <li>list item 3.c</li>
+<ol>
+<li>list item 3.c.i</li>
 </ol>
-<li>list item 4</li>
+</ol>
 </ul>
+<li>list item 4</li>
 <table><caption>This is the caption of table 1.</caption><tbody><tr><td rowspan="2">Product</td><td colspan="2">Years</td></tr><tr><td>2016</td><td>2017</td></tr><tr><td>Apple</td><td>49823</td><td>695944</td></tr></tbody></table>
 <figure><figcaption>This is the caption of figure 1.</figcaption></figure>
 <figure><figcaption>This is the caption of figure 2.</figcaption><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="></figure>
+<ul>
+<ul>
+<li>subitem of list</li>
+</ul>
+<li>item 1 of list</li>
+<li>item 2 of list</li>
+</ul>
+<ul>
+<li>item 1 of neighboring list</li>
+<li>item 2 of neighboring list</li>
+<ul>
+<li>item 1 of sub list</li>
+<p>Here a code snippet:</p>
+<pre><code>print("Hello world")</code></pre>
+<p>(to be displayed inline)</p>
+</ul>
+<p>Here a formula:</p>
+<div><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>E</mi><mo>&#x0003D;</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="TeX">E=mc^2</annotation></math></div>
+<p>(to be displayed inline)</p>
+</ul>
+<p>Here a code block:</p>
+<pre><code>print("Hello world")</code></pre>
+<p>Here a formula block:</p>
+<div><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>E</mi><mo>&#x0003D;</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="TeX">E=mc^2</annotation></math></div>
+<p>The end.</p>
 </html>
