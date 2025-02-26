@@ -1465,7 +1465,7 @@ class KeyValueItem(FloatingItem):
         """
         body = f"<{self.label.value}>{new_line}"
 
-        page_no = 0
+        page_no = 1
         if len(self.prov) > 0:
             page_no = self.prov[0].page_no
 
