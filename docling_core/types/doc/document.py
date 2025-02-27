@@ -2489,11 +2489,16 @@ class DoclingDocument(BaseModel):
                     )
                     # NOTE: assumes unordered (flag & marker currently in ListItem)
                     indent_str = list_level * indent * " "
+                    is_ol = item.label == GroupLabel.ORDERED_LIST
                     text = "\n".join(
                         [
                             # avoid additional marker on already evaled sublists
-                            cpt if cpt and cpt[0] == " " else f"{indent_str}- {cpt}"
-                            for cpt in comps
+                            (
+                                c
+                                if c and c[0] == " "
+                                else f"{indent_str}{f'{i + 1}.' if is_ol else '-'} {c}"
+                            )
+                            for i, c in enumerate(comps)
                         ]
                     )
                     _ingest_text(text=text)

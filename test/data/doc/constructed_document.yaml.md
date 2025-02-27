@@ -15,10 +15,10 @@ This paper introduces the biggest invention ever made. ...
 - list item 1
 - list item 2
 - list item 3
-    - list item 3.a
-    - list item 3.b
-    - list item 3.c
-        - list item 3.c.i
+    1. list item 3.a
+    2. list item 3.b
+    3. list item 3.c
+        1. list item 3.c.i
 - list item 4
 
 This is the caption of table 1.
