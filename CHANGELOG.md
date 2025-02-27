@@ -1,3 +1,14 @@
+## [v2.21.0](https://github.com/DS4SD/docling-core/releases/tag/v2.21.0) - 2025-02-27
+
+### Feature
+
+* Add inline groups, revamp Markdown export incl. list groups ([#156](https://github.com/DS4SD/docling-core/issues/156)) ([`2abaf9b`](https://github.com/DS4SD/docling-core/commit/2abaf9b53736187adec0266c5ed8b9acff008f6e))
+
+### Fix
+
+* **markdown:** Fix case of leading list ([#174](https://github.com/DS4SD/docling-core/issues/174)) ([`c77c59b`](https://github.com/DS4SD/docling-core/commit/c77c59bec09d4b8093771935393f558cf319ec29))
+* Properly handle missing page image case for export_to_html ([#166](https://github.com/DS4SD/docling-core/issues/166)) ([`4708f93`](https://github.com/DS4SD/docling-core/commit/4708f933a7ef87e4637f5bea07e6e4f296abc51a))
+
 ## [v2.20.0](https://github.com/DS4SD/docling-core/releases/tag/v2.20.0) - 2025-02-19
 
 ### Feature
