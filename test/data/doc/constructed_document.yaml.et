@@ -1,49 +1,52 @@
 0: unspecified with name=_root_
- 1: title
-  2: text
-  3: text
- 4: chapter with name=Introduction
-  5: section_header
-  6: text
-  7: list with name=group
-   8: list_item
-   9: list_item
+ 1: list with name=group
+  2: list_item
+ 3: title
+  4: text
+  5: text
+ 6: chapter with name=Introduction
+  7: section_header
+  8: text
+  9: list with name=group
    10: list_item
-    11: ordered_list with name=group
-     12: list_item
-     13: list_item
+   11: list_item
+   12: list_item
+    13: ordered_list with name=group
      14: list_item
-      15: ordered_list with name=group
-       16: list_item
-   17: list_item
- 18: caption
- 19: table
+     15: list_item
+     16: list_item
+      17: ordered_list with name=group
+       18: list_item
+   19: list_item
  20: caption
- 21: picture
+ 21: table
  22: caption
  23: picture
- 24: list with name=group
-  25: list with name=group
-   26: list_item
+ 24: caption
+ 25: picture
+ 26: list with name=group
   27: list_item
-  28: list_item
+ 28: list with name=group
  29: list with name=group
   30: list_item
   31: list_item
-   32: list with name=group
-    33: list_item
-    34: inline with name=group
-     35: paragraph
-     36: code
-     37: paragraph
-    38: inline with name=group
-     39: paragraph
-     40: formula
-     41: paragraph
- 42: paragraph
- 43: code
- 44: paragraph
- 45: formula
- 46: key_value_region
- 47: form
- 48: paragraph
+ 32: list with name=group
+  33: list_item
+  34: list_item
+   35: list with name=group
+    36: list_item
+    37: inline with name=group
+     38: paragraph
+     39: code
+     40: paragraph
+    41: inline with name=group
+     42: paragraph
+     43: formula
+     44: paragraph
+ 45: paragraph
+ 46: code
+ 47: paragraph
+ 48: formula
+ 49: key_value_region
+ 50: form
+ 51: paragraph

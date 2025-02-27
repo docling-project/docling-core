@@ -1,3 +1,5 @@
+- item of leading list
+
 # Title of the Document
 
 Author 1
@@ -34,9 +36,10 @@ This is the caption of figure 2.
 
 <!-- image -->
 
-- subitem of list
 - item 1 of list
-- item 2 of list
+
+- item 1 of list after empty list
+- item 2 of list after empty list
 
 - item 1 of neighboring list
 - item 2 of neighboring list

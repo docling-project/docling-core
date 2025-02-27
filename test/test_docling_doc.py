@@ -525,6 +525,9 @@ def _construct_doc() -> DoclingDocument:
 
     doc = DoclingDocument(name="Untitled 1")
 
+    leading_list = doc.add_group(parent=None, label=GroupLabel.LIST)
+    doc.add_list_item(parent=leading_list, text="item of leading list")
+
     title = doc.add_title(
         text="Title of the Document"
     )  # can be done if such information is present, or ommitted.
@@ -688,11 +691,15 @@ def _construct_doc() -> DoclingDocument:
         image=ImageRef.from_pil(image=fig2_image, dpi=72), caption=fig_caption_2
     )
 
+    g0 = doc.add_group(label=GroupLabel.LIST, parent=None)
+    doc.add_list_item(text="item 1 of list", parent=g0)
+
+    # an empty list
+    doc.add_group(label=GroupLabel.LIST, parent=None)
+
     g1 = doc.add_group(label=GroupLabel.LIST, parent=None)
-    gn = doc.add_group(label=GroupLabel.LIST, parent=g1)
-    doc.add_list_item(text="subitem of list", parent=gn)
-    doc.add_list_item(text="item 1 of list", parent=g1)
-    doc.add_list_item(text="item 2 of list", parent=g1)
+    doc.add_list_item(text="item 1 of list after empty list", parent=g1)
+    doc.add_list_item(text="item 2 of list after empty list", parent=g1)
 
     g2 = doc.add_group(label=GroupLabel.LIST, parent=None)
     doc.add_list_item(text="item 1 of neighboring list", parent=g2)

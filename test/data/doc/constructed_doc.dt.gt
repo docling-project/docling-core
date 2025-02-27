@@ -1,4 +1,6 @@
-<doctag><title>Title of the Document</title>
+<doctag><unordered_list><list_item>item of leading list</list_item>
+</unordered_list>
+<title>Title of the Document</title>
 <text>Author 1
 Affiliation 1</text>
 <text>Author 2
@@ -19,10 +21,10 @@ Affiliation 2</text>
 <otsl><fcel>Product<fcel>Years<lcel><nl><ucel><fcel>2016<fcel>2017<nl><fcel>Apple<fcel>49823<fcel>695944<nl><caption>This is the caption of table 1.</caption></otsl>
 <picture><caption>This is the caption of figure 1.</caption></picture>
 <picture><caption>This is the caption of figure 2.</caption></picture>
-<unordered_list><unordered_list><list_item>subitem of list</list_item>
+<unordered_list><list_item>item 1 of list</list_item>
 </unordered_list>
-<list_item>item 1 of list</list_item>
-<list_item>item 2 of list</list_item>
+<unordered_list><unordered_list><list_item>item 1 of list after empty list</list_item>
+<list_item>item 2 of list after empty list</list_item>
 </unordered_list>
 <unordered_list><list_item>item 1 of neighboring list</list_item>
 <list_item>item 2 of neighboring list</list_item>
@@ -34,6 +36,7 @@ Affiliation 2</text>
 <paragraph>Here a formula:</paragraph>
 <formula>E=mc^2</formula>
 <paragraph>(to be displayed inline)</paragraph>
+</unordered_list>
 </unordered_list>
 <paragraph>Here a code block:</paragraph>
 <code<_unknown_>print("Hello world")</code

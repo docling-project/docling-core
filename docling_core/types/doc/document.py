@@ -2488,20 +2488,11 @@ class DoclingDocument(BaseModel):
                         visited=visited,
                     )
                     # NOTE: assumes unordered (flag & marker currently in ListItem)
-                    indent_str = f"{(list_level if components else 0) * indent * ' '}"
+                    indent_str = list_level * indent * " "
                     text = "\n".join(
                         [
-                            (
-                                # if starting with sublist, promote to top-level
-                                cpt.lstrip()
-                                if not components
-                                else (
-                                    # avoid additional marker on already evaled sublists
-                                    cpt
-                                    if cpt and cpt[0] == " "
-                                    else f"{indent_str}- {cpt}"
-                                )
-                            )
+                            # avoid additional marker on already evaled sublists
+                            cpt if cpt and cpt[0] == " " else f"{indent_str}- {cpt}"
                             for cpt in comps
                         ]
                     )
