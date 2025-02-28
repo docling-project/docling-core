@@ -1,3 +1,9 @@
+## [v2.21.1](https://github.com/DS4SD/docling-core/releases/tag/v2.21.1) - 2025-02-28
+
+### Fix
+
+* **markdown:** Fix handling of ordered lists ([#175](https://github.com/DS4SD/docling-core/issues/175)) ([`349f7da`](https://github.com/DS4SD/docling-core/commit/349f7daa0c20c861134cffb28177eaaf48b27ae5))
+
 ## [v2.21.0](https://github.com/DS4SD/docling-core/releases/tag/v2.21.0) - 2025-02-27
 
 ### Feature
