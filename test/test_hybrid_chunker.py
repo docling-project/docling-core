@@ -98,7 +98,7 @@ def test_serialize():
             dict(
                 text=chunk.text,
                 ser_text=(ser_text := chunker.serialize(chunk)),
-                num_tokens=len(TOKENIZER.tokenize(ser_text, max_length=None)),
+                num_tokens=len(TOKENIZER.tokenize(ser_text)),
             )
             for chunk in chunks
         ]
@@ -171,7 +171,7 @@ def test_serialize_altered_delim():
             dict(
                 text=chunk.text,
                 ser_text=(ser_text := chunker.serialize(chunk)),
-                num_tokens=len(TOKENIZER.tokenize(ser_text, max_length=None)),
+                num_tokens=len(TOKENIZER.tokenize(ser_text)),
             )
             for chunk in chunks
         ]
