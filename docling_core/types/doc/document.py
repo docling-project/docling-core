@@ -1490,7 +1490,7 @@ class KeyValueItem(FloatingItem):
                 if len(doc.pages.keys()):
                     page_w, page_h = doc.pages[page_no].size.as_tuple()
                     body += DocumentToken.get_location(
-                        bbox=cell.prov.bbox.to_bottom_left_origin(page_h).as_tuple(),
+                        bbox=cell.prov.bbox.to_top_left_origin(page_h).as_tuple(),
                         page_w=page_w,
                         page_h=page_h,
                         xsize=xsize,
