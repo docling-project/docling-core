@@ -2487,7 +2487,6 @@ class DoclingDocument(BaseModel):
                         is_inline_scope=is_inline_scope,
                         visited=visited,
                     )
-                    # NOTE: assumes unordered (flag & marker currently in ListItem)
                     indent_str = list_level * indent * " "
                     is_ol = item.label == GroupLabel.ORDERED_LIST
                     text = "\n".join(
@@ -2501,7 +2500,12 @@ class DoclingDocument(BaseModel):
                             for i, c in enumerate(comps)
                         ]
                     )
-                    _ingest_text(text=text)
+                    _ingest_text(
+                        text=text,
+                        # special chars have already been escaped as needed
+                        do_escape_html=False,
+                        do_escape_underscores=False,
+                    )
                 elif item.label == GroupLabel.INLINE:
                     comps = self._get_markdown_components(
                         node=item,
@@ -2520,7 +2524,13 @@ class DoclingDocument(BaseModel):
                         is_inline_scope=True,
                         visited=visited,
                     )
-                    _ingest_text(" ".join(comps))
+                    text = " ".join(comps)
+                    _ingest_text(
+                        text=text,
+                        # special chars have already been escaped as needed
+                        do_escape_html=False,
+                        do_escape_underscores=False,
+                    )
                 else:
                     continue
 

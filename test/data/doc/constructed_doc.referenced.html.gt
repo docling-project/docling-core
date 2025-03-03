@@ -108,7 +108,7 @@
 <ul>
 <li>item 1 of sub list</li>
 <p>Here a code snippet:</p>
-<pre><code>print("Hello world")</code></pre>
+<pre><code><p>Hello world</p></code></pre>
 <p>(to be displayed inline)</p>
 </ul>
 <p>Here a formula:</p>

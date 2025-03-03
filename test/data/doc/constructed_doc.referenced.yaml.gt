@@ -676,13 +676,13 @@ texts:
   content_layer: body
   footnotes: []
   label: code
-  orig: print("Hello world")
+  orig: <p>Hello world</p>
   parent:
     $ref: '#/groups/10'
   prov: []
   references: []
   self_ref: '#/texts/24'
-  text: print("Hello world")
+  text: <p>Hello world</p>
 - children: []
   content_layer: body
   label: paragraph

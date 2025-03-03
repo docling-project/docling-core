@@ -44,7 +44,7 @@ This is the caption of figure 2.
 - item 1 of neighboring list
 - item 2 of neighboring list
     - item 1 of sub list
-    - Here a code snippet: `print("Hello world")` (to be displayed inline)
+    - Here a code snippet: `<p>Hello world</p>` (to be displayed inline)
     - Here a formula: $E=mc^2$ (to be displayed inline)
 
 Here a code block:

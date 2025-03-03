@@ -714,7 +714,7 @@ def _construct_doc() -> DoclingDocument:
         text="Here a code snippet:",
         parent=inline1,
     )
-    doc.add_code(text='print("Hello world")', parent=inline1)
+    doc.add_code(text="<p>Hello world</p>", parent=inline1)
     doc.add_text(
         label=DocItemLabel.PARAGRAPH, text="(to be displayed inline)", parent=inline1
     )
