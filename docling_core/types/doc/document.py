@@ -800,7 +800,7 @@ class CodeItem(FloatingItem, TextItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        body = f"<{self.label.value}{new_line}"
+        body = f"<{self.label.value}>{new_line}"
 
         if add_location:
             body += self.get_location_tokens(
@@ -813,7 +813,7 @@ class CodeItem(FloatingItem, TextItem):
         if add_content and self.text is not None:
             body += f"<_{self.code_language.value}_>{self.text}{new_line}"
 
-        body += f"</{self.label.value}\n"
+        body += f"</{self.label.value}>\n"
 
         return body
 
