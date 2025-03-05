@@ -2848,7 +2848,7 @@ class DoclingDocument(BaseModel):
 
                 # Building a math equation in MathML format
                 # ref https://www.w3.org/TR/wai-aria-1.1/#math
-                elif formula_to_mathml:
+                elif formula_to_mathml and len(math_formula) > 0:
                     try:
                         mathml_element = latex2mathml.converter.convert_to_element(
                             math_formula, display="block"
@@ -2870,7 +2870,7 @@ class DoclingDocument(BaseModel):
                             and img_fallback is not None
                         ):
                             text = img_fallback
-                        elif len(math_formula) > 0:
+                        else:
                             text = f"<pre>{math_formula}</pre>"
 
                 elif math_formula != "":
