@@ -1,3 +1,12 @@
+## [v2.21.2](https://github.com/DS4SD/docling-core/releases/tag/v2.21.2) - 2025-03-06
+
+### Fix
+
+* Suppress warning for missing fallback case ([#184](https://github.com/DS4SD/docling-core/issues/184)) ([`ccde54a`](https://github.com/DS4SD/docling-core/commit/ccde54aa2926281644e5c1f0c96b79db18f6bbc7))
+* **doctags:** Fix code export ([#181](https://github.com/DS4SD/docling-core/issues/181)) ([`53f6d09`](https://github.com/DS4SD/docling-core/commit/53f6d099b05f295fea546010dc2faadc5b2c7ee2))
+* **markdown:** Fix escaping in case of nesting ([#180](https://github.com/DS4SD/docling-core/issues/180)) ([`834db4b`](https://github.com/DS4SD/docling-core/commit/834db4bc664e010e10c4503e60be576ed7819e2c))
+* **HybridChunker:** Remove `max_length` from tokenization ([#178](https://github.com/DS4SD/docling-core/issues/178)) ([`419252c`](https://github.com/DS4SD/docling-core/commit/419252c39b856c45e50326b4eff3c4a183ac8437))
+
 ## [v2.21.1](https://github.com/DS4SD/docling-core/releases/tag/v2.21.1) - 2025-02-28
 
 ### Fix
