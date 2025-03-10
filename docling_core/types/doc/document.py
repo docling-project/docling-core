@@ -1003,6 +1003,20 @@ class PictureItem(FloatingItem):
             predicted_class = classifications[0].predicted_classes[0].class_name
             body += DocumentToken.get_picture_classification_token(predicted_class)
 
+        smiles_annotations = [
+            ann for ann in self.annotations if isinstance(ann, PictureMoleculeData)
+        ]
+        if len(smiles_annotations) > 0:
+            body += (
+                "<"
+                + DocumentToken.SMILES.value
+                + ">"
+                + smiles_annotations[0].smi
+                + "</"
+                + DocumentToken.SMILES.value
+                + ">"
+            )
+
         if add_caption and len(self.captions):
             text = self.caption_text(doc)
 

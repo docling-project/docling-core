@@ -144,7 +144,7 @@ pictures: # All pictures...
         text: "..."
         provenance: "model2"
       - kind: molecule_data
-        smi: "..."
+        smi: "CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1"
         confidence: 0.98
         class_name: "chemistry_molecular_structure"
         segmentation: [[0,0],[1,0],[0,1],[1,1]]

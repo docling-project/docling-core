@@ -50,6 +50,7 @@ class DocumentToken(Enum):
     UNORDERED_LIST = "unordered_list"
     LOC = "loc_"
     PAGE_BREAK = "page_break"
+    SMILES = "smiles"
 
     @classmethod
     def get_special_tokens(
