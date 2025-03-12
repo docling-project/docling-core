@@ -1,0 +1,17 @@
+Assistant: <doctag><page_header><loc_135><loc_33><loc_407><loc_40>Optimized Table Tokenization for Table Structure Recognition</page_header>
+<page_header><loc_439><loc_32><loc_445><loc_38>7</page_header>
+<picture><loc_104><loc_85><loc_413><loc_170><other><caption><loc_68><loc_56><loc_445><loc_80>Fig. 3. OTSL description of table structure: A - table example; B - graphical representation of table structure; C - mapping structure on a grid; D - OTSL structure encoding; E - explanation on cell encoding</caption></picture>
+<section_header_level_1><loc_68><loc_191><loc_190><loc_199>4.2 Language Syntax</section_header_level_1>
+<text><loc_68><loc_206><loc_318><loc_213>The OTSL representation follows these syntax rules:</text>
+<unordered_list><list_item><loc_72><loc_222><loc_445><loc_238>1. Left-looking cell rule: The left neighbour of an "L" cell must be either another "L" cell or a "C" cell.</list_item>
+<list_item><loc_72><loc_240><loc_445><loc_257>2. Up-looking cell rule: The upper neighbour of a "U" cell must be either another "U" cell or a "C" cell.</list_item>
+<list_item><loc_72><loc_259><loc_167><loc_267>3. Cross cell rule:</list_item>
+</unordered_list>
+<text><loc_87><loc_268><loc_445><loc_293>The left neighbour of an "X" cell must be either another "X" cell or a "U" cell, and the upper neighbour of an "X" cell must be either another "X" cell or an "L" cell.</text>
+<unordered_list><list_item><loc_72><loc_295><loc_445><loc_303>4. First row rule: Only "L" cells and "C" cells are allowed in the first row.</list_item>
+<list_item><loc_72><loc_304><loc_445><loc_320>5. First column rule: Only "U" cells and "C" cells are allowed in the first column.</list_item>
+<list_item><loc_72><loc_322><loc_445><loc_338>6. Rectangular rule: The table representation is always rectangular - all rows must have an equal number of tokens, terminated with "NL" token.</list_item>
+</unordered_list>
+<text><loc_68><loc_347><loc_445><loc_445>The application of these rules gives OTSL a set of unique properties. First of all, the OTSL enforces a strictly rectangular structure representation, where every new-line token starts a new row. As a consequence, all rows and all columns have exactly the same number of tokens, irrespective of cell spans. Secondly, the OTSL representation is unambiguous: Every table structure is represented in one way. In this representation every table cell corresponds to a "C"-cell token, which in case of spans is always located in the top-left corner of the table cell definition. Third, OTSL syntax rules are only backward-looking. As a consequence, every predicted token can be validated straight during sequence generation by looking at the previously predicted sequence. As such, OTSL can guarantee that every predicted sequence is syntactically valid.</text>
+<text><loc_68><loc_447><loc_445><loc_463>These characteristics can be easily learned by sequence generator networks, as we demonstrate further below. We find strong indications that this pattern</text>
+</doctag><end_of_utterance>
