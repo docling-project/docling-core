@@ -1,3 +1,10 @@
+## [v2.22.0](https://github.com/DS4SD/docling-core/releases/tag/v2.22.0) - 2025-03-12
+
+### Feature
+
+* Add DoclingDocument.load_from_doctags method and DocTags data models ([#187](https://github.com/DS4SD/docling-core/issues/187)) ([`c065c4c`](https://github.com/DS4SD/docling-core/commit/c065c4c7c62f126879fdf78661521400779602af))
+* Add document tokens for SMILES ([#176](https://github.com/DS4SD/docling-core/issues/176)) ([`32398b8`](https://github.com/DS4SD/docling-core/commit/32398b8ac0c909933b93fd6abea6979acbef8992))
+
 ## [v2.21.2](https://github.com/DS4SD/docling-core/releases/tag/v2.21.2) - 2025-03-06
 
 ### Fix
