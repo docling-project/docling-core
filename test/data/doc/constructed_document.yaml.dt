@@ -42,5 +42,13 @@ Affiliation 2</text>
 <code><_unknown_>print("Hello world")</code>
 <paragraph>Here a formula block:</paragraph>
 <formula>E=mc^2</formula>
+<paragraph>Some formatting chops:</paragraph>
+<paragraph>bold</paragraph>
+<paragraph>italic</paragraph>
+<paragraph>underline</paragraph>
+<paragraph>strikethrough</paragraph>
+<paragraph>hyperlink</paragraph>
+<paragraph>&</paragraph>
+<paragraph>everything at the same time.</paragraph>
 <paragraph>The end.</paragraph>
 </doctag>

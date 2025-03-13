@@ -19,7 +19,8 @@ body:
   - $ref: '#/texts/32'
   - $ref: '#/key_value_items/0'
   - $ref: '#/form_items/0'
-  - $ref: '#/texts/33'
+  - $ref: '#/groups/12'
+  - $ref: '#/texts/41'
   content_layer: body
   label: unspecified
   name: _root_
@@ -169,6 +170,21 @@ groups:
   parent:
     $ref: '#/groups/9'
   self_ref: '#/groups/11'
+- children:
+  - $ref: '#/texts/33'
+  - $ref: '#/texts/34'
+  - $ref: '#/texts/35'
+  - $ref: '#/texts/36'
+  - $ref: '#/texts/37'
+  - $ref: '#/texts/38'
+  - $ref: '#/texts/39'
+  - $ref: '#/texts/40'
+  content_layer: body
+  label: inline
+  name: group
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/12'
 key_value_items:
 - captions: []
   children: []
@@ -762,10 +778,109 @@ texts:
 - children: []
   content_layer: body
   label: paragraph
+  orig: 'Some formatting chops:'
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/33'
+  text: 'Some formatting chops:'
+- children: []
+  content_layer: body
+  formatting:
+    bold: true
+    italic: false
+    strikethrough: false
+    underline: false
+  label: paragraph
+  orig: bold
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/34'
+  text: bold
+- children: []
+  content_layer: body
+  formatting:
+    bold: false
+    italic: true
+    strikethrough: false
+    underline: false
+  label: paragraph
+  orig: italic
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/35'
+  text: italic
+- children: []
+  content_layer: body
+  formatting:
+    bold: false
+    italic: false
+    strikethrough: false
+    underline: true
+  label: paragraph
+  orig: underline
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/36'
+  text: underline
+- children: []
+  content_layer: body
+  formatting:
+    bold: false
+    italic: false
+    strikethrough: true
+    underline: false
+  label: paragraph
+  orig: strikethrough
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/37'
+  text: strikethrough
+- children: []
+  content_layer: body
+  hyperlink: .
+  label: paragraph
+  orig: hyperlink
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/38'
+  text: hyperlink
+- children: []
+  content_layer: body
+  label: paragraph
+  orig: '&'
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/39'
+  text: '&'
+- children: []
+  content_layer: body
+  formatting:
+    bold: true
+    italic: true
+    strikethrough: true
+    underline: true
+  hyperlink: https://github.com/DS4SD/docling
+  label: paragraph
+  orig: everything at the same time.
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/40'
+  text: everything at the same time.
+- children: []
+  content_layer: body
+  label: paragraph
   orig: The end.
   parent:
     $ref: '#/body'
   prov: []
-  self_ref: '#/texts/33'
+  self_ref: '#/texts/41'
   text: The end.
-version: 1.2.0
+version: 1.3.0

@@ -120,5 +120,13 @@
 <pre><code>print("Hello world")</code></pre>
 <p>Here a formula block:</p>
 <div><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>E</mi><mo>&#x0003D;</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="TeX">E=mc^2</annotation></math></div>
+<p>Some formatting chops:</p>
+<p>bold</p>
+<p>italic</p>
+<p>underline</p>
+<p>strikethrough</p>
+<p>hyperlink</p>
+<p>&amp;</p>
+<p>everything at the same time.</p>
 <p>The end.</p>
 </html>

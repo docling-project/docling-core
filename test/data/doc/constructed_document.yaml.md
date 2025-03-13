@@ -61,4 +61,6 @@ $$E=mc^2$$
 
 <!-- missing-form-item -->
 
+Some formatting chops: **bold** *italic* underline ~~strikethrough~~ [hyperlink](.) &amp; [~~***everything at the same time.***~~](https://github.com/DS4SD/docling)
+
 The end.

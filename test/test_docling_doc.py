@@ -13,14 +13,15 @@ from pydantic import AnyUrl, ValidationError
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (  # BoundingBox,
     CURRENT_VERSION,
-    DEFAULT_EXPORT_LABELS,
     CodeItem,
     ContentLayer,
     DocItem,
     DoclingDocument,
     DocumentOrigin,
     FloatingItem,
+    Formatting,
     FormItem,
+    FormulaItem,
     GraphCell,
     GraphData,
     GraphLink,
@@ -35,6 +36,7 @@ from docling_core.types.doc.document import (  # BoundingBox,
     TableData,
     TableItem,
     TextItem,
+    TitleItem,
 )
 from docling_core.types.doc.labels import (
     DocItemLabel,
@@ -321,6 +323,15 @@ def test_docitems():
             )
             verify(dc, obj)
 
+        elif dc is TitleItem:
+            obj = dc(
+                text="whatever",
+                orig="whatever",
+                label=DocItemLabel.TITLE,
+                self_ref="#",
+            )
+            verify(dc, obj)
+
         elif dc is SectionHeaderItem:
             obj = dc(
                 text="whatever",
@@ -349,6 +360,13 @@ def test_docitems():
                 orig="whatever",
                 text="print(Hello World!)",
                 code_language="Python",
+            )
+            verify(dc, obj)
+        elif dc is FormulaItem:
+            obj = dc(
+                self_ref="#",
+                orig="whatever",
+                text="E=mc^2",
             )
             verify(dc, obj)
         elif dc is GraphData:  # we skip this on purpose
@@ -431,7 +449,8 @@ def test_construct_bad_doc():
     doc = _construct_bad_doc()
     assert doc.validate_tree(doc.body) == False
 
-    _test_export_methods(doc, filename=filename)
+    with pytest.raises(ValueError):
+        _test_export_methods(doc, filename=filename)
     with pytest.raises(ValueError):
         _test_serialize_and_reload(doc)
 
@@ -474,13 +493,7 @@ def _test_export_methods(doc: DoclingDocument, filename: str):
     _verify_regression_test(et_pred, filename=filename, ext="et")
 
     # Export stuff
-    labels = DEFAULT_EXPORT_LABELS.union(
-        {
-            DocItemLabel.KEY_VALUE_REGION,
-            DocItemLabel.FORM,
-        }
-    )
-    md_pred = doc.export_to_markdown(labels=labels)
+    md_pred = doc.export_to_markdown()
     _verify_regression_test(md_pred, filename=filename, ext="md")
 
     # Test sHTML export ...
@@ -766,6 +779,54 @@ def _construct_doc() -> DoclingDocument:
     doc.add_key_values(graph=graph)
 
     doc.add_form(graph=graph)
+
+    inline_fmt = doc.add_group(label=GroupLabel.INLINE)
+    doc.add_text(
+        label=DocItemLabel.PARAGRAPH, text="Some formatting chops:", parent=inline_fmt
+    )
+    doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="bold",
+        parent=inline_fmt,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="italic",
+        parent=inline_fmt,
+        formatting=Formatting(italic=True),
+    )
+    doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="underline",
+        parent=inline_fmt,
+        formatting=Formatting(underline=True),
+    )
+    doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="strikethrough",
+        parent=inline_fmt,
+        formatting=Formatting(strikethrough=True),
+    )
+    doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="hyperlink",
+        parent=inline_fmt,
+        hyperlink=Path("."),
+    )
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text="&", parent=inline_fmt)
+    doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="everything at the same time.",
+        parent=inline_fmt,
+        formatting=Formatting(
+            bold=True,
+            italic=True,
+            underline=True,
+            strikethrough=True,
+        ),
+        hyperlink=AnyUrl("https://github.com/DS4SD/docling"),
+    )
 
     doc.add_text(label=DocItemLabel.PARAGRAPH, text="The end.", parent=None)
 

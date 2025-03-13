@@ -7,3 +7,5 @@ prov: []
 self_ref: '#'
 text: whatever
 content_layer: body
+formatting: null
+hyperlink: null
