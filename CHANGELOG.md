@@ -1,3 +1,10 @@
+## [v2.23.0](https://github.com/DS4SD/docling-core/releases/tag/v2.23.0) - 2025-03-13
+
+### Feature
+
+* Add serializers, text formatting, update Markdown export ([#182](https://github.com/DS4SD/docling-core/issues/182)) ([`a7cdc87`](https://github.com/DS4SD/docling-core/commit/a7cdc87411102b15da5459e0b5d00fbe966aea9d))
+* Add data model types from docling-parse ([#186](https://github.com/DS4SD/docling-core/issues/186)) ([`a86a4a3`](https://github.com/DS4SD/docling-core/commit/a86a4a3aa36ad0e69835af3aeba381be39a99cb9))
+
 ## [v2.22.0](https://github.com/DS4SD/docling-core/releases/tag/v2.22.0) - 2025-03-12
 
 ### Feature
