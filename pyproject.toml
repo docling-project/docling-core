@@ -23,7 +23,7 @@ maintainers = [
 ]
 readme = "README.md"
 homepage = "https://ds4sd.github.io/"
-repository = "https://github.com/DS4SD/docling-core"
+repository = "https://github.com/docling-project/docling-core"
 keywords = ["docling", "discovery", "etl", "information retrieval", "analytics", "database", "database schema", "schema", "JSON"]
 classifiers=[
     "Development Status :: 5 - Production/Stable",

@@ -14,7 +14,7 @@ env:
 
 jobs:
   code-checks:
-    if: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name != 'DS4SD/docling-core' && github.event.pull_request.head.repo.full_name != 'ds4sd/docling-core') }}
+    if: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name != 'docling-project/docling-core' && github.event.pull_request.head.repo.full_name != 'docling-project/docling-core') }}
     uses: ./.github/workflows/checks.yml
 
     # To enable when we add the ./docs
