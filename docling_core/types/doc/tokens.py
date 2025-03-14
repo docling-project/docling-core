@@ -51,6 +51,7 @@ class DocumentToken(Enum):
     LOC = "loc_"
     PAGE_BREAK = "page_break"
     SMILES = "smiles"
+    INLINE = "inline"
 
     @classmethod
     def get_special_tokens(

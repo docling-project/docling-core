@@ -741,22 +741,27 @@ class TextItem(DocItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        body = f"<{self.label.value}>{new_line}"
+        from docling_core.experimental.serializer.doctags import (
+            DocTagsDocSerializer,
+            DocTagsParams,
+        )
 
-        if add_location:
-            body += self.get_location_tokens(
-                doc=doc,
+        serializer = DocTagsDocSerializer(
+            doc=doc,
+            params=DocTagsParams(
                 new_line=new_line,
                 xsize=xsize,
                 ysize=ysize,
-            )
-
-        if add_content and self.text is not None:
-            body += f"{self.text.strip()}{new_line}"
-
-        body += f"</{self.label.value}>\n"
-
-        return body
+                add_location=add_location,
+                add_content=add_content,
+            ),
+        )
+        text = serializer.text_serializer.serialize(
+            item=self,
+            doc_serializer=serializer,
+            doc=doc,
+        ).text
+        return text
 
 
 class TitleItem(TextItem):
@@ -794,27 +799,27 @@ class SectionHeaderItem(TextItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        body = f"<{self.label.value}_level_{self.level}>{new_line}"
+        from docling_core.experimental.serializer.doctags import (
+            DocTagsDocSerializer,
+            DocTagsParams,
+        )
 
-        # TODO: This must be done through an explicit mapping.
-        # assert DocumentToken.is_known_token(
-        #    body
-        # ), f"failed DocumentToken.is_known_token({body})"
-
-        if add_location:
-            body += self.get_location_tokens(
-                doc=doc,
+        serializer = DocTagsDocSerializer(
+            doc=doc,
+            params=DocTagsParams(
                 new_line=new_line,
                 xsize=xsize,
                 ysize=ysize,
-            )
-
-        if add_content and self.text is not None:
-            body += f"{self.text.strip()}{new_line}"
-
-        body += f"</{self.label.value}_level_{self.level}>\n"
-
-        return body
+                add_location=add_location,
+                add_content=add_content,
+            ),
+        )
+        text = serializer.text_serializer.serialize(
+            item=self,
+            doc_serializer=serializer,
+            doc=doc,
+        ).text
+        return text
 
 
 class ListItem(TextItem):
@@ -884,22 +889,27 @@ class CodeItem(FloatingItem, TextItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        body = f"<{self.label.value}>{new_line}"
+        from docling_core.experimental.serializer.doctags import (
+            DocTagsDocSerializer,
+            DocTagsParams,
+        )
 
-        if add_location:
-            body += self.get_location_tokens(
-                doc=doc,
+        serializer = DocTagsDocSerializer(
+            doc=doc,
+            params=DocTagsParams(
                 new_line=new_line,
                 xsize=xsize,
                 ysize=ysize,
-            )
-
-        if add_content and self.text is not None:
-            body += f"<_{self.code_language.value}_>{self.text}{new_line}"
-
-        body += f"</{self.label.value}>\n"
-
-        return body
+                add_location=add_location,
+                add_content=add_content,
+            ),
+        )
+        text = serializer.text_serializer.serialize(
+            item=self,
+            doc_serializer=serializer,
+            doc=doc,
+        ).text
+        return text
 
 
 class FormulaItem(TextItem):
@@ -1040,7 +1050,7 @@ class PictureItem(FloatingItem):
         xsize: int = 500,
         ysize: int = 500,
         add_location: bool = True,
-        add_caption: bool = True,
+        add_caption: bool = True,  # TODO not covered
         add_content: bool = True,  # not used at the moment
     ):
         r"""Export picture to document tokens format.
@@ -1055,59 +1065,27 @@ class PictureItem(FloatingItem):
         :param # not used at the moment
 
         """
-        body = f"<{self.label.value}>{new_line}"
-        if add_location:
-            body += self.get_location_tokens(
-                doc=doc,
+        from docling_core.experimental.serializer.doctags import (
+            DocTagsDocSerializer,
+            DocTagsParams,
+        )
+
+        serializer = DocTagsDocSerializer(
+            doc=doc,
+            params=DocTagsParams(
                 new_line=new_line,
                 xsize=xsize,
                 ysize=ysize,
-            )
-
-        classifications = [
-            ann
-            for ann in self.annotations
-            if isinstance(ann, PictureClassificationData)
-        ]
-        if len(classifications) > 0:
-            # ! TODO: currently this code assumes class_name is of type 'str'
-            # ! TODO: when it will change to an ENUM --> adapt code
-            predicted_class = classifications[0].predicted_classes[0].class_name
-            body += DocumentToken.get_picture_classification_token(predicted_class)
-
-        smiles_annotations = [
-            ann for ann in self.annotations if isinstance(ann, PictureMoleculeData)
-        ]
-        if len(smiles_annotations) > 0:
-            body += (
-                "<"
-                + DocumentToken.SMILES.value
-                + ">"
-                + smiles_annotations[0].smi
-                + "</"
-                + DocumentToken.SMILES.value
-                + ">"
-            )
-
-        if add_caption and len(self.captions):
-            text = self.caption_text(doc)
-
-            if len(text):
-                body += f"<{DocItemLabel.CAPTION.value}>"
-                for caption in self.captions:
-                    body += caption.resolve(doc).get_location_tokens(
-                        doc=doc,
-                        new_line=new_line,
-                        xsize=xsize,
-                        ysize=ysize,
-                    )
-                body += f"{text.strip()}"
-                body += f"</{DocItemLabel.CAPTION.value}>"
-                body += f"{new_line}"
-
-        body += f"</{self.label.value}>\n"
-
-        return body
+                add_location=add_location,
+                add_content=add_content,
+            ),
+        )
+        text = serializer.picture_serializer.serialize(
+            item=self,
+            doc_serializer=serializer,
+            doc=doc,
+        ).text
+        return text
 
 
 class TableItem(FloatingItem):
@@ -1174,15 +1152,11 @@ class TableItem(FloatingItem):
             serializer = MarkdownDocSerializer(
                 doc=doc,
             )
-            text = (
-                serializer.table_serializer.serialize(
-                    item=self,
-                    doc_serializer=serializer,
-                    doc=doc,
-                ).text
-                if serializer.table_serializer
-                else ""
-            )
+            text = serializer.table_serializer.serialize(
+                item=self,
+                doc_serializer=serializer,
+                doc=doc,
+            ).text
             return text
         else:
             _logger.warning(
@@ -1398,9 +1372,9 @@ class TableItem(FloatingItem):
         xsize: int = 500,
         ysize: int = 500,
         add_location: bool = True,
-        add_cell_location: bool = True,
-        add_cell_text: bool = True,
-        add_caption: bool = True,
+        add_cell_location: bool = True,  # TODO not covered
+        add_cell_text: bool = True,  # TODO not covered
+        add_caption: bool = True,  # TODO not covered
     ):
         r"""Export table to document tokens format.
 
@@ -1414,39 +1388,26 @@ class TableItem(FloatingItem):
         :param add_caption: bool:  (Default value = True)
 
         """
-        otsl_tag = DocumentToken.OTSL.value
+        from docling_core.experimental.serializer.doctags import (
+            DocTagsDocSerializer,
+            DocTagsParams,
+        )
 
-        body = f"<{otsl_tag}>{new_line}"
-
-        if add_location:
-            body += self.get_location_tokens(
-                doc=doc,
+        serializer = DocTagsDocSerializer(
+            doc=doc,
+            params=DocTagsParams(
                 new_line=new_line,
                 xsize=xsize,
                 ysize=ysize,
-            )
-
-        body += self.export_to_otsl(doc, add_cell_location, add_cell_text, xsize, ysize)
-
-        if add_caption and len(self.captions):
-            text = self.caption_text(doc)
-
-            if len(text):
-                body += f"<{DocItemLabel.CAPTION.value}>"
-                for caption in self.captions:
-                    body += caption.resolve(doc).get_location_tokens(
-                        doc=doc,
-                        new_line=new_line,
-                        xsize=xsize,
-                        ysize=ysize,
-                    )
-                body += f"{text.strip()}"
-                body += f"</{DocItemLabel.CAPTION.value}>"
-                body += f"{new_line}"
-
-        body += f"</{otsl_tag}>\n"
-
-        return body
+                add_location=add_location,
+            ),
+        )
+        text = serializer.table_serializer.serialize(
+            item=self,
+            doc_serializer=serializer,
+            doc=doc,
+        ).text
+        return text
 
 
 class GraphCell(BaseModel):
@@ -3481,196 +3442,27 @@ class DoclingDocument(BaseModel):
         :returns: The content of the document formatted as a DocTags string.
         :rtype: str
         """
-
-        def _close_lists(
-            current_level: int,
-            previous_level: int,
-            ordered_list_stack: List[bool],
-            output_parts: List[str],
-        ) -> List[bool]:
-            """Close open list tags until the nesting level matches item's level."""
-            while current_level < previous_level and ordered_list_stack:
-                last_is_ordered = ordered_list_stack.pop()
-                if last_is_ordered:
-                    output_parts.append(f"</{DocumentToken.ORDERED_LIST.value}>\n")
-                else:
-                    output_parts.append(f"</{DocumentToken.UNORDERED_LIST.value}>\n")
-                previous_level -= 1
-            return ordered_list_stack
-
-        def _add_page_break_if_needed(
-            output_parts: List[str],
-            item,
-            prev_page_no,
-            page_break_enabled: bool,
-        ):
-            """Inserts a page-break token.
-
-            Inserts a page-break token if the item's page number is different
-            from the previous item and page breaks are enabled.
-            Returns the updated output_parts list and the current page number.
-            """
-            if not page_break_enabled:
-                return output_parts, prev_page_no
-
-            if not item.prov:
-                return output_parts, prev_page_no
-
-            current_page_no = item.prov[0].page_no
-            if prev_page_no is None:
-                return output_parts, current_page_no
-
-            if current_page_no != prev_page_no:
-                output_parts.append(f"<{DocumentToken.PAGE_BREAK.value}>\n")
-
-            return output_parts, current_page_no
-
-        def _get_standalone_captions(document_body):
-            """Identify captions that are not attached to any table or figure."""
-            all_captions = set()
-            matched_captions = set()
-            for item, _ in self.iterate_items(document_body, with_groups=True):
-                if item.label == DocItemLabel.CAPTION:
-                    all_captions.update([item.self_ref])
-                if item.label in [DocItemLabel.PICTURE, DocItemLabel.TABLE]:
-                    matched_captions.update([caption.cref for caption in item.captions])
-
-            return all_captions - matched_captions
-
-        # Initialization
-        output_parts: List[str] = []
-        ordered_list_stack: List[bool] = []
-        previous_level = 0
-        previous_page_no = None
-
-        # Precompute standalone captions
-        standalone_captions = _get_standalone_captions(self.body)
-
-        # Begin document
-        output_parts.append(f"<{DocumentToken.DOCUMENT.value}>{delim}")
-
-        for ix, (item, current_level) in enumerate(
-            self.iterate_items(
-                self.body,
-                with_groups=True,
-                included_content_layers={
-                    ContentLayer.BODY,
-                    ContentLayer.FURNITURE,
-                },
-            )
-        ):
-            # Close lists if we've moved to a lower nesting level
-            if current_level < previous_level and ordered_list_stack:
-                ordered_list_stack = _close_lists(
-                    current_level,
-                    previous_level,
-                    ordered_list_stack,
-                    output_parts,
-                )
-            previous_level = current_level
-
-            # Skip items outside the specified element range
-            if ix < from_element or ix >= to_element:
-                continue
-
-            # Skip items whose label is not in the allowed set
-            if isinstance(item, DocItem) and (item.label not in labels):
-                continue
-
-            # Skip captions that are not standalone as they will be included below
-            # by the export functions of Table and Picture
-            if (
-                isinstance(item, TextItem)
-                and item.label == DocItemLabel.CAPTION
-                and item.self_ref not in standalone_captions
-            ):
-                continue
-
-            # Handle list groups
-            if isinstance(item, GroupItem):
-                if item.label == GroupLabel.ORDERED_LIST:
-                    output_parts.append(f"<{DocumentToken.ORDERED_LIST.value}>{delim}")
-                    ordered_list_stack.append(True)
-                elif item.label == GroupLabel.LIST:
-                    output_parts.append(
-                        f"<{DocumentToken.UNORDERED_LIST.value}>{delim}"
-                    )
-                    ordered_list_stack.append(False)
-                continue
-
-            # For other item types, optionally insert page-break if the page changed
-            output_parts, previous_page_no = _add_page_break_if_needed(
-                output_parts, item, previous_page_no, add_page_index
-            )
-
-            if isinstance(item, SectionHeaderItem):
-                output_parts.append(
-                    item.export_to_document_tokens(
-                        doc=self,
-                        new_line=delim,
-                        xsize=xsize,
-                        ysize=ysize,
-                        add_location=add_location,
-                        add_content=add_content,
-                    )
-                )
-            elif isinstance(item, CodeItem):
-                output_parts.append(
-                    item.export_to_document_tokens(
-                        doc=self,
-                        new_line=delim,
-                        xsize=xsize,
-                        ysize=ysize,
-                        add_location=add_location,
-                        add_content=add_content,
-                    )
-                )
-            elif isinstance(item, TextItem):
-                output_parts.append(
-                    item.export_to_document_tokens(
-                        doc=self,
-                        new_line=delim,
-                        xsize=xsize,
-                        ysize=ysize,
-                        add_location=add_location,
-                        add_content=add_content,
-                    )
-                )
-            elif isinstance(item, TableItem):
-                output_parts.append(
-                    item.export_to_document_tokens(
-                        doc=self,
-                        new_line=delim,
-                        xsize=xsize,
-                        ysize=ysize,
-                        add_location=add_location,
-                        add_cell_location=add_table_cell_location,
-                        add_cell_text=add_table_cell_text,
-                        add_caption=True,
-                    )
-                )
-            elif isinstance(item, PictureItem):
-                output_parts.append(
-                    item.export_to_document_tokens(
-                        doc=self,
-                        new_line=delim,
-                        xsize=xsize,
-                        ysize=ysize,
-                        add_caption=True,
-                        add_location=add_location,
-                        add_content=add_content,
-                    )
-                )
-
-        # End any lists that might still be open
-        ordered_list_stack = _close_lists(
-            0, previous_level, ordered_list_stack, output_parts
+        from docling_core.experimental.serializer.doctags import (
+            DocTagsDocSerializer,
+            DocTagsParams,
         )
 
-        # End document
-        output_parts.append(f"</{DocumentToken.DOCUMENT.value}>")
-
-        return "".join(output_parts)
+        serializer = DocTagsDocSerializer(
+            doc=self,
+            start=from_element,
+            stop=to_element,
+            labels=labels,
+            params=DocTagsParams(
+                new_line=delim,
+                xsize=xsize,
+                ysize=ysize,
+                add_location=add_location,
+                add_content=add_content,
+            ),
+            # add_page_index: bool = True,
+        )
+        ser_res = serializer.serialize()
+        return ser_res.text
 
     def _export_to_indented_text(
         self,

@@ -7,7 +7,7 @@
 import sys
 from functools import cached_property
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, computed_field
 from typing_extensions import override
@@ -125,6 +125,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         """References to excluded items."""
         return self._excluded_refs
 
+    def get_params(self) -> dict[str, Any]:
+        """Get parameters for serialization."""
+        return {}
+
     # making some assumptions about the kwargs it can pass
     @override
     def get_parts(
@@ -170,6 +174,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     list_level=list_level,
                     is_inline_scope=is_inline_scope,
                     visited=my_visited,
+                    **({**self.get_params(), **kwargs}),
                 )
             elif isinstance(item, InlineGroup):
                 part = self.inline_serializer.serialize(
@@ -178,6 +183,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     doc=self.doc,
                     list_level=list_level,
                     visited=my_visited,
+                    **({**self.get_params(), **kwargs}),
                 )
             ###########
             # doc items
@@ -191,6 +197,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                         doc_serializer=self,
                         doc=self.doc,
                         is_inline_scope=is_inline_scope,
+                        **({**self.get_params(), **kwargs}),
                     )
                     if item.self_ref not in self.get_excluded_refs()
                     else SerializationResult(text="")
@@ -200,6 +207,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     item=item,
                     doc_serializer=self,
                     doc=self.doc,
+                    **({**self.get_params(), **kwargs}),
                 )
             elif isinstance(item, PictureItem):
                 part = self.picture_serializer.serialize(
@@ -209,24 +217,28 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     visited=my_visited,
                     image_mode=self.image_mode,
                     image_placeholder=self.image_placeholder,
+                    **({**self.get_params(), **kwargs}),
                 )
             elif isinstance(item, KeyValueItem):
                 part = self.key_value_serializer.serialize(
                     item=item,
                     doc_serializer=self,
                     doc=self.doc,
+                    **({**self.get_params(), **kwargs}),
                 )
             elif isinstance(item, FormItem):
                 part = self.form_serializer.serialize(
                     item=item,
                     doc_serializer=self,
                     doc=self.doc,
+                    **({**self.get_params(), **kwargs}),
                 )
             else:
                 part = self.fallback_serializer.serialize(
                     item=item,
                     doc_serializer=self,
                     doc=self.doc,
+                    **({**self.get_params(), **kwargs}),
                 )
             if part.text:
                 parts.append(part)
