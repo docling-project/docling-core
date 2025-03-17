@@ -36,26 +36,26 @@
    35: list with name=group
     36: list_item
     37: inline with name=group
-     38: paragraph
+     38: text
      39: code
-     40: paragraph
+     40: text
     41: inline with name=group
-     42: paragraph
+     42: text
      43: formula
-     44: paragraph
- 45: paragraph
+     44: text
+ 45: text
  46: code
- 47: paragraph
+ 47: text
  48: formula
  49: key_value_region
  50: form
  51: inline with name=group
-  52: paragraph
-  53: paragraph
-  54: paragraph
-  55: paragraph
-  56: paragraph
-  57: paragraph
-  58: paragraph
-  59: paragraph
- 60: paragraph
+  52: text
+  53: text
+  54: text
+  55: text
+  56: text
+  57: text
+  58: text
+  59: text
+ 60: text

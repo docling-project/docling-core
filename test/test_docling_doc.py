@@ -723,32 +723,30 @@ def _construct_doc() -> DoclingDocument:
 
     inline1 = doc.add_group(label=GroupLabel.INLINE, parent=g2_subgroup)
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
+        label=DocItemLabel.TEXT,
         text="Here a code snippet:",
         parent=inline1,
     )
     doc.add_code(text="<p>Hello world</p>", parent=inline1)
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH, text="(to be displayed inline)", parent=inline1
+        label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1
     )
 
     inline2 = doc.add_group(label=GroupLabel.INLINE, parent=g2_subgroup)
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
+        label=DocItemLabel.TEXT,
         text="Here a formula:",
         parent=inline2,
     )
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline2)
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH, text="(to be displayed inline)", parent=inline2
+        label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline2
     )
 
-    doc.add_text(label=DocItemLabel.PARAGRAPH, text="Here a code block:", parent=None)
+    doc.add_text(label=DocItemLabel.TEXT, text="Here a code block:", parent=None)
     doc.add_code(text='print("Hello world")', parent=None)
 
-    doc.add_text(
-        label=DocItemLabel.PARAGRAPH, text="Here a formula block:", parent=None
-    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Here a formula block:", parent=None)
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=None)
 
     graph = GraphData(
@@ -782,41 +780,41 @@ def _construct_doc() -> DoclingDocument:
 
     inline_fmt = doc.add_group(label=GroupLabel.INLINE)
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH, text="Some formatting chops:", parent=inline_fmt
+        label=DocItemLabel.TEXT, text="Some formatting chops:", parent=inline_fmt
     )
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
+        label=DocItemLabel.TEXT,
         text="bold",
         parent=inline_fmt,
         formatting=Formatting(bold=True),
     )
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
+        label=DocItemLabel.TEXT,
         text="italic",
         parent=inline_fmt,
         formatting=Formatting(italic=True),
     )
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
+        label=DocItemLabel.TEXT,
         text="underline",
         parent=inline_fmt,
         formatting=Formatting(underline=True),
     )
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
+        label=DocItemLabel.TEXT,
         text="strikethrough",
         parent=inline_fmt,
         formatting=Formatting(strikethrough=True),
     )
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
+        label=DocItemLabel.TEXT,
         text="hyperlink",
         parent=inline_fmt,
         hyperlink=Path("."),
     )
-    doc.add_text(label=DocItemLabel.PARAGRAPH, text="&", parent=inline_fmt)
+    doc.add_text(label=DocItemLabel.TEXT, text="&", parent=inline_fmt)
     doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
+        label=DocItemLabel.TEXT,
         text="everything at the same time.",
         parent=inline_fmt,
         formatting=Formatting(
@@ -828,7 +826,7 @@ def _construct_doc() -> DoclingDocument:
         hyperlink=AnyUrl("https://github.com/DS4SD/docling"),
     )
 
-    doc.add_text(label=DocItemLabel.PARAGRAPH, text="The end.", parent=None)
+    doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=None)
 
     return doc
 

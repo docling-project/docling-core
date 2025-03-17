@@ -29,26 +29,26 @@ Affiliation 2</text>
 <unordered_list><list_item>item 1 of neighboring list</list_item>
 <list_item>item 2 of neighboring list</list_item>
 <unordered_list><list_item>item 1 of sub list</list_item>
-<paragraph>Here a code snippet:</paragraph>
+<text>Here a code snippet:</text>
 <code><_unknown_><p>Hello world</p></code>
-<paragraph>(to be displayed inline)</paragraph>
+<text>(to be displayed inline)</text>
 </unordered_list>
-<paragraph>Here a formula:</paragraph>
+<text>Here a formula:</text>
 <formula>E=mc^2</formula>
-<paragraph>(to be displayed inline)</paragraph>
+<text>(to be displayed inline)</text>
 </unordered_list>
 </unordered_list>
-<paragraph>Here a code block:</paragraph>
+<text>Here a code block:</text>
 <code><_unknown_>print("Hello world")</code>
-<paragraph>Here a formula block:</paragraph>
+<text>Here a formula block:</text>
 <formula>E=mc^2</formula>
-<paragraph>Some formatting chops:</paragraph>
-<paragraph>bold</paragraph>
-<paragraph>italic</paragraph>
-<paragraph>underline</paragraph>
-<paragraph>strikethrough</paragraph>
-<paragraph>hyperlink</paragraph>
-<paragraph>&</paragraph>
-<paragraph>everything at the same time.</paragraph>
-<paragraph>The end.</paragraph>
+<text>Some formatting chops:</text>
+<text>bold</text>
+<text>italic</text>
+<text>underline</text>
+<text>strikethrough</text>
+<text>hyperlink</text>
+<text>&</text>
+<text>everything at the same time.</text>
+<text>The end.</text>
 </doctag>

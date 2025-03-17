@@ -679,7 +679,7 @@ texts:
   text: item 1 of sub list
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: 'Here a code snippet:'
   parent:
     $ref: '#/groups/10'
@@ -701,7 +701,7 @@ texts:
   text: <p>Hello world</p>
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: (to be displayed inline)
   parent:
     $ref: '#/groups/10'
@@ -710,7 +710,7 @@ texts:
   text: (to be displayed inline)
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: 'Here a formula:'
   parent:
     $ref: '#/groups/11'
@@ -728,7 +728,7 @@ texts:
   text: E=mc^2
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: (to be displayed inline)
   parent:
     $ref: '#/groups/11'
@@ -737,7 +737,7 @@ texts:
   text: (to be displayed inline)
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: 'Here a code block:'
   parent:
     $ref: '#/body'
@@ -759,7 +759,7 @@ texts:
   text: print("Hello world")
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: 'Here a formula block:'
   parent:
     $ref: '#/body'
@@ -777,7 +777,7 @@ texts:
   text: E=mc^2
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: 'Some formatting chops:'
   parent:
     $ref: '#/groups/12'
@@ -791,7 +791,7 @@ texts:
     italic: false
     strikethrough: false
     underline: false
-  label: paragraph
+  label: text
   orig: bold
   parent:
     $ref: '#/groups/12'
@@ -805,7 +805,7 @@ texts:
     italic: true
     strikethrough: false
     underline: false
-  label: paragraph
+  label: text
   orig: italic
   parent:
     $ref: '#/groups/12'
@@ -819,7 +819,7 @@ texts:
     italic: false
     strikethrough: false
     underline: true
-  label: paragraph
+  label: text
   orig: underline
   parent:
     $ref: '#/groups/12'
@@ -833,7 +833,7 @@ texts:
     italic: false
     strikethrough: true
     underline: false
-  label: paragraph
+  label: text
   orig: strikethrough
   parent:
     $ref: '#/groups/12'
@@ -843,7 +843,7 @@ texts:
 - children: []
   content_layer: body
   hyperlink: .
-  label: paragraph
+  label: text
   orig: hyperlink
   parent:
     $ref: '#/groups/12'
@@ -852,7 +852,7 @@ texts:
   text: hyperlink
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: '&'
   parent:
     $ref: '#/groups/12'
@@ -867,7 +867,7 @@ texts:
     strikethrough: true
     underline: true
   hyperlink: https://github.com/DS4SD/docling
-  label: paragraph
+  label: text
   orig: everything at the same time.
   parent:
     $ref: '#/groups/12'
@@ -876,7 +876,7 @@ texts:
   text: everything at the same time.
 - children: []
   content_layer: body
-  label: paragraph
+  label: text
   orig: The end.
   parent:
     $ref: '#/body'
