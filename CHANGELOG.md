@@ -1,3 +1,9 @@
+## [v2.23.1](https://github.com/docling-project/docling-core/releases/tag/v2.23.1) - 2025-03-17
+
+### Fix
+
+* New favicon url ([#191](https://github.com/docling-project/docling-core/issues/191)) ([`11eb1dc`](https://github.com/docling-project/docling-core/commit/11eb1dc5aa317c91f6558e93b44d3015b3cb4e98))
+
 ## [v2.23.0](https://github.com/docling-project/docling-core/releases/tag/v2.23.0) - 2025-03-13
 
 ### Feature
