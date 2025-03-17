@@ -70,7 +70,7 @@ def test_table_export_to_tokens():
                         page_w=pagedims[page][0], page_h=pagedims[page][1]
                     )
 
-                    fname = f"{filename}_table_{i}.doctags.txt"
+                    fname = f"{filename}_table_{i}.dt.txt"
                     if GENERATE:
                         print(f"writing {fname}")
                         with open(fname, "w", encoding="utf-8") as gold_obj:
@@ -93,7 +93,7 @@ def test_table_export_to_tokens():
                         add_table_location=False, add_cell_location=False
                     )
 
-                    fname = f"{filename}_table_{i}.doctags.txt"
+                    fname = f"{filename}_table_{i}.dt.txt"
                     if GENERATE:
                         print(f"writing {fname}")
                         with open(fname, "w", encoding="utf-8") as gold_obj:
@@ -138,12 +138,12 @@ def test_document_export_to_tokens():
 
     if GENERATE:
         with open(
-            "test/data/legacy_doc/doc-export.doctags.txt", "w", encoding="utf-8"
+            "test/data/legacy_doc/doc-export.dt.txt", "w", encoding="utf-8"
         ) as gold_obj:
             gold_obj.write(xml)
 
     with open(
-        "test/data/legacy_doc/doc-export.doctags.txt", "r", encoding="utf-8"
+        "test/data/legacy_doc/doc-export.dt.txt", "r", encoding="utf-8"
     ) as gold_obj:
         gold_data = gold_obj.read().strip()
 
