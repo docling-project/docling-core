@@ -3017,6 +3017,7 @@ class DoclingDocument(BaseModel):
             "list_item": DocItemLabel.LIST_ITEM,
             "footnote": DocItemLabel.FOOTNOTE,
             "code": DocItemLabel.CODE,
+            "key_value_region": DocItemLabel.KEY_VALUE_REGION,
         }
 
         def extract_bounding_box(text_chunk: str) -> Optional[BoundingBox]:
@@ -3380,11 +3381,6 @@ class DoclingDocument(BaseModel):
                                     parent=None,
                                 )
                                 pic.captions.append(caption_item.get_ref())
-                    elif tag_name == DocItemLabel.KEY_VALUE_REGION:
-                        key_value_data, kv_item_prov = parse_key_value_item(
-                            full_chunk, image
-                        )
-                        self.add_key_values(graph=key_value_data, prov=kv_item_prov)
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
@@ -3402,6 +3398,11 @@ class DoclingDocument(BaseModel):
                                     parent=None,
                                 )
                                 pic.captions.append(caption_item.get_ref())
+                elif tag_name == DocItemLabel.KEY_VALUE_REGION:
+                    key_value_data, kv_item_prov = parse_key_value_item(
+                        full_chunk, image
+                    )
+                    self.add_key_values(graph=key_value_data, prov=kv_item_prov)
                 elif tag_name in [
                     DocumentToken.ORDERED_LIST.value,
                     DocumentToken.UNORDERED_LIST.value,
