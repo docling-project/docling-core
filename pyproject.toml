@@ -22,7 +22,7 @@ maintainers = [
     "Panos Vagenas <pva@zurich.ibm.com>",
 ]
 readme = "README.md"
-homepage = "https://ds4sd.github.io/"
+homepage = "https://github.com/docling-project"
 repository = "https://github.com/docling-project/docling-core"
 keywords = ["docling", "discovery", "etl", "information retrieval", "analytics", "database", "database schema", "schema", "JSON"]
 classifiers=[

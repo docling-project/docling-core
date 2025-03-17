@@ -1548,7 +1548,7 @@ class DoclingDocument(BaseModel):
 
     _HTML_DEFAULT_HEAD: str = r"""<head>
     <link rel="icon" type="image/png"
-    href="https://ds4sd.github.io/docling/assets/logo.png"/>
+    href="https://raw.githubusercontent.com/docling-project/docling/refs/heads/main/docs/assets/logo.svg"/>
     <meta charset="UTF-8">
     <title>
     Powered by Docling
