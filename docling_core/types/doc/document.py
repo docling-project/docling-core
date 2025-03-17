@@ -3190,14 +3190,25 @@ class DoclingDocument(BaseModel):
             )
 
         def parse_key_value_item(
-            tokens: str,
+            tokens: str, image: Optional[PILImage.Image] = None
         ) -> Tuple[GraphData, Optional[ProvenanceItem]]:
-            start_locs_match = re.match(r"^\s*(<loc_\d+>\s*)+", tokens)
+            if image is not None:
+                pg_width = image.width
+                pg_height = image.height
+            else:
+                pg_width = 1
+                pg_height = 1
+
+            start_locs_match = re.search(r"<key_value_region>(.*?)<key", tokens)
             if start_locs_match:
-                overall_locs = start_locs_match.group(0)
-                overall_bbox = extract_bounding_box(overall_locs)
+                overall_locs = start_locs_match.group(1)
+                overall_bbox = extract_bounding_box(overall_locs) if image else None
                 overall_prov = (
-                    ProvenanceItem(bbox=overall_bbox, charspan=(0, 0), page_no=1)
+                    ProvenanceItem(
+                        bbox=overall_bbox.resize_by_scale(pg_width, pg_height),
+                        charspan=(0, 0),
+                        page_no=1,
+                    )
                     if overall_bbox
                     else None
                 )
@@ -3225,11 +3236,13 @@ class DoclingDocument(BaseModel):
                 # link tokens
                 link_matches = re.findall(r"<link_(\d+)>", raw_content)
 
-                cell_bbox = extract_bounding_box(raw_content)
+                cell_bbox = extract_bounding_box(raw_content) if image else None
                 cell_prov = None
                 if cell_bbox is not None:
                     cell_prov = ProvenanceItem(
-                        bbox=cell_bbox, charspan=(0, 0), page_no=1
+                        bbox=cell_bbox.resize_by_scale(pg_width, pg_height),
+                        charspan=(0, 0),
+                        page_no=1,
                     )
 
                 cleaned_text = re.sub(r"<loc_\d+>", "", raw_content)
@@ -3279,6 +3292,12 @@ class DoclingDocument(BaseModel):
             else:
                 pg_width = 1
                 pg_height = 1
+
+            self.add_page(
+                page_no=page_no,
+                size=Size(width=pg_width, height=pg_height),
+                image=ImageRef.from_pil(image=image, dpi=72) if image else None,
+            )
 
             """
             1. Finds all <tag>...</tag>
@@ -3362,7 +3381,9 @@ class DoclingDocument(BaseModel):
                                 )
                                 pic.captions.append(caption_item.get_ref())
                     elif tag_name == DocItemLabel.KEY_VALUE_REGION:
-                        key_value_data, kv_item_prov = parse_key_value_item(full_chunk)
+                        key_value_data, kv_item_prov = parse_key_value_item(
+                            full_chunk, image
+                        )
                         self.add_key_values(graph=key_value_data, prov=kv_item_prov)
                     else:
                         if bbox:
