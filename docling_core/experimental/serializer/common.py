@@ -10,7 +10,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, computed_field
+from pydantic import AnyUrl, BaseModel, NonNegativeInt, computed_field
 from typing_extensions import override
 
 from docling_core.experimental.serializer.base import (
@@ -55,6 +55,9 @@ _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 class CommonParams(BaseModel):
     """Common serialization parameters."""
 
+    start: NonNegativeInt = 0
+    stop: NonNegativeInt = sys.maxsize  # semantics: exclusive, like slicing end
+
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     image_placeholder: str = "<!-- image -->"
 
@@ -76,8 +79,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     # this filtering criteria are non-recursive;
     # e.g. if a list group node is outside the range and some of its children items are
     # within, they will be serialized
-    start: int = 0
-    stop: int = sys.maxsize
     labels: set[DocItemLabel] = _DEFAULT_LABELS
     layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS
     pages: Optional[set[int]] = None
@@ -99,9 +100,11 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def _params_dict(self) -> dict[str, Any]:
         return self.params.model_dump()
 
-    @computed_field  # type: ignore[misc]
-    @cached_property
-    def _excluded_refs(self) -> list[str]:
+    # TODO add cache base on start-stop params
+    @override
+    def get_excluded_refs(self, **kwargs) -> list[str]:
+        """References to excluded items."""
+        params = CommonParams(**kwargs)
         refs: list[str] = [
             item.self_ref
             for ix, (item, _) in enumerate(
@@ -111,7 +114,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 )
             )
             if (
-                (ix < self.start or ix >= self.stop)
+                (ix < params.start or ix >= params.stop)
                 or (
                     isinstance(item, DocItem)
                     and (
@@ -129,11 +132,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             )
         ]
         return refs
-
-    @override
-    def get_excluded_refs(self) -> list[str]:
-        """References to excluded items."""
-        return self._excluded_refs
 
     @abstractmethod
     def serialize_body(self) -> SerializationResult:
@@ -166,6 +164,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             # TODO handle differently as it clashes with self.labels
         }
 
+        kwargs_to_pass = {**self._params_dict, **kwargs}
+
         ########
         # groups
         ########
@@ -177,7 +177,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 list_level=list_level,
                 is_inline_scope=is_inline_scope,
                 visited=my_visited,
-                **({**self._params_dict, **kwargs}),
+                **kwargs_to_pass,
             )
         elif isinstance(item, InlineGroup):
             part = self.inline_serializer.serialize(
@@ -186,7 +186,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 doc=self.doc,
                 list_level=list_level,
                 visited=my_visited,
-                **({**self._params_dict, **kwargs}),
+                **kwargs_to_pass,
             )
         ###########
         # doc items
@@ -200,17 +200,17 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     doc_serializer=self,
                     doc=self.doc,
                     is_inline_scope=is_inline_scope,
-                    **({**self._params_dict, **kwargs}),
+                    **kwargs_to_pass,
                 )
-                if item.self_ref not in self.get_excluded_refs()
-                else SerializationResult(text="")
+                if item.self_ref not in self.get_excluded_refs(**kwargs_to_pass)
+                else empty_res
             )
         elif isinstance(item, TableItem):
             part = self.table_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **({**self._params_dict, **kwargs}),
+                **kwargs_to_pass,
             )
         elif isinstance(item, PictureItem):
             part = self.picture_serializer.serialize(
@@ -218,28 +218,28 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 doc_serializer=self,
                 doc=self.doc,
                 visited=my_visited,
-                **({**self._params_dict, **kwargs}),
+                **kwargs_to_pass,
             )
         elif isinstance(item, KeyValueItem):
             part = self.key_value_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **({**self._params_dict, **kwargs}),
+                **kwargs_to_pass,
             )
         elif isinstance(item, FormItem):
             part = self.form_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **({**self._params_dict, **kwargs}),
+                **kwargs_to_pass,
             )
         else:
             part = self.fallback_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **({**self._params_dict, **kwargs}),
+                **kwargs_to_pass,
             )
         return part
 
@@ -263,7 +263,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             root=item,
             with_groups=True,
             traverse_pictures=traverse_pictures,
-            # ...
         ):
             if item.self_ref in my_visited:
                 continue
@@ -274,6 +273,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 list_level=list_level,
                 is_inline_scope=is_inline_scope,
                 visited=my_visited,
+                **kwargs,
             )
             if part.text:
                 parts.append(part)
@@ -342,7 +342,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             it.text
             for cap in item.captions
             if isinstance(it := cap.resolve(self.doc), TextItem)
-            and it.self_ref not in self.get_excluded_refs()
+            and it.self_ref not in self.get_excluded_refs(**kwargs)
         ]
         text_res = (separator or "\n").join(text_parts)
         text_res = self.post_process(text=text_res)

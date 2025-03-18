@@ -174,6 +174,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         cap_res = doc_serializer.serialize_captions(
             item=item,
             separator="\n",
+            **kwargs,
         )
         if cap_res.text:
             texts.append(cap_res.text)

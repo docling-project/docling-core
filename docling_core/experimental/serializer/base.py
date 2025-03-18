@@ -222,6 +222,6 @@ class BaseDocSerializer(ABC):
         ...
 
     @abstractmethod
-    def get_excluded_refs(self) -> list[str]:
+    def get_excluded_refs(self, **kwargs) -> list[str]:
         """Get references to excluded items."""
         ...

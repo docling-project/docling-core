@@ -23,8 +23,6 @@ Affiliation 2</text>
 <picture><caption>This is the caption of figure 2.</caption></picture>
 <unordered_list><list_item>item 1 of list</list_item>
 </unordered_list>
-<unordered_list>
-</unordered_list>
 <unordered_list><list_item>item 1 of list after empty list</list_item>
 <list_item>item 2 of list after empty list</list_item>
 </unordered_list>

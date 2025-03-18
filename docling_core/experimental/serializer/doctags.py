@@ -5,6 +5,7 @@
 
 """Define classes for Doctags serialization."""
 import html
+import sys
 from pathlib import Path
 from typing import Optional, Union
 
@@ -133,43 +134,45 @@ class DocTagsTableSerializer(BaseTableSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
-        otsl_tag = DocumentToken.OTSL.value
 
-        body = f"<{otsl_tag}>{params.new_line}"
+        body = ""
 
-        if params.add_location:
-            body += item.get_location_tokens(
-                doc=doc,
-                new_line=params.new_line,
-                xsize=params.xsize,
-                ysize=params.ysize,
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            if params.add_location:
+                body += item.get_location_tokens(
+                    doc=doc,
+                    new_line=params.new_line,
+                    xsize=params.xsize,
+                    ysize=params.ysize,
+                )
+
+            body += item.export_to_otsl(
+                doc,
+                params.add_cell_location,
+                params.add_cell_text,
+                params.xsize,
+                params.ysize,
             )
 
-        body += item.export_to_otsl(
-            doc,
-            params.add_cell_location,
-            params.add_cell_text,
-            params.xsize,
-            params.ysize,
-        )
-
         if params.add_caption and len(item.captions):
-            text = item.caption_text(doc)
+            text = doc_serializer.serialize_captions(item, separator="", **kwargs).text
 
             if len(text):
                 body += f"<{DocItemLabel.CAPTION.value}>"
                 for caption in item.captions:
-                    body += caption.resolve(doc).get_location_tokens(
-                        doc=doc,
-                        new_line=params.new_line,
-                        xsize=params.xsize,
-                        ysize=params.ysize,
-                    )
+                    if caption.cref not in doc_serializer.get_excluded_refs(**kwargs):
+                        body += caption.resolve(doc).get_location_tokens(
+                            doc=doc,
+                            new_line=params.new_line,
+                            xsize=params.xsize,
+                            ysize=params.ysize,
+                        )
                 body += f"{text.strip()}"
                 body += f"</{DocItemLabel.CAPTION.value}>"
                 body += f"{params.new_line}"
 
-        body += f"</{otsl_tag}>"
+        if body:
+            body = _wrap(text=body, wrap_tag=DocumentToken.OTSL.value)
 
         return SerializationResult(text=body)
 
@@ -189,59 +192,60 @@ class DocTagsPictureSerializer(BasePictureSerializer):
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
 
-        body = f"<{item.label.value}>{params.new_line}"
-        if params.add_location:
-            body += item.get_location_tokens(
-                doc=doc,
-                new_line=params.new_line,
-                xsize=params.xsize,
-                ysize=params.ysize,
-            )
+        parts: list[str] = []
 
-        classifications = [
-            ann
-            for ann in item.annotations
-            if isinstance(ann, PictureClassificationData)
-        ]
-        if len(classifications) > 0:
-            # ! TODO: currently this code assumes class_name is of type 'str'
-            # ! TODO: when it will change to an ENUM --> adapt code
-            predicted_class = classifications[0].predicted_classes[0].class_name
-            body += DocumentToken.get_picture_classification_token(predicted_class)
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            body = ""
+            if params.add_location:
+                body += item.get_location_tokens(
+                    doc=doc,
+                    new_line=params.new_line,
+                    xsize=params.xsize,
+                    ysize=params.ysize,
+                )
 
-        smiles_annotations = [
-            ann for ann in item.annotations if isinstance(ann, PictureMoleculeData)
-        ]
-        if len(smiles_annotations) > 0:
-            body += (
-                "<"
-                + DocumentToken.SMILES.value
-                + ">"
-                + smiles_annotations[0].smi
-                + "</"
-                + DocumentToken.SMILES.value
-                + ">"
-            )
+            classifications = [
+                ann
+                for ann in item.annotations
+                if isinstance(ann, PictureClassificationData)
+            ]
+            if len(classifications) > 0:
+                # ! TODO: currently this code assumes class_name is of type 'str'
+                # ! TODO: when it will change to an ENUM --> adapt code
+                predicted_class = classifications[0].predicted_classes[0].class_name
+                body += DocumentToken.get_picture_classification_token(predicted_class)
+
+            smiles_annotations = [
+                ann for ann in item.annotations if isinstance(ann, PictureMoleculeData)
+            ]
+            if len(smiles_annotations) > 0:
+                body += _wrap(
+                    text=smiles_annotations[0].smi, wrap_tag=DocumentToken.SMILES.value
+                )
+            parts.append(body)
 
         if params.add_caption and len(item.captions):
             text = item.caption_text(doc)
 
             if len(text):
-                body += f"<{DocItemLabel.CAPTION.value}>"
+                body = ""
                 for caption in item.captions:
-                    body += caption.resolve(doc).get_location_tokens(
-                        doc=doc,
-                        new_line=params.new_line,
-                        xsize=params.xsize,
-                        ysize=params.ysize,
-                    )
-                body += f"{text.strip()}"
-                body += f"</{DocItemLabel.CAPTION.value}>"
-                body += f"{params.new_line}"
+                    if caption.cref not in doc_serializer.get_excluded_refs(**kwargs):
+                        body += caption.resolve(doc).get_location_tokens(
+                            doc=doc,
+                            new_line=params.new_line,
+                            xsize=params.xsize,
+                            ysize=params.ysize,
+                        )
+                        body += f"{text.strip()}"
+                if body:
+                    body = _wrap(text=body, wrap_tag=DocItemLabel.CAPTION.value)
+                    parts.append(body)
 
-        body += f"</{item.label.value}>"
-
-        return SerializationResult(text=body)
+        text = "".join(parts)
+        if text:
+            text = _wrap(text=text, wrap_tag=item.label.value)
+        return SerializationResult(text=text)
 
 
 class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
@@ -306,14 +310,17 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             visited=my_visited,
             **kwargs,
         )
-        text_res = "\n".join([p.text for p in parts])
-        text_res = f"{text_res}\n"  # NOTE: explicit
-        wrap_tag = (
-            DocumentToken.ORDERED_LIST.value
-            if isinstance(item, OrderedList)
-            else DocumentToken.UNORDERED_LIST.value
-        )
-        text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+        if parts:
+            text_res = "\n".join([p.text for p in parts])
+            text_res = f"{text_res}\n"  # NOTE: explicit
+            wrap_tag = (
+                DocumentToken.ORDERED_LIST.value
+                if isinstance(item, OrderedList)
+                else DocumentToken.UNORDERED_LIST.value
+            )
+            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+        else:
+            text_res = ""
         return SerializationResult(text=text_res)
 
 
@@ -405,8 +412,38 @@ class DocTagsDocSerializer(DocSerializer):
     @override
     def serialize_body(self) -> SerializationResult:
         """Serialize the document body."""
-        parts = self.get_parts()
-        content = "\n".join([p.text for p in parts if p.text])
+        # find page ranges
+        last_page: Optional[int] = None
+        starts: list[int] = []
+        for ix, (item, _) in enumerate(
+            self.doc.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+            )
+        ):
+            if isinstance(item, DocItem):
+                if item.prov:
+                    if last_page is None or item.prov[0].page_no > last_page:
+                        starts.append(ix)
+                        last_page = item.prov[0].page_no
+        page_ranges = [
+            (
+                (starts[i] if i > 0 else 0),
+                (starts[i + 1] if i < len(starts) - 1 else sys.maxsize),
+            )
+            for i, _ in enumerate(starts)
+        ] or [(0, sys.maxsize)]
+
+        page_results: list[SerializationResult] = []
+        for page_range in page_ranges:
+            subparts = self.get_parts(
+                **CommonParams(start=page_range[0], stop=page_range[1]).model_dump(),
+            )
+            page_res = SerializationResult(text="\n".join([s.text for s in subparts]))
+            page_results.append(page_res)
+
+        page_sep = f"\n<{DocumentToken.PAGE_BREAK.value}>\n"
+        content = page_sep.join([p.text for p in page_results if p.text])
         wrap_tag = DocumentToken.DOCUMENT.value
         text_res = f"<{wrap_tag}>{content}\n</{wrap_tag}>"
         return SerializationResult(text=text_res)
