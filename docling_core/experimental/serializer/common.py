@@ -5,6 +5,7 @@
 
 """Define base classes for serialization."""
 import sys
+from abc import abstractmethod
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -51,6 +52,13 @@ from docling_core.types.doc.labels import DocItemLabel
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 
 
+class CommonParams(BaseModel):
+    """Common serialization parameters."""
+
+    image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
+    image_placeholder: str = "<!-- image -->"
+
+
 class DocSerializer(BaseModel, BaseDocSerializer):
     """Class for document serializers."""
 
@@ -84,10 +92,12 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     list_serializer: BaseListSerializer
     inline_serializer: BaseInlineSerializer
 
-    # these will be passed to the picture serializer (None defers/delegates fallback
-    # setting to callee):
-    image_placeholder: Optional[str] = None
-    image_mode: Optional[ImageRefMode] = None
+    params: CommonParams = CommonParams()
+
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    def _params_dict(self) -> dict[str, Any]:
+        return self.params.model_dump()
 
     @computed_field  # type: ignore[misc]
     @cached_property
@@ -125,15 +135,119 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         """References to excluded items."""
         return self._excluded_refs
 
-    def get_params(self) -> dict[str, Any]:
-        """Get parameters for serialization."""
-        return {}
+    @abstractmethod
+    def serialize_body(self) -> SerializationResult:
+        """Serialize the document body."""
+        ...
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: Optional[NodeItem] = None,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: Optional[set[str]] = None,  # refs of visited items
+        **kwargs,
+    ) -> SerializationResult:
+        """Serialize a given node."""
+        my_visited: set[str] = visited if visited is not None else set()
+        empty_res = SerializationResult(text="")
+        if item is None or item == self.doc.body:
+            if self.doc.body.self_ref not in my_visited:
+                my_visited.add(self.doc.body.self_ref)
+                return self.serialize_body()
+            else:
+                return empty_res
+
+        label_blocklist = {
+            DocItemLabel.CAPTION,
+            DocItemLabel.FOOTNOTE,
+            # TODO handle differently as it clashes with self.labels
+        }
+
+        ########
+        # groups
+        ########
+        if isinstance(item, (UnorderedList, OrderedList)):
+            part = self.list_serializer.serialize(
+                item=item,
+                doc_serializer=self,
+                doc=self.doc,
+                list_level=list_level,
+                is_inline_scope=is_inline_scope,
+                visited=my_visited,
+                **({**self._params_dict, **kwargs}),
+            )
+        elif isinstance(item, InlineGroup):
+            part = self.inline_serializer.serialize(
+                item=item,
+                doc_serializer=self,
+                doc=self.doc,
+                list_level=list_level,
+                visited=my_visited,
+                **({**self._params_dict, **kwargs}),
+            )
+        ###########
+        # doc items
+        ###########
+        elif isinstance(item, DocItem) and item.label in label_blocklist:
+            return empty_res
+        elif isinstance(item, TextItem):
+            part = (
+                self.text_serializer.serialize(
+                    item=item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    is_inline_scope=is_inline_scope,
+                    **({**self._params_dict, **kwargs}),
+                )
+                if item.self_ref not in self.get_excluded_refs()
+                else SerializationResult(text="")
+            )
+        elif isinstance(item, TableItem):
+            part = self.table_serializer.serialize(
+                item=item,
+                doc_serializer=self,
+                doc=self.doc,
+                **({**self._params_dict, **kwargs}),
+            )
+        elif isinstance(item, PictureItem):
+            part = self.picture_serializer.serialize(
+                item=item,
+                doc_serializer=self,
+                doc=self.doc,
+                visited=my_visited,
+                **({**self._params_dict, **kwargs}),
+            )
+        elif isinstance(item, KeyValueItem):
+            part = self.key_value_serializer.serialize(
+                item=item,
+                doc_serializer=self,
+                doc=self.doc,
+                **({**self._params_dict, **kwargs}),
+            )
+        elif isinstance(item, FormItem):
+            part = self.form_serializer.serialize(
+                item=item,
+                doc_serializer=self,
+                doc=self.doc,
+                **({**self._params_dict, **kwargs}),
+            )
+        else:
+            part = self.fallback_serializer.serialize(
+                item=item,
+                doc_serializer=self,
+                doc=self.doc,
+                **({**self._params_dict, **kwargs}),
+            )
+        return part
 
     # making some assumptions about the kwargs it can pass
     @override
     def get_parts(
         self,
-        node: Optional[NodeItem] = None,
+        item: Optional[NodeItem] = None,
         *,
         traverse_pictures: bool = False,
         list_level: int = 0,
@@ -142,104 +256,25 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         **kwargs,
     ) -> list[SerializationResult]:
         """Get the components to be combined for serializing this node."""
-        my_visited: set[str] = visited if visited is not None else set()
         parts: list[SerializationResult] = []
+        my_visited: set[str] = visited if visited is not None else set()
 
-        label_blocklist = {
-            DocItemLabel.CAPTION,
-            DocItemLabel.FOOTNOTE,
-            # TODO handle differently as it clashes with self.labels
-        }
-        for ix, (item, _) in enumerate(
-            self.doc.iterate_items(
-                root=node,
-                with_groups=True,
-                traverse_pictures=traverse_pictures,
-                # ...
-            )
+        for item, _ in self.doc.iterate_items(
+            root=item,
+            with_groups=True,
+            traverse_pictures=traverse_pictures,
+            # ...
         ):
             if item.self_ref in my_visited:
                 continue
             else:
                 my_visited.add(item.self_ref)
-
-            ########
-            # groups
-            ########
-            if isinstance(item, (UnorderedList, OrderedList)):
-                part = self.list_serializer.serialize(
-                    item=item,
-                    doc_serializer=self,
-                    doc=self.doc,
-                    list_level=list_level,
-                    is_inline_scope=is_inline_scope,
-                    visited=my_visited,
-                    **({**self.get_params(), **kwargs}),
-                )
-            elif isinstance(item, InlineGroup):
-                part = self.inline_serializer.serialize(
-                    item=item,
-                    doc_serializer=self,
-                    doc=self.doc,
-                    list_level=list_level,
-                    visited=my_visited,
-                    **({**self.get_params(), **kwargs}),
-                )
-            ###########
-            # doc items
-            ###########
-            elif isinstance(item, DocItem) and item.label in label_blocklist:
-                continue
-            elif isinstance(item, TextItem):
-                part = (
-                    self.text_serializer.serialize(
-                        item=item,
-                        doc_serializer=self,
-                        doc=self.doc,
-                        is_inline_scope=is_inline_scope,
-                        **({**self.get_params(), **kwargs}),
-                    )
-                    if item.self_ref not in self.get_excluded_refs()
-                    else SerializationResult(text="")
-                )
-            elif isinstance(item, TableItem):
-                part = self.table_serializer.serialize(
-                    item=item,
-                    doc_serializer=self,
-                    doc=self.doc,
-                    **({**self.get_params(), **kwargs}),
-                )
-            elif isinstance(item, PictureItem):
-                part = self.picture_serializer.serialize(
-                    item=item,
-                    doc_serializer=self,
-                    doc=self.doc,
-                    visited=my_visited,
-                    image_mode=self.image_mode,
-                    image_placeholder=self.image_placeholder,
-                    **({**self.get_params(), **kwargs}),
-                )
-            elif isinstance(item, KeyValueItem):
-                part = self.key_value_serializer.serialize(
-                    item=item,
-                    doc_serializer=self,
-                    doc=self.doc,
-                    **({**self.get_params(), **kwargs}),
-                )
-            elif isinstance(item, FormItem):
-                part = self.form_serializer.serialize(
-                    item=item,
-                    doc_serializer=self,
-                    doc=self.doc,
-                    **({**self.get_params(), **kwargs}),
-                )
-            else:
-                part = self.fallback_serializer.serialize(
-                    item=item,
-                    doc_serializer=self,
-                    doc=self.doc,
-                    **({**self.get_params(), **kwargs}),
-                )
+            part = self.serialize(
+                item=item,
+                list_level=list_level,
+                is_inline_scope=is_inline_scope,
+                visited=my_visited,
+            )
             if part.text:
                 parts.append(part)
         return parts
@@ -328,7 +363,7 @@ class PictureSerializer(BasePictureSerializer):
         **kwargs,
     ) -> SerializationResult:
         parts = doc_serializer.get_parts(
-            node=item,
+            item=item,
             traverse_pictures=True,
             visited=visited,
         )

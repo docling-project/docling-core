@@ -756,11 +756,7 @@ class TextItem(DocItem):
                 add_content=add_content,
             ),
         )
-        text = serializer.text_serializer.serialize(
-            item=self,
-            doc_serializer=serializer,
-            doc=doc,
-        ).text
+        text = serializer.serialize(item=self).text
         return text
 
 
@@ -814,11 +810,7 @@ class SectionHeaderItem(TextItem):
                 add_content=add_content,
             ),
         )
-        text = serializer.text_serializer.serialize(
-            item=self,
-            doc_serializer=serializer,
-            doc=doc,
-        ).text
+        text = serializer.serialize(item=self).text
         return text
 
 
@@ -904,11 +896,7 @@ class CodeItem(FloatingItem, TextItem):
                 add_content=add_content,
             ),
         )
-        text = serializer.text_serializer.serialize(
-            item=self,
-            doc_serializer=serializer,
-            doc=doc,
-        ).text
+        text = serializer.serialize(item=self).text
         return text
 
 
@@ -963,7 +951,10 @@ class PictureItem(FloatingItem):
         image_placeholder: str = "<!-- image -->",
     ) -> str:
         """Export picture to Markdown format."""
-        from docling_core.experimental.serializer.markdown import MarkdownDocSerializer
+        from docling_core.experimental.serializer.markdown import (
+            MarkdownDocSerializer,
+            MarkdownParams,
+        )
 
         if not add_caption:
             _logger.warning(
@@ -972,19 +963,12 @@ class PictureItem(FloatingItem):
 
         serializer = MarkdownDocSerializer(
             doc=self,
-            image_mode=image_mode,
-        )
-        text = (
-            serializer.picture_serializer.serialize(
-                item=self,
-                doc_serializer=serializer,
-                doc=doc,
+            params=MarkdownParams(
                 image_mode=image_mode,
                 image_placeholder=image_placeholder,
-            ).text
-            if serializer.picture_serializer
-            else ""
+            ),
         )
+        text = serializer.serialize(item=self).text
         return text
 
     def export_to_html(
@@ -1050,7 +1034,7 @@ class PictureItem(FloatingItem):
         xsize: int = 500,
         ysize: int = 500,
         add_location: bool = True,
-        add_caption: bool = True,  # TODO not covered
+        add_caption: bool = True,
         add_content: bool = True,  # not used at the moment
     ):
         r"""Export picture to document tokens format.
@@ -1078,13 +1062,10 @@ class PictureItem(FloatingItem):
                 ysize=ysize,
                 add_location=add_location,
                 add_content=add_content,
+                add_caption=add_caption,
             ),
         )
-        text = serializer.picture_serializer.serialize(
-            item=self,
-            doc_serializer=serializer,
-            doc=doc,
-        ).text
+        text = serializer.serialize(item=self).text
         return text
 
 
@@ -1149,14 +1130,8 @@ class TableItem(FloatingItem):
                 MarkdownDocSerializer,
             )
 
-            serializer = MarkdownDocSerializer(
-                doc=doc,
-            )
-            text = serializer.table_serializer.serialize(
-                item=self,
-                doc_serializer=serializer,
-                doc=doc,
-            ).text
+            serializer = MarkdownDocSerializer(doc=doc)
+            text = serializer.serialize(item=self).text
             return text
         else:
             _logger.warning(
@@ -1400,13 +1375,12 @@ class TableItem(FloatingItem):
                 xsize=xsize,
                 ysize=ysize,
                 add_location=add_location,
+                add_cell_location=add_cell_location,
+                add_cell_text=add_cell_text,
+                add_caption=add_caption,
             ),
         )
-        text = serializer.table_serializer.serialize(
-            item=self,
-            doc_serializer=serializer,
-            doc=doc,
-        ).text
+        text = serializer.serialize(item=self).text
         return text
 
 
@@ -2609,25 +2583,22 @@ class DoclingDocument(BaseModel):
         """
         from docling_core.experimental.serializer.markdown import (
             MarkdownDocSerializer,
-            MarkdownListSerializer,
-            MarkdownTextSerializer,
+            MarkdownParams,
         )
 
         serializer = MarkdownDocSerializer(
             doc=self,
             start=from_element,
             stop=to_element,
-            image_placeholder=image_placeholder,
-            image_mode=image_mode,
             labels=labels,
             layers=included_content_layers,
             pages={page_no} if page_no is not None else None,
             escaping_underscores=escaping_underscores,
-            text_serializer=MarkdownTextSerializer(
-                wrap_width=text_width if text_width > 0 else None,
-            ),
-            list_serializer=MarkdownListSerializer(
+            params=MarkdownParams(
+                image_placeholder=image_placeholder,
+                image_mode=image_mode,
                 indent=indent,
+                wrap_width=text_width if text_width > 0 else None,
             ),
         )
         ser_res = serializer.serialize()
@@ -3458,8 +3429,10 @@ class DoclingDocument(BaseModel):
                 ysize=ysize,
                 add_location=add_location,
                 add_content=add_content,
+                add_page_index=add_page_index,
+                add_table_cell_location=add_table_cell_location,
+                add_table_cell_text=add_table_cell_text,
             ),
-            # add_page_index: bool = True,
         )
         ser_res = serializer.serialize()
         return ser_res.text

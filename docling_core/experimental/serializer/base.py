@@ -197,7 +197,7 @@ class BaseDocSerializer(ABC):
     @abstractmethod
     def get_parts(
         self,
-        node: Optional[NodeItem] = None,
+        item: Optional[NodeItem] = None,
         **kwargs,
     ) -> list[SerializationResult]:
         """Get the components to be combined for serializing this node."""

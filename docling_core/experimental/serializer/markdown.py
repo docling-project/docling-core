@@ -26,7 +26,7 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import DocSerializer
+from docling_core.experimental.serializer.common import CommonParams, DocSerializer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CodeItem,
@@ -49,10 +49,15 @@ from docling_core.types.doc.document import (
 )
 
 
+class MarkdownParams(CommonParams):
+    """Markdown-specific serialization parameters."""
+
+    indent: int = 4
+    wrap_width: Optional[PositiveInt] = None
+
+
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     """Markdown-specific text item serializer."""
-
-    wrap_width: Optional[PositiveInt] = None
 
     @override
     def serialize(
@@ -65,6 +70,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        params = MarkdownParams(**kwargs)
         escape_html = True
         escape_underscores = True
         if isinstance(item, TitleItem):
@@ -84,8 +90,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 res = ""
             escape_html = False
             escape_underscores = False
-        elif self.wrap_width:
-            res = textwrap.fill(item.text, width=self.wrap_width)
+        elif params.wrap_width:
+            res = textwrap.fill(item.text, width=params.wrap_width)
         else:
             res = item.text
         res = doc_serializer.post_process(
@@ -158,17 +164,10 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         item: PictureItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        image_mode: Optional[ImageRefMode] = None,
-        image_placeholder: Optional[str] = None,
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        my_image_mode = (
-            image_mode if image_mode is not None else ImageRefMode.PLACEHOLDER
-        )
-        my_image_placeholder = (
-            image_placeholder if image_placeholder is not None else "<!-- image -->"
-        )
+        params = MarkdownParams(**kwargs)
 
         texts: list[str] = []
 
@@ -183,8 +182,8 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             img_res = self._serialize_image_part(
                 item=item,
                 doc=doc,
-                image_mode=my_image_mode,
-                image_placeholder=my_image_placeholder,
+                image_mode=params.image_mode,
+                image_placeholder=params.image_placeholder,
             )
             if img_res.text:
                 texts.append(img_res.text)
@@ -288,8 +287,6 @@ class MarkdownFormSerializer(BaseFormSerializer):
 class MarkdownListSerializer(BaseModel, BaseListSerializer):
     """Markdown-specific list serializer."""
 
-    indent: int = 4
-
     @override
     def serialize(
         self,
@@ -303,9 +300,10 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        params = MarkdownParams(**kwargs)
         my_visited = visited or set()
         parts = doc_serializer.get_parts(
-            node=item,
+            item=item,
             list_level=list_level + 1,
             is_inline_scope=is_inline_scope,
             visited=my_visited,
@@ -318,7 +316,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
             else:
                 my_parts.append(p)
 
-        indent_str = list_level * self.indent * " "
+        indent_str = list_level * params.indent * " "
         is_ol = isinstance(item, OrderedList)
         text_res = sep.join(
             [
@@ -351,7 +349,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
         """Serializes the passed item."""
         my_visited = visited or set()
         parts = doc_serializer.get_parts(
-            node=item,
+            item=item,
             list_level=list_level,
             is_inline_scope=True,
             visited=my_visited,
@@ -392,6 +390,8 @@ class MarkdownDocSerializer(DocSerializer):
 
     list_serializer: BaseListSerializer = MarkdownListSerializer()
     inline_serializer: BaseInlineSerializer = MarkdownInlineSerializer()
+
+    params: MarkdownParams = MarkdownParams()
 
     @override
     def serialize_bold(self, text: str, **kwargs):
@@ -462,8 +462,8 @@ class MarkdownDocSerializer(DocSerializer):
         return res
 
     @override
-    def serialize(self, **kwargs) -> SerializationResult:
-        """Run the serialization."""
+    def serialize_body(self) -> SerializationResult:
+        """Serialize the document body."""
         parts = self.get_parts()
         text_res = "\n\n".join([p.text for p in parts if p.text])
         return SerializationResult(text=text_res)

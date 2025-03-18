@@ -5,11 +5,10 @@
 
 """Define classes for Doctags serialization."""
 import html
-from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
-from pydantic import AnyUrl, BaseModel, computed_field
+from pydantic import AnyUrl, BaseModel
 from typing_extensions import override
 
 from docling_core.experimental.serializer.base import (
@@ -24,7 +23,7 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import DocSerializer
+from docling_core.experimental.serializer.common import CommonParams, DocSerializer
 from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
@@ -51,8 +50,8 @@ def _wrap(text: str, wrap_tag: str) -> str:
     return f"<{wrap_tag}>{text}</{wrap_tag}>"
 
 
-class DocTagsParams(BaseModel):
-    """Common parameters for DocTags serialization."""
+class DocTagsParams(CommonParams):
+    """DocTags-specific serialization parameters."""
 
     new_line: str = ""
     xsize: int = 500
@@ -62,6 +61,10 @@ class DocTagsParams(BaseModel):
     add_cell_location: bool = True
     add_cell_text: bool = True
     add_caption: bool = True
+
+    add_page_index: bool = True  # TODO where are these used
+    add_table_cell_location: bool = False  # TODO where are these used
+    add_table_cell_text: bool = True  # TODO where are these used
 
 
 class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
@@ -297,7 +300,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         """Serializes the passed item."""
         my_visited = visited or set()
         parts = doc_serializer.get_parts(
-            node=item,
+            item=item,
             list_level=list_level + 1,
             is_inline_scope=is_inline_scope,
             visited=my_visited,
@@ -331,7 +334,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         """Serializes the passed item."""
         my_visited = visited or set()
         parts = doc_serializer.get_parts(
-            node=item,
+            item=item,
             list_level=list_level,
             is_inline_scope=True,
             visited=my_visited,
@@ -379,15 +382,6 @@ class DocTagsDocSerializer(DocSerializer):
 
     params: DocTagsParams = DocTagsParams()
 
-    @computed_field  # type: ignore[misc]
-    @cached_property
-    def _kwargs(self) -> dict[str, Any]:
-        return self.params.model_dump()
-
-    def get_params(self) -> dict[str, Any]:
-        """Get parameters for serialization."""
-        return self._kwargs
-
     def post_process(
         self,
         text: str,
@@ -409,8 +403,8 @@ class DocTagsDocSerializer(DocSerializer):
         return res
 
     @override
-    def serialize(self, **kwargs) -> SerializationResult:
-        """Run the serialization."""
+    def serialize_body(self) -> SerializationResult:
+        """Serialize the document body."""
         parts = self.get_parts()
         content = "\n".join([p.text for p in parts if p.text])
         wrap_tag = DocumentToken.DOCUMENT.value
