@@ -1,3 +1,9 @@
+## [v2.23.2](https://github.com/docling-project/docling-core/releases/tag/v2.23.2) - 2025-03-18
+
+### Fix
+
+* Add caption to the table in load_from_doctags ([#197](https://github.com/docling-project/docling-core/issues/197)) ([`5cee486`](https://github.com/docling-project/docling-core/commit/5cee4866143dd2c770cac5a44d525f1ce5b2c94d))
+
 ## [v2.23.1](https://github.com/docling-project/docling-core/releases/tag/v2.23.1) - 2025-03-17
 
 ### Fix
