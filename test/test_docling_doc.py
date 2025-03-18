@@ -45,7 +45,7 @@ from docling_core.types.doc.labels import (
     GroupLabel,
 )
 
-GENERATE = False
+from .test_data_gen_flag import GEN_TEST_DATA
 
 
 def test_doc_origin():
@@ -477,7 +477,7 @@ def _test_serialize_and_reload(doc):
 
 
 def _verify_regression_test(pred: str, filename: str, ext: str):
-    if os.path.exists(filename + f".{ext}") and not GENERATE:
+    if os.path.exists(filename + f".{ext}") and not GEN_TEST_DATA:
         with open(filename + f".{ext}", "r", encoding="utf-8") as fr:
             gt_true = fr.read().rstrip()
 
@@ -826,6 +826,27 @@ def _construct_doc() -> DoclingDocument:
         hyperlink=AnyUrl("https://github.com/DS4SD/docling"),
     )
 
+    parent_A = doc.add_group(name="list A", label=GroupLabel.ORDERED_LIST)
+    doc.add_list_item(text="Item 1 in A", enumerated=True, parent=parent_A)
+    doc.add_list_item(text="Item 2 in A", enumerated=True, parent=parent_A)
+    item_A_3 = doc.add_list_item(text="Item 3 in A", enumerated=True, parent=parent_A)
+
+    parent_B = doc.add_group(
+        parent=item_A_3, name="list B", label=GroupLabel.ORDERED_LIST
+    )
+    doc.add_list_item(text="Item 1 in B", enumerated=True, parent=parent_B)
+    item_B_2 = doc.add_list_item(text="Item 2 in B", enumerated=True, parent=parent_B)
+
+    parent_C = doc.add_group(
+        parent=item_B_2, name="list C", label=GroupLabel.ORDERED_LIST
+    )
+    doc.add_list_item(text="Item 1 in C", enumerated=True, parent=parent_C)
+    doc.add_list_item(text="Item 2 in C", enumerated=True, parent=parent_C)
+
+    doc.add_list_item(text="Item 3 in B", enumerated=True, parent=parent_B)
+
+    doc.add_list_item(text="Item 4 in A", enumerated=True, parent=parent_A)
+
     doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=None)
 
     return doc
@@ -1099,7 +1120,7 @@ def _verify_saved_output(filename: str, paths: List[Path]):
 
     pred = _normalise_string_wrt_filepaths(pred, paths=paths)
 
-    if GENERATE:
+    if GEN_TEST_DATA:
         with open(str(filename) + ".gt", "w", encoding="utf-8") as fw:
             fw.write(pred)
     else:

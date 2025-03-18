@@ -50,5 +50,17 @@ Affiliation 2</text>
 <text>hyperlink</text>
 <text>&</text>
 <text>everything at the same time.</text>
+<ordered_list><list_item>Item 1 in A</list_item>
+<list_item>Item 2 in A</list_item>
+<list_item>Item 3 in A</list_item>
+<ordered_list><list_item>Item 1 in B</list_item>
+<list_item>Item 2 in B</list_item>
+<ordered_list><list_item>Item 1 in C</list_item>
+<list_item>Item 2 in C</list_item>
+</ordered_list>
+</ordered_list>
+<list_item>Item 3 in B</list_item>
+</ordered_list>
+<list_item>Item 4 in A</list_item>
 <text>The end.</text>
 </doctag>

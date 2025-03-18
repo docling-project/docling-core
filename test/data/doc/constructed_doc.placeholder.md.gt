@@ -63,4 +63,14 @@ $$E=mc^2$$
 
 Some formatting chops: **bold** *italic* underline ~~strikethrough~~ [hyperlink](.) &amp; [~~***everything at the same time.***~~](https://github.com/DS4SD/docling)
 
+1. Item 1 in A
+2. Item 2 in A
+3. Item 3 in A
+    1. Item 1 in B
+    2. Item 2 in B
+        1. Item 1 in C
+        2. Item 2 in C
+    3. Item 3 in B
+4. Item 4 in A
+
 The end.
