@@ -310,9 +310,17 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
             is_inline_scope=is_inline_scope,
             visited=my_visited,
         )
+        sep = "\n"
+        my_parts: list[SerializationResult] = []
+        for p in parts:
+            if p.text and p.text[0] == " " and my_parts:
+                my_parts[-1].text = sep.join([my_parts[-1].text, p.text])  # update last
+            else:
+                my_parts.append(p)
+
         indent_str = list_level * self.indent * " "
         is_ol = isinstance(item, OrderedList)
-        text_res = "\n".join(
+        text_res = sep.join(
             [
                 # avoid additional marker on already evaled sublists
                 (
@@ -320,7 +328,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                     if c.text and c.text[0] == " "
                     else f"{indent_str}{f'{i + 1}.' if is_ol else '-'} {c.text}"
                 )
-                for i, c in enumerate(parts)
+                for i, c in enumerate(my_parts)
             ]
         )
         return SerializationResult(text=text_res)

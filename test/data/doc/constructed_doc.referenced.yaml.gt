@@ -20,7 +20,8 @@ body:
   - $ref: '#/key_value_items/0'
   - $ref: '#/form_items/0'
   - $ref: '#/groups/12'
-  - $ref: '#/texts/41'
+  - $ref: '#/groups/13'
+  - $ref: '#/texts/50'
   content_layer: body
   label: unspecified
   name: _root_
@@ -185,6 +186,36 @@ groups:
   parent:
     $ref: '#/body'
   self_ref: '#/groups/12'
+- children:
+  - $ref: '#/texts/41'
+  - $ref: '#/texts/42'
+  - $ref: '#/texts/43'
+  - $ref: '#/texts/49'
+  content_layer: body
+  label: ordered_list
+  name: list A
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/13'
+- children:
+  - $ref: '#/texts/44'
+  - $ref: '#/texts/45'
+  - $ref: '#/texts/48'
+  content_layer: body
+  label: ordered_list
+  name: list B
+  parent:
+    $ref: '#/texts/43'
+  self_ref: '#/groups/14'
+- children:
+  - $ref: '#/texts/46'
+  - $ref: '#/texts/47'
+  content_layer: body
+  label: ordered_list
+  name: list C
+  parent:
+    $ref: '#/texts/45'
+  self_ref: '#/groups/15'
 key_value_items:
 - captions: []
   children: []
@@ -876,11 +907,112 @@ texts:
   text: everything at the same time.
 - children: []
   content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 1 in A
+  parent:
+    $ref: '#/groups/13'
+  prov: []
+  self_ref: '#/texts/41'
+  text: Item 1 in A
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 2 in A
+  parent:
+    $ref: '#/groups/13'
+  prov: []
+  self_ref: '#/texts/42'
+  text: Item 2 in A
+- children:
+  - $ref: '#/groups/14'
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 3 in A
+  parent:
+    $ref: '#/groups/13'
+  prov: []
+  self_ref: '#/texts/43'
+  text: Item 3 in A
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 1 in B
+  parent:
+    $ref: '#/groups/14'
+  prov: []
+  self_ref: '#/texts/44'
+  text: Item 1 in B
+- children:
+  - $ref: '#/groups/15'
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 2 in B
+  parent:
+    $ref: '#/groups/14'
+  prov: []
+  self_ref: '#/texts/45'
+  text: Item 2 in B
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 1 in C
+  parent:
+    $ref: '#/groups/15'
+  prov: []
+  self_ref: '#/texts/46'
+  text: Item 1 in C
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 2 in C
+  parent:
+    $ref: '#/groups/15'
+  prov: []
+  self_ref: '#/texts/47'
+  text: Item 2 in C
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 3 in B
+  parent:
+    $ref: '#/groups/14'
+  prov: []
+  self_ref: '#/texts/48'
+  text: Item 3 in B
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '-'
+  orig: Item 4 in A
+  parent:
+    $ref: '#/groups/13'
+  prov: []
+  self_ref: '#/texts/49'
+  text: Item 4 in A
+- children: []
+  content_layer: body
   label: text
   orig: The end.
   parent:
     $ref: '#/body'
   prov: []
-  self_ref: '#/texts/41'
+  self_ref: '#/texts/50'
   text: The end.
 version: 1.3.0

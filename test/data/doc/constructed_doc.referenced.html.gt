@@ -128,5 +128,20 @@
 <p>hyperlink</p>
 <p>&amp;</p>
 <p>everything at the same time.</p>
+<ol>
+<li>Item 1 in A</li>
+<li>Item 2 in A</li>
+<li>Item 3 in A</li>
+<ol>
+<li>Item 1 in B</li>
+<li>Item 2 in B</li>
+<ol>
+<li>Item 1 in C</li>
+<li>Item 2 in C</li>
+</ol>
+</ol>
+<li>Item 3 in B</li>
+</ol>
+<li>Item 4 in A</li>
 <p>The end.</p>
 </html>
