@@ -3051,6 +3051,25 @@ class DoclingDocument(BaseModel):
             """Strip all <...> tags inside the chunk to get the raw text content."""
             return re.sub(r"<.*?>", "", text_chunk, flags=re.DOTALL).strip()
 
+        def extract_caption(
+            text_chunk: str,
+        ) -> tuple[Optional[TextItem], Optional[BoundingBox]]:
+            """Extract caption text from the chunk."""
+            caption = re.search(r"<caption>(.*?)</caption>", text_chunk)
+            if caption is not None:
+                caption_content = caption.group(1)
+                bbox = extract_bounding_box(caption_content)
+                caption_text = extract_inner_text(caption_content)
+                caption_item = self.add_text(
+                    label=DocItemLabel.CAPTION,
+                    text=caption_text,
+                    parent=None,
+                )
+            else:
+                caption_item = None
+                bbox = None
+            return caption_item, bbox
+
         def otsl_parse_texts(texts, tokens):
             split_word = TableToken.OTSL_NL.value
             split_row_tokens = [
@@ -3261,16 +3280,24 @@ class DoclingDocument(BaseModel):
                 if tag_name == DocumentToken.OTSL.value:
                     table_data = parse_table_content(full_chunk)
                     bbox = extract_bounding_box(full_chunk) if image else None
-
+                    caption, caption_bbox = extract_caption(full_chunk)
+                    if caption is not None and caption_bbox is not None:
+                        caption.prov.append(
+                            ProvenanceItem(
+                                bbox=caption_bbox.resize_by_scale(pg_width, pg_height),
+                                charspan=(0, 0),
+                                page_no=page_no,
+                            )
+                        )
                     if bbox:
                         prov = ProvenanceItem(
                             bbox=bbox.resize_by_scale(pg_width, pg_height),
                             charspan=(0, 0),
                             page_no=page_no,
                         )
-                        self.add_table(data=table_data, prov=prov)
+                        self.add_table(data=table_data, prov=prov, caption=caption)
                     else:
-                        self.add_table(data=table_data)
+                        self.add_table(data=table_data, caption=caption)
 
                 elif tag_name == DocItemLabel.PICTURE:
                     text_caption_content = extract_inner_text(full_chunk)
