@@ -2475,12 +2475,14 @@ class DoclingDocument(BaseModel):
 
     def save_as_json(
         self,
-        filename: Path,
+        filename: str | Path,
         artifacts_dir: Optional[Path] = None,
         image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
         indent: int = 2,
     ):
         """Save as json."""
+        if isinstance(filename, str):
+            filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
 
         if image_mode == ImageRefMode.REFERENCED:
@@ -2495,7 +2497,7 @@ class DoclingDocument(BaseModel):
             json.dump(out, fw, indent=indent)
 
     @classmethod
-    def load_from_json(cls, filename: Path) -> "DoclingDocument":
+    def load_from_json(cls, filename: str | Path) -> "DoclingDocument":
         """load_from_json.
 
         :param filename: The filename to load a saved DoclingDocument from a .json.
@@ -2505,17 +2507,21 @@ class DoclingDocument(BaseModel):
         :rtype: DoclingDocument
 
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         with open(filename, "r", encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
 
     def save_as_yaml(
         self,
-        filename: Path,
+        filename: str | Path,
         artifacts_dir: Optional[Path] = None,
         image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
         default_flow_style: bool = False,
     ):
         """Save as yaml."""
+        if isinstance(filename, str):
+            filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
 
         if image_mode == ImageRefMode.REFERENCED:
@@ -2530,7 +2536,7 @@ class DoclingDocument(BaseModel):
             yaml.dump(out, fw, default_flow_style=default_flow_style)
 
     @classmethod
-    def load_from_yaml(cls, filename: Path) -> "DoclingDocument":
+    def load_from_yaml(cls, filename: str | Path) -> "DoclingDocument":
         """load_from_yaml.
 
         Args:
@@ -2539,6 +2545,8 @@ class DoclingDocument(BaseModel):
         Returns:
             DoclingDocument: the loaded DoclingDocument
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         with open(filename, encoding="utf-8") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
         return DoclingDocument.model_validate(data)
@@ -2556,7 +2564,7 @@ class DoclingDocument(BaseModel):
 
     def save_as_markdown(
         self,
-        filename: Path,
+        filename: str | Path,
         artifacts_dir: Optional[Path] = None,
         delim: str = "\n\n",
         from_element: int = 0,
@@ -2572,6 +2580,8 @@ class DoclingDocument(BaseModel):
         included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
     ):
         """Save to markdown."""
+        if isinstance(filename, str):
+            filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
 
         if image_mode == ImageRefMode.REFERENCED:
@@ -2702,7 +2712,7 @@ class DoclingDocument(BaseModel):
 
     def save_as_html(
         self,
-        filename: Path,
+        filename: str | Path,
         artifacts_dir: Optional[Path] = None,
         from_element: int = 0,
         to_element: int = sys.maxsize,
@@ -2715,6 +2725,8 @@ class DoclingDocument(BaseModel):
         included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
     ):
         """Save to HTML."""
+        if isinstance(filename, str):
+            filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
 
         if image_mode == ImageRefMode.REFERENCED:
@@ -2740,8 +2752,10 @@ class DoclingDocument(BaseModel):
             fw.write(html_out)
 
     def _get_output_paths(
-        self, filename: Path, artifacts_dir: Optional[Path] = None
+        self, filename: str | Path, artifacts_dir: Optional[Path] = None
     ) -> Tuple[Path, Optional[Path]]:
+        if isinstance(filename, str):
+            filename = Path(filename)
         if artifacts_dir is None:
             # Remove the extension and add '_pictures'
             artifacts_dir = filename.with_suffix("")
@@ -3516,7 +3530,7 @@ class DoclingDocument(BaseModel):
 
     def save_as_doctags(
         self,
-        filename: Path,
+        filename: str | Path,
         delim: str = "",
         from_element: int = 0,
         to_element: int = sys.maxsize,
@@ -3531,6 +3545,8 @@ class DoclingDocument(BaseModel):
         add_table_cell_text: bool = True,
     ):
         r"""Save the document content to DocTags format."""
+        if isinstance(filename, str):
+            filename = Path(filename)
         out = self.export_to_document_tokens(
             delim=delim,
             from_element=from_element,
