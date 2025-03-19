@@ -3037,6 +3037,7 @@ class DoclingDocument(BaseModel):
             "list_item": DocItemLabel.LIST_ITEM,
             "footnote": DocItemLabel.FOOTNOTE,
             "code": DocItemLabel.CODE,
+            "key_value_region": DocItemLabel.KEY_VALUE_REGION,
         }
 
         def extract_bounding_box(text_chunk: str) -> Optional[BoundingBox]:
@@ -3228,6 +3229,95 @@ class DoclingDocument(BaseModel):
                 table_cells=table_cells,
             )
 
+        def parse_key_value_item(
+            tokens: str, image: Optional[PILImage.Image] = None
+        ) -> Tuple[GraphData, Optional[ProvenanceItem]]:
+            if image is not None:
+                pg_width = image.width
+                pg_height = image.height
+            else:
+                pg_width = 1
+                pg_height = 1
+
+            start_locs_match = re.search(r"<key_value_region>(.*?)<key", tokens)
+            if start_locs_match:
+                overall_locs = start_locs_match.group(1)
+                overall_bbox = extract_bounding_box(overall_locs) if image else None
+                overall_prov = (
+                    ProvenanceItem(
+                        bbox=overall_bbox.resize_by_scale(pg_width, pg_height),
+                        charspan=(0, 0),
+                        page_no=1,
+                    )
+                    if overall_bbox
+                    else None
+                )
+            else:
+                overall_prov = None
+
+            # here we assumed the labels as only key or value, later on we can update
+            # it to have unspecified, checkbox etc.
+            cell_pattern = re.compile(
+                r"<(?P<label>key|value)_(?P<id>\d+)>"
+                r"(?P<content>.*?)"
+                r"</(?P=label)_(?P=id)>",
+                re.DOTALL,
+            )
+
+            cells: List["GraphCell"] = []
+            links: List["GraphLink"] = []
+            raw_link_predictions = []
+
+            for cell_match in cell_pattern.finditer(tokens):
+                cell_label_str = cell_match.group("label")  # "key" or "value"
+                cell_id = int(cell_match.group("id"))
+                raw_content = cell_match.group("content")
+
+                # link tokens
+                link_matches = re.findall(r"<link_(\d+)>", raw_content)
+
+                cell_bbox = extract_bounding_box(raw_content) if image else None
+                cell_prov = None
+                if cell_bbox is not None:
+                    cell_prov = ProvenanceItem(
+                        bbox=cell_bbox.resize_by_scale(pg_width, pg_height),
+                        charspan=(0, 0),
+                        page_no=1,
+                    )
+
+                cleaned_text = re.sub(r"<loc_\d+>", "", raw_content)
+                cleaned_text = re.sub(r"<link_\d+>", "", cleaned_text).strip()
+
+                cell_obj = GraphCell(
+                    label=GraphCellLabel(cell_label_str),
+                    cell_id=cell_id,
+                    text=cleaned_text,
+                    orig=cleaned_text,
+                    prov=cell_prov,
+                    item_ref=None,
+                )
+                cells.append(cell_obj)
+
+                cell_ids = {cell.cell_id for cell in cells}
+
+                for target_str in link_matches:
+                    raw_link_predictions.append((cell_id, int(target_str)))
+
+            cell_ids = {cell.cell_id for cell in cells}
+
+            for source_id, target_id in raw_link_predictions:
+                # basic check to validate the prediction
+                if target_id not in cell_ids:
+                    continue
+                link_obj = GraphLink(
+                    label=GraphLinkLabel.TO_VALUE,
+                    source_cell_id=source_id,
+                    target_cell_id=target_id,
+                )
+                links.append(link_obj)
+
+            return (GraphData(cells=cells, links=links), overall_prov)
+
         # doc = DoclingDocument(name="Document")
         for pg_idx, doctag_page in enumerate(doctag_document.pages):
             page_doctags = doctag_page.tokens
@@ -3242,6 +3332,12 @@ class DoclingDocument(BaseModel):
             else:
                 pg_width = 1
                 pg_height = 1
+
+            self.add_page(
+                page_no=page_no,
+                size=Size(width=pg_width, height=pg_height),
+                image=ImageRef.from_pil(image=image, dpi=72) if image else None,
+            )
 
             """
             1. Finds all <tag>...</tag>
@@ -3263,6 +3359,7 @@ class DoclingDocument(BaseModel):
                 rf"{DocItemLabel.SECTION_HEADER}_level_1|"
                 rf"{DocumentToken.ORDERED_LIST.value}|"
                 rf"{DocumentToken.UNORDERED_LIST.value}|"
+                rf"{DocItemLabel.KEY_VALUE_REGION}|"
                 rf"{DocumentToken.OTSL.value})>.*?</(?P=tag)>"
             )
 
@@ -3348,6 +3445,11 @@ class DoclingDocument(BaseModel):
                                     parent=None,
                                 )
                                 pic.captions.append(caption_item.get_ref())
+                elif tag_name == DocItemLabel.KEY_VALUE_REGION:
+                    key_value_data, kv_item_prov = parse_key_value_item(
+                        full_chunk, image
+                    )
+                    self.add_key_values(graph=key_value_data, prov=kv_item_prov)
                 elif tag_name in [
                     DocumentToken.ORDERED_LIST.value,
                     DocumentToken.UNORDERED_LIST.value,
