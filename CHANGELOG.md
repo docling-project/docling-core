@@ -1,3 +1,9 @@
+## [v2.23.3](https://github.com/docling-project/docling-core/releases/tag/v2.23.3) - 2025-03-19
+
+### Fix
+
+* **markdown:** Fix ordered list numbering ([#200](https://github.com/docling-project/docling-core/issues/200)) ([`7ed4d22`](https://github.com/docling-project/docling-core/commit/7ed4d225b67dd41aa2c3e7c0d4b2b96f9e95114e))
+
 ## [v2.23.2](https://github.com/docling-project/docling-core/releases/tag/v2.23.2) - 2025-03-18
 
 ### Fix
