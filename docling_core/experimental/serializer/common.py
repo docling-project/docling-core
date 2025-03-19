@@ -98,7 +98,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def _params_dict(self) -> dict[str, Any]:
         return self.params.model_dump()
 
-    # TODO add cache base on start-stop params
+    # TODO add cache based on start-stop params
     @override
     def get_excluded_refs(self, **kwargs) -> list[str]:
         """References to excluded items."""
@@ -109,6 +109,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 self.doc.iterate_items(
                     with_groups=True,
                     traverse_pictures=True,
+                    included_content_layers=self.layers,
                 )
             )
             if (
@@ -150,6 +151,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             self.doc.iterate_items(
                 with_groups=True,
                 traverse_pictures=True,
+                included_content_layers=self.layers,
             )
         ):
             if isinstance(item, DocItem):
@@ -302,6 +304,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             root=item,
             with_groups=True,
             traverse_pictures=traverse_pictures,
+            included_content_layers=self.layers,
         ):
             if item.self_ref in my_visited:
                 continue

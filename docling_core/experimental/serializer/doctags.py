@@ -390,8 +390,9 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         )
         wrap_tag = DocumentToken.INLINE.value
         text_res = "\n".join([p.text for p in parts if p.text])
-        text_res = f"{text_res}\n"  # NOTE: explicit
-        text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+        if text_res:
+            text_res = f"{text_res}\n"  # NOTE: explicit
+            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
         return SerializationResult(text=text_res)
 
 
