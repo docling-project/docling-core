@@ -546,7 +546,7 @@ class SegmentedPdfPage(SegmentedPage):
 
     def save_as_json(
         self,
-        filename: Path,
+        filename: str | Path,
         indent: int = 2,
     ):
         """Save the page data as a JSON file.
@@ -555,12 +555,14 @@ class SegmentedPdfPage(SegmentedPage):
             filename: Path to save the JSON file
             indent: Indentation level for JSON formatting
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         out = self.export_to_dict()
         with open(filename, "w", encoding="utf-8") as fw:
             json.dump(out, fw, indent=indent)
 
     @classmethod
-    def load_from_json(cls, filename: Path) -> "SegmentedPdfPage":
+    def load_from_json(cls, filename: str | Path) -> "SegmentedPdfPage":
         """Load page data from a JSON file.
 
         Args:
@@ -569,6 +571,8 @@ class SegmentedPdfPage(SegmentedPage):
         Returns:
             Instantiated SegmentedPdfPage object
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         with open(filename, "r", encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
 
@@ -1155,19 +1159,21 @@ class PdfTableOfContents(BaseModel):
         """
         return self.model_dump(mode=mode, by_alias=True, exclude_none=True)
 
-    def save_as_json(self, filename: Path, indent: int = 2):
+    def save_as_json(self, filename: str | Path, indent: int = 2):
         """Save the table of contents as a JSON file.
 
         Args:
             filename: Path to save the JSON file
             indent: Indentation level for JSON formatting
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         out = self.export_to_dict()
         with open(filename, "w", encoding="utf-8") as fw:
             json.dump(out, fw, indent=indent)
 
     @classmethod
-    def load_from_json(cls, filename: Path) -> "PdfTableOfContents":
+    def load_from_json(cls, filename: str | Path) -> "PdfTableOfContents":
         """Load table of contents from a JSON file.
 
         Args:
@@ -1176,6 +1182,8 @@ class PdfTableOfContents(BaseModel):
         Returns:
             Instantiated PdfTableOfContents object
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         with open(filename, "r", encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
 
@@ -1213,19 +1221,21 @@ class ParsedPdfDocument(BaseModel):
         """
         return self.model_dump(mode=mode, by_alias=True, exclude_none=True)
 
-    def save_as_json(self, filename: Path, indent: int = 2):
+    def save_as_json(self, filename: str | Path, indent: int = 2):
         """Save the document as a JSON file.
 
         Args:
             filename: Path to save the JSON file
             indent: Indentation level for JSON formatting
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         out = self.export_to_dict()
         with open(filename, "w", encoding="utf-8") as fw:
             json.dump(out, fw, indent=indent)
 
     @classmethod
-    def load_from_json(cls, filename: Path) -> "ParsedPdfDocument":
+    def load_from_json(cls, filename: str | Path) -> "ParsedPdfDocument":
         """Load document from a JSON file.
 
         Args:
@@ -1234,5 +1244,7 @@ class ParsedPdfDocument(BaseModel):
         Returns:
             Instantiated ParsedPdfDocument object
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         with open(filename, "r", encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
