@@ -67,6 +67,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         """Pydantic config."""
 
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     doc: DoclingDocument
 

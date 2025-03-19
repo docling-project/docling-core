@@ -1375,8 +1375,8 @@ class TableItem(FloatingItem):
                 xsize=xsize,
                 ysize=ysize,
                 add_location=add_location,
-                add_cell_location=add_cell_location,
-                add_cell_text=add_cell_text,
+                add_table_cell_location=add_cell_location,
+                add_table_cell_text=add_cell_text,
                 add_caption=add_caption,
             ),
         )
@@ -2522,7 +2522,7 @@ class DoclingDocument(BaseModel):
             to_element=to_element,
             labels=labels,
             strict_text=strict_text,
-            escaping_underscores=escaping_underscores,
+            escape_underscores=escaping_underscores,
             image_placeholder=image_placeholder,
             image_mode=image_mode,
             indent=indent,
@@ -2541,7 +2541,7 @@ class DoclingDocument(BaseModel):
         to_element: int = sys.maxsize,
         labels: set[DocItemLabel] = DOCUMENT_TOKENS_EXPORT_LABELS,
         strict_text: bool = False,
-        escaping_underscores: bool = True,
+        escape_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
@@ -2591,7 +2591,7 @@ class DoclingDocument(BaseModel):
             labels=labels,
             layers=included_content_layers,
             pages={page_no} if page_no is not None else None,
-            escaping_underscores=escaping_underscores,
+            escape_underscores=escape_underscores,
             params=MarkdownParams(
                 start_idx=from_element,
                 stop_idx=to_element,
@@ -2628,7 +2628,7 @@ class DoclingDocument(BaseModel):
             to_element,
             labels,
             strict_text=True,
-            escaping_underscores=False,
+            escape_underscores=False,
             image_placeholder="",
         )
 

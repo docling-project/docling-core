@@ -92,14 +92,12 @@ class DocTagsParams(CommonParams):
     xsize: int = 500
     ysize: int = 500
     add_location: bool = True
-    add_content: bool = True  # TODO remove as always true?
-    add_cell_location: bool = True
-    add_cell_text: bool = True
+    add_content: bool = True
+    add_table_cell_location: bool = True
+    add_table_cell_text: bool = True
     add_caption: bool = True
 
-    add_page_index: bool = True  # TODO where are these used
-    add_table_cell_location: bool = False  # TODO where are these used
-    add_table_cell_text: bool = True  # TODO where are these used
+    add_page_index: bool = True  # TODO remove as unused?
 
 
 class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
@@ -182,11 +180,11 @@ class DocTagsTableSerializer(BaseTableSerializer):
                 )
 
             body += item.export_to_otsl(
-                doc,
-                params.add_cell_location,
-                params.add_cell_text,
-                params.xsize,
-                params.ysize,
+                doc=doc,
+                add_cell_location=params.add_table_cell_location,
+                add_cell_text=params.add_table_cell_text,
+                xsize=params.xsize,
+                ysize=params.ysize,
             )
 
         if params.add_caption and len(item.captions):
