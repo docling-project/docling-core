@@ -5,7 +5,6 @@
 
 """Define classes for Doctags serialization."""
 import html
-import sys
 from pathlib import Path
 from typing import Optional, Union
 
@@ -410,40 +409,16 @@ class DocTagsDocSerializer(DocSerializer):
         return res
 
     @override
-    def serialize_body(self) -> SerializationResult:
-        """Serialize the document body."""
-        # find page ranges
-        last_page: Optional[int] = None
-        starts: list[int] = []
-        for ix, (item, _) in enumerate(
-            self.doc.iterate_items(
-                with_groups=True,
-                traverse_pictures=True,
-            )
-        ):
-            if isinstance(item, DocItem):
-                if item.prov:
-                    if last_page is None or item.prov[0].page_no > last_page:
-                        starts.append(ix)
-                        last_page = item.prov[0].page_no
-        page_ranges = [
-            (
-                (starts[i] if i > 0 else 0),
-                (starts[i + 1] if i < len(starts) - 1 else sys.maxsize),
-            )
-            for i, _ in enumerate(starts)
-        ] or [(0, sys.maxsize)]
+    def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
+        """Serialize a page out of its parts."""
+        text_res = "\n".join([p.text for p in parts])
+        return SerializationResult(text=text_res)
 
-        page_results: list[SerializationResult] = []
-        for page_range in page_ranges:
-            subparts = self.get_parts(
-                **CommonParams(start=page_range[0], stop=page_range[1]).model_dump(),
-            )
-            page_res = SerializationResult(text="\n".join([s.text for s in subparts]))
-            page_results.append(page_res)
-
+    @override
+    def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
+        """Serialize a document out of its pages."""
         page_sep = f"\n<{DocumentToken.PAGE_BREAK.value}>\n"
-        content = page_sep.join([p.text for p in page_results if p.text])
+        content = page_sep.join([p.text for p in pages if p.text])
         wrap_tag = DocumentToken.DOCUMENT.value
         text_res = f"<{wrap_tag}>{content}\n</{wrap_tag}>"
         return SerializationResult(text=text_res)

@@ -2593,8 +2593,8 @@ class DoclingDocument(BaseModel):
             pages={page_no} if page_no is not None else None,
             escaping_underscores=escaping_underscores,
             params=MarkdownParams(
-                start=from_element,
-                stop=to_element,
+                start_idx=from_element,
+                stop_idx=to_element,
                 image_placeholder=image_placeholder,
                 image_mode=image_mode,
                 indent=indent,
@@ -3422,8 +3422,8 @@ class DoclingDocument(BaseModel):
             doc=self,
             labels=labels,
             params=DocTagsParams(
-                start=from_element,
-                stop=to_element,
+                start_idx=from_element,
+                stop_idx=to_element,
                 new_line=delim,
                 xsize=xsize,
                 ysize=ysize,

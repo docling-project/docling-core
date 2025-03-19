@@ -52,8 +52,11 @@ from docling_core.types.doc.document import (
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
+    image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
+    image_placeholder: str = "<!-- image -->"
     indent: int = 4
     wrap_width: Optional[PositiveInt] = None
+    page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -119,12 +122,10 @@ class MarkdownTableSerializer(BaseTableSerializer):
         """Serializes the passed item."""
         text_parts: list[str] = []
 
-        if caption_txt := doc_serializer.serialize_captions(
-            item=item,
-        ).text:
+        if caption_txt := doc_serializer.serialize_captions(item=item, **kwargs).text:
             text_parts.append(caption_txt)
 
-        if item.self_ref not in doc_serializer.get_excluded_refs():
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             rows = [
                 [
                     # make sure that md tables are not broken
@@ -179,7 +180,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         if cap_res.text:
             texts.append(cap_res.text)
 
-        if item.self_ref not in doc_serializer.get_excluded_refs():
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             img_res = self._serialize_image_part(
                 item=item,
                 doc=doc,
@@ -308,6 +309,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
             list_level=list_level + 1,
             is_inline_scope=is_inline_scope,
             visited=my_visited,
+            **kwargs,
         )
         sep = "\n"
         my_parts: list[SerializationResult] = []
@@ -463,8 +465,17 @@ class MarkdownDocSerializer(DocSerializer):
         return res
 
     @override
-    def serialize_body(self) -> SerializationResult:
-        """Serialize the document body."""
-        parts = self.get_parts()
-        text_res = "\n\n".join([p.text for p in parts if p.text])
+    def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
+        """Serialize a page out of its parts."""
+        text_res = "\n\n".join([p.text for p in parts])
         return SerializationResult(text=text_res)
+
+    @override
+    def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
+        """Serialize a document out of its pages."""
+        if self.params.page_break_placeholder is not None:
+            sep = f"\n\n{self.params.page_break_placeholder}\n\n"
+            text_res = sep.join([p.text for p in pages if p.text])
+            return SerializationResult(text=text_res)
+        else:
+            return self.serialize_page(parts=pages)

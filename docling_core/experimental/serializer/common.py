@@ -6,6 +6,7 @@
 """Define base classes for serialization."""
 import sys
 from abc import abstractmethod
+from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -25,7 +26,6 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DEFAULT_CONTENT_LAYERS,
     DOCUMENT_TOKENS_EXPORT_LABELS,
@@ -55,11 +55,9 @@ _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 class CommonParams(BaseModel):
     """Common serialization parameters."""
 
-    start: NonNegativeInt = 0
-    stop: NonNegativeInt = sys.maxsize  # semantics: exclusive, like slicing end
-
-    image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
-    image_placeholder: str = "<!-- image -->"
+    # slice-like semantics: start is included, stop is excluded
+    start_idx: NonNegativeInt = 0
+    stop_idx: NonNegativeInt = sys.maxsize
 
 
 class DocSerializer(BaseModel, BaseDocSerializer):
@@ -114,7 +112,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 )
             )
             if (
-                (ix < params.start or ix >= params.stop)
+                (ix < params.start_idx or ix >= params.stop_idx)
                 or (
                     isinstance(item, DocItem)
                     and (
@@ -134,9 +132,51 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         return refs
 
     @abstractmethod
-    def serialize_body(self) -> SerializationResult:
-        """Serialize the document body."""
+    def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
+        """Serialize a page out of its parts."""
         ...
+
+    @abstractmethod
+    def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
+        """Serialize a document out of its pages."""
+        ...
+
+    def _serialize_body(self) -> SerializationResult:
+        """Serialize the document body."""
+        # find page ranges if available; otherwise regard whole doc as a single page
+        last_page: Optional[int] = None
+        starts: list[int] = []
+        for ix, (item, _) in enumerate(
+            self.doc.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+            )
+        ):
+            if isinstance(item, DocItem):
+                if item.prov:
+                    if last_page is None or item.prov[0].page_no > last_page:
+                        starts.append(ix)
+                        last_page = item.prov[0].page_no
+        page_ranges = [
+            (
+                (starts[i] if i > 0 else 0),
+                (starts[i + 1] if i < len(starts) - 1 else sys.maxsize),
+            )
+            for i, _ in enumerate(starts)
+        ] or [
+            (0, sys.maxsize)
+        ]  # use whole range if no pages detected
+
+        page_results: list[SerializationResult] = []
+        for page_range in page_ranges:
+            params_to_pass = deepcopy(self.params)
+            params_to_pass.start_idx = page_range[0]
+            params_to_pass.stop_idx = page_range[1]
+            subparts = self.get_parts(**params_to_pass.model_dump())
+            page_res = self.serialize_page(subparts)
+            page_results.append(page_res)
+        res = self.serialize_doc(page_results)
+        return res
 
     @override
     def serialize(
@@ -154,7 +194,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         if item is None or item == self.doc.body:
             if self.doc.body.self_ref not in my_visited:
                 my_visited.add(self.doc.body.self_ref)
-                return self.serialize_body()
+                return self._serialize_body()
             else:
                 return empty_res
 
