@@ -53,6 +53,27 @@ class DocumentToken(Enum):
     SMILES = "smiles"
     INLINE = "inline"
 
+    CAPTION = "caption"
+    FOOTNOTE = "footnote"
+    FORMULA = "formula"
+    LIST_ITEM = "list_item"
+    PAGE_FOOTER = "page_footer"
+    PAGE_HEADER = "page_header"
+    PICTURE = "picture"
+    SECTION_HEADER = "section_header"
+    TABLE = "table"
+    TEXT = "text"
+    TITLE = "title"
+    DOCUMENT_INDEX = "document_index"
+    CODE = "code"
+    CHECKBOX_SELECTED = "checkbox_selected"
+    CHECKBOX_UNSELECTED = "checkbox_unselected"
+    FORM = "form"
+    KEY_VALUE_REGION = "key_value_region"
+
+    PARAGRAPH = "paragraph"
+    REFERENCE = "reference"
+
     @classmethod
     def get_special_tokens(
         cls,

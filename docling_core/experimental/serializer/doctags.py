@@ -51,6 +51,40 @@ def _wrap(text: str, wrap_tag: str) -> str:
     return f"<{wrap_tag}>{text}</{wrap_tag}>"
 
 
+_DOC_TOKEN_BY_DOC_ITEM_LABEL = {
+    DocItemLabel.CAPTION: DocumentToken.CAPTION,
+    DocItemLabel.FOOTNOTE: DocumentToken.FOOTNOTE,
+    DocItemLabel.FORMULA: DocumentToken.FORMULA,
+    DocItemLabel.LIST_ITEM: DocumentToken.LIST_ITEM,
+    DocItemLabel.PAGE_FOOTER: DocumentToken.PAGE_FOOTER,
+    DocItemLabel.PAGE_HEADER: DocumentToken.PAGE_HEADER,
+    DocItemLabel.PICTURE: DocumentToken.PICTURE,
+    DocItemLabel.SECTION_HEADER: DocumentToken.SECTION_HEADER,
+    DocItemLabel.TABLE: DocumentToken.TABLE,
+    DocItemLabel.TEXT: DocumentToken.TEXT,
+    DocItemLabel.TITLE: DocumentToken.TITLE,
+    DocItemLabel.DOCUMENT_INDEX: DocumentToken.DOCUMENT_INDEX,
+    DocItemLabel.CODE: DocumentToken.CODE,
+    DocItemLabel.CHECKBOX_SELECTED: DocumentToken.CHECKBOX_SELECTED,
+    DocItemLabel.CHECKBOX_UNSELECTED: DocumentToken.CHECKBOX_UNSELECTED,
+    DocItemLabel.FORM: DocumentToken.FORM,
+    DocItemLabel.KEY_VALUE_REGION: DocumentToken.KEY_VALUE_REGION,
+    DocItemLabel.PARAGRAPH: DocumentToken.PARAGRAPH,
+    DocItemLabel.REFERENCE: DocumentToken.REFERENCE,
+}
+
+
+def _create_token_from_doc_item_label(item: DocItem) -> str:
+    """Get token corresponding to passed doc item label."""
+    try:
+        res = _DOC_TOKEN_BY_DOC_ITEM_LABEL[item.label].value
+    except KeyError as e:
+        raise RuntimeError(f"Unexpected DocItemLabel encountered: {item.label}") from e
+    if isinstance(item, SectionHeaderItem):
+        res = f"{res}_level_{item.level}"
+    return res
+
+
 class DocTagsParams(CommonParams):
     """DocTags-specific serialization parameters."""
 
@@ -82,7 +116,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
-        wrap_tag: Optional[str] = item.label
+        wrap_tag: Optional[str] = _create_token_from_doc_item_label(item)
         parts: list[str] = []
 
         if params.add_location:
@@ -109,10 +143,8 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 text_part = f"<_{item.code_language}_>{text_part}"
             else:
                 text_part = text_part.strip()
-                if isinstance(item, SectionHeaderItem):
-                    wrap_tag = f"{item.label}_level_{item.level}"
-                elif isinstance(item, ListItem):
-                    wrap_tag = None
+                if isinstance(item, ListItem):
+                    wrap_tag = None  # deferring list item tags to list handling
 
             if text_part:
                 parts.append(text_part)
@@ -161,7 +193,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
             text = doc_serializer.serialize_captions(item, separator="", **kwargs).text
 
             if len(text):
-                body += f"<{DocItemLabel.CAPTION.value}>"
+                body += f"<{DocumentToken.CAPTION.value}>"
                 for caption in item.captions:
                     if caption.cref not in doc_serializer.get_excluded_refs(**kwargs):
                         body += caption.resolve(doc).get_location_tokens(
@@ -171,7 +203,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
                             ysize=params.ysize,
                         )
                 body += f"{text.strip()}"
-                body += f"</{DocItemLabel.CAPTION.value}>"
+                body += f"</{DocumentToken.CAPTION.value}>"
                 body += f"{params.new_line}"
 
         if body:
@@ -242,12 +274,13 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                         )
                         body += f"{text.strip()}"
                 if body:
-                    body = _wrap(text=body, wrap_tag=DocItemLabel.CAPTION.value)
+                    body = _wrap(text=body, wrap_tag=DocumentToken.CAPTION.value)
                     parts.append(body)
 
         text = "".join(parts)
         if text:
-            text = _wrap(text=text, wrap_tag=item.label.value)
+            token = _create_token_from_doc_item_label(item=item)
+            text = _wrap(text=text, wrap_tag=token)
         return SerializationResult(text=text)
 
 
@@ -315,7 +348,10 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         )
         if parts:
             text_res = "\n".join(
-                [_wrap(text=p.text, wrap_tag=DocItemLabel.LIST_ITEM) for p in parts]
+                [
+                    _wrap(text=p.text, wrap_tag=DocumentToken.LIST_ITEM.value)
+                    for p in parts
+                ]
             )
             text_res = f"{text_res}\n"  # NOTE: explicit
             wrap_tag = (
