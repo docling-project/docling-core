@@ -600,6 +600,14 @@ class NodeItem(BaseModel):
         """get_ref."""
         return RefItem(cref=self.self_ref)
 
+    def is_first_child(self, item: RefItem) -> bool:
+        """is_first_child."""
+        return len(self.children) > 0 and (self.children[0].cref == item.cref)
+
+    def is_last_child(self, item: RefItem) -> bool:
+        """is_last_child."""
+        return len(self.children) > 0 and (self.children[-1].cref == item.cref)
+
 
 class GroupItem(NodeItem):  # Container type, can't be a leaf node
     """GroupItem."""
