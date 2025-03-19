@@ -199,9 +199,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 return empty_res
 
         label_blocklist = {
+            # captions only considered in context of floating items (pictures, tables)
             DocItemLabel.CAPTION,
-            DocItemLabel.FOOTNOTE,
-            # TODO handle differently as it clashes with self.labels
         }
 
         kwargs_to_pass = {**self._params_dict, **kwargs}
@@ -378,14 +377,17 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serialize the item's captions."""
-        text_parts: list[str] = [
-            it.text
-            for cap in item.captions
-            if isinstance(it := cap.resolve(self.doc), TextItem)
-            and it.self_ref not in self.get_excluded_refs(**kwargs)
-        ]
-        text_res = (separator or "\n").join(text_parts)
-        text_res = self.post_process(text=text_res)
+        if DocItemLabel.CAPTION in self.labels:
+            text_parts: list[str] = [
+                it.text
+                for cap in item.captions
+                if isinstance(it := cap.resolve(self.doc), TextItem)
+                and it.self_ref not in self.get_excluded_refs(**kwargs)
+            ]
+            text_res = (separator or "\n").join(text_parts)
+            text_res = self.post_process(text=text_res)
+        else:
+            text_res = ""
         return SerializationResult(text=text_res)
 
 

@@ -122,8 +122,13 @@ class MarkdownTableSerializer(BaseTableSerializer):
         """Serializes the passed item."""
         text_parts: list[str] = []
 
-        if caption_txt := doc_serializer.serialize_captions(item=item, **kwargs).text:
-            text_parts.append(caption_txt)
+        cap_res = doc_serializer.serialize_captions(
+            item=item,
+            separator="\n",
+            **kwargs,
+        )
+        if cap_res.text:
+            text_parts.append(cap_res.text)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             rows = [

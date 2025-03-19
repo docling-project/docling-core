@@ -190,7 +190,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
             )
 
         if params.add_caption and len(item.captions):
-            text = doc_serializer.serialize_captions(item, separator="", **kwargs).text
+            text = doc_serializer.serialize_captions(item, separator=" ", **kwargs).text
 
             if len(text):
                 body += f"<{DocumentToken.CAPTION.value}>"
@@ -260,7 +260,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
             parts.append(body)
 
         if params.add_caption and len(item.captions):
-            text = item.caption_text(doc)
+            text = doc_serializer.serialize_captions(item, separator=" ", **kwargs).text
 
             if len(text):
                 body = ""
