@@ -32,6 +32,7 @@ from docling_core.types.doc.document import (
     FormItem,
     InlineGroup,
     KeyValueItem,
+    ListItem,
     NodeItem,
     OrderedList,
     PictureClassificationData,
@@ -81,7 +82,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
-        wrap_tag: str = item.label
+        wrap_tag: Optional[str] = item.label
         parts: list[str] = []
 
         if params.add_location:
@@ -110,12 +111,15 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 text_part = text_part.strip()
                 if isinstance(item, SectionHeaderItem):
                     wrap_tag = f"{item.label}_level_{item.level}"
+                elif isinstance(item, ListItem):
+                    wrap_tag = None
 
             if text_part:
                 parts.append(text_part)
 
         res = "".join(parts)
-        res = _wrap(text=res, wrap_tag=wrap_tag)
+        if wrap_tag is not None:
+            res = _wrap(text=res, wrap_tag=wrap_tag)
         return SerializationResult(text=res)
 
 
@@ -310,7 +314,9 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
         if parts:
-            text_res = "\n".join([p.text for p in parts])
+            text_res = "\n".join(
+                [_wrap(text=p.text, wrap_tag=DocItemLabel.LIST_ITEM) for p in parts]
+            )
             text_res = f"{text_res}\n"  # NOTE: explicit
             wrap_tag = (
                 DocumentToken.ORDERED_LIST.value
