@@ -458,7 +458,8 @@ class MarkdownDocSerializer(DocSerializer):
     ) -> str:
         """Apply some text post-processing steps."""
         res = text
-        if escape_underscores and self.escape_underscores:
+        params = self.params.merge_with_patch(patch=kwargs)
+        if escape_underscores and params.escape_underscores:
             res = self._escape_underscores(text)
         if escape_html:
             res = html.escape(res, quote=False)

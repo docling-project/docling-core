@@ -7,12 +7,11 @@
 import sys
 from abc import abstractmethod
 from copy import deepcopy
-from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, NonNegativeInt, computed_field
-from typing_extensions import override
+from pydantic import AnyUrl, BaseModel, NonNegativeInt
+from typing_extensions import Self, override
 
 from docling_core.experimental.serializer.base import (
     BaseDocSerializer,
@@ -27,7 +26,6 @@ from docling_core.experimental.serializer.base import (
     SerializationResult,
 )
 from docling_core.types.doc.document import (
-    DEFAULT_CONTENT_LAYERS,
     DOCUMENT_TOKENS_EXPORT_LABELS,
     ContentLayer,
     DocItem,
@@ -50,14 +48,30 @@ from docling_core.types.doc.document import (
 from docling_core.types.doc.labels import DocItemLabel
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
+_DEFAULT_LAYERS = {cl for cl in ContentLayer}
 
 
 class CommonParams(BaseModel):
     """Common serialization parameters."""
 
+    # allowlists with non-recursive semantics, i.e. if a list group node is outside the
+    # range and some of its children items are within, they will be serialized
+    labels: set[DocItemLabel] = _DEFAULT_LABELS
+    layers: set[ContentLayer] = _DEFAULT_LAYERS
+    pages: Optional[set[int]] = None  # None means all pages are allowed
+
     # slice-like semantics: start is included, stop is excluded
     start_idx: NonNegativeInt = 0
     stop_idx: NonNegativeInt = sys.maxsize
+
+    include_formatting: bool = True
+    include_hyperlinks: bool = True
+    escape_underscores: bool = True
+
+    def merge_with_patch(self, patch: dict[str, Any]) -> Self:
+        """Create an instance by merging the provided patch dict on top of self."""
+        res = self.model_validate({**self.model_dump(), **patch})
+        return res
 
 
 class DocSerializer(BaseModel, BaseDocSerializer):
@@ -71,17 +85,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     doc: DoclingDocument
 
-    include_formatting: bool = True
-    include_hyperlinks: bool = True
-    escape_underscores: bool = True
-
-    # this filtering criteria are non-recursive;
-    # e.g. if a list group node is outside the range and some of its children items are
-    # within, they will be serialized
-    labels: set[DocItemLabel] = _DEFAULT_LABELS
-    layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS
-    pages: Optional[set[int]] = None
-
     text_serializer: BaseTextSerializer
     table_serializer: BaseTableSerializer
     picture_serializer: BasePictureSerializer
@@ -94,23 +97,18 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     params: CommonParams = CommonParams()
 
-    @computed_field  # type: ignore[misc]
-    @cached_property
-    def _params_dict(self) -> dict[str, Any]:
-        return self.params.model_dump()
-
     # TODO add cache based on start-stop params
     @override
     def get_excluded_refs(self, **kwargs) -> list[str]:
         """References to excluded items."""
-        params = CommonParams(**kwargs)
+        params = self.params.merge_with_patch(patch=kwargs)
         refs: list[str] = [
             item.self_ref
             for ix, (item, _) in enumerate(
                 self.doc.iterate_items(
                     with_groups=True,
                     traverse_pictures=True,
-                    included_content_layers=self.layers,
+                    included_content_layers=params.layers,
                 )
             )
             if (
@@ -118,13 +116,13 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 or (
                     isinstance(item, DocItem)
                     and (
-                        item.label not in self.labels
-                        or item.content_layer not in self.layers
+                        item.label not in params.labels
+                        or item.content_layer not in params.layers
                         or (
-                            self.pages is not None
+                            params.pages is not None
                             and (
                                 (not item.prov)
-                                or item.prov[0].page_no not in self.pages
+                                or item.prov[0].page_no not in params.pages
                             )
                         )
                     )
@@ -152,7 +150,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             self.doc.iterate_items(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers=self.layers,
+                included_content_layers=self.params.layers,
             )
         ):
             if isinstance(item, DocItem):
@@ -206,8 +204,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             DocItemLabel.CAPTION,
         }
 
-        kwargs_to_pass = {**self._params_dict, **kwargs}
-
         ########
         # groups
         ########
@@ -219,7 +215,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 list_level=list_level,
                 is_inline_scope=is_inline_scope,
                 visited=my_visited,
-                **kwargs_to_pass,
+                **kwargs,
             )
         elif isinstance(item, InlineGroup):
             part = self.inline_serializer.serialize(
@@ -228,7 +224,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 doc=self.doc,
                 list_level=list_level,
                 visited=my_visited,
-                **kwargs_to_pass,
+                **kwargs,
             )
         ###########
         # doc items
@@ -242,9 +238,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     doc_serializer=self,
                     doc=self.doc,
                     is_inline_scope=is_inline_scope,
-                    **kwargs_to_pass,
+                    **kwargs,
                 )
-                if item.self_ref not in self.get_excluded_refs(**kwargs_to_pass)
+                if item.self_ref not in self.get_excluded_refs(**kwargs)
                 else empty_res
             )
         elif isinstance(item, TableItem):
@@ -252,7 +248,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **kwargs_to_pass,
+                **kwargs,
             )
         elif isinstance(item, PictureItem):
             part = self.picture_serializer.serialize(
@@ -260,28 +256,28 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 doc_serializer=self,
                 doc=self.doc,
                 visited=my_visited,
-                **kwargs_to_pass,
+                **kwargs,
             )
         elif isinstance(item, KeyValueItem):
             part = self.key_value_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **kwargs_to_pass,
+                **kwargs,
             )
         elif isinstance(item, FormItem):
             part = self.form_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **kwargs_to_pass,
+                **kwargs,
             )
         else:
             part = self.fallback_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **kwargs_to_pass,
+                **kwargs,
             )
         return part
 
@@ -300,12 +296,12 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         """Get the components to be combined for serializing this node."""
         parts: list[SerializationResult] = []
         my_visited: set[str] = visited if visited is not None else set()
-
+        params = self.params.merge_with_patch(patch=kwargs)
         for item, _ in self.doc.iterate_items(
             root=item,
             with_groups=True,
             traverse_pictures=traverse_pictures,
-            included_content_layers=self.layers,
+            included_content_layers=params.layers,
         ):
             if item.self_ref in my_visited:
                 continue
@@ -332,8 +328,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         **kwargs,
     ) -> str:
         """Apply some text post-processing steps."""
+        params = self.params.merge_with_patch(patch=kwargs)
         res = text
-        if self.include_formatting and formatting:
+        if params.include_formatting and formatting:
             if formatting.bold:
                 res = self.serialize_bold(text=res)
             if formatting.italic:
@@ -342,7 +339,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 res = self.serialize_underline(text=res)
             if formatting.strikethrough:
                 res = self.serialize_strikethrough(text=res)
-        if self.include_hyperlinks and hyperlink:
+        if params.include_hyperlinks and hyperlink:
             res = self.serialize_hyperlink(text=res, hyperlink=hyperlink)
         return res
 
@@ -381,7 +378,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serialize the item's captions."""
-        if DocItemLabel.CAPTION in self.labels:
+        params = self.params.merge_with_patch(patch=kwargs)
+        if DocItemLabel.CAPTION in params.labels:
             text_parts: list[str] = [
                 it.text
                 for cap in item.captions

@@ -92,12 +92,17 @@ class DocTagsParams(CommonParams):
     xsize: int = 500
     ysize: int = 500
     add_location: bool = True
-    add_content: bool = True
     add_table_cell_location: bool = True
     add_table_cell_text: bool = True
-    add_caption: bool = True
+    add_page_break: bool = True
 
-    add_page_index: bool = True  # TODO remove as unused?
+    add_picture_caption: bool = True
+    add_table_caption: bool = True
+    # add_formula_caption: bool = True
+    # add_code_caption: bool = True
+
+    # TODO provide separate params by type like above?
+    add_content: bool = True
 
 
 class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
@@ -187,7 +192,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
                 ysize=params.ysize,
             )
 
-        if params.add_caption and len(item.captions):
+        if params.add_table_caption and len(item.captions):
             text = doc_serializer.serialize_captions(item, separator=" ", **kwargs).text
 
             if len(text):
@@ -243,8 +248,6 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 if isinstance(ann, PictureClassificationData)
             ]
             if len(classifications) > 0:
-                # ! TODO: currently this code assumes class_name is of type 'str'
-                # ! TODO: when it will change to an ENUM --> adapt code
                 predicted_class = classifications[0].predicted_classes[0].class_name
                 body += DocumentToken.get_picture_classification_token(predicted_class)
 
@@ -257,7 +260,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 )
             parts.append(body)
 
-        if params.add_caption and len(item.captions):
+        if params.add_picture_caption and len(item.captions):
             text = doc_serializer.serialize_captions(item, separator=" ", **kwargs).text
 
             if len(text):
@@ -407,10 +410,7 @@ class DocTagsFallbackSerializer(BaseFallbackSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        if isinstance(item, DocItem):
-            text_res = "<!-- missing-text -->"
-        else:
-            text_res = ""  # TODO go with explicit None return type?
+        text_res = ""
         return SerializationResult(text=text_res)
 
 
@@ -458,8 +458,11 @@ class DocTagsDocSerializer(DocSerializer):
     @override
     def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
         """Serialize a document out of its pages."""
-        page_sep = f"\n<{DocumentToken.PAGE_BREAK.value}>\n"
-        content = page_sep.join([p.text for p in pages if p.text])
+        if self.params.add_page_break:
+            page_sep = f"\n<{DocumentToken.PAGE_BREAK.value}>\n"
+            content = page_sep.join([p.text for p in pages if p.text])
+        else:
+            content = self.serialize_page(parts=pages).text
         wrap_tag = DocumentToken.DOCUMENT.value
         text_res = f"<{wrap_tag}>{content}\n</{wrap_tag}>"
         return SerializationResult(text=text_res)

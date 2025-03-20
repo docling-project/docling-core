@@ -1062,7 +1062,7 @@ class PictureItem(FloatingItem):
                 ysize=ysize,
                 add_location=add_location,
                 add_content=add_content,
-                add_caption=add_caption,
+                add_picture_caption=add_caption,
             ),
         )
         text = serializer.serialize(item=self).text
@@ -1377,7 +1377,7 @@ class TableItem(FloatingItem):
                 add_location=add_location,
                 add_table_cell_location=add_cell_location,
                 add_table_cell_text=add_cell_text,
-                add_caption=add_caption,
+                add_table_caption=add_caption,
             ),
         )
         text = serializer.serialize(item=self).text
@@ -2588,13 +2588,13 @@ class DoclingDocument(BaseModel):
 
         serializer = MarkdownDocSerializer(
             doc=self,
-            labels=labels,
-            layers=included_content_layers,
-            pages={page_no} if page_no is not None else None,
-            escape_underscores=escape_underscores,
             params=MarkdownParams(
+                labels=labels,
+                layers=included_content_layers,
+                pages={page_no} if page_no is not None else None,
                 start_idx=from_element,
                 stop_idx=to_element,
+                escape_underscores=escape_underscores,
                 image_placeholder=image_placeholder,
                 image_mode=image_mode,
                 indent=indent,
@@ -3420,8 +3420,9 @@ class DoclingDocument(BaseModel):
 
         serializer = DocTagsDocSerializer(
             doc=self,
-            labels=labels,
             params=DocTagsParams(
+                labels=labels,
+                # layers=...,  # not exposed
                 start_idx=from_element,
                 stop_idx=to_element,
                 new_line=delim,
@@ -3429,7 +3430,9 @@ class DoclingDocument(BaseModel):
                 ysize=ysize,
                 add_location=add_location,
                 add_content=add_content,
-                add_page_index=add_page_index,
+                add_page_break=add_page_index,
+                # add_picture_caption=...,  # not exposed
+                # add_table_caption=...,  # not exposed
                 add_table_cell_location=add_table_cell_location,
                 add_table_cell_text=add_table_cell_text,
             ),
