@@ -67,6 +67,7 @@ class CommonParams(BaseModel):
     include_formatting: bool = True
     include_hyperlinks: bool = True
     escape_underscores: bool = True
+    caption_delim: str = " "
 
     def merge_with_patch(self, patch: dict[str, Any]) -> Self:
         """Create an instance by merging the provided patch dict on top of self."""
@@ -374,7 +375,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def serialize_captions(
         self,
         item: FloatingItem,
-        separator: Optional[str] = None,
         **kwargs,
     ) -> SerializationResult:
         """Serialize the item's captions."""
@@ -386,7 +386,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 if isinstance(it := cap.resolve(self.doc), TextItem)
                 and it.self_ref not in self.get_excluded_refs(**kwargs)
             ]
-            text_res = (separator or "\n").join(text_parts)
+            text_res = params.caption_delim.join(text_parts)
             text_res = self.post_process(text=text_res)
         else:
             text_res = ""

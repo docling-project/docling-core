@@ -124,7 +124,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
         cap_res = doc_serializer.serialize_captions(
             item=item,
-            separator="\n",
             **kwargs,
         )
         if cap_res.text:
@@ -179,7 +178,6 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
         cap_res = doc_serializer.serialize_captions(
             item=item,
-            separator="\n",
             **kwargs,
         )
         if cap_res.text:
