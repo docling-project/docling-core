@@ -37,10 +37,7 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     NodeItem,
     OrderedList,
-    PictureClassificationData,
-    PictureDescriptionData,
     PictureItem,
-    PictureMoleculeData,
     TableItem,
     TextItem,
     UnorderedList,
@@ -389,55 +386,4 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             text_res = self.post_process(text=text_res)
         else:
             text_res = ""
-        return SerializationResult(text=text_res)
-
-
-class PictureSerializer(BasePictureSerializer):
-    """Class for picture serializers."""
-
-    # helper function
-    def _serialize_content(
-        self,
-        item: PictureItem,
-        doc_serializer: "BaseDocSerializer",
-        doc: DoclingDocument,
-        separator: Optional[str] = None,
-        visited: Optional[set[str]] = None,
-        **kwargs,
-    ) -> SerializationResult:
-        parts = doc_serializer.get_parts(
-            item=item,
-            traverse_pictures=True,
-            visited=visited,
-        )
-        text_res = (separator or " ").join([p.text for p in parts])
-        # NOTE: we do no postprocessing since already done as needed
-        return SerializationResult(text=text_res)
-
-    # helper function
-    def _serialize_annotations(
-        self,
-        item: PictureItem,
-        doc_serializer: "BaseDocSerializer",
-        doc: DoclingDocument,
-        separator: Optional[str] = None,
-        **kwargs,
-    ) -> SerializationResult:
-        text_parts: list[str] = []
-        for annotation in item.annotations:
-            if isinstance(annotation, PictureClassificationData):
-                predicted_class = (
-                    annotation.predicted_classes[0].class_name
-                    if annotation.predicted_classes
-                    else None
-                )
-                if predicted_class is not None:
-                    text_parts.append(f"Picture type: {predicted_class}")
-            elif isinstance(annotation, PictureMoleculeData):
-                text_parts.append(f"SMILES: {annotation.smi}")
-            elif isinstance(annotation, PictureDescriptionData):
-                text_parts.append(f"Description: {annotation.text}")
-
-        text_res = (separator or "\n").join(text_parts)
-        text_res = doc_serializer.post_process(text=text_res)
         return SerializationResult(text=text_res)
