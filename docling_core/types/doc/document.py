@@ -3494,19 +3494,28 @@ class DoclingDocument(BaseModel):
                 else:
                     # For everything else, treat as text
                     text_content = extract_inner_text(full_chunk)
-                    self.add_text(
-                        label=doc_label,
-                        text=text_content,
-                        prov=(
-                            ProvenanceItem(
-                                bbox=bbox.resize_by_scale(pg_width, pg_height),
-                                charspan=(0, len(text_content)),
-                                page_no=page_no,
-                            )
-                            if bbox
-                            else None
-                        ),
+                    element_prov = (
+                        ProvenanceItem(
+                            bbox=bbox.resize_by_scale(pg_width, pg_height),
+                            charspan=(0, len(text_content)),
+                            page_no=page_no,
+                        )
+                        if bbox
+                        else None
                     )
+                    if tag_name in [DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER]:
+                        # Process as furniture
+                        self.add_text(
+                            label=doc_label,
+                            text=text_content,
+                            prov=element_prov,
+                            content_layer=ContentLayer.FURNITURE,
+                        )
+                    else:
+                        # Process as normal text
+                        self.add_text(
+                            label=doc_label, text=text_content, prov=element_prov
+                        )
         return self
 
     @deprecated("Use save_as_doctags instead.")
