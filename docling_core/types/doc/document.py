@@ -3503,19 +3503,17 @@ class DoclingDocument(BaseModel):
                         if bbox
                         else None
                     )
+
+                    content_layer = ContentLayer.BODY
                     if tag_name in [DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER]:
-                        # Process as furniture
-                        self.add_text(
-                            label=doc_label,
-                            text=text_content,
-                            prov=element_prov,
-                            content_layer=ContentLayer.FURNITURE,
-                        )
-                    else:
-                        # Process as normal text
-                        self.add_text(
-                            label=doc_label, text=text_content, prov=element_prov
-                        )
+                        content_layer = ContentLayer.FURNITURE
+
+                    self.add_text(
+                        label=doc_label,
+                        text=text_content,
+                        prov=element_prov,
+                        content_layer=content_layer,
+                    )
         return self
 
     @deprecated("Use save_as_doctags instead.")
