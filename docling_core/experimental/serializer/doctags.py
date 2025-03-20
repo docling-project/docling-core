@@ -104,6 +104,8 @@ class DocTagsParams(CommonParams):
     # TODO provide separate params by type like above?
     add_content: bool = True
 
+    human_friendly: bool = True
+
 
 class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
     """DocTags-specific text item serializer."""
@@ -340,6 +342,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         my_visited = visited or set()
+        params = DocTagsParams(**kwargs)
         parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level + 1,
@@ -347,14 +350,16 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             visited=my_visited,
             **kwargs,
         )
+        delim = "\n" if params.human_friendly else ""
+
         if parts:
-            text_res = "\n".join(
+            text_res = delim.join(
                 [
                     _wrap(text=p.text, wrap_tag=DocumentToken.LIST_ITEM.value)
                     for p in parts
                 ]
             )
-            text_res = f"{text_res}\n"  # NOTE: explicit
+            text_res = f"{text_res}{delim}"
             wrap_tag = (
                 DocumentToken.ORDERED_LIST.value
                 if isinstance(item, OrderedList)
@@ -382,6 +387,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         my_visited = visited or set()
+        params = DocTagsParams(**kwargs)
         parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level,
@@ -390,9 +396,10 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
             **kwargs,
         )
         wrap_tag = DocumentToken.INLINE.value
-        text_res = "\n".join([p.text for p in parts if p.text])
+        delim = "\n" if params.human_friendly else ""
+        text_res = delim.join([p.text for p in parts if p.text])
         if text_res:
-            text_res = f"{text_res}\n"  # NOTE: explicit
+            text_res = f"{text_res}{delim}"
             text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
         return SerializationResult(text=text_res)
 
@@ -452,17 +459,19 @@ class DocTagsDocSerializer(DocSerializer):
     @override
     def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
         """Serialize a page out of its parts."""
-        text_res = "\n".join([p.text for p in parts])
+        delim = "\n" if self.params.human_friendly else ""
+        text_res = delim.join([p.text for p in parts])
         return SerializationResult(text=text_res)
 
     @override
     def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
         """Serialize a document out of its pages."""
+        delim = "\n" if self.params.human_friendly else ""
         if self.params.add_page_break:
-            page_sep = f"\n<{DocumentToken.PAGE_BREAK.value}>\n"
+            page_sep = f"{delim}<{DocumentToken.PAGE_BREAK.value}>{delim}"
             content = page_sep.join([p.text for p in pages if p.text])
         else:
             content = self.serialize_page(parts=pages).text
         wrap_tag = DocumentToken.DOCUMENT.value
-        text_res = f"<{wrap_tag}>{content}\n</{wrap_tag}>"
+        text_res = f"<{wrap_tag}>{content}{delim}</{wrap_tag}>"
         return SerializationResult(text=text_res)
