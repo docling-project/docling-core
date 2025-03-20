@@ -66,7 +66,6 @@ class CommonParams(BaseModel):
 
     include_formatting: bool = True
     include_hyperlinks: bool = True
-    escape_underscores: bool = True
     caption_delim: str = " "
 
     def merge_with_patch(self, patch: dict[str, Any]) -> Self:

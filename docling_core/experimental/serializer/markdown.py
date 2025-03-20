@@ -57,6 +57,7 @@ class MarkdownParams(CommonParams):
     indent: int = 4
     wrap_width: Optional[PositiveInt] = None
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
+    escape_underscores: bool = True
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
