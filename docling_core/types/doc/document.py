@@ -414,6 +414,7 @@ class DocumentOrigin(BaseModel):
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "text/asciidoc",
         "text/markdown",
+        "text/csv",
     ]
 
     @field_validator("binary_hash", mode="before")
