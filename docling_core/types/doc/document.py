@@ -1062,7 +1062,7 @@ class PictureItem(FloatingItem):
                 ysize=ysize,
                 add_location=add_location,
                 add_content=add_content,
-                add_picture_caption=add_caption,
+                add_caption=add_caption,
             ),
         )
         text = serializer.serialize(item=self).text
@@ -1347,9 +1347,9 @@ class TableItem(FloatingItem):
         xsize: int = 500,
         ysize: int = 500,
         add_location: bool = True,
-        add_cell_location: bool = True,  # TODO not covered
-        add_cell_text: bool = True,  # TODO not covered
-        add_caption: bool = True,  # TODO not covered
+        add_cell_location: bool = True,
+        add_cell_text: bool = True,
+        add_caption: bool = True,
     ):
         r"""Export table to document tokens format.
 
@@ -1375,9 +1375,9 @@ class TableItem(FloatingItem):
                 xsize=xsize,
                 ysize=ysize,
                 add_location=add_location,
+                add_caption=add_caption,
                 add_table_cell_location=add_cell_location,
                 add_table_cell_text=add_cell_text,
-                add_table_caption=add_caption,
             ),
         )
         text = serializer.serialize(item=self).text
@@ -3429,10 +3429,9 @@ class DoclingDocument(BaseModel):
                 xsize=xsize,
                 ysize=ysize,
                 add_location=add_location,
+                # add_caption=...,  # not exposed
                 add_content=add_content,
                 add_page_break=add_page_index,
-                # add_picture_caption=...,  # not exposed
-                # add_table_caption=...,  # not exposed
                 add_table_cell_location=add_table_cell_location,
                 add_table_cell_text=add_table_cell_text,
             ),

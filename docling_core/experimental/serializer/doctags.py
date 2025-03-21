@@ -62,17 +62,11 @@ class DocTagsParams(CommonParams):
     xsize: int = 500
     ysize: int = 500
     add_location: bool = True
+    add_caption: bool = True
+    add_content: bool = True
     add_table_cell_location: bool = True
     add_table_cell_text: bool = True
     add_page_break: bool = True
-
-    add_picture_caption: bool = True
-    add_table_caption: bool = True
-    # add_formula_caption: bool = True
-    # add_code_caption: bool = True
-
-    # TODO provide separate params by type like above?
-    add_content: bool = True
 
     mode: Mode = Mode.HUMAN_FRIENDLY
 
@@ -121,10 +115,9 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
 
         if params.add_content:
             text_part = item.text
-            escape_html = False  # TODO review
             text_part = doc_serializer.post_process(
                 text=text_part,
-                escape_html=escape_html,
+                escape_html=False,  # TODO review
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
             )
@@ -182,7 +175,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
                 ysize=params.ysize,
             )
 
-        if params.add_table_caption and len(item.captions):
+        if params.add_caption and len(item.captions):
             text = doc_serializer.serialize_captions(item, **kwargs).text
 
             if len(text):
@@ -250,7 +243,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 )
             parts.append(body)
 
-        if params.add_picture_caption and len(item.captions):
+        if params.add_caption and len(item.captions):
             text = doc_serializer.serialize_captions(item, **kwargs).text
 
             if len(text):
