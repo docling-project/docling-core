@@ -197,7 +197,7 @@ class BaseDocSerializer(ABC):
     @abstractmethod
     def get_parts(
         self,
-        node: Optional[NodeItem] = None,
+        item: Optional[NodeItem] = None,
         **kwargs,
     ) -> list[SerializationResult]:
         """Get the components to be combined for serializing this node."""
@@ -222,6 +222,6 @@ class BaseDocSerializer(ABC):
         ...
 
     @abstractmethod
-    def get_excluded_refs(self) -> list[str]:
+    def get_excluded_refs(self, **kwargs) -> list[str]:
         """Get references to excluded items."""
         ...

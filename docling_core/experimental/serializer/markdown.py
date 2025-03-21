@@ -26,10 +26,11 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import DocSerializer
+from docling_core.experimental.serializer.common import CommonParams, DocSerializer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CodeItem,
+    ContentLayer,
     DocItem,
     DoclingDocument,
     Formatting,
@@ -49,10 +50,20 @@ from docling_core.types.doc.document import (
 )
 
 
+class MarkdownParams(CommonParams):
+    """Markdown-specific serialization parameters."""
+
+    layers: set[ContentLayer] = {ContentLayer.BODY}
+    image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
+    image_placeholder: str = "<!-- image -->"
+    indent: int = 4
+    wrap_width: Optional[PositiveInt] = None
+    page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
+    escape_underscores: bool = True
+
+
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     """Markdown-specific text item serializer."""
-
-    wrap_width: Optional[PositiveInt] = None
 
     @override
     def serialize(
@@ -65,6 +76,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        params = MarkdownParams(**kwargs)
         escape_html = True
         escape_underscores = True
         if isinstance(item, TitleItem):
@@ -84,8 +96,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 res = ""
             escape_html = False
             escape_underscores = False
-        elif self.wrap_width:
-            res = textwrap.fill(item.text, width=self.wrap_width)
+        elif params.wrap_width:
+            res = textwrap.fill(item.text, width=params.wrap_width)
         else:
             res = item.text
         res = doc_serializer.post_process(
@@ -113,12 +125,14 @@ class MarkdownTableSerializer(BaseTableSerializer):
         """Serializes the passed item."""
         text_parts: list[str] = []
 
-        if caption_txt := doc_serializer.serialize_captions(
+        cap_res = doc_serializer.serialize_captions(
             item=item,
-        ).text:
-            text_parts.append(caption_txt)
+            **kwargs,
+        )
+        if cap_res.text:
+            text_parts.append(cap_res.text)
 
-        if item.self_ref not in doc_serializer.get_excluded_refs():
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             rows = [
                 [
                     # make sure that md tables are not broken
@@ -158,33 +172,26 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         item: PictureItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        image_mode: Optional[ImageRefMode] = None,
-        image_placeholder: Optional[str] = None,
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        my_image_mode = (
-            image_mode if image_mode is not None else ImageRefMode.PLACEHOLDER
-        )
-        my_image_placeholder = (
-            image_placeholder if image_placeholder is not None else "<!-- image -->"
-        )
+        params = MarkdownParams(**kwargs)
 
         texts: list[str] = []
 
         cap_res = doc_serializer.serialize_captions(
             item=item,
-            separator="\n",
+            **kwargs,
         )
         if cap_res.text:
             texts.append(cap_res.text)
 
-        if item.self_ref not in doc_serializer.get_excluded_refs():
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             img_res = self._serialize_image_part(
                 item=item,
                 doc=doc,
-                image_mode=my_image_mode,
-                image_placeholder=my_image_placeholder,
+                image_mode=params.image_mode,
+                image_placeholder=params.image_placeholder,
             )
             if img_res.text:
                 texts.append(img_res.text)
@@ -288,8 +295,6 @@ class MarkdownFormSerializer(BaseFormSerializer):
 class MarkdownListSerializer(BaseModel, BaseListSerializer):
     """Markdown-specific list serializer."""
 
-    indent: int = 4
-
     @override
     def serialize(
         self,
@@ -303,12 +308,14 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        params = MarkdownParams(**kwargs)
         my_visited = visited or set()
         parts = doc_serializer.get_parts(
-            node=item,
+            item=item,
             list_level=list_level + 1,
             is_inline_scope=is_inline_scope,
             visited=my_visited,
+            **kwargs,
         )
         sep = "\n"
         my_parts: list[SerializationResult] = []
@@ -318,7 +325,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
             else:
                 my_parts.append(p)
 
-        indent_str = list_level * self.indent * " "
+        indent_str = list_level * params.indent * " "
         is_ol = isinstance(item, OrderedList)
         text_res = sep.join(
             [
@@ -351,7 +358,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
         """Serializes the passed item."""
         my_visited = visited or set()
         parts = doc_serializer.get_parts(
-            node=item,
+            item=item,
             list_level=list_level,
             is_inline_scope=True,
             visited=my_visited,
@@ -392,6 +399,8 @@ class MarkdownDocSerializer(DocSerializer):
 
     list_serializer: BaseListSerializer = MarkdownListSerializer()
     inline_serializer: BaseInlineSerializer = MarkdownInlineSerializer()
+
+    params: MarkdownParams = MarkdownParams()
 
     @override
     def serialize_bold(self, text: str, **kwargs):
@@ -450,7 +459,8 @@ class MarkdownDocSerializer(DocSerializer):
     ) -> str:
         """Apply some text post-processing steps."""
         res = text
-        if escape_underscores and self.escape_underscores:
+        params = self.params.merge_with_patch(patch=kwargs)
+        if escape_underscores and params.escape_underscores:
             res = self._escape_underscores(text)
         if escape_html:
             res = html.escape(res, quote=False)
@@ -462,8 +472,17 @@ class MarkdownDocSerializer(DocSerializer):
         return res
 
     @override
-    def serialize(self, **kwargs) -> SerializationResult:
-        """Run the serialization."""
-        parts = self.get_parts()
-        text_res = "\n\n".join([p.text for p in parts if p.text])
+    def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
+        """Serialize a page out of its parts."""
+        text_res = "\n\n".join([p.text for p in parts])
         return SerializationResult(text=text_res)
+
+    @override
+    def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
+        """Serialize a document out of its pages."""
+        if self.params.page_break_placeholder is not None:
+            sep = f"\n\n{self.params.page_break_placeholder}\n\n"
+            text_res = sep.join([p.text for p in pages if p.text])
+            return SerializationResult(text=text_res)
+        else:
+            return self.serialize_page(parts=pages)

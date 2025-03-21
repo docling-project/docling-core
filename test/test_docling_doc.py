@@ -10,6 +10,10 @@ from PIL import Image as PILImage
 from PIL import ImageDraw
 from pydantic import AnyUrl, ValidationError
 
+from docling_core.experimental.serializer.doctags import (
+    DocTagsDocSerializer,
+    DocTagsParams,
+)
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (  # BoundingBox,
     CURRENT_VERSION,
@@ -503,6 +507,15 @@ def _test_export_methods(doc: DoclingDocument, filename: str):
     # Test DocTags export ...
     dt_pred = doc.export_to_document_tokens()
     _verify_regression_test(dt_pred, filename=filename, ext="dt")
+
+    ser = DocTagsDocSerializer(
+        doc=doc,
+        params=DocTagsParams(
+            mode=DocTagsParams.Mode.MINIFIED,
+        ),
+    )
+    dt_min_pred = ser.serialize().text
+    _verify_regression_test(dt_min_pred, filename=filename, ext="min.dt")
 
     # Test Tables export ...
     for table in doc.tables:

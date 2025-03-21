@@ -138,7 +138,7 @@ pictures: # All pictures...
       - kind: classification
         provenance: model1
         predicted_classes:
-          - class_name: "illustration"
+          - class_name: "bar_chart"
             confidence: 0.78
       - kind: description
         text: "..."

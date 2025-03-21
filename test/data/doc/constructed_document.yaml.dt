@@ -10,39 +10,40 @@ Affiliation 2</text>
 <unordered_list><list_item>list item 1</list_item>
 <list_item>list item 2</list_item>
 <list_item>list item 3</list_item>
-<ordered_list><list_item>list item 3.a</list_item>
+<list_item><ordered_list><list_item>list item 3.a</list_item>
 <list_item>list item 3.b</list_item>
 <list_item>list item 3.c</list_item>
-<ordered_list><list_item>list item 3.c.i</list_item>
-</ordered_list>
-</ordered_list>
-</unordered_list>
+<list_item><ordered_list><list_item>list item 3.c.i</list_item>
+</ordered_list></list_item>
+</ordered_list></list_item>
 <list_item>list item 4</list_item>
+</unordered_list>
 <otsl><fcel>Product<fcel>Years<lcel><nl><ucel><fcel>2016<fcel>2017<nl><fcel>Apple<fcel>49823<fcel>695944<nl><caption>This is the caption of table 1.</caption></otsl>
 <picture><caption>This is the caption of figure 1.</caption></picture>
 <picture><caption>This is the caption of figure 2.</caption></picture>
 <unordered_list><list_item>item 1 of list</list_item>
 </unordered_list>
-<unordered_list><unordered_list><list_item>item 1 of list after empty list</list_item>
+<unordered_list><list_item>item 1 of list after empty list</list_item>
 <list_item>item 2 of list after empty list</list_item>
 </unordered_list>
 <unordered_list><list_item>item 1 of neighboring list</list_item>
 <list_item>item 2 of neighboring list</list_item>
-<unordered_list><list_item>item 1 of sub list</list_item>
-<text>Here a code snippet:</text>
+<list_item><unordered_list><list_item>item 1 of sub list</list_item>
+<list_item><inline><text>Here a code snippet:</text>
 <code><_unknown_><p>Hello world</p></code>
 <text>(to be displayed inline)</text>
-</unordered_list>
-<text>Here a formula:</text>
+</inline></list_item>
+<list_item><inline><text>Here a formula:</text>
 <formula>E=mc^2</formula>
 <text>(to be displayed inline)</text>
-</unordered_list>
+</inline></list_item>
+</unordered_list></list_item>
 </unordered_list>
 <text>Here a code block:</text>
 <code><_unknown_>print("Hello world")</code>
 <text>Here a formula block:</text>
 <formula>E=mc^2</formula>
-<text>Some formatting chops:</text>
+<inline><text>Some formatting chops:</text>
 <text>bold</text>
 <text>italic</text>
 <text>underline</text>
@@ -50,17 +51,18 @@ Affiliation 2</text>
 <text>hyperlink</text>
 <text>&</text>
 <text>everything at the same time.</text>
+</inline>
 <ordered_list><list_item>Item 1 in A</list_item>
 <list_item>Item 2 in A</list_item>
 <list_item>Item 3 in A</list_item>
-<ordered_list><list_item>Item 1 in B</list_item>
+<list_item><ordered_list><list_item>Item 1 in B</list_item>
 <list_item>Item 2 in B</list_item>
-<ordered_list><list_item>Item 1 in C</list_item>
+<list_item><ordered_list><list_item>Item 1 in C</list_item>
 <list_item>Item 2 in C</list_item>
-</ordered_list>
-</ordered_list>
+</ordered_list></list_item>
 <list_item>Item 3 in B</list_item>
-</ordered_list>
+</ordered_list></list_item>
 <list_item>Item 4 in A</list_item>
+</ordered_list>
 <text>The end.</text>
 </doctag>
