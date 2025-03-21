@@ -2475,7 +2475,7 @@ class DoclingDocument(BaseModel):
 
     def save_as_json(
         self,
-        filename: str | Path,
+        filename: Union[str, Path],
         artifacts_dir: Optional[Path] = None,
         image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
         indent: int = 2,
@@ -2497,7 +2497,7 @@ class DoclingDocument(BaseModel):
             json.dump(out, fw, indent=indent)
 
     @classmethod
-    def load_from_json(cls, filename: str | Path) -> "DoclingDocument":
+    def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":
         """load_from_json.
 
         :param filename: The filename to load a saved DoclingDocument from a .json.
@@ -2514,7 +2514,7 @@ class DoclingDocument(BaseModel):
 
     def save_as_yaml(
         self,
-        filename: str | Path,
+        filename: Union[str, Path],
         artifacts_dir: Optional[Path] = None,
         image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
         default_flow_style: bool = False,
@@ -2536,7 +2536,7 @@ class DoclingDocument(BaseModel):
             yaml.dump(out, fw, default_flow_style=default_flow_style)
 
     @classmethod
-    def load_from_yaml(cls, filename: str | Path) -> "DoclingDocument":
+    def load_from_yaml(cls, filename: Union[str, Path]) -> "DoclingDocument":
         """load_from_yaml.
 
         Args:
@@ -2564,7 +2564,7 @@ class DoclingDocument(BaseModel):
 
     def save_as_markdown(
         self,
-        filename: str | Path,
+        filename: Union[str, Path],
         artifacts_dir: Optional[Path] = None,
         delim: str = "\n\n",
         from_element: int = 0,
@@ -2712,7 +2712,7 @@ class DoclingDocument(BaseModel):
 
     def save_as_html(
         self,
-        filename: str | Path,
+        filename: Union[str, Path],
         artifacts_dir: Optional[Path] = None,
         from_element: int = 0,
         to_element: int = sys.maxsize,
@@ -2752,7 +2752,7 @@ class DoclingDocument(BaseModel):
             fw.write(html_out)
 
     def _get_output_paths(
-        self, filename: str | Path, artifacts_dir: Optional[Path] = None
+        self, filename: Union[str, Path], artifacts_dir: Optional[Path] = None
     ) -> Tuple[Path, Optional[Path]]:
         if isinstance(filename, str):
             filename = Path(filename)
@@ -3530,7 +3530,7 @@ class DoclingDocument(BaseModel):
 
     def save_as_doctags(
         self,
-        filename: str | Path,
+        filename: Union[str, Path],
         delim: str = "",
         from_element: int = 0,
         to_element: int = sys.maxsize,

@@ -546,7 +546,7 @@ class SegmentedPdfPage(SegmentedPage):
 
     def save_as_json(
         self,
-        filename: str | Path,
+        filename: Union[str, Path],
         indent: int = 2,
     ):
         """Save the page data as a JSON file.
@@ -562,7 +562,7 @@ class SegmentedPdfPage(SegmentedPage):
             json.dump(out, fw, indent=indent)
 
     @classmethod
-    def load_from_json(cls, filename: str | Path) -> "SegmentedPdfPage":
+    def load_from_json(cls, filename: Union[str, Path]) -> "SegmentedPdfPage":
         """Load page data from a JSON file.
 
         Args:
@@ -1159,7 +1159,7 @@ class PdfTableOfContents(BaseModel):
         """
         return self.model_dump(mode=mode, by_alias=True, exclude_none=True)
 
-    def save_as_json(self, filename: str | Path, indent: int = 2):
+    def save_as_json(self, filename: Union[str, Path], indent: int = 2):
         """Save the table of contents as a JSON file.
 
         Args:
@@ -1173,7 +1173,7 @@ class PdfTableOfContents(BaseModel):
             json.dump(out, fw, indent=indent)
 
     @classmethod
-    def load_from_json(cls, filename: str | Path) -> "PdfTableOfContents":
+    def load_from_json(cls, filename: Union[str, Path]) -> "PdfTableOfContents":
         """Load table of contents from a JSON file.
 
         Args:
@@ -1221,7 +1221,7 @@ class ParsedPdfDocument(BaseModel):
         """
         return self.model_dump(mode=mode, by_alias=True, exclude_none=True)
 
-    def save_as_json(self, filename: str | Path, indent: int = 2):
+    def save_as_json(self, filename: Union[str, Path], indent: int = 2):
         """Save the document as a JSON file.
 
         Args:
@@ -1235,7 +1235,7 @@ class ParsedPdfDocument(BaseModel):
             json.dump(out, fw, indent=indent)
 
     @classmethod
-    def load_from_json(cls, filename: str | Path) -> "ParsedPdfDocument":
+    def load_from_json(cls, filename: Union[str, Path]) -> "ParsedPdfDocument":
         """Load document from a JSON file.
 
         Args:
