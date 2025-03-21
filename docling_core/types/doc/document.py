@@ -2570,6 +2570,7 @@ class DoclingDocument(BaseModel):
         text_width: int = -1,
         page_no: Optional[int] = None,
         included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
+        add_page_markers: bool = False,
     ):
         """Save to markdown."""
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
@@ -2594,6 +2595,7 @@ class DoclingDocument(BaseModel):
             text_width=text_width,
             page_no=page_no,
             included_content_layers=included_content_layers,
+            add_page_markers=add_page_markers,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -2613,6 +2615,7 @@ class DoclingDocument(BaseModel):
         text_width: int = -1,
         page_no: Optional[int] = None,
         included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
+        add_page_markers: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -2643,6 +2646,9 @@ class DoclingDocument(BaseModel):
         :param indent: The indent in spaces of the nested lists.
             (Default value = 4).
         :type indent: int = 4
+        :param add_page_markers: Whether to add page markers (e.g. ##PAGE 1##)
+            to the markdown output. (Default value = False).
+        :type add_page_markers: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
         """
@@ -2662,6 +2668,7 @@ class DoclingDocument(BaseModel):
             layers=included_content_layers,
             pages={page_no} if page_no is not None else None,
             escaping_underscores=escaping_underscores,
+            add_page_markers=add_page_markers,
             text_serializer=MarkdownTextSerializer(
                 wrap_width=text_width if text_width > 0 else None,
             ),

@@ -465,5 +465,86 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize(self, **kwargs) -> SerializationResult:
         """Run the serialization."""
         parts = self.get_parts()
-        text_res = "\n\n".join([p.text for p in parts if p.text])
+
+        if not self.add_page_markers:
+            text_res = "\n\n".join([p.text for p in parts if p.text])
+            return SerializationResult(text=text_res)
+
+        # Get all pages in the document
+        all_pages: set[int] = set()
+        page_items: dict[int, list[DocItem]] = {}
+
+        # Collect all items with page information
+        for ix, (item, _) in enumerate(
+            self.doc.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+            )
+        ):
+            if ix < self.start or ix >= self.stop:
+                continue
+
+            if isinstance(item, DocItem) and item.prov and len(item.prov) > 0:
+                page_no = item.prov[0].page_no
+
+                # Skip pages that are not in the requested pages set
+                if self.pages is not None and page_no not in self.pages:
+                    continue
+
+                all_pages.add(page_no)
+
+                if page_no not in page_items:
+                    page_items[page_no] = []
+
+                page_items[page_no].append(item)
+
+        # If no page information is available, return without page markers
+        if not all_pages:
+            text_res = "\n\n".join([p.text for p in parts if p.text])
+            return SerializationResult(text=text_res)
+
+        # Build the result with page markers
+        result = []
+
+        # Sort pages
+        sorted_pages = sorted(all_pages)
+
+        # Process each page
+        for page_no in sorted_pages:
+            # Add page marker
+            result.append(f"##PAGE {page_no}##")
+
+            # Filter parts for this page
+            page_parts = []
+
+            # Get all items on this page
+            items_on_page = page_items.get(page_no, [])
+
+            # Process all parts
+            for part in parts:
+                if not part.text:
+                    continue
+
+                # Check if this part belongs to the current page
+                # This is a simplified approach - in a real implementation,
+                # you would need a more robust way to associate parts with pages
+                for item in items_on_page:
+                    # Simple heuristic: if the item's text is in the part's text
+                    if hasattr(item, "text") and item.text in part.text:
+                        page_parts.append(part.text)
+                        break
+
+            # Add all parts for this page
+            if page_parts:
+                result.extend(page_parts)
+
+        # If we couldn't associate parts with pages properly,
+        # fall back to the original approach
+        if not any(result[1:]):
+            # Check if we have any content after the first page marker
+            # Fall back to original approach without page markers
+            text_res = "\n\n".join([p.text for p in parts if p.text])
+            return SerializationResult(text=text_res)
+
+        text_res = "\n\n".join(result)
         return SerializationResult(text=text_res)

@@ -64,6 +64,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     include_formatting: bool = True
     include_hyperlinks: bool = True
     escape_underscores: bool = True
+    add_page_markers: bool = False
 
     # this filtering criteria are non-recursive;
     # e.g. if a list group node is outside the range and some of its children items are
