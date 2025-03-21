@@ -50,7 +50,7 @@ from docling_core.types.doc.labels import (
     GraphLinkLabel,
     GroupLabel,
 )
-from docling_core.types.doc.tokens import DocumentToken, TableToken
+from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 from docling_core.types.doc.utils import (
     get_html_tag_with_text_direction,
     get_text_direction,
@@ -3121,7 +3121,7 @@ class DoclingDocument(BaseModel):
                 token
                 for token in tokens
                 if not (
-                    token.startswith(rf"<{DocumentToken.LOC.value}")
+                    token.startswith(rf"<{_LOC_PREFIX}")
                     or token
                     in [
                         rf"<{DocumentToken.OTSL.value}>",
@@ -3135,7 +3135,7 @@ class DoclingDocument(BaseModel):
                 token
                 for token in text_parts
                 if not (
-                    token.startswith(rf"<{DocumentToken.LOC.value}")
+                    token.startswith(rf"<{_LOC_PREFIX}")
                     or token
                     in [
                         rf"<{DocumentToken.OTSL.value}>",

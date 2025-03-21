@@ -8,10 +8,10 @@
 from enum import Enum
 from typing import Tuple
 
-from docling_core.types.doc.labels import PictureClassificationLabel
+from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
 
 
-class TableToken(Enum):
+class TableToken(str, Enum):
     """Class to represent an LLM friendly representation of a Table."""
 
     CELL_LABEL_COLUMN_HEADER = "<column_header>"
@@ -41,14 +41,59 @@ class TableToken(Enum):
         return label in TableToken.get_special_tokens()
 
 
-class DocumentToken(Enum):
+_LOC_PREFIX = "loc_"
+_SECTION_HEADER_PREFIX = "section_header_level_"
+
+
+class _PictureClassificationTokens(str, Enum):
+    """Non-wrapping tokens."""
+
+    OTHER = "other"
+
+    # If more than one picture is grouped together, it
+    # is generally not possible to assign a label
+    PICTURE_GROUP = "picture_group"
+
+    # General
+    PIE_CHART = "pie_chart"
+    BAR_CHART = "bar_chart"
+    LINE_CHART = "line_chart"
+    FLOW_CHART = "flow_chart"
+    SCATTER_CHART = "scatter_chart"
+    HEATMAP = "heatmap"
+    REMOTE_SENSING = "remote_sensing"
+
+    NATURAL_IMAGE = "natural_image"
+
+    # Chemistry
+    MOLECULAR_STRUCTURE = "chemistry_molecular_structure"
+    MARKUSH_STRUCTURE = "chemistry_markush_structure"
+
+    # Company
+    ICON = "icon"
+    LOGO = "logo"
+    SIGNATURE = "signature"
+    STAMP = "stamp"
+    QR_CODE = "qr_code"
+    BAR_CODE = "bar_code"
+    SCREENSHOT = "screenshot"
+
+    # Geology/Geography
+    GEOGRAPHIC_MAP = "map"
+    STRATIGRAPHIC_CHART = "stratigraphic_chart"
+
+    # Engineering
+    CAD_DRAWING = "cad_drawing"
+    ELECTRICAL_DIAGRAM = "electrical_diagram"
+
+
+class DocumentToken(str, Enum):
     """Class to represent an LLM friendly representation of a Document."""
 
     DOCUMENT = "doctag"
     OTSL = "otsl"
     ORDERED_LIST = "ordered_list"
     UNORDERED_LIST = "unordered_list"
-    LOC = "loc_"
     PAGE_BREAK = "page_break"
     SMILES = "smiles"
     INLINE = "inline"
@@ -60,7 +105,6 @@ class DocumentToken(Enum):
     PAGE_FOOTER = "page_footer"
     PAGE_HEADER = "page_header"
     PICTURE = "picture"
-    SECTION_HEADER = "section_header"
     TABLE = "table"
     TEXT = "text"
     TITLE = "title"
@@ -80,23 +124,63 @@ class DocumentToken(Enum):
         page_dimension: Tuple[int, int] = (100, 100),
     ):
         """Function to get all special document tokens."""
-        special_tokens = [token.value for token in cls]
+        special_tokens: list[str] = []
+        for token in cls:
+            special_tokens.append(f"<{token.value}>")
+            special_tokens.append(f"</{token.value}>")
 
         for i in range(6):
             special_tokens += [
-                f"<section_header_level_{i}>",
-                f"</section_header_level_{i}>",
+                f"<{_SECTION_HEADER_PREFIX}{i}>",
+                f"</{_SECTION_HEADER_PREFIX}{i}>",
             ]
 
-        # Add dynamically picture classification tokens
-        for _, member in PictureClassificationLabel.__members__.items():
-            special_tokens.append(f"<{member}>")
+        special_tokens.extend(
+            [f"<{token.value}>" for token in _PictureClassificationTokens]
+        )
+        special_tokens.extend([f"<_{token.value}_>" for token in CodeLanguageLabel])
+
+        special_tokens.extend(TableToken.get_special_tokens())
 
         # Adding dynamically generated location-tokens
-        for i in range(0, max(page_dimension[0] + 1, page_dimension[1] + 1)):
-            special_tokens.append(f"<loc_{i}>")
+        for i in range(0, max(page_dimension[0], page_dimension[1])):
+            special_tokens.append(f"<{_LOC_PREFIX}{i}>")
 
         return special_tokens
+
+    @classmethod
+    def create_token_from_doc_item_label(cls, label: str, level: int = 1) -> str:
+        """Get token corresponding to passed doc item label."""
+        doc_token_by_item_label = {
+            DocItemLabel.CAPTION: DocumentToken.CAPTION,
+            DocItemLabel.FOOTNOTE: DocumentToken.FOOTNOTE,
+            DocItemLabel.FORMULA: DocumentToken.FORMULA,
+            DocItemLabel.LIST_ITEM: DocumentToken.LIST_ITEM,
+            DocItemLabel.PAGE_FOOTER: DocumentToken.PAGE_FOOTER,
+            DocItemLabel.PAGE_HEADER: DocumentToken.PAGE_HEADER,
+            DocItemLabel.PICTURE: DocumentToken.PICTURE,
+            DocItemLabel.TABLE: DocumentToken.TABLE,
+            DocItemLabel.TEXT: DocumentToken.TEXT,
+            DocItemLabel.TITLE: DocumentToken.TITLE,
+            DocItemLabel.DOCUMENT_INDEX: DocumentToken.DOCUMENT_INDEX,
+            DocItemLabel.CODE: DocumentToken.CODE,
+            DocItemLabel.CHECKBOX_SELECTED: DocumentToken.CHECKBOX_SELECTED,
+            DocItemLabel.CHECKBOX_UNSELECTED: DocumentToken.CHECKBOX_UNSELECTED,
+            DocItemLabel.FORM: DocumentToken.FORM,
+            DocItemLabel.KEY_VALUE_REGION: DocumentToken.KEY_VALUE_REGION,
+            DocItemLabel.PARAGRAPH: DocumentToken.PARAGRAPH,
+            DocItemLabel.REFERENCE: DocumentToken.REFERENCE,
+        }
+
+        res: str
+        if label == DocItemLabel.SECTION_HEADER:
+            res = f"{_SECTION_HEADER_PREFIX}{level}"
+        else:
+            try:
+                res = doc_token_by_item_label[DocItemLabel(label)].value
+            except KeyError as e:
+                raise RuntimeError(f"Unexpected DocItemLabel: {label}") from e
+        return res
 
     @staticmethod
     def is_known_token(label):
@@ -106,20 +190,15 @@ class DocumentToken(Enum):
     @staticmethod
     def get_picture_classification_token(classification: str) -> str:
         """Function to get picture classification tokens."""
-        return f"<{classification}>"
+        return f"<{_PictureClassificationTokens(classification).value}>"
 
     @staticmethod
     def get_location_token(val: float, rnorm: int = 100):
         """Function to get location tokens."""
         val_ = round(rnorm * val)
-
-        if val_ < 0:
-            return "<loc_0>"
-
-        if val_ > rnorm:
-            return f"<loc_{rnorm}>"
-
-        return f"<loc_{val_}>"
+        val_ = max(val_, 0)
+        val_ = min(val_, rnorm - 1)
+        return f"<{_LOC_PREFIX}{val_}>"
 
     @staticmethod
     def get_location(

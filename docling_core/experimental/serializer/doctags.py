@@ -5,6 +5,7 @@
 
 """Define classes for Doctags serialization."""
 import html
+from enum import Enum
 from pathlib import Path
 from typing import Optional, Union
 
@@ -26,7 +27,6 @@ from docling_core.experimental.serializer.base import (
 from docling_core.experimental.serializer.common import CommonParams, DocSerializer
 from docling_core.types.doc.document import (
     CodeItem,
-    DocItem,
     DoclingDocument,
     Formatting,
     FormItem,
@@ -38,12 +38,10 @@ from docling_core.types.doc.document import (
     PictureClassificationData,
     PictureItem,
     PictureMoleculeData,
-    SectionHeaderItem,
     TableItem,
     TextItem,
     UnorderedList,
 )
-from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.tokens import DocumentToken
 
 
@@ -51,42 +49,14 @@ def _wrap(text: str, wrap_tag: str) -> str:
     return f"<{wrap_tag}>{text}</{wrap_tag}>"
 
 
-_DOC_TOKEN_BY_DOC_ITEM_LABEL = {
-    DocItemLabel.CAPTION: DocumentToken.CAPTION,
-    DocItemLabel.FOOTNOTE: DocumentToken.FOOTNOTE,
-    DocItemLabel.FORMULA: DocumentToken.FORMULA,
-    DocItemLabel.LIST_ITEM: DocumentToken.LIST_ITEM,
-    DocItemLabel.PAGE_FOOTER: DocumentToken.PAGE_FOOTER,
-    DocItemLabel.PAGE_HEADER: DocumentToken.PAGE_HEADER,
-    DocItemLabel.PICTURE: DocumentToken.PICTURE,
-    DocItemLabel.SECTION_HEADER: DocumentToken.SECTION_HEADER,
-    DocItemLabel.TABLE: DocumentToken.TABLE,
-    DocItemLabel.TEXT: DocumentToken.TEXT,
-    DocItemLabel.TITLE: DocumentToken.TITLE,
-    DocItemLabel.DOCUMENT_INDEX: DocumentToken.DOCUMENT_INDEX,
-    DocItemLabel.CODE: DocumentToken.CODE,
-    DocItemLabel.CHECKBOX_SELECTED: DocumentToken.CHECKBOX_SELECTED,
-    DocItemLabel.CHECKBOX_UNSELECTED: DocumentToken.CHECKBOX_UNSELECTED,
-    DocItemLabel.FORM: DocumentToken.FORM,
-    DocItemLabel.KEY_VALUE_REGION: DocumentToken.KEY_VALUE_REGION,
-    DocItemLabel.PARAGRAPH: DocumentToken.PARAGRAPH,
-    DocItemLabel.REFERENCE: DocumentToken.REFERENCE,
-}
-
-
-def _create_token_from_doc_item_label(item: DocItem) -> str:
-    """Get token corresponding to passed doc item label."""
-    try:
-        res = _DOC_TOKEN_BY_DOC_ITEM_LABEL[item.label].value
-    except KeyError as e:
-        raise RuntimeError(f"Unexpected DocItemLabel encountered: {item.label}") from e
-    if isinstance(item, SectionHeaderItem):
-        res = f"{res}_level_{item.level}"
-    return res
-
-
 class DocTagsParams(CommonParams):
     """DocTags-specific serialization parameters."""
+
+    class Mode(str, Enum):
+        """DocTags serialization mode."""
+
+        MINIFIED = "minified"
+        HUMAN_FRIENDLY = "human-friendly"
 
     new_line: str = ""
     xsize: int = 500
@@ -104,7 +74,17 @@ class DocTagsParams(CommonParams):
     # TODO provide separate params by type like above?
     add_content: bool = True
 
-    human_friendly: bool = True
+    mode: Mode = Mode.HUMAN_FRIENDLY
+
+
+def _get_delim(mode: DocTagsParams.Mode) -> str:
+    if mode == DocTagsParams.Mode.HUMAN_FRIENDLY:
+        delim = "\n"
+    elif mode == DocTagsParams.Mode.MINIFIED:
+        delim = ""
+    else:
+        raise RuntimeError(f"Unknown DocTags mode: {mode}")
+    return delim
 
 
 class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
@@ -120,8 +100,13 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        from docling_core.types.doc.document import SectionHeaderItem
+
         params = DocTagsParams(**kwargs)
-        wrap_tag: Optional[str] = _create_token_from_doc_item_label(item)
+        wrap_tag: Optional[str] = DocumentToken.create_token_from_doc_item_label(
+            label=item.label,
+            **({"level": item.level} if isinstance(item, SectionHeaderItem) else {}),
+        )
         parts: list[str] = []
 
         if params.add_location:
@@ -282,7 +267,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
 
         text = "".join(parts)
         if text:
-            token = _create_token_from_doc_item_label(item=item)
+            token = DocumentToken.create_token_from_doc_item_label(label=item.label)
             text = _wrap(text=text, wrap_tag=token)
         return SerializationResult(text=text)
 
@@ -350,8 +335,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             visited=my_visited,
             **kwargs,
         )
-        delim = "\n" if params.human_friendly else ""
-
+        delim = _get_delim(mode=params.mode)
         if parts:
             text_res = delim.join(
                 [
@@ -396,7 +380,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
             **kwargs,
         )
         wrap_tag = DocumentToken.INLINE.value
-        delim = "\n" if params.human_friendly else ""
+        delim = _get_delim(mode=params.mode)
         text_res = delim.join([p.text for p in parts if p.text])
         if text_res:
             text_res = f"{text_res}{delim}"
@@ -459,14 +443,14 @@ class DocTagsDocSerializer(DocSerializer):
     @override
     def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
         """Serialize a page out of its parts."""
-        delim = "\n" if self.params.human_friendly else ""
+        delim = _get_delim(mode=self.params.mode)
         text_res = delim.join([p.text for p in parts])
         return SerializationResult(text=text_res)
 
     @override
     def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
         """Serialize a document out of its pages."""
-        delim = "\n" if self.params.human_friendly else ""
+        delim = _get_delim(mode=self.params.mode)
         if self.params.add_page_break:
             page_sep = f"{delim}<{DocumentToken.PAGE_BREAK.value}>{delim}"
             content = page_sep.join([p.text for p in pages if p.text])
