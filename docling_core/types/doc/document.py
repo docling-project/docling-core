@@ -1463,52 +1463,23 @@ class KeyValueItem(FloatingItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        body = f"<{self.label.value}>{new_line}"
+        from docling_core.experimental.serializer.doctags import (
+            DocTagsDocSerializer,
+            DocTagsParams,
+        )
 
-        page_no = 1
-        if len(self.prov) > 0:
-            page_no = self.prov[0].page_no
-
-        if add_location:
-            body += self.get_location_tokens(
-                doc=doc,
+        serializer = DocTagsDocSerializer(
+            doc=doc,
+            params=DocTagsParams(
                 new_line=new_line,
                 xsize=xsize,
                 ysize=ysize,
-            )
-
-        # mapping from source_cell_id to a list of target_cell_ids
-        source_to_targets: Dict[int, List[int]] = {}
-        for link in self.graph.links:
-            source_to_targets.setdefault(link.source_cell_id, []).append(
-                link.target_cell_id
-            )
-
-        for cell in self.graph.cells:
-            body += f"<{cell.label.value}_{cell.cell_id}>{new_line}"
-            if cell.prov is not None:
-                if len(doc.pages.keys()):
-                    page_w, page_h = doc.pages[page_no].size.as_tuple()
-                    body += DocumentToken.get_location(
-                        bbox=cell.prov.bbox.to_top_left_origin(page_h).as_tuple(),
-                        page_w=page_w,
-                        page_h=page_h,
-                        xsize=xsize,
-                        ysize=ysize,
-                    )
-            if add_content:
-                body += f"{cell.text.strip()}{new_line}"
-
-            if cell.cell_id in source_to_targets:
-                targets = source_to_targets[cell.cell_id]
-                for target in targets:
-                    body += f"<link_{target}>{new_line}"
-
-            body += f"</{cell.label.value}_{cell.cell_id}>{new_line}"
-
-        body += f"</{self.label.value}>{new_line}"
-
-        return body
+                add_location=add_location,
+                add_content=add_content,
+            ),
+        )
+        text = serializer.serialize(item=self).text
+        return text
 
 
 class FormItem(FloatingItem):
