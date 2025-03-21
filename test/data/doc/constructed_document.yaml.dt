@@ -43,6 +43,7 @@ Affiliation 2</text>
 <code><_unknown_>print("Hello world")</code>
 <text>Here a formula block:</text>
 <formula>E=mc^2</formula>
+<key_value_region><key_0>number<link_1></key_0><value_1>1<link_0></value_1></key_value_region>
 <inline><text>Some formatting chops:</text>
 <text>bold</text>
 <text>italic</text>
