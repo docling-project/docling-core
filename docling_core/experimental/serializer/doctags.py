@@ -3,7 +3,7 @@
 import html
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import AnyUrl, BaseModel
 from typing_extensions import override
@@ -279,9 +279,54 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        # TODO add actual implementation
-        text_res = ""
-        return SerializationResult(text=text_res)
+        params = DocTagsParams(**kwargs)
+
+        body = f"<{item.label.value}>{params.new_line}"
+
+        page_no = 1
+        if len(item.prov) > 0:
+            page_no = item.prov[0].page_no
+
+        if params.add_location:
+            body += item.get_location_tokens(
+                doc=doc,
+                new_line=params.new_line,
+                xsize=params.xsize,
+                ysize=params.ysize,
+            )
+
+        # mapping from source_cell_id to a list of target_cell_ids
+        source_to_targets: Dict[int, List[int]] = {}
+        for link in item.graph.links:
+            source_to_targets.setdefault(link.source_cell_id, []).append(
+                link.target_cell_id
+            )
+
+        for cell in item.graph.cells:
+            body += f"<{cell.label.value}_{cell.cell_id}>{params.new_line}"
+            if cell.prov is not None:
+                if len(doc.pages.keys()):
+                    page_w, page_h = doc.pages[page_no].size.as_tuple()
+                    body += DocumentToken.get_location(
+                        bbox=cell.prov.bbox.to_top_left_origin(page_h).as_tuple(),
+                        page_w=page_w,
+                        page_h=page_h,
+                        xsize=params.xsize,
+                        ysize=params.ysize,
+                    )
+            if params.add_content:
+                body += f"{cell.text.strip()}{params.new_line}"
+
+            if cell.cell_id in source_to_targets:
+                targets = source_to_targets[cell.cell_id]
+                for target in targets:
+                    body += f"<link_{target}>{params.new_line}"
+
+            body += f"</{cell.label.value}_{cell.cell_id}>{params.new_line}"
+
+        body += f"</{item.label.value}>{params.new_line}"
+
+        return SerializationResult(text=body)
 
 
 class DocTagsFormSerializer(BaseFormSerializer):
