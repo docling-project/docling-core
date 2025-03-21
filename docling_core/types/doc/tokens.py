@@ -8,7 +8,7 @@
 from enum import Enum
 from typing import Tuple
 
-from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel
 
 
 class TableToken(str, Enum):
@@ -45,46 +45,108 @@ _LOC_PREFIX = "loc_"
 _SECTION_HEADER_PREFIX = "section_header_level_"
 
 
-class _PictureClassificationTokens(str, Enum):
-    """Non-wrapping tokens."""
+class _PictureClassificationToken(str, Enum):
+    """PictureClassificationToken."""
 
-    OTHER = "other"
+    OTHER = "<other>"
 
     # If more than one picture is grouped together, it
     # is generally not possible to assign a label
-    PICTURE_GROUP = "picture_group"
+    PICTURE_GROUP = "<picture_group>"
 
     # General
-    PIE_CHART = "pie_chart"
-    BAR_CHART = "bar_chart"
-    LINE_CHART = "line_chart"
-    FLOW_CHART = "flow_chart"
-    SCATTER_CHART = "scatter_chart"
-    HEATMAP = "heatmap"
-    REMOTE_SENSING = "remote_sensing"
+    PIE_CHART = "<pie_chart>"
+    BAR_CHART = "<bar_chart>"
+    LINE_CHART = "<line_chart>"
+    FLOW_CHART = "<flow_chart>"
+    SCATTER_CHART = "<scatter_chart>"
+    HEATMAP = "<heatmap>"
+    REMOTE_SENSING = "<remote_sensing>"
 
-    NATURAL_IMAGE = "natural_image"
+    NATURAL_IMAGE = "<natural_image>"
 
     # Chemistry
-    MOLECULAR_STRUCTURE = "chemistry_molecular_structure"
-    MARKUSH_STRUCTURE = "chemistry_markush_structure"
+    MOLECULAR_STRUCTURE = "<chemistry_molecular_structure>"
+    MARKUSH_STRUCTURE = "<chemistry_markush_structure>"
 
     # Company
-    ICON = "icon"
-    LOGO = "logo"
-    SIGNATURE = "signature"
-    STAMP = "stamp"
-    QR_CODE = "qr_code"
-    BAR_CODE = "bar_code"
-    SCREENSHOT = "screenshot"
+    ICON = "<icon>"
+    LOGO = "<logo>"
+    SIGNATURE = "<signature>"
+    STAMP = "<stamp>"
+    QR_CODE = "<qr_code>"
+    BAR_CODE = "<bar_code>"
+    SCREENSHOT = "<screenshot>"
 
     # Geology/Geography
-    GEOGRAPHIC_MAP = "map"
-    STRATIGRAPHIC_CHART = "stratigraphic_chart"
+    GEOGRAPHIC_MAP = "<map>"
+    STRATIGRAPHIC_CHART = "<stratigraphic_chart>"
 
     # Engineering
-    CAD_DRAWING = "cad_drawing"
-    ELECTRICAL_DIAGRAM = "electrical_diagram"
+    CAD_DRAWING = "<cad_drawing>"
+    ELECTRICAL_DIAGRAM = "<electrical_diagram>"
+
+
+class _CodeLanguageToken(str, Enum):
+    """CodeLanguageToken."""
+
+    ADA = "<_Ada_>"
+    AWK = "<_Awk_>"
+    BASH = "<_Bash_>"
+    BC = "<_bc_>"
+    C = "<_C_>"
+    C_SHARP = "<_C#_>"
+    C_PLUS_PLUS = "<_C++_>"
+    CMAKE = "<_CMake_>"
+    COBOL = "<_COBOL_>"
+    CSS = "<_CSS_>"
+    CEYLON = "<_Ceylon_>"
+    CLOJURE = "<_Clojure_>"
+    CRYSTAL = "<_Crystal_>"
+    CUDA = "<_Cuda_>"
+    CYTHON = "<_Cython_>"
+    D = "<_D_>"
+    DART = "<_Dart_>"
+    DC = "<_dc_>"
+    DOCKERFILE = "<_Dockerfile_>"
+    ELIXIR = "<_Elixir_>"
+    ERLANG = "<_Erlang_>"
+    FORTRAN = "<_FORTRAN_>"
+    FORTH = "<_Forth_>"
+    GO = "<_Go_>"
+    HTML = "<_HTML_>"
+    HASKELL = "<_Haskell_>"
+    HAXE = "<_Haxe_>"
+    JAVA = "<_Java_>"
+    JAVASCRIPT = "<_JavaScript_>"
+    JULIA = "<_Julia_>"
+    KOTLIN = "<_Kotlin_>"
+    LISP = "<_Lisp_>"
+    LUA = "<_Lua_>"
+    MATLAB = "<_Matlab_>"
+    MOONSCRIPT = "<_MoonScript_>"
+    NIM = "<_Nim_>"
+    OCAML = "<_OCaml_>"
+    OBJECTIVEC = "<_ObjectiveC_>"
+    OCTAVE = "<_Octave_>"
+    PHP = "<_PHP_>"
+    PASCAL = "<_Pascal_>"
+    PERL = "<_Perl_>"
+    PROLOG = "<_Prolog_>"
+    PYTHON = "<_Python_>"
+    RACKET = "<_Racket_>"
+    RUBY = "<_Ruby_>"
+    RUST = "<_Rust_>"
+    SML = "<_SML_>"
+    SQL = "<_SQL_>"
+    SCALA = "<_Scala_>"
+    SCHEME = "<_Scheme_>"
+    SWIFT = "<_Swift_>"
+    TYPESCRIPT = "<_TypeScript_>"
+    UNKNOWN = "<_unknown_>"
+    VISUALBASIC = "<_VisualBasic_>"
+    XML = "<_XML_>"
+    YAML = "<_YAML_>"
 
 
 class DocumentToken(str, Enum):
@@ -121,7 +183,7 @@ class DocumentToken(str, Enum):
     @classmethod
     def get_special_tokens(
         cls,
-        page_dimension: Tuple[int, int] = (100, 100),
+        page_dimension: Tuple[int, int] = (500, 500),
     ):
         """Function to get all special document tokens."""
         special_tokens: list[str] = []
@@ -135,10 +197,8 @@ class DocumentToken(str, Enum):
                 f"</{_SECTION_HEADER_PREFIX}{i}>",
             ]
 
-        special_tokens.extend(
-            [f"<{token.value}>" for token in _PictureClassificationTokens]
-        )
-        special_tokens.extend([f"<_{token.value}_>" for token in CodeLanguageLabel])
+        special_tokens.extend([t.value for t in _PictureClassificationToken])
+        special_tokens.extend([t.value for t in _CodeLanguageToken])
 
         special_tokens.extend(TableToken.get_special_tokens())
 
@@ -149,7 +209,7 @@ class DocumentToken(str, Enum):
         return special_tokens
 
     @classmethod
-    def create_token_from_doc_item_label(cls, label: str, level: int = 1) -> str:
+    def create_token_name_from_doc_item_label(cls, label: str, level: int = 1) -> str:
         """Get token corresponding to passed doc item label."""
         doc_token_by_item_label = {
             DocItemLabel.CAPTION: DocumentToken.CAPTION,
@@ -189,11 +249,16 @@ class DocumentToken(str, Enum):
 
     @staticmethod
     def get_picture_classification_token(classification: str) -> str:
-        """Function to get picture classification tokens."""
-        return f"<{_PictureClassificationTokens(classification).value}>"
+        """Function to get the token for a given picture classification value."""
+        return _PictureClassificationToken(f"<{classification}>").value
 
     @staticmethod
-    def get_location_token(val: float, rnorm: int = 100):
+    def get_code_language_token(code_language: str) -> str:
+        """Function to get the token for a given code language."""
+        return _CodeLanguageToken(f"<_{code_language}_>").value
+
+    @staticmethod
+    def get_location_token(val: float, rnorm: int = 500):  # TODO review
         """Function to get location tokens."""
         val_ = round(rnorm * val)
         val_ = max(val_, 0)
@@ -205,8 +270,8 @@ class DocumentToken(str, Enum):
         bbox: tuple[float, float, float, float],
         page_w: float,
         page_h: float,
-        xsize: int = 100,
-        ysize: int = 100,
+        xsize: int = 500,  # TODO review
+        ysize: int = 500,  # TODO review
     ):
         """Get the location string give bbox and page-dim."""
         assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"

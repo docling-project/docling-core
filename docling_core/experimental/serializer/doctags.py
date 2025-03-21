@@ -56,7 +56,7 @@ class DocTagsParams(CommonParams):
         """DocTags serialization mode."""
 
         MINIFIED = "minified"
-        HUMAN_FRIENDLY = "human-friendly"
+        HUMAN_FRIENDLY = "human_friendly"
 
     new_line: str = ""
     xsize: int = 500
@@ -103,7 +103,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         from docling_core.types.doc.document import SectionHeaderItem
 
         params = DocTagsParams(**kwargs)
-        wrap_tag: Optional[str] = DocumentToken.create_token_from_doc_item_label(
+        wrap_tag: Optional[str] = DocumentToken.create_token_name_from_doc_item_label(
             label=item.label,
             **({"level": item.level} if isinstance(item, SectionHeaderItem) else {}),
         )
@@ -130,7 +130,10 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
             )
 
             if isinstance(item, CodeItem):
-                text_part = f"<_{item.code_language}_>{text_part}"
+                language_token = DocumentToken.get_code_language_token(
+                    code_language=item.code_language,
+                )
+                text_part = f"{language_token}{text_part}"
             else:
                 text_part = text_part.strip()
                 if isinstance(item, ListItem):
@@ -267,7 +270,9 @@ class DocTagsPictureSerializer(BasePictureSerializer):
 
         text = "".join(parts)
         if text:
-            token = DocumentToken.create_token_from_doc_item_label(label=item.label)
+            token = DocumentToken.create_token_name_from_doc_item_label(
+                label=item.label
+            )
             text = _wrap(text=text, wrap_tag=token)
         return SerializationResult(text=text)
 
