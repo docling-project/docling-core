@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2025
-# SPDX-License-Identifier: MIT
-#
-
 """Define classes for Doctags serialization."""
+
 import html
 from enum import Enum
 from pathlib import Path
