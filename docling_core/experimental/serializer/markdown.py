@@ -30,6 +30,7 @@ from docling_core.experimental.serializer.common import CommonParams, DocSeriali
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CodeItem,
+    ContentLayer,
     DocItem,
     DoclingDocument,
     Formatting,
@@ -52,6 +53,7 @@ from docling_core.types.doc.document import (
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
+    layers: set[ContentLayer] = {ContentLayer.BODY}
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     image_placeholder: str = "<!-- image -->"
     indent: int = 4

@@ -64,7 +64,7 @@ class DocTagsParams(CommonParams):
     add_location: bool = True
     add_caption: bool = True
     add_content: bool = True
-    add_table_cell_location: bool = True
+    add_table_cell_location: bool = False
     add_table_cell_text: bool = True
     add_page_break: bool = True
 
