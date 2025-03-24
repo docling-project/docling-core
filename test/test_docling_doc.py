@@ -1,7 +1,7 @@
 import os
 from collections import deque
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from unittest.mock import Mock
 
 import pytest
@@ -10,10 +10,6 @@ from PIL import Image as PILImage
 from PIL import ImageDraw
 from pydantic import AnyUrl, ValidationError
 
-from docling_core.experimental.serializer.doctags import (
-    DocTagsDocSerializer,
-    DocTagsParams,
-)
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (  # BoundingBox,
     CURRENT_VERSION,
@@ -429,7 +425,8 @@ def test_parse_doc():
 
     doc = DoclingDocument.model_validate(dict_from_yaml)
 
-    _test_export_methods(doc, filename=filename)
+    page_break = "<!-- page break -->"
+    _test_export_methods(doc, filename=filename, page_break_placeholder=page_break)
     _test_serialize_and_reload(doc)
 
 
@@ -491,7 +488,9 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
             fw.write(f"{pred}\n")
 
 
-def _test_export_methods(doc: DoclingDocument, filename: str):
+def _test_export_methods(
+    doc: DoclingDocument, filename: str, page_break_placeholder: Optional[str] = None
+):
     # Iterate all elements
     et_pred = doc.export_to_element_tree()
     _verify_regression_test(et_pred, filename=filename, ext="et")
@@ -499,6 +498,10 @@ def _test_export_methods(doc: DoclingDocument, filename: str):
     # Export stuff
     md_pred = doc.export_to_markdown()
     _verify_regression_test(md_pred, filename=filename, ext="md")
+
+    if page_break_placeholder is not None:
+        md_pred = doc.export_to_markdown(page_break_placeholder=page_break_placeholder)
+        _verify_regression_test(md_pred, filename=filename, ext="paged.md")
 
     # Test sHTML export ...
     html_pred = doc.export_to_html()
@@ -508,13 +511,7 @@ def _test_export_methods(doc: DoclingDocument, filename: str):
     dt_pred = doc.export_to_doctags()
     _verify_regression_test(dt_pred, filename=filename, ext="dt")
 
-    ser = DocTagsDocSerializer(
-        doc=doc,
-        params=DocTagsParams(
-            mode=DocTagsParams.Mode.MINIFIED,
-        ),
-    )
-    dt_min_pred = ser.serialize().text
+    dt_min_pred = doc.export_to_doctags(minified=True)
     _verify_regression_test(dt_min_pred, filename=filename, ext="min.dt")
 
     # Test Tables export ...
