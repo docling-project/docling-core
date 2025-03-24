@@ -94,38 +94,43 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     params: CommonParams = CommonParams()
 
-    # TODO add cache based on start-stop params
+    _excluded_refs_cache: dict[str, list[str]] = {}
+
     @override
     def get_excluded_refs(self, **kwargs) -> list[str]:
         """References to excluded items."""
         params = self.params.merge_with_patch(patch=kwargs)
-        refs: list[str] = [
-            item.self_ref
-            for ix, (item, _) in enumerate(
-                self.doc.iterate_items(
-                    with_groups=True,
-                    traverse_pictures=True,
-                    included_content_layers=params.layers,
+        params_json = params.model_dump_json()
+        refs = self._excluded_refs_cache.get(params_json)
+        if refs is None:
+            refs = [
+                item.self_ref
+                for ix, (item, _) in enumerate(
+                    self.doc.iterate_items(
+                        with_groups=True,
+                        traverse_pictures=True,
+                        included_content_layers=params.layers,
+                    )
                 )
-            )
-            if (
-                (ix < params.start_idx or ix >= params.stop_idx)
-                or (
-                    isinstance(item, DocItem)
-                    and (
-                        item.label not in params.labels
-                        or item.content_layer not in params.layers
-                        or (
-                            params.pages is not None
-                            and (
-                                (not item.prov)
-                                or item.prov[0].page_no not in params.pages
+                if (
+                    (ix < params.start_idx or ix >= params.stop_idx)
+                    or (
+                        isinstance(item, DocItem)
+                        and (
+                            item.label not in params.labels
+                            or item.content_layer not in params.layers
+                            or (
+                                params.pages is not None
+                                and (
+                                    (not item.prov)
+                                    or item.prov[0].page_no not in params.pages
+                                )
                             )
                         )
                     )
                 )
-            )
-        ]
+            ]
+            self._excluded_refs_cache[params_json] = refs
         return refs
 
     @abstractmethod
