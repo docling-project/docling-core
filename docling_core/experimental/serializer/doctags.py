@@ -1,11 +1,9 @@
 """Define classes for Doctags serialization."""
 
-import html
 from enum import Enum
-from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.experimental.serializer.base import (
@@ -25,7 +23,6 @@ from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
     DoclingDocument,
-    Formatting,
     FormItem,
     InlineGroup,
     KeyValueItem,
@@ -112,7 +109,6 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
             text_part = item.text
             text_part = doc_serializer.post_process(
                 text=text_part,
-                escape_html=False,  # TODO review
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
             )
@@ -455,26 +451,6 @@ class DocTagsDocSerializer(DocSerializer):
     inline_serializer: BaseInlineSerializer = DocTagsInlineSerializer()
 
     params: DocTagsParams = DocTagsParams()
-
-    def post_process(
-        self,
-        text: str,
-        *,
-        escape_html: bool = True,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
-        **kwargs,
-    ) -> str:
-        """Apply some text post-processing steps."""
-        res = text
-        if escape_html:
-            res = html.escape(res, quote=False)
-        res = super().post_process(
-            text=res,
-            formatting=formatting,
-            hyperlink=hyperlink,
-        )
-        return res
 
     @override
     def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
