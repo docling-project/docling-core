@@ -23,6 +23,7 @@ from docling_core.experimental.serializer.base import (
 from docling_core.experimental.serializer.common import CommonParams, DocSerializer
 from docling_core.types.doc.document import (
     CodeItem,
+    DocItem,
     DoclingDocument,
     Formatting,
     FormItem,
@@ -54,7 +55,6 @@ class DocTagsParams(CommonParams):
         MINIFIED = "minified"
         HUMAN_FRIENDLY = "human_friendly"
 
-    new_line: str = ""
     xsize: int = 500
     ysize: int = 500
     add_location: bool = True
@@ -67,7 +67,6 @@ class DocTagsParams(CommonParams):
     mode: Mode = Mode.HUMAN_FRIENDLY
 
 
-# TODO: reconcile new_line and delim
 def _get_delim(params: DocTagsParams) -> str:
     if params.mode == DocTagsParams.Mode.HUMAN_FRIENDLY:
         delim = "\n"
@@ -76,14 +75,6 @@ def _get_delim(params: DocTagsParams) -> str:
     else:
         raise RuntimeError(f"Unknown DocTags mode: {params.mode}")
     return delim
-
-
-def _get_new_line(params: DocTagsParams) -> str:
-    if params.mode != DocTagsParams.Mode.MINIFIED:
-        new_line = params.new_line
-    else:
-        new_line = ""
-    return new_line
 
 
 class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
@@ -102,7 +93,6 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         from docling_core.types.doc.document import SectionHeaderItem
 
         params = DocTagsParams(**kwargs)
-        new_line = _get_new_line(params=params)
         wrap_tag: Optional[str] = DocumentToken.create_token_name_from_doc_item_label(
             label=item.label,
             **({"level": item.level} if isinstance(item, SectionHeaderItem) else {}),
@@ -112,7 +102,6 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         if params.add_location:
             location = item.get_location_tokens(
                 doc=doc,
-                new_line=new_line,
                 xsize=params.xsize,
                 ysize=params.ysize,
             )
@@ -162,14 +151,12 @@ class DocTagsTableSerializer(BaseTableSerializer):
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
 
-        new_line = _get_new_line(params=params)
         body = ""
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             if params.add_location:
                 body += item.get_location_tokens(
                     doc=doc,
-                    new_line=new_line,
                     xsize=params.xsize,
                     ysize=params.ysize,
                 )
@@ -189,15 +176,14 @@ class DocTagsTableSerializer(BaseTableSerializer):
                 body += f"<{DocumentToken.CAPTION.value}>"
                 for caption in item.captions:
                     if caption.cref not in doc_serializer.get_excluded_refs(**kwargs):
-                        body += caption.resolve(doc).get_location_tokens(
-                            doc=doc,
-                            new_line=new_line,
-                            xsize=params.xsize,
-                            ysize=params.ysize,
-                        )
+                        if isinstance(cap := caption.resolve(doc), DocItem):
+                            body += cap.get_location_tokens(
+                                doc=doc,
+                                xsize=params.xsize,
+                                ysize=params.ysize,
+                            )
                 body += f"{text.strip()}"
                 body += f"</{DocumentToken.CAPTION.value}>"
-                body += f"{new_line}"
 
         if body:
             body = _wrap(text=body, wrap_tag=DocumentToken.OTSL.value)
@@ -219,7 +205,6 @@ class DocTagsPictureSerializer(BasePictureSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
-        new_line = _get_new_line(params=params)
         parts: list[str] = []
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
@@ -227,7 +212,6 @@ class DocTagsPictureSerializer(BasePictureSerializer):
             if params.add_location:
                 body += item.get_location_tokens(
                     doc=doc,
-                    new_line=new_line,
                     xsize=params.xsize,
                     ysize=params.ysize,
                 )
@@ -257,13 +241,13 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 body = ""
                 for caption in item.captions:
                     if caption.cref not in doc_serializer.get_excluded_refs(**kwargs):
-                        body += caption.resolve(doc).get_location_tokens(
-                            doc=doc,
-                            new_line=new_line,
-                            xsize=params.xsize,
-                            ysize=params.ysize,
-                        )
-                        body += f"{text.strip()}"
+                        if isinstance(cap := caption.resolve(doc), DocItem):
+                            body += cap.get_location_tokens(
+                                doc=doc,
+                                xsize=params.xsize,
+                                ysize=params.ysize,
+                            )
+                            body += f"{text.strip()}"
                 if body:
                     body = _wrap(text=body, wrap_tag=DocumentToken.CAPTION.value)
                     parts.append(body)
@@ -292,7 +276,6 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
 
-        new_line = _get_new_line(params=params)
         body = ""
 
         page_no = 1
@@ -302,7 +285,6 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
         if params.add_location:
             body += item.get_location_tokens(
                 doc=doc,
-                new_line=new_line,
                 xsize=params.xsize,
                 ysize=params.ysize,
             )
@@ -327,18 +309,18 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
                         ysize=params.ysize,
                     )
             if params.add_content:
-                cell_txt += f"{cell.text.strip()}{new_line}"
+                cell_txt += cell.text.strip()
 
             if cell.cell_id in source_to_targets:
                 targets = source_to_targets[cell.cell_id]
                 for target in targets:
                     # TODO centralize token creation
-                    cell_txt += f"<link_{target}>{new_line}"
+                    cell_txt += f"<link_{target}>"
 
             # TODO centralize token creation
             tok = f"{cell.label.value}_{cell.cell_id}"
             cell_txt = _wrap(text=cell_txt, wrap_tag=tok)
-            body += f"{cell_txt}{new_line}"
+            body += cell_txt
 
         body = _wrap(body, DocumentToken.KEY_VALUE_REGION.value)
         return SerializationResult(text=body)
