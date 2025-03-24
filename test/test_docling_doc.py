@@ -505,7 +505,7 @@ def _test_export_methods(doc: DoclingDocument, filename: str):
     _verify_regression_test(html_pred, filename=filename, ext="html")
 
     # Test DocTags export ...
-    dt_pred = doc.export_to_document_tokens()
+    dt_pred = doc.export_to_doctags()
     _verify_regression_test(dt_pred, filename=filename, ext="dt")
 
     ser = DocTagsDocSerializer(
@@ -522,12 +522,12 @@ def _test_export_methods(doc: DoclingDocument, filename: str):
         table.export_to_markdown()
         table.export_to_html(doc)
         table.export_to_dataframe()
-        table.export_to_document_tokens(doc)
+        table.export_to_doctags(doc)
 
     # Test Images export ...
 
     for fig in doc.pictures:
-        fig.export_to_document_tokens(doc)
+        fig.export_to_doctags(doc)
 
 
 def _construct_bad_doc():
@@ -1213,7 +1213,7 @@ def test_save_to_disk():
     ### Document Tokens
 
     filename = Path("test/data/doc/constructed_doc.dt")
-    doc.save_as_document_tokens(filename=filename)
+    doc.save_as_doctags(filename=filename)
     _verify_saved_output(filename=filename, paths=paths)
 
     ### JSON

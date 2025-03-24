@@ -724,7 +724,12 @@ class TextItem(DocItem):
     formatting: Optional[Formatting] = None
     hyperlink: Optional[Union[AnyUrl, Path]] = None
 
-    def export_to_document_tokens(
+    @deprecated("Use export_to_doctags() instead.")
+    def export_to_document_tokens(self, *args, **kwargs):
+        r"""Export to DocTags format."""
+        return self.export_to_doctags(*args, **kwargs)
+
+    def export_to_doctags(
         self,
         doc: "DoclingDocument",
         new_line: str = "",  # deprecated
@@ -777,7 +782,12 @@ class SectionHeaderItem(TextItem):
     )
     level: LevelNumber = 1
 
-    def export_to_document_tokens(
+    @deprecated("Use export_to_doctags() instead.")
+    def export_to_document_tokens(self, *args, **kwargs):
+        r"""Export to DocTags format."""
+        return self.export_to_doctags(*args, **kwargs)
+
+    def export_to_doctags(
         self,
         doc: "DoclingDocument",
         new_line: str = "",  # deprecated
@@ -862,7 +872,12 @@ class CodeItem(FloatingItem, TextItem):
     )
     code_language: CodeLanguageLabel = CodeLanguageLabel.UNKNOWN
 
-    def export_to_document_tokens(
+    @deprecated("Use export_to_doctags() instead.")
+    def export_to_document_tokens(self, *args, **kwargs):
+        r"""Export to DocTags format."""
+        return self.export_to_doctags(*args, **kwargs)
+
+    def export_to_doctags(
         self,
         doc: "DoclingDocument",
         new_line: str = "",  # deprecated
@@ -1026,7 +1041,12 @@ class PictureItem(FloatingItem):
         else:
             return default_response
 
-    def export_to_document_tokens(
+    @deprecated("Use export_to_doctags() instead.")
+    def export_to_document_tokens(self, *args, **kwargs):
+        r"""Export to DocTags format."""
+        return self.export_to_doctags(*args, **kwargs)
+
+    def export_to_doctags(
         self,
         doc: "DoclingDocument",
         new_line: str = "",  # deprecated
@@ -1338,7 +1358,12 @@ class TableItem(FloatingItem):
             body_str = "".join(body)
         return body_str
 
-    def export_to_document_tokens(
+    @deprecated("Use export_to_doctags() instead.")
+    def export_to_document_tokens(self, *args, **kwargs):
+        r"""Export to DocTags format."""
+        return self.export_to_doctags(*args, **kwargs)
+
+    def export_to_doctags(
         self,
         doc: "DoclingDocument",
         new_line: str = "",  # deprecated
@@ -2265,7 +2290,7 @@ class DoclingDocument(BaseModel):
         with_groups: bool = False,
         traverse_pictures: bool = False,
         page_no: Optional[int] = None,
-        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
+        included_content_layers: Optional[set[ContentLayer]] = None,
         _level: int = 0,  # fixed parameter, carries through the node nesting level
     ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
         """iterate_elements.
@@ -2278,6 +2303,11 @@ class DoclingDocument(BaseModel):
         :param # fixed parameter:
         :param carries through the node nesting level:
         """
+        my_layers = (
+            included_content_layers
+            if included_content_layers is not None
+            else DEFAULT_CONTENT_LAYERS
+        )
         if not root:
             root = self.body
 
@@ -2293,7 +2323,7 @@ class DoclingDocument(BaseModel):
                     or any(prov.page_no == page_no for prov in root.prov)
                 )
             )
-            and root.content_layer in included_content_layers
+            and root.content_layer in my_layers
         )
 
         if should_yield:
@@ -2313,7 +2343,7 @@ class DoclingDocument(BaseModel):
                     traverse_pictures=traverse_pictures,
                     page_no=page_no,
                     _level=_level + 1,
-                    included_content_layers=included_content_layers,
+                    included_content_layers=my_layers,
                 )
 
     def _clear_picture_pil_cache(self):
@@ -2537,7 +2567,7 @@ class DoclingDocument(BaseModel):
         delim: str = "\n\n",
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: set[DocItemLabel] = DOCUMENT_TOKENS_EXPORT_LABELS,
+        labels: Optional[set[DocItemLabel]] = None,
         strict_text: bool = False,
         escaping_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
@@ -2545,7 +2575,8 @@ class DoclingDocument(BaseModel):
         indent: int = 4,
         text_width: int = -1,
         page_no: Optional[int] = None,
-        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        page_break_placeholder: Optional[str] = None,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -2572,6 +2603,7 @@ class DoclingDocument(BaseModel):
             text_width=text_width,
             page_no=page_no,
             included_content_layers=included_content_layers,
+            page_break_placeholder=page_break_placeholder,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -2582,7 +2614,7 @@ class DoclingDocument(BaseModel):
         delim: str = "\n\n",
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: set[DocItemLabel] = DOCUMENT_TOKENS_EXPORT_LABELS,
+        labels: Optional[set[DocItemLabel]] = None,
         strict_text: bool = False,
         escape_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
@@ -2590,7 +2622,8 @@ class DoclingDocument(BaseModel):
         indent: int = 4,
         text_width: int = -1,
         page_no: Optional[int] = None,
-        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        page_break_placeholder: Optional[str] = None,  # e.g. "<!-- page break -->",
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -2605,8 +2638,9 @@ class DoclingDocument(BaseModel):
         :param to_element: Body slicing stop index
                 (exclusive). (Default value = maxint).
         :type to_element: int = sys.maxsize
-        :param labels: The set of document labels to include in the export.
-        :type labels: set[DocItemLabel] = DOCUMENT_TOKENS_EXPORT_LABELS
+        :param labels: The set of document labels to include in the export. None falls
+            back to the system-defined default.
+        :type labels: Optional[set[DocItemLabel]] = None
         :param strict_text: Deprecated.
         :type strict_text: bool = False
         :param escaping_underscores: bool: Whether to escape underscores in the
@@ -2621,6 +2655,12 @@ class DoclingDocument(BaseModel):
         :param indent: The indent in spaces of the nested lists.
             (Default value = 4).
         :type indent: int = 4
+        :param included_content_layers: The set of layels to include in the export. None
+            falls back to the system-defined default.
+        :type included_content_layers: Optional[set[ContentLayer]] = None
+        :param page_break_placeholder: The placeholder to include for marking page
+            breaks. None means no page break placeholder will be used.
+        :type page_break_placeholder: Optional[str] = None
         :returns: The exported Markdown representation.
         :rtype: str
         """
@@ -2629,11 +2669,17 @@ class DoclingDocument(BaseModel):
             MarkdownParams,
         )
 
+        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
+        my_layers = (
+            included_content_layers
+            if included_content_layers is not None
+            else DEFAULT_CONTENT_LAYERS
+        )
         serializer = MarkdownDocSerializer(
             doc=self,
             params=MarkdownParams(
-                labels=labels,
-                layers=included_content_layers,
+                labels=my_labels,
+                layers=my_layers,
                 pages={page_no} if page_no is not None else None,
                 start_idx=from_element,
                 stop_idx=to_element,
@@ -2642,6 +2688,7 @@ class DoclingDocument(BaseModel):
                 image_mode=image_mode,
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
+                page_break_placeholder=page_break_placeholder,
             ),
         )
         ser_res = serializer.serialize()
@@ -2662,14 +2709,16 @@ class DoclingDocument(BaseModel):
         delim: str = "\n\n",
         from_element: int = 0,
         to_element: int = 1000000,
-        labels: set[DocItemLabel] = DOCUMENT_TOKENS_EXPORT_LABELS,
+        labels: Optional[set[DocItemLabel]] = None,
     ) -> str:
         """export_to_text."""
+        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
+
         return self.export_to_markdown(
-            delim,
-            from_element,
-            to_element,
-            labels,
+            delim=delim,
+            from_element=from_element,
+            to_element=to_element,
+            labels=my_labels,
             strict_text=True,
             escape_underscores=False,
             image_placeholder="",
@@ -2681,13 +2730,13 @@ class DoclingDocument(BaseModel):
         artifacts_dir: Optional[Path] = None,
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
+        labels: Optional[set[DocItemLabel]] = None,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         formula_to_mathml: bool = True,
         page_no: Optional[int] = None,
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
-        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
+        included_content_layers: Optional[set[ContentLayer]] = None,
     ):
         """Save to HTML."""
         if isinstance(filename, str):
@@ -2754,15 +2803,21 @@ class DoclingDocument(BaseModel):
         self,
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: set[DocItemLabel] = DEFAULT_EXPORT_LABELS,
+        labels: Optional[set[DocItemLabel]] = None,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         formula_to_mathml: bool = True,
         page_no: Optional[int] = None,
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
-        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
+        included_content_layers: Optional[set[ContentLayer]] = None,
     ) -> str:
         r"""Serialize to HTML."""
+        my_labels = labels if labels is not None else DEFAULT_EXPORT_LABELS
+        my_layers = (
+            included_content_layers
+            if included_content_layers is not None
+            else DEFAULT_CONTENT_LAYERS
+        )
 
         def close_lists(
             curr_level: int,
@@ -2810,7 +2865,7 @@ class DoclingDocument(BaseModel):
                 self.body,
                 with_groups=True,
                 page_no=page_no,
-                included_content_layers=included_content_layers,
+                included_content_layers=my_layers,
             )
         ):
             # If we've moved to a lower level, we're exiting one or more groups
@@ -2832,7 +2887,7 @@ class DoclingDocument(BaseModel):
             if ix < from_element or to_element <= ix:
                 continue  # skip as many items as you want
 
-            if (isinstance(item, DocItem)) and (item.label not in labels):
+            if (isinstance(item, DocItem)) and (item.label not in my_labels):
                 continue  # skip any label that is not whitelisted
 
             if isinstance(item, GroupItem) and item.label in [
@@ -2979,7 +3034,7 @@ class DoclingDocument(BaseModel):
                     )
                 )
 
-            elif isinstance(item, DocItem) and item.label in labels:
+            elif isinstance(item, DocItem) and item.label in my_labels:
                 continue
 
         html_texts.append("</html>")
@@ -3506,7 +3561,7 @@ class DoclingDocument(BaseModel):
         delim: str = "",
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: set[DocItemLabel] = DOCUMENT_TOKENS_EXPORT_LABELS,
+        labels: Optional[set[DocItemLabel]] = None,
         xsize: int = 500,
         ysize: int = 500,
         add_location: bool = True,
@@ -3515,11 +3570,12 @@ class DoclingDocument(BaseModel):
         # table specific flags
         add_table_cell_location: bool = False,
         add_table_cell_text: bool = True,
+        minified: bool = False,
     ):
         r"""Save the document content to DocTags format."""
         if isinstance(filename, str):
             filename = Path(filename)
-        out = self.export_to_document_tokens(
+        out = self.export_to_doctags(
             delim=delim,
             from_element=from_element,
             to_element=to_element,
@@ -3532,17 +3588,23 @@ class DoclingDocument(BaseModel):
             # table specific flags
             add_table_cell_location=add_table_cell_location,
             add_table_cell_text=add_table_cell_text,
+            minified=minified,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(out)
 
-    def export_to_document_tokens(  # noqa: C901
+    @deprecated("Use export_to_doctags() instead.")
+    def export_to_document_tokens(self, *args, **kwargs):
+        r"""Export to DocTags format."""
+        return self.export_to_doctags(*args, **kwargs)
+
+    def export_to_doctags(  # noqa: C901
         self,
         delim: str = "",  # deprecated
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: set[DocItemLabel] = DOCUMENT_TOKENS_EXPORT_LABELS,
+        labels: Optional[set[DocItemLabel]] = None,
         xsize: int = 500,
         ysize: int = 500,
         add_location: bool = True,
@@ -3551,6 +3613,7 @@ class DoclingDocument(BaseModel):
         # table specific flags
         add_table_cell_location: bool = False,
         add_table_cell_text: bool = True,
+        minified: bool = False,
     ) -> str:
         r"""Exports the document content to a DocumentToken format.
 
@@ -3568,6 +3631,7 @@ class DoclingDocument(BaseModel):
         :param add_page_index: bool:  (Default value = True)
         :param # table specific flagsadd_table_cell_location: bool
         :param add_table_cell_text: bool:  (Default value = True)
+        :param minified: bool:  (Default value = False)
         :returns: The content of the document formatted as a DocTags string.
         :rtype: str
         """
@@ -3576,10 +3640,11 @@ class DoclingDocument(BaseModel):
             DocTagsParams,
         )
 
+        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
         serializer = DocTagsDocSerializer(
             doc=self,
             params=DocTagsParams(
-                labels=labels,
+                labels=my_labels,
                 # layers=...,  # not exposed
                 start_idx=from_element,
                 stop_idx=to_element,
@@ -3591,6 +3656,11 @@ class DoclingDocument(BaseModel):
                 add_page_break=add_page_index,
                 add_table_cell_location=add_table_cell_location,
                 add_table_cell_text=add_table_cell_text,
+                mode=(
+                    DocTagsParams.Mode.MINIFIED
+                    if minified
+                    else DocTagsParams.Mode.HUMAN_FRIENDLY
+                ),
             ),
         )
         ser_res = serializer.serialize()
