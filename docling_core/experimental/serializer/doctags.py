@@ -23,6 +23,7 @@ from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
     DoclingDocument,
+    FloatingItem,
     FormItem,
     InlineGroup,
     KeyValueItem,
@@ -126,10 +127,15 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
             if text_part:
                 parts.append(text_part)
 
-        res = "".join(parts)
+        if params.add_caption and isinstance(item, FloatingItem):
+            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+            if cap_text:
+                parts.append(cap_text)
+
+        text_res = "".join(parts)
         if wrap_tag is not None:
-            res = _wrap(text=res, wrap_tag=wrap_tag)
-        return SerializationResult(text=res)
+            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+        return SerializationResult(text=text_res)
 
 
 class DocTagsTableSerializer(BaseTableSerializer):
@@ -147,44 +153,36 @@ class DocTagsTableSerializer(BaseTableSerializer):
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
 
-        body = ""
+        parts: list[str] = []
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             if params.add_location:
-                body += item.get_location_tokens(
+                loc_text = item.get_location_tokens(
                     doc=doc,
                     xsize=params.xsize,
                     ysize=params.ysize,
                 )
+                parts.append(loc_text)
 
-            body += item.export_to_otsl(
+            otsl_text = item.export_to_otsl(
                 doc=doc,
                 add_cell_location=params.add_table_cell_location,
                 add_cell_text=params.add_table_cell_text,
                 xsize=params.xsize,
                 ysize=params.ysize,
             )
+            parts.append(otsl_text)
 
-        if params.add_caption and len(item.captions):
-            text = doc_serializer.serialize_captions(item, **kwargs).text
+        if params.add_caption:
+            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+            if cap_text:
+                parts.append(cap_text)
 
-            if len(text):
-                body += f"<{DocumentToken.CAPTION.value}>"
-                for caption in item.captions:
-                    if caption.cref not in doc_serializer.get_excluded_refs(**kwargs):
-                        if isinstance(cap := caption.resolve(doc), DocItem):
-                            body += cap.get_location_tokens(
-                                doc=doc,
-                                xsize=params.xsize,
-                                ysize=params.ysize,
-                            )
-                body += f"{text.strip()}"
-                body += f"</{DocumentToken.CAPTION.value}>"
+        text_res = "".join(parts)
+        if text_res:
+            text_res = _wrap(text=text_res, wrap_tag=DocumentToken.OTSL.value)
 
-        if body:
-            body = _wrap(text=body, wrap_tag=DocumentToken.OTSL.value)
-
-        return SerializationResult(text=body)
+        return SerializationResult(text=text_res)
 
 
 class DocTagsPictureSerializer(BasePictureSerializer):
@@ -230,31 +228,18 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 )
             parts.append(body)
 
-        if params.add_caption and len(item.captions):
-            text = doc_serializer.serialize_captions(item, **kwargs).text
+        if params.add_caption:
+            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+            if cap_text:
+                parts.append(cap_text)
 
-            if len(text):
-                body = ""
-                for caption in item.captions:
-                    if caption.cref not in doc_serializer.get_excluded_refs(**kwargs):
-                        if isinstance(cap := caption.resolve(doc), DocItem):
-                            body += cap.get_location_tokens(
-                                doc=doc,
-                                xsize=params.xsize,
-                                ysize=params.ysize,
-                            )
-                            body += f"{text.strip()}"
-                if body:
-                    body = _wrap(text=body, wrap_tag=DocumentToken.CAPTION.value)
-                    parts.append(body)
-
-        text = "".join(parts)
-        if text:
+        text_res = "".join(parts)
+        if text_res:
             token = DocumentToken.create_token_name_from_doc_item_label(
                 label=item.label
             )
-            text = _wrap(text=text, wrap_tag=token)
-        return SerializationResult(text=text)
+            text_res = _wrap(text=text_res, wrap_tag=token)
+        return SerializationResult(text=text_res)
 
 
 class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
@@ -317,6 +302,11 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
             tok = f"{cell.label.value}_{cell.cell_id}"
             cell_txt = _wrap(text=cell_txt, wrap_tag=tok)
             body += cell_txt
+
+        if params.add_caption:
+            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+            if cap_text:
+                body += cap_text
 
         body = _wrap(body, DocumentToken.KEY_VALUE_REGION.value)
         return SerializationResult(text=body)
@@ -470,4 +460,33 @@ class DocTagsDocSerializer(DocSerializer):
             content = self.serialize_page(parts=pages).text
         wrap_tag = DocumentToken.DOCUMENT.value
         text_res = f"<{wrap_tag}>{content}{delim}</{wrap_tag}>"
+        return SerializationResult(text=text_res)
+
+    @override
+    def serialize_captions(
+        self,
+        item: FloatingItem,
+        **kwargs,
+    ) -> SerializationResult:
+        """Serialize the item's captions."""
+        params = DocTagsParams(**kwargs)
+        parts: list[str] = []
+
+        if item.captions:
+            cap_text = super().serialize_captions(item, **kwargs).text
+            if cap_text:
+                if params.add_location:
+                    for caption in item.captions:
+                        if caption.cref not in self.get_excluded_refs(**kwargs):
+                            if isinstance(cap := caption.resolve(self.doc), DocItem):
+                                loc_txt = cap.get_location_tokens(
+                                    doc=self.doc,
+                                    xsize=params.xsize,
+                                    ysize=params.ysize,
+                                )
+                                parts.append(loc_txt)
+                parts.append(cap_text)
+        text_res = "".join(parts)
+        if text_res:
+            text_res = _wrap(text=text_res, wrap_tag=DocumentToken.CAPTION.value)
         return SerializationResult(text=text_res)
