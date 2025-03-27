@@ -457,8 +457,12 @@ class RefItem(BaseModel):
         populate_by_name=True,
     )
 
+    def path(self):
+        """Get the path of the reference."""
+        return self.cref.split("/")
+
     def resolve(self, doc: "DoclingDocument"):
-        """resolve."""
+        """Resolve the path in the document."""
         path_components = self.cref.split("/")
         if (num_comps := len(path_components)) == 3:
             _, path, index_str = path_components
@@ -597,7 +601,7 @@ class NodeItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    def get_ref(self):
+    def get_ref(self) -> RefItem:
         """get_ref."""
         return RefItem(cref=self.self_ref)
 
@@ -1597,6 +1601,96 @@ class DoclingDocument(BaseModel):
                 ]:
                     item["content_layer"] = "furniture"
         return data
+
+    ###################################
+    # Delete items method
+    ###################################
+
+    def delete_document_item(self, ref: str):
+        """Delete document item using the self-reference."""
+
+        refitem_i = RefItem(cref=ref)
+        path_i = refitem_i.path()
+
+        if len(path_i) == 3:
+            part_i = path_i[1]
+            index_i = path_i[2]
+
+            if index_i < len(self.__getattribute__(part_i)):
+                del self.__getattribute__(path_i)[index_i]
+
+                parent: RefItem = RefItem(cref="#")
+                child_ind: int = -1
+
+                for item, level in self.iterate_items():
+
+                    if item.parent is None:
+                        child_ind += 1
+                    elif item.parent is not None and parent != item.parent:
+                        parent = item.parent
+                        child_ind = 0
+                    else:
+                        child_ind += 1
+
+                    refitem_j = item.get_ref()
+                    path_j = refitem_j.path()
+
+                    if len(path_j) == 3 and part_i == part_j and index_j == index_i:
+                        if child_ind < len(parent.children):
+                            del parent.children[child_ind]
+                        else:
+                            RuntimeError(
+                                f"Index out-of-bounds: {index}>={len(parent.children)}"
+                            )
+
+                    elif len(path_j) == 3 and part_i == part_j and index_j > index_i:
+                        item.self_ref = f"#/{part_i}/{index_j-1}"
+            else:
+                raise RuntimeError(
+                    f"Unsupported number of path components: {index}>={doc.__getattribute__(part)}"
+                )
+
+        else:
+            raise RuntimeError(f"Unsupported ref: {ref}")
+
+    def insert_document_item(self, ref: RefItem, item: DocItem):
+        """Insert document item using the self-reference."""
+
+        parent: RefItem = RefItem(cref="#")
+        child_ind: int = -1
+
+        new_ref = RefItem(cref="#")
+
+        if isinstance(item, TextItem):
+            new_ref = RefItem(cref=f"#/texts/{len(self.texts)}")
+            self.texts.append(item)
+        elif isinstance(item, TableItem):
+            new_ref = RefItem(cref=f"#/tables/{len(self.tables)}")
+            self.tables.append(item)
+        elif isinstance(item, PictureItem):
+            new_ref = RefItem(cref=f"#/pictures/{len(self.pictures)}")
+            self.pictures.append(item)
+        elif isinstance(item, FormItem):
+            new_ref = RefItem(cref=f"#/form_items/{len(self.form_items)}")
+            self.key_value_items.append(item)
+        elif isinstance(item, KeyValueItem):
+            new_ref = RefItem(cref=f"#/key_value_items/{len(self.key_value_items)}")
+            self.form_items.append(item)
+        else:
+            raise RuntimeError(f"Unsupported insertion for DocItem of type: {DocItem}")
+
+        for item, level in self.iterate_items():
+
+            if parent != item.parent:
+                parent = item.parent
+                child_ind = 0
+            else:
+                child_ind += 1
+
+            refitem_j = item.get_ref()
+
+            if ref.cref == refitem_j.cref:
+                parent.children.insert(new_ref, children_id)
 
     ###################################
     # TODO: refactor add* methods below
