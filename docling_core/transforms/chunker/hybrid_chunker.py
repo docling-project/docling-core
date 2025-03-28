@@ -11,6 +11,8 @@ from typing import Any, Iterable, Iterator, Optional, Union
 from pydantic import BaseModel, ConfigDict, PositiveInt, TypeAdapter, model_validator
 from typing_extensions import Self
 
+from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer
+
 try:
     import semchunk
     from transformers import AutoTokenizer, PreTrainedTokenizerBase
@@ -20,6 +22,7 @@ except ImportError:
         "`pip install 'docling-core[chunking]'`"
     )
 
+from docling_core.experimental.serializer.base import BaseDocSerializer
 from docling_core.transforms.chunker import (
     BaseChunk,
     BaseChunker,
@@ -231,7 +234,12 @@ class HybridChunker(BaseChunker):
 
         return output_chunks
 
-    def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
+    def chunk(
+        self,
+        dl_doc: DoclingDocument,
+        doc_serializer: Optional[BaseDocSerializer] = None,
+        **kwargs: Any,
+    ) -> Iterator[BaseChunk]:
         r"""Chunk the provided document.
 
         Args:
@@ -240,8 +248,13 @@ class HybridChunker(BaseChunker):
         Yields:
             Iterator[Chunk]: iterator over extracted chunks
         """
+        my_doc_ser = doc_serializer or ChunkingDocSerializer(doc=dl_doc)
         res: Iterable[DocChunk]
-        res = self._inner_chunker.chunk(dl_doc=dl_doc, **kwargs)  # type: ignore
+        res = self._inner_chunker.chunk(
+            dl_doc=dl_doc,
+            doc_serializer=my_doc_ser,
+            **kwargs,
+        )  # type: ignore
         res = [x for c in res for x in self._split_by_doc_items(c)]
         res = [x for c in res for x in self._split_using_plain_text(c)]
         if self.merge_peers:
