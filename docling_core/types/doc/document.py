@@ -542,15 +542,22 @@ class DocTagsDocument(BaseModel):
 
     @classmethod
     def from_doctags_and_image_pairs(
-        cls, doctags: List[Union[Path, str]], images: List[Union[Path, PILImage.Image]]
+        cls,
+        doctags: List[Union[Path, str]],
+        images: Optional[List[Union[Path, PILImage.Image]]],
     ):
         """from_doctags_and_image_pairs."""
-        if len(doctags) != len(images):
+        if images is not None and len(doctags) != len(images):
             raise ValueError("Number of page doctags must be equal to page images!")
         doctags_doc = cls()
 
+        imgs: List[Optional[Union[Path, PILImage.Image]]] = (
+            typing.cast(List[Optional[Union[Path, PILImage.Image]]], images)
+            if images is not None
+            else [None] * len(doctags)
+        )
         pages = []
-        for dt, img in zip(doctags, images):
+        for dt, img in zip(doctags, imgs):
             if isinstance(dt, Path):
                 with dt.open("r") as fp:
                     dt = fp.read()
@@ -559,7 +566,7 @@ class DocTagsDocument(BaseModel):
 
             if isinstance(img, Path):
                 img = PILImage.open(img)
-            elif isinstance(dt, PILImage.Image):
+            elif isinstance(img, PILImage.Image):
                 pass
 
             page = DocTagsPage(tokens=dt, image=img)
@@ -567,6 +574,26 @@ class DocTagsDocument(BaseModel):
 
         doctags_doc.pages = pages
         return doctags_doc
+
+    @classmethod
+    def from_multipage_doctags_and_images(
+        cls,
+        doctags: Union[Path, str],
+        images: Optional[List[Union[Path, PILImage.Image]]],
+    ):
+        """From doctags with `<page_break>` and corresponding list of page images."""
+        if isinstance(doctags, Path):
+            with doctags.open("r") as fp:
+                doctags = fp.read()
+        dt_list = (
+            doctags.removeprefix(f"<{DocumentToken.DOCUMENT.value}>")
+            .removesuffix(f"</{DocumentToken.DOCUMENT.value}>")
+            .split(f"<{DocumentToken.PAGE_BREAK.value}>")
+        )
+        dt_list_stripped = typing.cast(
+            list[Union[Path, str]], [pg.strip() for pg in dt_list]
+        )
+        return cls.from_doctags_and_image_pairs(dt_list_stripped, images)
 
 
 class ProvenanceItem(BaseModel):
