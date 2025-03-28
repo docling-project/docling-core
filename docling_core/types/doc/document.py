@@ -605,7 +605,16 @@ class NodeItem(BaseModel):
         """get_ref."""
         return RefItem(cref=self.self_ref)
 
+    def delete_child(self, stack: list[int]) -> bool:
+        if len(stack)==1 and stack[0]<len(self.children):
+            del self.children[stack[0]]
+            return True
+        elif len(stack)>1 and stack[0]<len(self.children):
+            return self.children.delete_child(stack=stack[1:])
 
+        # FIXME: should we raise an error here?        
+        return False
+        
 class GroupItem(NodeItem):  # Container type, can't be a leaf node
     """GroupItem."""
 
@@ -1606,53 +1615,52 @@ class DoclingDocument(BaseModel):
     # Delete items method
     ###################################
 
-    def delete_document_item(self, ref: str):
+    def remove_orphans_from_document(self):
+        """Delete items in the document that are not referenced in the tree."""
+        active_items: set[str] = {}
+        for item, level in self.iterate_items():
+            ref = item.get_ref()
+            active_items.insert(ref.cref)
+
+        cnt = 0
+        for item in self.texts:
+            ref = item.get_ref()
+            
+            
+            
+        # delete the item in the document
+        # del self.__getattribute__(path_i)[index_i]        
+
+        # elif len(path_j) == 3 and part_i == part_j and index_j > index_i:
+        # item.self_ref = f"#/{part_i}/{index_j-1}"
+        
+    def delete_document_items(self, refs: list[RefItem], remove_orphans: bool = False):
         """Delete document item using the self-reference."""
+        to_be_deleted_items: dict[list[int]: str] = {} # FIXME: list should be a tuple
 
-        refitem_i = RefItem(cref=ref)
-        path_i = refitem_i.path()
+        # Identify the to_be_deleted_items
+        for node_item, stack in self.iterate_items_with_stack():
 
-        if len(path_i) == 3:
-            part_i = path_i[1]
-            index_i = path_i[2]
+            ref = item.get_ref()
+            if ref in refs:
+                to_be_deleted_items[stack] = ref.cref
 
-            if index_i < len(self.__getattribute__(part_i)):
-                del self.__getattribute__(path_i)[index_i]
+            substacks = [stack[0:i+1] for i in range(len(stack))]
+            for substack in substacks:
+                if substack in to_be_deleted_items:
+                    to_be_deleted_items[stack] = ref.cref
 
-                parent: RefItem = RefItem(cref="#")
-                child_ind: int = -1
+        # Clean the tree
+        for stack, ref in reversed(sorted(to_be_deleted_items.items())):
+            success = self.body.delete_child(stack=stack)
 
-                for item, level in self.iterate_items():
+            if not success:
+                del to_be_deleted_items[stack]
+                log.warning(f"Could not delete: {ref}")
 
-                    if item.parent is None:
-                        child_ind += 1
-                    elif item.parent is not None and parent != item.parent:
-                        parent = item.parent
-                        child_ind = 0
-                    else:
-                        child_ind += 1
-
-                    refitem_j = item.get_ref()
-                    path_j = refitem_j.path()
-
-                    if len(path_j) == 3 and part_i == part_j and index_j == index_i:
-                        if child_ind < len(parent.children):
-                            del parent.children[child_ind]
-                        else:
-                            RuntimeError(
-                                f"Index out-of-bounds: {index}>={len(parent.children)}"
-                            )
-
-                    elif len(path_j) == 3 and part_i == part_j and index_j > index_i:
-                        item.self_ref = f"#/{part_i}/{index_j-1}"
-            else:
-                raise RuntimeError(
-                    f"Unsupported number of path components: {index}>={doc.__getattribute__(part)}"
-                )
-
-        else:
-            raise RuntimeError(f"Unsupported ref: {ref}")
-
+        # Remove the orphans and update the references
+        
+                
     def insert_document_item(self, ref: RefItem, item: DocItem):
         """Insert document item using the self-reference."""
 
@@ -2378,6 +2386,69 @@ class DoclingDocument(BaseModel):
                     included_content_layers=included_content_layers,
                 )
 
+    def iterate_items_with_stack(
+        self,
+        root: Optional[NodeItem] = None,
+        with_groups: bool = False,
+        traverse_pictures: bool = False,
+        page_no: Optional[int] = None,
+        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
+        _stack: list[int] = [],  # fixed parameter, carries through the node nesting level
+    ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
+        """iterate_elements.
+
+        :param root: Optional[NodeItem]:  (Default value = None)
+        :param with_groups: bool:  (Default value = False)
+        :param traverse_pictures: bool:  (Default value = False)
+        :param page_no: Optional[int]:  (Default value = None)
+        :param _level:  (Default value = 0)
+        :param # fixed parameter:
+        :param carries through the node nesting level:
+        """
+        if not root:
+            root = self.body
+
+        # Yield non-group items or group items when with_groups=True
+
+        # Combine conditions to have a single yield point
+        should_yield = (
+            (not isinstance(root, GroupItem) or with_groups)
+            and (
+                not isinstance(root, DocItem)
+                or (
+                    page_no is None
+                    or any(prov.page_no == page_no for prov in root.prov)
+                )
+            )
+            and root.content_layer in included_content_layers
+        )
+
+        if should_yield:
+            yield root, _stack
+
+        # Handle picture traversal - only traverse children if requested
+        if isinstance(root, PictureItem) and not traverse_pictures:
+            return
+
+        _stack.append(-1)
+        
+        # Traverse children
+        for child_ind, child_ref in enumerate(root.children):
+            _stack[-1] = child_ind
+            child = child_ref.resolve(self)
+
+            if isinstance(child, NodeItem):
+                yield from self.iterate_items(
+                    child,
+                    with_groups=with_groups,
+                    traverse_pictures=traverse_pictures,
+                    page_no=page_no,
+                    _stack=_stack,
+                    included_content_layers=included_content_layers,
+                )
+
+        _stack.pop()
+                
     def _clear_picture_pil_cache(self):
         """Clear cache storage of all images."""
         for item, level in self.iterate_items(with_groups=False):
