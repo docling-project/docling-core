@@ -348,7 +348,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        my_visited = visited or set()
+        my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
         parts = doc_serializer.get_parts(
             item=item,
@@ -392,7 +392,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        my_visited = visited or set()
+        my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
         parts = doc_serializer.get_parts(
             item=item,
