@@ -530,16 +530,19 @@ class SegmentedPdfPage(SegmentedPage):
         """
         cells = []
         for page_cell in self.iterate_cells(cell_unit):
-            cell_bbox = page_cell.to_bounding_box()
             # Bring cell_bbox coord origin to the same as input bbox.coord_origin:
-            if cell_bbox.coord_origin != bbox.coord_origin:
+            if page_cell.rect.coord_origin != bbox.coord_origin:
                 if bbox.coord_origin == CoordOrigin.TOPLEFT:
-                    cell_bbox = cell_bbox.to_top_left_origin(self.dimension.height)
+                    page_cell.rect = page_cell.rect.to_top_left_origin(
+                        self.dimension.height
+                    )
                 elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
-                    cell_bbox = cell_bbox.to_bottom_left_origin(self.dimension.height)
+                    page_cell.rect = page_cell.rect.to_bottom_left_origin(
+                        self.dimension.height
+                    )
+            cell_bbox = page_cell.to_bounding_box()
             if cell_bbox.intersection_over_self(bbox) > ios:
                 cells.append(page_cell)
-
         return cells
 
     def export_to_dict(self) -> Dict:
