@@ -1264,7 +1264,7 @@ def test_document_manipulation():
     GENERATE: bool = True
 
     image_dir = Path("./test/data/doc/constructed_images/")
-    
+
     doc: DoclingDocument = _construct_doc()
 
     """
@@ -1277,17 +1277,21 @@ def test_document_manipulation():
     filename = Path("test/data/doc/constructed_doc.original.json")
     if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
         doc.save_as_json(
-            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+            filename=_gt_filename(filename=filename),
+            artifacts_dir=image_dir,
+            image_mode=ImageRefMode.EMBEDDED,
         )
     _verify_loaded_output(filename=filename, pred=doc)
-    
+
     refs = [RefItem(cref="#/texts/10")]
     doc.delete_document_items(refs=refs)
 
     filename = Path("test/data/doc/constructed_doc.deleted_text.json")
     if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
         doc.save_as_json(
-            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+            filename=_gt_filename(filename=filename),
+            artifacts_dir=image_dir,
+            image_mode=ImageRefMode.EMBEDDED,
         )
     _verify_loaded_output(filename=filename, pred=doc)
 
@@ -1304,7 +1308,9 @@ def test_document_manipulation():
     filename = Path("test/data/doc/constructed_doc.deleted_group.json")
     if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
         doc.save_as_json(
-            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+            filename=_gt_filename(filename=filename),
+            artifacts_dir=image_dir,
+            image_mode=ImageRefMode.EMBEDDED,
         )
     _verify_loaded_output(filename=filename, pred=doc)
 
@@ -1321,7 +1327,9 @@ def test_document_manipulation():
     filename = Path("test/data/doc/constructed_doc.deleted_table.json")
     if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
         doc.save_as_json(
-            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+            filename=_gt_filename(filename=filename),
+            artifacts_dir=image_dir,
+            image_mode=ImageRefMode.EMBEDDED,
         )
     _verify_loaded_output(filename=filename, pred=doc)
 
@@ -1338,7 +1346,9 @@ def test_document_manipulation():
     filename = Path("test/data/doc/constructed_doc.deleted_picture.json")
     if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
         doc.save_as_json(
-            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+            filename=_gt_filename(filename=filename),
+            artifacts_dir=image_dir,
+            image_mode=ImageRefMode.EMBEDDED,
         )
     _verify_loaded_output(filename=filename, pred=doc)
 
