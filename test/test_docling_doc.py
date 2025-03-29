@@ -34,6 +34,7 @@ from docling_core.types.doc.document import (  # BoundingBox,
     ListItem,
     PictureItem,
     ProvenanceItem,
+    RefItem,
     SectionHeaderItem,
     Size,
     TableCell,
@@ -1144,8 +1145,13 @@ def _verify_saved_output(filename: str, paths: List[Path]):
         assert pred == gt, f"pred!=gt for {filename}"
 
 
-def _verify_loaded_output(filename: str, pred=None):
-    gt = DoclingDocument.load_from_json(Path(str(filename) + ".gt"))
+def _gt_filename(filename: Path) -> Path:
+    return Path(str(filename) + ".gt")
+
+
+def _verify_loaded_output(filename: Path, pred=None):
+    # gt = DoclingDocument.load_from_json(Path(str(filename) + ".gt"))
+    gt = DoclingDocument.load_from_json(_gt_filename(filename=filename))
 
     pred = pred or DoclingDocument.load_from_json(Path(filename))
     assert isinstance(pred, DoclingDocument)
@@ -1249,5 +1255,98 @@ def test_save_to_disk():
         filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED
     )
     _verify_saved_output(filename=filename, paths=paths)
+
+    assert True
+
+
+def test_document_manipulation():
+
+    GENERATE: bool = True
+
+    image_dir = Path("./test/data/doc/constructed_images/")
+    
+    doc: DoclingDocument = _construct_doc()
+
+    """
+    for item, stack in doc.iterate_items_with_stack(with_groups=True):
+        print(item.self_ref, "\t", stack)
+
+    print(doc._export_to_indented_text())
+    """
+
+    filename = Path("test/data/doc/constructed_doc.original.json")
+    if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
+        doc.save_as_json(
+            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+        )
+    _verify_loaded_output(filename=filename, pred=doc)
+    
+    refs = [RefItem(cref="#/texts/10")]
+    doc.delete_document_items(refs=refs)
+
+    filename = Path("test/data/doc/constructed_doc.deleted_text.json")
+    if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
+        doc.save_as_json(
+            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+        )
+    _verify_loaded_output(filename=filename, pred=doc)
+
+    """
+    for item, stack in doc.iterate_items_with_stack(with_groups=True):
+        print(item.self_ref, "\t", stack)
+
+    print(doc._export_to_indented_text())
+    """
+
+    refs = [RefItem(cref="#/groups/1")]
+    doc.delete_document_items(refs=refs)
+
+    filename = Path("test/data/doc/constructed_doc.deleted_group.json")
+    if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
+        doc.save_as_json(
+            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+        )
+    _verify_loaded_output(filename=filename, pred=doc)
+
+    """
+    for item, stack in doc.iterate_items_with_stack(with_groups=True):
+        print(item.self_ref, "\t", stack)
+
+    print(doc._export_to_indented_text())
+    """
+
+    refs = [RefItem(cref="#/tables/1")]
+    doc.delete_document_items(refs=refs)
+
+    filename = Path("test/data/doc/constructed_doc.deleted_table.json")
+    if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
+        doc.save_as_json(
+            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+        )
+    _verify_loaded_output(filename=filename, pred=doc)
+
+    """
+    for item, stack in doc.iterate_items_with_stack(with_groups=True):
+        print(item.self_ref, "\t", stack)
+
+    print(doc._export_to_indented_text())
+    """
+
+    refs = [RefItem(cref="#/pictures/1")]
+    doc.delete_document_items(refs=refs)
+
+    filename = Path("test/data/doc/constructed_doc.deleted_picture.json")
+    if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
+        doc.save_as_json(
+            filename=_gt_filename(filename=filename), artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+        )
+    _verify_loaded_output(filename=filename, pred=doc)
+
+    """
+    for item, stack in doc.iterate_items_with_stack(with_groups=True):
+        print(item.self_ref, "\t", stack)
+
+    print(doc._export_to_indented_text())
+    """
 
     assert True

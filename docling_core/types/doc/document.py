@@ -605,16 +605,66 @@ class NodeItem(BaseModel):
         """get_ref."""
         return RefItem(cref=self.self_ref)
 
-    def delete_child(self, stack: list[int]) -> bool:
-        if len(stack)==1 and stack[0]<len(self.children):
+    def delete_child(self, doc: "DoclingDocument", stack: list[int]) -> bool:
+        """Delete child node in tree."""
+        if len(stack) == 1 and stack[0] < len(self.children):
             del self.children[stack[0]]
             return True
-        elif len(stack)>1 and stack[0]<len(self.children):
-            return self.children.delete_child(stack=stack[1:])
+        elif len(stack) > 1 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item.delete_child(doc=doc, stack=stack[1:])
 
-        # FIXME: should we raise an error here?        
         return False
-        
+
+    def update_child(
+        self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem
+    ) -> bool:
+        """Update child node in tree."""
+        if len(stack) == 1 and stack[0] < len(self.children):
+            self.children[stack[0]] = new_ref
+            return True
+        elif len(stack) > 1 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item.update_child(doc=doc, stack=stack[1:], new_ref=new_ref)
+
+        return False
+
+    def add_child(
+        self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem
+    ) -> bool:
+        """Add child to a child-less node."""
+        if len(stack) == 0 and len(self.children) == 0:
+            self.children.append(new_ref)
+            return True
+        elif len(stack) > 0 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item.add_child(doc=doc, stack=stack[1:], new_ref=new_ref)
+
+        return False
+
+    def insert_child(
+        self,
+        doc: "DoclingDocument",
+        stack: list[int],
+        new_ref: RefItem,
+        prepend: bool = False,
+    ) -> bool:
+        """Insert child node in tree."""
+        if len(stack) == 1 and stack[0] < len(self.children) and prepend:
+            self.children.insert(stack[0], new_ref)
+            return True
+        elif len(stack) == 1 and stack[0] < len(self.children) and (not prepend):
+            self.children.insert(stack[0] + 1, new_ref)
+            return True
+        elif len(stack) > 1 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item.insert_child(
+                doc=doc, stack=stack[1:], new_ref=new_ref, prepend=prepend
+            )
+
+        return False
+
+
 class GroupItem(NodeItem):  # Container type, can't be a leaf node
     """GroupItem."""
 
@@ -1615,90 +1665,103 @@ class DoclingDocument(BaseModel):
     # Delete items method
     ###################################
 
-    def remove_orphans_from_document(self):
-        """Delete items in the document that are not referenced in the tree."""
-        active_items: set[str] = {}
-        for item, level in self.iterate_items():
-            ref = item.get_ref()
-            active_items.insert(ref.cref)
-
-        cnt = 0
-        for item in self.texts:
-            ref = item.get_ref()
-            
-            
-            
-        # delete the item in the document
-        # del self.__getattribute__(path_i)[index_i]        
-
-        # elif len(path_j) == 3 and part_i == part_j and index_j > index_i:
-        # item.self_ref = f"#/{part_i}/{index_j-1}"
-        
-    def delete_document_items(self, refs: list[RefItem], remove_orphans: bool = False):
+    def delete_document_items(self, refs: list[RefItem]) -> bool:
         """Delete document item using the self-reference."""
-        to_be_deleted_items: dict[list[int]: str] = {} # FIXME: list should be a tuple
+        # to_be_deleted_items: dict[tuple, str] = {}  # FIXME: list should be a tuple
+        to_be_deleted_items: dict[tuple[int, ...], str] = {}
 
         # Identify the to_be_deleted_items
-        for node_item, stack in self.iterate_items_with_stack():
-
+        for item, stack in self.iterate_items_with_stack(with_groups=True):
             ref = item.get_ref()
             if ref in refs:
-                to_be_deleted_items[stack] = ref.cref
+                to_be_deleted_items[tuple(stack)] = ref.cref
 
-            substacks = [stack[0:i+1] for i in range(len(stack))]
+            substacks = [stack[0 : i + 1] for i in range(len(stack) - 1)]
             for substack in substacks:
-                if substack in to_be_deleted_items:
-                    to_be_deleted_items[stack] = ref.cref
+                if tuple(substack) in to_be_deleted_items:
+                    to_be_deleted_items[tuple(stack)] = ref.cref
 
-        # Clean the tree
-        for stack, ref in reversed(sorted(to_be_deleted_items.items())):
-            success = self.body.delete_child(stack=stack)
+        if len(to_be_deleted_items) == 0:
+            return False
+
+        # Clean the tree, reverse the order to not have to update
+        for stack_, ref_ in reversed(sorted(to_be_deleted_items.items())):
+            _logger.info(f"deleting item at stack: {stack_}")
+            success = self.body.delete_child(doc=self, stack=list(stack_))
 
             if not success:
-                del to_be_deleted_items[stack]
-                log.warning(f"Could not delete: {ref}")
+                del to_be_deleted_items[stack_]
 
-        # Remove the orphans and update the references
-        
-                
-    def insert_document_item(self, ref: RefItem, item: DocItem):
-        """Insert document item using the self-reference."""
+        # Remove the orphans and create lookup
+        lookup: dict[str, dict[int, int]] = {
+            "texts": {0: 0},
+            "tables": {0: 0},
+            "key_value_items": {0: 0},
+            "form_items": {0: 0},
+            "pictures": {0: 0},
+            "groups": {0: 0},
+        }
 
-        parent: RefItem = RefItem(cref="#")
-        child_ind: int = -1
+        for stack_, ref_ in to_be_deleted_items.items():
+            path = ref_.split("/")
+            if len(path) != 3:
+                continue
 
-        new_ref = RefItem(cref="#")
+            item_label = path[1]
+            item_index = int(path[2])
 
-        if isinstance(item, TextItem):
-            new_ref = RefItem(cref=f"#/texts/{len(self.texts)}")
-            self.texts.append(item)
-        elif isinstance(item, TableItem):
-            new_ref = RefItem(cref=f"#/tables/{len(self.tables)}")
-            self.tables.append(item)
-        elif isinstance(item, PictureItem):
-            new_ref = RefItem(cref=f"#/pictures/{len(self.pictures)}")
-            self.pictures.append(item)
-        elif isinstance(item, FormItem):
-            new_ref = RefItem(cref=f"#/form_items/{len(self.form_items)}")
-            self.key_value_items.append(item)
-        elif isinstance(item, KeyValueItem):
-            new_ref = RefItem(cref=f"#/key_value_items/{len(self.key_value_items)}")
-            self.form_items.append(item)
-        else:
-            raise RuntimeError(f"Unsupported insertion for DocItem of type: {DocItem}")
+            lookup[item_label][item_index] = -1
+            del self.__getattribute__(item_label)[item_index]
 
-        for item, level in self.iterate_items():
+        # Update the references
+        def _update_ref(path: list[str], lookup: dict[str, dict[int, int]]) -> RefItem:
+            if len(path) != 3:
+                raise ValueError(f"Could not update reference for {path}")
 
-            if parent != item.parent:
-                parent = item.parent
-                child_ind = 0
-            else:
-                child_ind += 1
+            item_label = path[1]
+            item_index = int(path[2])
 
-            refitem_j = item.get_ref()
+            delta = sum(
+                val if item_index >= key else 0
+                for key, val in lookup[item_label].items()
+            )
+            new_index = item_index + delta
 
-            if ref.cref == refitem_j.cref:
-                parent.children.insert(new_ref, children_id)
+            return RefItem(cref=f"#/{item_label}/{new_index}")
+
+        def _breadth_width_first(node: NodeItem, lookup: dict[str, dict[int, int]]):
+
+            # Update the captions, references and footnote references
+            if isinstance(node, FloatingItem):
+                for i, caption_ref in enumerate(node.captions):
+                    path = caption_ref.path()
+                    if len(path) == 3:
+                        node.captions[i] = _update_ref(path=path, lookup=lookup)
+
+                for i, reference_ref in enumerate(node.references):
+                    path = reference_ref.path()
+                    if len(path) == 3:
+                        node.references[i] = _update_ref(path=path, lookup=lookup)
+
+                for i, footnote_ref in enumerate(node.footnotes):
+                    path = footnote_ref.path()
+                    if len(path) == 3:
+                        node.footnotes[i] = _update_ref(path=path, lookup=lookup)
+
+            # Update the child references
+            for i, child_ref in enumerate(node.children):
+
+                path = child_ref.path()
+                if len(path) == 3:
+                    node.children[i] = _update_ref(path=path, lookup=lookup)
+
+            for i, child_ref in enumerate(node.children):
+                node = child_ref.resolve(self)
+                _breadth_width_first(node=node, lookup=lookup)
+
+        _breadth_width_first(node=self.body, lookup=lookup)
+
+        return True
 
     ###################################
     # TODO: refactor add* methods below
@@ -2393,7 +2456,9 @@ class DoclingDocument(BaseModel):
         traverse_pictures: bool = False,
         page_no: Optional[int] = None,
         included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
-        _stack: list[int] = [],  # fixed parameter, carries through the node nesting level
+        _stack: list[
+            int
+        ] = [],  # fixed parameter, carries through the node nesting level
     ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
         """iterate_elements.
 
@@ -2431,14 +2496,14 @@ class DoclingDocument(BaseModel):
             return
 
         _stack.append(-1)
-        
+
         # Traverse children
         for child_ind, child_ref in enumerate(root.children):
             _stack[-1] = child_ind
             child = child_ref.resolve(self)
 
             if isinstance(child, NodeItem):
-                yield from self.iterate_items(
+                yield from self.iterate_items_with_stack(
                     child,
                     with_groups=with_groups,
                     traverse_pictures=traverse_pictures,
@@ -2448,7 +2513,7 @@ class DoclingDocument(BaseModel):
                 )
 
         _stack.pop()
-                
+
     def _clear_picture_pil_cache(self):
         """Clear cache storage of all images."""
         for item, level in self.iterate_items(with_groups=False):
