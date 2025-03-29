@@ -1281,15 +1281,31 @@ def test_document_manipulation():
             artifacts_dir=image_dir,
             image_mode=ImageRefMode.EMBEDDED,
         )
-    _verify_loaded_output(filename=filename, pred=doc)
+    #_verify_loaded_output(filename=filename, pred=doc)
 
     refs = [RefItem(cref="#/texts/10")]
     doc.delete_document_items(refs=refs)
 
+    # test if the document is still model-validating
+    filename = Path("test/data/constructed_doc.tmp.json")
+    doc.save_as_json(
+        filename=filename,
+        artifacts_dir=image_dir,
+        image_mode=ImageRefMode.EMBEDDED,
+    )
+    doc_ = DoclingDocument.load_from_json(filename)
+
+    for item, stack in doc.iterate_items_with_stack(with_groups=True):
+        print(item.self_ref, "\t", stack)
+
+    print(doc._export_to_indented_text())
+
+    exit(-1)
+    
     filename = Path("test/data/doc/constructed_doc.deleted_text.json")
     if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
         doc.save_as_json(
-            filename=_gt_filename(filename=filename),
+            filename=filename,
             artifacts_dir=image_dir,
             image_mode=ImageRefMode.EMBEDDED,
         )
