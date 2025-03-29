@@ -1753,7 +1753,7 @@ class DoclingDocument(BaseModel):
                 path = node.parent.path()
                 if len(path) == 3:
                     node.parent = _update_ref(path=path, lookup=lookup)
-            
+
             # Update the parent reference
             if node.self_ref is not None:
                 path = node.self_ref.split("/")
@@ -1761,7 +1761,7 @@ class DoclingDocument(BaseModel):
                     _ref = _update_ref(path=path, lookup=lookup)
                     print(node.self_ref, " => ", _ref.cref)
                     node.self_ref = _ref.cref
-                    
+
             # Update the child references
             for i, child_ref in enumerate(node.children):
 
