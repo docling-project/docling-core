@@ -1665,7 +1665,7 @@ class DoclingDocument(BaseModel):
     # Delete items method
     ###################################
 
-    def delete_document_items(self, refs: list[RefItem]) -> bool:
+    def delete_items(self, refs: list[RefItem]) -> bool:
         """Delete document item using the self-reference."""
         # to_be_deleted_items: dict[tuple, str] = {}  # FIXME: list should be a tuple
         to_be_deleted_items: dict[tuple[int, ...], str] = {}
@@ -1686,96 +1686,139 @@ class DoclingDocument(BaseModel):
 
         # Clean the tree, reverse the order to not have to update
         for stack_, ref_ in reversed(sorted(to_be_deleted_items.items())):
-            _logger.info(f"deleting item at stack: {stack_}")
             success = self.body.delete_child(doc=self, stack=list(stack_))
 
             if not success:
                 del to_be_deleted_items[stack_]
+            else:
+                print(f"deleted item in tree at stack: {stack_} => {ref_}")
 
-        # Remove the orphans and create lookup
-        lookup: dict[str, dict[int, int]] = {
-            "texts": {0: 0},
-            "tables": {0: 0},
-            "key_value_items": {0: 0},
-            "form_items": {0: 0},
-            "pictures": {0: 0},
-            "groups": {0: 0},
-        }
+        # Create a new lookup of the orphans
+        lookup: dict[str, dict[int, int]] = {}
 
         for stack_, ref_ in to_be_deleted_items.items():
             path = ref_.split("/")
-            if len(path) != 3:
-                continue
+            if len(path) == 3:
 
-            item_label = path[1]
-            item_index = int(path[2])
+                item_label = path[1]
+                item_index = int(path[2])
 
-            lookup[item_label][item_index] = -1
-            del self.__getattribute__(item_label)[item_index]
+                if item_label not in lookup:
+                    lookup[item_label] = {}
 
-        # Update the references
-        def _update_ref(path: list[str], lookup: dict[str, dict[int, int]]) -> RefItem:
-            if len(path) != 3:
-                raise ValueError(f"Could not update reference for {path}")
+                lookup[item_label][item_index] = -1
 
-            item_label = path[1]
-            item_index = int(path[2])
+        # Remove the orphans in reverse order
+        for item_label, item_inds in lookup.items():
+            for item_index, val in reversed(
+                sorted(item_inds.items())
+            ):  # make sure you delete the last in the list first!
+                print(f"deleting item in doc for {item_label} for {item_index}")
+                del self.__getattribute__(item_label)[item_index]
 
-            delta = sum(
-                val if item_index >= key else 0
-                for key, val in lookup[item_label].items()
-            )
-            new_index = item_index + delta
-
-            return RefItem(cref=f"#/{item_label}/{new_index}")
-
-        def _breadth_width_first(node: NodeItem, lookup: dict[str, dict[int, int]]):
-
-            # Update the captions, references and footnote references
-            if isinstance(node, FloatingItem):
-                for i, caption_ref in enumerate(node.captions):
-                    path = caption_ref.path()
-                    if len(path) == 3:
-                        node.captions[i] = _update_ref(path=path, lookup=lookup)
-
-                for i, reference_ref in enumerate(node.references):
-                    path = reference_ref.path()
-                    if len(path) == 3:
-                        node.references[i] = _update_ref(path=path, lookup=lookup)
-
-                for i, footnote_ref in enumerate(node.footnotes):
-                    path = footnote_ref.path()
-                    if len(path) == 3:
-                        node.footnotes[i] = _update_ref(path=path, lookup=lookup)
-
-            # Update the self_ref reference
-            if node.parent is not None:
-                path = node.parent.path()
-                if len(path) == 3:
-                    node.parent = _update_ref(path=path, lookup=lookup)
-
-            # Update the parent reference
-            if node.self_ref is not None:
-                path = node.self_ref.split("/")
-                if len(path) == 3:
-                    _ref = _update_ref(path=path, lookup=lookup)
-                    print(node.self_ref, " => ", _ref.cref)
-                    node.self_ref = _ref.cref
-
-            # Update the child references
-            for i, child_ref in enumerate(node.children):
-
-                path = child_ref.path()
-                if len(path) == 3:
-                    node.children[i] = _update_ref(path=path, lookup=lookup)
-
-            for i, child_ref in enumerate(node.children):
-                node = child_ref.resolve(self)
-                _breadth_width_first(node=node, lookup=lookup)
-
-        _breadth_width_first(node=self.body, lookup=lookup)
+        self._update_breadth_first_with_lookup(
+            node=self.body, refs_to_be_deleted=refs, lookup=lookup
+        )
 
         return True
+
+    # Update the references
+    def _update_ref_with_lookup(
+        self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]
+    ) -> RefItem:
+        """Update ref with lookup."""
+        if item_label not in lookup:  # Nothing to be done
+            return RefItem(cref=f"#/{item_label}/{item_index}")
+
+        # Count how many items have been deleted in front of you
+        delta = sum(
+            val if item_index >= key else 0 for key, val in lookup[item_label].items()
+        )
+        new_index = item_index + delta
+
+        return RefItem(cref=f"#/{item_label}/{new_index}")
+
+    def _update_refitems_with_lookup(
+        self,
+        ref_items: list[RefItem],
+        refs_to_be_deleted: list[RefItem],
+        lookup: dict[str, dict[int, int]],
+    ) -> list[RefItem]:
+        """Update refitems with lookup."""
+        new_refitems = []
+        for ref_item in ref_items:
+
+            if (
+                ref_item not in refs_to_be_deleted
+            ):  # if ref_item is in ref, then delete/skip them
+                path = ref_item.path()
+                if len(path) == 3:
+                    new_refitems.append(
+                        self._update_ref_with_lookup(
+                            item_label=path[1],
+                            item_index=int(path[2]),
+                            lookup=lookup,
+                        )
+                    )
+                else:
+                    new_refitems.append(ref_item)
+
+        return new_refitems
+
+    def _update_breadth_first_with_lookup(
+        self,
+        node: NodeItem,
+        refs_to_be_deleted: list[RefItem],
+        lookup: dict[str, dict[int, int]],
+    ):
+        """Update breadth first with lookup."""
+        # Update the captions, references and footnote references
+        if isinstance(node, FloatingItem):
+            node.captions = self._update_refitems_with_lookup(
+                ref_items=node.captions,
+                refs_to_be_deleted=refs_to_be_deleted,
+                lookup=lookup,
+            )
+            node.references = self._update_refitems_with_lookup(
+                ref_items=node.references,
+                refs_to_be_deleted=refs_to_be_deleted,
+                lookup=lookup,
+            )
+            node.footnotes = self._update_refitems_with_lookup(
+                ref_items=node.footnotes,
+                refs_to_be_deleted=refs_to_be_deleted,
+                lookup=lookup,
+            )
+
+        # Update the self_ref reference
+        if node.parent is not None:
+            path = node.parent.path()
+            if len(path) == 3:
+                node.parent = self._update_ref_with_lookup(
+                    item_label=path[1], item_index=int(path[2]), lookup=lookup
+                )
+
+        # Update the parent reference
+        if node.self_ref is not None:
+            path = node.self_ref.split("/")
+            if len(path) == 3:
+                _ref = self._update_ref_with_lookup(
+                    item_label=path[1], item_index=int(path[2]), lookup=lookup
+                )
+                node.self_ref = _ref.cref
+
+        # Update the child references
+        node.children = self._update_refitems_with_lookup(
+            ref_items=node.children,
+            refs_to_be_deleted=refs_to_be_deleted,
+            lookup=lookup,
+        )
+
+        for i, child_ref in enumerate(node.children):
+            node = child_ref.resolve(self)
+            self._update_breadth_first_with_lookup(
+                node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup
+            )
 
     ###################################
     # TODO: refactor add* methods below
