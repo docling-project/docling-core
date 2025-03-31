@@ -605,6 +605,18 @@ class NodeItem(BaseModel):
         """get_ref."""
         return RefItem(cref=self.self_ref)
 
+    def get_parent_ref(
+        self, doc: "DoclingDocument", stack: list[int]
+    ) -> Optional[RefItem]:
+        """get_parent_ref."""
+        if len(stack) == 0:
+            return self.parent
+        elif len(stack) > 1 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item.get_parent_ref(doc=doc, stack=stack[1:])
+
+        return None
+
     def delete_child(self, doc: "DoclingDocument", stack: list[int]) -> bool:
         """Delete child node in tree."""
         if len(stack) == 1 and stack[0] < len(self.children):
@@ -642,25 +654,23 @@ class NodeItem(BaseModel):
 
         return False
 
-    def insert_child(
+    def add_sibling(
         self,
         doc: "DoclingDocument",
         stack: list[int],
-        new_ref: RefItem,
-        prepend: bool = False,
+        ref: RefItem,
+        after: bool = True,
     ) -> bool:
-        """Insert child node in tree."""
-        if len(stack) == 1 and stack[0] < len(self.children) and prepend:
-            self.children.insert(stack[0], new_ref)
+        """Add sibling node in tree."""
+        if len(stack) == 1 and stack[0] < len(self.children) and (not after):
+            self.children.insert(stack[0], ref)
             return True
-        elif len(stack) == 1 and stack[0] < len(self.children) and (not prepend):
-            self.children.insert(stack[0] + 1, new_ref)
+        elif len(stack) == 1 and stack[0] < len(self.children) and (after):
+            self.children.insert(stack[0] + 1, ref)
             return True
         elif len(stack) > 1 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
-            return item.insert_child(
-                doc=doc, stack=stack[1:], new_ref=new_ref, prepend=prepend
-            )
+            return item.add_sibling(doc=doc, stack=stack[1:], ref=ref, after=after)
 
         return False
 
@@ -1662,12 +1672,106 @@ class DoclingDocument(BaseModel):
         return data
 
     ###################################
-    # Delete items method
+    # Manipulation methods
     ###################################
+
+    def get_stack_of_refitem(self, ref: RefItem) -> tuple[bool, list[int]]:
+        """Find the stack indices of the reference."""
+        for item, stack in self.iterate_items_with_stack(with_groups=True):
+            if ref == item.get_ref():
+                return (True, stack)
+
+        return (False, [])
+
+    def insert_item(self, item: NodeItem, stack: list[int], after: bool) -> bool:
+        """Delete document item using the self-reference."""
+        parent_ref = self.body.get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            return False
+
+        if isinstance(item, TextItem):
+            item_label = "texts"
+            item_index = len(self.texts)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.texts.append(item)
+
+        elif isinstance(item, TableItem):
+            item_label = "tables"
+            item_index = len(self.tables)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.tables.append(item)
+
+        elif isinstance(item, PictureItem):
+            item_label = "pictures"
+            item_index = len(self.pictures)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.pictures.append(item)
+
+        elif isinstance(item, KeyValueItem):
+            item_label = "key_value_items"
+            item_index = len(self.key_value_items)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.key_value_items.append(item)
+
+        elif isinstance(item, FormItem):
+            item_label = "form_items"
+            item_index = len(self.form_items)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.form_items.append(item)
+        else:
+            _logger.error(f"Could not insert item: {item}")
+            return False
+
+        body_ref = self.body.get_ref()
+        success = body_ref.insert_sibling(
+            doc=self, stack=stack, ref=item.get_ref(), after=after
+        )
+
+        if not succes:
+            if isinstance(item, TextItem):
+                self.texts.pop()
+            elif isinstance(item, TableItem):
+                self.tables.pop()
+            elif isinstance(item, PictureItem):
+                self.pictures.pop()
+            elif isinstance(item, KeyValueItem):
+                self.key_value_items.pop()                
+            elif isinstance(item, FormItem):
+                self.form_items.pop()
+            else:
+                _logger.error(f"Could not pop item: {item}")
+                return False
+            
+        return success
 
     def delete_items(self, refs: list[RefItem]) -> bool:
         """Delete document item using the self-reference."""
-        # to_be_deleted_items: dict[tuple, str] = {}  # FIXME: list should be a tuple
         to_be_deleted_items: dict[tuple[int, ...], str] = {}
 
         # Identify the to_be_deleted_items
@@ -1691,7 +1795,7 @@ class DoclingDocument(BaseModel):
             if not success:
                 del to_be_deleted_items[stack_]
             else:
-                print(f"deleted item in tree at stack: {stack_} => {ref_}")
+                _logger.info(f"deleted item in tree at stack: {stack_} => {ref_}")
 
         # Create a new lookup of the orphans
         lookup: dict[str, dict[int, int]] = {}

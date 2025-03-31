@@ -1275,15 +1275,15 @@ def test_document_manipulation():
     """
 
     filename = Path("test/data/doc/constructed_doc.original.json")
-    if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
-        doc.save_as_json(
-            filename=_gt_filename(filename=filename),
-            artifacts_dir=image_dir,
-            image_mode=ImageRefMode.EMBEDDED,
-        )
+    #if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
+    doc.save_as_json(
+        filename=_gt_filename(filename=filename),
+        artifacts_dir=image_dir,
+        image_mode=ImageRefMode.EMBEDDED,
+    )
     # test if the document is still model-validating
     DoclingDocument.load_from_json(filename=_gt_filename(filename=filename))
-    # _verify_loaded_output(filename=filename, pred=doc)
+    _verify_loaded_output(filename=filename, pred=doc)
 
     refs = [RefItem(cref="#/texts/10")]
     doc.delete_items(refs=refs)
