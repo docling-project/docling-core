@@ -1734,22 +1734,27 @@ class DoclingDocument(BaseModel):
     # Manipulation methods
     ###################################
 
-    def get_stack_of_refitem(self, ref: RefItem, _stack: list[int] = []) -> tuple[bool, list[int]]:
+    def get_stack_of_refitem(self, ref: RefItem) -> tuple[bool, list[int]]:
         """Find the stack indices of the reference."""
-        if ref==self.body.get_ref():
-            return (True, _stack)
-        
-        parent_ref = ref.get_parent_ref(doc=self, stack=[])
+        if ref == self.body.get_ref():
+            return (True, [])
+
+        node = ref.resolve(doc=self)
+        parent_ref = node.get_parent_ref(doc=self, stack=[])
 
         if parent_ref is None:
             return (False, [])
 
+        stack: list[int] = []
         while parent_ref is not None:
-            _stack.prepend(parent_ref.children.index(ref))
-            parent_ref = parent_ref.get_parent_ref(doc=self, stack=[])
+            parent = parent_ref.resolve(doc=self)
 
-        return (True, _stack)
-        
+            index = parent.children.index(ref)
+            stack.insert(0, index)  # prepend the index
+            parent_ref = parent.get_parent_ref(doc=self, stack=[])
+
+        return (True, stack)
+
         """
         for item, stack in self.iterate_items_with_stack(with_groups=True):
             if ref == item.get_ref():
@@ -1757,7 +1762,7 @@ class DoclingDocument(BaseModel):
 
         return (False, [])
         """
-        
+
     def insert_item(self, item: NodeItem, stack: list[int], after: bool) -> bool:
         """Delete document item using the self-reference."""
         parent_ref = self.body.get_parent_ref(doc=self, stack=stack)
@@ -1823,8 +1828,7 @@ class DoclingDocument(BaseModel):
             _logger.error(f"Could not insert item: {item}")
             return False
 
-        body_ref = self.body.get_ref()
-        success = body_ref.add_sibling(
+        success = self.body.add_sibling(
             doc=self, stack=stack, ref=item.get_ref(), after=after
         )
 
@@ -1892,7 +1896,8 @@ class DoclingDocument(BaseModel):
             for item_index, val in reversed(
                 sorted(item_inds.items())
             ):  # make sure you delete the last in the list first!
-                print(f"deleting item in doc for {item_label} for {item_index}")
+                # print(f"deleting item in doc for {item_label} for {item_index}")
+                _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
         self._update_breadth_first_with_lookup(
