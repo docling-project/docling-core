@@ -1,3 +1,31 @@
+## [v2.24.1](https://github.com/docling-project/docling-core/releases/tag/v2.24.1) - 2025-03-28
+
+### Fix
+
+* Automatic transformation of output cells bbox coord origin defined by input in get_cells_in_bbox ([#219](https://github.com/docling-project/docling-core/issues/219)) ([`8e0e9b7`](https://github.com/docling-project/docling-core/commit/8e0e9b72bf04fe4605ccfcbb1ec463e5fce87694))
+
+## [v2.24.0](https://github.com/docling-project/docling-core/releases/tag/v2.24.0) - 2025-03-25
+
+### Feature
+
+* Expose MD page break & DocTags minification ([#213](https://github.com/docling-project/docling-core/issues/213)) ([`ff13a93`](https://github.com/docling-project/docling-core/commit/ff13a9385d91b51f3c01b6cfbde72a1d5ce7c4c9))
+* Add document tokens from key value items ([#170](https://github.com/docling-project/docling-core/issues/170)) ([`db119f4`](https://github.com/docling-project/docling-core/commit/db119f46655f9b75bc55dd068b2c219ed2ff4332))
+* Add DocTags serializers ([#192](https://github.com/docling-project/docling-core/issues/192)) ([`1f4d57e`](https://github.com/docling-project/docling-core/commit/1f4d57ed187c2b5e0a66e96e192ff985ab6e5c05))
+* Add kv_item support for doctag to docling_document ([#188](https://github.com/docling-project/docling-core/issues/188)) ([`2371c11`](https://github.com/docling-project/docling-core/commit/2371c11b8f74628169a9bb377036511235070af0))
+
+### Fix
+
+* Enable caption serialization for all floating items ([#216](https://github.com/docling-project/docling-core/issues/216)) ([`e1d0597`](https://github.com/docling-project/docling-core/commit/e1d0597338aa2a9f2c2500484556b31ff649198d))
+* Allow captions without holding item ([#215](https://github.com/docling-project/docling-core/issues/215)) ([`2efb71a`](https://github.com/docling-project/docling-core/commit/2efb71a0ca16d408ec6bc817d967688444c13a7e))
+* Add 'text/csv' mimetype to _extra_mimetypes type list ([#210](https://github.com/docling-project/docling-core/issues/210)) ([`bc3f5d5`](https://github.com/docling-project/docling-core/commit/bc3f5d57c39a47007beca2c11008de058a65243d))
+* Add handling for str filenames in save/load methods ([#205](https://github.com/docling-project/docling-core/issues/205)) ([`75d94ab`](https://github.com/docling-project/docling-core/commit/75d94abc3189278679a7661926218c19b00345f8))
+* Markdown picture item export ([#207](https://github.com/docling-project/docling-core/issues/207)) ([`510649e`](https://github.com/docling-project/docling-core/commit/510649e51a7b3eec2640958f4217fac4c6da7514))
+* DocTags support of furniture ([#209](https://github.com/docling-project/docling-core/issues/209)) ([`337ff74`](https://github.com/docling-project/docling-core/commit/337ff74dae59bab8742abc4fe449462a42f42d5b))
+
+### Performance
+
+* **serialization:** Cache excluded references ([#214](https://github.com/docling-project/docling-core/issues/214)) ([`bcace5d`](https://github.com/docling-project/docling-core/commit/bcace5df9f0fea901580c65c9eb5f80affb51b75))
+
 ## [v2.23.3](https://github.com/docling-project/docling-core/releases/tag/v2.23.3) - 2025-03-19
 
 ### Fix

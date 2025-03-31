@@ -7,10 +7,11 @@
 import sys
 from abc import abstractmethod
 from copy import deepcopy
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, NonNegativeInt
+from pydantic import AnyUrl, BaseModel, NonNegativeInt, computed_field
 from typing_extensions import Self, override
 
 from docling_core.experimental.serializer.base import (
@@ -94,38 +95,58 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     params: CommonParams = CommonParams()
 
-    # TODO add cache based on start-stop params
+    _excluded_refs_cache: dict[str, list[str]] = {}
+
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    def _captions_of_some_item(self) -> set[str]:
+        layers = {cl for cl in ContentLayer}  # TODO review
+        refs = {
+            cap.cref
+            for (item, _) in self.doc.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers=layers,
+            )
+            for cap in (item.captions if isinstance(item, FloatingItem) else [])
+        }
+        return refs
+
     @override
     def get_excluded_refs(self, **kwargs) -> list[str]:
         """References to excluded items."""
         params = self.params.merge_with_patch(patch=kwargs)
-        refs: list[str] = [
-            item.self_ref
-            for ix, (item, _) in enumerate(
-                self.doc.iterate_items(
-                    with_groups=True,
-                    traverse_pictures=True,
-                    included_content_layers=params.layers,
+        params_json = params.model_dump_json()
+        refs = self._excluded_refs_cache.get(params_json)
+        if refs is None:
+            refs = [
+                item.self_ref
+                for ix, (item, _) in enumerate(
+                    self.doc.iterate_items(
+                        with_groups=True,
+                        traverse_pictures=True,
+                        included_content_layers=params.layers,
+                    )
                 )
-            )
-            if (
-                (ix < params.start_idx or ix >= params.stop_idx)
-                or (
-                    isinstance(item, DocItem)
-                    and (
-                        item.label not in params.labels
-                        or item.content_layer not in params.layers
-                        or (
-                            params.pages is not None
-                            and (
-                                (not item.prov)
-                                or item.prov[0].page_no not in params.pages
+                if (
+                    (ix < params.start_idx or ix >= params.stop_idx)
+                    or (
+                        isinstance(item, DocItem)
+                        and (
+                            item.label not in params.labels
+                            or item.content_layer not in params.layers
+                            or (
+                                params.pages is not None
+                                and (
+                                    (not item.prov)
+                                    or item.prov[0].page_no not in params.pages
+                                )
                             )
                         )
                     )
                 )
-            )
-        ]
+            ]
+            self._excluded_refs_cache[params_json] = refs
         return refs
 
     @abstractmethod
@@ -196,11 +217,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             else:
                 return empty_res
 
-        label_blocklist = {
-            # captions only considered in context of floating items (pictures, tables)
-            DocItemLabel.CAPTION,
-        }
-
         ########
         # groups
         ########
@@ -226,20 +242,22 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         ###########
         # doc items
         ###########
-        elif isinstance(item, DocItem) and item.label in label_blocklist:
-            return empty_res
         elif isinstance(item, TextItem):
-            part = (
-                self.text_serializer.serialize(
-                    item=item,
-                    doc_serializer=self,
-                    doc=self.doc,
-                    is_inline_scope=is_inline_scope,
-                    **kwargs,
+            if item.self_ref in self._captions_of_some_item:
+                # those captions will be handled by the floating item holding them
+                return empty_res
+            else:
+                part = (
+                    self.text_serializer.serialize(
+                        item=item,
+                        doc_serializer=self,
+                        doc=self.doc,
+                        is_inline_scope=is_inline_scope,
+                        **kwargs,
+                    )
+                    if item.self_ref not in self.get_excluded_refs(**kwargs)
+                    else empty_res
                 )
-                if item.self_ref not in self.get_excluded_refs(**kwargs)
-                else empty_res
-            )
         elif isinstance(item, TableItem):
             part = self.table_serializer.serialize(
                 item=item,

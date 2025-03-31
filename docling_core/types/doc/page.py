@@ -1,5 +1,6 @@
 """Datastructures for PaginatedDocument."""
 
+import copy
 import json
 import logging
 import math
@@ -530,10 +531,16 @@ class SegmentedPdfPage(SegmentedPage):
         """
         cells = []
         for page_cell in self.iterate_cells(cell_unit):
-            cell_bbox = page_cell.to_bounding_box()
+            pc = copy.deepcopy(page_cell)
+            # Bring cell_bbox coord origin to the same as input bbox.coord_origin:
+            if page_cell.rect.coord_origin != bbox.coord_origin:
+                if bbox.coord_origin == CoordOrigin.TOPLEFT:
+                    pc.rect = pc.rect.to_top_left_origin(self.dimension.height)
+                elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
+                    pc.rect = pc.rect.to_bottom_left_origin(self.dimension.height)
+            cell_bbox = pc.to_bounding_box()
             if cell_bbox.intersection_over_self(bbox) > ios:
-                cells.append(page_cell)
-
+                cells.append(pc)
         return cells
 
     def export_to_dict(self) -> Dict:

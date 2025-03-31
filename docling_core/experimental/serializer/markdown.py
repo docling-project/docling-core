@@ -33,6 +33,7 @@ from docling_core.types.doc.document import (
     ContentLayer,
     DocItem,
     DoclingDocument,
+    FloatingItem,
     Formatting,
     FormItem,
     FormulaItem,
@@ -77,37 +78,46 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = MarkdownParams(**kwargs)
+        parts: list[str] = []
         escape_html = True
         escape_underscores = True
         if isinstance(item, TitleItem):
-            res = f"# {item.text}"
+            text = f"# {item.text}"
         elif isinstance(item, SectionHeaderItem):
-            res = f"{(item.level + 1) * '#'} {item.text}"
+            text = f"{(item.level + 1) * '#'} {item.text}"
         elif isinstance(item, CodeItem):
-            res = f"`{item.text}`" if is_inline_scope else f"```\n{item.text}\n```"
+            text = f"`{item.text}`" if is_inline_scope else f"```\n{item.text}\n```"
             escape_html = False
             escape_underscores = False
         elif isinstance(item, FormulaItem):
             if item.text:
-                res = f"${item.text}$" if is_inline_scope else f"$${item.text}$$"
+                text = f"${item.text}$" if is_inline_scope else f"$${item.text}$$"
             elif item.orig:
-                res = "<!-- formula-not-decoded -->"
+                text = "<!-- formula-not-decoded -->"
             else:
-                res = ""
+                text = ""
             escape_html = False
             escape_underscores = False
         elif params.wrap_width:
-            res = textwrap.fill(item.text, width=params.wrap_width)
+            text = textwrap.fill(item.text, width=params.wrap_width)
         else:
-            res = item.text
-        res = doc_serializer.post_process(
-            text=res,
+            text = item.text
+        parts.append(text)
+
+        if isinstance(item, FloatingItem):
+            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+            if cap_text:
+                parts.append(cap_text)
+
+        text_res = (" " if is_inline_scope else "\n\n").join(parts)
+        text_res = doc_serializer.post_process(
+            text=text_res,
             escape_html=escape_html,
             escape_underscores=escape_underscores,
             formatting=item.formatting,
             hyperlink=item.hyperlink,
         )
-        return SerializationResult(text=res)
+        return SerializationResult(text=text_res)
 
 
 class MarkdownTableSerializer(BaseTableSerializer):
