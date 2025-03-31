@@ -543,7 +543,7 @@ class DocTagsDocument(BaseModel):
     @classmethod
     def from_doctags_and_image_pairs(
         cls,
-        doctags: List[Union[Path, str]],
+        doctags: typing.Sequence[Union[Path, str]],
         images: Optional[List[Union[Path, PILImage.Image]]],
     ):
         """from_doctags_and_image_pairs."""
@@ -551,23 +551,23 @@ class DocTagsDocument(BaseModel):
             raise ValueError("Number of page doctags must be equal to page images!")
         doctags_doc = cls()
 
-        imgs: List[Optional[Union[Path, PILImage.Image]]] = (
-            typing.cast(List[Optional[Union[Path, PILImage.Image]]], images)
-            if images is not None
-            else [None] * len(doctags)
-        )
         pages = []
-        for dt, img in zip(doctags, imgs):
+
+        for ix, dt in enumerate(doctags):
             if isinstance(dt, Path):
                 with dt.open("r") as fp:
                     dt = fp.read()
             elif isinstance(dt, str):
                 pass
 
-            if isinstance(img, Path):
-                img = PILImage.open(img)
-            elif isinstance(img, PILImage.Image):
-                pass
+            img = None
+            if images is not None:
+                img = images[ix]
+
+                if isinstance(img, Path):
+                    img = PILImage.open(img)
+                elif isinstance(img, PILImage.Image):
+                    pass
 
             page = DocTagsPage(tokens=dt, image=img)
             pages.append(page)
@@ -590,10 +590,9 @@ class DocTagsDocument(BaseModel):
             .removesuffix(f"</{DocumentToken.DOCUMENT.value}>")
             .split(f"<{DocumentToken.PAGE_BREAK.value}>")
         )
-        dt_list_stripped = typing.cast(
-            list[Union[Path, str]], [pg.strip() for pg in dt_list]
-        )
-        return cls.from_doctags_and_image_pairs(dt_list_stripped, images)
+        dt_list = [el.strip() for el in dt_list]
+
+        return cls.from_doctags_and_image_pairs(dt_list, images)
 
 
 class ProvenanceItem(BaseModel):
