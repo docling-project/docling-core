@@ -1741,35 +1741,39 @@ class DoclingDocument(BaseModel):
 
         node = ref.resolve(doc=self)
         parent_ref = node.get_parent_ref(doc=self, stack=[])
-        
+
         if parent_ref is None:
             return (False, [])
 
         stack: list[int] = []
         while parent_ref is not None:
             parent = parent_ref.resolve(doc=self)
-                    
+
             index = parent.children.index(node.get_ref())
             stack.insert(0, index)  # prepend the index
 
             node = parent
             parent_ref = node.get_parent_ref(doc=self, stack=[])
-            
+
         return (True, stack)
 
-    def insert_item_at_refitem(self, item: NodeItem, ref: RefItem, after: bool) -> RefItem:
+    def insert_item_at_refitem(
+        self, item: NodeItem, ref: RefItem, after: bool
+    ) -> RefItem:
         """Insert node-item using the self-reference."""
         success, stack = self.get_stack_of_refitem(ref=ref)
-        
+
         if not success:
-            raise ValueError(f"Could not insert at {ref.cref}: could not find the stack")
+            raise ValueError(
+                f"Could not insert at {ref.cref}: could not find the stack"
+            )
 
         return self.insert_item(item=item, stack=stack, after=after)
-        
+
     def insert_item(self, item: NodeItem, stack: list[int], after: bool) -> RefItem:
         """Insert node-item using the self-reference."""
         parent_ref = self.body.get_parent_ref(doc=self, stack=stack)
-        
+
         if parent_ref is None:
             raise ValueError(f"Could not find a parent at stack: {stack}")
 
@@ -1828,8 +1832,7 @@ class DoclingDocument(BaseModel):
 
             self.form_items.append(item)
         else:
-            _logger.error(f"Could not insert item: {item}")
-            return False
+            raise ValueError(f"Item {item} is not supported for insertion")
 
         success = self.body.add_sibling(
             doc=self, stack=stack, ref=item.get_ref(), after=after
@@ -1849,7 +1852,7 @@ class DoclingDocument(BaseModel):
             else:
                 _logger.error(f"Could not pop item: {item}")
 
-            raise ValueError(f"Failed to add sibling")
+            raise ValueError(f"Failed to add sibling for item: {item}")
 
         return item.get_ref()
 
