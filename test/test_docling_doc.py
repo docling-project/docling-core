@@ -1275,7 +1275,7 @@ def test_document_manipulation():
     """
 
     filename = Path("test/data/doc/constructed_doc.original.json")
-    #if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
+    # if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
     doc.save_as_json(
         filename=_gt_filename(filename=filename),
         artifacts_dir=image_dir,

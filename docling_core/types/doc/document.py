@@ -1675,14 +1675,30 @@ class DoclingDocument(BaseModel):
     # Manipulation methods
     ###################################
 
-    def get_stack_of_refitem(self, ref: RefItem) -> tuple[bool, list[int]]:
+    def get_stack_of_refitem(self, ref: RefItem, _stack: list[int] = []) -> tuple[bool, list[int]]:
         """Find the stack indices of the reference."""
+        if ref==self.body.get_ref():
+            return (True, _stack)
+        
+        parent_ref = ref.get_parent_ref(doc=self, stack=[])
+
+        if parent_ref is None:
+            return (False, [])
+
+        while parent_ref is not None:
+            _stack.prepend(parent_ref.children.index(ref))
+            parent_ref = parent_ref.get_parent_ref(doc=self, stack=[])
+
+        return (True, _stack)
+        
+        """
         for item, stack in self.iterate_items_with_stack(with_groups=True):
             if ref == item.get_ref():
                 return (True, stack)
 
         return (False, [])
-
+        """
+        
     def insert_item(self, item: NodeItem, stack: list[int], after: bool) -> bool:
         """Delete document item using the self-reference."""
         parent_ref = self.body.get_parent_ref(doc=self, stack=stack)
@@ -1749,11 +1765,11 @@ class DoclingDocument(BaseModel):
             return False
 
         body_ref = self.body.get_ref()
-        success = body_ref.insert_sibling(
+        success = body_ref.add_sibling(
             doc=self, stack=stack, ref=item.get_ref(), after=after
         )
 
-        if not succes:
+        if not success:
             if isinstance(item, TextItem):
                 self.texts.pop()
             elif isinstance(item, TableItem):
@@ -1761,13 +1777,13 @@ class DoclingDocument(BaseModel):
             elif isinstance(item, PictureItem):
                 self.pictures.pop()
             elif isinstance(item, KeyValueItem):
-                self.key_value_items.pop()                
+                self.key_value_items.pop()
             elif isinstance(item, FormItem):
                 self.form_items.pop()
             else:
                 _logger.error(f"Could not pop item: {item}")
                 return False
-            
+
         return success
 
     def delete_items(self, refs: list[RefItem]) -> bool:
