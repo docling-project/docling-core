@@ -151,6 +151,12 @@
           "$ref": "#/texts/9"
         },
         {
+          "$ref": "#/texts/50"
+        },
+        {
+          "$ref": "#/texts/51"
+        },
+        {
           "$ref": "#/texts/10"
         }
       ],
@@ -1100,6 +1106,34 @@
       "prov": [],
       "orig": "The end.",
       "text": "The end."
+    },
+    {
+      "self_ref": "#/texts/50",
+      "parent": {
+        "$ref": "#/groups/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "new list item (before)",
+      "text": "new list item (before)",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/51",
+      "parent": {
+        "$ref": "#/groups/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "new list item (after)",
+      "text": "new list item (after)",
+      "enumerated": false,
+      "marker": "-"
     }
   ],
   "pictures": [

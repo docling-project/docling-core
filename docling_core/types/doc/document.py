@@ -612,7 +612,7 @@ class NodeItem(BaseModel):
         """get_parent_ref."""
         if len(stack) == 0:
             return self.parent
-        elif len(stack) > 1 and stack[0] < len(self.children):
+        elif len(stack) > 0 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
             return item.get_parent_ref(doc=doc, stack=stack[1:])
 
@@ -1741,34 +1741,37 @@ class DoclingDocument(BaseModel):
 
         node = ref.resolve(doc=self)
         parent_ref = node.get_parent_ref(doc=self, stack=[])
-
+        
         if parent_ref is None:
             return (False, [])
 
         stack: list[int] = []
         while parent_ref is not None:
             parent = parent_ref.resolve(doc=self)
-
-            index = parent.children.index(ref)
+                    
+            index = parent.children.index(node.get_ref())
             stack.insert(0, index)  # prepend the index
-            parent_ref = parent.get_parent_ref(doc=self, stack=[])
 
+            node = parent
+            parent_ref = node.get_parent_ref(doc=self, stack=[])
+            
         return (True, stack)
 
-        """
-        for item, stack in self.iterate_items_with_stack(with_groups=True):
-            if ref == item.get_ref():
-                return (True, stack)
+    def insert_item_at_refitem(self, item: NodeItem, ref: RefItem, after: bool) -> RefItem:
+        """Insert node-item using the self-reference."""
+        success, stack = self.get_stack_of_refitem(ref=ref)
+        
+        if not success:
+            raise ValueError(f"Could not insert at {ref.cref}: could not find the stack")
 
-        return (False, [])
-        """
-
-    def insert_item(self, item: NodeItem, stack: list[int], after: bool) -> bool:
-        """Delete document item using the self-reference."""
+        return self.insert_item(item=item, stack=stack, after=after)
+        
+    def insert_item(self, item: NodeItem, stack: list[int], after: bool) -> RefItem:
+        """Insert node-item using the self-reference."""
         parent_ref = self.body.get_parent_ref(doc=self, stack=stack)
-
+        
         if parent_ref is None:
-            return False
+            raise ValueError(f"Could not find a parent at stack: {stack}")
 
         if isinstance(item, TextItem):
             item_label = "texts"
@@ -1845,9 +1848,10 @@ class DoclingDocument(BaseModel):
                 self.form_items.pop()
             else:
                 _logger.error(f"Could not pop item: {item}")
-                return False
 
-        return success
+            raise ValueError(f"Failed to add sibling")
+
+        return item.get_ref()
 
     def delete_items(self, refs: list[RefItem]) -> bool:
         """Delete document item using the self-reference."""
@@ -1896,7 +1900,6 @@ class DoclingDocument(BaseModel):
             for item_index, val in reversed(
                 sorted(item_inds.items())
             ):  # make sure you delete the last in the list first!
-                # print(f"deleting item in doc for {item_label} for {item_index}")
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 

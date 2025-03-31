@@ -1280,11 +1280,26 @@ def test_document_manipulation():
 
     doc: DoclingDocument = _construct_doc()
 
+    # _print(document=doc)
+
+    ref = RefItem(cref="#/texts/12")
+    success, stack = doc.get_stack_of_refitem(ref=ref)
+
+    assert success
+    assert stack==[2, 2, 2, 0, 2, 0, 0], f"stack==[2, 2, 2, 0, 2, 0, 0] for stack: {stack}"
+
+    text_item_1 = ListItem(self_ref="#", text="new list item (before)", orig="new list item (before)", label=DocItemLabel.LIST_ITEM)
+    text_item_2 = ListItem(self_ref="#", text="new list item (after)", orig="new list item (after)", label=DocItemLabel.LIST_ITEM)
+
+    ref_item_1 = doc.insert_item_at_refitem(item=text_item_1, ref=RefItem(cref="#/texts/10"), after=False)
+    ref_item_2 = doc.insert_item_at_refitem(item=text_item_2, ref=RefItem(cref="#/texts/10"), after=True)
+    
+    # print(ref_item_1, ", ", ref_item_2)    
+    # _print(document=doc)
+    
     refs = [RefItem(cref="#/texts/10")]
     doc.delete_items(refs=refs)
-
-    # _print(doc)
-
+    
     filename = Path("test/data/doc/constructed_doc.deleted_text.json")
     _verify(filename=filename, document=doc)
 
