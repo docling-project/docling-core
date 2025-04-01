@@ -632,7 +632,7 @@ class NodeItem(BaseModel):
         """get_ref."""
         return RefItem(cref=self.self_ref)
 
-    def get_parent_ref(
+    def _get_parent_ref(
         self, doc: "DoclingDocument", stack: list[int]
     ) -> Optional[RefItem]:
         """get_parent_ref."""
@@ -640,7 +640,7 @@ class NodeItem(BaseModel):
             return self.parent
         elif len(stack) > 0 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
-            return item.get_parent_ref(doc=doc, stack=stack[1:])
+            return item._get_parent_ref(doc=doc, stack=stack[1:])
 
         return None
 
@@ -1766,7 +1766,7 @@ class DoclingDocument(BaseModel):
             return (True, [])
 
         node = ref.resolve(doc=self)
-        parent_ref = node.get_parent_ref(doc=self, stack=[])
+        parent_ref = node._get_parent_ref(doc=self, stack=[])
 
         if parent_ref is None:
             return (False, [])
@@ -1779,7 +1779,7 @@ class DoclingDocument(BaseModel):
             stack.insert(0, index)  # prepend the index
 
             node = parent
-            parent_ref = node.get_parent_ref(doc=self, stack=[])
+            parent_ref = node._get_parent_ref(doc=self, stack=[])
 
         return (True, stack)
 
@@ -1798,7 +1798,7 @@ class DoclingDocument(BaseModel):
 
     def insert_item(self, item: NodeItem, stack: list[int], after: bool) -> RefItem:
         """Insert node-item using the self-reference."""
-        parent_ref = self.body.get_parent_ref(doc=self, stack=stack)
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
 
         if parent_ref is None:
             raise ValueError(f"Could not find a parent at stack: {stack}")
