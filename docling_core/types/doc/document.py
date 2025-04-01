@@ -3435,7 +3435,7 @@ class DoclingDocument(BaseModel):
                 full_chunk = match.group(0)
                 tag_name = match.group("tag")
 
-                bbox = extract_bounding_box(full_chunk)  # if image else None
+                bbox = extract_bounding_box(full_chunk)  # Extracts first bbox
                 doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.PARAGRAPH)
 
                 if tag_name == DocumentToken.OTSL.value:
