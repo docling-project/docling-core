@@ -482,8 +482,8 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
     if os.path.exists(filename + f".{ext}") and not GEN_TEST_DATA:
         with open(filename + f".{ext}", "r", encoding="utf-8") as fr:
             gt_true = fr.read().rstrip()
-
-        assert gt_true == pred, f"Does not pass regression-test for {filename}.{ext}"
+            
+        assert gt_true == pred, f"Does not pass regression-test for {filename}.{ext}\n\n{gt_true}\n\n{pred}"
     else:
         with open(filename + f".{ext}", "w", encoding="utf-8") as fw:
             fw.write(f"{pred}\n")

@@ -2674,6 +2674,27 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
         _level: int = 0,  # fixed parameter, carries through the node nesting level
     ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
+        """iterate_elements."""
+        for item, stack in self.iterate_items_with_stack(
+            root=root,
+            with_groups=with_groups,
+            traverse_pictures=traverse_pictures,
+            page_no=page_no,
+            included_content_layers=included_content_layers,
+        ):
+            yield item, len(stack)
+
+    def iterate_items_with_stack(
+        self,
+        root: Optional[NodeItem] = None,
+        with_groups: bool = False,
+        traverse_pictures: bool = False,
+        page_no: Optional[int] = None,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        _stack: list[
+            int
+        ] = [],  # fixed parameter, carries through the node nesting level
+    ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
         """iterate_elements.
 
         :param root: Optional[NodeItem]:  (Default value = None)
@@ -2708,65 +2729,6 @@ class DoclingDocument(BaseModel):
         )
 
         if should_yield:
-            yield root, _level
-
-        # Handle picture traversal - only traverse children if requested
-        if isinstance(root, PictureItem) and not traverse_pictures:
-            return
-
-        # Traverse children
-        for child_ref in root.children:
-            child = child_ref.resolve(self)
-            if isinstance(child, NodeItem):
-                yield from self.iterate_items(
-                    child,
-                    with_groups=with_groups,
-                    traverse_pictures=traverse_pictures,
-                    page_no=page_no,
-                    _level=_level + 1,
-                    included_content_layers=my_layers,
-                )
-
-    def iterate_items_with_stack(
-        self,
-        root: Optional[NodeItem] = None,
-        with_groups: bool = False,
-        traverse_pictures: bool = False,
-        page_no: Optional[int] = None,
-        included_content_layers: set[ContentLayer] = DEFAULT_CONTENT_LAYERS,
-        _stack: list[
-            int
-        ] = [],  # fixed parameter, carries through the node nesting level
-    ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
-        """iterate_elements.
-
-        :param root: Optional[NodeItem]:  (Default value = None)
-        :param with_groups: bool:  (Default value = False)
-        :param traverse_pictures: bool:  (Default value = False)
-        :param page_no: Optional[int]:  (Default value = None)
-        :param _level:  (Default value = 0)
-        :param # fixed parameter:
-        :param carries through the node nesting level:
-        """
-        if not root:
-            root = self.body
-
-        # Yield non-group items or group items when with_groups=True
-
-        # Combine conditions to have a single yield point
-        should_yield = (
-            (not isinstance(root, GroupItem) or with_groups)
-            and (
-                not isinstance(root, DocItem)
-                or (
-                    page_no is None
-                    or any(prov.page_no == page_no for prov in root.prov)
-                )
-            )
-            and root.content_layer in included_content_layers
-        )
-
-        if should_yield:
             yield root, _stack
 
         # Handle picture traversal - only traverse children if requested
@@ -2787,7 +2749,7 @@ class DoclingDocument(BaseModel):
                     traverse_pictures=traverse_pictures,
                     page_no=page_no,
                     _stack=_stack,
-                    included_content_layers=included_content_layers,
+                    included_content_layers=my_layers,
                 )
 
         _stack.pop()
