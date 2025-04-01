@@ -1349,10 +1349,49 @@ def test_save_pictures():
 
     doc: DoclingDocument = _construct_doc()
 
-    new_doc = doc._with_pictures_refs(image_dir=Path("./test/data/constructed_images/"))
+    new_doc = doc._with_pictures_refs(
+        image_dir=Path("./test/data/constructed_images/"), page_no=None
+    )
 
     img_paths = new_doc._list_images_on_disk()
     assert len(img_paths) == 1, "len(img_paths)!=1"
+
+
+def test_save_pictures_with_page():
+    # Given
+    doc = DoclingDocument(name="Dummy")
+
+    doc.add_page(page_no=1, size=Size(width=2000, height=4000), image=None)
+    doc.add_page(
+        page_no=2,
+        size=Size(width=2000, height=4000),
+    )
+    image = PILImage.new(mode="RGB", size=(200, 400), color=(0, 0, 0))
+    doc.add_picture(
+        image=ImageRef.from_pil(image=image, dpi=72),
+        prov=ProvenanceItem(
+            page_no=2,
+            bbox=BoundingBox(
+                b=0, l=0, r=200, t=400, coord_origin=CoordOrigin.BOTTOMLEFT
+            ),
+            charspan=(1, 2),
+        ),
+    )
+
+    # When
+    with_ref = doc._with_pictures_refs(
+        image_dir=Path("./test/data/constructed_images/"), page_no=1
+    )
+    # Then
+    n_images = len(with_ref._list_images_on_disk())
+    assert n_images == 0
+    # When
+    with_ref = with_ref._with_pictures_refs(
+        image_dir=Path("./test/data/constructed_images/"), page_no=2
+    )
+    n_images = len(with_ref._list_images_on_disk())
+    # Then
+    assert n_images == 1
 
 
 def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
@@ -1406,7 +1445,8 @@ def test_save_to_disk():
     image_dir = Path("./test/data/doc/constructed_images/")
 
     doc_with_references = doc._with_pictures_refs(
-        image_dir=image_dir  # Path("./test/data/constructed_images/")
+        image_dir=image_dir,  # Path("./test/data/constructed_images/")
+        page_no=None,
     )
 
     # paths will be different on different machines, so needs to be kept!
