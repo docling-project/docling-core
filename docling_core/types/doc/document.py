@@ -3439,13 +3439,8 @@ class DoclingDocument(BaseModel):
                 doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.PARAGRAPH)
 
                 if tag_name == DocumentToken.OTSL.value:
-                    print("TABLE bbox:")
-                    print(bbox)
                     table_data = parse_table_content(full_chunk)
-                    # bbox = extract_bounding_box(full_chunk) if image else None
                     caption, caption_bbox = extract_caption(full_chunk)
-                    print("TABLE caption bbox:")
-                    print(caption_bbox)
                     if caption is not None and caption_bbox is not None:
                         caption.prov.append(
                             ProvenanceItem(
@@ -3465,7 +3460,6 @@ class DoclingDocument(BaseModel):
                         self.add_table(data=table_data, caption=caption)
 
                 elif tag_name == DocItemLabel.PICTURE:
-                    # text_caption_content = extract_inner_text(full_chunk)
                     caption, caption_bbox = extract_caption(full_chunk)
                     if image:
                         if bbox:
@@ -3499,13 +3493,6 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
-                            # if len(caption) > 0:
-                            #     caption_item = self.add_text(
-                            #         label=DocItemLabel.CAPTION,
-                            #         text=caption,
-                            #         parent=None,
-                            #     )
-                            #     pic.captions.append(caption_item.get_ref())
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
