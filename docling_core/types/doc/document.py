@@ -3487,7 +3487,9 @@ class DoclingDocument(BaseModel):
                             if caption is not None and caption_bbox is not None:
                                 caption.prov.append(
                                     ProvenanceItem(
-                                        bbox=caption_bbox.resize_by_scale(pg_width, pg_height),
+                                        bbox=caption_bbox.resize_by_scale(
+                                            pg_width, pg_height
+                                        ),
                                         charspan=(0, 0),
                                         page_no=page_no,
                                     )
@@ -3503,13 +3505,17 @@ class DoclingDocument(BaseModel):
                                 ),
                             )
                             # If there is a caption to an image, add it as well
-                            if len(text_caption_content) > 0:
-                                caption_item = self.add_text(
-                                    label=DocItemLabel.CAPTION,
-                                    text=text_caption_content,
-                                    parent=None,
+                            if caption is not None and caption_bbox is not None:
+                                caption.prov.append(
+                                    ProvenanceItem(
+                                        bbox=caption_bbox.resize_by_scale(
+                                            pg_width, pg_height
+                                        ),
+                                        charspan=(0, 0),
+                                        page_no=page_no,
+                                    )
                                 )
-                                pic.captions.append(caption_item.get_ref())
+                                pic.captions.append(caption.get_ref())
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
                     key_value_data, kv_item_prov = parse_key_value_item(
                         full_chunk, image
