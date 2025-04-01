@@ -3105,6 +3105,8 @@ class DoclingDocument(BaseModel):
         def extract_bounding_box(text_chunk: str) -> Optional[BoundingBox]:
             """Extract <loc_...> coords from the chunk, normalized by / 500."""
             coords = re.findall(r"<loc_(\d+)>", text_chunk)
+            if len(coords) > 4:
+                coords = coords[:4]
             if len(coords) == 4:
                 l, t, r, b = map(float, coords)
                 return BoundingBox(l=l / 500, t=t / 500, r=r / 500, b=b / 500)
@@ -3433,13 +3435,17 @@ class DoclingDocument(BaseModel):
                 full_chunk = match.group(0)
                 tag_name = match.group("tag")
 
-                bbox = extract_bounding_box(full_chunk) if image else None
+                bbox = extract_bounding_box(full_chunk)  # if image else None
                 doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.PARAGRAPH)
 
                 if tag_name == DocumentToken.OTSL.value:
+                    print("TABLE bbox:")
+                    print(bbox)
                     table_data = parse_table_content(full_chunk)
-                    bbox = extract_bounding_box(full_chunk) if image else None
+                    # bbox = extract_bounding_box(full_chunk) if image else None
                     caption, caption_bbox = extract_caption(full_chunk)
+                    print("TABLE caption bbox:")
+                    print(caption_bbox)
                     if caption is not None and caption_bbox is not None:
                         caption.prov.append(
                             ProvenanceItem(
@@ -3459,7 +3465,8 @@ class DoclingDocument(BaseModel):
                         self.add_table(data=table_data, caption=caption)
 
                 elif tag_name == DocItemLabel.PICTURE:
-                    text_caption_content = extract_inner_text(full_chunk)
+                    # text_caption_content = extract_inner_text(full_chunk)
+                    caption, caption_bbox = extract_caption(full_chunk)
                     if image:
                         if bbox:
                             im_width, im_height = image.size
@@ -3483,13 +3490,22 @@ class DoclingDocument(BaseModel):
                                 ),
                             )
                             # If there is a caption to an image, add it as well
-                            if len(text_caption_content) > 0:
-                                caption_item = self.add_text(
-                                    label=DocItemLabel.CAPTION,
-                                    text=text_caption_content,
-                                    parent=None,
+                            if caption is not None and caption_bbox is not None:
+                                caption.prov.append(
+                                    ProvenanceItem(
+                                        bbox=caption_bbox.resize_by_scale(pg_width, pg_height),
+                                        charspan=(0, 0),
+                                        page_no=page_no,
+                                    )
                                 )
-                                pic.captions.append(caption_item.get_ref())
+                                pic.captions.append(caption.get_ref())
+                            # if len(caption) > 0:
+                            #     caption_item = self.add_text(
+                            #         label=DocItemLabel.CAPTION,
+                            #         text=caption,
+                            #         parent=None,
+                            #     )
+                            #     pic.captions.append(caption_item.get_ref())
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
