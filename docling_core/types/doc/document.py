@@ -458,7 +458,7 @@ class RefItem(BaseModel):
         populate_by_name=True,
     )
 
-    def path(self):
+    def _split_ref_to_path(self):
         """Get the path of the reference."""
         return self.cref.split("/")
 
@@ -1967,7 +1967,7 @@ class DoclingDocument(BaseModel):
             if (
                 ref_item not in refs_to_be_deleted
             ):  # if ref_item is in ref, then delete/skip them
-                path = ref_item.path()
+                path = ref_item._split_ref_to_path()
                 if len(path) == 3:
                     new_refitems.append(
                         self._update_ref_with_lookup(
@@ -2008,7 +2008,7 @@ class DoclingDocument(BaseModel):
 
         # Update the self_ref reference
         if node.parent is not None:
-            path = node.parent.path()
+            path = node.parent._split_ref_to_path()
             if len(path) == 3:
                 node.parent = self._update_ref_with_lookup(
                     item_label=path[1], item_index=int(path[2]), lookup=lookup
