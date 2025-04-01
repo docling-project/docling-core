@@ -3498,7 +3498,7 @@ class DoclingDocument(BaseModel):
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
-                            self.add_picture(
+                            pic = self.add_picture(
                                 parent=None,
                                 prov=ProvenanceItem(
                                     bbox=bbox, charspan=(0, 0), page_no=page_no
