@@ -182,7 +182,10 @@ class BoundingBox(BaseModel):
     ) -> float:
         """intersection_over_self."""
         intersection_area = self.intersection_area_with(other=other)
-        return intersection_area / self.area()
+        if self.area() > 0:
+            return intersection_area / self.area()
+        else:
+            return 0.0
 
     def to_bottom_left_origin(self, page_height: float) -> "BoundingBox":
         """to_bottom_left_origin.

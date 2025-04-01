@@ -1,3 +1,14 @@
+## [v2.25.0](https://github.com/docling-project/docling-core/releases/tag/v2.25.0) - 2025-03-31
+
+### Feature
+
+* Allow images in doctags deserializer to be optional and support multipage ([#225](https://github.com/docling-project/docling-core/issues/225)) ([`e0943d2`](https://github.com/docling-project/docling-core/commit/e0943d24ec80d3973a1a30e6755e35695f49b432))
+
+### Fix
+
+* DivisionByZero in intersection_over_self ([#224](https://github.com/docling-project/docling-core/issues/224)) ([`2f380ab`](https://github.com/docling-project/docling-core/commit/2f380abd174624a1ac36c47257eba0a659413f01))
+* Fix hyperlink deserialization ([#223](https://github.com/docling-project/docling-core/issues/223)) ([`57d26ee`](https://github.com/docling-project/docling-core/commit/57d26eed112815af39b5a89a71f2a28ffb6aad67))
+
 ## [v2.24.1](https://github.com/docling-project/docling-core/releases/tag/v2.24.1) - 2025-03-28
 
 ### Fix
