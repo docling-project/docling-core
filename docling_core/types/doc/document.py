@@ -652,7 +652,7 @@ class NodeItem(BaseModel):
         elif len(stack) > 1 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
             return item._delete_child(doc=doc, stack=stack[1:])
-        
+
         return False
 
     def _update_child(
@@ -665,7 +665,7 @@ class NodeItem(BaseModel):
         elif len(stack) > 1 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
             return item._update_child(doc=doc, stack=stack[1:], new_ref=new_ref)
-        
+
         return False
 
     def _add_child(
@@ -678,7 +678,7 @@ class NodeItem(BaseModel):
         elif len(stack) > 0 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
             return item._add_child(doc=doc, stack=stack[1:], new_ref=new_ref)
-        
+
         return False
 
     def _add_sibling(
@@ -698,7 +698,7 @@ class NodeItem(BaseModel):
         elif len(stack) > 1 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
             return item._add_sibling(doc=doc, stack=stack[1:], ref=ref, after=after)
-        
+
         return False
 
 
@@ -1780,14 +1780,14 @@ class DoclingDocument(BaseModel):
         refs = []
         for _ in node_items:
             refs.append(_.get_ref())
-            
+
         self._delete_items(refs=refs)
 
     def replace_item(self, new_item: NodeItem, item: NodeItem):
         """Replace item with new item."""
         self.insert_item_after_sibling(new_item=new_item, sibling=item)
         self.delete_items(node_items=[item])
-        
+
     # ----------------------------
     # Private Manipulation methods
     # ----------------------------
@@ -1923,11 +1923,11 @@ class DoclingDocument(BaseModel):
     def _delete_items(self, refs: list[RefItem]) -> bool:
         """Delete document item using the self-reference."""
         to_be_deleted_items: dict[tuple[int, ...], str] = {}
-        
+
         # Identify the to_be_deleted_items
         for item, stack in self._iterate_items_with_stack(with_groups=True):
             ref = item.get_ref()
-            
+
             if ref in refs:
                 to_be_deleted_items[tuple(stack)] = ref.cref
 
@@ -2714,7 +2714,7 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
         _level: int = 0,  # fixed parameter, carries through the node nesting level
     ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
-        """iterate elements with level."""
+        """Iterate elements with level."""
         for item, stack in self._iterate_items_with_stack(
             root=root,
             with_groups=with_groups,
@@ -2735,16 +2735,7 @@ class DoclingDocument(BaseModel):
             int
         ] = [],  # fixed parameter, carries through the node nesting level
     ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
-        """iterate elements with stack.
-
-        :param root: Optional[NodeItem]:  (Default value = None)
-        :param with_groups: bool:  (Default value = False)
-        :param traverse_pictures: bool:  (Default value = False)
-        :param page_no: Optional[int]:  (Default value = None)
-        :param _level:  (Default value = 0)
-        :param # fixed parameter:
-        :param carries through the node nesting level:
-        """
+        """Iterate elements with stack."""
         my_layers = (
             included_content_layers
             if included_content_layers is not None
