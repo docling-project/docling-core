@@ -3307,16 +3307,6 @@ class DoclingDocument(BaseModel):
             )
 
         def extract_chart_type(text_chunk: str):
-            # PIC_PIE_CHART                   : '<pie_chart>';
-            # PIC_BAR_CHART                   : '<bar_chart>';
-            # PIC_LINE_CHART                  : '<line_chart>';
-            # PIC_FLOW_CHART                  : '<flow_chart>';
-            # CHART_LINE_CHART                : '<line>';
-            # CHART_DOT_LINE_CHART            : '<dot_line>';
-            # CHART_VBAR_CHART                : '<vbar_categorical>';
-            # CHART_HBAR_CHART                : '<hbar_categorical>';
-            # CHART_STACKED_BAR_CHART         : '<stacked_bar_chart>';
-
             label = None
             chart_labels = [
                 PictureClassificationLabel.PIE_CHART,
@@ -3325,10 +3315,6 @@ class DoclingDocument(BaseModel):
                 PictureClassificationLabel.FLOW_CHART,
                 PictureClassificationLabel.SCATTER_CHART,
                 PictureClassificationLabel.HEATMAP,
-                "pie_chart",
-                "bar_chart",
-                "line_chart",
-                "flow_chart",
                 "line",
                 "dot_line",
                 "vbar_categorical",
@@ -3338,10 +3324,6 @@ class DoclingDocument(BaseModel):
 
             # Current SmolDocling can predict different labels:
             chart_labels_mapping = {
-                "pie_chart": PictureClassificationLabel.PIE_CHART,
-                "bar_chart": PictureClassificationLabel.BAR_CHART,
-                "line_chart": PictureClassificationLabel.LINE_CHART,
-                "flow_chart": PictureClassificationLabel.FLOW_CHART,
                 "line": PictureClassificationLabel.LINE_CHART,
                 "dot_line": PictureClassificationLabel.LINE_CHART,
                 "vbar_categorical": PictureClassificationLabel.BAR_CHART,
@@ -3354,6 +3336,8 @@ class DoclingDocument(BaseModel):
                 if tag in text_chunk:
                     if clabel in chart_labels_mapping:
                         label = PictureClassificationLabel(chart_labels_mapping[clabel])
+                    else:
+                        label = PictureClassificationLabel(clabel)
                     break
             return label
 
