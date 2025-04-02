@@ -3353,9 +3353,7 @@ class DoclingDocument(BaseModel):
                 tag = f"<{clabel}>"
                 if tag in text_chunk:
                     if clabel in chart_labels_mapping:
-                        clabel = PictureClassificationLabel(
-                            chart_labels_mapping[clabel]
-                        )
+                        label = PictureClassificationLabel(chart_labels_mapping[clabel])
                     break
             return label
 
