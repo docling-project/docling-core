@@ -38,6 +38,7 @@ from docling_core.types.doc.document import (  # BoundingBox,
     TableItem,
     TextItem,
     TitleItem,
+    NodeItem
 )
 from docling_core.types.doc.labels import (
     DocItemLabel,
@@ -1260,8 +1261,12 @@ def test_save_to_disk():
 
 def test_document_manipulation():
 
+    def _resolve(doc: DoclingDocument, cref:str) -> NodeItem:
+        ref = RefItem(cref=cref)
+        return ref.resolve(doc=doc)
+    
     def _print(document: DoclingDocument):
-        for item, stack in doc.iterate_items_with_stack(with_groups=True):
+        for item, stack in doc._iterate_items_with_stack(with_groups=True):
             print(item.self_ref, "\t", stack)
         print(doc._export_to_indented_text())
 
@@ -1285,7 +1290,7 @@ def test_document_manipulation():
     # _print(document=doc)
 
     ref = RefItem(cref="#/texts/12")
-    success, stack = doc.get_stack_of_refitem(ref=ref)
+    success, stack = doc._get_stack_of_refitem(ref=ref)
 
     assert success
     assert stack == [
@@ -1311,36 +1316,38 @@ def test_document_manipulation():
         label=DocItemLabel.LIST_ITEM,
     )
 
-    ref_item_1 = doc.insert_item_at_refitem(
-        item=text_item_1, ref=RefItem(cref="#/texts/10"), after=False
-    )
-    ref_item_2 = doc.insert_item_at_refitem(
-        item=text_item_2, ref=RefItem(cref="#/texts/10"), after=True
-    )
+    node = _resolve(doc=doc, cref="#/texts/10")
+
+    doc.insert_item_before_sibling(new_item=text_item_1, sibling=node)
+    doc.insert_item_after_sibling(new_item=text_item_2, sibling=node)
 
     # print(ref_item_1, ", ", ref_item_2)
     # _print(document=doc)
+    
+    items = [_resolve(doc=doc, cref="#/texts/10")]
+    doc.delete_items(node_items=items)
 
-    refs = [RefItem(cref="#/texts/10")]
-    doc.delete_items(refs=refs)
-
+    # _print(document=doc)
+    
     filename = Path("test/data/doc/constructed_doc.deleted_text.json")
     _verify(filename=filename, document=doc)
 
-    refs = [RefItem(cref="#/groups/1")]
-    doc.delete_items(refs=refs)
+    items = [_resolve(doc=doc, cref="#/groups/1")]
+    doc.delete_items(node_items=items)
 
     filename = Path("test/data/doc/constructed_doc.deleted_group.json")
     _verify(filename=filename, document=doc)
 
-    refs = [RefItem(cref="#/tables/1")]
-    doc.delete_items(refs=refs)
+    """
+    items = [_resolve(doc=doc, cref="#/tables/0")]
+    doc.delete_items(node_items=items)
 
     filename = Path("test/data/doc/constructed_doc.deleted_table.json")
     _verify(filename=filename, document=doc)
-
-    refs = [RefItem(cref="#/pictures/1")]
-    doc.delete_items(refs=refs)
+    """
+    
+    items = [_resolve(doc=doc, cref="#/pictures/1")]
+    doc.delete_items(node_items=items)
 
     filename = Path("test/data/doc/constructed_doc.deleted_picture.json")
     _verify(filename=filename, document=doc)
