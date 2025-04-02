@@ -7,7 +7,11 @@ import json
 
 from transformers import AutoTokenizer
 
-from docling_core.transforms.chunker.hierarchical_chunker import DocChunk
+from docling_core.experimental.serializer.markdown import MarkdownTableSerializer
+from docling_core.transforms.chunker.hierarchical_chunker import (
+    ChunkingDocSerializer,
+    DocChunk,
+)
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.types.doc import DoclingDocument as DLDocument
 
@@ -78,7 +82,7 @@ def test_chunk_no_merge_peers():
     )
 
 
-def test_serialize():
+def test_contextualize():
     EXPECTED_OUT_FILE = "test/data/chunker/2a_out_ser_chunks.json"
 
     with open(INPUT_FILE, encoding="utf-8") as f:
@@ -97,7 +101,7 @@ def test_serialize():
         root=[
             dict(
                 text=chunk.text,
-                ser_text=(ser_text := chunker.serialize(chunk)),
+                ser_text=(ser_text := chunker.contextualize(chunk)),
                 num_tokens=len(TOKENIZER.tokenize(ser_text)),
             )
             for chunk in chunks
@@ -153,7 +157,7 @@ def test_chunk_default():
     )
 
 
-def test_serialize_altered_delim():
+def test_contextualize_altered_delim():
     EXPECTED_OUT_FILE = "test/data/chunker/2d_out_ser_chunks.json"
 
     with open(INPUT_FILE, encoding="utf-8") as f:
@@ -170,11 +174,42 @@ def test_serialize_altered_delim():
         root=[
             dict(
                 text=chunk.text,
-                ser_text=(ser_text := chunker.serialize(chunk)),
+                ser_text=(ser_text := chunker.contextualize(chunk)),
                 num_tokens=len(TOKENIZER.tokenize(ser_text)),
             )
             for chunk in chunks
         ]
+    )
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_custom_serializer():
+    EXPECTED_OUT_FILE = "test/data/chunker/2e_out_chunks.json"
+
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=TOKENIZER,
+        max_tokens=MAX_TOKENS,
+        merge_peers=True,
+    )
+    doc_serializer = ChunkingDocSerializer(
+        doc=dl_doc,
+        table_serializer=MarkdownTableSerializer(),  # configuring a different table serializer
+    )
+
+    chunk_iter = chunker.chunk(
+        dl_doc=dl_doc,
+        doc_serializer=doc_serializer,
+    )
+    chunks = list(chunk_iter)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
     _process(
         act_data=act_data,
