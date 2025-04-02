@@ -154,6 +154,7 @@ class DocumentToken(str, Enum):
 
     DOCUMENT = "doctag"
     OTSL = "otsl"
+    CHART = "chart"
     ORDERED_LIST = "ordered_list"
     UNORDERED_LIST = "unordered_list"
     PAGE_BREAK = "page_break"
