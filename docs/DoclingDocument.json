@@ -1638,7 +1638,7 @@
       "type": "object"
     },
     "PictureTabularChartData": {
-      "description": "Base class for picture chart data.\n\nAttributes:\n    title (str): The title of the chart.",
+      "description": "Base class for picture chart data.\n\nAttributes:\n    title (str): The title of the chart.\n    chart_data (TableData): Chart data in the table format.",
       "properties": {
         "title": {
           "title": "Title",
