@@ -381,6 +381,7 @@ class PictureTabularChartData(PictureChartData):
 
     Attributes:
         title (str): The title of the chart.
+        chart_data (TableData): Chart data in the table format.
     """
 
     kind: Literal["tabular_chart_data"] = "tabular_chart_data"
