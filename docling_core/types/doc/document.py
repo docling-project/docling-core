@@ -3445,7 +3445,7 @@ class DoclingDocument(BaseModel):
                         caption.prov.append(
                             ProvenanceItem(
                                 bbox=caption_bbox.resize_by_scale(pg_width, pg_height),
-                                charspan=(0, 0),
+                                charspan=(0, len(caption.text)),
                                 page_no=page_no,
                             )
                         )
@@ -3490,7 +3490,7 @@ class DoclingDocument(BaseModel):
                                         bbox=caption_bbox.resize_by_scale(
                                             pg_width, pg_height
                                         ),
-                                        charspan=(0, 0),
+                                        charspan=(0, len(caption.text)),
                                         page_no=page_no,
                                     )
                                 )
@@ -3511,7 +3511,7 @@ class DoclingDocument(BaseModel):
                                         bbox=caption_bbox.resize_by_scale(
                                             pg_width, pg_height
                                         ),
-                                        charspan=(0, 0),
+                                        charspan=(0, len(caption.text)),
                                         page_no=page_no,
                                     )
                                 )

@@ -55,7 +55,7 @@ def test_multipage_doctags_load():
     # print(doc.export_to_html())
 
 
-def test_doctags_table_provenances():
+def test_doctags_table_provenances_and_captions():
     doc = DoclingDocument(name="Document")
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
         [Path("test/data/doc/01030000000083.dt")],
@@ -64,9 +64,10 @@ def test_doctags_table_provenances():
     doc.load_from_doctags(doctags_doc)
     for table in doc.tables:
         assert len(table.prov) > 0
+        assert len(table.captions) > 0
 
 
-def test_doctags_picture_provenances():
+def test_doctags_picture_provenances_and_captions():
     doc = DoclingDocument(name="Document")
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
         [Path("test/data/doc/01030000000111.dt")],
@@ -75,3 +76,4 @@ def test_doctags_picture_provenances():
     doc.load_from_doctags(doctags_doc)
     for picture in doc.pictures:
         assert len(picture.prov) > 0
+        assert len(picture.captions) > 0
