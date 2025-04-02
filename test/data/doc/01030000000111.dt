@@ -1,0 +1,13 @@
+<doctag><picture><loc_45><loc_45><loc_453><loc_208><other><caption><loc_45><loc_220><loc_427><loc_235>Figure 8.1: a) P6238 CUSSONS free and forced vortex apparatus, b) push-in orifices, c) free vortex measuring caliper, d) force vortex measuring probes</caption></picture>
+<section_header_level_1><loc_45><loc_245><loc_99><loc_254>7. THEORY</section_header_level_1>
+<text><loc_45><loc_261><loc_455><loc_289>Two types of vortices are distinguished in the dynamics of the motion: forced and free vortices. The forced vortex is caused by external forces on the fluid, such as the impeller of a pump, and the free vortex naturally occurs in the flow and can be observed in a drain or in the atmosphere of a tornado.</text>
+<section_header_level_1><loc_45><loc_298><loc_134><loc_306>7.1. FREE VORTEX</section_header_level_1>
+<text><loc_45><loc_314><loc_455><loc_342>A free vortex is formed when water flows out of a vessel through a central hole in the base (Figure 8.2). The degree of the rotation depends on the initial disturbance. In a free cylindrical vortex, the velocity varies inversely with the distance from the axis of rotation (Figure 8.3).</text>
+<formula><loc_45><loc_349><loc_110><loc_364>\upsilon = \frac { k } { r } \quad \quad ( 1 )</formula>
+<text><loc_45><loc_368><loc_383><loc_376>The equation governing the surface profile is derived from the Bernoulli's theorem:</text>
+<formula><loc_45><loc_383><loc_134><loc_399>\upsilon ^ { 2 } = + \, z = C \quad \quad ( 2 )</formula>
+<text><loc_45><loc_404><loc_291><loc_412>Substituting Equation (1) into (2) will give a new expression:</text>
+<formula><loc_45><loc_419><loc_141><loc_434>\frac { k ^ { 2 } } { 2 g r ^ { 2 } } + \, z = C \quad \quad ( 3 )</formula>
+<text><loc_45><loc_441><loc_59><loc_449>or:</text>
+<page_footer><loc_45><loc_470><loc_186><loc_476>68 APPLIED FLUID MECHANICS LAB MANUAL</page_footer>
+</doctag>
