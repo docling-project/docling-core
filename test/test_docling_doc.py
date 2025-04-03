@@ -1352,4 +1352,25 @@ def test_document_manipulation():
     filename = Path("test/data/doc/constructed_doc.deleted_picture.json")
     _verify(filename=filename, document=doc)
 
-    assert True
+    text_item_3 = TextItem(
+        self_ref="#",
+        text="child text appended at body",
+        orig="child text appended at body",
+        label=DocItemLabel.TEXT,
+    )
+    doc.append_child_item(child=text_item_3)
+    # _print(document=doc)
+
+    text_item_4 = ListItem(
+        self_ref="#",
+        text="child text appended at body",
+        orig="child text appended at body",
+        label=DocItemLabel.LIST_ITEM,
+    )
+    doc.append_child_item(child=text_item_4, parent=_resolve(doc=doc, cref="#/groups/11"))
+    # _print(document=doc)
+
+    filename = Path("test/data/doc/constructed_doc.appended_child.json")
+    _verify(filename=filename, document=doc)
+    
+    

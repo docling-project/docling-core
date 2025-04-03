@@ -1779,33 +1779,59 @@ class DoclingDocument(BaseModel):
     # Public Manipulation methods
     # ---------------------------
 
-    def append_child_item(self, child: NodeItem, parent: Optional[NodeItem] = None):
+    def append_child_item(self, *, child: NodeItem, parent: Optional[NodeItem]=None) -> RefItem:
         """Adds an item."""
-        success, stack = self._get_stack_of_item(item=child)
+        if len(child.children)>0:
+            raise ValueError(
+                f"Can not append a child with children"
+            )
 
-        if success:
-            self.body._add_child(doc=self, new_ref=child.get_ref(), stack=stack)
+        parent = parent if parent is not None else self.body
+        
+        success, stack = self._get_stack_of_item(item=parent)
 
-    def insert_item_after_sibling(self, new_item: NodeItem, sibling: NodeItem):
+        if not success:
+            raise ValueError(
+                f"Could not resolve the parent node in the document tree: {parent}"
+            )
+
+        # Append the item to the attributes of the doc
+        self._append_item(item=child, parent_ref=parent.get_ref())
+
+        # Update the tree of the doc
+        success = self.body._add_child(doc=self, new_ref=child.get_ref(), stack=stack)
+
+        # Clean the attribute (orphan) if not successful
+        if not success:
+            self._pop_item(item)
+            raise ValueError(f"Could not append child: {child} to parent: {parent}")
+        
+        # Return reference of the appended child (with updated ref and parent_ref)
+        return child.get_ref()
+            
+    def insert_item_after_sibling(self, *, new_item: NodeItem, sibling: NodeItem) -> RefItem:
         """Inserts an item, given its node_item instance, after other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=True)
-
-    def insert_item_before_sibling(self, new_item: NodeItem, sibling: NodeItem):
+        return new_item.get_ref()
+    
+    def insert_item_before_sibling(self, *, new_item: NodeItem, sibling: NodeItem) -> RefItem:
         """Inserts an item, given its node_item instance, before other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=False)
 
-    def delete_items(self, node_items: List[NodeItem]):
+    def delete_items(self, *, node_items: List[NodeItem]) -> None:
         """Deletes an item, given its instance or ref, and any children it has."""
         refs = []
         for _ in node_items:
             refs.append(_.get_ref())
-
+            
         self._delete_items(refs=refs)
-
-    def replace_item(self, new_item: NodeItem, item: NodeItem):
+        
+    def replace_item(self, *, new_item: NodeItem, old_item: NodeItem) -> RefItem:
         """Replace item with new item."""
-        self.insert_item_after_sibling(new_item=new_item, sibling=item)
+        self.insert_item_after_sibling(new_item=new_item, sibling=old_item)
         self.delete_items(node_items=[item])
+        
+        return new_item.get_ref()
 
     # ----------------------------
     # Private Manipulation methods
@@ -1851,14 +1877,9 @@ class DoclingDocument(BaseModel):
 
         return self._insert_item_at_stack(item=item, stack=stack, after=after)
 
-    def _insert_item_at_stack(
-        self, item: NodeItem, stack: list[int], after: bool
-    ) -> RefItem:
-        """Insert node-item using the self-reference."""
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+    def _append_item(self, *, item: NodeItem, parent_ref: RefItem) -> RefItem:
+        """Append item of its type."""
+        cref: str = "" # to be updated
 
         if isinstance(item, TextItem):
             item_label = "texts"
@@ -1917,31 +1938,49 @@ class DoclingDocument(BaseModel):
         else:
             raise ValueError(f"Item {item} is not supported for insertion")
 
+        return RefItem(cref=cref)
+
+    def _pop_item(self, *, item: NodeItem):
+        """Pop the last item of its type."""
+        path = item.self_ref.split("/")
+
+        if len(path) != 3:
+            raise ValueError(f"Can not pop item with path: {path}")
+
+        item_label = path[1]
+        item_index = int(path[2])
+
+        if (
+            len(self.__getattribute__(item_label)) + 1 == item_index
+        ):  # we can only pop the last item
+            del self.__getattribute__(item_label)[item_index]
+        else:
+            msg = f"index:{item_index}, len:{len(self.__getattribute__(item_label))}"
+            raise ValueError(f"Failed to pop: item is not last ({msg})")
+
+    def _insert_item_at_stack(
+        self, item: NodeItem, stack: list[int], after: bool
+    ) -> RefItem:
+        """Insert node-item using the self-reference."""
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        new_ref = self._append_item(item=item, parent_ref=parent_ref)
+
         success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=item.get_ref(), after=after
+            doc=self, stack=stack, new_ref=new_ref, after=after
         )
 
         if not success:
-            if isinstance(item, TextItem):
-                self.texts.pop()
-            elif isinstance(item, TableItem):
-                self.tables.pop()
-            elif isinstance(item, PictureItem):
-                self.pictures.pop()
-            elif isinstance(item, KeyValueItem):
-                self.key_value_items.pop()
-            elif isinstance(item, FormItem):
-                self.form_items.pop()
-            else:
-                _logger.error(f"Could not pop item: {item}")
-
-            raise ValueError(f"Failed to add sibling for item: {item}")
+            self._pop_item(item=item)
 
         return item.get_ref()
 
     def _delete_items(self, refs: list[RefItem]) -> bool:
         """Delete document item using the self-reference."""
-        to_be_deleted_items: dict[tuple[int, ...], str] = {}
+        to_be_deleted_items: dict[tuple[int, ...], str] = {} # stack to cref
 
         # Identify the to_be_deleted_items
         for item, stack in self._iterate_items_with_stack(with_groups=True):
@@ -1957,7 +1996,6 @@ class DoclingDocument(BaseModel):
 
         if len(to_be_deleted_items) == 0:
             raise ValueError("Nothing to be deleted ...")
-            return False
 
         # Clean the tree, reverse the order to not have to update
         for stack_, ref_ in reversed(sorted(to_be_deleted_items.items())):
@@ -1968,7 +2006,9 @@ class DoclingDocument(BaseModel):
             else:
                 _logger.info(f"deleted item in tree at stack: {stack_} => {ref_}")
 
-        # Create a new lookup of the orphans
+        # Create a new lookup of the orphans:
+        # dict of item_label (`texts`, `tables`, ...) to a
+        # dict of item_label with delta (default = -1).   
         lookup: dict[str, dict[int, int]] = {}
 
         for stack_, ref_ in to_be_deleted_items.items():
