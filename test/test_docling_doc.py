@@ -1258,7 +1258,27 @@ def test_save_to_disk():
 
     assert True
 
+def test_document_stack_operations():
 
+    doc: DoclingDocument = _construct_doc()
+
+    # _print(document=doc)
+
+    ref = RefItem(cref="#/texts/12")
+    success, stack = doc._get_stack_of_refitem(ref=ref)
+
+    assert success
+    assert stack == [
+        2,
+        2,
+        2,
+        0,
+        2,
+        0,
+        0,
+    ], f"stack==[2, 2, 2, 0, 2, 0, 0] for stack: {stack}"
+
+    
 def test_document_manipulation():
 
     def _resolve(doc: DoclingDocument, cref: str) -> NodeItem:
@@ -1286,22 +1306,6 @@ def test_document_manipulation():
     image_dir = Path("./test/data/doc/constructed_images/")
 
     doc: DoclingDocument = _construct_doc()
-
-    # _print(document=doc)
-
-    ref = RefItem(cref="#/texts/12")
-    success, stack = doc._get_stack_of_refitem(ref=ref)
-
-    assert success
-    assert stack == [
-        2,
-        2,
-        2,
-        0,
-        2,
-        0,
-        0,
-    ], f"stack==[2, 2, 2, 0, 2, 0, 0] for stack: {stack}"
 
     text_item_1 = ListItem(
         self_ref="#",
