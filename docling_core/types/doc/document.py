@@ -660,6 +660,10 @@ class NodeItem(BaseModel):
     ) -> bool:
         """Update child node in tree."""
         if len(stack) == 1 and stack[0] < len(self.children):
+            # ensure the parent is correct
+            new_item = new_ref.resolve(doc=doc)
+            new_item.parent = self.get_ref()
+
             self.children[stack[0]] = new_ref
             return True
         elif len(stack) > 1 and stack[0] < len(self.children):
@@ -672,7 +676,12 @@ class NodeItem(BaseModel):
         self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem
     ) -> bool:
         """Add child to a child-less node."""
-        if len(stack) == 0 and len(self.children) == 0:
+        if len(stack) == 0:
+
+            # ensure the parent is correct
+            new_item = new_ref.resolve(doc=doc)
+            new_item.parent = self.get_ref()
+
             self.children.append(new_ref)
             return True
         elif len(stack) > 0 and stack[0] < len(self.children):
@@ -685,19 +694,29 @@ class NodeItem(BaseModel):
         self,
         doc: "DoclingDocument",
         stack: list[int],
-        ref: RefItem,
+        new_ref: RefItem,
         after: bool = True,
     ) -> bool:
         """Add sibling node in tree."""
         if len(stack) == 1 and stack[0] < len(self.children) and (not after):
-            self.children.insert(stack[0], ref)
+            # ensure the parent is correct
+            new_item = new_ref.resolve(doc=doc)
+            new_item.parent = self.get_ref()
+
+            self.children.insert(stack[0], new_ref)
             return True
         elif len(stack) == 1 and stack[0] < len(self.children) and (after):
-            self.children.insert(stack[0] + 1, ref)
+            # ensure the parent is correct
+            new_item = new_ref.resolve(doc=doc)
+            new_item.parent = self.get_ref()
+
+            self.children.insert(stack[0] + 1, new_ref)
             return True
         elif len(stack) > 1 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
-            return item._add_sibling(doc=doc, stack=stack[1:], ref=ref, after=after)
+            return item._add_sibling(
+                doc=doc, stack=stack[1:], new_ref=new_ref, after=after
+            )
 
         return False
 
@@ -1899,7 +1918,7 @@ class DoclingDocument(BaseModel):
             raise ValueError(f"Item {item} is not supported for insertion")
 
         success = self.body._add_sibling(
-            doc=self, stack=stack, ref=item.get_ref(), after=after
+            doc=self, stack=stack, new_ref=item.get_ref(), after=after
         )
 
         if not success:
