@@ -50,6 +50,36 @@ _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 _DEFAULT_LAYERS = {cl for cl in ContentLayer}
 
 
+def create_ser_result(
+    *,
+    text: str = "",
+    span_source: Union[DocItem, list[SerializationResult]] = [],
+) -> SerializationResult:
+    """Function for creating `SerializationResult` instances.
+
+    Args:
+        text: the text the use. Defaults to "".
+        span_source: the item or list of results to use as span source. Defaults to [].
+
+    Returns:
+        The created `SerializationResult`.
+    """
+    spans: list[Span]
+    if isinstance(span_source, DocItem):
+        spans = [Span(item=span_source)]
+    else:
+        results: list[SerializationResult] = span_source
+        spans = []
+        for ser_res in results:
+            for span in ser_res.spans:
+                if span not in spans:
+                    spans.append(span)
+    return SerializationResult(
+        text=text,
+        spans=spans,
+    )
+
+
 class CommonParams(BaseModel):
     """Common serialization parameters."""
 
@@ -71,16 +101,6 @@ class CommonParams(BaseModel):
         """Create an instance by merging the provided patch dict on top of self."""
         res = self.model_validate({**self.model_dump(), **patch})
         return res
-
-
-def get_spans(ser_results: list[SerializationResult]) -> list[Span]:
-    """Get spans corresponding to the passed serialization results."""
-    spans: list[Span] = []
-    for ser_res in ser_results:
-        for span in ser_res.spans:
-            if span not in spans:
-                spans.append(span)
-    return spans
 
 
 class DocSerializer(BaseModel, BaseDocSerializer):
@@ -221,7 +241,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         """Serialize a given node."""
         my_visited: set[str] = visited if visited is not None else set()
         my_kwargs = self.params.merge_with_patch(patch=kwargs).model_dump()
-        empty_res = SerializationResult()
+        empty_res = create_ser_result()
         if item is None or item == self.doc.body:
             if self.doc.body.self_ref not in my_visited:
                 my_visited.add(self.doc.body.self_ref)
@@ -407,17 +427,16 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> SerializationResult:
         """Serialize the item's captions."""
         params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
         if DocItemLabel.CAPTION in params.labels:
-            text_parts: list[str] = []
-            spans: list[Span] = []
-            for cap in item.captions:
-                if isinstance(
-                    it := cap.resolve(self.doc), TextItem
-                ) and it.self_ref not in self.get_excluded_refs(**kwargs):
-                    text_parts.append(it.text)
-                    spans.append(Span(item=it))
-            text_res = params.caption_delim.join(text_parts)
+            results = [
+                create_ser_result(text=it.text, span_source=it)
+                for cap in item.captions
+                if isinstance(it := cap.resolve(self.doc), TextItem)
+                and it.self_ref not in self.get_excluded_refs(**kwargs)
+            ]
+            text_res = params.caption_delim.join([r.text for r in results])
             text_res = self.post_process(text=text_res)
         else:
             text_res = ""
-        return SerializationResult(text=text_res, spans=spans)
+        return create_ser_result(text=text_res, span_source=results)

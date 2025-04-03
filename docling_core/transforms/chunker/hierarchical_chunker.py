@@ -18,9 +18,8 @@ from docling_core.experimental.serializer.base import (
     BaseDocSerializer,
     BaseTableSerializer,
     SerializationResult,
-    Span,
 )
-from docling_core.experimental.serializer.common import get_spans
+from docling_core.experimental.serializer.common import create_ser_result
 from docling_core.experimental.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
@@ -164,15 +163,11 @@ class TripletTableSerializer(BaseTableSerializer):
                     for j in range(1, ncols)
                 ]
                 table_text = ". ".join(table_text_parts)
-                tab_res = SerializationResult(text=table_text, spans=[Span(item=item)])
-                parts.append(tab_res)
+                parts.append(create_ser_result(text=table_text, span_source=item))
 
         text_res = "\n\n".join([r.text for r in parts])
 
-        return SerializationResult(
-            text=text_res,
-            spans=get_spans(ser_results=parts),
-        )
+        return create_ser_result(text=text_res, span_source=parts)
 
 
 class ChunkingDocSerializer(MarkdownDocSerializer):
@@ -214,7 +209,7 @@ class HierarchicalChunker(BaseChunker):
         my_doc_ser = doc_serializer or ChunkingDocSerializer(doc=dl_doc)
         heading_by_level: dict[LevelNumber, str] = {}
         visited: set[str] = set()
-        ser_res = SerializationResult()
+        ser_res = create_ser_result()
         excluded_refs = my_doc_ser.get_excluded_refs(**kwargs)
         for item, level in dl_doc.iterate_items(with_groups=True):
             if item.self_ref in excluded_refs:
