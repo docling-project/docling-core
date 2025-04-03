@@ -3312,6 +3312,7 @@ class DoclingDocument(BaseModel):
             chart_labels = [
                 PictureClassificationLabel.PIE_CHART,
                 PictureClassificationLabel.BAR_CHART,
+                PictureClassificationLabel.STACKED_BAR_CHART,
                 PictureClassificationLabel.LINE_CHART,
                 PictureClassificationLabel.FLOW_CHART,
                 PictureClassificationLabel.SCATTER_CHART,
@@ -3320,7 +3321,6 @@ class DoclingDocument(BaseModel):
                 "dot_line",
                 "vbar_categorical",
                 "hbar_categorical",
-                "stacked_bar_chart",
             ]
 
             # Current SmolDocling can predict different labels:
@@ -3329,7 +3329,6 @@ class DoclingDocument(BaseModel):
                 "dot_line": PictureClassificationLabel.LINE_CHART,
                 "vbar_categorical": PictureClassificationLabel.BAR_CHART,
                 "hbar_categorical": PictureClassificationLabel.BAR_CHART,
-                "stacked_bar_chart": PictureClassificationLabel.BAR_CHART,
             }
 
             for clabel in chart_labels:
@@ -3565,7 +3564,7 @@ class DoclingDocument(BaseModel):
                                 )
                                 pic_title = chart_type
                             if table_data is not None:
-                                # TODO: add chart data as PictureTabularChartData
+                                # Add chart data as PictureTabularChartData
                                 pd = PictureTabularChartData(
                                     chart_data=table_data, title=pic_title
                                 )
@@ -3604,7 +3603,7 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                             if table_data is not None:
-                                # TODO: add chart data as PictureTabularChartData
+                                # Add chart data as PictureTabularChartData
                                 pd = PictureTabularChartData(
                                     chart_data=table_data, title=pic_title
                                 )

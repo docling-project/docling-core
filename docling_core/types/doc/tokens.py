@@ -57,6 +57,7 @@ class _PictureClassificationToken(str, Enum):
     # General
     PIE_CHART = "<pie_chart>"
     BAR_CHART = "<bar_chart>"
+    STACKED_BAR_CHART = "<stacked_bar_chart>"
     LINE_CHART = "<line_chart>"
     FLOW_CHART = "<flow_chart>"
     SCATTER_CHART = "<scatter_chart>"
