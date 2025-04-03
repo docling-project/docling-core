@@ -1258,6 +1258,7 @@ def test_save_to_disk():
 
     assert True
 
+
 def test_document_stack_operations():
 
     doc: DoclingDocument = _construct_doc()
@@ -1278,7 +1279,7 @@ def test_document_stack_operations():
         0,
     ], f"stack==[2, 2, 2, 0, 2, 0, 0] for stack: {stack}"
 
-    
+
 def test_document_manipulation():
 
     def _resolve(doc: DoclingDocument, cref: str) -> NodeItem:
@@ -1371,10 +1372,10 @@ def test_document_manipulation():
         orig="child text appended at body",
         label=DocItemLabel.LIST_ITEM,
     )
-    doc.append_child_item(child=text_item_4, parent=_resolve(doc=doc, cref="#/groups/11"))
+    doc.append_child_item(
+        child=text_item_4, parent=_resolve(doc=doc, cref="#/groups/11")
+    )
     # _print(document=doc)
 
     filename = Path("test/data/doc/constructed_doc.appended_child.json")
     _verify(filename=filename, document=doc)
-    
-    

@@ -1779,15 +1779,15 @@ class DoclingDocument(BaseModel):
     # Public Manipulation methods
     # ---------------------------
 
-    def append_child_item(self, *, child: NodeItem, parent: Optional[NodeItem]=None) -> RefItem:
+    def append_child_item(
+        self, *, child: NodeItem, parent: Optional[NodeItem] = None
+    ) -> RefItem:
         """Adds an item."""
-        if len(child.children)>0:
-            raise ValueError(
-                f"Can not append a child with children"
-            )
+        if len(child.children) > 0:
+            raise ValueError("Can not append a child with children")
 
         parent = parent if parent is not None else self.body
-        
+
         success, stack = self._get_stack_of_item(item=parent)
 
         if not success:
@@ -1803,34 +1803,39 @@ class DoclingDocument(BaseModel):
 
         # Clean the attribute (orphan) if not successful
         if not success:
-            self._pop_item(item)
+            self._pop_item(item=child)
             raise ValueError(f"Could not append child: {child} to parent: {parent}")
-        
+
         # Return reference of the appended child (with updated ref and parent_ref)
         return child.get_ref()
-            
-    def insert_item_after_sibling(self, *, new_item: NodeItem, sibling: NodeItem) -> RefItem:
+
+    def insert_item_after_sibling(
+        self, *, new_item: NodeItem, sibling: NodeItem
+    ) -> RefItem:
         """Inserts an item, given its node_item instance, after other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=True)
         return new_item.get_ref()
-    
-    def insert_item_before_sibling(self, *, new_item: NodeItem, sibling: NodeItem) -> RefItem:
+
+    def insert_item_before_sibling(
+        self, *, new_item: NodeItem, sibling: NodeItem
+    ) -> RefItem:
         """Inserts an item, given its node_item instance, before other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=False)
+        return new_item.get_ref()
 
     def delete_items(self, *, node_items: List[NodeItem]) -> None:
         """Deletes an item, given its instance or ref, and any children it has."""
         refs = []
         for _ in node_items:
             refs.append(_.get_ref())
-            
+
         self._delete_items(refs=refs)
-        
+
     def replace_item(self, *, new_item: NodeItem, old_item: NodeItem) -> RefItem:
         """Replace item with new item."""
         self.insert_item_after_sibling(new_item=new_item, sibling=old_item)
-        self.delete_items(node_items=[item])
-        
+        self.delete_items(node_items=[old_item])
+
         return new_item.get_ref()
 
     # ----------------------------
@@ -1879,7 +1884,7 @@ class DoclingDocument(BaseModel):
 
     def _append_item(self, *, item: NodeItem, parent_ref: RefItem) -> RefItem:
         """Append item of its type."""
-        cref: str = "" # to be updated
+        cref: str = ""  # to be updated
 
         if isinstance(item, TextItem):
             item_label = "texts"
@@ -1980,7 +1985,7 @@ class DoclingDocument(BaseModel):
 
     def _delete_items(self, refs: list[RefItem]) -> bool:
         """Delete document item using the self-reference."""
-        to_be_deleted_items: dict[tuple[int, ...], str] = {} # stack to cref
+        to_be_deleted_items: dict[tuple[int, ...], str] = {}  # stack to cref
 
         # Identify the to_be_deleted_items
         for item, stack in self._iterate_items_with_stack(with_groups=True):
@@ -2008,7 +2013,7 @@ class DoclingDocument(BaseModel):
 
         # Create a new lookup of the orphans:
         # dict of item_label (`texts`, `tables`, ...) to a
-        # dict of item_label with delta (default = -1).   
+        # dict of item_label with delta (default = -1).
         lookup: dict[str, dict[int, int]] = {}
 
         for stack_, ref_ in to_be_deleted_items.items():
@@ -2790,9 +2795,7 @@ class DoclingDocument(BaseModel):
         traverse_pictures: bool = False,
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
-        _stack: list[
-            int
-        ] = [],  # fixed parameter, carries through the node nesting level
+        _stack: Optional[list[int]] = None,
     ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
         """Iterate elements with stack."""
         my_layers = (
@@ -2800,6 +2803,8 @@ class DoclingDocument(BaseModel):
             if included_content_layers is not None
             else DEFAULT_CONTENT_LAYERS
         )
+        my_stack: list[int] = _stack if _stack is not None else []
+
         if not root:
             root = self.body
 
@@ -2819,17 +2824,17 @@ class DoclingDocument(BaseModel):
         )
 
         if should_yield:
-            yield root, _stack
+            yield root, my_stack
 
         # Handle picture traversal - only traverse children if requested
         if isinstance(root, PictureItem) and not traverse_pictures:
             return
 
-        _stack.append(-1)
+        my_stack.append(-1)
 
         # Traverse children
         for child_ind, child_ref in enumerate(root.children):
-            _stack[-1] = child_ind
+            my_stack[-1] = child_ind
             child = child_ref.resolve(self)
 
             if isinstance(child, NodeItem):
@@ -2838,11 +2843,11 @@ class DoclingDocument(BaseModel):
                     with_groups=with_groups,
                     traverse_pictures=traverse_pictures,
                     page_no=page_no,
-                    _stack=_stack,
+                    _stack=my_stack,
                     included_content_layers=my_layers,
                 )
 
-        _stack.pop()
+        my_stack.pop()
 
     def _clear_picture_pil_cache(self):
         """Clear cache storage of all images."""
