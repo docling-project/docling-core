@@ -232,6 +232,7 @@ class DocumentToken(str, Enum):
             DocItemLabel.KEY_VALUE_REGION: DocumentToken.KEY_VALUE_REGION,
             DocItemLabel.PARAGRAPH: DocumentToken.PARAGRAPH,
             DocItemLabel.REFERENCE: DocumentToken.REFERENCE,
+            DocItemLabel.CHART: DocumentToken.CHART,
         }
 
         res: str
