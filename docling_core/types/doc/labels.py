@@ -8,6 +8,7 @@ class DocItemLabel(str, Enum):
     """DocItemLabel."""
 
     CAPTION = "caption"
+    CHART = "chart"
     FOOTNOTE = "footnote"
     FORMULA = "formula"
     LIST_ITEM = "list_item"
