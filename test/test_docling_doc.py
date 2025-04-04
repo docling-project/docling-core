@@ -1320,7 +1320,6 @@ def test_document_manipulation():
     doc.insert_item_before_sibling(new_item=text_item_1, sibling=node)
     doc.insert_item_after_sibling(new_item=text_item_2, sibling=node)
 
-    # FIXME fix this
     filename = Path("test/data/doc/constructed_doc.inserted_text.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
@@ -1397,6 +1396,5 @@ def test_document_manipulation():
     )
     doc.replace_item(old_item=text_item_3, new_item=text_item_5)
 
-    # FIXME fix this
     filename = Path("test/data/doc/constructed_doc.replaced_item.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
