@@ -1308,13 +1308,11 @@ def test_document_manipulation():
         self_ref="#",
         text="new list item (before)",
         orig="new list item (before)",
-        label=DocItemLabel.LIST_ITEM,
     )
     text_item_2 = ListItem(
         self_ref="#",
         text="new list item (after)",
         orig="new list item (after)",
-        label=DocItemLabel.LIST_ITEM,
     )
 
     node = _resolve(doc=doc, cref="#/texts/10")
@@ -1322,31 +1320,27 @@ def test_document_manipulation():
     doc.insert_item_before_sibling(new_item=text_item_1, sibling=node)
     doc.insert_item_after_sibling(new_item=text_item_2, sibling=node)
 
+    # FIXME fix this
+    filename = Path("test/data/doc/constructed_doc.inserted_text.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
     items = [_resolve(doc=doc, cref="#/texts/10")]
     doc.delete_items(node_items=items)
 
     filename = Path("test/data/doc/constructed_doc.deleted_text.json")
-    _verify(filename=filename, document=doc)
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
     items = [_resolve(doc=doc, cref="#/groups/1")]
     doc.delete_items(node_items=items)
 
     filename = Path("test/data/doc/constructed_doc.deleted_group.json")
-    _verify(filename=filename, document=doc)
-
-    """
-    items = [_resolve(doc=doc, cref="#/tables/0")]
-    doc.delete_items(node_items=items)
-
-    filename = Path("test/data/doc/constructed_doc.deleted_table.json")
-    _verify(filename=filename, document=doc)
-    """
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
     items = [_resolve(doc=doc, cref="#/pictures/1")]
     doc.delete_items(node_items=items)
 
     filename = Path("test/data/doc/constructed_doc.deleted_picture.json")
-    _verify(filename=filename, document=doc)
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
     text_item_3 = TextItem(
         self_ref="#",
@@ -1393,4 +1387,16 @@ def test_document_manipulation():
         )
 
     filename = Path("test/data/doc/constructed_doc.appended_child.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    text_item_5 = TextItem(
+        self_ref="#",
+        text="new child",
+        orig="new child",
+        label=DocItemLabel.TEXT,
+    )
+    doc.replace_item(old_item=text_item_3, new_item=text_item_5)
+
+    # FIXME fix this
+    filename = Path("test/data/doc/constructed_doc.replaced_item.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
