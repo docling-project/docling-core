@@ -1059,7 +1059,9 @@ class FormulaItem(TextItem):
 class PictureItem(FloatingItem):
     """PictureItem."""
 
-    label: typing.Literal[DocItemLabel.PICTURE] = DocItemLabel.PICTURE
+    label: typing.Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = (
+        DocItemLabel.PICTURE
+    )
 
     annotations: List[PictureDataType] = []
 
