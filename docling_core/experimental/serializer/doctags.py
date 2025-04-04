@@ -33,10 +33,12 @@ from docling_core.types.doc.document import (
     PictureClassificationData,
     PictureItem,
     PictureMoleculeData,
+    PictureTabularChartData,
     TableItem,
     TextItem,
     UnorderedList,
 )
+from docling_core.types.doc.labels import DocItemLabel, PictureClassificationLabel
 from docling_core.types.doc.tokens import DocumentToken
 
 
@@ -200,6 +202,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
         parts: list[str] = []
+        is_chart = False
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
@@ -217,6 +220,16 @@ class DocTagsPictureSerializer(BasePictureSerializer):
             ]
             if len(classifications) > 0:
                 predicted_class = classifications[0].predicted_classes[0].class_name
+                if predicted_class in [
+                    PictureClassificationLabel.PIE_CHART,
+                    PictureClassificationLabel.BAR_CHART,
+                    PictureClassificationLabel.STACKED_BAR_CHART,
+                    PictureClassificationLabel.LINE_CHART,
+                    PictureClassificationLabel.FLOW_CHART,
+                    PictureClassificationLabel.SCATTER_CHART,
+                    PictureClassificationLabel.HEATMAP,
+                ]:
+                    is_chart = True
                 body += DocumentToken.get_picture_classification_token(predicted_class)
 
             smiles_annotations = [
@@ -226,6 +239,21 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 body += _wrap(
                     text=smiles_annotations[0].smi, wrap_tag=DocumentToken.SMILES.value
                 )
+
+            tabular_chart_annotations = [
+                ann
+                for ann in item.annotations
+                if isinstance(ann, PictureTabularChartData)
+            ]
+            if len(tabular_chart_annotations) > 0:
+                temp_doc = DoclingDocument(name="temp")
+                temp_table = temp_doc.add_table(
+                    data=tabular_chart_annotations[0].chart_data
+                )
+                otsl_content = temp_table.export_to_otsl(
+                    temp_doc, add_cell_location=False
+                )
+                body += otsl_content
             parts.append(body)
 
         if params.add_caption:
@@ -234,9 +262,14 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 parts.append(cap_text)
 
         text_res = "".join(parts)
+        pic_label = DocItemLabel.PICTURE
+        if is_chart:
+            pic_label = DocItemLabel.CHART
+
         if text_res:
             token = DocumentToken.create_token_name_from_doc_item_label(
-                label=item.label
+                # label=item.label
+                label=pic_label
             )
             text_res = _wrap(text=text_res, wrap_tag=token)
         return SerializationResult(text=text_res)

@@ -49,6 +49,7 @@ from docling_core.types.doc.labels import (
     GraphCellLabel,
     GraphLinkLabel,
     GroupLabel,
+    PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 from docling_core.types.doc.utils import (
@@ -290,22 +291,6 @@ class PictureScatterChartData(PictureChartData):
     points: List[ChartPoint]
 
 
-PictureDataType = Annotated[
-    Union[
-        PictureClassificationData,
-        PictureDescriptionData,
-        PictureMoleculeData,
-        PictureMiscData,
-        PictureLineChartData,
-        PictureBarChartData,
-        PictureStackedBarChartData,
-        PicturePieChartData,
-        PictureScatterChartData,
-    ],
-    Field(discriminator="kind"),
-]
-
-
 class TableCell(BaseModel):
     """TableCell."""
 
@@ -389,6 +374,35 @@ class TableData(BaseModel):  # TBD
                     table_data[i][j] = cell
 
         return table_data
+
+
+class PictureTabularChartData(PictureChartData):
+    """Base class for picture chart data.
+
+    Attributes:
+        title (str): The title of the chart.
+        chart_data (TableData): Chart data in the table format.
+    """
+
+    kind: Literal["tabular_chart_data"] = "tabular_chart_data"
+    chart_data: TableData
+
+
+PictureDataType = Annotated[
+    Union[
+        PictureClassificationData,
+        PictureDescriptionData,
+        PictureMoleculeData,
+        PictureMiscData,
+        PictureTabularChartData,
+        PictureLineChartData,
+        PictureBarChartData,
+        PictureStackedBarChartData,
+        PicturePieChartData,
+        PictureScatterChartData,
+    ],
+    Field(discriminator="kind"),
+]
 
 
 class DocumentOrigin(BaseModel):
@@ -1045,7 +1059,9 @@ class FormulaItem(TextItem):
 class PictureItem(FloatingItem):
     """PictureItem."""
 
-    label: typing.Literal[DocItemLabel.PICTURE] = DocItemLabel.PICTURE
+    label: typing.Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = (
+        DocItemLabel.PICTURE
+    )
 
     annotations: List[PictureDataType] = []
 
@@ -3605,11 +3621,28 @@ class DoclingDocument(BaseModel):
 
         def otsl_parse_texts(texts, tokens):
             split_word = TableToken.OTSL_NL.value
+            # CLEAN tokens from extra tags, only structural OTSL allowed
+            clean_tokens = []
+            for t in tokens:
+                if t in [
+                    TableToken.OTSL_ECEL.value,
+                    TableToken.OTSL_FCEL.value,
+                    TableToken.OTSL_LCEL.value,
+                    TableToken.OTSL_UCEL.value,
+                    TableToken.OTSL_XCEL.value,
+                    TableToken.OTSL_NL.value,
+                    TableToken.OTSL_CHED.value,
+                    TableToken.OTSL_RHED.value,
+                    TableToken.OTSL_SROW.value,
+                ]:
+                    clean_tokens.append(t)
+            tokens = clean_tokens
             split_row_tokens = [
                 list(y)
                 for x, y in itertools.groupby(tokens, lambda z: z == split_word)
                 if not x
             ]
+
             table_cells = []
             r_idx = 0
             c_idx = 0
@@ -3761,6 +3794,40 @@ class DoclingDocument(BaseModel):
                 table_cells=table_cells,
             )
 
+        def extract_chart_type(text_chunk: str):
+            label = None
+            chart_labels = [
+                PictureClassificationLabel.PIE_CHART,
+                PictureClassificationLabel.BAR_CHART,
+                PictureClassificationLabel.STACKED_BAR_CHART,
+                PictureClassificationLabel.LINE_CHART,
+                PictureClassificationLabel.FLOW_CHART,
+                PictureClassificationLabel.SCATTER_CHART,
+                PictureClassificationLabel.HEATMAP,
+                "line",
+                "dot_line",
+                "vbar_categorical",
+                "hbar_categorical",
+            ]
+
+            # Current SmolDocling can predict different labels:
+            chart_labels_mapping = {
+                "line": PictureClassificationLabel.LINE_CHART,
+                "dot_line": PictureClassificationLabel.LINE_CHART,
+                "vbar_categorical": PictureClassificationLabel.BAR_CHART,
+                "hbar_categorical": PictureClassificationLabel.BAR_CHART,
+            }
+
+            for clabel in chart_labels:
+                tag = f"<{clabel}>"
+                if tag in text_chunk:
+                    if clabel in chart_labels_mapping:
+                        label = PictureClassificationLabel(chart_labels_mapping[clabel])
+                    else:
+                        label = PictureClassificationLabel(clabel)
+                    break
+            return label
+
         def parse_key_value_item(
             tokens: str, image: Optional[PILImage.Image] = None
         ) -> Tuple[GraphData, Optional[ProvenanceItem]]:
@@ -3892,10 +3959,9 @@ class DoclingDocument(BaseModel):
                 rf"{DocumentToken.ORDERED_LIST.value}|"
                 rf"{DocumentToken.UNORDERED_LIST.value}|"
                 rf"{DocItemLabel.KEY_VALUE_REGION}|"
+                rf"{DocumentToken.CHART.value}|"
                 rf"{DocumentToken.OTSL.value})>.*?</(?P=tag)>"
             )
-
-            # DocumentToken.OTSL
             pattern = re.compile(tag_pattern, re.DOTALL)
 
             # Go through each match in order
@@ -3927,8 +3993,13 @@ class DoclingDocument(BaseModel):
                     else:
                         self.add_table(data=table_data, caption=caption)
 
-                elif tag_name == DocItemLabel.PICTURE:
+                elif tag_name in [DocItemLabel.PICTURE, DocItemLabel.CHART]:
                     caption, caption_bbox = extract_caption(full_chunk)
+                    table_data = None
+                    chart_type = None
+                    if tag_name == DocumentToken.CHART.value:
+                        table_data = parse_table_content(full_chunk)
+                        chart_type = extract_chart_type(full_chunk)
                     if image:
                         if bbox:
                             im_width, im_height = image.size
@@ -3963,6 +4034,26 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
+                            pic_title = "picture"
+                            if chart_type is not None:
+                                pic.annotations.append(
+                                    PictureClassificationData(
+                                        provenance="load_from_doctags",
+                                        predicted_classes=[
+                                            # chart_type
+                                            PictureClassificationClass(
+                                                class_name=chart_type, confidence=1.0
+                                            )
+                                        ],
+                                    )
+                                )
+                                pic_title = chart_type
+                            if table_data is not None:
+                                # Add chart data as PictureTabularChartData
+                                pd = PictureTabularChartData(
+                                    chart_data=table_data, title=pic_title
+                                )
+                                pic.annotations.append(pd)
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
@@ -3984,6 +4075,25 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
+                            if chart_type is not None:
+                                pic.annotations.append(
+                                    PictureClassificationData(
+                                        provenance="load_from_doctags",
+                                        predicted_classes=[
+                                            # chart_type
+                                            PictureClassificationClass(
+                                                class_name=chart_type, confidence=1.0
+                                            )
+                                        ],
+                                    )
+                                )
+                            if table_data is not None:
+                                # Add chart data as PictureTabularChartData
+                                pd = PictureTabularChartData(
+                                    chart_data=table_data, title=pic_title
+                                )
+                                pic.annotations.append(pd)
+
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
                     key_value_data, kv_item_prov = parse_key_value_item(
                         full_chunk, image
