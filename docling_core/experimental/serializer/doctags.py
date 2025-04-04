@@ -254,7 +254,6 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                     temp_doc, add_cell_location=False
                 )
                 body += otsl_content
-                print("In the serializer, OTSL: {}".format(otsl_content))
             parts.append(body)
 
         if params.add_caption:
