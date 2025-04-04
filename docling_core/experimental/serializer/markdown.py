@@ -26,7 +26,11 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import CommonParams, DocSerializer
+from docling_core.experimental.serializer.common import (
+    CommonParams,
+    DocSerializer,
+    create_ser_result,
+)
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CodeItem,
@@ -61,6 +65,7 @@ class MarkdownParams(CommonParams):
     wrap_width: Optional[PositiveInt] = None
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
+    escape_html: bool = True
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -78,46 +83,51 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = MarkdownParams(**kwargs)
-        parts: list[str] = []
+        res_parts: list[SerializationResult] = []
         escape_html = True
         escape_underscores = True
         if isinstance(item, TitleItem):
-            text = f"# {item.text}"
+            text_part = f"# {item.text}"
         elif isinstance(item, SectionHeaderItem):
-            text = f"{(item.level + 1) * '#'} {item.text}"
+            text_part = f"{(item.level + 1) * '#'} {item.text}"
         elif isinstance(item, CodeItem):
-            text = f"`{item.text}`" if is_inline_scope else f"```\n{item.text}\n```"
+            text_part = (
+                f"`{item.text}`" if is_inline_scope else f"```\n{item.text}\n```"
+            )
             escape_html = False
             escape_underscores = False
         elif isinstance(item, FormulaItem):
             if item.text:
-                text = f"${item.text}$" if is_inline_scope else f"$${item.text}$$"
+                text_part = f"${item.text}$" if is_inline_scope else f"$${item.text}$$"
             elif item.orig:
-                text = "<!-- formula-not-decoded -->"
+                text_part = "<!-- formula-not-decoded -->"
             else:
-                text = ""
+                text_part = ""
             escape_html = False
             escape_underscores = False
         elif params.wrap_width:
-            text = textwrap.fill(item.text, width=params.wrap_width)
+            text_part = textwrap.fill(item.text, width=params.wrap_width)
         else:
-            text = item.text
-        parts.append(text)
+            text_part = item.text
+
+        if text_part:
+            text_res = create_ser_result(text=text_part, span_source=item)
+            res_parts.append(text_res)
 
         if isinstance(item, FloatingItem):
-            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
-            if cap_text:
-                parts.append(cap_text)
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                res_parts.append(cap_res)
 
-        text_res = (" " if is_inline_scope else "\n\n").join(parts)
-        text_res = doc_serializer.post_process(
-            text=text_res,
+        text = (" " if is_inline_scope else "\n\n").join([r.text for r in res_parts])
+        text = doc_serializer.post_process(
+            text=text,
             escape_html=escape_html,
             escape_underscores=escape_underscores,
             formatting=item.formatting,
             hyperlink=item.hyperlink,
         )
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text, span_source=res_parts)
 
 
 class MarkdownTableSerializer(BaseTableSerializer):
@@ -133,14 +143,14 @@ class MarkdownTableSerializer(BaseTableSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        text_parts: list[str] = []
+        res_parts: list[SerializationResult] = []
 
         cap_res = doc_serializer.serialize_captions(
             item=item,
             **kwargs,
         )
         if cap_res.text:
-            text_parts.append(cap_res.text)
+            res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             rows = [
@@ -165,11 +175,11 @@ class MarkdownTableSerializer(BaseTableSerializer):
             else:
                 table_text = ""
             if table_text:
-                text_parts.append(table_text)
+                res_parts.append(create_ser_result(text=table_text, span_source=item))
 
-        text_res = "\n\n".join(text_parts)
+        text_res = "\n\n".join([r.text for r in res_parts])
 
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=res_parts)
 
 
 class MarkdownPictureSerializer(BasePictureSerializer):
@@ -187,14 +197,14 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         """Serializes the passed item."""
         params = MarkdownParams(**kwargs)
 
-        texts: list[str] = []
+        res_parts: list[SerializationResult] = []
 
         cap_res = doc_serializer.serialize_captions(
             item=item,
             **kwargs,
         )
         if cap_res.text:
-            texts.append(cap_res.text)
+            res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             img_res = self._serialize_image_part(
@@ -204,11 +214,11 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 image_placeholder=params.image_placeholder,
             )
             if img_res.text:
-                texts.append(img_res.text)
+                res_parts.append(img_res)
 
-        text_res = "\n\n".join(texts)
+        text_res = "\n\n".join([r.text for r in res_parts])
 
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=res_parts)
 
     def _serialize_image_part(
         self,
@@ -255,7 +265,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         else:
             text_res = image_placeholder
 
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=item)
 
 
 class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
@@ -272,12 +282,13 @@ class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         # TODO add actual implementation
-        text_res = (
-            "<!-- missing-key-value-item -->"
-            if item.self_ref not in doc_serializer.get_excluded_refs()
-            else ""
-        )
-        return SerializationResult(text=text_res)
+        if item.self_ref not in doc_serializer.get_excluded_refs():
+            return create_ser_result(
+                text="<!-- missing-key-value-item -->",
+                span_source=item,
+            )
+        else:
+            return create_ser_result()
 
 
 class MarkdownFormSerializer(BaseFormSerializer):
@@ -294,12 +305,13 @@ class MarkdownFormSerializer(BaseFormSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         # TODO add actual implementation
-        text_res = (
-            "<!-- missing-form-item -->"
-            if item.self_ref not in doc_serializer.get_excluded_refs()
-            else ""
-        )
-        return SerializationResult(text=text_res)
+        if item.self_ref not in doc_serializer.get_excluded_refs():
+            return create_ser_result(
+                text="<!-- missing-form-item -->",
+                span_source=item,
+            )
+        else:
+            return create_ser_result()
 
 
 class MarkdownListSerializer(BaseModel, BaseListSerializer):
@@ -319,7 +331,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = MarkdownParams(**kwargs)
-        my_visited = visited or set()
+        my_visited = visited if visited is not None else set()
         parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level + 1,
@@ -332,6 +344,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         for p in parts:
             if p.text and p.text[0] == " " and my_parts:
                 my_parts[-1].text = sep.join([my_parts[-1].text, p.text])  # update last
+                my_parts[-1].spans.extend(p.spans)
             else:
                 my_parts.append(p)
 
@@ -348,7 +361,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 for i, c in enumerate(my_parts)
             ]
         )
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=my_parts)
 
 
 class MarkdownInlineSerializer(BaseInlineSerializer):
@@ -366,7 +379,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        my_visited = visited or set()
+        my_visited = visited if visited is not None else set()
         parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level,
@@ -374,7 +387,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
             visited=my_visited,
         )
         text_res = " ".join([p.text for p in parts if p.text])
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=parts)
 
 
 class MarkdownFallbackSerializer(BaseFallbackSerializer):
@@ -391,10 +404,12 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         if isinstance(item, DocItem):
-            text_res = "<!-- missing-text -->"
+            return create_ser_result(
+                text="<!-- missing-text -->",
+                span_source=item,
+            )
         else:
-            text_res = ""  # TODO go with explicit None return type?
-        return SerializationResult(text=text_res)
+            return create_ser_result()
 
 
 class MarkdownDocSerializer(DocSerializer):
@@ -472,7 +487,7 @@ class MarkdownDocSerializer(DocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
         if escape_underscores and params.escape_underscores:
             res = self._escape_underscores(text)
-        if escape_html:
+        if escape_html and params.escape_html:
             res = html.escape(res, quote=False)
         res = super().post_process(
             text=res,
@@ -485,7 +500,7 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
         """Serialize a page out of its parts."""
         text_res = "\n\n".join([p.text for p in parts])
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=parts)
 
     @override
     def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
@@ -493,6 +508,6 @@ class MarkdownDocSerializer(DocSerializer):
         if self.params.page_break_placeholder is not None:
             sep = f"\n\n{self.params.page_break_placeholder}\n\n"
             text_res = sep.join([p.text for p in pages if p.text])
-            return SerializationResult(text=text_res)
+            return create_ser_result(text=text_res, span_source=pages)
         else:
             return self.serialize_page(parts=pages)

@@ -11,24 +11,35 @@ import logging
 import re
 from typing import Any, ClassVar, Final, Iterator, Literal, Optional
 
-from pandas import DataFrame
 from pydantic import Field, StringConstraints, field_validator
-from typing_extensions import Annotated
+from typing_extensions import Annotated, override
 
+from docling_core.experimental.serializer.base import (
+    BaseDocSerializer,
+    BaseTableSerializer,
+    SerializationResult,
+)
+from docling_core.experimental.serializer.common import create_ser_result
+from docling_core.experimental.serializer.markdown import (
+    MarkdownDocSerializer,
+    MarkdownParams,
+)
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, BaseMeta
 from docling_core.types import DoclingDocument as DLDocument
+from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
-    CodeItem,
     DocItem,
+    DoclingDocument,
     DocumentOrigin,
+    InlineGroup,
     LevelNumber,
-    ListItem,
+    OrderedList,
     SectionHeaderItem,
     TableItem,
-    TextItem,
+    TitleItem,
+    UnorderedList,
 )
-from docling_core.types.doc.labels import DocItemLabel
 
 _VERSION: Final = "1.0.0"
 
@@ -64,7 +75,8 @@ class DocMeta(BaseMeta):
         alias=_KEY_HEADINGS,
         min_length=1,
     )
-    captions: Optional[list[str]] = Field(
+    captions: Optional[list[str]] = Field(  # deprecated
+        deprecated=True,
         default=None,
         alias=_KEY_CAPTIONS,
         min_length=1,
@@ -110,6 +122,67 @@ class DocChunk(BaseChunk):
     meta: DocMeta
 
 
+class TripletTableSerializer(BaseTableSerializer):
+    """Triplet-based table item serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        parts: list[SerializationResult] = []
+
+        cap_res = doc_serializer.serialize_captions(
+            item=item,
+            **kwargs,
+        )
+        if cap_res.text:
+            parts.append(cap_res)
+
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            table_df = item.export_to_dataframe()
+            if table_df.shape[0] >= 1 and table_df.shape[1] >= 2:
+
+                # copy header as first row and shift all rows by one
+                table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
+                table_df.index = table_df.index + 1
+                table_df = table_df.sort_index()
+
+                rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
+                cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
+
+                nrows = table_df.shape[0]
+                ncols = table_df.shape[1]
+                table_text_parts = [
+                    f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
+                    for i in range(1, nrows)
+                    for j in range(1, ncols)
+                ]
+                table_text = ". ".join(table_text_parts)
+                parts.append(create_ser_result(text=table_text, span_source=item))
+
+        text_res = "\n\n".join([r.text for r in parts])
+
+        return create_ser_result(text=text_res, span_source=parts)
+
+
+class ChunkingDocSerializer(MarkdownDocSerializer):
+    """Doc serializer used for chunking purposes."""
+
+    table_serializer: BaseTableSerializer = TripletTableSerializer()
+    params: MarkdownParams = MarkdownParams(
+        image_mode=ImageRefMode.PLACEHOLDER,
+        image_placeholder="",
+        escape_underscores=False,
+        escape_html=False,
+    )
+
+
 class HierarchicalChunker(BaseChunker):
     r"""Chunker implementation leveraging the document layout.
 
@@ -119,31 +192,14 @@ class HierarchicalChunker(BaseChunker):
         delim (str): Delimiter to use for merging text. Defaults to "\n".
     """
 
-    merge_list_items: bool = True
+    merge_list_items: Annotated[bool, Field(deprecated=True)] = True
 
-    @classmethod
-    def _triplet_serialize(cls, table_df: DataFrame) -> str:
-
-        # copy header as first row and shift all rows by one
-        table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
-        table_df.index = table_df.index + 1
-        table_df = table_df.sort_index()
-
-        rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
-        cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
-
-        nrows = table_df.shape[0]
-        ncols = table_df.shape[1]
-        texts = [
-            f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
-            for i in range(1, nrows)
-            for j in range(1, ncols)
-        ]
-        output_text = ". ".join(texts)
-
-        return output_text
-
-    def chunk(self, dl_doc: DLDocument, **kwargs: Any) -> Iterator[BaseChunk]:
+    def chunk(
+        self,
+        dl_doc: DLDocument,
+        doc_serializer: Optional[BaseDocSerializer] = None,
+        **kwargs: Any,
+    ) -> Iterator[BaseChunk]:
         r"""Chunk the provided document.
 
         Args:
@@ -152,90 +208,41 @@ class HierarchicalChunker(BaseChunker):
         Yields:
             Iterator[Chunk]: iterator over extracted chunks
         """
+        my_doc_ser = doc_serializer or ChunkingDocSerializer(doc=dl_doc)
         heading_by_level: dict[LevelNumber, str] = {}
-        list_items: list[TextItem] = []
-        for item, level in dl_doc.iterate_items():
-            captions = None
-            if isinstance(item, DocItem):
+        visited: set[str] = set()
+        ser_res = create_ser_result()
+        excluded_refs = my_doc_ser.get_excluded_refs(**kwargs)
+        for item, level in dl_doc.iterate_items(with_groups=True):
+            if item.self_ref in excluded_refs:
+                continue
+            if isinstance(item, (TitleItem, SectionHeaderItem)):
+                level = item.level if isinstance(item, SectionHeaderItem) else 0
+                heading_by_level[level] = item.text
 
-                # first handle any merging needed
-                if self.merge_list_items:
-                    if isinstance(
-                        item, ListItem
-                    ) or (  # TODO remove when all captured as ListItem:
-                        isinstance(item, TextItem)
-                        and item.label == DocItemLabel.LIST_ITEM
-                    ):
-                        list_items.append(item)
-                        continue
-                    elif list_items:  # need to yield
-                        yield DocChunk(
-                            text=self.delim.join([i.text for i in list_items]),
-                            meta=DocMeta(
-                                doc_items=list_items,
-                                headings=[
-                                    heading_by_level[k]
-                                    for k in sorted(heading_by_level)
-                                ]
-                                or None,
-                                origin=dl_doc.origin,
-                            ),
-                        )
-                        list_items = []  # reset
+                # remove headings of higher level as they just went out of scope
+                keys_to_del = [k for k in heading_by_level if k > level]
+                for k in keys_to_del:
+                    heading_by_level.pop(k, None)
+                continue
+            elif (
+                isinstance(item, (OrderedList, UnorderedList, InlineGroup, DocItem))
+                and item.self_ref not in visited
+            ):
+                ser_res = my_doc_ser.serialize(item=item, visited=visited)
+            else:
+                continue
 
-                if isinstance(item, SectionHeaderItem) or (
-                    isinstance(item, TextItem)
-                    and item.label in [DocItemLabel.SECTION_HEADER, DocItemLabel.TITLE]
-                ):
-                    level = (
-                        item.level
-                        if isinstance(item, SectionHeaderItem)
-                        else (0 if item.label == DocItemLabel.TITLE else 1)
-                    )
-                    heading_by_level[level] = item.text
-
-                    # remove headings of higher level as they just went out of scope
-                    keys_to_del = [k for k in heading_by_level if k > level]
-                    for k in keys_to_del:
-                        heading_by_level.pop(k, None)
-                    continue
-
-                if (
-                    isinstance(item, TextItem)
-                    or ((not self.merge_list_items) and isinstance(item, ListItem))
-                    or isinstance(item, CodeItem)
-                ):
-                    text = item.text
-                elif isinstance(item, TableItem):
-                    table_df = item.export_to_dataframe()
-                    if table_df.shape[0] < 1 or table_df.shape[1] < 2:
-                        # at least two cols needed, as first column contains row headers
-                        continue
-                    text = self._triplet_serialize(table_df=table_df)
-                    captions = [
-                        c.text for c in [r.resolve(dl_doc) for r in item.captions]
-                    ] or None
-                else:
-                    continue
+            if not ser_res.text:
+                continue
+            if doc_items := [u.item for u in ser_res.spans]:
                 c = DocChunk(
-                    text=text,
+                    text=ser_res.text,
                     meta=DocMeta(
-                        doc_items=[item],
+                        doc_items=doc_items,
                         headings=[heading_by_level[k] for k in sorted(heading_by_level)]
                         or None,
-                        captions=captions,
                         origin=dl_doc.origin,
                     ),
                 )
                 yield c
-
-        if self.merge_list_items and list_items:  # need to yield
-            yield DocChunk(
-                text=self.delim.join([i.text for i in list_items]),
-                meta=DocMeta(
-                    doc_items=list_items,
-                    headings=[heading_by_level[k] for k in sorted(heading_by_level)]
-                    or None,
-                    origin=dl_doc.origin,
-                ),
-            )

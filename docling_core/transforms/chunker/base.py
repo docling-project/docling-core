@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Iterator
 
 from pydantic import BaseModel
+from typing_extensions import deprecated
 
 from docling_core.types.doc import DoclingDocument as DLDocument
 
@@ -65,8 +66,8 @@ class BaseChunker(BaseModel, ABC):
         """
         raise NotImplementedError()
 
-    def serialize(self, chunk: BaseChunk) -> str:
-        """Serialize the given chunk. This base implementation is embedding-targeted.
+    def contextualize(self, chunk: BaseChunk) -> str:
+        """Contextualize the given chunk. This implementation is embedding-targeted.
 
         Args:
             chunk: chunk to serialize
@@ -93,3 +94,8 @@ class BaseChunker(BaseModel, ABC):
         items.append(chunk.text)
 
         return self.delim.join(items)
+
+    @deprecated("Use contextualize() instead.")
+    def serialize(self, chunk: BaseChunk) -> str:
+        """Contextualize the given chunk. This implementation is embedding-targeted."""
+        return self.contextualize(chunk=chunk)
