@@ -3926,7 +3926,30 @@ class DoclingDocument(BaseModel):
                         self.add_table(data=table_data, prov=prov, caption=caption)
                     else:
                         self.add_table(data=table_data, caption=caption)
-
+                elif tag_name == DocumentToken.DOCUMENT_INDEX:
+                    text_content = extract_inner_text(full_chunk)
+                    table_data = TableData(
+                        table_cells=[
+                            TableCell(
+                                text=text_content,
+                                start_col_offset_idx=0,
+                                end_col_offset_idx=0,
+                                start_row_offset_idx=0,
+                                end_row_offset_idx=0,
+                            )
+                        ],
+                        num_cols=1,
+                        num_rows=1,
+                    )
+                    if bbox:
+                        prov = ProvenanceItem(
+                            bbox=bbox.resize_by_scale(pg_width, pg_height),
+                            charspan=(0, 0),
+                            page_no=page_no,
+                        )
+                        self.add_table(data=table_data, prov=prov)
+                    else:
+                        self.add_table(data=table_data)
                 elif tag_name == DocItemLabel.PICTURE:
                     caption, caption_bbox = extract_caption(full_chunk)
                     if image:
