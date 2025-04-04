@@ -265,7 +265,6 @@ class DocTagsPictureSerializer(BasePictureSerializer):
         pic_label = DocItemLabel.PICTURE
         if is_chart:
             pic_label = DocItemLabel.CHART
-        print(pic_label)
 
         if text_res:
             token = DocumentToken.create_token_name_from_doc_item_label(

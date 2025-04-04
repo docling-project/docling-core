@@ -3991,7 +3991,7 @@ class DoclingDocument(BaseModel):
                     else:
                         self.add_table(data=table_data, caption=caption)
 
-                elif tag_name in [DocItemLabel.PICTURE, DocumentToken.CHART.value]:
+                elif tag_name in [DocItemLabel.PICTURE, DocItemLabel.CHART]:
                     caption, caption_bbox = extract_caption(full_chunk)
                     table_data = None
                     chart_type = None
