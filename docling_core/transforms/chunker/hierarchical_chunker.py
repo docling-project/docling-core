@@ -27,6 +27,7 @@ from docling_core.experimental.serializer.markdown import (
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, BaseMeta
 from docling_core.types import DoclingDocument as DLDocument
+from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DocItem,
     DoclingDocument,
@@ -175,6 +176,7 @@ class ChunkingDocSerializer(MarkdownDocSerializer):
 
     table_serializer: BaseTableSerializer = TripletTableSerializer()
     params: MarkdownParams = MarkdownParams(
+        image_mode=ImageRefMode.PLACEHOLDER,
         image_placeholder="",
         escape_underscores=False,
         escape_html=False,
