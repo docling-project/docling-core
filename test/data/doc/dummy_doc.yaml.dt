@@ -1,4 +1,4 @@
 <doctag><title><loc_42><loc_26><loc_406><loc_46>DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis</title>
-<picture><loc_297><loc_125><loc_457><loc_499><bar_chart><smiles>CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1</smiles><caption><loc_210><loc_196><loc_245><loc_213>Figure 1: Four examples of complex page layouts across different document categories</caption></picture>
+<chart><loc_297><loc_125><loc_457><loc_499><bar_chart><smiles>CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1</smiles><caption><loc_210><loc_196><loc_245><loc_213>Figure 1: Four examples of complex page layouts across different document categories</caption></chart>
 <otsl><loc_210><loc_196><loc_245><loc_213></otsl>
 </doctag>

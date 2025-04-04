@@ -3151,11 +3151,28 @@ class DoclingDocument(BaseModel):
 
         def otsl_parse_texts(texts, tokens):
             split_word = TableToken.OTSL_NL.value
+            # CLEAN tokens from extra tags, only structural OTSL allowed
+            clean_tokens = []
+            for t in tokens:
+                if t in [
+                    TableToken.OTSL_ECEL.value,
+                    TableToken.OTSL_FCEL.value,
+                    TableToken.OTSL_LCEL.value,
+                    TableToken.OTSL_UCEL.value,
+                    TableToken.OTSL_XCEL.value,
+                    TableToken.OTSL_NL.value,
+                    TableToken.OTSL_CHED.value,
+                    TableToken.OTSL_RHED.value,
+                    TableToken.OTSL_SROW.value,
+                ]:
+                    clean_tokens.append(t)
+            tokens = clean_tokens
             split_row_tokens = [
                 list(y)
                 for x, y in itertools.groupby(tokens, lambda z: z == split_word)
                 if not x
             ]
+
             table_cells = []
             r_idx = 0
             c_idx = 0
@@ -3475,8 +3492,6 @@ class DoclingDocument(BaseModel):
                 rf"{DocumentToken.CHART.value}|"
                 rf"{DocumentToken.OTSL.value})>.*?</(?P=tag)>"
             )
-
-            # DocumentToken.OTSL
             pattern = re.compile(tag_pattern, re.DOTALL)
 
             # Go through each match in order
