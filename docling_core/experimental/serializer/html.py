@@ -92,6 +92,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     ) -> SerializationResult:
         """Serializes the passed text item to HTML."""
         params = HTMLParams(**kwargs)
+
+        print(" -> serialising text with label: ", item.label)
         
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem):
@@ -123,7 +125,11 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             # List items are handled by list serializer
             text_inner = self._prepare_content(item.text)
             text = get_html_tag_with_text_direction(html_tag="li", text=text_inner)
+
+            print("text in list-item:", text_inner)
             
+        elif is_inline_scope:            
+            text = self._prepare_content(item.text)
         else:
             # Regular text item
             text_inner = self._prepare_content(item.text)
@@ -302,6 +308,10 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             visited=my_visited,
             **kwargs,
         )
+
+        print("parts of the list")
+        for _ in parts:
+            print(" -> list-parts: ", _)
         
         # Start the appropriate list type
         tag = "ol" if isinstance(item, OrderedList) else "ul"
@@ -309,10 +319,20 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         
         # Add all child parts
         for part in parts:
-            list_html.append(part.text)
-            
+            if part.text.startswith("<li>") and part.text.endswith("</li>"):
+                list_html.append(part.text)
+            elif part.text.startswith("<ol>") and part.text.endswith("</ol>"):
+                list_html.append(part.text)
+            elif part.text.startswith("<ul>") and part.text.endswith("</ul>"):
+                list_html.append(part.text)                
+            else:
+                print(f"WARNING: no <li> for {part.text}")
+                list_html.append(f"<li>{part.text}</li>")
+                
         # Close the list
         list_html.append(f"</{tag}>")
+
+        print(" => list: ", " ".join(list_html))
         
         return SerializationResult(text="\n".join(list_html))
 
@@ -342,13 +362,18 @@ class HTMLInlineSerializer(BaseInlineSerializer):
             visited=my_visited,
             **kwargs,
         )
+
+        for _ in parts:
+            print("inline-parts: ", _)
         
         # Join all parts without separators
-        inline_html = "".join([p.text for p in parts])
+        inline_html = " ".join([p.text for p in parts])
         
         # Wrap in span if needed
         if inline_html:
             inline_html = f"<span class='inline-group'>{inline_html}</span>"
+
+        print(" => inline: ", inline_html)
             
         return SerializationResult(text=inline_html)
 
