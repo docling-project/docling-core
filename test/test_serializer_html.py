@@ -23,6 +23,7 @@ def test_html_export():
         f.write(html_output)
 
     doc.save_as_html(filename="example_document.old.html")
+    doc.save_as_markdown(filename="example_document.old.md")
         
     print("Basic example saved to 'example_document.html'")
     
