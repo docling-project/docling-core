@@ -675,7 +675,7 @@ class NodeItem(BaseModel):
     def _add_child(
         self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem
     ) -> bool:
-        """Add child to a child-less node."""
+        """Append child to node identified by stack."""
         if len(stack) == 0:
 
             # ensure the parent is correct
@@ -1781,7 +1781,7 @@ class DoclingDocument(BaseModel):
 
     def append_child_item(
         self, *, child: NodeItem, parent: Optional[NodeItem] = None
-    ) -> RefItem:
+    ) -> None:
         """Adds an item."""
         if len(child.children) > 0:
             raise ValueError("Can not append a child with children")
@@ -1806,22 +1806,17 @@ class DoclingDocument(BaseModel):
             self._pop_item(item=child)
             raise ValueError(f"Could not append child: {child} to parent: {parent}")
 
-        # Return reference of the appended child (with updated ref and parent_ref)
-        return child.get_ref()
-
     def insert_item_after_sibling(
         self, *, new_item: NodeItem, sibling: NodeItem
-    ) -> RefItem:
+    ) -> None:
         """Inserts an item, given its node_item instance, after other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=True)
-        return new_item.get_ref()
 
     def insert_item_before_sibling(
         self, *, new_item: NodeItem, sibling: NodeItem
-    ) -> RefItem:
+    ) -> None:
         """Inserts an item, given its node_item instance, before other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=False)
-        return new_item.get_ref()
 
     def delete_items(self, *, node_items: List[NodeItem]) -> None:
         """Deletes an item, given its instance or ref, and any children it has."""
@@ -1831,12 +1826,10 @@ class DoclingDocument(BaseModel):
 
         self._delete_items(refs=refs)
 
-    def replace_item(self, *, new_item: NodeItem, old_item: NodeItem) -> RefItem:
+    def replace_item(self, *, new_item: NodeItem, old_item: NodeItem) -> None:
         """Replace item with new item."""
         self.insert_item_after_sibling(new_item=new_item, sibling=old_item)
         self.delete_items(node_items=[old_item])
-
-        return new_item.get_ref()
 
     # ----------------------------
     # Private Manipulation methods

@@ -1,5 +1,6 @@
 import os
 from collections import deque
+from copy import deepcopy
 from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
@@ -1286,13 +1287,8 @@ def test_document_manipulation():
         ref = RefItem(cref=cref)
         return ref.resolve(doc=doc)
 
-    def _print(document: DoclingDocument):
-        for item, stack in doc._iterate_items_with_stack(with_groups=True):
-            print(item.self_ref, "\t", stack)
-        print(doc._export_to_indented_text())
-
-    def _verify(filename: Path, document: DoclingDocument, GENERATE: bool = False):
-        if GENERATE or (not os.path.exists(_gt_filename(filename=filename))):
+    def _verify(filename: Path, document: DoclingDocument, generate: bool = False):
+        if generate or (not os.path.exists(_gt_filename(filename=filename))):
             doc.save_as_json(
                 filename=_gt_filename(filename=filename),
                 artifacts_dir=image_dir,
@@ -1326,13 +1322,8 @@ def test_document_manipulation():
     doc.insert_item_before_sibling(new_item=text_item_1, sibling=node)
     doc.insert_item_after_sibling(new_item=text_item_2, sibling=node)
 
-    # print(ref_item_1, ", ", ref_item_2)
-    # _print(document=doc)
-
     items = [_resolve(doc=doc, cref="#/texts/10")]
     doc.delete_items(node_items=items)
-
-    # _print(document=doc)
 
     filename = Path("test/data/doc/constructed_doc.deleted_text.json")
     _verify(filename=filename, document=doc)
@@ -1364,7 +1355,6 @@ def test_document_manipulation():
         label=DocItemLabel.TEXT,
     )
     doc.append_child_item(child=text_item_3)
-    # _print(document=doc)
 
     text_item_4 = ListItem(
         self_ref="#",
@@ -1372,10 +1362,35 @@ def test_document_manipulation():
         orig="child text appended at body",
         label=DocItemLabel.LIST_ITEM,
     )
-    doc.append_child_item(
-        child=text_item_4, parent=_resolve(doc=doc, cref="#/groups/11")
-    )
-    # _print(document=doc)
+    parent = _resolve(doc=doc, cref="#/groups/11")
+    doc.append_child_item(child=text_item_4, parent=parent)
+
+    # try to add a sibling to the root:
+    with pytest.raises(ValueError):
+        doc.insert_item_before_sibling(
+            new_item=TextItem(
+                self_ref="#",
+                label=DocItemLabel.TEXT,
+                text="foo",
+                orig="foo",
+            ),
+            sibling=doc.body,
+        )
+
+    # try to append a child with children of its own:
+    with pytest.raises(ValueError):
+        doc.append_child_item(
+            child=TextItem(
+                self_ref="#",
+                label=DocItemLabel.TEXT,
+                text="foo",
+                orig="foo",
+                children=[
+                    _resolve(doc=deepcopy(doc), cref=text_item_4.self_ref).get_ref()
+                ],
+            ),
+            parent=doc.body,
+        )
 
     filename = Path("test/data/doc/constructed_doc.appended_child.json")
-    _verify(filename=filename, document=doc)
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
