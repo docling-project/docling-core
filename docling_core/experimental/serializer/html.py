@@ -5,18 +5,16 @@
 
 """Define classes for HTML serialization."""
 import html
-import sys
-from pathlib import Path
-from typing import Optional, Union, List
-
 import logging
+from pathlib import Path
+from typing import Optional, Union
+from xml.etree.cElementTree import SubElement, tostring
+from xml.sax.saxutils import unescape
 
 import latex2mathml.converter
 import latex2mathml.exceptions
 from pydantic import AnyUrl, BaseModel
 from typing_extensions import override
-from xml.etree.cElementTree import SubElement, tostring
-from xml.sax.saxutils import unescape
 
 from docling_core.experimental.serializer.base import (
     BaseDocSerializer,
@@ -35,10 +33,8 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CodeItem,
     ContentLayer,
-    DocItem,
     DoclingDocument,
     FloatingItem,
-    Formatting,
     FormItem,
     FormulaItem,
     GroupItem,
@@ -55,29 +51,31 @@ from docling_core.types.doc.document import (
     TitleItem,
     UnorderedList,
 )
-from docling_core.types.doc.labels import DocItemLabel
-from docling_core.types.doc.utils import get_html_tag_with_text_direction, get_text_direction
+from docling_core.types.doc.utils import (
+    get_html_tag_with_text_direction,
+    get_text_direction,
+)
 
 _logger = logging.getLogger(__name__)
+
 
 class HTMLParams(CommonParams):
     """HTML-specific serialization parameters."""
 
     # Default layers to use for HTML export
     layers: set[ContentLayer] = {ContentLayer.BODY}
-    
+
     # How to handle images
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
-    
+
     # HTML document properties
     html_lang: str = "en"
     css_styles: Optional[str] = None
     add_document_metadata: bool = True
     prettify: bool = True  # Add indentation and line breaks
-    
+
     # Formula rendering options
     formula_to_mathml: bool = True
-    
 
 
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
@@ -95,55 +93,52 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     ) -> SerializationResult:
         """Serializes the passed text item to HTML."""
         params = HTMLParams(**kwargs)
-        
+
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem):
             text_inner = self._prepare_content(item.text)
             text = get_html_tag_with_text_direction(html_tag="h1", text=text_inner)
-            
+
         elif isinstance(item, SectionHeaderItem):
             section_level = min(item.level + 1, 6)
             text_inner = self._prepare_content(item.text)
             text = get_html_tag_with_text_direction(
                 html_tag=f"h{section_level}", text=text_inner
             )
-            
+
         elif isinstance(item, FormulaItem):
             text = self._process_formula(
-                item=item, 
+                item=item,
                 doc=doc,
                 image_mode=params.image_mode,
                 formula_to_mathml=params.formula_to_mathml,
-                is_inline_scope=is_inline_scope
+                is_inline_scope=is_inline_scope,
             )
-            
+
         elif isinstance(item, CodeItem):
-            text = self._process_code(
-                item=item,
-                is_inline_scope=is_inline_scope
-            )
-            
+            text = self._process_code(item=item, is_inline_scope=is_inline_scope)
+
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
             text_inner = self._prepare_content(item.text)
             text = get_html_tag_with_text_direction(html_tag="li", text=text_inner)
-            
-        elif is_inline_scope:            
+
+        elif is_inline_scope:
             text = self._prepare_content(item.text)
         else:
             # Regular text item
             text_inner = self._prepare_content(item.text)
             text = get_html_tag_with_text_direction(html_tag="p", text=text_inner)
-        
+
         # Apply formatting and hyperlinks
         text = doc_serializer.post_process(
             text=text,
             formatting=item.formatting,
             hyperlink=item.hyperlink,
         )
-        
+
         return SerializationResult(text=text)
-        
+
     def _prepare_content(
         self, text: str, do_escape_html=True, do_replace_newline=True
     ) -> str:
@@ -155,8 +150,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         return text
 
     def _process_code(
-        self, 
-        item: FormulaItem, 
+        self,
+        item: FormulaItem,
         is_inline_scope: bool,
     ) -> str:
         code_text = self._prepare_content(
@@ -168,10 +163,10 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             text = f"<pre><code>{code_text}</code></pre>"
 
         return text
-            
+
     def _process_formula(
-        self, 
-        item: FormulaItem, 
+        self,
+        item: FormulaItem,
         doc: DoclingDocument,
         image_mode: ImageRefMode,
         formula_to_mathml: bool,
@@ -181,13 +176,17 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         math_formula = self._prepare_content(
             item.text, do_escape_html=False, do_replace_newline=False
         )
-        
+
         # If formula is empty, try to use an image fallback
         if item.text == "" and item.orig != "":
             img_fallback = self._get_formula_image_fallback(item, doc)
-            if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0 and img_fallback:
+            if (
+                image_mode == ImageRefMode.EMBEDDED
+                and len(item.prov) > 0
+                and img_fallback
+            ):
                 return img_fallback
-                
+
         # Try to generate MathML
         if formula_to_mathml and math_formula:
             try:
@@ -207,16 +206,20 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                     return mathml
                 else:
                     return f"<div>{mathml}</div>"
-                
+
             except Exception:
                 img_fallback = self._get_formula_image_fallback(item, doc)
-                if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0 and img_fallback:
+                if (
+                    image_mode == ImageRefMode.EMBEDDED
+                    and len(item.prov) > 0
+                    and img_fallback
+                ):
                     return img_fallback
                 elif math_formula:
                     return f"<pre>{math_formula}</pre>"
 
         _logger.warning("Could not parse formula with MathML")
-                
+
         # Fallback options if we got here
         if math_formula and is_inline_scope:
             return f"<code>{math_formula}</code>"
@@ -226,16 +229,16 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             return '<span class="formula-not-decoded">Formula not decoded</span>'
         else:
             return '<div class="formula-not-decoded">Formula not decoded</div>'
-    
-    def _get_formula_image_fallback(self, item: TextItem, doc: DoclingDocument) -> Optional[str]:
+
+    def _get_formula_image_fallback(
+        self, item: TextItem, doc: DoclingDocument
+    ) -> Optional[str]:
         """Try to get an image fallback for a formula."""
         item_image = item.get_image(doc=doc)
         if item_image is not None:
             img_ref = ImageRef.from_pil(item_image, dpi=72)
             return (
-                "<figure>"
-                f'<img src="{img_ref.uri}" alt="{item.orig}" />'
-                "</figure>"
+                "<figure>" f'<img src="{img_ref.uri}" alt="{item.orig}" />' "</figure>"
             )
         return None
 
@@ -253,13 +256,13 @@ class HTMLTableSerializer(BaseTableSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed table item to HTML."""
-        #text = item.export_to_html(doc=doc, add_caption=True)
+        # text = item.export_to_html(doc=doc, add_caption=True)
         text = self._serialize(
             item=item,
             doc_serializer=doc_serializer,
             doc=doc,
             add_caption=True,
-            add_footnotes=True
+            add_footnotes=True,
         )
         return SerializationResult(text=text)
 
@@ -319,15 +322,14 @@ class HTMLTableSerializer(BaseTableSerializer):
         if len(caption_text.text) > 0 and len(body) > 0:
             body = f"<table>{caption_text.text}<tbody>{body}</tbody></table>"
         elif len(caption_text.text) == 0 and len(body) > 0:
-            body = f"<table><tbody>{body}</tbody></table>"            
-        elif len(caption_text.text) > 0 and len(body) == 0:            
-            body = f"<table>{caption_text.text}</table>"            
+            body = f"<table><tbody>{body}</tbody></table>"
+        elif len(caption_text.text) > 0 and len(body) == 0:
+            body = f"<table>{caption_text.text}</table>"
         else:
             body = "<table></table>"
 
         return body
 
-    
 
 class HTMLPictureSerializer(BasePictureSerializer):
     """HTML-specific picture item serializer."""
@@ -350,7 +352,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
 
     def _serialize(
         self,
-        item: PictureItem,            
+        item: PictureItem,
         doc: "DoclingDocument",
         add_caption: bool = True,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
@@ -373,7 +375,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
 
             # get the self.image._pil or crop it out of the page-image
             img = item.get_image(doc)
-            
+
             if img is not None:
                 imgb64 = item._image_to_base64(img)
                 img_text = f'<img src="data:image/png;base64,{imgb64}">'
@@ -394,7 +396,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
 
         else:
             return f"<figure>{caption_text}</figure>"
-    
+
 
 class HTMLKeyValueSerializer(BaseKeyValueSerializer):
     """HTML-specific key-value item serializer."""
@@ -409,9 +411,43 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed key-value item to HTML."""
-        # This is a placeholder implementation - we could expand it
-        # to use a description list (dl/dt/dd) or a table
-        return SerializationResult(text="<div class='key-value-region'>Key-value data</div>")
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return SerializationResult(text="")
+
+        # Create a definition list (dl) for key-value pairs
+        parts = ['<dl class="key-value-region">']
+
+        # Group cells by their keys
+        key_to_values: Dict[int, List[int]] = {}
+        for link in item.graph.links:
+            key_to_values.setdefault(link.source_cell_id, []).append(
+                link.target_cell_id
+            )
+
+        # Find all cells
+        cell_by_id = {cell.cell_id: cell for cell in item.graph.cells}
+
+        # Process each key-value pair
+        for key_id, value_ids in key_to_values.items():
+            if key_id in cell_by_id:
+                key_cell = cell_by_id[key_id]
+                key_text = html.escape(key_cell.text)
+                parts.append(f"<dt>{key_text}</dt>")
+
+                for value_id in value_ids:
+                    if value_id in cell_by_id:
+                        value_cell = cell_by_id[value_id]
+                        value_text = html.escape(value_cell.text)
+                        parts.append(f"<dd>{value_text}</dd>")
+
+        parts.append("</dl>")
+
+        # Add caption if available
+        cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+        if cap_text:
+            parts.append(cap_text)
+
+        return SerializationResult(text="\n".join(parts))
 
 
 class HTMLFormSerializer(BaseFormSerializer):
@@ -427,8 +463,29 @@ class HTMLFormSerializer(BaseFormSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed form item to HTML."""
-        # This is a placeholder implementation
-        return SerializationResult(text="<div class='form'>Form data</div>")
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return SerializationResult(text="")
+
+        # Create a form representation (non-functional HTML form)
+        parts = ['<div class="form-container">']
+        
+        # Add caption if available
+        cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+        if cap_text:
+            parts.append(cap_text)
+
+        # Simple representation of form items
+        for cell in item.graph.cells:
+            cell_text = html.escape(cell.text)
+            cell_label = cell.label.value
+            parts.append(
+                f'<div class="form-item form-item-{cell_label}">{cell_text}</div>'
+            )
+
+        parts.append("</div>")
+
+        return SerializationResult(text="\n".join(parts))
+
 
 
 class HTMLListSerializer(BaseModel, BaseListSerializer):
@@ -448,7 +505,7 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
     ) -> SerializationResult:
         """Serializes a list to HTML."""
         my_visited = visited or set()
-        
+
         # Get all child parts
         parts = doc_serializer.get_parts(
             item=item,
@@ -461,7 +518,7 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         # Start the appropriate list type
         tag = "ol" if isinstance(item, OrderedList) else "ul"
         list_html = [f"<{tag}>"]
-        
+
         # Add all child parts
         for part in parts:
             if part.text.startswith("<li>") and part.text.endswith("</li>"):
@@ -469,14 +526,14 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             elif part.text.startswith("<ol>") and part.text.endswith("</ol>"):
                 list_html.append(part.text)
             elif part.text.startswith("<ul>") and part.text.endswith("</ul>"):
-                list_html.append(part.text)                
+                list_html.append(part.text)
             else:
                 _logger.info(f"no <li>, <ol> or <ul> for {part.text}")
                 list_html.append(f"<li>{part.text}</li>")
-                
+
         # Close the list
         list_html.append(f"</{tag}>")
-        
+
         return SerializationResult(text="\n".join(list_html))
 
 
@@ -496,7 +553,7 @@ class HTMLInlineSerializer(BaseInlineSerializer):
     ) -> SerializationResult:
         """Serializes an inline group to HTML."""
         my_visited = visited or set()
-        
+
         # Get all parts with inline scope
         parts = doc_serializer.get_parts(
             item=item,
@@ -508,11 +565,11 @@ class HTMLInlineSerializer(BaseInlineSerializer):
 
         # Join all parts without separators
         inline_html = " ".join([p.text for p in parts])
-        
+
         # Wrap in span if needed
         if inline_html:
             inline_html = f"<span class='inline-group'>{inline_html}</span>"
-            
+
         return SerializationResult(text=inline_html)
 
 
@@ -532,9 +589,11 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         # For group items, we don't generate any markup
         if isinstance(item, GroupItem):
             return SerializationResult(text="")
-            
+
         # For other doc items, add a comment
-        return SerializationResult(text=f"<!-- Unhandled item type: {item.__class__.__name__} -->")
+        return SerializationResult(
+            text=f"<!-- Unhandled item type: {item.__class__.__name__} -->"
+        )
 
 
 class HTMLDocSerializer(DocSerializer):
@@ -595,41 +654,41 @@ class HTMLDocSerializer(DocSerializer):
             self._generate_head(),
             "<body>",
         ]
-        
+
         # Add all pages
         for page in pages:
             if page.text:
                 html_parts.append(page.text)
-                
+
         # Close HTML structure
         html_parts.extend(["</body>", "</html>"])
-        
+
         # Join with newlines
         html_content = "\n".join(html_parts)
-        
+
         return SerializationResult(text=html_content)
-        
+
     @override
     def serialize_captions(
         self,
         item: FloatingItem,
-        tag: str = 'figcaption',
+        tag: str = "figcaption",
         **kwargs,
     ) -> SerializationResult:
         """Serialize the item's captions."""
         caption_parts = []
-        
+
         # Extract caption text from all caption items
         for cap in item.captions:
             caption_item = cap.resolve(self.doc)
             if isinstance(caption_item, TextItem):
                 caption_parts.append(caption_item.text)
-                
+
         # Join all captions with a space
         if caption_parts:
             caption_text = " ".join(caption_parts)
             text_dir = get_text_direction(caption_text)
-            
+
             # Create proper HTML
             if text_dir == "rtl":
                 return SerializationResult(
@@ -637,9 +696,9 @@ class HTMLDocSerializer(DocSerializer):
                 )
             else:
                 return SerializationResult(
-                    text=f'<{tag}>{html.escape(caption_text)}</{tag}>'
+                    text=f"<{tag}>{html.escape(caption_text)}</{tag}>"
                 )
-                
+
         return SerializationResult(text="")
 
     def _generate_head(self) -> str:
@@ -791,4 +850,3 @@ class HTMLDocSerializer(DocSerializer):
         margin-top: 0.5em;
     }
 </style>"""
-    
