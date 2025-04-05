@@ -112,14 +112,15 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 item=item, 
                 doc=doc,
                 image_mode=params.image_mode,
-                formula_to_mathml=params.formula_to_mathml
+                formula_to_mathml=params.formula_to_mathml,
+                is_inline_scope=is_inline_scope
             )
             
         elif isinstance(item, CodeItem):
-            code_text = self._prepare_content(
-                item.text, do_escape_html=True, do_replace_newline=False
+            text = self._process_code(
+                item=item,
+                is_inline_scope=is_inline_scope
             )
-            text = f"<pre><code>{code_text}</code></pre>"
             
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
@@ -153,13 +154,29 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         if do_replace_newline:
             text = text.replace("\n", "<br>")
         return text
-    
+
+    def _process_code(
+        self, 
+        item: FormulaItem, 
+        is_inline_scope: bool,
+    ) -> str:
+        code_text = self._prepare_content(
+            item.text, do_escape_html=True, do_replace_newline=False
+        )
+        if is_inline_scope:
+            text = f"<code>{code_text}</code>"
+        else:
+            text = f"<pre><code>{code_text}</code></pre>"
+
+        return text
+            
     def _process_formula(
         self, 
         item: FormulaItem, 
         doc: DoclingDocument,
         image_mode: ImageRefMode,
-        formula_to_mathml: bool
+        formula_to_mathml: bool,
+        is_inline_scope: bool,
     ) -> str:
         """Process a formula item to HTML/MathML."""
         math_formula = self._prepare_content(
@@ -175,25 +192,39 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         # Try to generate MathML
         if formula_to_mathml and math_formula:
             try:
+                # Set display mode based on context
+                display_mode = "inline" if is_inline_scope else "block"
                 mathml_element = latex2mathml.converter.convert_to_element(
-                    math_formula, display="block"
+                    math_formula, display=display_mode
                 )
                 annotation = SubElement(
                     mathml_element, "annotation", dict(encoding="TeX")
                 )
                 annotation.text = math_formula
                 mathml = unescape(tostring(mathml_element, encoding="unicode"))
-                return f"<div>{mathml}</div>"
+
+                # Don't wrap in div for inline formulas
+                if is_inline_scope:
+                    return mathml
+                else:
+                    return f"<div>{mathml}</div>"
+                
             except Exception:
                 img_fallback = self._get_formula_image_fallback(item, doc)
                 if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0 and img_fallback:
                     return img_fallback
                 elif math_formula:
                     return f"<pre>{math_formula}</pre>"
-        
+
+        _logger.warning("Could not parse formula with MathML")
+                
         # Fallback options if we got here
-        if math_formula:
-            return f"<pre>{math_formula}</pre>"
+        if math_formula and is_inline_scope:
+            return f"<code>{math_formula}</code>"
+        elif math_formula and (not is_inline_scope):
+            f"<pre>{math_formula}</pre>"
+        elif is_inline_scope:
+            return '<span class="formula-not-decoded">Formula not decoded</span>'
         else:
             return '<div class="formula-not-decoded">Formula not decoded</div>'
     
