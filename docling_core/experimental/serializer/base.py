@@ -21,6 +21,7 @@ from docling_core.types.doc.document import (
     PictureItem,
     TableItem,
     TextItem,
+    GraphData,
     UnorderedList,
 )
 
@@ -142,6 +143,22 @@ class BaseInlineSerializer(ABC):
         """Serializes the passed item."""
         ...
 
+
+class BaseGraphDataSerializer(ABC):
+    """Base class for inline serializers."""
+
+    @abstractmethod
+    def serialize(
+        self,
+        *,
+        item: GraphData,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        **kwargs,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        ...
+        
 
 class BaseFallbackSerializer(ABC):
     """Base fallback class for item serializers."""

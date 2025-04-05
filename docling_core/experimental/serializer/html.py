@@ -26,6 +26,7 @@ from docling_core.experimental.serializer.base import (
     BasePictureSerializer,
     BaseTableSerializer,
     BaseTextSerializer,
+    BaseGraphDataSerializer,
     SerializationResult,
 )
 from docling_core.experimental.serializer.common import CommonParams, DocSerializer
@@ -49,6 +50,7 @@ from docling_core.types.doc.document import (
     TableItem,
     TextItem,
     TitleItem,
+    GraphData,
     UnorderedList,
 )
 from docling_core.types.doc.utils import (
@@ -397,32 +399,27 @@ class HTMLPictureSerializer(BasePictureSerializer):
         else:
             return f"<figure>{caption_text}</figure>"
 
-
-class HTMLKeyValueSerializer(BaseKeyValueSerializer):
-    """HTML-specific key-value item serializer."""
+class HTMLGraphDataSerializer(BaseGraphDataSerializer):
+    """HTML-specific graph-data item serializer."""        
 
     @override
-    def serialize(
+    def serialize(    
         self,
         *,
-        item: KeyValueItem,
-        doc_serializer: "BaseDocSerializer",
-        doc: DoclingDocument,
-        **kwargs,
+        item: GraphData,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,            
+        tag: str    
     ) -> SerializationResult:
-        """Serializes the passed key-value item to HTML."""
-        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
-            return SerializationResult(text="")
-        
         # Build cell lookup by ID
-        cell_map = {cell.cell_id: cell for cell in item.graph.cells}
+        cell_map = {cell.cell_id: cell for cell in item.cells}
         
         # Build relationship maps
         child_links = {}  # source_id -> list of child_ids (to_child)
         value_links = {}  # key_id -> list of value_ids (to_value)
         parents = set()   # Set of all IDs that are targets of to_child (to find roots)
 
-        for link in item.graph.links:
+        for link in item.links:
             if link.source_cell_id not in cell_map or link.target_cell_id not in cell_map:
                 continue
                 
@@ -434,13 +431,13 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
         
         # Find root cells (cells with no parent)
         root_ids = [cell_id for cell_id in cell_map.keys() if cell_id not in parents]
-        
+
         # Generate the HTML
-        html = ['<div class="key-value-region">']
+        html = [f'<div class="{tag}">']
         
         # If we have roots, make a list structure
         if root_ids:
-            html.append('<ul class="key-value-list">')
+            html.append(f'<ul class="{tag}">')
             for root_id in root_ids:
                 html.append(self._render_cell_tree(
                     cell_id=root_id,
@@ -450,9 +447,10 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
                     level=0
                 ))
             html.append('</ul>')
+            
         # If no hierarchy, fall back to definition list
         else:
-            html.append('<dl class="key-value-pairs">')
+            html.append(f'<dl class="{tag}">')
             for key_id, value_ids in value_links.items():
                 key_cell = cell_map[key_id]
                 key_text = html.escape(key_cell.text)
@@ -466,13 +464,8 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
         
         html.append('</div>')
 
-        # Add caption if available
-        cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
-        if len(cap_text)>0:
-            html.append(cap_text)
-
         return SerializationResult(text="\n".join(html))
-
+        
     def _render_cell_tree(
         self,
         cell_id: int,
@@ -492,14 +485,13 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
                 if value_id in cell_map:
                     value_cell = cell_map[value_id]
                     value_texts.append(html.escape(value_cell.text))
-            
-            if value_texts:
-                cell_text = f"<strong>{cell_text}:</strong> {', '.join(value_texts)}"
+                    
+            cell_text = f"<strong>{cell_text}</strong>: {', '.join(value_texts)}"
     
         # If this cell has children, create a nested list
         if cell_id in child_links and child_links[cell_id]:
             children_html = []
-            children_html.append(f'<li>{cell_text}')
+            children_html.append(f'<li>{cell_text}</li>')
             children_html.append('<ul>')
             
             for child_id in child_links[cell_id]:
@@ -512,11 +504,44 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
                 ))
             
             children_html.append('</ul>')
-            children_html.append('</li>')
             return '\n'.join(children_html)
+        
+        elif cell_id in value_links:
+            return f'<li>{cell_text}</li>'
         else:
             # Leaf node - just render the cell
-            return f'<li>{cell_text}</li>'
+            # return f'<li>{cell_text}</li>'
+            return ""
+        
+class HTMLKeyValueSerializer(BaseKeyValueSerializer):
+    """HTML-specific key-value item serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: KeyValueItem,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        **kwargs,
+    ) -> SerializationResult:
+        """Serializes the passed key-value item to HTML."""
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return SerializationResult(text="")
+        
+        graph_serializer = HTMLGraphDataSerializer()
+
+        # Add key-value if available
+        key_value = graph_serializer.serialize(item=item.graph,
+                                               doc_serializer=doc_serializer,
+                                               doc=doc,
+                                               tag="key-value-region")
+        
+        # Add caption if available
+        caption = doc_serializer.serialize_captions(item=item, **kwargs)
+        
+        return SerializationResult(text="\n".join([key_value.text, caption.text]))
+        
 
 class HTMLFormSerializer(BaseFormSerializer):
     """HTML-specific form item serializer."""
@@ -534,26 +559,18 @@ class HTMLFormSerializer(BaseFormSerializer):
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return SerializationResult(text="")
 
-        # Create a form representation (non-functional HTML form)
-        parts = ['<div class="form-container">']
+        graph_serializer = HTMLGraphDataSerializer()
+
+        # Add key-value if available
+        key_value = graph_serializer.serialize(item=item.graph,
+                                               doc_serializer=doc_serializer,
+                                               doc=doc,
+                                               tag="form-container")
         
         # Add caption if available
-        cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
-        if cap_text:
-            parts.append(cap_text)
-
-        # Simple representation of form items
-        for cell in item.graph.cells:
-            cell_text = html.escape(cell.text)
-            cell_label = cell.label.value
-            parts.append(
-                f'<div class="form-item form-item-{cell_label}">{cell_text}</div>'
-            )
-
-        parts.append("</div>")
-
-        return SerializationResult(text="\n".join(parts))
-
+        caption = doc_serializer.serialize_captions(item=item, **kwargs)
+        
+        return SerializationResult(text="\n".join([key_value.text, caption.text]))
 
 
 class HTMLListSerializer(BaseModel, BaseListSerializer):
