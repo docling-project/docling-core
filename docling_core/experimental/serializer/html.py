@@ -254,9 +254,81 @@ class HTMLTableSerializer(BaseTableSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed table item to HTML."""
-        text = item.export_to_html(doc=doc, add_caption=True)
+        #text = item.export_to_html(doc=doc, add_caption=True)
+        text = self._serialize(
+            item=item,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            add_caption=True,
+            add_footnotes=True
+        )
         return SerializationResult(text=text)
 
+    def _serialize(
+        self,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        add_caption: bool = True,
+        add_footnotes: bool = True,
+    ) -> str:
+        """Export the table as html."""
+        nrows = item.data.num_rows
+        ncols = item.data.num_cols
+
+        caption_text = doc_serializer.serialize_captions(item=item, tag="caption")
+
+        body = ""
+
+        for i in range(nrows):
+            body += "<tr>"
+            for j in range(ncols):
+                cell: TableCell = item.data.grid[i][j]
+
+                rowspan, rowstart = (
+                    cell.row_span,
+                    cell.start_row_offset_idx,
+                )
+                colspan, colstart = (
+                    cell.col_span,
+                    cell.start_col_offset_idx,
+                )
+
+                if rowstart != i:
+                    continue
+                if colstart != j:
+                    continue
+
+                content = html.escape(cell.text.strip())
+                celltag = "td"
+                if cell.column_header:
+                    celltag = "th"
+
+                opening_tag = f"{celltag}"
+                if rowspan > 1:
+                    opening_tag += f' rowspan="{rowspan}"'
+                if colspan > 1:
+                    opening_tag += f' colspan="{colspan}"'
+
+                text_dir = get_text_direction(content)
+                if text_dir == "rtl":
+                    opening_tag += f' dir="{dir}"'
+
+                body += f"<{opening_tag}>{content}</{celltag}>"
+            body += "</tr>"
+
+        if len(caption_text.text) > 0 and len(body) > 0:
+            body = f"<table>{caption_text.text}<tbody>{body}</tbody></table>"
+        elif len(caption_text.text) == 0 and len(body) > 0:
+            body = f"<table><tbody>{body}</tbody></table>"            
+        elif len(caption_text.text) > 0 and len(body) == 0:            
+            body = f"<table>{caption_text.text}</table>"            
+        else:
+            body = "<table></table>"
+
+        return body
+
+    
 
 class HTMLPictureSerializer(BasePictureSerializer):
     """HTML-specific picture item serializer."""
@@ -506,6 +578,7 @@ class HTMLDocSerializer(DocSerializer):
     def serialize_captions(
         self,
         item: FloatingItem,
+        tag: str = 'figcaption',
         **kwargs,
     ) -> SerializationResult:
         """Serialize the item's captions."""
@@ -525,11 +598,11 @@ class HTMLDocSerializer(DocSerializer):
             # Create proper HTML
             if text_dir == "rtl":
                 return SerializationResult(
-                    text=f'<figcaption dir="{text_dir}">{html.escape(caption_text)}</figcaption>'
+                    text=f'<{tag} dir="{text_dir}">{html.escape(caption_text)}</{tag}>'
                 )
             else:
                 return SerializationResult(
-                    text=f'<figcaption>{html.escape(caption_text)}</figcaption>'
+                    text=f'<{tag}>{html.escape(caption_text)}</{tag}>'
                 )
                 
         return SerializationResult(text="")
