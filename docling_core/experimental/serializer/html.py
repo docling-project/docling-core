@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Optional, Union, List
 
+import logging
+
 import latex2mathml.converter
 import latex2mathml.exceptions
 from pydantic import AnyUrl, BaseModel
@@ -56,6 +58,7 @@ from docling_core.types.doc.document import (
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import get_html_tag_with_text_direction, get_text_direction
 
+_logger = logging.getLogger(__name__)
 
 class HTMLParams(CommonParams):
     """HTML-specific serialization parameters."""
@@ -92,8 +95,6 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     ) -> SerializationResult:
         """Serializes the passed text item to HTML."""
         params = HTMLParams(**kwargs)
-
-        print(" -> serialising text with label: ", item.label)
         
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem):
@@ -126,8 +127,6 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             # List items are handled by list serializer
             text_inner = self._prepare_content(item.text)
             text = get_html_tag_with_text_direction(html_tag="li", text=text_inner)
-
-            print("text in list-item:", text_inner)
             
         elif is_inline_scope:            
             text = self._prepare_content(item.text)
@@ -349,6 +348,53 @@ class HTMLPictureSerializer(BasePictureSerializer):
         )
         return SerializationResult(text=text)
 
+    def _serialize(
+        self,
+        item: PictureItem,            
+        doc: "DoclingDocument",
+        add_caption: bool = True,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+    ) -> str:
+        """Export picture to HTML format."""
+        caption_text = doc_serializer.serialize_captions(item=item, tag="figcaption")
+
+        if image_mode == ImageRefMode.PLACEHOLDER:
+            return f"<figure>{caption_text}</figure>"
+
+        elif image_mode == ImageRefMode.EMBEDDED:
+            # short-cut: we already have the image in base64
+            if (
+                isinstance(self.image, ImageRef)
+                and isinstance(self.image.uri, AnyUrl)
+                and self.image.uri.scheme == "data"
+            ):
+                img_text = f'<img src="{self.image.uri}">'
+                return f"<figure>{caption_text}{img_text}</figure>"
+
+            # get the self.image._pil or crop it out of the page-image
+            img = item.get_image(doc)
+            
+            if img is not None:
+                imgb64 = item._image_to_base64(img)
+                img_text = f'<img src="data:image/png;base64,{imgb64}">'
+
+                return f"<figure>{caption_text}{img_text}</figure>"
+            else:
+                return f"<figure>{caption_text}</figure>"
+
+        elif image_mode == ImageRefMode.REFERENCED:
+
+            if not isinstance(self.image, ImageRef) or (
+                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "data"
+            ):
+                return default_response
+
+            img_text = f'<img src="{quote(str(self.image.uri))}">'
+            return f"<figure>{caption_text}{img_text}</figure>"
+
+        else:
+            return f"<figure>{caption_text}</figure>"
+    
 
 class HTMLKeyValueSerializer(BaseKeyValueSerializer):
     """HTML-specific key-value item serializer."""
@@ -412,10 +458,6 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
 
-        print("parts of the list")
-        for _ in parts:
-            print(" -> list-parts: ", _)
-        
         # Start the appropriate list type
         tag = "ol" if isinstance(item, OrderedList) else "ul"
         list_html = [f"<{tag}>"]
@@ -429,13 +471,11 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             elif part.text.startswith("<ul>") and part.text.endswith("</ul>"):
                 list_html.append(part.text)                
             else:
-                print(f"WARNING: no <li> for {part.text}")
+                _logger.info(f"no <li>, <ol> or <ul> for {part.text}")
                 list_html.append(f"<li>{part.text}</li>")
                 
         # Close the list
         list_html.append(f"</{tag}>")
-
-        print(" => list: ", " ".join(list_html))
         
         return SerializationResult(text="\n".join(list_html))
 
@@ -466,17 +506,12 @@ class HTMLInlineSerializer(BaseInlineSerializer):
             **kwargs,
         )
 
-        for _ in parts:
-            print("inline-parts: ", _)
-        
         # Join all parts without separators
         inline_html = " ".join([p.text for p in parts])
         
         # Wrap in span if needed
         if inline_html:
             inline_html = f"<span class='inline-group'>{inline_html}</span>"
-
-        print(" => inline: ", inline_html)
             
         return SerializationResult(text=inline_html)
 
