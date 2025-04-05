@@ -20,13 +20,13 @@ from docling_core.experimental.serializer.base import (
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
+    BaseGraphDataSerializer,
     BaseInlineSerializer,
     BaseKeyValueSerializer,
     BaseListSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
     BaseTextSerializer,
-    BaseGraphDataSerializer,
     SerializationResult,
 )
 from docling_core.experimental.serializer.common import CommonParams, DocSerializer
@@ -38,6 +38,7 @@ from docling_core.types.doc.document import (
     FloatingItem,
     FormItem,
     FormulaItem,
+    GraphData,
     GroupItem,
     ImageRef,
     InlineGroup,
@@ -50,7 +51,6 @@ from docling_core.types.doc.document import (
     TableItem,
     TextItem,
     TitleItem,
-    GraphData,
     UnorderedList,
 )
 from docling_core.types.doc.utils import (
@@ -399,85 +399,95 @@ class HTMLPictureSerializer(BasePictureSerializer):
         else:
             return f"<figure>{caption_text}</figure>"
 
+
 class HTMLGraphDataSerializer(BaseGraphDataSerializer):
-    """HTML-specific graph-data item serializer."""        
+    """HTML-specific graph-data item serializer."""
 
     @override
-    def serialize(    
+    def serialize(
         self,
         *,
         item: GraphData,
         doc_serializer: BaseDocSerializer,
-        doc: DoclingDocument,            
-        tag: str    
+        doc: DoclingDocument,
+        tag: str,
     ) -> SerializationResult:
         # Build cell lookup by ID
         cell_map = {cell.cell_id: cell for cell in item.cells}
-        
+
         # Build relationship maps
         child_links = {}  # source_id -> list of child_ids (to_child)
         value_links = {}  # key_id -> list of value_ids (to_value)
-        parents = set()   # Set of all IDs that are targets of to_child (to find roots)
+        parents = set()  # Set of all IDs that are targets of to_child (to find roots)
 
         for link in item.links:
-            if link.source_cell_id not in cell_map or link.target_cell_id not in cell_map:
+            if (
+                link.source_cell_id not in cell_map
+                or link.target_cell_id not in cell_map
+            ):
                 continue
-                
+
             if link.label.value == "to_child":
-                child_links.setdefault(link.source_cell_id, []).append(link.target_cell_id)
+                child_links.setdefault(link.source_cell_id, []).append(
+                    link.target_cell_id
+                )
                 parents.add(link.target_cell_id)
             elif link.label.value == "to_value":
-                value_links.setdefault(link.source_cell_id, []).append(link.target_cell_id)
-        
+                value_links.setdefault(link.source_cell_id, []).append(
+                    link.target_cell_id
+                )
+
         # Find root cells (cells with no parent)
         root_ids = [cell_id for cell_id in cell_map.keys() if cell_id not in parents]
 
         # Generate the HTML
         html = [f'<div class="{tag}">']
-        
+
         # If we have roots, make a list structure
         if root_ids:
             html.append(f'<ul class="{tag}">')
             for root_id in root_ids:
-                html.append(self._render_cell_tree(
-                    cell_id=root_id,
-                    cell_map=cell_map,
-                    child_links=child_links,
-                    value_links=value_links,
-                    level=0
-                ))
-            html.append('</ul>')
-            
+                html.append(
+                    self._render_cell_tree(
+                        cell_id=root_id,
+                        cell_map=cell_map,
+                        child_links=child_links,
+                        value_links=value_links,
+                        level=0,
+                    )
+                )
+            html.append("</ul>")
+
         # If no hierarchy, fall back to definition list
         else:
             html.append(f'<dl class="{tag}">')
             for key_id, value_ids in value_links.items():
                 key_cell = cell_map[key_id]
                 key_text = html.escape(key_cell.text)
-                html.append(f'<dt>{key_text}</dt>')
-                
+                html.append(f"<dt>{key_text}</dt>")
+
                 for value_id in value_ids:
                     value_cell = cell_map[value_id]
                     value_text = html.escape(value_cell.text)
-                    html.append(f'<dd>{value_text}</dd>')
-            html.append('</dl>')
-        
-        html.append('</div>')
+                    html.append(f"<dd>{value_text}</dd>")
+            html.append("</dl>")
+
+        html.append("</div>")
 
         return SerializationResult(text="\n".join(html))
-        
+
     def _render_cell_tree(
         self,
         cell_id: int,
         cell_map: dict,
         child_links: dict,
         value_links: dict,
-        level: int
+        level: int,
     ) -> str:
         """Recursively render a cell and its children as a nested list."""
         cell = cell_map[cell_id]
         cell_text = html.escape(cell.text)
-        
+
         # Format key-value pairs if this cell has values linked
         if cell_id in value_links:
             value_texts = []
@@ -485,34 +495,37 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
                 if value_id in cell_map:
                     value_cell = cell_map[value_id]
                     value_texts.append(html.escape(value_cell.text))
-                    
+
             cell_text = f"<strong>{cell_text}</strong>: {', '.join(value_texts)}"
-    
+
         # If this cell has children, create a nested list
         if cell_id in child_links and child_links[cell_id]:
             children_html = []
-            children_html.append(f'<li>{cell_text}</li>')
-            children_html.append('<ul>')
-            
+            children_html.append(f"<li>{cell_text}</li>")
+            children_html.append("<ul>")
+
             for child_id in child_links[cell_id]:
-                children_html.append(self._render_cell_tree(
-                    cell_id=child_id,
-                    cell_map=cell_map,
-                    child_links=child_links,
-                    value_links=value_links,
-                    level=level+1
-                ))
-            
-            children_html.append('</ul>')
-            return '\n'.join(children_html)
-        
+                children_html.append(
+                    self._render_cell_tree(
+                        cell_id=child_id,
+                        cell_map=cell_map,
+                        child_links=child_links,
+                        value_links=value_links,
+                        level=level + 1,
+                    )
+                )
+
+            children_html.append("</ul>")
+            return "\n".join(children_html)
+
         elif cell_id in value_links:
-            return f'<li>{cell_text}</li>'
+            return f"<li>{cell_text}</li>"
         else:
             # Leaf node - just render the cell
             # return f'<li>{cell_text}</li>'
             return ""
-        
+
+
 class HTMLKeyValueSerializer(BaseKeyValueSerializer):
     """HTML-specific key-value item serializer."""
 
@@ -528,20 +541,22 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
         """Serializes the passed key-value item to HTML."""
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return SerializationResult(text="")
-        
+
         graph_serializer = HTMLGraphDataSerializer()
 
         # Add key-value if available
-        key_value = graph_serializer.serialize(item=item.graph,
-                                               doc_serializer=doc_serializer,
-                                               doc=doc,
-                                               tag="key-value-region")
-        
+        key_value = graph_serializer.serialize(
+            item=item.graph,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            tag="key-value-region",
+        )
+
         # Add caption if available
         caption = doc_serializer.serialize_captions(item=item, **kwargs)
-        
+
         return SerializationResult(text="\n".join([key_value.text, caption.text]))
-        
+
 
 class HTMLFormSerializer(BaseFormSerializer):
     """HTML-specific form item serializer."""
@@ -562,14 +577,16 @@ class HTMLFormSerializer(BaseFormSerializer):
         graph_serializer = HTMLGraphDataSerializer()
 
         # Add key-value if available
-        key_value = graph_serializer.serialize(item=item.graph,
-                                               doc_serializer=doc_serializer,
-                                               doc=doc,
-                                               tag="form-container")
-        
+        key_value = graph_serializer.serialize(
+            item=item.graph,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            tag="form-container",
+        )
+
         # Add caption if available
         caption = doc_serializer.serialize_captions(item=item, **kwargs)
-        
+
         return SerializationResult(text="\n".join([key_value.text, caption.text]))
 
 
