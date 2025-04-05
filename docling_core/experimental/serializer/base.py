@@ -15,6 +15,7 @@ from docling_core.types.doc.document import (
     DoclingDocument,
     FloatingItem,
     FormItem,
+    GraphData,
     InlineGroup,
     KeyValueItem,
     NodeItem,
@@ -22,7 +23,6 @@ from docling_core.types.doc.document import (
     PictureItem,
     TableItem,
     TextItem,
-    GraphData,
     UnorderedList,
 )
 
@@ -168,7 +168,7 @@ class BaseGraphDataSerializer(ABC):
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
-        
+
 
 class BaseFallbackSerializer(ABC):
     """Base fallback class for item serializers."""
