@@ -154,6 +154,7 @@ class BaseGraphDataSerializer(ABC):
         item: GraphData,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
+        tag: str,
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
