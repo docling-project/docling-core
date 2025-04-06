@@ -8,6 +8,7 @@ import html
 import logging
 from pathlib import Path
 from typing import Optional, Union
+from urllib.parse import quote
 from xml.etree.cElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
@@ -48,6 +49,7 @@ from docling_core.types.doc.document import (
     OrderedList,
     PictureItem,
     SectionHeaderItem,
+    TableCell,
     TableItem,
     TextItem,
     TitleItem,
@@ -153,7 +155,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
     def _process_code(
         self,
-        item: FormulaItem,
+        item: CodeItem,
         is_inline_scope: bool,
     ) -> str:
         code_text = self._prepare_content(
@@ -219,6 +221,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                     return img_fallback
                 elif math_formula:
                     return f"<pre>{math_formula}</pre>"
+                else:
+                    return "<pre>Formula not decoded</pre>"
 
         _logger.warning("Could not parse formula with MathML")
 
@@ -229,8 +233,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             f"<pre>{math_formula}</pre>"
         elif is_inline_scope:
             return '<span class="formula-not-decoded">Formula not decoded</span>'
-        else:
-            return '<div class="formula-not-decoded">Formula not decoded</div>'
+
+        return '<div class="formula-not-decoded">Formula not decoded</div>'
 
     def _get_formula_image_fallback(
         self, item: TextItem, doc: DoclingDocument
@@ -343,61 +347,55 @@ class HTMLPictureSerializer(BasePictureSerializer):
         item: PictureItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        **kwargs,
-    ) -> SerializationResult:
-        """Serializes the passed picture item to HTML."""
-        params = HTMLParams(**kwargs)
-        text = item.export_to_html(
-            doc=doc, add_caption=True, image_mode=params.image_mode
-        )
-        return SerializationResult(text=text)
-
-    def _serialize(
-        self,
-        item: PictureItem,
-        doc: "DoclingDocument",
         add_caption: bool = True,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
-    ) -> str:
+        **kwargs,
+    ) -> SerializationResult:
         """Export picture to HTML format."""
-        caption_text = doc_serializer.serialize_captions(item=item, tag="figcaption")
+        caption = doc_serializer.serialize_captions(
+            item=item, doc_serializer=doc_serializer, doc=doc, tag="figcaption"
+        )
+
+        result = ""
 
         if image_mode == ImageRefMode.PLACEHOLDER:
-            return f"<figure>{caption_text}</figure>"
+            result = f"<figure>{caption.text}</figure>"
 
         elif image_mode == ImageRefMode.EMBEDDED:
             # short-cut: we already have the image in base64
             if (
-                isinstance(self.image, ImageRef)
-                and isinstance(self.image.uri, AnyUrl)
-                and self.image.uri.scheme == "data"
+                isinstance(item.image, ImageRef)
+                and isinstance(item.image.uri, AnyUrl)
+                and item.image.uri.scheme == "data"
             ):
-                img_text = f'<img src="{self.image.uri}">'
-                return f"<figure>{caption_text}{img_text}</figure>"
-
-            # get the self.image._pil or crop it out of the page-image
-            img = item.get_image(doc)
-
-            if img is not None:
-                imgb64 = item._image_to_base64(img)
-                img_text = f'<img src="data:image/png;base64,{imgb64}">'
-
-                return f"<figure>{caption_text}{img_text}</figure>"
+                img_text = f'<img src="{item.image.uri}">'
+                result = f"<figure>{caption.text}{img_text}</figure>"
             else:
-                return f"<figure>{caption_text}</figure>"
+                # get the item.image._pil or crop it out of the page-image
+                img = item.get_image(doc)
+
+                if img is not None:
+                    imgb64 = item._image_to_base64(img)
+                    img_text = f'<img src="data:image/png;base64,{imgb64}">'
+
+                    result = f"<figure>{caption.text}{img_text}</figure>"
+                else:
+                    result = f"<figure>{caption.text}</figure>"
 
         elif image_mode == ImageRefMode.REFERENCED:
 
-            if not isinstance(self.image, ImageRef) or (
-                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "data"
+            if not isinstance(item.image, ImageRef) or (
+                isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
             ):
-                return default_response
+                result = f"<figure>{caption.text}</figure>"
 
-            img_text = f'<img src="{quote(str(self.image.uri))}">'
-            return f"<figure>{caption_text}{img_text}</figure>"
-
+            else:
+                img_text = f'<img src="{quote(str(item.image.uri))}">'
+                result = f"<figure>{caption.text}{img_text}</figure>"
         else:
-            return f"<figure>{caption_text}</figure>"
+            result = f"<figure>{caption.text}</figure>"
+
+        return SerializationResult(text=result)
 
 
 class HTMLGraphDataSerializer(BaseGraphDataSerializer):
@@ -411,14 +409,20 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         tag: str,
+        **kwargs,
     ) -> SerializationResult:
+        """Serialize the graph-data to HTML."""
         # Build cell lookup by ID
         cell_map = {cell.cell_id: cell for cell in item.cells}
 
         # Build relationship maps
-        child_links = {}  # source_id -> list of child_ids (to_child)
-        value_links = {}  # key_id -> list of value_ids (to_value)
-        parents = set()  # Set of all IDs that are targets of to_child (to find roots)
+        child_links: dict[int, list[int]] = (
+            {}
+        )  # source_id -> list of child_ids (to_child)
+        value_links: dict[int, list[int]] = {}  # key_id -> list of value_ids (to_value)
+        parents: set[int] = (
+            set()
+        )  # Set of all IDs that are targets of to_child (to find roots)
 
         for link in item.links:
             if (
@@ -441,13 +445,13 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
         root_ids = [cell_id for cell_id in cell_map.keys() if cell_id not in parents]
 
         # Generate the HTML
-        html = [f'<div class="{tag}">']
+        parts = [f'<div class="{tag}">']
 
         # If we have roots, make a list structure
         if root_ids:
-            html.append(f'<ul class="{tag}">')
+            parts.append(f'<ul class="{tag}">')
             for root_id in root_ids:
-                html.append(
+                parts.append(
                     self._render_cell_tree(
                         cell_id=root_id,
                         cell_map=cell_map,
@@ -456,25 +460,25 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
                         level=0,
                     )
                 )
-            html.append("</ul>")
+            parts.append("</ul>")
 
         # If no hierarchy, fall back to definition list
         else:
-            html.append(f'<dl class="{tag}">')
+            parts.append(f'<dl class="{tag}">')
             for key_id, value_ids in value_links.items():
                 key_cell = cell_map[key_id]
                 key_text = html.escape(key_cell.text)
-                html.append(f"<dt>{key_text}</dt>")
+                parts.append(f"<dt>{key_text}</dt>")
 
                 for value_id in value_ids:
                     value_cell = cell_map[value_id]
                     value_text = html.escape(value_cell.text)
-                    html.append(f"<dd>{value_text}</dd>")
-            html.append("</dl>")
+                    parts.append(f"<dd>{value_text}</dd>")
+            parts.append("</dl>")
 
-        html.append("</div>")
+        parts.append("</div>")
 
-        return SerializationResult(text="\n".join(html))
+        return SerializationResult(text="\n".join(parts))
 
     def _render_cell_tree(
         self,
