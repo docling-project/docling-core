@@ -42,7 +42,6 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     NodeItem,
     OrderedList,
-    PictureClassificationData,
     PictureItem,
     PictureTabularChartData,
     SectionHeaderItem,
@@ -51,7 +50,6 @@ from docling_core.types.doc.document import (
     TitleItem,
     UnorderedList,
 )
-from docling_core.types.doc.labels import PictureClassificationLabel
 
 
 class MarkdownParams(CommonParams):
@@ -213,7 +211,9 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         if not params.disable_chart_tables:
             # Check if picture has attached PictureTabularChartData
             tabular_chart_annotations = [
-                ann for ann in item.annotations if isinstance(ann, PictureTabularChartData)
+                ann
+                for ann in item.annotations
+                if isinstance(ann, PictureTabularChartData)
             ]
             if len(tabular_chart_annotations) > 0:
                 temp_doc = DoclingDocument(name="temp")
