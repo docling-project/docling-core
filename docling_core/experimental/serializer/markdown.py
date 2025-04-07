@@ -60,6 +60,7 @@ class MarkdownParams(CommonParams):
     layers: set[ContentLayer] = {ContentLayer.BODY}
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     image_placeholder: str = "<!-- image -->"
+    disable_chart_tables: bool = False
     indent: int = 4
     wrap_width: Optional[PositiveInt] = None
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
@@ -199,25 +200,6 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         if cap_res.text:
             texts.append(cap_res.text)
 
-        # Check if picture is a chart
-        classifications = [
-            ann
-            for ann in item.annotations
-            if isinstance(ann, PictureClassificationData)
-        ]
-        if len(classifications) > 0:
-            predicted_class = classifications[0].predicted_classes[0].class_name
-            if predicted_class in [
-                PictureClassificationLabel.PIE_CHART,
-                PictureClassificationLabel.BAR_CHART,
-                PictureClassificationLabel.STACKED_BAR_CHART,
-                PictureClassificationLabel.LINE_CHART,
-                PictureClassificationLabel.FLOW_CHART,
-                PictureClassificationLabel.SCATTER_CHART,
-                PictureClassificationLabel.HEATMAP,
-            ]:
-                pass
-
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             img_res = self._serialize_image_part(
                 item=item,
@@ -228,18 +210,19 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             if img_res.text:
                 texts.append(img_res.text)
 
-        # Check if picture has attached PictureTabularChartData
-        tabular_chart_annotations = [
-            ann for ann in item.annotations if isinstance(ann, PictureTabularChartData)
-        ]
-        if len(tabular_chart_annotations) > 0:
-            temp_doc = DoclingDocument(name="temp")
-            temp_table = temp_doc.add_table(
-                data=tabular_chart_annotations[0].chart_data
-            )
-            md_table_content = temp_table.export_to_markdown(temp_doc)
-            if len(md_table_content) > 0:
-                texts.append(md_table_content)
+        if not params.disable_chart_tables:
+            # Check if picture has attached PictureTabularChartData
+            tabular_chart_annotations = [
+                ann for ann in item.annotations if isinstance(ann, PictureTabularChartData)
+            ]
+            if len(tabular_chart_annotations) > 0:
+                temp_doc = DoclingDocument(name="temp")
+                temp_table = temp_doc.add_table(
+                    data=tabular_chart_annotations[0].chart_data
+                )
+                md_table_content = temp_table.export_to_markdown(temp_doc)
+                if len(md_table_content) > 0:
+                    texts.append(md_table_content)
         text_res = "\n\n".join(texts)
 
         return SerializationResult(text=text_res)
