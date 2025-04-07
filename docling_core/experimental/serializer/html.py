@@ -55,6 +55,7 @@ from docling_core.types.doc.document import (
     TitleItem,
     UnorderedList,
 )
+from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
     get_html_tag_with_text_direction,
     get_text_direction,
@@ -269,6 +270,7 @@ class HTMLTableSerializer(BaseTableSerializer):
             doc=doc,
             add_caption=True,
             add_footnotes=True,
+            **kwargs,
         )
         return SerializationResult(text=text)
 
@@ -279,51 +281,55 @@ class HTMLTableSerializer(BaseTableSerializer):
         doc: DoclingDocument,
         add_caption: bool = True,
         add_footnotes: bool = True,
+        **kwargs,
     ) -> str:
         """Export the table as html."""
         nrows = item.data.num_rows
         ncols = item.data.num_cols
 
-        caption_text = doc_serializer.serialize_captions(item=item, tag="caption")
+        caption_text = doc_serializer.serialize_captions(
+            item=item, tag="caption", **kwargs
+        )
 
         body = ""
 
-        for i in range(nrows):
-            body += "<tr>"
-            for j in range(ncols):
-                cell: TableCell = item.data.grid[i][j]
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            for i in range(nrows):
+                body += "<tr>"
+                for j in range(ncols):
+                    cell: TableCell = item.data.grid[i][j]
 
-                rowspan, rowstart = (
-                    cell.row_span,
-                    cell.start_row_offset_idx,
-                )
-                colspan, colstart = (
-                    cell.col_span,
-                    cell.start_col_offset_idx,
-                )
+                    rowspan, rowstart = (
+                        cell.row_span,
+                        cell.start_row_offset_idx,
+                    )
+                    colspan, colstart = (
+                        cell.col_span,
+                        cell.start_col_offset_idx,
+                    )
 
-                if rowstart != i:
-                    continue
-                if colstart != j:
-                    continue
+                    if rowstart != i:
+                        continue
+                    if colstart != j:
+                        continue
 
-                content = html.escape(cell.text.strip())
-                celltag = "td"
-                if cell.column_header:
-                    celltag = "th"
+                    content = html.escape(cell.text.strip())
+                    celltag = "td"
+                    if cell.column_header:
+                        celltag = "th"
 
-                opening_tag = f"{celltag}"
-                if rowspan > 1:
-                    opening_tag += f' rowspan="{rowspan}"'
-                if colspan > 1:
-                    opening_tag += f' colspan="{colspan}"'
+                    opening_tag = f"{celltag}"
+                    if rowspan > 1:
+                        opening_tag += f' rowspan="{rowspan}"'
+                    if colspan > 1:
+                        opening_tag += f' colspan="{colspan}"'
 
-                text_dir = get_text_direction(content)
-                if text_dir == "rtl":
-                    opening_tag += f' dir="{dir}"'
+                    text_dir = get_text_direction(content)
+                    if text_dir == "rtl":
+                        opening_tag += f' dir="{dir}"'
 
-                body += f"<{opening_tag}>{content}</{celltag}>"
-            body += "</tr>"
+                    body += f"<{opening_tag}>{content}</{celltag}>"
+                body += "</tr>"
 
         if len(caption_text.text) > 0 and len(body) > 0:
             body = f"<table>{caption_text.text}<tbody>{body}</tbody></table>"
@@ -353,45 +359,53 @@ class HTMLPictureSerializer(BasePictureSerializer):
     ) -> SerializationResult:
         """Export picture to HTML format."""
         caption = doc_serializer.serialize_captions(
-            item=item, doc_serializer=doc_serializer, doc=doc, tag="figcaption"
+            item=item,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            tag="figcaption",
+            **kwargs,
         )
 
         result = ""
 
-        if image_mode == ImageRefMode.PLACEHOLDER:
-            result = f"<figure>{caption.text}</figure>"
-
-        elif image_mode == ImageRefMode.EMBEDDED:
-            # short-cut: we already have the image in base64
-            if (
-                isinstance(item.image, ImageRef)
-                and isinstance(item.image.uri, AnyUrl)
-                and item.image.uri.scheme == "data"
-            ):
-                img_text = f'<img src="{item.image.uri}">'
-                result = f"<figure>{caption.text}{img_text}</figure>"
-            else:
-                # get the item.image._pil or crop it out of the page-image
-                img = item.get_image(doc)
-
-                if img is not None:
-                    imgb64 = item._image_to_base64(img)
-                    img_text = f'<img src="data:image/png;base64,{imgb64}">'
-
-                    result = f"<figure>{caption.text}{img_text}</figure>"
-                else:
-                    result = f"<figure>{caption.text}</figure>"
-
-        elif image_mode == ImageRefMode.REFERENCED:
-
-            if not isinstance(item.image, ImageRef) or (
-                isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
-            ):
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            if image_mode == ImageRefMode.PLACEHOLDER:
                 result = f"<figure>{caption.text}</figure>"
 
+            elif image_mode == ImageRefMode.EMBEDDED:
+                # short-cut: we already have the image in base64
+                if (
+                    isinstance(item.image, ImageRef)
+                    and isinstance(item.image.uri, AnyUrl)
+                    and item.image.uri.scheme == "data"
+                ):
+                    img_text = f'<img src="{item.image.uri}">'
+                    result = f"<figure>{caption.text}{img_text}</figure>"
+                else:
+                    # get the item.image._pil or crop it out of the page-image
+                    img = item.get_image(doc)
+
+                    if img is not None:
+                        imgb64 = item._image_to_base64(img)
+                        img_text = f'<img src="data:image/png;base64,{imgb64}">'
+
+                        result = f"<figure>{caption.text}{img_text}</figure>"
+                    else:
+                        result = f"<figure>{caption.text}</figure>"
+
+            elif image_mode == ImageRefMode.REFERENCED:
+
+                if not isinstance(item.image, ImageRef) or (
+                    isinstance(item.image.uri, AnyUrl)
+                    and item.image.uri.scheme == "data"
+                ):
+                    result = f"<figure>{caption.text}</figure>"
+
+                else:
+                    img_text = f'<img src="{quote(str(item.image.uri))}">'
+                    result = f"<figure>{caption.text}{img_text}</figure>"
             else:
-                img_text = f'<img src="{quote(str(item.image.uri))}">'
-                result = f"<figure>{caption.text}{img_text}</figure>"
+                result = f"<figure>{caption.text}</figure>"
         else:
             result = f"<figure>{caption.text}</figure>"
 
@@ -782,13 +796,16 @@ class HTMLDocSerializer(DocSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serialize the item's captions."""
+        params = self.params.merge_with_patch(patch=kwargs)
         caption_parts = []
 
-        # Extract caption text from all caption items
-        for cap in item.captions:
-            caption_item = cap.resolve(self.doc)
-            if isinstance(caption_item, TextItem):
-                caption_parts.append(caption_item.text)
+        if DocItemLabel.CAPTION in params.labels:
+            for cap in item.captions:  # Extract caption text from all caption items
+                caption_item = cap.resolve(self.doc)
+                if isinstance(
+                    caption_item, TextItem
+                ) and caption_item.self_ref not in self.get_excluded_refs(**kwargs):
+                    caption_parts.append(caption_item.text)
 
         # Join all captions with a space
         if caption_parts:
