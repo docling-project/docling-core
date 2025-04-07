@@ -58,7 +58,7 @@ class MarkdownParams(CommonParams):
     layers: set[ContentLayer] = {ContentLayer.BODY}
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     image_placeholder: str = "<!-- image -->"
-    disable_chart_tables: bool = False
+    enable_chart_tables: bool = True
     indent: int = 4
     wrap_width: Optional[PositiveInt] = None
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
@@ -208,7 +208,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             if img_res.text:
                 texts.append(img_res.text)
 
-        if not params.disable_chart_tables:
+        if params.enable_chart_tables:
             # Check if picture has attached PictureTabularChartData
             tabular_chart_annotations = [
                 ann
