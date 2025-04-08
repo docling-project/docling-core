@@ -1,74 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
 <head>
-    <link rel="icon" type="image/png"
-    href="https://raw.githubusercontent.com/docling-project/docling/refs/heads/main/docs/assets/logo.svg"/>
-    <meta charset="UTF-8">
-    <title>
-    Powered by Docling
-    </title>
-    <style>
+<meta charset="UTF-8">
+<title>2206.01062v1</title>
+<meta name="generator" content="Docling HTML Serializer">
+<style>
     html {
-    background-color: LightGray;
+        background-color: #f5f5f5;
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
     }
     body {
-    margin: 0 auto;
-    width:800px;
-    padding: 30px;
-    background-color: White;
-    font-family: Arial, sans-serif;
-    box-shadow: 10px 10px 10px grey;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    figure{
-    display: block;
-    width: 100%;
-    margin: 0px;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    h1, h2, h3, h4, h5, h6 {
+        color: #333;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
     }
-    img {
-    display: block;
-    margin: auto;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    max-width: 640px;
-    max-height: 640px;
+    h1 {
+        font-size: 2em;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.3em;
     }
     table {
-    min-width:500px;
-    background-color: White;
-    border-collapse: collapse;
-    cell-padding: 5px;
-    margin: auto;
-    margin-top: 10px;
-    margin-bottom: 10px;
+        border-collapse: collapse;
+        margin: 1em 0;
+        width: 100%;
     }
     th, td {
-    border: 1px solid black;
-    padding: 8px;
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
     }
     th {
-    font-weight: bold;
+        background-color: #f2f2f2;
+        font-weight: bold;
     }
-    table tr:nth-child(even) td{
-    background-color: LightGray;
+    figure {
+        margin: 1.5em 0;
+        text-align: center;
     }
-    math annotation {
-    display: none;
+    figcaption {
+        color: #666;
+        font-style: italic;
+        margin-top: 0.5em;
+    }
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+    pre {
+        background-color: #f6f8fa;
+        border-radius: 3px;
+        padding: 1em;
+        overflow: auto;
+    }
+    code {
+        font-family: monospace;
+        background-color: #f6f8fa;
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+    }
+    pre code {
+        background-color: transparent;
+        padding: 0;
+    }
+    .formula {
+        text-align: center;
+        padding: 0.5em;
+        margin: 1em 0;
+        background-color: #f9f9f9;
     }
     .formula-not-decoded {
-    background: repeating-linear-gradient(
-    45deg, /* Angle of the stripes */
-    LightGray, /* First color */
-    LightGray 10px, /* Length of the first color */
-    White 10px, /* Second color */
-    White 20px /* Length of the second color */
-    );
-    margin: 0;
-    text-align: center;
+        text-align: center;
+        padding: 0.5em;
+        margin: 1em 0;
+        background: repeating-linear-gradient(
+            45deg,
+            #f0f0f0,
+            #f0f0f0 10px,
+            #f9f9f9 10px,
+            #f9f9f9 20px
+        );
     }
-    </style>
-    </head>
+    .page-break {
+        page-break-after: always;
+        border-top: 1px dashed #ccc;
+        margin: 2em 0;
+    }
+    .key-value-region {
+        background-color: #f9f9f9;
+        padding: 1em;
+        border-radius: 4px;
+        margin: 1em 0;
+    }
+    .key-value-region dt {
+        font-weight: bold;
+    }
+    .key-value-region dd {
+        margin-left: 1em;
+        margin-bottom: 0.5em;
+    }
+    .form-container {
+        border: 1px solid #ddd;
+        padding: 1em;
+        border-radius: 4px;
+        margin: 1em 0;
+    }
+    .form-item {
+        margin-bottom: 0.5em;
+    }
+    .image-classification {
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 0.5em;
+    }
+</style>
+</head>
+<body>
+<div class='page'>
 <h2>DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis</h2>
 <p>Birgit Pfitzmann IBM Research Rueschlikon, Switzerland bpf@zurich.ibm.com</p>
 <p>Christoph Auer IBM Research Rueschlikon, Switzerland cau@zurich.ibm.com</p>
@@ -89,6 +143,8 @@
 <p>PDF document conversion, layout segmentation, object-detection, data set, Machine Learning</p>
 <h2>ACMReference Format:</h2>
 <p>Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ahmed S. Nassar, and Peter Staar. 2022. DocLayNet: A Large Human-Annotated Dataset for DocumentLayout Analysis. In Proceedings of the 28th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '22), August 14-18, 2022, Washington, DC, USA. ACM, New York, NY, USA, 9 pages. https://doi.org/10.1145/ 3534678.3539043</p>
+</div>
+<div class='page'>
 <h2>1 INTRODUCTION</h2>
 <p>Despite the substantial improvements achieved with machine-learning (ML) approaches and deep neural networks in recent years, document conversion remains a challenging problem, as demonstrated by the numerous public competitions held on this topic [1-4]. The challenge originates from the huge variability in PDF documents regarding layout, language and formats (scanned, programmatic or a combination of both). Engineering a single ML model that can be applied on all types of documents and provides high-quality layout segmentation remains to this day extremely challenging [5]. To highlight the variability in document layouts, we show a few example documents from the DocLayNet dataset in Figure 1.</p>
 <p>Akeyproblem in the process of document conversion is to understand the structure of a single document page, i.e. which segments of text should be grouped together in a unit. To train models for this task, there are currently two large datasets available to the community, PubLayNet [6] and DocBank [7]. They were introduced in 2019 and 2020 respectively and significantly accelerated the implementation of layout detection and segmentation models due to their sizes of 300K and 500K ground-truth pages. These sizes were achieved by leveraging an automation approach. The benefit of automated ground-truth generation is obvious: one can generate large ground-truth datasets at virtually no cost. However, the automation introduces a constraint on the variability in the dataset, because corresponding structured source data must be available. PubLayNet and DocBank were both generated from scientific document repositories (PubMed and arXiv), which provide XML or L A T E X sources. Those scientific documents present a limited variability in their layouts, because they are typeset in uniform templates provided by the publishers. Obviously, documents such as technical manuals, annual company reports, legal text, government tenders, etc. have very different and partially unique layouts. As a consequence, the layout predictions obtained from models trained on PubLayNet or DocBank is very reasonable when applied on scientific documents. However, for more artistic or free-style layouts, we see sub-par prediction quality from these models, which we demonstrate in Section 5.</p>
@@ -99,6 +155,7 @@
 <li>(3) Detailed Label Set : We define 11 class labels to distinguish layout features in high detail. PubLayNet provides 5 labels; DocBank provides 13, although not a superset of ours.</li>
 <li>(4) Redundant Annotations : A fraction of the pages in the DocLayNet data set carry more than one human annotation.</li>
 </ul>
+<p>1 https://developer.ibm.com/exchanges/data/all/doclaynet</p>
 <p>This enables experimentation with annotation uncertainty and quality control analysis.</p>
 <ul>
 <li>(5) Pre-defined Train-, Test- &amp; Validation-set : Like DocBank, we provide fixed train-, test- &amp; validation-sets to ensure proportional representation of the class-labels. Further, we prevent leakage of unique layouts across sets, which has a large effect on model accuracy scores.</li>
@@ -111,22 +168,30 @@
 <h2>3 THE DOCLAYNET DATASET</h2>
 <p>DocLayNet contains 80863 PDF pages. Among these, 7059 carry two instances of human annotations, and 1591 carry three. This amounts to 91104 total annotation instances. The annotations provide layout information in the shape of labeled, rectangular boundingboxes. We define 11 distinct labels for layout features, namely Caption , Footnote , Formula List-item , , Page-footer , Page-header , Picture , Section-header , Table , Text , and Title . Our reasoning for picking this particular label set is detailed in Section 4.</p>
 <p>In addition to open intellectual property constraints for the source documents, we required that the documents in DocLayNet adhere to a few conditions. Firstly, we kept scanned documents</p>
+</div>
+<div class='page'>
 <figure><figcaption>Figure 2: Distribution of DocLayNet pages across document categories.</figcaption></figure>
 <p>to a minimum, since they introduce difficulties in annotation (see Section 4). As a second condition, we focussed on medium to large documents ( &gt; 10 pages) with technical content, dense in complex tables, figures, plots and captions. Such documents carry a lot of information value, but are often hard to analyse with high accuracy due to their challenging layouts. Counterexamples of documents not included in the dataset are receipts, invoices, hand-written documents or photographs showing 'text in the wild".</p>
 <p>The pages in DocLayNet can be grouped into six distinct categories, namely Financial Reports , Manuals Scientific Articles , , Laws &amp; Regulations , Patents and Government Tenders . Each document category was sourced from various repositories. For example, Financial Reports contain both free-style format annual reports 2 which expose company-specific, artistic layouts as well as the more formal SEC filings. The two largest categories ( Financial Reports and Manuals ) contain a large amount of free-style layouts in order to obtain maximum variability. In the other four categories, we boosted the variability by mixing documents from independent providers, such as different government websites or publishers. In Figure 2, we show the document categories contained in DocLayNet with their respective sizes.</p>
 <p>We did not control the document selection with regard to language. The vast majority of documents contained in DocLayNet (close to 95%) are published in English language. However, DocLayNet also contains a number of documents in other languages such as German (2.5%), French (1.0%) and Japanese (1.0%). While the document language has negligible impact on the performance of computer vision methods such as object detection and segmentation models, it might prove challenging for layout analysis methods which exploit textual features.</p>
 <p>To ensure that future benchmarks in the document-layout analysis community can be easily compared, we have split up DocLayNet into pre-defined train-, test- and validation-sets. In this way, we can avoid spurious variations in the evaluation scores due to random splitting in train-, test- and validation-sets. We also ensured that less frequent labels are represented in train and test sets in equal proportions.</p>
+<p>2 e.g. AAPL from https://www.annualreports.com/</p>
 <p>Table 1 shows the overall frequency and distribution of the labels among the different sets. Importantly, we ensure that subsets are only split on full-document boundaries. This avoids that pages of the same document are spread over train, test and validation set, which can give an undesired evaluation advantage to models and lead to overestimation of their prediction accuracy. We will show the impact of this decision in Section 5.</p>
 <p>In order to accommodate the different types of models currently in use by the community, we provide DocLayNet in an augmented COCO format [16]. This entails the standard COCO ground-truth file (in JSON format) with the associated page images (in PNG format, 1025 × 1025 pixels). Furthermore, custom fields have been added to each COCO record to specify document category, original document filename and page number. In addition, we also provide the original PDF pages, as well as sidecar files containing parsed PDF text and text-cell coordinates (in JSON). All additional files are linked to the primary page images by their matching filenames.</p>
 <p>Despite being cost-intense and far less scalable than automation, human annotation has several benefits over automated groundtruth generation. The first and most obvious reason to leverage human annotations is the freedom to annotate any type of document without requiring a programmatic source. For most PDF documents, the original source document is not available. The latter is not a hard constraint with human annotation, but it is for automated methods. A second reason to use human annotations is that the latter usually provide a more natural interpretation of the page layout. The human-interpreted layout can significantly deviate from the programmatic layout used in typesetting. For example, 'invisible' tables might be used solely for aligning text paragraphs on columns. Such typesetting tricks might be interpreted by automated methods incorrectly as an actual table, while the human annotation will interpret it correctly as Text or other styles. The same applies to multi-line text elements, when authors decided to space them as 'invisible' list elements without bullet symbols. A third reason to gather ground-truth through human annotation is to estimate a 'natural' upper bound on the segmentation accuracy. As we will show in Section 4, certain documents featuring complex layouts can have different but equally acceptable layout interpretations. This natural upper bound for segmentation accuracy can be found by annotating the same pages multiple times by different people and evaluating the inter-annotator agreement. Such a baseline consistency evaluation is very useful to define expectations for a good target accuracy in trained deep neural network models and avoid overfitting (see Table 1). On the flip side, achieving high annotation consistency proved to be a key challenge in human annotation, as we outline in Section 4.</p>
 <h2>4 ANNOTATION CAMPAIGN</h2>
 <p>The annotation campaign was carried out in four phases. In phase one, we identified and prepared the data sources for annotation. In phase two, we determined the class labels and how annotations should be done on the documents in order to obtain maximum consistency. The latter was guided by a detailed requirement analysis and exhaustive experiments. In phase three, we trained the annotation staff and performed exams for quality assurance. In phase four,</p>
+</div>
+<div class='page'>
 <table><caption>Table 1: DocLayNet dataset overview. Along with the frequency of each class label, we present the relative occurrence (as % of row &#x27;Total&#x27;) in the train, test and validation sets. The inter-annotator agreement is computed as the mAP@0.5-0.95 metric between pairwise annotations from the triple-annotated pages, from which we obtain accuracy ranges.</caption><tbody><tr><td></td><td></td><th colspan="4">% of Total</th><th colspan="6">triple inter-annotator mAP @ 0.5-0.95 (%)</th></tr><tr><th>class label</th><th>Count</th><th>Train</th><th>Test</th><th>Val</th><th>All</th><th>Fin</th><th>Man</th><th>Sci</th><th>Law</th><th>Pat</th><th>Ten</th></tr><tr><td>Caption</td><td>22524</td><td>2.04</td><td>1.77</td><td>2.32</td><td>84-89</td><td>40-61</td><td>86-92</td><td>94-99</td><td>95-99</td><td>69-78</td><td>n/a</td></tr><tr><td>Footnote</td><td>6318</td><td>0.60</td><td>0.31</td><td>0.58</td><td>83-91</td><td>n/a</td><td>100</td><td>62-88</td><td>85-94</td><td>n/a</td><td>82-97</td></tr><tr><td>Formula</td><td>25027</td><td>2.25</td><td>1.90</td><td>2.96</td><td>83-85</td><td>n/a</td><td>n/a</td><td>84-87</td><td>86-96</td><td>n/a</td><td>n/a</td></tr><tr><td>List-item</td><td>185660</td><td>17.19</td><td>13.34</td><td>15.82</td><td>87-88</td><td>74-83</td><td>90-92</td><td>97-97</td><td>81-85</td><td>75-88</td><td>93-95</td></tr><tr><td>Page-footer</td><td>70878</td><td>6.51</td><td>5.58</td><td>6.00</td><td>93-94</td><td>88-90</td><td>95-96</td><td>100</td><td>92-97</td><td>100</td><td>96-98</td></tr><tr><td>Page-header</td><td>58022</td><td>5.10</td><td>6.70</td><td>5.06</td><td>85-89</td><td>66-76</td><td>90-94</td><td>98-100</td><td>91-92</td><td>97-99</td><td>81-86</td></tr><tr><td>Picture</td><td>45976</td><td>4.21</td><td>2.78</td><td>5.31</td><td>69-71</td><td>56-59</td><td>82-86</td><td>69-82</td><td>80-95</td><td>66-71</td><td>59-76</td></tr><tr><td>Section-header</td><td>142884</td><td>12.60</td><td>15.77</td><td>12.85</td><td>83-84</td><td>76-81</td><td>90-92</td><td>94-95</td><td>87-94</td><td>69-73</td><td>78-86</td></tr><tr><td>Table</td><td>34733</td><td>3.20</td><td>2.27</td><td>3.60</td><td>77-81</td><td>75-80</td><td>83-86</td><td>98-99</td><td>58-80</td><td>79-84</td><td>70-85</td></tr><tr><td>Text</td><td>510377</td><td>45.82</td><td>49.28</td><td>45.00</td><td>84-86</td><td>81-86</td><td>88-93</td><td>89-93</td><td>87-92</td><td>71-79</td><td>87-95</td></tr><tr><td>Title</td><td>5071</td><td>0.47</td><td>0.30</td><td>0.50</td><td>60-72</td><td>24-63</td><td>50-63</td><td>94-100</td><td>82-96</td><td>68-79</td><td>24-56</td></tr><tr><td>Total</td><td>1107470</td><td>941123</td><td>99816</td><td>66531</td><td>82-83</td><td>71-74</td><td>79-81</td><td>89-94</td><td>86-91</td><td>71-76</td><td>68-85</td></tr></tbody></table>
 <figure><figcaption>Figure 3: Corpus Conversion Service annotation user interface. The PDF page is shown in the background, with overlaid text-cells (in darker shades). The annotation boxes can be drawn by dragging a rectangle over each segment with the respective label from the palette on the right.</figcaption></figure>
 <p>we distributed the annotation workload and performed continuous quality controls. Phase one and two required a small team of experts only. For phases three and four, a group of 40 dedicated annotators were assembled and supervised.</p>
 <p>Phase 1: Data selection and preparation. Our inclusion criteria for documents were described in Section 3. A large effort went into ensuring that all documents are free to use. The data sources include publication repositories such as arXiv 3 , government offices, company websites as well as data directory services for financial reports and patents. Scanned documents were excluded wherever possible because they can be rotated or skewed. This would not allow us to perform annotation with rectangular bounding-boxes and therefore complicate the annotation process.</p>
 <p>Preparation work included uploading and parsing the sourced PDF documents in the Corpus Conversion Service (CCS) [22], a cloud-native platform which provides a visual annotation interface and allows for dataset inspection and analysis. The annotation interface of CCS is shown in Figure 3. The desired balance of pages between the different document categories was achieved by selective subsampling of pages with certain desired properties. For example, we made sure to include the title page of each document and bias the remaining page selection to those with figures or tables. The latter was achieved by leveraging pre-trained object detection models from PubLayNet, which helped us estimate how many figures and tables a given page contains.</p>
 <p>Phase 2: Label selection and guideline. We reviewed the collected documents and identified the most common structural features they exhibit. This was achieved by identifying recurrent layout elements and lead us to the definition of 11 distinct class labels. These 11 class labels are Caption , Footnote , Formula List-item , , Pagefooter , Page-header , Picture , Section-header , Table , Text , and Title . Critical factors that were considered for the choice of these class labels were (1) the overall occurrence of the label, (2) the specificity of the label, (3) recognisability on a single page (i.e. no need for context from previous or next page) and (4) overall coverage of the page. Specificity ensures that the choice of label is not ambiguous, while coverage ensures that all meaningful items on a page can be annotated. We refrained from class labels that are very specific to a document category, such as Abstract in the Scientific Articles category. We also avoided class labels that are tightly linked to the semantics of the text. Labels such as Author and Affiliation , as seen in DocBank, are often only distinguishable by discriminating on</p>
+<p>3 https://arxiv.org/</p>
+</div>
+<div class='page'>
 <p>the textual content of an element, which goes beyond visual layout recognition, in particular outside the Scientific Articles category.</p>
 <p>At first sight, the task of visual document-layout interpretation appears intuitive enough to obtain plausible annotations in most cases. However, during early trial-runs in the core team, we observed many cases in which annotators use different annotation styles, especially for documents with challenging layouts. For example, if a figure is presented with subfigures, one annotator might draw a single figure bounding-box, while another might annotate each subfigure separately. The same applies for lists, where one might annotate all list items in one block or each list item separately. In essence, we observed that challenging layouts would be annotated in different but plausible ways. To illustrate this, we show in Figure 4 multiple examples of plausible but inconsistent annotations on the same pages.</p>
 <p>Obviously, this inconsistency in annotations is not desirable for datasets which are intended to be used for model training. To minimise these inconsistencies, we created a detailed annotation guideline. While perfect consistency across 40 annotation staff members is clearly not possible to achieve, we saw a huge improvement in annotation consistency after the introduction of our annotation guideline. A few selected, non-trivial highlights of the guideline are:</p>
@@ -142,8 +207,11 @@
 <p>Phase 3: Training. After a first trial with a small group of people, we realised that providing the annotation guideline and a set of random practice pages did not yield the desired quality level for layout annotation. Therefore we prepared a subset of pages with two different complexity levels, each with a practice and an exam part. 974 pages were reference-annotated by one proficient core team member. Annotation staff were then given the task to annotate the same subsets (blinded from the reference). By comparing the annotations of each staff member with the reference annotations, we could quantify how closely their annotations matched the reference. Only after passing two exam levels with high annotation quality, staff were admitted into the production phase. Practice iterations</p>
 <figure></figure>
 <p>05237a14f2524e3f53c8454b074409d05078038a6a36b770fcc8ec7e540deae0</p>
+<p>Figure 4: Examples of plausible annotation alternatives for the same page. Criteria in our annotation guideline can resolve cases A to C, while the case D remains ambiguous.</p>
 <p>were carried out over a timeframe of 12 weeks, after which 8 of the 40 initially allocated annotators did not pass the bar.</p>
 <p>Phase 4: Production annotation. The previously selected 80K pages were annotated with the defined 11 class labels by 32 annotators. This production phase took around three months to complete. All annotations were created online through CCS, which visualises the programmatic PDF text-cells as an overlay on the page. The page annotation are obtained by drawing rectangular bounding-boxes, as shown in Figure 3. With regard to the annotation practices, we implemented a few constraints and capabilities on the tooling level. First, we only allow non-overlapping, vertically oriented, rectangular boxes. For the large majority of documents, this constraint was sufficient and it speeds up the annotation considerably in comparison with arbitrary segmentation shapes. Second, annotator staff were not able to see each other's annotations. This was enforced by design to avoid any bias in the annotation, which could skew the numbers of the inter-annotator agreement (see Table 1). We wanted</p>
+</div>
+<div class='page'>
 <p>Table 2: Prediction performance (mAP@0.5-0.95) of object detection networks on DocLayNet test set. The MRCNN (Mask R-CNN) and FRCNN (Faster R-CNN) models with ResNet-50 or ResNet-101 backbone were trained based on the network architectures from the detectron2 model zoo (Mask R-CNN R50, R101-FPN 3x, Faster R-CNN R101-FPN 3x), with default configurations. The YOLO implementation utilized was YOLOv5x6 [13]. All models were initialised using pre-trained weights from the COCO 2017 dataset.</p>
 <table><tbody><tr><td></td><th rowspan="2">human</th><th colspan="2">MRCNN</th><th>FRCNN</th><th>YOLO</th></tr><tr><td></td><th>R50</th><th>R101</th><th>R101</th><th>v5x6</th></tr><tr><td>Caption</td><td>84-89</td><td>68.4</td><td>71.5</td><td>70.1</td><td>77.7</td></tr><tr><td>Footnote</td><td>83-91</td><td>70.9</td><td>71.8</td><td>73.7</td><td>77.2</td></tr><tr><td>Formula</td><td>83-85</td><td>60.1</td><td>63.4</td><td>63.5</td><td>66.2</td></tr><tr><td>List-item</td><td>87-88</td><td>81.2</td><td>80.8</td><td>81.0</td><td>86.2</td></tr><tr><td>Page-footer</td><td>93-94</td><td>61.6</td><td>59.3</td><td>58.9</td><td>61.1</td></tr><tr><td>Page-header</td><td>85-89</td><td>71.9</td><td>70.0</td><td>72.0</td><td>67.9</td></tr><tr><td>Picture</td><td>69-71</td><td>71.7</td><td>72.7</td><td>72.0</td><td>77.1</td></tr><tr><td>Section-header</td><td>83-84</td><td>67.6</td><td>69.3</td><td>68.4</td><td>74.6</td></tr><tr><td>Table</td><td>77-81</td><td>82.2</td><td>82.9</td><td>82.2</td><td>86.3</td></tr><tr><td>Text</td><td>84-86</td><td>84.6</td><td>85.8</td><td>85.4</td><td>88.1</td></tr><tr><td>Title</td><td>60-72</td><td>76.7</td><td>80.4</td><td>79.9</td><td>82.7</td></tr><tr><td>All</td><td>82-83</td><td>72.4</td><td>73.5</td><td>73.4</td><td>76.8</td></tr></tbody></table>
 <p>to avoid this at any cost in order to have clear, unbiased baseline numbers for human document-layout annotation. Third, we introduced the feature of snapping boxes around text segments to obtain a pixel-accurate annotation and again reduce time and effort. The CCS annotation tool automatically shrinks every user-drawn box to the minimum bounding-box around the enclosed text-cells for all purely text-based segments, which excludes only Table and Picture . For the latter, we instructed annotation staff to minimise inclusion of surrounding whitespace while including all graphical lines. A downside of snapping boxes to enclosed text cells is that some wrongly parsed PDF pages cannot be annotated correctly and need to be skipped. Fourth, we established a way to flag pages as rejected for cases where no valid annotation according to the label guidelines could be achieved. Example cases for this would be PDF pages that render incorrectly or contain layouts that are impossible to capture with non-overlapping rectangles. Such rejected pages are not contained in the final dataset. With all these measures in place, experienced annotation staff managed to annotate a single page in a typical timeframe of 20s to 60s, depending on its complexity.</p>
@@ -154,6 +222,8 @@
 <p>In this section, we will present several aspects related to the performance of object detection models on DocLayNet. Similarly as in PubLayNet, we will evaluate the quality of their predictions using mean average precision (mAP) with 10 overlaps that range from 0.5 to 0.95 in steps of 0.05 (mAP@0.5-0.95). These scores are computed by leveraging the evaluation code provided by the COCO API [16].</p>
 <h2>Baselines for Object Detection</h2>
 <p>In Table 2, we present baseline experiments (given in mAP) on Mask R-CNN [12], Faster R-CNN [11], and YOLOv5 [13]. Both training and evaluation were performed on RGB images with dimensions of 1025 × 1025 pixels. For training, we only used one annotation in case of redundantly annotated pages. As one can observe, the variation in mAP between the models is rather low, but overall between 6 and 10% lower than the mAP computed from the pairwise human annotations on triple-annotated pages. This gives a good indication that the DocLayNet dataset poses a worthwhile challenge for the research community to close the gap between human recognition and ML approaches. It is interesting to see that Mask R-CNN and Faster R-CNN produce very comparable mAP scores, indicating that pixel-based image segmentation derived from bounding-boxes does not help to obtain better predictions. On the other hand, the more recent Yolov5x model does very well and even out-performs humans on selected labels such as Text , Table and Picture . This is not entirely surprising, as Text , Table and Picture are abundant and the most visually distinctive in a document.</p>
+</div>
+<div class='page'>
 <p>Table 3: Performance of a Mask R-CNN R50 network in mAP@0.5-0.95 scores trained on DocLayNet with different class label sets. The reduced label sets were obtained by either down-mapping or dropping labels.</p>
 <table><tbody><tr><th>Class-count</th><th>11</th><th>6</th><th>5</th><th>4</th></tr><tr><td>Caption</td><td>68</td><td>Text</td><td>Text</td><td>Text</td></tr><tr><td>Footnote</td><td>71</td><td>Text</td><td>Text</td><td>Text</td></tr><tr><td>Formula</td><td>60</td><td>Text</td><td>Text</td><td>Text</td></tr><tr><td>List-item</td><td>81</td><td>Text</td><td>82</td><td>Text</td></tr><tr><td>Page-footer</td><td>62</td><td>62</td><td>-</td><td>-</td></tr><tr><td>Page-header</td><td>72</td><td>68</td><td>-</td><td>-</td></tr><tr><td>Picture</td><td>72</td><td>72</td><td>72</td><td>72</td></tr><tr><td>Section-header</td><td>68</td><td>67</td><td>69</td><td>68</td></tr><tr><td>Table</td><td>82</td><td>83</td><td>82</td><td>82</td></tr><tr><td>Text</td><td>85</td><td>84</td><td>84</td><td>84</td></tr><tr><td>Title</td><td>77</td><td>Sec.-h.</td><td>Sec.-h.</td><td>Sec.-h.</td></tr><tr><td>Overall</td><td>72</td><td>73</td><td>78</td><td>77</td></tr></tbody></table>
 <h2>Learning Curve</h2>
@@ -167,6 +237,8 @@
 <p>Many documents in DocLayNet have a unique styling. In order to avoid overfitting on a particular style, we have split the train-, test- and validation-sets of DocLayNet on document boundaries, i.e. every document contributes pages to only one set. To the best of our knowledge, this was not considered in PubLayNet or DocBank. To quantify how this affects model performance, we trained and evaluated a Mask R-CNN R50 model on a modified dataset version. Here, the train-, test- and validation-sets were obtained by a randomised draw over the individual pages. As can be seen in Table 4, the difference in model performance is surprisingly large: pagewise splitting gains ˜ 0% in mAP over the document-wise splitting. 1 Thus, random page-wise splitting of DocLayNet can easily lead to accidental overestimation of model performance and should be avoided.</p>
 <h2>Dataset Comparison</h2>
 <p>Throughout this paper, we claim that DocLayNet's wider variety of document layouts leads to more robust layout detection models. In Table 5, we provide evidence for that. We trained models on each of the available datasets (PubLayNet, DocBank and DocLayNet) and evaluated them on the test sets of the other datasets. Due to the different label sets and annotation styles, a direct comparison is not possible. Hence, we focussed on the common labels among the datasets. Between PubLayNet and DocLayNet, these are Picture ,</p>
+</div>
+<div class='page'>
 <p>Table 5: Prediction Performance (mAP@0.5-0.95) of a Mask R-CNN R50 network across the PubLayNet, DocBank &amp; DocLayNet data-sets. By evaluating on common label classes of each dataset, we observe that the DocLayNet-trained model has much less pronounced variations in performance across all datasets.</p>
 <table><tbody><tr><td></td><td></td><th colspan="3">Testing on</th></tr><tr><th>Training on</th><th>labels</th><th>PLN</th><th>DB</th><th>DLN</th></tr><tr><td rowspan="5">PubLayNet (PLN)</td><td>Figure</td><td>96</td><td>43</td><td>23</td></tr><tr><td>Sec-header</td><td>87</td><td>-</td><td>32</td></tr><tr><td>Table</td><td>95</td><td>24</td><td>49</td></tr><tr><td>Text</td><td>96</td><td>-</td><td>42</td></tr><tr><td>total</td><td>93</td><td>34</td><td>30</td></tr><tr><td rowspan="3">DocBank (DB)</td><td>Figure</td><td>77</td><td>71</td><td>31</td></tr><tr><td>Table</td><td>19</td><td>65</td><td>22</td></tr><tr><td>total</td><td>48</td><td>68</td><td>27</td></tr><tr><td rowspan="5">DocLayNet (DLN)</td><td>Figure</td><td>67</td><td>51</td><td>72</td></tr><tr><td>Sec-header</td><td>53</td><td>-</td><td>68</td></tr><tr><td>Table</td><td>87</td><td>43</td><td>82</td></tr><tr><td>Text</td><td>77</td><td>-</td><td>84</td></tr><tr><td>total</td><td>59</td><td>47</td><td>78</td></tr></tbody></table>
 <p>Section-header , Table and Text . Before training, we either mapped or excluded DocLayNet's other labels as specified in table 3, and also PubLayNet's List to Text . Note that the different clustering of lists (by list-element vs. whole list objects) naturally decreases the mAP score for Text .</p>
@@ -193,6 +265,8 @@
 <li>[12] Kaiming He, Georgia Gkioxari, Piotr Dollár, and Ross B. Girshick. Mask R-CNN. In IEEE International Conference on Computer Vision , ICCV, pages 2980-2988. IEEE Computer Society, Oct 2017.</li>
 <li>[13] Glenn Jocher, Alex Stoken, Ayush Chaurasia, Jirka Borovec, NanoCode012, TaoXie, Yonghye Kwon, Kalen Michael, Liu Changyu, Jiacong Fang, Abhiram V, Laughing, tkianai, yxNONG, Piotr Skalski, Adam Hogan, Jebastin Nadar, imyhxy, Lorenzo Mammana, Alex Wang, Cristi Fati, Diego Montes, Jan Hajek, Laurentiu</li>
 </ul>
+</div>
+<div class='page'>
 <figure><figcaption>Text Caption List-Item Formula Table Section-Header Picture Page-Header Page-Footer Title</figcaption></figure>
 <p>Figure 6: Example layout predictions on selected pages from the DocLayNet test-set. (A, D) exhibit favourable results on coloured backgrounds. (B, C) show accurate list-item and paragraph differentiation despite densely-spaced lines. (E) demonstrates good table and figure distinction. (F) shows predictions on a Chinese patent with multiple overlaps, label confusion and missing boxes.</p>
 <p>Diaconu, Mai Thanh Minh, Marc, albinxavi, fatih, oleg, and wanghao yang. ultralytics/yolov5: v6.0 - yolov5n nano models, roboflow integration, tensorflow export, opencv dnn support, October 2021.</p>
@@ -207,4 +281,7 @@
 <li>[21] Peng Zhang, Can Li, Liang Qiao, Zhanzhan Cheng, Shiliang Pu, Yi Niu, and Fei Wu. Vsr: A unified framework for document layout analysis combining vision, semantics and relations, 2021.</li>
 <li>[22] Peter W J Staar, Michele Dolfi, Christoph Auer, and Costas Bekas. Corpus conversion service: A machine learning platform to ingest documents at scale. In Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining , KDD, pages 774-782. ACM, 2018.</li>
 <li>[23] Connor Shorten and Taghi M. Khoshgoftaar. A survey on image data augmentation for deep learning. Journal of Big Data , 6(1):60, 2019.</li>
+</ul>
+</div>
+</body>
 </html>
