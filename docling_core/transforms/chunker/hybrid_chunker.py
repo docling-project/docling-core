@@ -11,6 +11,8 @@ from typing import Any, Iterable, Iterator, Optional, Union
 from pydantic import BaseModel, ConfigDict, PositiveInt, TypeAdapter, model_validator
 from typing_extensions import Self
 
+from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer
+
 try:
     import semchunk
     from transformers import AutoTokenizer, PreTrainedTokenizerBase
@@ -20,6 +22,7 @@ except ImportError:
         "`pip install 'docling-core[chunking]'`"
     )
 
+from docling_core.experimental.serializer.base import BaseDocSerializer
 from docling_core.transforms.chunker import (
     BaseChunk,
     BaseChunker,
@@ -28,7 +31,6 @@ from docling_core.transforms.chunker import (
     HierarchicalChunker,
 )
 from docling_core.types import DoclingDocument
-from docling_core.types.doc.document import TextItem
 
 
 class HybridChunker(BaseChunker):
@@ -81,7 +83,7 @@ class HybridChunker(BaseChunker):
         other_len: int
 
     def _count_chunk_tokens(self, doc_chunk: DocChunk):
-        ser_txt = self.serialize(chunk=doc_chunk)
+        ser_txt = self.contextualize(chunk=doc_chunk)
         return len(self._tokenizer.tokenize(text=ser_txt))
 
     def _doc_chunk_length(self, doc_chunk: DocChunk):
@@ -94,7 +96,11 @@ class HybridChunker(BaseChunker):
         )
 
     def _make_chunk_from_doc_items(
-        self, doc_chunk: DocChunk, window_start: int, window_end: int
+        self,
+        doc_chunk: DocChunk,
+        window_start: int,
+        window_end: int,
+        doc_serializer: BaseDocSerializer,
     ):
         doc_items = doc_chunk.meta.doc_items[window_start : window_end + 1]
         meta = DocMeta(
@@ -106,18 +112,21 @@ class HybridChunker(BaseChunker):
         window_text = (
             doc_chunk.text
             if len(doc_chunk.meta.doc_items) == 1
+            # TODO: merging should ideally be done by the serializer:
             else self.delim.join(
                 [
-                    doc_item.text
+                    res_text
                     for doc_item in doc_items
-                    if isinstance(doc_item, TextItem)
+                    if (res_text := doc_serializer.serialize(item=doc_item).text)
                 ]
             )
         )
         new_chunk = DocChunk(text=window_text, meta=meta)
         return new_chunk
 
-    def _split_by_doc_items(self, doc_chunk: DocChunk) -> list[DocChunk]:
+    def _split_by_doc_items(
+        self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer
+    ) -> list[DocChunk]:
         chunks = []
         window_start = 0
         window_end = 0  # an inclusive index
@@ -127,6 +136,7 @@ class HybridChunker(BaseChunker):
                 doc_chunk=doc_chunk,
                 window_start=window_start,
                 window_end=window_end,
+                doc_serializer=doc_serializer,
             )
             if self._count_chunk_tokens(doc_chunk=new_chunk) <= self.max_tokens:
                 if window_end < num_items - 1:
@@ -153,6 +163,7 @@ class HybridChunker(BaseChunker):
                     doc_chunk=doc_chunk,
                     window_start=window_start,
                     window_end=window_end - 1,
+                    doc_serializer=doc_serializer,
                 )
                 window_start = window_end
             chunks.append(new_chunk)
@@ -199,6 +210,7 @@ class HybridChunker(BaseChunker):
                 chks = chunks[window_start : window_end + 1]
                 doc_items = [it for chk in chks for it in chk.meta.doc_items]
                 candidate = DocChunk(
+                    # TODO: merging should ideally be done by the serializer:
                     text=self.delim.join([chk.text for chk in chks]),
                     meta=DocMeta(
                         doc_items=doc_items,
@@ -231,7 +243,12 @@ class HybridChunker(BaseChunker):
 
         return output_chunks
 
-    def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
+    def chunk(
+        self,
+        dl_doc: DoclingDocument,
+        doc_serializer: Optional[BaseDocSerializer] = None,
+        **kwargs: Any,
+    ) -> Iterator[BaseChunk]:
         r"""Chunk the provided document.
 
         Args:
@@ -240,9 +257,18 @@ class HybridChunker(BaseChunker):
         Yields:
             Iterator[Chunk]: iterator over extracted chunks
         """
+        my_doc_ser = doc_serializer or ChunkingDocSerializer(doc=dl_doc)
         res: Iterable[DocChunk]
-        res = self._inner_chunker.chunk(dl_doc=dl_doc, **kwargs)  # type: ignore
-        res = [x for c in res for x in self._split_by_doc_items(c)]
+        res = self._inner_chunker.chunk(
+            dl_doc=dl_doc,
+            doc_serializer=my_doc_ser,
+            **kwargs,
+        )  # type: ignore
+        res = [
+            x
+            for c in res
+            for x in self._split_by_doc_items(c, doc_serializer=my_doc_ser)
+        ]
         res = [x for c in res for x in self._split_using_plain_text(c)]
         if self.merge_peers:
             res = self._merge_chunks_with_matching_metadata(res)

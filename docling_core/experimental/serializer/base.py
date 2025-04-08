@@ -11,6 +11,7 @@ from typing import Optional, Union
 from pydantic import AnyUrl, BaseModel
 
 from docling_core.types.doc.document import (
+    DocItem,
     DoclingDocument,
     FloatingItem,
     FormItem,
@@ -25,10 +26,19 @@ from docling_core.types.doc.document import (
 )
 
 
+class Span(BaseModel):
+    """Class encapsulating fine-granular document span information."""
+
+    item: DocItem
+    # prov_idx: Optional[PositiveInt] = None  # None to be interpreted as whole DocItem
+
+
 class SerializationResult(BaseModel):
     """SerializationResult."""
 
-    text: str
+    text: str = ""
+    spans: list[Span] = []
+    # group: Optional[GroupItem] = None  # set when result reflects specific group item
 
 
 class BaseTextSerializer(ABC):
@@ -163,7 +173,9 @@ class BaseDocSerializer(ABC):
     """Base class for document serializers."""
 
     @abstractmethod
-    def serialize(self, **kwargs) -> SerializationResult:
+    def serialize(
+        self, *, item: Optional[NodeItem] = None, **kwargs
+    ) -> SerializationResult:
         """Run the serialization."""
         ...
 
