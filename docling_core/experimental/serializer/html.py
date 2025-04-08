@@ -33,6 +33,10 @@ from docling_core.experimental.serializer.base import (
     SerializationResult,
 )
 from docling_core.experimental.serializer.common import CommonParams, DocSerializer
+from docling_core.experimental.serializer.html_styles import (
+    _get_css_for_split_page,
+    _get_css_for_single_column
+)
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CodeItem,
@@ -61,6 +65,8 @@ from docling_core.types.doc.utils import (
     get_html_tag_with_text_direction,
     get_text_direction,
 )
+
+
 
 _logger = logging.getLogger(__name__)
 
@@ -786,6 +792,7 @@ class HTMLDocSerializer(DocSerializer):
     @override
     def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
         """Serialize a document out of its pages."""
+
         # Create HTML structure
         html_parts = [
             "<!DOCTYPE html>",
@@ -793,9 +800,7 @@ class HTMLDocSerializer(DocSerializer):
             "<body>",
         ]
 
-        split_page_view: bool = True
-
-        if split_page_view:
+        if self.params.split_page_view:
             html_parts.append("<table>")
             html_parts.append("<tbody>")
 
@@ -913,8 +918,10 @@ class HTMLDocSerializer(DocSerializer):
         # Add default styles or custom CSS
         if params.css_styles:
             head_parts.append(f"<style>\n{params.css_styles}\n</style>")
+        elif self.params.split_page_view:
+            head_parts.append(_get_css_for_split_page())
         else:
-            head_parts.append(self._get_default_css())
+            head_parts.append(_get_css_for_single_column())
 
         head_parts.append("</head>")
 
