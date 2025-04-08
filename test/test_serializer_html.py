@@ -45,8 +45,10 @@ def test_html_export_with_pageimages():
     doc = DoclingDocument.load_from_json(
         "/Users/taa/Documents/projects/docling/2501.12948v1.json"
     )
-
     doc.save_as_html(filename="2501.12948v1.html", image_mode=ImageRefMode.EMBEDDED)
+    doc.save_as_html(filename="2501.12948v1.split.html", image_mode=ImageRefMode.EMBEDDED, split_page_view=True)
+
+    
     """
 
 
