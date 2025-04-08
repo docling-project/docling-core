@@ -18,7 +18,11 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import CommonParams, DocSerializer
+from docling_core.experimental.serializer.common import (
+    CommonParams,
+    DocSerializer,
+    create_ser_result,
+)
 from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
@@ -137,7 +141,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         text_res = "".join(parts)
         if wrap_tag is not None:
             text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=item)
 
 
 class DocTagsTableSerializer(BaseTableSerializer):
@@ -155,7 +159,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
 
-        parts: list[str] = []
+        res_parts: list[SerializationResult] = []
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             if params.add_location:
@@ -164,7 +168,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
                     xsize=params.xsize,
                     ysize=params.ysize,
                 )
-                parts.append(loc_text)
+                res_parts.append(create_ser_result(text=loc_text, span_source=item))
 
             otsl_text = item.export_to_otsl(
                 doc=doc,
@@ -173,18 +177,18 @@ class DocTagsTableSerializer(BaseTableSerializer):
                 xsize=params.xsize,
                 ysize=params.ysize,
             )
-            parts.append(otsl_text)
+            res_parts.append(create_ser_result(text=otsl_text, span_source=item))
 
         if params.add_caption:
-            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
-            if cap_text:
-                parts.append(cap_text)
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                res_parts.append(cap_res)
 
-        text_res = "".join(parts)
+        text_res = "".join([r.text for r in res_parts])
         if text_res:
             text_res = _wrap(text=text_res, wrap_tag=DocumentToken.OTSL.value)
 
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=res_parts)
 
 
 class DocTagsPictureSerializer(BasePictureSerializer):
@@ -201,7 +205,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
-        parts: list[str] = []
+        res_parts: list[SerializationResult] = []
         is_chart = False
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
@@ -254,25 +258,20 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                     temp_doc, add_cell_location=False
                 )
                 body += otsl_content
-            parts.append(body)
+            res_parts.append(create_ser_result(text=body, span_source=item))
 
         if params.add_caption:
-            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
-            if cap_text:
-                parts.append(cap_text)
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                res_parts.append(cap_res)
 
-        text_res = "".join(parts)
-        pic_label = DocItemLabel.PICTURE
-        if is_chart:
-            pic_label = DocItemLabel.CHART
-
+        text_res = "".join([r.text for r in res_parts])
         if text_res:
             token = DocumentToken.create_token_name_from_doc_item_label(
-                # label=item.label
-                label=pic_label
+                label=DocItemLabel.CHART if is_chart else DocItemLabel.PICTURE,
             )
             text_res = _wrap(text=text_res, wrap_tag=token)
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=res_parts)
 
 
 class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
@@ -289,8 +288,8 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
-
         body = ""
+        results: list[SerializationResult] = []
 
         page_no = 1
         if len(item.prov) > 0:
@@ -335,14 +334,16 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
             tok = f"{cell.label.value}_{cell.cell_id}"
             cell_txt = _wrap(text=cell_txt, wrap_tag=tok)
             body += cell_txt
+        results.append(create_ser_result(text=body, span_source=item))
 
         if params.add_caption:
-            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
-            if cap_text:
-                body += cap_text
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                results.append(cap_res)
 
+        body = "".join([r.text for r in results])
         body = _wrap(body, DocumentToken.KEY_VALUE_REGION.value)
-        return SerializationResult(text=body)
+        return create_ser_result(text=body, span_source=results)
 
 
 class DocTagsFormSerializer(BaseFormSerializer):
@@ -359,8 +360,7 @@ class DocTagsFormSerializer(BaseFormSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         # TODO add actual implementation
-        text_res = ""
-        return SerializationResult(text=text_res)
+        return create_ser_result()
 
 
 class DocTagsListSerializer(BaseModel, BaseListSerializer):
@@ -381,7 +381,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        my_visited = visited or set()
+        my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
         parts = doc_serializer.get_parts(
             item=item,
@@ -407,7 +407,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
         else:
             text_res = ""
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=parts)
 
 
 class DocTagsInlineSerializer(BaseInlineSerializer):
@@ -425,7 +425,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        my_visited = visited or set()
+        my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
         parts = doc_serializer.get_parts(
             item=item,
@@ -440,7 +440,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         if text_res:
             text_res = f"{text_res}{delim}"
             text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=parts)
 
 
 class DocTagsFallbackSerializer(BaseFallbackSerializer):
@@ -456,8 +456,7 @@ class DocTagsFallbackSerializer(BaseFallbackSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        text_res = ""
-        return SerializationResult(text=text_res)
+        return create_ser_result()
 
 
 class DocTagsDocSerializer(DocSerializer):
@@ -482,7 +481,7 @@ class DocTagsDocSerializer(DocSerializer):
         """Serialize a page out of its parts."""
         delim = _get_delim(params=self.params)
         text_res = delim.join([p.text for p in parts])
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=parts)
 
     @override
     def serialize_doc(
@@ -497,7 +496,7 @@ class DocTagsDocSerializer(DocSerializer):
             content = self.serialize_page(parts=list(pages.values())).text
         wrap_tag = DocumentToken.DOCUMENT.value
         text_res = f"<{wrap_tag}>{content}{delim}</{wrap_tag}>"
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=list(pages.values()))
 
     @override
     def serialize_captions(
@@ -507,11 +506,10 @@ class DocTagsDocSerializer(DocSerializer):
     ) -> SerializationResult:
         """Serialize the item's captions."""
         params = DocTagsParams(**kwargs)
-        parts: list[str] = []
-
+        results: list[SerializationResult] = []
         if item.captions:
-            cap_text = super().serialize_captions(item, **kwargs).text
-            if cap_text:
+            cap_res = super().serialize_captions(item, **kwargs)
+            if cap_res.text:
                 if params.add_location:
                     for caption in item.captions:
                         if caption.cref not in self.get_excluded_refs(**kwargs):
@@ -521,9 +519,9 @@ class DocTagsDocSerializer(DocSerializer):
                                     xsize=params.xsize,
                                     ysize=params.ysize,
                                 )
-                                parts.append(loc_txt)
-                parts.append(cap_text)
-        text_res = "".join(parts)
+                                results.append(create_ser_result(text=loc_txt))
+                results.append(cap_res)
+        text_res = "".join([r.text for r in results])
         if text_res:
             text_res = _wrap(text=text_res, wrap_tag=DocumentToken.CAPTION.value)
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=results)

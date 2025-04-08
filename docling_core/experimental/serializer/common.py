@@ -25,6 +25,7 @@ from docling_core.experimental.serializer.base import (
     BaseTableSerializer,
     BaseTextSerializer,
     SerializationResult,
+    Span,
 )
 from docling_core.types.doc.document import (
     DOCUMENT_TOKENS_EXPORT_LABELS,
@@ -47,6 +48,36 @@ from docling_core.types.doc.labels import DocItemLabel
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 _DEFAULT_LAYERS = {cl for cl in ContentLayer}
+
+
+def create_ser_result(
+    *,
+    text: str = "",
+    span_source: Union[DocItem, list[SerializationResult]] = [],
+) -> SerializationResult:
+    """Function for creating `SerializationResult` instances.
+
+    Args:
+        text: the text the use. Defaults to "".
+        span_source: the item or list of results to use as span source. Defaults to [].
+
+    Returns:
+        The created `SerializationResult`.
+    """
+    spans: list[Span]
+    if isinstance(span_source, DocItem):
+        spans = [Span(item=span_source)]
+    else:
+        results: list[SerializationResult] = span_source
+        spans = []
+        for ser_res in results:
+            for span in ser_res.spans:
+                if span not in spans:
+                    spans.append(span)
+    return SerializationResult(
+        text=text,
+        spans=spans,
+    )
 
 
 class CommonParams(BaseModel):
@@ -217,13 +248,16 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> SerializationResult:
         """Serialize a given node."""
         my_visited: set[str] = visited if visited is not None else set()
-        empty_res = SerializationResult(text="")
+        my_kwargs = self.params.merge_with_patch(patch=kwargs).model_dump()
+        empty_res = create_ser_result()
         if item is None or item == self.doc.body:
             if self.doc.body.self_ref not in my_visited:
                 my_visited.add(self.doc.body.self_ref)
                 return self._serialize_body()
             else:
                 return empty_res
+
+        my_visited.add(item.self_ref)
 
         ########
         # groups
@@ -236,7 +270,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 list_level=list_level,
                 is_inline_scope=is_inline_scope,
                 visited=my_visited,
-                **kwargs,
+                **my_kwargs,
             )
         elif isinstance(item, InlineGroup):
             part = self.inline_serializer.serialize(
@@ -245,7 +279,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 doc=self.doc,
                 list_level=list_level,
                 visited=my_visited,
-                **kwargs,
+                **my_kwargs,
             )
         ###########
         # doc items
@@ -261,7 +295,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                         doc_serializer=self,
                         doc=self.doc,
                         is_inline_scope=is_inline_scope,
-                        **kwargs,
+                        **my_kwargs,
                     )
                     if item.self_ref not in self.get_excluded_refs(**kwargs)
                     else empty_res
@@ -271,7 +305,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **kwargs,
+                **my_kwargs,
             )
         elif isinstance(item, PictureItem):
             part = self.picture_serializer.serialize(
@@ -279,28 +313,28 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 doc_serializer=self,
                 doc=self.doc,
                 visited=my_visited,
-                **kwargs,
+                **my_kwargs,
             )
         elif isinstance(item, KeyValueItem):
             part = self.key_value_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **kwargs,
+                **my_kwargs,
             )
         elif isinstance(item, FormItem):
             part = self.form_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **kwargs,
+                **my_kwargs,
             )
         else:
             part = self.fallback_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,
-                **kwargs,
+                **my_kwargs,
             )
         return part
 
@@ -401,15 +435,16 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> SerializationResult:
         """Serialize the item's captions."""
         params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
         if DocItemLabel.CAPTION in params.labels:
-            text_parts: list[str] = [
-                it.text
+            results = [
+                create_ser_result(text=it.text, span_source=it)
                 for cap in item.captions
                 if isinstance(it := cap.resolve(self.doc), TextItem)
                 and it.self_ref not in self.get_excluded_refs(**kwargs)
             ]
-            text_res = params.caption_delim.join(text_parts)
+            text_res = params.caption_delim.join([r.text for r in results])
             text_res = self.post_process(text=text_res)
         else:
             text_res = ""
-        return SerializationResult(text=text_res)
+        return create_ser_result(text=text_res, span_source=results)
