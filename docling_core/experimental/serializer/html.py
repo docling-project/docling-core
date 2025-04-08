@@ -98,6 +98,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         """Serializes the passed text item to HTML."""
         params = HTMLParams(**kwargs)
 
+        print(f"HTMLTextSerializer {item.get_ref().cref}: {item.label} -> {item.text[0:64]}")
+        
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem):
             text_inner = self._prepare_content(item.text)
@@ -262,8 +264,12 @@ class HTMLTableSerializer(BaseTableSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed table item to HTML."""
-        # text = item.export_to_html(doc=doc, add_caption=True)
-        text = self._serialize(
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return SerializationResult(text="")
+
+        print(f"HTMLTableSerializer {item.get_ref().cref}: {item.label}")
+        
+        text = self._serialize_table(
             item=item,
             doc_serializer=doc_serializer,
             doc=doc,
@@ -271,8 +277,8 @@ class HTMLTableSerializer(BaseTableSerializer):
             add_footnotes=True,
         )
         return SerializationResult(text=text)
-
-    def _serialize(
+    
+    def _serialize_table(
         self,
         item: TableItem,
         doc_serializer: BaseDocSerializer,
@@ -347,15 +353,21 @@ class HTMLPictureSerializer(BasePictureSerializer):
         item: PictureItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        visited: Optional[set[str]] = None,
         add_caption: bool = True,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         **kwargs,
     ) -> SerializationResult:
         """Export picture to HTML format."""
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return SerializationResult(text="")
+        
+        print(f"HTMLPictureSerializer {item.get_ref().cref}: {item.label}")
+        
         caption = doc_serializer.serialize_captions(
             item=item, doc_serializer=doc_serializer, doc=doc, tag="figcaption"
         )
-
+        
         result = ""
 
         if image_mode == ImageRefMode.PLACEHOLDER:
@@ -394,7 +406,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 result = f"<figure>{caption.text}{img_text}</figure>"
         else:
             result = f"<figure>{caption.text}</figure>"
-
+        
         return SerializationResult(text=result)
 
 
@@ -411,6 +423,8 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
         tag: str,
         **kwargs,
     ) -> SerializationResult:
+        print("HTMLGraphDataSerializer")
+        
         """Serialize the graph-data to HTML."""
         # Build cell lookup by ID
         cell_map = {cell.cell_id: cell for cell in item.cells}
@@ -543,6 +557,8 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed key-value item to HTML."""
+        print(f"HTMLKeyValueSerializer {item.get_ref().cref}: {item.label}")
+        
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return SerializationResult(text="")
 
@@ -575,6 +591,8 @@ class HTMLFormSerializer(BaseFormSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed form item to HTML."""
+        print(f"HTMLFormSerializer {item.get_ref().cref}: {item.label}")
+        
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return SerializationResult(text="")
 
@@ -608,9 +626,11 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
         **kwargs,
-    ) -> SerializationResult:
+    ) -> SerializationResult:        
         """Serializes a list to HTML."""
-        my_visited = visited or set()
+        print(f"HTMLListSerializer {item.get_ref().cref}: {item.label}")
+                
+        my_visited: set[str] = visited if visited is not None else set()
 
         # Get all child parts
         parts = doc_serializer.get_parts(
@@ -658,8 +678,10 @@ class HTMLInlineSerializer(BaseInlineSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes an inline group to HTML."""
-        my_visited = visited or set()
-
+        print(f"HTMLInlineSerializer: {item.label}: {visited}")
+        
+        my_visited: set[str] = visited if visited is not None else set()
+        
         # Get all parts with inline scope
         parts = doc_serializer.get_parts(
             item=item,
@@ -692,6 +714,8 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
+        print(f"HTMLFallbackSerializer {item.get_ref().cref}: {item.label}")
+        
         # For group items, we don't generate any markup
         if isinstance(item, GroupItem):
             return SerializationResult(text="")
@@ -782,6 +806,9 @@ class HTMLDocSerializer(DocSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serialize the item's captions."""
+        print(f"serialize_captions: {item.label}")
+
+        """
         caption_parts = []
 
         # Extract caption text from all caption items
@@ -804,7 +831,8 @@ class HTMLDocSerializer(DocSerializer):
                 return SerializationResult(
                     text=f"<{tag}>{html.escape(caption_text)}</{tag}>"
                 )
-
+        """
+        
         return SerializationResult(text="")
 
     def _generate_head(self) -> str:
