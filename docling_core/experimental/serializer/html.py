@@ -34,8 +34,8 @@ from docling_core.experimental.serializer.base import (
 )
 from docling_core.experimental.serializer.common import CommonParams, DocSerializer
 from docling_core.experimental.serializer.html_styles import (
+    _get_css_for_single_column,
     _get_css_for_split_page,
-    _get_css_for_single_column
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
@@ -65,8 +65,6 @@ from docling_core.types.doc.utils import (
     get_html_tag_with_text_direction,
     get_text_direction,
 )
-
-
 
 _logger = logging.getLogger(__name__)
 
@@ -783,16 +781,19 @@ class HTMLDocSerializer(DocSerializer):
         return f'<a href="{str(hyperlink)}">{text}</a>'
 
     @override
-    def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
+    def serialize_page(
+        self, parts: list[SerializationResult], **kwargs
+    ) -> SerializationResult:
         """Serialize a page out of its parts."""
         # Join all parts with newlines
         body_content = "\n".join([p.text for p in parts if p.text])
         return SerializationResult(text=f"<div class='page'>\n{body_content}\n</div>")
 
     @override
-    def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
+    def serialize_doc(
+        self, pages: dict[Optional[int], SerializationResult], **kwargs
+    ) -> SerializationResult:
         """Serialize a document out of its pages."""
-
         # Create HTML structure
         html_parts = [
             "<!DOCTYPE html>",
@@ -804,54 +805,59 @@ class HTMLDocSerializer(DocSerializer):
             html_parts.append("<table>")
             html_parts.append("<tbody>")
 
-            for page_ind, page in enumerate(pages):
-                page_no = page_ind + 1
-                page_img = self.doc.pages[page_no].image
+            for page_no, page in pages.items():
 
-                html_parts.append("<tr>")
+                if isinstance(page_no, int):
+                    page_img = self.doc.pages[page_no].image
 
-                html_parts.append("<td>")
+                    html_parts.append("<tr>")
 
-                # short-cut: we already have the image in base64
-                if (
-                    (page_img is not None)
-                    and isinstance(page_img, ImageRef)
-                    and isinstance(page_img.uri, AnyUrl)
-                    and page_img.uri.scheme == "data"
-                ):
-                    img_text = f'<img src="{page_img.uri}">'
-                    html_parts.append(f"<figure>{img_text}</figure>")
+                    html_parts.append("<td>")
 
-                elif (page_img is not None) and (page_img._pil is not None):
+                    # short-cut: we already have the image in base64
+                    if (
+                        (page_img is not None)
+                        and isinstance(page_img, ImageRef)
+                        and isinstance(page_img.uri, AnyUrl)
+                        and page_img.uri.scheme == "data"
+                    ):
+                        img_text = f'<img src="{page_img.uri}">'
+                        html_parts.append(f"<figure>{img_text}</figure>")
 
-                    buffered = BytesIO()
-                    page_img._pil.save(
-                        buffered, format="PNG"
-                    )  # Save the image to the byte stream
-                    img_bytes = buffered.getvalue()  # Get the byte data
+                    elif (page_img is not None) and (page_img._pil is not None):
 
-                    # Encode to Base64 and decode to string
-                    img_base64 = base64.b64encode(img_bytes).decode("utf-8")
-                    img_text = f'<img src="data:image/png;base64,{img_base64}">'
+                        buffered = BytesIO()
+                        page_img._pil.save(
+                            buffered, format="PNG"
+                        )  # Save the image to the byte stream
+                        img_bytes = buffered.getvalue()  # Get the byte data
 
-                    html_parts.append(f"<figure>{img_text}</figure>")
+                        # Encode to Base64 and decode to string
+                        img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+                        img_text = f'<img src="data:image/png;base64,{img_base64}">'
+
+                        html_parts.append(f"<figure>{img_text}</figure>")
+                    else:
+                        html_parts.append("<figure>no page-image found</figure>")
+
+                    html_parts.append("</td>")
+
+                    html_parts.append("<td>")
+                    html_parts.append(page.text)
+                    html_parts.append("</td>")
+
+                    html_parts.append("</tr>")
                 else:
-                    html_parts.append("<figure>no page-image found</figure>")
-
-                html_parts.append("</td>")
-
-                html_parts.append("<td>")
-                html_parts.append(page.text)
-                html_parts.append("</td>")
-
-                html_parts.append("</tr>")
+                    raise ValueError(
+                        "We need page-indices to leverage `split_page_view`"
+                    )
 
             html_parts.append("</tbody>")
             html_parts.append("</table>")
 
         else:
             # Add all pages
-            for page in pages:
+            for page_no, page in pages.items():
                 if page.text:
                     html_parts.append(page.text)
 

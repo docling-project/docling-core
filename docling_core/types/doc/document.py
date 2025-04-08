@@ -3251,7 +3251,7 @@ class DoclingDocument(BaseModel):
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
         included_content_layers: Optional[set[ContentLayer]] = None,
-        split_page_view: bool = False            
+        split_page_view: bool = False,
     ):
         """Save to HTML."""
         if isinstance(filename, str):
@@ -3326,7 +3326,7 @@ class DoclingDocument(BaseModel):
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
         included_content_layers: Optional[set[ContentLayer]] = None,
-        split_page_view: bool = False
+        split_page_view: bool = False,
     ) -> str:
         r"""Serialize to HTML."""
         from docling_core.experimental.serializer.html import (
