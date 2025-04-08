@@ -11,11 +11,12 @@ import logging
 import re
 from typing import Any, ClassVar, Final, Iterator, Literal, Optional
 
-from pydantic import Field, StringConstraints, field_validator
+from pydantic import ConfigDict, Field, StringConstraints, field_validator
 from typing_extensions import Annotated, override
 
 from docling_core.experimental.serializer.base import (
     BaseDocSerializer,
+    BaseSerializerProvider,
     BaseTableSerializer,
     SerializationResult,
 )
@@ -183,6 +184,15 @@ class ChunkingDocSerializer(MarkdownDocSerializer):
     )
 
 
+class ChunkingSerializerProvider(BaseSerializerProvider):
+    """Serializer provider used for chunking purposes."""
+
+    @override
+    def get_serializer(self, doc: DoclingDocument) -> BaseDocSerializer:
+        """Get the associated serializer."""
+        return ChunkingDocSerializer(doc=doc)
+
+
 class HierarchicalChunker(BaseChunker):
     r"""Chunker implementation leveraging the document layout.
 
@@ -192,12 +202,16 @@ class HierarchicalChunker(BaseChunker):
         delim (str): Delimiter to use for merging text. Defaults to "\n".
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
+
+    # deprecated:
     merge_list_items: Annotated[bool, Field(deprecated=True)] = True
 
     def chunk(
         self,
         dl_doc: DLDocument,
-        doc_serializer: Optional[BaseDocSerializer] = None,
         **kwargs: Any,
     ) -> Iterator[BaseChunk]:
         r"""Chunk the provided document.
@@ -208,7 +222,7 @@ class HierarchicalChunker(BaseChunker):
         Yields:
             Iterator[Chunk]: iterator over extracted chunks
         """
-        my_doc_ser = doc_serializer or ChunkingDocSerializer(doc=dl_doc)
+        my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
         heading_by_level: dict[LevelNumber, str] = {}
         visited: set[str] = set()
         ser_res = create_ser_result()

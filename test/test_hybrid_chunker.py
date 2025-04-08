@@ -10,10 +10,12 @@ from transformers import AutoTokenizer
 from docling_core.experimental.serializer.markdown import MarkdownTableSerializer
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
+    ChunkingSerializerProvider,
     DocChunk,
 )
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.types.doc import DoclingDocument as DLDocument
+from docling_core.types.doc.document import DoclingDocument
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -193,20 +195,21 @@ def test_chunk_custom_serializer():
         data_json = f.read()
     dl_doc = DLDocument.model_validate_json(data_json)
 
+    class MySerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            return ChunkingDocSerializer(
+                doc=doc,
+                table_serializer=MarkdownTableSerializer(),
+            )
+
     chunker = HybridChunker(
         tokenizer=TOKENIZER,
         max_tokens=MAX_TOKENS,
         merge_peers=True,
-    )
-    doc_serializer = ChunkingDocSerializer(
-        doc=dl_doc,
-        table_serializer=MarkdownTableSerializer(),  # configuring a different table serializer
+        serializer_provider=MySerializerProvider(),
     )
 
-    chunk_iter = chunker.chunk(
-        dl_doc=dl_doc,
-        doc_serializer=doc_serializer,
-    )
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]

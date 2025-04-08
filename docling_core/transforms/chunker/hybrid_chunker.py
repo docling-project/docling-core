@@ -4,14 +4,23 @@
 #
 
 """Hybrid chunker implementation leveraging both doc structure & token awareness."""
-
 import warnings
+from functools import cached_property
 from typing import Any, Iterable, Iterator, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, PositiveInt, TypeAdapter, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    PositiveInt,
+    TypeAdapter,
+    computed_field,
+    model_validator,
+)
 from typing_extensions import Self
 
-from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer
+from docling_core.transforms.chunker.hierarchical_chunker import (
+    ChunkingSerializerProvider,
+)
 
 try:
     import semchunk
@@ -22,7 +31,10 @@ except ImportError:
         "`pip install 'docling-core[chunking]'`"
     )
 
-from docling_core.experimental.serializer.base import BaseDocSerializer
+from docling_core.experimental.serializer.base import (
+    BaseDocSerializer,
+    BaseSerializerProvider,
+)
 from docling_core.transforms.chunker import (
     BaseChunk,
     BaseChunker,
@@ -52,7 +64,7 @@ class HybridChunker(BaseChunker):
     max_tokens: int = None  # type: ignore[assignment]
     merge_peers: bool = True
 
-    _inner_chunker: HierarchicalChunker = HierarchicalChunker()
+    serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
 
     @model_validator(mode="after")
     def _patch_tokenizer_and_max_tokens(self) -> Self:
@@ -66,6 +78,11 @@ class HybridChunker(BaseChunker):
                 self._tokenizer.model_max_length
             )
         return self
+
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    def _inner_chunker(self) -> HierarchicalChunker:
+        return HierarchicalChunker(serializer_provider=self.serializer_provider)
 
     def _count_text_tokens(self, text: Optional[Union[str, list[str]]]):
         if text is None:
@@ -246,7 +263,6 @@ class HybridChunker(BaseChunker):
     def chunk(
         self,
         dl_doc: DoclingDocument,
-        doc_serializer: Optional[BaseDocSerializer] = None,
         **kwargs: Any,
     ) -> Iterator[BaseChunk]:
         r"""Chunk the provided document.
@@ -257,7 +273,7 @@ class HybridChunker(BaseChunker):
         Yields:
             Iterator[Chunk]: iterator over extracted chunks
         """
-        my_doc_ser = doc_serializer or ChunkingDocSerializer(doc=dl_doc)
+        my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
         res: Iterable[DocChunk]
         res = self._inner_chunker.chunk(
             dl_doc=dl_doc,

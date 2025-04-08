@@ -237,3 +237,12 @@ class BaseDocSerializer(ABC):
     def get_excluded_refs(self, **kwargs) -> list[str]:
         """Get references to excluded items."""
         ...
+
+
+class BaseSerializerProvider(ABC):
+    """Base class for document serializer providers."""
+
+    @abstractmethod
+    def get_serializer(self, doc: DoclingDocument) -> BaseDocSerializer:
+        """Get a the associated serializer."""
+        ...
