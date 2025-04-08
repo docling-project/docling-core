@@ -1,8 +1,10 @@
+"""HTML styles for different export modes."""
 
 
 def _get_css_with_no_styling(self) -> str:
     """Return default CSS styles for the HTML document."""
     return "<style></style>"
+
 
 def _get_ccs_for_single_column(self) -> str:
     """Return CSS styles for the single-column HTML document."""

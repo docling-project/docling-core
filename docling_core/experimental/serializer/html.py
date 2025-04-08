@@ -4,8 +4,10 @@
 #
 
 """Define classes for HTML serialization."""
+import base64
 import html
 import logging
+from io import BytesIO
 from pathlib import Path
 from typing import Optional, Union
 from urllib.parse import quote
@@ -60,8 +62,6 @@ from docling_core.types.doc.utils import (
     get_text_direction,
 )
 
-from docling_core.experimental.serializer.html_styles import (_get_css_with_no_styling, _get_ccs_for_single_column)
-
 _logger = logging.getLogger(__name__)
 
 
@@ -86,6 +86,7 @@ class HTMLParams(CommonParams):
     # Allow for split page view (only possible if page-images are present)
     split_page_view: bool = False
 
+
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     """HTML-specific text item serializer."""
 
@@ -102,8 +103,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         """Serializes the passed text item to HTML."""
         params = HTMLParams(**kwargs)
 
-        print(f"HTMLTextSerializer {item.get_ref().cref}: {item.label} -> {item.text[0:64]}")
-        
+        print(f"HTMLTextSerializer {item.get_ref().cref}: {item.label}")
+
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem):
             text_inner = self._prepare_content(item.text)
@@ -245,7 +246,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     def _get_formula_image_fallback(
         self, item: TextItem, doc: DoclingDocument
     ) -> Optional[str]:
-        """Try to get an image fallback for a formula."""        
+        """Try to get an image fallback for a formula."""
         item_image = item.get_image(doc=doc)
         if item_image is not None:
             img_ref = ImageRef.from_pil(item_image, dpi=72)
@@ -272,7 +273,7 @@ class HTMLTableSerializer(BaseTableSerializer):
             return SerializationResult(text="")
 
         print(f"HTMLTableSerializer {item.get_ref().cref}: {item.label}")
-        
+
         text = self._serialize_table(
             item=item,
             doc_serializer=doc_serializer,
@@ -281,7 +282,7 @@ class HTMLTableSerializer(BaseTableSerializer):
             add_footnotes=True,
         )
         return SerializationResult(text=text)
-    
+
     def _serialize_table(
         self,
         item: TableItem,
@@ -296,7 +297,7 @@ class HTMLTableSerializer(BaseTableSerializer):
 
         caption_text = doc_serializer.serialize_captions(item=item, tag="caption")
         print(caption_text)
-        
+
         body = ""
 
         for i in range(nrows):
@@ -366,13 +367,13 @@ class HTMLPictureSerializer(BasePictureSerializer):
         """Export picture to HTML format."""
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return SerializationResult(text="")
-        
+
         print(f"HTMLPictureSerializer {item.get_ref().cref}: {item.label}")
-        
+
         caption = doc_serializer.serialize_captions(
             item=item, doc_serializer=doc_serializer, doc=doc, tag="figcaption"
         )
-        
+
         result = ""
 
         if image_mode == ImageRefMode.PLACEHOLDER:
@@ -411,7 +412,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 result = f"<figure>{caption.text}{img_text}</figure>"
         else:
             result = f"<figure>{caption.text}</figure>"
-        
+
         return SerializationResult(text=result)
 
 
@@ -428,9 +429,9 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
         tag: str,
         **kwargs,
     ) -> SerializationResult:
-        print("HTMLGraphDataSerializer")
-        
         """Serialize the graph-data to HTML."""
+        print("HTMLGraphDataSerializer")
+
         # Build cell lookup by ID
         cell_map = {cell.cell_id: cell for cell in item.cells}
 
@@ -563,7 +564,7 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
     ) -> SerializationResult:
         """Serializes the passed key-value item to HTML."""
         print(f"HTMLKeyValueSerializer {item.get_ref().cref}: {item.label}")
-        
+
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return SerializationResult(text="")
 
@@ -597,7 +598,7 @@ class HTMLFormSerializer(BaseFormSerializer):
     ) -> SerializationResult:
         """Serializes the passed form item to HTML."""
         print(f"HTMLFormSerializer {item.get_ref().cref}: {item.label}")
-        
+
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return SerializationResult(text="")
 
@@ -631,10 +632,10 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
         **kwargs,
-    ) -> SerializationResult:        
+    ) -> SerializationResult:
         """Serializes a list to HTML."""
         print(f"HTMLListSerializer {item.get_ref().cref}: {item.label}")
-                
+
         my_visited: set[str] = visited if visited is not None else set()
 
         # Get all child parts
@@ -646,10 +647,10 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
 
-        if len(parts)==0:
+        if len(parts) == 0:
             print(f" => no list-items found for {item.get_ref().cref}")
-            return SerializationResult(text="")            
-        
+            return SerializationResult(text="")
+
         # Start the appropriate list type
         tag = "ol" if isinstance(item, OrderedList) else "ul"
         list_html = [f"<{tag}>"]
@@ -688,9 +689,9 @@ class HTMLInlineSerializer(BaseInlineSerializer):
     ) -> SerializationResult:
         """Serializes an inline group to HTML."""
         print(f"HTMLInlineSerializer: {item.label}: {visited}")
-        
+
         my_visited: set[str] = visited if visited is not None else set()
-        
+
         # Get all parts with inline scope
         parts = doc_serializer.get_parts(
             item=item,
@@ -723,8 +724,6 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
-        print(f"HTMLFallbackSerializer {item.get_ref().cref}: {item.label}")
-        
         # For group items, we don't generate any markup
         if isinstance(item, GroupItem):
             return SerializationResult(text="")
@@ -795,50 +794,56 @@ class HTMLDocSerializer(DocSerializer):
         ]
 
         split_page_view: bool = True
-        
+
         if split_page_view:
             html_parts.append("<table>")
             html_parts.append("<tbody>")
-            
+
             for page_ind, page in enumerate(pages):
-                page_no = page_ind+1
+                page_no = page_ind + 1
                 page_img = self.doc.pages[page_no].image
-                
+
                 html_parts.append("<tr>")
 
                 html_parts.append("<td>")
 
                 # short-cut: we already have the image in base64
-                if (page_img is not None
+                if (
+                    (page_img is not None)
                     and isinstance(page_img, ImageRef)
                     and isinstance(page_img.uri, AnyUrl)
                     and page_img.uri.scheme == "data"
                 ):
                     img_text = f'<img src="{page_img.uri}">'
                     html_parts.append(f"<figure>{img_text}</figure>")
+
+                elif (page_img is not None) and (page_img._pil is not None):
+
+                    buffered = BytesIO()
+                    page_img._pil.save(
+                        buffered, format="PNG"
+                    )  # Save the image to the byte stream
+                    img_bytes = buffered.getvalue()  # Get the byte data
+
+                    # Encode to Base64 and decode to string
+                    img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+                    img_text = f'<img src="data:image/png;base64,{img_base64}">'
+
+                    html_parts.append(f"<figure>{img_text}</figure>")
                 else:
-                    # get the page_img._pil or crop it out of the page-image
-                    img = item.get_image(self.doc)
-                    
-                    if img is not None:
-                        imgb64 = item._image_to_base64(img)
-                        img_text = f'<img src="data:image/png;base64,{imgb64}">'
-                        
-                        html_parts.append(f"<figure>{img_text}</figure>")
-                    else:
-                        html_parts.append(f"<figure>no page-image found</figure>")
-                                      
+                    html_parts.append("<figure>no page-image found</figure>")
+
                 html_parts.append("</td>")
 
                 html_parts.append("<td>")
                 html_parts.append(page.text)
-                html_parts.append("</td>")                
-                
+                html_parts.append("</td>")
+
                 html_parts.append("</tr>")
 
             html_parts.append("</tbody>")
             html_parts.append("</table>")
-            
+
         else:
             # Add all pages
             for page in pages:
@@ -872,7 +877,7 @@ class HTMLDocSerializer(DocSerializer):
                 caption_parts.append(caption_item.text)
 
         # Join all captions with a space
-        if len(caption_parts)>0:
+        if len(caption_parts) > 0:
             caption_text = " ".join(caption_parts)
             text_dir = get_text_direction(caption_text)
 
@@ -885,7 +890,7 @@ class HTMLDocSerializer(DocSerializer):
                 return SerializationResult(
                     text=f"<{tag}>{html.escape(caption_text)}</{tag}>"
                 )
-        
+
         return SerializationResult(text="")
 
     def _generate_head(self) -> str:
