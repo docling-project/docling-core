@@ -499,17 +499,21 @@ class MarkdownDocSerializer(DocSerializer):
         return res
 
     @override
-    def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
+    def serialize_page(
+        self, *, parts: list[SerializationResult], **kwargs
+    ) -> SerializationResult:
         """Serialize a page out of its parts."""
         text_res = "\n\n".join([p.text for p in parts])
         return SerializationResult(text=text_res)
 
     @override
-    def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
+    def serialize_doc(
+        self, *, pages: dict[Optional[int], SerializationResult], **kwargs
+    ) -> SerializationResult:
         """Serialize a document out of its pages."""
         if self.params.page_break_placeholder is not None:
             sep = f"\n\n{self.params.page_break_placeholder}\n\n"
-            text_res = sep.join([p.text for p in pages if p.text])
+            text_res = sep.join([text for k in pages if (text := pages[k].text)])
             return SerializationResult(text=text_res)
         else:
-            return self.serialize_page(parts=pages)
+            return self.serialize_page(parts=list(pages.values()))

@@ -150,20 +150,26 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         return refs
 
     @abstractmethod
-    def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
+    def serialize_page(
+        self, *, parts: list[SerializationResult], **kwargs
+    ) -> SerializationResult:
         """Serialize a page out of its parts."""
         ...
 
     @abstractmethod
-    def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
+    def serialize_doc(
+        self, *, pages: dict[Optional[int], SerializationResult], **kwargs
+    ) -> SerializationResult:
         """Serialize a document out of its pages."""
         ...
 
     def _serialize_body(self) -> SerializationResult:
         """Serialize the document body."""
         # find page ranges if available; otherwise regard whole doc as a single page
-        last_page: Optional[int] = None
-        starts: list[int] = []
+        prev_start: int = 0
+        prev_page_nr: Optional[int] = None
+        range_by_page_nr: dict[Optional[int], tuple[int, int]] = {}
+
         for ix, (item, _) in enumerate(
             self.doc.iterate_items(
                 with_groups=True,
@@ -173,28 +179,30 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         ):
             if isinstance(item, DocItem):
                 if item.prov:
-                    if last_page is None or item.prov[0].page_no > last_page:
-                        starts.append(ix)
-                        last_page = item.prov[0].page_no
-        page_ranges = [
-            (
-                (starts[i] if i > 0 else 0),
-                (starts[i + 1] if i < len(starts) - 1 else sys.maxsize),
-            )
-            for i, _ in enumerate(starts)
-        ] or [
-            (0, sys.maxsize)
-        ]  # use whole range if no pages detected
+                    page_no = item.prov[0].page_no
+                    if prev_page_nr is None or page_no > prev_page_nr:
+                        if prev_page_nr is not None:  # close previous range
+                            range_by_page_nr[prev_page_nr] = (prev_start, ix)
 
-        page_results: list[SerializationResult] = []
-        for page_range in page_ranges:
+                        prev_start = ix
+                        # could alternatively always start 1st page from 0:
+                        # prev_start = ix if prev_page_nr is not None else 0
+
+                        prev_page_nr = page_no
+
+        # close last (and single if no pages) range
+        range_by_page_nr[prev_page_nr] = (prev_start, sys.maxsize)
+
+        page_results: dict[Optional[int], SerializationResult] = {}
+        for page_nr in range_by_page_nr:
+            page_range = range_by_page_nr[page_nr]
             params_to_pass = deepcopy(self.params)
             params_to_pass.start_idx = page_range[0]
             params_to_pass.stop_idx = page_range[1]
             subparts = self.get_parts(**params_to_pass.model_dump())
-            page_res = self.serialize_page(subparts)
-            page_results.append(page_res)
-        res = self.serialize_doc(page_results)
+            page_res = self.serialize_page(parts=subparts)
+            page_results[page_nr] = page_res
+        res = self.serialize_doc(pages=page_results)
         return res
 
     @override

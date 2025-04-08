@@ -476,21 +476,25 @@ class DocTagsDocSerializer(DocSerializer):
     params: DocTagsParams = DocTagsParams()
 
     @override
-    def serialize_page(self, parts: list[SerializationResult]) -> SerializationResult:
+    def serialize_page(
+        self, *, parts: list[SerializationResult], **kwargs
+    ) -> SerializationResult:
         """Serialize a page out of its parts."""
         delim = _get_delim(params=self.params)
         text_res = delim.join([p.text for p in parts])
         return SerializationResult(text=text_res)
 
     @override
-    def serialize_doc(self, pages: list[SerializationResult]) -> SerializationResult:
+    def serialize_doc(
+        self, *, pages: dict[Optional[int], SerializationResult], **kwargs
+    ) -> SerializationResult:
         """Serialize a document out of its pages."""
         delim = _get_delim(params=self.params)
         if self.params.add_page_break:
             page_sep = f"{delim}<{DocumentToken.PAGE_BREAK.value}>{delim}"
-            content = page_sep.join([p.text for p in pages if p.text])
+            content = page_sep.join([text for k in pages if (text := pages[k].text)])
         else:
-            content = self.serialize_page(parts=pages).text
+            content = self.serialize_page(parts=list(pages.values())).text
         wrap_tag = DocumentToken.DOCUMENT.value
         text_res = f"<{wrap_tag}>{content}{delim}</{wrap_tag}>"
         return SerializationResult(text=text_res)
