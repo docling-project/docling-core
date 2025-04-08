@@ -5,7 +5,6 @@ import pytest
 
 from docling_core.types.doc.page import BoundingRectangle
 
-
 SQRT_2 = math.sqrt(2)
 
 R_0 = BoundingRectangle(r_x0=0, r_y0=0, r_x1=1, r_y1=0, r_x2=1, r_y2=1, r_x3=0, r_y3=1)
@@ -68,9 +67,9 @@ R_MINUS_45 = BoundingRectangle(
         (R_90, np.pi / 2, 90),
         (R_135, 3 * np.pi / 4, 135),
         (R_180, np.pi, 180),
-        (R_MINUS_135, -3 * np.pi / 4, -135),
-        (R_MINUS_90, -np.pi / 2, -90),
-        (R_MINUS_45, -np.pi / 4, -45),
+        (R_MINUS_135, 5 * np.pi / 4, 225),
+        (R_MINUS_90, 3 * np.pi / 2, 270),
+        (R_MINUS_45, 7 * np.pi / 4, 315),
     ],
 )
 def test_bounding_rectangle_angle(

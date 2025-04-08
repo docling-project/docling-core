@@ -116,22 +116,22 @@ class BoundingRectangle(BaseModel):
 
     @property
     def angle(self) -> float:
-        """Calculate the angle of the rectangle in radians."""
+        """Calculate the angle of the rectangle in radians (0-2pi range)."""
         p_0 = ((self.r_x0 + self.r_x3) / 2.0, (self.r_y0 + self.r_y3) / 2.0)
         p_1 = ((self.r_x1 + self.r_x2) / 2.0, (self.r_y1 + self.r_y2) / 2.0)
 
         delta_x, delta_y = p_1[0] - p_0[0], p_1[1] - p_0[1]
 
         if abs(delta_y) < 1.0e-3:
-            angle = 0
+            angle = 0.0
         elif abs(delta_x) < 1.0e-3:
             angle = np.pi / 2.0 if delta_y > 0 else -np.pi / 2.0
         else:
             angle = math.atan(delta_y / delta_x)
         if delta_x < 0:
             angle += np.pi
-        if abs(angle) > np.pi:
-            angle -= 2 * np.pi
+        if angle < 0:
+            angle += 2 * np.pi
         return angle
 
     @property
