@@ -894,7 +894,7 @@ class HTMLDocSerializer(DocSerializer):
 
         if self.params.html_head is not None:
             return self.params.html_head
-        
+
         head_parts = ["<head>", '<meta charset="UTF-8">']
 
         # Add metadata if requested

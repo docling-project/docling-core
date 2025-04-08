@@ -18,11 +18,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
 from urllib.parse import quote, unquote
-from xml.etree.cElementTree import SubElement, tostring
-from xml.sax.saxutils import unescape
 
-import latex2mathml.converter
-import latex2mathml.exceptions
 import pandas as pd
 import yaml
 from PIL import Image as PILImage
@@ -3179,7 +3175,7 @@ class DoclingDocument(BaseModel):
         formula_to_mathml: bool = True,
         page_no: Optional[int] = None,
         html_lang: str = "en",
-        html_head: str = "null", # should be deprecated
+        html_head: str = "null",  # should be deprecated
         included_content_layers: Optional[set[ContentLayer]] = None,
         split_page_view: bool = False,
     ):
@@ -3255,7 +3251,7 @@ class DoclingDocument(BaseModel):
         formula_to_mathml: bool = True,
         page_no: Optional[int] = None,
         html_lang: str = "en",
-        html_head: str = "null", # should be deprecated ...
+        html_head: str = "null",  # should be deprecated ...
         included_content_layers: Optional[set[ContentLayer]] = None,
         split_page_view: bool = False,
     ) -> str:
@@ -3285,9 +3281,9 @@ class DoclingDocument(BaseModel):
             split_page_view=split_page_view,
         )
 
-        if html_head=="null":
+        if html_head == "null":
             params.html_head = None
-        
+
         serializer = HTMLDocSerializer(
             doc=self,
             params=params,
