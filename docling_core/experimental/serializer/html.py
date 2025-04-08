@@ -80,7 +80,10 @@ class HTMLParams(CommonParams):
 
     # HTML document properties
     html_lang: str = "en"
+    html_head: Optional[str] = None
+
     css_styles: Optional[str] = None
+
     add_document_metadata: bool = True
     prettify: bool = True  # Add indentation and line breaks
 
@@ -889,6 +892,9 @@ class HTMLDocSerializer(DocSerializer):
         """Generate the HTML head section with metadata and styles."""
         params = self.params
 
+        if self.params.html_head is not None:
+            return self.params.html_head
+        
         head_parts = ["<head>", '<meta charset="UTF-8">']
 
         # Add metadata if requested
