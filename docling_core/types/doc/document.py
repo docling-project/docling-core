@@ -2765,6 +2765,7 @@ class DoclingDocument(BaseModel):
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
         included_content_layers: Optional[set[ContentLayer]] = None,
+        split_page_view: bool = False            
     ):
         """Save to HTML."""
         if isinstance(filename, str):
@@ -2788,6 +2789,7 @@ class DoclingDocument(BaseModel):
             html_lang=html_lang,
             html_head=html_head,
             included_content_layers=included_content_layers,
+            split_page_view=split_page_view,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -2838,6 +2840,7 @@ class DoclingDocument(BaseModel):
         html_lang: str = "en",
         html_head: str = _HTML_DEFAULT_HEAD,
         included_content_layers: Optional[set[ContentLayer]] = None,
+        split_page_view: bool = False
     ) -> str:
         r"""Serialize to HTML."""
         from docling_core.experimental.serializer.html import (
@@ -2863,6 +2866,7 @@ class DoclingDocument(BaseModel):
                 formula_to_mathml=formula_to_mathml,
                 html_lang=html_lang,
                 html_head=html_head,
+                split_page_view=split_page_view,
             ),
         )
         ser_res = serializer.serialize()
