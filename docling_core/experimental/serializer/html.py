@@ -81,6 +81,8 @@ class HTMLParams(CommonParams):
     # Formula rendering options
     formula_to_mathml: bool = True
 
+    # Allow for split page view (only possible if page-images are present)
+    split_page_view: bool = False
 
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     """HTML-specific text item serializer."""
@@ -642,6 +644,10 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
 
+        if len(parts)==0:
+            print(f" => no list-items found for {item.get_ref().cref}")
+            return SerializationResult(text="")            
+        
         # Start the appropriate list type
         tag = "ol" if isinstance(item, OrderedList) else "ul"
         list_html = [f"<{tag}>"]
