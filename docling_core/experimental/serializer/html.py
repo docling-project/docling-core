@@ -241,7 +241,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     def _get_formula_image_fallback(
         self, item: TextItem, doc: DoclingDocument
     ) -> Optional[str]:
-        """Try to get an image fallback for a formula."""
+        """Try to get an image fallback for a formula."""        
         item_image = item.get_image(doc=doc)
         if item_image is not None:
             img_ref = ImageRef.from_pil(item_image, dpi=72)
@@ -291,7 +291,8 @@ class HTMLTableSerializer(BaseTableSerializer):
         ncols = item.data.num_cols
 
         caption_text = doc_serializer.serialize_captions(item=item, tag="caption")
-
+        print(caption_text)
+        
         body = ""
 
         for i in range(nrows):
@@ -808,7 +809,6 @@ class HTMLDocSerializer(DocSerializer):
         """Serialize the item's captions."""
         print(f"serialize_captions: {item.label}")
 
-        """
         caption_parts = []
 
         # Extract caption text from all caption items
@@ -818,7 +818,7 @@ class HTMLDocSerializer(DocSerializer):
                 caption_parts.append(caption_item.text)
 
         # Join all captions with a space
-        if caption_parts:
+        if len(caption_parts)>0:
             caption_text = " ".join(caption_parts)
             text_dir = get_text_direction(caption_text)
 
@@ -831,7 +831,6 @@ class HTMLDocSerializer(DocSerializer):
                 return SerializationResult(
                     text=f"<{tag}>{html.escape(caption_text)}</{tag}>"
                 )
-        """
         
         return SerializationResult(text="")
 
