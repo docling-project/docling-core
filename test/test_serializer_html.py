@@ -2,12 +2,9 @@
 
 from test.test_docling_doc import _construct_doc
 
-from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import (  # BoundingBox,
-    DoclingDocument,
-    
-)
 from docling_core.experimental.serializer.html import HTMLDocSerializer
+from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.document import DoclingDocument  # BoundingBox,
 
 
 def test_html_export():
@@ -31,29 +28,30 @@ def test_html_export():
 
     assert True
 
+
 def test_markdown_export_with_pageimages():
 
-    doc = DoclingDocument.load_from_json("/Users/taa/Documents/projects/docling/2501.12948v1.json")
+    doc = DoclingDocument.load_from_json(
+        "/Users/taa/Documents/projects/docling/2501.12948v1.json"
+    )
 
     doc.save_as_markdown(
-        filename="2501.12948v1.markdown",
-        image_mode=ImageRefMode.REFERENCED
+        filename="2501.12948v1.markdown", image_mode=ImageRefMode.REFERENCED
     )
 
-    
+
 def test_html_export_with_pageimages():
 
-    doc = DoclingDocument.load_from_json("/Users/taa/Documents/projects/docling/2501.12948v1.json")
-
-    doc.save_as_html(
-        filename="2501.12948v1.html",
-        image_mode=ImageRefMode.EMBEDDED
+    doc = DoclingDocument.load_from_json(
+        "/Users/taa/Documents/projects/docling/2501.12948v1.json"
     )
+
+    doc.save_as_html(filename="2501.12948v1.html", image_mode=ImageRefMode.EMBEDDED)
     """
 
 
     """
-    
+
     """
     # Create the serializer with default parameters
     serializer = HTMLDocSerializer(doc=doc)
@@ -65,5 +63,5 @@ def test_html_export_with_pageimages():
     with open("example_document.new.html", "w", encoding="utf-8") as f:
         f.write(html_output)
     """
-    
+
     assert True
