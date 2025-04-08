@@ -427,7 +427,6 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serialize the graph-data to HTML."""
-
         # Build cell lookup by ID
         cell_map = {cell.cell_id: cell for cell in item.cells}
 
