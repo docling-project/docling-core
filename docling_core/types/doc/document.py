@@ -1675,76 +1675,6 @@ class PageItem(BaseModel):
 class DoclingDocument(BaseModel):
     """DoclingDocument."""
 
-    _HTML_DEFAULT_HEAD: str = r"""<head>
-    <link rel="icon" type="image/png"
-    href="https://raw.githubusercontent.com/docling-project/docling/refs/heads/main/docs/assets/logo.svg"/>
-    <meta charset="UTF-8">
-    <title>
-    Powered by Docling
-    </title>
-    <style>
-    html {
-    background-color: LightGray;
-    }
-    body {
-    margin: 0 auto;
-    width:800px;
-    padding: 30px;
-    background-color: White;
-    font-family: Arial, sans-serif;
-    box-shadow: 10px 10px 10px grey;
-    }
-    figure{
-    display: block;
-    width: 100%;
-    margin: 0px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    }
-    img {
-    display: block;
-    margin: auto;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    max-width: 640px;
-    max-height: 640px;
-    }
-    table {
-    min-width:500px;
-    background-color: White;
-    border-collapse: collapse;
-    cell-padding: 5px;
-    margin: auto;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    }
-    th, td {
-    border: 1px solid black;
-    padding: 8px;
-    }
-    th {
-    font-weight: bold;
-    }
-    table tr:nth-child(even) td{
-    background-color: LightGray;
-    }
-    math annotation {
-    display: none;
-    }
-    .formula-not-decoded {
-    background: repeating-linear-gradient(
-    45deg, /* Angle of the stripes */
-    LightGray, /* First color */
-    LightGray 10px, /* Length of the first color */
-    White 10px, /* Second color */
-    White 20px /* Length of the second color */
-    );
-    margin: 0;
-    text-align: center;
-    }
-    </style>
-    </head>"""
-
     schema_name: typing.Literal["DoclingDocument"] = "DoclingDocument"
     version: Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)] = (
         CURRENT_VERSION
@@ -3249,7 +3179,7 @@ class DoclingDocument(BaseModel):
         formula_to_mathml: bool = True,
         page_no: Optional[int] = None,
         html_lang: str = "en",
-        html_head: str = _HTML_DEFAULT_HEAD,
+        html_head: str = "", # should be deprecated
         included_content_layers: Optional[set[ContentLayer]] = None,
         split_page_view: bool = False,
     ):
@@ -3324,7 +3254,7 @@ class DoclingDocument(BaseModel):
         formula_to_mathml: bool = True,
         page_no: Optional[int] = None,
         html_lang: str = "en",
-        html_head: str = _HTML_DEFAULT_HEAD,
+        html_head: str = "", # should be deprecated ...
         included_content_layers: Optional[set[ContentLayer]] = None,
         split_page_view: bool = False,
     ) -> str:
@@ -3351,262 +3281,12 @@ class DoclingDocument(BaseModel):
                 image_mode=image_mode,
                 formula_to_mathml=formula_to_mathml,
                 html_lang=html_lang,
-                html_head=html_head,
                 split_page_view=split_page_view,
             ),
         )
         ser_res = serializer.serialize()
 
         return ser_res.text
-
-    def _legacy_export_to_html(  # noqa: C901
-        self,
-        from_element: int = 0,
-        to_element: int = sys.maxsize,
-        labels: Optional[set[DocItemLabel]] = None,
-        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
-        formula_to_mathml: bool = True,
-        page_no: Optional[int] = None,
-        html_lang: str = "en",
-        html_head: str = _HTML_DEFAULT_HEAD,
-        included_content_layers: Optional[set[ContentLayer]] = None,
-    ) -> str:
-        r"""Serialize to HTML."""
-        my_labels = labels if labels is not None else DEFAULT_EXPORT_LABELS
-        my_layers = (
-            included_content_layers
-            if included_content_layers is not None
-            else DEFAULT_CONTENT_LAYERS
-        )
-
-        def close_lists(
-            curr_level: int,
-            prev_level: int,
-            in_ordered_list: List[bool],
-            html_texts: list[str],
-        ):
-
-            if len(in_ordered_list) == 0:
-                return (in_ordered_list, html_texts)
-
-            while curr_level < prev_level and len(in_ordered_list) > 0:
-                if in_ordered_list[-1]:
-                    html_texts.append("</ol>")
-                else:
-                    html_texts.append("</ul>")
-
-                prev_level -= 1
-                in_ordered_list.pop()  # = in_ordered_list[:-1]
-
-            return (in_ordered_list, html_texts)
-
-        head_lines = [
-            "<!DOCTYPE html>",
-            f'<html lang="{html_lang}">',
-            html_head,
-        ]
-        html_texts: list[str] = []
-
-        prev_level = 0  # Track the previous item's level
-
-        in_ordered_list: List[bool] = []  # False
-
-        def _prepare_tag_content(
-            text: str, do_escape_html=True, do_replace_newline=True
-        ) -> str:
-            if do_escape_html:
-                text = html.escape(text, quote=False)
-            if do_replace_newline:
-                text = text.replace("\n", "<br>")
-            return text
-
-        for ix, (item, curr_level) in enumerate(
-            self.iterate_items(
-                self.body,
-                with_groups=True,
-                page_no=page_no,
-                included_content_layers=my_layers,
-            )
-        ):
-            # If we've moved to a lower level, we're exiting one or more groups
-            if curr_level < prev_level and len(in_ordered_list) > 0:
-                # Calculate how many levels we've exited
-                # level_difference = previous_level - level
-                # Decrement list_nesting_level for each list group we've exited
-                # list_nesting_level = max(0, list_nesting_level - level_difference)
-
-                in_ordered_list, html_texts = close_lists(
-                    curr_level=curr_level,
-                    prev_level=prev_level,
-                    in_ordered_list=in_ordered_list,
-                    html_texts=html_texts,
-                )
-
-            prev_level = curr_level  # Update previous_level for next iteration
-
-            if ix < from_element or to_element <= ix:
-                continue  # skip as many items as you want
-
-            if (isinstance(item, DocItem)) and (item.label not in my_labels):
-                continue  # skip any label that is not whitelisted
-
-            if isinstance(item, GroupItem) and item.label in [
-                GroupLabel.ORDERED_LIST,
-            ]:
-
-                text = "<ol>"
-                html_texts.append(text)
-
-                # Increment list nesting level when entering a new list
-                in_ordered_list.append(True)
-
-            elif isinstance(item, GroupItem) and item.label in [
-                GroupLabel.LIST,
-            ]:
-
-                text = "<ul>"
-                html_texts.append(text)
-
-                # Increment list nesting level when entering a new list
-                in_ordered_list.append(False)
-
-            elif isinstance(item, GroupItem):
-                continue
-
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
-                text_inner = _prepare_tag_content(item.text)
-                text = get_html_tag_with_text_direction(html_tag="h1", text=text_inner)
-
-                html_texts.append(text)
-
-            elif isinstance(item, SectionHeaderItem):
-
-                section_level: int = min(item.level + 1, 6)
-
-                text = get_html_tag_with_text_direction(
-                    html_tag=f"h{section_level}",
-                    text=_prepare_tag_content(item.text),
-                )
-                html_texts.append(text)
-
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.FORMULA]:
-
-                math_formula = _prepare_tag_content(
-                    item.text, do_escape_html=False, do_replace_newline=False
-                )
-                text = ""
-
-                def _image_fallback(item: TextItem):
-                    item_image = item.get_image(doc=self)
-                    if item_image is not None:
-                        img_ref = ImageRef.from_pil(item_image, dpi=72)
-                        return (
-                            "<figure>"
-                            f'<img src="{img_ref.uri}" alt="{item.orig}" />'
-                            "</figure>"
-                        )
-
-                img_fallback = _image_fallback(item)
-
-                # If the formula is not processed correcty, use its image
-                if (
-                    item.text == ""
-                    and item.orig != ""
-                    and image_mode == ImageRefMode.EMBEDDED
-                    and len(item.prov) > 0
-                    and img_fallback is not None
-                ):
-                    text = img_fallback
-
-                # Building a math equation in MathML format
-                # ref https://www.w3.org/TR/wai-aria-1.1/#math
-                elif formula_to_mathml and len(math_formula) > 0:
-                    try:
-                        mathml_element = latex2mathml.converter.convert_to_element(
-                            math_formula, display="block"
-                        )
-                        annotation = SubElement(
-                            mathml_element, "annotation", dict(encoding="TeX")
-                        )
-                        annotation.text = math_formula
-                        mathml = unescape(tostring(mathml_element, encoding="unicode"))
-                        text = f"<div>{mathml}</div>"
-                    except Exception as err:
-                        _logger.warning(
-                            "Malformed formula cannot be rendered. "
-                            f"Error {err.__class__.__name__}, formula={math_formula}"
-                        )
-                        if (
-                            image_mode == ImageRefMode.EMBEDDED
-                            and len(item.prov) > 0
-                            and img_fallback is not None
-                        ):
-                            text = img_fallback
-                        else:
-                            text = f"<pre>{math_formula}</pre>"
-
-                elif math_formula != "":
-                    text = f"<pre>{math_formula}</pre>"
-
-                if text != "":
-                    html_texts.append(text)
-                else:
-                    html_texts.append(
-                        '<div class="formula-not-decoded">Formula not decoded</div>'
-                    )
-
-            elif isinstance(item, ListItem):
-                text = get_html_tag_with_text_direction(
-                    html_tag="li", text=_prepare_tag_content(item.text)
-                )
-                html_texts.append(text)
-
-            elif isinstance(item, TextItem) and item.label in [DocItemLabel.LIST_ITEM]:
-                text = get_html_tag_with_text_direction(
-                    html_tag="li", text=_prepare_tag_content(item.text)
-                )
-                html_texts.append(text)
-
-            elif isinstance(item, CodeItem):
-                code_text = _prepare_tag_content(
-                    item.text, do_escape_html=False, do_replace_newline=False
-                )
-                text = f"<pre><code>{code_text}</code></pre>"
-                html_texts.append(text)
-
-            elif isinstance(item, TextItem):
-
-                text = get_html_tag_with_text_direction(
-                    html_tag="p", text=_prepare_tag_content(item.text)
-                )
-                html_texts.append(text)
-
-            elif isinstance(item, TableItem):
-
-                text = item.export_to_html(doc=self, add_caption=True)
-                html_texts.append(text)
-
-            elif isinstance(item, PictureItem):
-
-                html_texts.append(
-                    item.export_to_html(
-                        doc=self, add_caption=True, image_mode=image_mode
-                    )
-                )
-
-            elif isinstance(item, DocItem) and item.label in my_labels:
-                continue
-
-        html_texts.append("</html>")
-
-        lines = []
-        lines.extend(head_lines)
-        lines.extend(html_texts)
-
-        delim = "\n"
-        html_text = (delim.join(lines)).strip()
-
-        return html_text
 
     def load_from_doctags(  # noqa: C901
         self,
