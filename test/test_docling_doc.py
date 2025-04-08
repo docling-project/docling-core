@@ -1,5 +1,6 @@
 import os
 from collections import deque
+from copy import deepcopy
 from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
@@ -28,8 +29,10 @@ from docling_core.types.doc.document import (  # BoundingBox,
     ImageRef,
     KeyValueItem,
     ListItem,
+    NodeItem,
     PictureItem,
     ProvenanceItem,
+    RefItem,
     SectionHeaderItem,
     Size,
     TableCell,
@@ -482,7 +485,9 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
         with open(filename + f".{ext}", "r", encoding="utf-8") as fr:
             gt_true = fr.read().rstrip()
 
-        assert gt_true == pred, f"Does not pass regression-test for {filename}.{ext}"
+        assert (
+            gt_true == pred
+        ), f"Does not pass regression-test for {filename}.{ext}\n\n{gt_true}\n\n{pred}"
     else:
         with open(filename + f".{ext}", "w", encoding="utf-8") as fw:
             fw.write(f"{pred}\n")
@@ -1141,8 +1146,13 @@ def _verify_saved_output(filename: str, paths: List[Path]):
         assert pred == gt, f"pred!=gt for {filename}"
 
 
-def _verify_loaded_output(filename: str, pred=None):
-    gt = DoclingDocument.load_from_json(Path(str(filename) + ".gt"))
+def _gt_filename(filename: Path) -> Path:
+    return Path(str(filename) + ".gt")
+
+
+def _verify_loaded_output(filename: Path, pred=None):
+    # gt = DoclingDocument.load_from_json(Path(str(filename) + ".gt"))
+    gt = DoclingDocument.load_from_json(_gt_filename(filename=filename))
 
     pred = pred or DoclingDocument.load_from_json(Path(filename))
     assert isinstance(pred, DoclingDocument)
@@ -1248,3 +1258,143 @@ def test_save_to_disk():
     _verify_saved_output(filename=filename, paths=paths)
 
     assert True
+
+
+def test_document_stack_operations():
+
+    doc: DoclingDocument = _construct_doc()
+
+    # _print(document=doc)
+
+    ref = RefItem(cref="#/texts/12")
+    success, stack = doc._get_stack_of_refitem(ref=ref)
+
+    assert success
+    assert stack == [
+        2,
+        2,
+        2,
+        0,
+        2,
+        0,
+        0,
+    ], f"stack==[2, 2, 2, 0, 2, 0, 0] for stack: {stack}"
+
+
+def test_document_manipulation():
+
+    def _resolve(doc: DoclingDocument, cref: str) -> NodeItem:
+        ref = RefItem(cref=cref)
+        return ref.resolve(doc=doc)
+
+    def _verify(filename: Path, document: DoclingDocument, generate: bool = False):
+        if generate or (not os.path.exists(_gt_filename(filename=filename))):
+            doc.save_as_json(
+                filename=_gt_filename(filename=filename),
+                artifacts_dir=image_dir,
+                image_mode=ImageRefMode.EMBEDDED,
+            )
+        # test if the document is still model-validating
+        DoclingDocument.load_from_json(filename=_gt_filename(filename=filename))
+
+        # test if the document is the same as the stored GT
+        _verify_loaded_output(filename=filename, pred=doc)
+
+    image_dir = Path("./test/data/doc/constructed_images/")
+
+    doc: DoclingDocument = _construct_doc()
+
+    text_item_1 = ListItem(
+        self_ref="#",
+        text="new list item (before)",
+        orig="new list item (before)",
+    )
+    text_item_2 = ListItem(
+        self_ref="#",
+        text="new list item (after)",
+        orig="new list item (after)",
+    )
+
+    node = _resolve(doc=doc, cref="#/texts/10")
+
+    doc.insert_item_before_sibling(new_item=text_item_1, sibling=node)
+    doc.insert_item_after_sibling(new_item=text_item_2, sibling=node)
+
+    filename = Path("test/data/doc/constructed_doc.inserted_text.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    items = [_resolve(doc=doc, cref="#/texts/10")]
+    doc.delete_items(node_items=items)
+
+    filename = Path("test/data/doc/constructed_doc.deleted_text.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    items = [_resolve(doc=doc, cref="#/groups/1")]
+    doc.delete_items(node_items=items)
+
+    filename = Path("test/data/doc/constructed_doc.deleted_group.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    items = [_resolve(doc=doc, cref="#/pictures/1")]
+    doc.delete_items(node_items=items)
+
+    filename = Path("test/data/doc/constructed_doc.deleted_picture.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    text_item_3 = TextItem(
+        self_ref="#",
+        text="child text appended at body",
+        orig="child text appended at body",
+        label=DocItemLabel.TEXT,
+    )
+    doc.append_child_item(child=text_item_3)
+
+    text_item_4 = ListItem(
+        self_ref="#",
+        text="child text appended at body",
+        orig="child text appended at body",
+        label=DocItemLabel.LIST_ITEM,
+    )
+    parent = _resolve(doc=doc, cref="#/groups/11")
+    doc.append_child_item(child=text_item_4, parent=parent)
+
+    # try to add a sibling to the root:
+    with pytest.raises(ValueError):
+        doc.insert_item_before_sibling(
+            new_item=TextItem(
+                self_ref="#",
+                label=DocItemLabel.TEXT,
+                text="foo",
+                orig="foo",
+            ),
+            sibling=doc.body,
+        )
+
+    # try to append a child with children of its own:
+    with pytest.raises(ValueError):
+        doc.append_child_item(
+            child=TextItem(
+                self_ref="#",
+                label=DocItemLabel.TEXT,
+                text="foo",
+                orig="foo",
+                children=[
+                    _resolve(doc=deepcopy(doc), cref=text_item_4.self_ref).get_ref()
+                ],
+            ),
+            parent=doc.body,
+        )
+
+    filename = Path("test/data/doc/constructed_doc.appended_child.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    text_item_5 = TextItem(
+        self_ref="#",
+        text="new child",
+        orig="new child",
+        label=DocItemLabel.TEXT,
+    )
+    doc.replace_item(old_item=text_item_3, new_item=text_item_5)
+
+    filename = Path("test/data/doc/constructed_doc.replaced_item.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)

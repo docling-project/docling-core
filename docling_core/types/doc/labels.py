@@ -8,6 +8,7 @@ class DocItemLabel(str, Enum):
     """DocItemLabel."""
 
     CAPTION = "caption"
+    CHART = "chart"
     FOOTNOTE = "footnote"
     FORMULA = "formula"
     LIST_ITEM = "list_item"
@@ -94,6 +95,7 @@ class PictureClassificationLabel(str, Enum):
     # General
     PIE_CHART = "pie_chart"
     BAR_CHART = "bar_chart"
+    STACKED_BAR_CHART = "stacked_bar_chart"
     LINE_CHART = "line_chart"
     FLOW_CHART = "flow_chart"
     SCATTER_CHART = "scatter_chart"

@@ -49,6 +49,7 @@ from docling_core.types.doc.labels import (
     GraphCellLabel,
     GraphLinkLabel,
     GroupLabel,
+    PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 from docling_core.types.doc.utils import (
@@ -290,22 +291,6 @@ class PictureScatterChartData(PictureChartData):
     points: List[ChartPoint]
 
 
-PictureDataType = Annotated[
-    Union[
-        PictureClassificationData,
-        PictureDescriptionData,
-        PictureMoleculeData,
-        PictureMiscData,
-        PictureLineChartData,
-        PictureBarChartData,
-        PictureStackedBarChartData,
-        PicturePieChartData,
-        PictureScatterChartData,
-    ],
-    Field(discriminator="kind"),
-]
-
-
 class TableCell(BaseModel):
     """TableCell."""
 
@@ -391,6 +376,35 @@ class TableData(BaseModel):  # TBD
         return table_data
 
 
+class PictureTabularChartData(PictureChartData):
+    """Base class for picture chart data.
+
+    Attributes:
+        title (str): The title of the chart.
+        chart_data (TableData): Chart data in the table format.
+    """
+
+    kind: Literal["tabular_chart_data"] = "tabular_chart_data"
+    chart_data: TableData
+
+
+PictureDataType = Annotated[
+    Union[
+        PictureClassificationData,
+        PictureDescriptionData,
+        PictureMoleculeData,
+        PictureMiscData,
+        PictureTabularChartData,
+        PictureLineChartData,
+        PictureBarChartData,
+        PictureStackedBarChartData,
+        PicturePieChartData,
+        PictureScatterChartData,
+    ],
+    Field(discriminator="kind"),
+]
+
+
 class DocumentOrigin(BaseModel):
     """FileSource."""
 
@@ -458,8 +472,12 @@ class RefItem(BaseModel):
         populate_by_name=True,
     )
 
+    def _split_ref_to_path(self):
+        """Get the path of the reference."""
+        return self.cref.split("/")
+
     def resolve(self, doc: "DoclingDocument"):
-        """resolve."""
+        """Resolve the path in the document."""
         path_components = self.cref.split("/")
         if (num_comps := len(path_components)) == 3:
             _, path, index_str = path_components
@@ -624,9 +642,97 @@ class NodeItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    def get_ref(self):
+    def get_ref(self) -> RefItem:
         """get_ref."""
         return RefItem(cref=self.self_ref)
+
+    def _get_parent_ref(
+        self, doc: "DoclingDocument", stack: list[int]
+    ) -> Optional[RefItem]:
+        """get_parent_ref."""
+        if len(stack) == 0:
+            return self.parent
+        elif len(stack) > 0 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item._get_parent_ref(doc=doc, stack=stack[1:])
+
+        return None
+
+    def _delete_child(self, doc: "DoclingDocument", stack: list[int]) -> bool:
+        """Delete child node in tree."""
+        if len(stack) == 1 and stack[0] < len(self.children):
+            del self.children[stack[0]]
+            return True
+        elif len(stack) > 1 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item._delete_child(doc=doc, stack=stack[1:])
+
+        return False
+
+    def _update_child(
+        self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem
+    ) -> bool:
+        """Update child node in tree."""
+        if len(stack) == 1 and stack[0] < len(self.children):
+            # ensure the parent is correct
+            new_item = new_ref.resolve(doc=doc)
+            new_item.parent = self.get_ref()
+
+            self.children[stack[0]] = new_ref
+            return True
+        elif len(stack) > 1 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item._update_child(doc=doc, stack=stack[1:], new_ref=new_ref)
+
+        return False
+
+    def _add_child(
+        self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem
+    ) -> bool:
+        """Append child to node identified by stack."""
+        if len(stack) == 0:
+
+            # ensure the parent is correct
+            new_item = new_ref.resolve(doc=doc)
+            new_item.parent = self.get_ref()
+
+            self.children.append(new_ref)
+            return True
+        elif len(stack) > 0 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item._add_child(doc=doc, stack=stack[1:], new_ref=new_ref)
+
+        return False
+
+    def _add_sibling(
+        self,
+        doc: "DoclingDocument",
+        stack: list[int],
+        new_ref: RefItem,
+        after: bool = True,
+    ) -> bool:
+        """Add sibling node in tree."""
+        if len(stack) == 1 and stack[0] < len(self.children) and (not after):
+            # ensure the parent is correct
+            new_item = new_ref.resolve(doc=doc)
+            new_item.parent = self.get_ref()
+
+            self.children.insert(stack[0], new_ref)
+            return True
+        elif len(stack) == 1 and stack[0] < len(self.children) and (after):
+            # ensure the parent is correct
+            new_item = new_ref.resolve(doc=doc)
+            new_item.parent = self.get_ref()
+
+            self.children.insert(stack[0] + 1, new_ref)
+            return True
+        elif len(stack) > 1 and stack[0] < len(self.children):
+            item = self.children[stack[0]].resolve(doc)
+            return item._add_sibling(
+                doc=doc, stack=stack[1:], new_ref=new_ref, after=after
+            )
+
+        return False
 
 
 class GroupItem(NodeItem):  # Container type, can't be a leaf node
@@ -953,7 +1059,9 @@ class FormulaItem(TextItem):
 class PictureItem(FloatingItem):
     """PictureItem."""
 
-    label: typing.Literal[DocItemLabel.PICTURE] = DocItemLabel.PICTURE
+    label: typing.Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = (
+        DocItemLabel.PICTURE
+    )
 
     annotations: List[PictureDataType] = []
 
@@ -1683,6 +1791,364 @@ class DoclingDocument(BaseModel):
                     item["content_layer"] = "furniture"
         return data
 
+    # ---------------------------
+    # Public Manipulation methods
+    # ---------------------------
+
+    def append_child_item(
+        self, *, child: NodeItem, parent: Optional[NodeItem] = None
+    ) -> None:
+        """Adds an item."""
+        if len(child.children) > 0:
+            raise ValueError("Can not append a child with children")
+
+        parent = parent if parent is not None else self.body
+
+        success, stack = self._get_stack_of_item(item=parent)
+
+        if not success:
+            raise ValueError(
+                f"Could not resolve the parent node in the document tree: {parent}"
+            )
+
+        # Append the item to the attributes of the doc
+        self._append_item(item=child, parent_ref=parent.get_ref())
+
+        # Update the tree of the doc
+        success = self.body._add_child(doc=self, new_ref=child.get_ref(), stack=stack)
+
+        # Clean the attribute (orphan) if not successful
+        if not success:
+            self._pop_item(item=child)
+            raise ValueError(f"Could not append child: {child} to parent: {parent}")
+
+    def insert_item_after_sibling(
+        self, *, new_item: NodeItem, sibling: NodeItem
+    ) -> None:
+        """Inserts an item, given its node_item instance, after other as a sibling."""
+        self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=True)
+
+    def insert_item_before_sibling(
+        self, *, new_item: NodeItem, sibling: NodeItem
+    ) -> None:
+        """Inserts an item, given its node_item instance, before other as a sibling."""
+        self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=False)
+
+    def delete_items(self, *, node_items: List[NodeItem]) -> None:
+        """Deletes an item, given its instance or ref, and any children it has."""
+        refs = []
+        for _ in node_items:
+            refs.append(_.get_ref())
+
+        self._delete_items(refs=refs)
+
+    def replace_item(self, *, new_item: NodeItem, old_item: NodeItem) -> None:
+        """Replace item with new item."""
+        self.insert_item_after_sibling(new_item=new_item, sibling=old_item)
+        self.delete_items(node_items=[old_item])
+
+    # ----------------------------
+    # Private Manipulation methods
+    # ----------------------------
+
+    def _get_stack_of_item(self, item: NodeItem) -> tuple[bool, list[int]]:
+        """Find the stack indices of the item."""
+        return self._get_stack_of_refitem(ref=item.get_ref())
+
+    def _get_stack_of_refitem(self, ref: RefItem) -> tuple[bool, list[int]]:
+        """Find the stack indices of the reference."""
+        if ref == self.body.get_ref():
+            return (True, [])
+
+        node = ref.resolve(doc=self)
+        parent_ref = node._get_parent_ref(doc=self, stack=[])
+
+        if parent_ref is None:
+            return (False, [])
+
+        stack: list[int] = []
+        while parent_ref is not None:
+            parent = parent_ref.resolve(doc=self)
+
+            index = parent.children.index(node.get_ref())
+            stack.insert(0, index)  # prepend the index
+
+            node = parent
+            parent_ref = node._get_parent_ref(doc=self, stack=[])
+
+        return (True, stack)
+
+    def _insert_item_at_refitem(
+        self, item: NodeItem, ref: RefItem, after: bool
+    ) -> RefItem:
+        """Insert node-item using the self-reference."""
+        success, stack = self._get_stack_of_refitem(ref=ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {ref.cref}: could not find the stack"
+            )
+
+        return self._insert_item_at_stack(item=item, stack=stack, after=after)
+
+    def _append_item(self, *, item: NodeItem, parent_ref: RefItem) -> RefItem:
+        """Append item of its type."""
+        cref: str = ""  # to be updated
+
+        if isinstance(item, TextItem):
+            item_label = "texts"
+            item_index = len(self.texts)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.texts.append(item)
+
+        elif isinstance(item, TableItem):
+            item_label = "tables"
+            item_index = len(self.tables)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.tables.append(item)
+
+        elif isinstance(item, PictureItem):
+            item_label = "pictures"
+            item_index = len(self.pictures)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.pictures.append(item)
+
+        elif isinstance(item, KeyValueItem):
+            item_label = "key_value_items"
+            item_index = len(self.key_value_items)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.key_value_items.append(item)
+
+        elif isinstance(item, FormItem):
+            item_label = "form_items"
+            item_index = len(self.form_items)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.form_items.append(item)
+        else:
+            raise ValueError(f"Item {item} is not supported for insertion")
+
+        return RefItem(cref=cref)
+
+    def _pop_item(self, *, item: NodeItem):
+        """Pop the last item of its type."""
+        path = item.self_ref.split("/")
+
+        if len(path) != 3:
+            raise ValueError(f"Can not pop item with path: {path}")
+
+        item_label = path[1]
+        item_index = int(path[2])
+
+        if (
+            len(self.__getattribute__(item_label)) + 1 == item_index
+        ):  # we can only pop the last item
+            del self.__getattribute__(item_label)[item_index]
+        else:
+            msg = f"index:{item_index}, len:{len(self.__getattribute__(item_label))}"
+            raise ValueError(f"Failed to pop: item is not last ({msg})")
+
+    def _insert_item_at_stack(
+        self, item: NodeItem, stack: list[int], after: bool
+    ) -> RefItem:
+        """Insert node-item using the self-reference."""
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        new_ref = self._append_item(item=item, parent_ref=parent_ref)
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=item)
+
+        return item.get_ref()
+
+    def _delete_items(self, refs: list[RefItem]) -> bool:
+        """Delete document item using the self-reference."""
+        to_be_deleted_items: dict[tuple[int, ...], str] = {}  # stack to cref
+
+        # Identify the to_be_deleted_items
+        for item, stack in self._iterate_items_with_stack(with_groups=True):
+            ref = item.get_ref()
+
+            if ref in refs:
+                to_be_deleted_items[tuple(stack)] = ref.cref
+
+            substacks = [stack[0 : i + 1] for i in range(len(stack) - 1)]
+            for substack in substacks:
+                if tuple(substack) in to_be_deleted_items:
+                    to_be_deleted_items[tuple(stack)] = ref.cref
+
+        if len(to_be_deleted_items) == 0:
+            raise ValueError("Nothing to be deleted ...")
+
+        # Clean the tree, reverse the order to not have to update
+        for stack_, ref_ in reversed(sorted(to_be_deleted_items.items())):
+            success = self.body._delete_child(doc=self, stack=list(stack_))
+
+            if not success:
+                del to_be_deleted_items[stack_]
+            else:
+                _logger.info(f"deleted item in tree at stack: {stack_} => {ref_}")
+
+        # Create a new lookup of the orphans:
+        # dict of item_label (`texts`, `tables`, ...) to a
+        # dict of item_label with delta (default = -1).
+        lookup: dict[str, dict[int, int]] = {}
+
+        for stack_, ref_ in to_be_deleted_items.items():
+            path = ref_.split("/")
+            if len(path) == 3:
+
+                item_label = path[1]
+                item_index = int(path[2])
+
+                if item_label not in lookup:
+                    lookup[item_label] = {}
+
+                lookup[item_label][item_index] = -1
+
+        # Remove the orphans in reverse order
+        for item_label, item_inds in lookup.items():
+            for item_index, val in reversed(
+                sorted(item_inds.items())
+            ):  # make sure you delete the last in the list first!
+                _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
+                del self.__getattribute__(item_label)[item_index]
+
+        self._update_breadth_first_with_lookup(
+            node=self.body, refs_to_be_deleted=refs, lookup=lookup
+        )
+
+        return True
+
+    # Update the references
+    def _update_ref_with_lookup(
+        self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]
+    ) -> RefItem:
+        """Update ref with lookup."""
+        if item_label not in lookup:  # Nothing to be done
+            return RefItem(cref=f"#/{item_label}/{item_index}")
+
+        # Count how many items have been deleted in front of you
+        delta = sum(
+            val if item_index >= key else 0 for key, val in lookup[item_label].items()
+        )
+        new_index = item_index + delta
+
+        return RefItem(cref=f"#/{item_label}/{new_index}")
+
+    def _update_refitems_with_lookup(
+        self,
+        ref_items: list[RefItem],
+        refs_to_be_deleted: list[RefItem],
+        lookup: dict[str, dict[int, int]],
+    ) -> list[RefItem]:
+        """Update refitems with lookup."""
+        new_refitems = []
+        for ref_item in ref_items:
+
+            if (
+                ref_item not in refs_to_be_deleted
+            ):  # if ref_item is in ref, then delete/skip them
+                path = ref_item._split_ref_to_path()
+                if len(path) == 3:
+                    new_refitems.append(
+                        self._update_ref_with_lookup(
+                            item_label=path[1],
+                            item_index=int(path[2]),
+                            lookup=lookup,
+                        )
+                    )
+                else:
+                    new_refitems.append(ref_item)
+
+        return new_refitems
+
+    def _update_breadth_first_with_lookup(
+        self,
+        node: NodeItem,
+        refs_to_be_deleted: list[RefItem],
+        lookup: dict[str, dict[int, int]],
+    ):
+        """Update breadth first with lookup."""
+        # Update the captions, references and footnote references
+        if isinstance(node, FloatingItem):
+            node.captions = self._update_refitems_with_lookup(
+                ref_items=node.captions,
+                refs_to_be_deleted=refs_to_be_deleted,
+                lookup=lookup,
+            )
+            node.references = self._update_refitems_with_lookup(
+                ref_items=node.references,
+                refs_to_be_deleted=refs_to_be_deleted,
+                lookup=lookup,
+            )
+            node.footnotes = self._update_refitems_with_lookup(
+                ref_items=node.footnotes,
+                refs_to_be_deleted=refs_to_be_deleted,
+                lookup=lookup,
+            )
+
+        # Update the self_ref reference
+        if node.parent is not None:
+            path = node.parent._split_ref_to_path()
+            if len(path) == 3:
+                node.parent = self._update_ref_with_lookup(
+                    item_label=path[1], item_index=int(path[2]), lookup=lookup
+                )
+
+        # Update the parent reference
+        if node.self_ref is not None:
+            path = node.self_ref.split("/")
+            if len(path) == 3:
+                _ref = self._update_ref_with_lookup(
+                    item_label=path[1], item_index=int(path[2]), lookup=lookup
+                )
+                node.self_ref = _ref.cref
+
+        # Update the child references
+        node.children = self._update_refitems_with_lookup(
+            ref_items=node.children,
+            refs_to_be_deleted=refs_to_be_deleted,
+            lookup=lookup,
+        )
+
+        for i, child_ref in enumerate(node.children):
+            node = child_ref.resolve(self)
+            self._update_breadth_first_with_lookup(
+                node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup
+            )
+
     ###################################
     # TODO: refactor add* methods below
     ###################################
@@ -2321,21 +2787,33 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
         _level: int = 0,  # fixed parameter, carries through the node nesting level
     ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
-        """iterate_elements.
+        """Iterate elements with level."""
+        for item, stack in self._iterate_items_with_stack(
+            root=root,
+            with_groups=with_groups,
+            traverse_pictures=traverse_pictures,
+            page_no=page_no,
+            included_content_layers=included_content_layers,
+        ):
+            yield item, len(stack)
 
-        :param root: Optional[NodeItem]:  (Default value = None)
-        :param with_groups: bool:  (Default value = False)
-        :param traverse_pictures: bool:  (Default value = False)
-        :param page_no: Optional[int]:  (Default value = None)
-        :param _level:  (Default value = 0)
-        :param # fixed parameter:
-        :param carries through the node nesting level:
-        """
+    def _iterate_items_with_stack(
+        self,
+        root: Optional[NodeItem] = None,
+        with_groups: bool = False,
+        traverse_pictures: bool = False,
+        page_no: Optional[int] = None,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        _stack: Optional[list[int]] = None,
+    ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
+        """Iterate elements with stack."""
         my_layers = (
             included_content_layers
             if included_content_layers is not None
             else DEFAULT_CONTENT_LAYERS
         )
+        my_stack: list[int] = _stack if _stack is not None else []
+
         if not root:
             root = self.body
 
@@ -2355,24 +2833,30 @@ class DoclingDocument(BaseModel):
         )
 
         if should_yield:
-            yield root, _level
+            yield root, my_stack
 
         # Handle picture traversal - only traverse children if requested
         if isinstance(root, PictureItem) and not traverse_pictures:
             return
 
+        my_stack.append(-1)
+
         # Traverse children
-        for child_ref in root.children:
+        for child_ind, child_ref in enumerate(root.children):
+            my_stack[-1] = child_ind
             child = child_ref.resolve(self)
+
             if isinstance(child, NodeItem):
-                yield from self.iterate_items(
+                yield from self._iterate_items_with_stack(
                     child,
                     with_groups=with_groups,
                     traverse_pictures=traverse_pictures,
                     page_no=page_no,
-                    _level=_level + 1,
+                    _stack=my_stack,
                     included_content_layers=my_layers,
                 )
+
+        my_stack.pop()
 
     def _clear_picture_pil_cache(self):
         """Clear cache storage of all images."""
@@ -2646,6 +3130,7 @@ class DoclingDocument(BaseModel):
         strict_text: bool = False,
         escape_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
+        enable_chart_tables: bool = True,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
         text_width: int = -1,
@@ -2713,6 +3198,7 @@ class DoclingDocument(BaseModel):
                 stop_idx=to_element,
                 escape_underscores=escape_underscores,
                 image_placeholder=image_placeholder,
+                enable_chart_tables=enable_chart_tables,
                 image_mode=image_mode,
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
@@ -3183,11 +3669,28 @@ class DoclingDocument(BaseModel):
 
         def otsl_parse_texts(texts, tokens):
             split_word = TableToken.OTSL_NL.value
+            # CLEAN tokens from extra tags, only structural OTSL allowed
+            clean_tokens = []
+            for t in tokens:
+                if t in [
+                    TableToken.OTSL_ECEL.value,
+                    TableToken.OTSL_FCEL.value,
+                    TableToken.OTSL_LCEL.value,
+                    TableToken.OTSL_UCEL.value,
+                    TableToken.OTSL_XCEL.value,
+                    TableToken.OTSL_NL.value,
+                    TableToken.OTSL_CHED.value,
+                    TableToken.OTSL_RHED.value,
+                    TableToken.OTSL_SROW.value,
+                ]:
+                    clean_tokens.append(t)
+            tokens = clean_tokens
             split_row_tokens = [
                 list(y)
                 for x, y in itertools.groupby(tokens, lambda z: z == split_word)
                 if not x
             ]
+
             table_cells = []
             r_idx = 0
             c_idx = 0
@@ -3339,6 +3842,40 @@ class DoclingDocument(BaseModel):
                 table_cells=table_cells,
             )
 
+        def extract_chart_type(text_chunk: str):
+            label = None
+            chart_labels = [
+                PictureClassificationLabel.PIE_CHART,
+                PictureClassificationLabel.BAR_CHART,
+                PictureClassificationLabel.STACKED_BAR_CHART,
+                PictureClassificationLabel.LINE_CHART,
+                PictureClassificationLabel.FLOW_CHART,
+                PictureClassificationLabel.SCATTER_CHART,
+                PictureClassificationLabel.HEATMAP,
+                "line",
+                "dot_line",
+                "vbar_categorical",
+                "hbar_categorical",
+            ]
+
+            # Current SmolDocling can predict different labels:
+            chart_labels_mapping = {
+                "line": PictureClassificationLabel.LINE_CHART,
+                "dot_line": PictureClassificationLabel.LINE_CHART,
+                "vbar_categorical": PictureClassificationLabel.BAR_CHART,
+                "hbar_categorical": PictureClassificationLabel.BAR_CHART,
+            }
+
+            for clabel in chart_labels:
+                tag = f"<{clabel}>"
+                if tag in text_chunk:
+                    if clabel in chart_labels_mapping:
+                        label = PictureClassificationLabel(chart_labels_mapping[clabel])
+                    else:
+                        label = PictureClassificationLabel(clabel)
+                    break
+            return label
+
         def parse_key_value_item(
             tokens: str, image: Optional[PILImage.Image] = None
         ) -> Tuple[GraphData, Optional[ProvenanceItem]]:
@@ -3470,10 +4007,9 @@ class DoclingDocument(BaseModel):
                 rf"{DocumentToken.ORDERED_LIST.value}|"
                 rf"{DocumentToken.UNORDERED_LIST.value}|"
                 rf"{DocItemLabel.KEY_VALUE_REGION}|"
+                rf"{DocumentToken.CHART.value}|"
                 rf"{DocumentToken.OTSL.value})>.*?</(?P=tag)>"
             )
-
-            # DocumentToken.OTSL
             pattern = re.compile(tag_pattern, re.DOTALL)
 
             # Go through each match in order
@@ -3505,8 +4041,13 @@ class DoclingDocument(BaseModel):
                     else:
                         self.add_table(data=table_data, caption=caption)
 
-                elif tag_name == DocItemLabel.PICTURE:
+                elif tag_name in [DocItemLabel.PICTURE, DocItemLabel.CHART]:
                     caption, caption_bbox = extract_caption(full_chunk)
+                    table_data = None
+                    chart_type = None
+                    if tag_name == DocumentToken.CHART.value:
+                        table_data = parse_table_content(full_chunk)
+                        chart_type = extract_chart_type(full_chunk)
                     if image:
                         if bbox:
                             im_width, im_height = image.size
@@ -3541,6 +4082,26 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
+                            pic_title = "picture"
+                            if chart_type is not None:
+                                pic.annotations.append(
+                                    PictureClassificationData(
+                                        provenance="load_from_doctags",
+                                        predicted_classes=[
+                                            # chart_type
+                                            PictureClassificationClass(
+                                                class_name=chart_type, confidence=1.0
+                                            )
+                                        ],
+                                    )
+                                )
+                                pic_title = chart_type
+                            if table_data is not None:
+                                # Add chart data as PictureTabularChartData
+                                pd = PictureTabularChartData(
+                                    chart_data=table_data, title=pic_title
+                                )
+                                pic.annotations.append(pd)
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
@@ -3562,6 +4123,25 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
+                            if chart_type is not None:
+                                pic.annotations.append(
+                                    PictureClassificationData(
+                                        provenance="load_from_doctags",
+                                        predicted_classes=[
+                                            # chart_type
+                                            PictureClassificationClass(
+                                                class_name=chart_type, confidence=1.0
+                                            )
+                                        ],
+                                    )
+                                )
+                            if table_data is not None:
+                                # Add chart data as PictureTabularChartData
+                                pd = PictureTabularChartData(
+                                    chart_data=table_data, title=pic_title
+                                )
+                                pic.annotations.append(pd)
+
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
                     key_value_data, kv_item_prov = parse_key_value_item(
                         full_chunk, image

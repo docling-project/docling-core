@@ -1313,8 +1313,11 @@
           "default": "body"
         },
         "label": {
-          "const": "picture",
           "default": "picture",
+          "enum": [
+            "picture",
+            "chart"
+          ],
           "title": "Label",
           "type": "string"
         },
@@ -1374,7 +1377,8 @@
                 "molecule_data": "#/$defs/PictureMoleculeData",
                 "pie_chart_data": "#/$defs/PicturePieChartData",
                 "scatter_chart_data": "#/$defs/PictureScatterChartData",
-                "stacked_bar_chart_data": "#/$defs/PictureStackedBarChartData"
+                "stacked_bar_chart_data": "#/$defs/PictureStackedBarChartData",
+                "tabular_chart_data": "#/$defs/PictureTabularChartData"
               },
               "propertyName": "kind"
             },
@@ -1390,6 +1394,9 @@
               },
               {
                 "$ref": "#/$defs/PictureMiscData"
+              },
+              {
+                "$ref": "#/$defs/PictureTabularChartData"
               },
               {
                 "$ref": "#/$defs/PictureLineChartData"
@@ -1631,6 +1638,30 @@
         "stacked_bars"
       ],
       "title": "PictureStackedBarChartData",
+      "type": "object"
+    },
+    "PictureTabularChartData": {
+      "description": "Base class for picture chart data.\n\nAttributes:\n    title (str): The title of the chart.\n    chart_data (TableData): Chart data in the table format.",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "const": "tabular_chart_data",
+          "default": "tabular_chart_data",
+          "title": "Kind",
+          "type": "string"
+        },
+        "chart_data": {
+          "$ref": "#/$defs/TableData"
+        }
+      },
+      "required": [
+        "title",
+        "chart_data"
+      ],
+      "title": "PictureTabularChartData",
       "type": "object"
     },
     "ProvenanceItem": {
