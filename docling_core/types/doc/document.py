@@ -3326,6 +3326,48 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
     ) -> str:
         r"""Serialize to HTML."""
+        from docling_core.experimental.serializer.html import (
+            HTMLDocSerializer,
+            HTMLParams,
+        )
+
+        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
+        my_layers = (
+            included_content_layers
+            if included_content_layers is not None
+            else DEFAULT_CONTENT_LAYERS
+        )
+        serializer = HTMLDocSerializer(
+            doc=self,
+            params=HTMLParams(
+                labels=my_labels,
+                layers=my_layers,
+                pages={page_no} if page_no is not None else None,
+                start_idx=from_element,
+                stop_idx=to_element,
+                image_mode=image_mode,
+                formula_to_mathml=formula_to_mathml,
+                html_lang=html_lang,
+                html_head=html_head,
+            ),
+        )
+        ser_res = serializer.serialize()
+
+        return ser_res.text
+
+    def _legacy_export_to_html(  # noqa: C901
+        self,
+        from_element: int = 0,
+        to_element: int = sys.maxsize,
+        labels: Optional[set[DocItemLabel]] = None,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        formula_to_mathml: bool = True,
+        page_no: Optional[int] = None,
+        html_lang: str = "en",
+        html_head: str = _HTML_DEFAULT_HEAD,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+    ) -> str:
+        r"""Serialize to HTML."""
         my_labels = labels if labels is not None else DEFAULT_EXPORT_LABELS
         my_layers = (
             included_content_layers

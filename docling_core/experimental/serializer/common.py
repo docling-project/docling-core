@@ -351,6 +351,11 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         **kwargs,
     ) -> list[SerializationResult]:
         """Get the components to be combined for serializing this node."""
+        if item is not None:
+            print(f"get_parts: {item.get_ref().cref}")
+        else:
+            print(f"get_parts: None")
+            
         parts: list[SerializationResult] = []
         my_visited: set[str] = visited if visited is not None else set()
         params = self.params.merge_with_patch(patch=kwargs)
@@ -360,6 +365,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             traverse_pictures=traverse_pictures,
             included_content_layers=params.layers,
         ):
+            print(f" -> child: {item.get_ref().cref}")
+            
             if item.self_ref in my_visited:
                 continue
             else:
