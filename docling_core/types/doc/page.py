@@ -317,6 +317,7 @@ class PdfTextCell(TextCell):
 
     font_key: str
     font_name: str
+    font_size: Optional[float] = None
 
     from_ocr: Literal[False] = False
 
