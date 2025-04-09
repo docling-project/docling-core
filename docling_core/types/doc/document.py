@@ -1124,6 +1124,27 @@ class PictureItem(FloatingItem):
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
     ) -> str:
         """Export picture to HTML format."""
+        from docling_core.experimental.serializer.html import (
+            HTMLDocSerializer,
+            HTMLParams,
+        )
+
+        serializer = HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(
+                image_mode=image_mode,
+            ),
+        )
+        text = serializer.serialize(item=self).text
+        return text
+
+    def _export_to_html(
+        self,
+        doc: "DoclingDocument",
+        add_caption: bool = True,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+    ) -> str:
+        """Export picture to HTML format."""
         text = ""
         if add_caption and len(self.captions):
             text = self.caption_text(doc)
@@ -1317,6 +1338,25 @@ class TableItem(FloatingItem):
         return res
 
     def export_to_html(
+        self,
+        doc: Optional["DoclingDocument"] = None,
+        add_caption: bool = True,
+    ) -> str:
+        """Export the table as html."""
+        if doc is not None:
+            from docling_core.experimental.serializer.html import HTMLDocSerializer
+
+            serializer = HTMLDocSerializer(doc=doc)
+            text = serializer.serialize(item=self).text
+            return text
+        else:
+            _logger.error(
+                "Usage of TableItem.export_to_markdown() without `doc` argument is "
+                "deprecated.",
+            )
+            return ""
+
+    def _export_to_html(
         self,
         doc: Optional["DoclingDocument"] = None,
         add_caption: bool = True,
