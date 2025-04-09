@@ -15,7 +15,6 @@ from xml.etree.cElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
 import latex2mathml.converter
-import latex2mathml.exceptions
 from pydantic import AnyUrl, BaseModel
 from typing_extensions import override
 
@@ -23,7 +22,6 @@ from docling_core.experimental.serializer.base import (
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
-    BaseGraphDataSerializer,
     BaseInlineSerializer,
     BaseKeyValueSerializer,
     BaseListSerializer,
@@ -32,7 +30,11 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import CommonParams, DocSerializer
+from docling_core.experimental.serializer.common import (
+    CommonParams,
+    DocSerializer,
+    create_ser_result,
+)
 from docling_core.experimental.serializer.html_styles import (
     _get_css_for_single_column,
     _get_css_for_split_page,
@@ -41,12 +43,12 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CodeItem,
     ContentLayer,
+    DocItem,
     DoclingDocument,
     FloatingItem,
     FormItem,
     FormulaItem,
     GraphData,
-    GroupItem,
     ImageRef,
     InlineGroup,
     KeyValueItem,
@@ -61,6 +63,7 @@ from docling_core.types.doc.document import (
     TitleItem,
     UnorderedList,
 )
+from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
     get_html_tag_with_text_direction,
     get_text_direction,
@@ -109,6 +112,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     ) -> SerializationResult:
         """Serializes the passed text item to HTML."""
         params = HTMLParams(**kwargs)
+        res_parts: list[SerializationResult] = []
 
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem):
@@ -153,7 +157,16 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             hyperlink=item.hyperlink,
         )
 
-        return SerializationResult(text=text)
+        if text:
+            text_res = create_ser_result(text=text, span_source=item)
+            res_parts.append(text_res)
+
+        if isinstance(item, FloatingItem):
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                res_parts.append(cap_res)
+
+        return create_ser_result(text=text, span_source=res_parts)
 
     def _prepare_content(
         self, text: str, do_escape_html=True, do_replace_newline=True
@@ -274,81 +287,62 @@ class HTMLTableSerializer(BaseTableSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed table item to HTML."""
-        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
-            return SerializationResult(text="")
-
-        text = self._serialize_table(
-            item=item,
-            doc_serializer=doc_serializer,
-            doc=doc,
-            add_caption=True,
-            add_footnotes=True,
-        )
-        return SerializationResult(text=text)
-
-    def _serialize_table(
-        self,
-        item: TableItem,
-        doc_serializer: BaseDocSerializer,
-        doc: DoclingDocument,
-        add_caption: bool = True,
-        add_footnotes: bool = True,
-    ) -> str:
-        """Export the table as html."""
         nrows = item.data.num_rows
         ncols = item.data.num_cols
 
-        caption_text = doc_serializer.serialize_captions(item=item, tag="caption")
+        res_parts: list[SerializationResult] = []
+        cap_res = doc_serializer.serialize_captions(item=item, tag="caption", **kwargs)
+        if cap_res.text:
+            res_parts.append(cap_res)
 
-        body = ""
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            body = ""
 
-        for i in range(nrows):
-            body += "<tr>"
-            for j in range(ncols):
-                cell: TableCell = item.data.grid[i][j]
+            for i in range(nrows):
+                body += "<tr>"
+                for j in range(ncols):
+                    cell: TableCell = item.data.grid[i][j]
 
-                rowspan, rowstart = (
-                    cell.row_span,
-                    cell.start_row_offset_idx,
-                )
-                colspan, colstart = (
-                    cell.col_span,
-                    cell.start_col_offset_idx,
-                )
+                    rowspan, rowstart = (
+                        cell.row_span,
+                        cell.start_row_offset_idx,
+                    )
+                    colspan, colstart = (
+                        cell.col_span,
+                        cell.start_col_offset_idx,
+                    )
 
-                if rowstart != i:
-                    continue
-                if colstart != j:
-                    continue
+                    if rowstart != i:
+                        continue
+                    if colstart != j:
+                        continue
 
-                content = html.escape(cell.text.strip())
-                celltag = "td"
-                if cell.column_header:
-                    celltag = "th"
+                    content = html.escape(cell.text.strip())
+                    celltag = "td"
+                    if cell.column_header:
+                        celltag = "th"
 
-                opening_tag = f"{celltag}"
-                if rowspan > 1:
-                    opening_tag += f' rowspan="{rowspan}"'
-                if colspan > 1:
-                    opening_tag += f' colspan="{colspan}"'
+                    opening_tag = f"{celltag}"
+                    if rowspan > 1:
+                        opening_tag += f' rowspan="{rowspan}"'
+                    if colspan > 1:
+                        opening_tag += f' colspan="{colspan}"'
 
-                text_dir = get_text_direction(content)
-                if text_dir == "rtl":
-                    opening_tag += f' dir="{dir}"'
+                    text_dir = get_text_direction(content)
+                    if text_dir == "rtl":
+                        opening_tag += f' dir="{dir}"'
 
-                body += f"<{opening_tag}>{content}</{celltag}>"
-            body += "</tr>"
+                    body += f"<{opening_tag}>{content}</{celltag}>"
+                body += "</tr>"
 
-        if len(caption_text.text) > 0 and len(body) > 0:
-            body = f"<table>{caption_text.text}<tbody>{body}</tbody></table>"
-        elif len(caption_text.text) == 0 and len(body) > 0:
-            body = f"<table><tbody>{body}</tbody></table>"
-        elif len(caption_text.text) > 0 and len(body) == 0:
-            body = f"<table>{caption_text.text}</table>"
-        else:
-            body = "<table></table>"
+            if body:
+                body = f"<tbody>{body}</tbody>"
+                res_parts.append(create_ser_result(text=body, span_source=item))
 
-        return body
+        text_res = "".join([r.text for r in res_parts])
+        text_res = f"<table>{text_res}</table>" if text_res else ""
+
+        return create_ser_result(text=text_res, span_source=res_parts)
 
 
 class HTMLPictureSerializer(BasePictureSerializer):
@@ -361,77 +355,68 @@ class HTMLPictureSerializer(BasePictureSerializer):
         item: PictureItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        visited: Optional[set[str]] = None,
-        add_caption: bool = True,
-        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         **kwargs,
     ) -> SerializationResult:
         """Export picture to HTML format."""
-        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
-            return SerializationResult(text="")
+        params = HTMLParams(**kwargs)
 
-        caption = doc_serializer.serialize_captions(
-            item=item, doc_serializer=doc_serializer, doc=doc, tag="figcaption"
+        res_parts: list[SerializationResult] = []
+
+        cap_res = doc_serializer.serialize_captions(
+            item=item,
+            tag="figcaption",
+            **kwargs,
         )
+        if cap_res.text:
+            res_parts.append(cap_res)
 
-        result = ""
+        img_text = ""
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
 
-        if image_mode == ImageRefMode.PLACEHOLDER:
-            result = f"<figure>{caption.text}</figure>"
-
-        elif image_mode == ImageRefMode.EMBEDDED:
-            # short-cut: we already have the image in base64
-            if (
-                isinstance(item.image, ImageRef)
-                and isinstance(item.image.uri, AnyUrl)
-                and item.image.uri.scheme == "data"
-            ):
-                img_text = f'<img src="{item.image.uri}">'
-                result = f"<figure>{caption.text}{img_text}</figure>"
-            else:
-                # get the item.image._pil or crop it out of the page-image
-                img = item.get_image(doc)
-
-                if img is not None:
-                    imgb64 = item._image_to_base64(img)
-                    img_text = f'<img src="data:image/png;base64,{imgb64}">'
-
-                    result = f"<figure>{caption.text}{img_text}</figure>"
+            if params.image_mode == ImageRefMode.EMBEDDED:
+                # short-cut: we already have the image in base64
+                if (
+                    isinstance(item.image, ImageRef)
+                    and isinstance(item.image.uri, AnyUrl)
+                    and item.image.uri.scheme == "data"
+                ):
+                    img_text = f'<img src="{item.image.uri}">'
                 else:
-                    result = f"<figure>{caption.text}</figure>"
+                    # get the item.image._pil or crop it out of the page-image
+                    img = item.get_image(doc)
 
-        elif image_mode == ImageRefMode.REFERENCED:
+                    if img is not None:
+                        imgb64 = item._image_to_base64(img)
+                        img_text = f'<img src="data:image/png;base64,{imgb64}">'
+            elif params.image_mode == ImageRefMode.REFERENCED:
+                if isinstance(item.image, ImageRef) and not (
+                    isinstance(item.image.uri, AnyUrl)
+                    and item.image.uri.scheme == "data"
+                ):
+                    img_text = f'<img src="{quote(str(item.image.uri))}">'
+        if img_text:
+            res_parts.append(create_ser_result(text=img_text, span_source=item))
 
-            if not isinstance(item.image, ImageRef) or (
-                isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
-            ):
-                result = f"<figure>{caption.text}</figure>"
+        text_res = "".join([r.text for r in res_parts])
+        if text_res:
+            text_res = f"<figure>{text_res}</figure>"
 
-            else:
-                img_text = f'<img src="{quote(str(item.image.uri))}">'
-                result = f"<figure>{caption.text}{img_text}</figure>"
-        else:
-            result = f"<figure>{caption.text}</figure>"
-
-        return SerializationResult(text=result)
+        return create_ser_result(text=text_res, span_source=res_parts)
 
 
-class HTMLGraphDataSerializer(BaseGraphDataSerializer):
+class _HTMLGraphDataSerializer:
     """HTML-specific graph-data item serializer."""
 
-    @override
     def serialize(
         self,
         *,
-        item: GraphData,
-        doc_serializer: BaseDocSerializer,
-        doc: DoclingDocument,
+        item: Union[FormItem, KeyValueItem],
+        graph_data: GraphData,
         class_name: str,
-        **kwargs,
     ) -> SerializationResult:
         """Serialize the graph-data to HTML."""
         # Build cell lookup by ID
-        cell_map = {cell.cell_id: cell for cell in item.cells}
+        cell_map = {cell.cell_id: cell for cell in graph_data.cells}
 
         # Build relationship maps
         child_links: dict[int, list[int]] = (
@@ -442,7 +427,7 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
             set()
         )  # Set of all IDs that are targets of to_child (to find roots)
 
-        for link in item.links:
+        for link in graph_data.links:
             if (
                 link.source_cell_id not in cell_map
                 or link.target_cell_id not in cell_map
@@ -496,7 +481,7 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
 
         parts.append("</div>")
 
-        return SerializationResult(text="\n".join(parts))
+        return create_ser_result(text="\n".join(parts), span_source=item)
 
     def _render_cell_tree(
         self,
@@ -561,23 +546,28 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed key-value item to HTML."""
-        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
-            return SerializationResult(text="")
+        res_parts: list[SerializationResult] = []
 
-        graph_serializer = HTMLGraphDataSerializer()
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            graph_serializer = _HTMLGraphDataSerializer()
 
-        # Add key-value if available
-        key_value = graph_serializer.serialize(
-            item=item.graph,
-            doc_serializer=doc_serializer,
-            doc=doc,
-            class_name="key-value-region",
-        )
+            # Add key-value if available
+            kv_res = graph_serializer.serialize(
+                item=item,
+                graph_data=item.graph,
+                class_name="key-value-region",
+            )
+            if kv_res.text:
+                res_parts.append(kv_res)
 
         # Add caption if available
-        caption = doc_serializer.serialize_captions(item=item, **kwargs)
+        cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+        if cap_res.text:
+            res_parts.append(cap_res)
 
-        return SerializationResult(text="\n".join([key_value.text, caption.text]))
+        text_res = "\n".join([r.text for r in res_parts])
+
+        return create_ser_result(text=text_res, span_source=res_parts)
 
 
 class HTMLFormSerializer(BaseFormSerializer):
@@ -593,23 +583,28 @@ class HTMLFormSerializer(BaseFormSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed form item to HTML."""
-        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
-            return SerializationResult(text="")
+        res_parts: list[SerializationResult] = []
 
-        graph_serializer = HTMLGraphDataSerializer()
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            graph_serializer = _HTMLGraphDataSerializer()
 
-        # Add key-value if available
-        key_value = graph_serializer.serialize(
-            item=item.graph,
-            doc_serializer=doc_serializer,
-            doc=doc,
-            class_name="form-container",
-        )
+            # Add form if available
+            form_res = graph_serializer.serialize(
+                item=item,
+                graph_data=item.graph,
+                class_name="form-container",
+            )
+            if form_res.text:
+                res_parts.append(form_res)
 
         # Add caption if available
-        caption = doc_serializer.serialize_captions(item=item, **kwargs)
+        cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+        if cap_res.text:
+            res_parts.append(cap_res)
 
-        return SerializationResult(text="\n".join([key_value.text, caption.text]))
+        text_res = "\n".join([r.text for r in res_parts])
+
+        return create_ser_result(text=text_res, span_source=res_parts)
 
 
 class HTMLListSerializer(BaseModel, BaseListSerializer):
@@ -639,30 +634,26 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
 
-        if len(parts) == 0:
-            _logger.warning(f" => no list-items found for list {item.get_ref().cref}")
-            return SerializationResult(text="")
-
-        # Start the appropriate list type
-        tag = "ol" if isinstance(item, OrderedList) else "ul"
-        list_html = [f"<{tag}>"]
-
         # Add all child parts
-        for part in parts:
-            if part.text.startswith("<li>") and part.text.endswith("</li>"):
-                list_html.append(part.text)
-            elif part.text.startswith("<ol>") and part.text.endswith("</ol>"):
-                list_html.append(part.text)
-            elif part.text.startswith("<ul>") and part.text.endswith("</ul>"):
-                list_html.append(part.text)
-            else:
-                _logger.info(f"no <li>, <ol> or <ul> for {part.text}")
-                list_html.append(f"<li>{part.text}</li>")
+        text_res = "\n".join(
+            [
+                (
+                    p.text
+                    if (
+                        (p.text.startswith("<li>") and p.text.endswith("</li>"))
+                        or (p.text.startswith("<ol>") and p.text.endswith("</ol>"))
+                        or (p.text.startswith("<ul>") and p.text.endswith("</ul>"))
+                    )
+                    else f"<li>{p.text}</li>"
+                )
+                for p in parts
+            ]
+        )
+        if text_res:
+            tag = "ol" if isinstance(item, OrderedList) else "ul"
+            text_res = f"<{tag}>\n{text_res}\n</{tag}>"
 
-        # Close the list
-        list_html.append(f"</{tag}>")
-
-        return SerializationResult(text="\n".join(list_html))
+        return create_ser_result(text=text_res, span_source=parts)
 
 
 class HTMLInlineSerializer(BaseInlineSerializer):
@@ -698,7 +689,7 @@ class HTMLInlineSerializer(BaseInlineSerializer):
         if inline_html:
             inline_html = f"<span class='inline-group'>{inline_html}</span>"
 
-        return SerializationResult(text=inline_html)
+        return create_ser_result(text=inline_html, span_source=parts)
 
 
 class HTMLFallbackSerializer(BaseFallbackSerializer):
@@ -714,14 +705,14 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
-        # For group items, we don't generate any markup
-        if isinstance(item, GroupItem):
-            return SerializationResult(text="")
-
-        # For other doc items, add a comment
-        return SerializationResult(
-            text=f"<!-- Unhandled item type: {item.__class__.__name__} -->"
-        )
+        if isinstance(item, DocItem):
+            return create_ser_result(
+                text=f"<!-- Unhandled item type: {item.__class__.__name__} -->",
+                span_source=item,
+            )
+        else:
+            # For group items, we don't generate any markup
+            return create_ser_result()
 
 
 class HTMLDocSerializer(DocSerializer):
@@ -773,7 +764,10 @@ class HTMLDocSerializer(DocSerializer):
         """Serialize a page out of its parts."""
         # Join all parts with newlines
         body_content = "\n".join([p.text for p in parts if p.text])
-        return SerializationResult(text=f"<div class='page'>\n{body_content}\n</div>")
+        return create_ser_result(
+            text=f"<div class='page'>\n{body_content}\n</div>",
+            span_source=parts,
+        )
 
     @override
     def serialize_doc(
@@ -853,7 +847,7 @@ class HTMLDocSerializer(DocSerializer):
         # Join with newlines
         html_content = "\n".join(html_parts)
 
-        return SerializationResult(text=html_content)
+        return create_ser_result(text=html_content, span_source=list(pages.values()))
 
     @override
     def serialize_captions(
@@ -863,30 +857,22 @@ class HTMLDocSerializer(DocSerializer):
         **kwargs,
     ) -> SerializationResult:
         """Serialize the item's captions."""
-        caption_parts = []
-
-        # Extract caption text from all caption items
-        for cap in item.captions:
-            caption_item = cap.resolve(self.doc)
-            if isinstance(caption_item, TextItem):
-                caption_parts.append(caption_item.text)
-
-        # Join all captions with a space
-        if len(caption_parts) > 0:
-            caption_text = " ".join(caption_parts)
-            text_dir = get_text_direction(caption_text)
-
-            # Create proper HTML
-            if text_dir == "rtl":
-                return SerializationResult(
-                    text=f'<{tag} dir="{text_dir}">{html.escape(caption_text)}</{tag}>'
-                )
-            else:
-                return SerializationResult(
-                    text=f"<{tag}>{html.escape(caption_text)}</{tag}>"
-                )
-
-        return SerializationResult(text="")
+        params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        text_res = ""
+        if DocItemLabel.CAPTION in params.labels:
+            results = [
+                create_ser_result(text=it.text, span_source=it)
+                for cap in item.captions
+                if isinstance(it := cap.resolve(self.doc), TextItem)
+                and it.self_ref not in self.get_excluded_refs(**kwargs)
+            ]
+            text_res = params.caption_delim.join([r.text for r in results])
+            if text_res:
+                text_dir = get_text_direction(text_res)
+                dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
+                text_res = f"<{tag}{dir_str}>{html.escape(text_res)}</{tag}>"
+        return create_ser_result(text=text_res, span_source=results)
 
     def _generate_head(self) -> str:
         """Generate the HTML head section with metadata and styles."""

@@ -15,7 +15,6 @@ from docling_core.types.doc.document import (
     DoclingDocument,
     FloatingItem,
     FormItem,
-    GraphData,
     InlineGroup,
     KeyValueItem,
     NodeItem,
@@ -148,23 +147,6 @@ class BaseInlineSerializer(ABC):
         item: InlineGroup,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
-    ) -> SerializationResult:
-        """Serializes the passed item."""
-        ...
-
-
-class BaseGraphDataSerializer(ABC):
-    """Base class for inline serializers."""
-
-    @abstractmethod
-    def serialize(
-        self,
-        *,
-        item: GraphData,
-        doc_serializer: "BaseDocSerializer",
-        doc: DoclingDocument,
-        class_name: str,
         **kwargs,
     ) -> SerializationResult:
         """Serializes the passed item."""
