@@ -1289,7 +1289,7 @@ class TableItem(FloatingItem):
             return text
         else:
             _logger.error(
-                "Usage of TableItem.export_to_markdown() without `doc` argument is "
+                "Usage of TableItem.export_to_html() without `doc` argument is "
                 "deprecated.",
             )
             return ""
