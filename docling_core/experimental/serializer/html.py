@@ -426,7 +426,7 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
         item: GraphData,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        tag: str,
+        class_name: str,
         **kwargs,
     ) -> SerializationResult:
         """Serialize the graph-data to HTML."""
@@ -463,11 +463,11 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
         root_ids = [cell_id for cell_id in cell_map.keys() if cell_id not in parents]
 
         # Generate the HTML
-        parts = [f'<div class="{tag}">']
+        parts = [f'<div class="{class_name}">']
 
         # If we have roots, make a list structure
         if root_ids:
-            parts.append(f'<ul class="{tag}">')
+            parts.append(f'<ul class="{class_name}">')
             for root_id in root_ids:
                 parts.append(
                     self._render_cell_tree(
@@ -482,7 +482,7 @@ class HTMLGraphDataSerializer(BaseGraphDataSerializer):
 
         # If no hierarchy, fall back to definition list
         else:
-            parts.append(f'<dl class="{tag}">')
+            parts.append(f'<dl class="{class_name}">')
             for key_id, value_ids in value_links.items():
                 key_cell = cell_map[key_id]
                 key_text = html.escape(key_cell.text)
@@ -571,7 +571,7 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
             item=item.graph,
             doc_serializer=doc_serializer,
             doc=doc,
-            tag="key-value-region",
+            class_name="key-value-region",
         )
 
         # Add caption if available
@@ -603,7 +603,7 @@ class HTMLFormSerializer(BaseFormSerializer):
             item=item.graph,
             doc_serializer=doc_serializer,
             doc=doc,
-            tag="form-container",
+            class_name="form-container",
         )
 
         # Add caption if available
