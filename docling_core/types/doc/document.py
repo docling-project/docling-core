@@ -3,7 +3,6 @@
 import base64
 import copy
 import hashlib
-import html
 import itertools
 import json
 import logging
@@ -12,12 +11,11 @@ import os
 import re
 import sys
 import typing
-import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
-from urllib.parse import quote, unquote
+from urllib.parse import unquote
 
 import pandas as pd
 import yaml
@@ -48,11 +46,7 @@ from docling_core.types.doc.labels import (
     PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
-from docling_core.types.doc.utils import (
-    get_html_tag_with_text_direction,
-    get_text_direction,
-    relative_path,
-)
+from docling_core.types.doc.utils import relative_path
 
 _logger = logging.getLogger(__name__)
 
@@ -1138,62 +1132,6 @@ class PictureItem(FloatingItem):
         text = serializer.serialize(item=self).text
         return text
 
-    def _export_to_html(
-        self,
-        doc: "DoclingDocument",
-        add_caption: bool = True,
-        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
-    ) -> str:
-        """Export picture to HTML format."""
-        text = ""
-        if add_caption and len(self.captions):
-            text = self.caption_text(doc)
-
-        caption_text = ""
-        if len(text) > 0:
-            caption_text = get_html_tag_with_text_direction(
-                html_tag="figcaption", text=text
-            )
-
-        default_response = f"<figure>{caption_text}</figure>"
-
-        if image_mode == ImageRefMode.PLACEHOLDER:
-            return default_response
-
-        elif image_mode == ImageRefMode.EMBEDDED:
-            # short-cut: we already have the image in base64
-            if (
-                isinstance(self.image, ImageRef)
-                and isinstance(self.image.uri, AnyUrl)
-                and self.image.uri.scheme == "data"
-            ):
-                img_text = f'<img src="{self.image.uri}">'
-                return f"<figure>{caption_text}{img_text}</figure>"
-
-            # get the self.image._pil or crop it out of the page-image
-            img = self.get_image(doc)
-
-            if img is not None:
-                imgb64 = self._image_to_base64(img)
-                img_text = f'<img src="data:image/png;base64,{imgb64}">'
-
-                return f"<figure>{caption_text}{img_text}</figure>"
-            else:
-                return default_response
-
-        elif image_mode == ImageRefMode.REFERENCED:
-
-            if not isinstance(self.image, ImageRef) or (
-                isinstance(self.image.uri, AnyUrl) and self.image.uri.scheme == "data"
-            ):
-                return default_response
-
-            img_text = f'<img src="{quote(str(self.image.uri))}">'
-            return f"<figure>{caption_text}{img_text}</figure>"
-
-        else:
-            return default_response
-
     @deprecated("Use export_to_doctags() instead.")
     def export_to_document_tokens(self, *args, **kwargs):
         r"""Export to DocTags format."""
@@ -1355,88 +1293,6 @@ class TableItem(FloatingItem):
                 "deprecated.",
             )
             return ""
-
-    def _export_to_html(
-        self,
-        doc: Optional["DoclingDocument"] = None,
-        add_caption: bool = True,
-    ) -> str:
-        """Export the table as html."""
-        if doc is None:
-            warnings.warn(
-                "The `doc` argument will be mandatory in a future version. "
-                "It must be provided to include a caption.",
-                DeprecationWarning,
-            )
-
-        nrows = self.data.num_rows
-        ncols = self.data.num_cols
-
-        text = ""
-        if doc is not None and add_caption and len(self.captions):
-            text = html.escape(self.caption_text(doc))
-
-        if len(self.data.table_cells) == 0:
-            return ""
-
-        body = ""
-
-        for i in range(nrows):
-            body += "<tr>"
-            for j in range(ncols):
-                cell: TableCell = self.data.grid[i][j]
-
-                rowspan, rowstart = (
-                    cell.row_span,
-                    cell.start_row_offset_idx,
-                )
-                colspan, colstart = (
-                    cell.col_span,
-                    cell.start_col_offset_idx,
-                )
-
-                if rowstart != i:
-                    continue
-                if colstart != j:
-                    continue
-
-                content = html.escape(cell.text.strip())
-                celltag = "td"
-                if cell.column_header:
-                    celltag = "th"
-
-                opening_tag = f"{celltag}"
-                if rowspan > 1:
-                    opening_tag += f' rowspan="{rowspan}"'
-                if colspan > 1:
-                    opening_tag += f' colspan="{colspan}"'
-
-                text_dir = get_text_direction(content)
-                if text_dir == "rtl":
-                    opening_tag += f' dir="{dir}"'
-
-                body += f"<{opening_tag}>{content}</{celltag}>"
-            body += "</tr>"
-
-        # dir = get_text_direction(text)
-
-        if len(text) > 0 and len(body) > 0:
-            caption_text = get_html_tag_with_text_direction(
-                html_tag="caption", text=text
-            )
-            body = f"<table>{caption_text}<tbody>{body}</tbody></table>"
-
-        elif len(text) == 0 and len(body) > 0:
-            body = f"<table><tbody>{body}</tbody></table>"
-        elif len(text) > 0 and len(body) == 0:
-            caption_text = get_html_tag_with_text_direction(
-                html_tag="caption", text=text
-            )
-            body = f"<table>{caption_text}</table>"
-        else:
-            body = "<table></table>"
-
-        return body
 
     def export_to_otsl(
         self,
