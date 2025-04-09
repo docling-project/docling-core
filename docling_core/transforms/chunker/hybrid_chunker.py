@@ -24,6 +24,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 
 try:
     import semchunk
+    import tiktoken
     from transformers import AutoTokenizer, PreTrainedTokenizerBase
 except ImportError:
     raise RuntimeError(
@@ -58,7 +59,7 @@ class HybridChunker(BaseChunker):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tokenizer: Union[PreTrainedTokenizerBase, str] = (
+    tokenizer: Union[PreTrainedTokenizerBase, tiktoken.Encoding, str] = (
         "sentence-transformers/all-MiniLM-L6-v2"
     )
     max_tokens: int = None  # type: ignore[assignment]
@@ -70,13 +71,23 @@ class HybridChunker(BaseChunker):
     def _patch_tokenizer_and_max_tokens(self) -> Self:
         self._tokenizer = (
             self.tokenizer
-            if isinstance(self.tokenizer, PreTrainedTokenizerBase)
+            if isinstance(self.tokenizer, (PreTrainedTokenizerBase, tiktoken.Encoding))
             else AutoTokenizer.from_pretrained(self.tokenizer)
         )
+        if isinstance(self._tokenizer, PreTrainedTokenizerBase):
+            self._count_tokens = lambda text: len(self._tokenizer.tokenize(text))
+        else:
+            self._count_tokens = lambda text: len(self._tokenizer.encode(text))
         if self.max_tokens is None:
-            self.max_tokens = TypeAdapter(PositiveInt).validate_python(
-                self._tokenizer.model_max_length
-            )
+            if hasattr(self._tokenizer, "model_max_length"):
+                self.max_tokens = TypeAdapter(PositiveInt).validate_python(
+                    self._tokenizer.model_max_length
+                )
+            else:
+                raise ValueError(
+                    "max_tokens must be provided when using a tokenizer "
+                    "(e.g. TikToken) without a 'model_max_length' attribute."
+                )
         return self
 
     @computed_field  # type: ignore[misc]
@@ -92,7 +103,7 @@ class HybridChunker(BaseChunker):
             for t in text:
                 total += self._count_text_tokens(t)
             return total
-        return len(self._tokenizer.tokenize(text))
+        return self._count_tokens(text)
 
     class _ChunkLengthInfo(BaseModel):
         total_len: int
@@ -101,7 +112,7 @@ class HybridChunker(BaseChunker):
 
     def _count_chunk_tokens(self, doc_chunk: DocChunk):
         ser_txt = self.contextualize(chunk=doc_chunk)
-        return len(self._tokenizer.tokenize(text=ser_txt))
+        return self._count_tokens(ser_txt)
 
     def _doc_chunk_length(self, doc_chunk: DocChunk):
         text_length = self._count_text_tokens(doc_chunk.text)
