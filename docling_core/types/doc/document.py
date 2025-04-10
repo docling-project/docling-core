@@ -3154,6 +3154,7 @@ class DoclingDocument(BaseModel):
         r"""Serialize to HTML."""
         from docling_core.experimental.serializer.html import (
             HTMLDocSerializer,
+            HTMLOutputStyle,
             HTMLParams,
         )
 
@@ -3163,6 +3164,10 @@ class DoclingDocument(BaseModel):
             if included_content_layers is not None
             else DEFAULT_CONTENT_LAYERS
         )
+
+        output_style = HTMLOutputStyle.SINGLE_COLUMN
+        if split_page_view:
+            output_style = HTMLOutputStyle.SPLIT_PAGE
 
         params = HTMLParams(
             labels=my_labels,
@@ -3174,7 +3179,7 @@ class DoclingDocument(BaseModel):
             formula_to_mathml=formula_to_mathml,
             html_head=html_head,
             html_lang=html_lang,
-            split_page_view=split_page_view,
+            output_style=output_style,
         )
 
         if html_head == "null":
