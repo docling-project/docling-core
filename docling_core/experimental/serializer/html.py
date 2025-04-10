@@ -7,6 +7,7 @@
 import base64
 import html
 import logging
+from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import Optional, Union
@@ -72,6 +73,13 @@ from docling_core.types.doc.utils import (
 _logger = logging.getLogger(__name__)
 
 
+class HTMLOutputStyle(str, Enum):
+    """HTML output style."""
+
+    SINGLE_COLUMN = "single_column"
+    SPLIT_PAGE = "split_page"
+
+
 class HTMLParams(CommonParams):
     """HTML-specific serialization parameters."""
 
@@ -93,8 +101,8 @@ class HTMLParams(CommonParams):
     # Formula rendering options
     formula_to_mathml: bool = True
 
-    # Allow for split page view (only possible if page-images are present)
-    split_page_view: bool = False
+    # Allow for different output styles
+    output_style: HTMLOutputStyle = HTMLOutputStyle.SINGLE_COLUMN
 
 
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
@@ -781,7 +789,7 @@ class HTMLDocSerializer(DocSerializer):
             "<body>",
         ]
 
-        if self.params.split_page_view:
+        if self.params.output_style == HTMLOutputStyle.SPLIT_PAGE:
             html_parts.append("<table>")
             html_parts.append("<tbody>")
 
@@ -835,11 +843,13 @@ class HTMLDocSerializer(DocSerializer):
             html_parts.append("</tbody>")
             html_parts.append("</table>")
 
-        else:
+        elif self.params.output_style == HTMLOutputStyle.SINGLE_COLUMN:
             # Add all pages
             for page_no, page in pages.items():
                 if page.text:
                     html_parts.append(page.text)
+        else:
+            raise ValueError(f"unknown output-style: {self.params.output_style}")
 
         # Close HTML structure
         html_parts.extend(["</body>", "</html>"])
@@ -896,11 +906,18 @@ class HTMLDocSerializer(DocSerializer):
 
         # Add default styles or custom CSS
         if params.css_styles:
-            head_parts.append(f"<style>\n{params.css_styles}\n</style>")
-        elif self.params.split_page_view:
+            if params.css_styles.startswith("<style>") and params.css_styles.endswith(
+                "</style>"
+            ):
+                head_parts.append(f"\n{params.css_styles}\n")
+            else:
+                head_parts.append(f"<style>\n{params.css_styles}\n</style>")
+        elif self.params.output_style == HTMLOutputStyle.SPLIT_PAGE:
             head_parts.append(_get_css_for_split_page())
-        else:
+        elif self.params.output_style == HTMLOutputStyle.SINGLE_COLUMN:
             head_parts.append(_get_css_for_single_column())
+        else:
+            raise ValueError(f"unknown output-style: {self.params.output_style}")
 
         head_parts.append("</head>")
 
