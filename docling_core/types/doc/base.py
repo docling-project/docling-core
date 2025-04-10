@@ -21,6 +21,13 @@ class CoordOrigin(str, Enum):
     BOTTOMLEFT = "BOTTOMLEFT"
 
 
+class QuestionContext(str, Enum):
+    """Position of the question with respect to a context in question-answering."""
+
+    BEFORE = "BEFORE"
+    AFTER = "AFTER"
+
+
 class Size(BaseModel):
     """Size."""
 

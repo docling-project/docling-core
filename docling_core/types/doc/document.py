@@ -16,7 +16,7 @@ import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
+from typing import Any, Final, Literal, Optional, Union
 from urllib.parse import quote, unquote
 from xml.etree.cElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
@@ -42,7 +42,7 @@ from typing_extensions import Annotated, Self, deprecated
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
-from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.base import ImageRefMode, QuestionContext
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -112,7 +112,7 @@ class PictureClassificationData(BasePictureData):
 
     kind: Literal["classification"] = "classification"
     provenance: str
-    predicted_classes: List[PictureClassificationClass]
+    predicted_classes: list[PictureClassificationClass]
 
 
 class PictureDescriptionData(BasePictureData):
@@ -131,7 +131,7 @@ class PictureMoleculeData(BaseModel):
     smi: str
     confidence: float
     class_name: str
-    segmentation: List[Tuple[float, float]]
+    segmentation: list[tuple[float, float]]
     provenance: str
 
 
@@ -139,7 +139,7 @@ class PictureMiscData(BaseModel):
     """PictureMiscData."""
 
     kind: Literal["misc"] = "misc"
-    content: Dict[str, Any]
+    content: dict[str, Any]
 
 
 class ChartLine(BaseModel):
@@ -147,12 +147,12 @@ class ChartLine(BaseModel):
 
     Attributes:
         label (str): The label for the line.
-        values (List[Tuple[float, float]]): A list of (x, y) coordinate pairs
+        values (list[tuple[float, float]]): A list of (x, y) coordinate pairs
             representing the line's data points.
     """
 
     label: str
-    values: List[Tuple[float, float]]
+    values: list[tuple[float, float]]
 
 
 class ChartBar(BaseModel):
@@ -171,15 +171,15 @@ class ChartStackedBar(BaseModel):
     """Represents a stacked bar in a stacked bar chart.
 
     Attributes:
-        label (List[str]): The labels for the stacked bars. Multiple values are stored
+        label (list[str]): The labels for the stacked bars. Multiple values are stored
             in cases where the chart is "double stacked," meaning bars are stacked both
             horizontally and vertically.
-        values (List[Tuple[str, int]]): A list of values representing different segments
+        values (list[tuple[str, int]]): A list of values representing different segments
             of the stacked bar along with their label.
     """
 
-    label: List[str]
-    values: List[Tuple[str, int]]
+    label: list[str]
+    values: list[tuple[str, int]]
 
 
 class ChartSlice(BaseModel):
@@ -198,11 +198,11 @@ class ChartPoint(BaseModel):
     """Represents a point in a scatter chart.
 
     Attributes:
-        value (Tuple[float, float]): A (x, y) coordinate pair representing a point in a
+        value (tuple[float, float]): A (x, y) coordinate pair representing a point in a
             chart.
     """
 
-    value: Tuple[float, float]
+    value: tuple[float, float]
 
 
 class PictureChartData(BaseModel):
@@ -222,13 +222,13 @@ class PictureLineChartData(PictureChartData):
         kind (Literal["line_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        lines (List[ChartLine]): A list of lines in the chart.
+        lines (list[ChartLine]): A list of lines in the chart.
     """
 
     kind: Literal["line_chart_data"] = "line_chart_data"
     x_axis_label: str
     y_axis_label: str
-    lines: List[ChartLine]
+    lines: list[ChartLine]
 
 
 class PictureBarChartData(PictureChartData):
@@ -238,13 +238,13 @@ class PictureBarChartData(PictureChartData):
         kind (Literal["bar_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        bars (List[ChartBar]): A list of bars in the chart.
+        bars (list[ChartBar]): A list of bars in the chart.
     """
 
     kind: Literal["bar_chart_data"] = "bar_chart_data"
     x_axis_label: str
     y_axis_label: str
-    bars: List[ChartBar]
+    bars: list[ChartBar]
 
 
 class PictureStackedBarChartData(PictureChartData):
@@ -254,13 +254,13 @@ class PictureStackedBarChartData(PictureChartData):
         kind (Literal["stacked_bar_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        stacked_bars (List[ChartStackedBar]): A list of stacked bars in the chart.
+        stacked_bars (list[ChartStackedBar]): A list of stacked bars in the chart.
     """
 
     kind: Literal["stacked_bar_chart_data"] = "stacked_bar_chart_data"
     x_axis_label: str
     y_axis_label: str
-    stacked_bars: List[ChartStackedBar]
+    stacked_bars: list[ChartStackedBar]
 
 
 class PicturePieChartData(PictureChartData):
@@ -268,11 +268,11 @@ class PicturePieChartData(PictureChartData):
 
     Attributes:
         kind (Literal["pie_chart_data"]): The type of the chart.
-        slices (List[ChartSlice]): A list of slices in the pie chart.
+        slices (list[ChartSlice]): A list of slices in the pie chart.
     """
 
     kind: Literal["pie_chart_data"] = "pie_chart_data"
-    slices: List[ChartSlice]
+    slices: list[ChartSlice]
 
 
 class PictureScatterChartData(PictureChartData):
@@ -282,13 +282,13 @@ class PictureScatterChartData(PictureChartData):
         kind (Literal["scatter_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        points (List[ChartPoint]): A list of points in the scatter chart.
+        points (list[ChartPoint]): A list of points in the scatter chart.
     """
 
     kind: Literal["scatter_chart_data"] = "scatter_chart_data"
     x_axis_label: str
     y_axis_label: str
-    points: List[ChartPoint]
+    points: list[ChartPoint]
 
 
 class TableCell(BaseModel):
@@ -310,7 +310,7 @@ class TableCell(BaseModel):
     @classmethod
     def from_dict_format(cls, data: Any) -> Any:
         """from_dict_format."""
-        if isinstance(data, Dict):
+        if isinstance(data, dict):
             # Check if this is a native BoundingBox or a bbox from docling-ibm-models
             if (
                 # "bbox" not in data
@@ -336,7 +336,7 @@ class TableCell(BaseModel):
 class TableData(BaseModel):  # TBD
     """BaseTableData."""
 
-    table_cells: List[TableCell] = []
+    table_cells: list[TableCell] = []
     num_rows: int = 0
     num_cols: int = 0
 
@@ -344,7 +344,7 @@ class TableData(BaseModel):  # TBD
     @property
     def grid(
         self,
-    ) -> List[List[TableCell]]:
+    ) -> list[list[TableCell]]:
         """grid."""
         # Initialise empty table data grid (only empty cells)
         table_data = [
@@ -420,7 +420,7 @@ class DocumentOrigin(BaseModel):
         # from any file handler protocol (e.g. https://, file://, s3://)
     )
 
-    _extra_mimetypes: typing.ClassVar[List[str]] = [
+    _extra_mimetypes: typing.ClassVar[list[str]] = [
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
         "application/vnd.openxmlformats-officedocument.presentationml.template",
@@ -556,13 +556,13 @@ class DocTagsPage(BaseModel):
 class DocTagsDocument(BaseModel):
     """DocTagsDocument."""
 
-    pages: List[DocTagsPage] = []
+    pages: list[DocTagsPage] = []
 
     @classmethod
     def from_doctags_and_image_pairs(
         cls,
         doctags: typing.Sequence[Union[Path, str]],
-        images: Optional[List[Union[Path, PILImage.Image]]],
+        images: Optional[list[Union[Path, PILImage.Image]]],
     ):
         """from_doctags_and_image_pairs."""
         if images is not None and len(doctags) != len(images):
@@ -597,7 +597,7 @@ class DocTagsDocument(BaseModel):
     def from_multipage_doctags_and_images(
         cls,
         doctags: Union[Path, str],
-        images: Optional[List[Union[Path, PILImage.Image]]],
+        images: Optional[list[Union[Path, PILImage.Image]]],
     ):
         """From doctags with `<page_break>` and corresponding list of page images."""
         if isinstance(doctags, Path):
@@ -618,14 +618,21 @@ class ProvenanceItem(BaseModel):
 
     page_no: int
     bbox: BoundingBox
-    charspan: Tuple[int, int]
+    charspan: tuple[int, int]
 
 
 class ContentLayer(str, Enum):
-    """ContentLayer."""
+    """Values representing distinct parts of a document layout.
+
+    The `body` layer consists of main items representing the content of the document,
+    such as paragraphs, tables, images or headers, while the `furniture` layer
+    includes other items like page headers of footnotes. The `annotation` layer holds
+    additional, generated information that complements or annotates the content.
+    """
 
     BODY = "body"
     FURNITURE = "furniture"
+    ANNOTATION = "annotation"
 
 
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
@@ -636,7 +643,7 @@ class NodeItem(BaseModel):
 
     self_ref: str = Field(pattern=_JSON_POINTER_REGEX)
     parent: Optional[RefItem] = None
-    children: List[RefItem] = []
+    children: list[RefItem] = []
 
     content_layer: ContentLayer = ContentLayer.BODY
 
@@ -772,7 +779,7 @@ class DocItem(
     """DocItem."""
 
     label: DocItemLabel
-    prov: List[ProvenanceItem] = []
+    prov: list[ProvenanceItem] = []
 
     def get_location_tokens(
         self,
@@ -971,9 +978,9 @@ class ListItem(TextItem):
 class FloatingItem(DocItem):
     """FloatingItem."""
 
-    captions: List[RefItem] = []
-    references: List[RefItem] = []
-    footnotes: List[RefItem] = []
+    captions: list[RefItem] = []
+    references: list[RefItem] = []
+    footnotes: list[RefItem] = []
     image: Optional[ImageRef] = None
 
     def caption_text(self, doc: "DoclingDocument") -> str:
@@ -1063,7 +1070,7 @@ class PictureItem(FloatingItem):
         DocItemLabel.PICTURE
     )
 
-    annotations: List[PictureDataType] = []
+    annotations: list[PictureDataType] = []
 
     # Convert the image to Base64
     def _image_to_base64(self, pil_image, format="PNG"):
@@ -1257,7 +1264,7 @@ class TableItem(FloatingItem):
                 break
 
         # Create the column names from all col_headers
-        columns: Optional[List[str]] = None
+        columns: Optional[list[str]] = None
         if num_headers > 0:
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
@@ -1570,8 +1577,8 @@ class GraphLink(BaseModel):
 class GraphData(BaseModel):
     """GraphData."""
 
-    cells: List[GraphCell] = Field(default_factory=list)
-    links: List[GraphLink] = Field(default_factory=list)
+    cells: list[GraphCell] = Field(default_factory=list)
+    links: list[GraphLink] = Field(default_factory=list)
 
     @field_validator("links")
     @classmethod
@@ -1592,6 +1599,77 @@ class GraphData(BaseModel):
                 )
 
         return links
+
+
+class QA(BaseModel):
+    """The representation of a question and answer pair.
+
+    TODO: create TypeVar for evidence
+
+    Attributes:
+        question: The question in natural language
+        answer: The answer to the question
+        position: Whether the question is asked before or after the context.
+        evidence: The evidence for the answer within the context.
+    """
+
+    question: str
+    answer: Optional[str] = None
+    position: QuestionContext = QuestionContext.BEFORE
+    evidence: Optional[list[Union[tuple[int, int], BoundingBox, list[TableCell]]]] = (
+        None
+    )
+
+
+class DocQaItem(NodeItem):
+    """The representation of a question and answer pair or conversation on a document.
+
+    Attributes:
+        context: A reference to a document context.
+        conversation: A list of question and answer pairs.
+    """
+
+    context: RefItem
+    conversation: list[QA]
+
+    def export_to_llava(
+        self,
+        doc: "DoclingDocument",
+    ) -> dict:
+        """Exports the document question answering into LLaVA dataset compatible format.
+
+        TODO: define a LlaVA pydantic model.
+        TODO: review id and image values.
+
+        Args:
+            doc: The reference document.
+
+        Returns:
+            A dictionary representing the document question answering in LlaVA dataset
+            compatible format.
+        """
+        llava: dict = {}
+        item = self.context.resolve(doc)
+        if not isinstance(item, PictureItem) or not item.image:
+            return llava
+
+        llava["id"] = hashlib.sha256(str(item.image.uri).encode()).hexdigest()
+        llava["image"] = (
+            item.image.uri.name if isinstance(item.image.uri, Path) else item.image.uri
+        )
+        llava["conversations"] = []
+        for pair in self.conversation:
+            text = (
+                f"{pair.question}\n<image>"
+                if pair.position == QuestionContext.BEFORE
+                else f"<image>\n{pair.question}"
+            )
+            question: dict = {"from": "human", "value": text}
+            answer: dict = {"from": "gpt", "value": pair.answer}
+            llava["conversations"].append(question)
+            llava["conversations"].append(answer)
+
+        return llava
 
 
 class KeyValueItem(FloatingItem):
@@ -1673,7 +1751,7 @@ class PageItem(BaseModel):
 
 
 class DoclingDocument(BaseModel):
-    """DoclingDocument."""
+    """The unified document representation format in Docling."""
 
     _HTML_DEFAULT_HEAD: str = r"""<head>
     <link rel="icon" type="image/png"
@@ -1761,19 +1839,20 @@ class DoclingDocument(BaseModel):
         name="_root_",
         self_ref="#/furniture",
         content_layer=ContentLayer.FURNITURE,
-    )  # List[RefItem] = []
-    body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
+    )  # list[RefItem] = []
+    body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # list[RefItem] = []
 
-    groups: List[Union[OrderedList, UnorderedList, InlineGroup, GroupItem]] = []
-    texts: List[
+    groups: list[Union[OrderedList, UnorderedList, InlineGroup, GroupItem]] = []
+    texts: list[
         Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]
     ] = []
-    pictures: List[PictureItem] = []
-    tables: List[TableItem] = []
-    key_value_items: List[KeyValueItem] = []
-    form_items: List[FormItem] = []
+    pictures: list[PictureItem] = []
+    tables: list[TableItem] = []
+    key_value_items: list[KeyValueItem] = []
+    form_items: list[FormItem] = []
+    annotations: list[Union[DocQaItem]] = []
 
-    pages: Dict[int, PageItem] = {}  # empty as default
+    pages: dict[int, PageItem] = {}  # empty as default
 
     @model_validator(mode="before")
     @classmethod
@@ -1834,7 +1913,7 @@ class DoclingDocument(BaseModel):
         """Inserts an item, given its node_item instance, before other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=False)
 
-    def delete_items(self, *, node_items: List[NodeItem]) -> None:
+    def delete_items(self, *, node_items: list[NodeItem]) -> None:
         """Deletes an item, given its instance or ref, and any children it has."""
         refs = []
         for _ in node_items:
@@ -1949,6 +2028,18 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.form_items.append(item)
+
+        elif isinstance(item, DocQaItem):
+            item_label = "annotations"
+            item_index = len(self.annotations)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.annotations.append(item)
+
         else:
             raise ValueError(f"Item {item} is not supported for insertion")
 
@@ -2474,7 +2565,7 @@ class DoclingDocument(BaseModel):
 
     def add_picture(
         self,
-        annotations: List[PictureDataType] = [],
+        annotations: list[PictureDataType] = [],
         image: Optional[ImageRef] = None,
         caption: Optional[Union[TextItem, RefItem]] = None,
         prov: Optional[ProvenanceItem] = None,
@@ -2483,7 +2574,7 @@ class DoclingDocument(BaseModel):
     ):
         """add_picture.
 
-        :param data: List[PictureData]: (Default value = [])
+        :param data: list[PictureData]: (Default value = [])
         :param caption: Optional[Union[TextItem:
         :param RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
@@ -2763,6 +2854,44 @@ class DoclingDocument(BaseModel):
 
         return form_item
 
+    def add_doc_qa(
+        self,
+        context: DocItem,
+        conversation: list[QA],
+        parent: Optional[NodeItem] = None,
+    ):
+        """Add a document question and answer as annotation.
+
+        TODO: set the parent as the context?
+        TODO: add provenance?
+
+        Args:
+            context: _description_
+            conversation: _description_
+            prov: _description_. Defaults to None.
+            parent: _description_. Defaults to None.
+
+        Returns:
+            The document question and answer item.
+        """
+        if not parent:
+            parent = self.body
+
+        doc_qa_index = len(self.annotations)
+        cref = f"#/annotations/{doc_qa_index}"
+
+        doc_qa_item = DocQaItem(
+            context=context.get_ref(),
+            conversation=conversation,
+            content_layer=ContentLayer.ANNOTATION,
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        self.annotations.append(doc_qa_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return doc_qa_item
+
     def num_pages(self):
         """num_pages."""
         return len(self.pages.values())
@@ -2786,7 +2915,7 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         _level: int = 0,  # fixed parameter, carries through the node nesting level
-    ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
+    ) -> typing.Iterable[tuple[NodeItem, int]]:  # tuple of node and level
         """Iterate elements with level."""
         for item, stack in self._iterate_items_with_stack(
             root=root,
@@ -2805,7 +2934,7 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         _stack: Optional[list[int]] = None,
-    ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
+    ) -> typing.Iterable[tuple[NodeItem, list[int]]]:  # tuple of node and level
         """Iterate elements with stack."""
         my_layers = (
             included_content_layers
@@ -2865,9 +2994,9 @@ class DoclingDocument(BaseModel):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
-    def _list_images_on_disk(self) -> List[Path]:
+    def _list_images_on_disk(self) -> list[Path]:
         """List all images on disk."""
-        result: List[Path] = []
+        result: list[Path] = []
 
         for item, level in self.iterate_items(with_groups=False):
             if isinstance(item, PictureItem):
@@ -3066,7 +3195,7 @@ class DoclingDocument(BaseModel):
         mode: str = "json",
         by_alias: bool = True,
         exclude_none: bool = True,
-    ) -> Dict:
+    ) -> dict:
         """Export to dict."""
         out = self.model_dump(mode=mode, by_alias=by_alias, exclude_none=exclude_none)
 
@@ -3121,13 +3250,13 @@ class DoclingDocument(BaseModel):
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(md_out)
 
-    def export_to_markdown(  # noqa: C901
+    def export_to_markdown(
         self,
-        delim: str = "\n\n",
+        delim: Annotated[str, Field(deprecated=True)] = "\n\n",
         from_element: int = 0,
         to_element: int = sys.maxsize,
         labels: Optional[set[DocItemLabel]] = None,
-        strict_text: bool = False,
+        strict_text: Annotated[bool, Field(deprecated=True)] = False,
         escape_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
         enable_chart_tables: bool = True,
@@ -3218,7 +3347,7 @@ class DoclingDocument(BaseModel):
 
         return ser_res.text
 
-    def export_to_text(  # noqa: C901
+    def export_to_text(
         self,
         delim: str = "\n\n",
         from_element: int = 0,
@@ -3281,7 +3410,7 @@ class DoclingDocument(BaseModel):
 
     def _get_output_paths(
         self, filename: Union[str, Path], artifacts_dir: Optional[Path] = None
-    ) -> Tuple[Path, Optional[Path]]:
+    ) -> tuple[Path, Optional[Path]]:
         if isinstance(filename, str):
             filename = Path(filename)
         if artifacts_dir is None:
@@ -3336,7 +3465,7 @@ class DoclingDocument(BaseModel):
         def close_lists(
             curr_level: int,
             prev_level: int,
-            in_ordered_list: List[bool],
+            in_ordered_list: list[bool],
             html_texts: list[str],
         ):
 
@@ -3363,7 +3492,7 @@ class DoclingDocument(BaseModel):
 
         prev_level = 0  # Track the previous item's level
 
-        in_ordered_list: List[bool] = []  # False
+        in_ordered_list: list[bool] = []  # False
 
         def _prepare_tag_content(
             text: str, do_escape_html=True, do_replace_newline=True
@@ -3832,7 +3961,7 @@ class DoclingDocument(BaseModel):
 
         def parse_key_value_item(
             tokens: str, image: Optional[PILImage.Image] = None
-        ) -> Tuple[GraphData, Optional[ProvenanceItem]]:
+        ) -> tuple[GraphData, Optional[ProvenanceItem]]:
             if image is not None:
                 pg_width = image.width
                 pg_height = image.height
@@ -3865,8 +3994,8 @@ class DoclingDocument(BaseModel):
                 re.DOTALL,
             )
 
-            cells: List["GraphCell"] = []
-            links: List["GraphLink"] = []
+            cells: list["GraphCell"] = []
+            links: list["GraphLink"] = []
             raw_link_predictions = []
 
             for cell_match in cell_pattern.finditer(tokens):
@@ -4216,9 +4345,9 @@ class DoclingDocument(BaseModel):
         r"""Export to DocTags format."""
         return self.export_to_doctags(*args, **kwargs)
 
-    def export_to_doctags(  # noqa: C901
+    def export_to_doctags(
         self,
-        delim: str = "",  # deprecated
+        delim: Annotated[str, Field(deprecated=True)] = "",
         from_element: int = 0,
         to_element: int = sys.maxsize,
         labels: Optional[set[DocItemLabel]] = None,
@@ -4429,11 +4558,10 @@ class DoclingDocument(BaseModel):
         else:
             return CURRENT_VERSION
 
-    @model_validator(mode="after")  # type: ignore
-    @classmethod
-    def validate_document(cls, d: "DoclingDocument"):
-        """validate_document."""
-        if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
+    @model_validator(mode="after")
+    def validate_document(self) -> Self:
+        """Validate the content layout of the document."""
+        if not self.validate_tree(self.body) or not self.validate_tree(self.furniture):
             raise ValueError("Document hierachy is inconsistent.")
 
-        return d
+        return self

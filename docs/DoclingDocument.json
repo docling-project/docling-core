@@ -53,7 +53,7 @@
       "type": "object"
     },
     "ChartLine": {
-      "description": "Represents a line in a line chart.\n\nAttributes:\n    label (str): The label for the line.\n    values (List[Tuple[float, float]]): A list of (x, y) coordinate pairs\n        representing the line's data points.",
+      "description": "Represents a line in a line chart.\n\nAttributes:\n    label (str): The label for the line.\n    values (list[tuple[float, float]]): A list of (x, y) coordinate pairs\n        representing the line's data points.",
       "properties": {
         "label": {
           "title": "Label",
@@ -85,7 +85,7 @@
       "type": "object"
     },
     "ChartPoint": {
-      "description": "Represents a point in a scatter chart.\n\nAttributes:\n    value (Tuple[float, float]): A (x, y) coordinate pair representing a point in a\n        chart.",
+      "description": "Represents a point in a scatter chart.\n\nAttributes:\n    value (tuple[float, float]): A (x, y) coordinate pair representing a point in a\n        chart.",
       "properties": {
         "value": {
           "maxItems": 2,
@@ -128,7 +128,7 @@
       "type": "object"
     },
     "ChartStackedBar": {
-      "description": "Represents a stacked bar in a stacked bar chart.\n\nAttributes:\n    label (List[str]): The labels for the stacked bars. Multiple values are stored\n        in cases where the chart is \"double stacked,\" meaning bars are stacked both\n        horizontally and vertically.\n    values (List[Tuple[str, int]]): A list of values representing different segments\n        of the stacked bar along with their label.",
+      "description": "Represents a stacked bar in a stacked bar chart.\n\nAttributes:\n    label (list[str]): The labels for the stacked bars. Multiple values are stored\n        in cases where the chart is \"double stacked,\" meaning bars are stacked both\n        horizontally and vertically.\n    values (list[tuple[str, int]]): A list of values representing different segments\n        of the stacked bar along with their label.",
       "properties": {
         "label": {
           "items": {
@@ -358,10 +358,11 @@
       "type": "string"
     },
     "ContentLayer": {
-      "description": "ContentLayer.",
+      "description": "Values representing distinct parts of a document layout.\n\nThe `body` layer consists of main items representing the content of the document,\nsuch as paragraphs, tables, images or headers, while the `furniture` layer\nincludes other items like page headers of footnotes. The `annotation` layer holds\nadditional, generated information that complements or annotates the content.",
       "enum": [
         "body",
-        "furniture"
+        "furniture",
+        "annotation"
       ],
       "title": "ContentLayer",
       "type": "string"
@@ -374,6 +375,57 @@
       ],
       "title": "CoordOrigin",
       "type": "string"
+    },
+    "DocQaItem": {
+      "additionalProperties": false,
+      "description": "The representation of a question and answer pair or conversation on a document.\n\nAttributes:\n    context: A reference to a document context.\n    conversation: A list of question and answer pairs.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "context": {
+          "$ref": "#/$defs/RefItem"
+        },
+        "conversation": {
+          "items": {
+            "$ref": "#/$defs/QA"
+          },
+          "title": "Conversation",
+          "type": "array"
+        }
+      },
+      "required": [
+        "self_ref",
+        "context",
+        "conversation"
+      ],
+      "title": "DocQaItem",
+      "type": "object"
     },
     "DocumentOrigin": {
       "description": "FileSource.",
@@ -1171,7 +1223,7 @@
       "type": "object"
     },
     "PictureBarChartData": {
-      "description": "Represents data of a bar chart.\n\nAttributes:\n    kind (Literal[\"bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    bars (List[ChartBar]): A list of bars in the chart.",
+      "description": "Represents data of a bar chart.\n\nAttributes:\n    kind (Literal[\"bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    bars (list[ChartBar]): A list of bars in the chart.",
       "properties": {
         "title": {
           "title": "Title",
@@ -1426,7 +1478,7 @@
       "type": "object"
     },
     "PictureLineChartData": {
-      "description": "Represents data of a line chart.\n\nAttributes:\n    kind (Literal[\"line_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    lines (List[ChartLine]): A list of lines in the chart.",
+      "description": "Represents data of a line chart.\n\nAttributes:\n    kind (Literal[\"line_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    lines (list[ChartLine]): A list of lines in the chart.",
       "properties": {
         "title": {
           "title": "Title",
@@ -1537,7 +1589,7 @@
       "type": "object"
     },
     "PicturePieChartData": {
-      "description": "Represents data of a pie chart.\n\nAttributes:\n    kind (Literal[\"pie_chart_data\"]): The type of the chart.\n    slices (List[ChartSlice]): A list of slices in the pie chart.",
+      "description": "Represents data of a pie chart.\n\nAttributes:\n    kind (Literal[\"pie_chart_data\"]): The type of the chart.\n    slices (list[ChartSlice]): A list of slices in the pie chart.",
       "properties": {
         "title": {
           "title": "Title",
@@ -1565,7 +1617,7 @@
       "type": "object"
     },
     "PictureScatterChartData": {
-      "description": "Represents data of a scatter chart.\n\nAttributes:\n    kind (Literal[\"scatter_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    points (List[ChartPoint]): A list of points in the scatter chart.",
+      "description": "Represents data of a scatter chart.\n\nAttributes:\n    kind (Literal[\"scatter_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    points (list[ChartPoint]): A list of points in the scatter chart.",
       "properties": {
         "title": {
           "title": "Title",
@@ -1603,7 +1655,7 @@
       "type": "object"
     },
     "PictureStackedBarChartData": {
-      "description": "Represents data of a stacked bar chart.\n\nAttributes:\n    kind (Literal[\"stacked_bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    stacked_bars (List[ChartStackedBar]): A list of stacked bars in the chart.",
+      "description": "Represents data of a stacked bar chart.\n\nAttributes:\n    kind (Literal[\"stacked_bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    stacked_bars (list[ChartStackedBar]): A list of stacked bars in the chart.",
       "properties": {
         "title": {
           "title": "Title",
@@ -1696,6 +1748,83 @@
       ],
       "title": "ProvenanceItem",
       "type": "object"
+    },
+    "QA": {
+      "description": "The representation of a question and answer pair.\n\nTODO: create TypeVar for evidence\n\nAttributes:\n    question: The question in natural language\n    answer: The answer to the question\n    position: Whether the question is asked before or after the context.\n    evidence: The evidence for the answer within the context.",
+      "properties": {
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer"
+        },
+        "position": {
+          "$ref": "#/$defs/QuestionContext",
+          "default": "BEFORE"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ],
+                    "type": "array"
+                  },
+                  {
+                    "$ref": "#/$defs/BoundingBox"
+                  },
+                  {
+                    "items": {
+                      "$ref": "#/$defs/TableCell"
+                    },
+                    "type": "array"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence"
+        }
+      },
+      "required": [
+        "question"
+      ],
+      "title": "QA",
+      "type": "object"
+    },
+    "QuestionContext": {
+      "description": "Position of the question with respect to a context in question-answering.",
+      "enum": [
+        "BEFORE",
+        "AFTER"
+      ],
+      "title": "QuestionContext",
+      "type": "string"
     },
     "RefItem": {
       "description": "RefItem.",
@@ -2263,7 +2392,7 @@
       "type": "object"
     }
   },
-  "description": "DoclingDocument.",
+  "description": "The unified document representation format in Docling.",
   "properties": {
     "schema_name": {
       "const": "DoclingDocument",
@@ -2393,6 +2522,14 @@
         "$ref": "#/$defs/FormItem"
       },
       "title": "Form Items",
+      "type": "array"
+    },
+    "annotations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DocQaItem"
+      },
+      "title": "Annotations",
       "type": "array"
     },
     "pages": {

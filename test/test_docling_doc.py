@@ -2,7 +2,7 @@ import os
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 from unittest.mock import Mock
 
 import pytest
@@ -12,7 +12,7 @@ from PIL import ImageDraw
 from pydantic import AnyUrl, ValidationError
 
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
-from docling_core.types.doc.document import (  # BoundingBox,
+from docling_core.types.doc.document import (
     CURRENT_VERSION,
     CodeItem,
     ContentLayer,
@@ -1119,7 +1119,7 @@ def test_save_pictures():
     assert len(img_paths) == 1, "len(img_paths)!=1"
 
 
-def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
+def _normalise_string_wrt_filepaths(instr: str, paths: list[Path]):
 
     for p in paths:
         instr = instr.replace(str(p), str(p.name))
@@ -1127,7 +1127,7 @@ def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
     return instr
 
 
-def _verify_saved_output(filename: str, paths: List[Path]):
+def _verify_saved_output(filename: str, paths: list[Path]):
 
     pred = ""
     with open(filename, "r", encoding="utf-8") as fr:
