@@ -70,9 +70,11 @@ def create_ser_result(
     else:
         results: list[SerializationResult] = span_source
         spans = []
+        span_ids: set[str] = set()
         for ser_res in results:
             for span in ser_res.spans:
-                if span not in spans:
+                if (span_id := span.item.self_ref) not in span_ids:
+                    span_ids.add(span_id)
                     spans.append(span)
     return SerializationResult(
         text=text,
