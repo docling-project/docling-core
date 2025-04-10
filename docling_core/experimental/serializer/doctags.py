@@ -394,8 +394,9 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         if parts:
             text_res = delim.join(
                 [
-                    _wrap(text=p.text, wrap_tag=DocumentToken.LIST_ITEM.value)
+                    t
                     for p in parts
+                    if (t := _wrap(text=p.text, wrap_tag=DocumentToken.LIST_ITEM.value))
                 ]
             )
             text_res = f"{text_res}{delim}"
@@ -480,7 +481,7 @@ class DocTagsDocSerializer(DocSerializer):
     ) -> SerializationResult:
         """Serialize a page out of its parts."""
         delim = _get_delim(params=self.params)
-        text_res = delim.join([p.text for p in parts])
+        text_res = delim.join([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
 
     @override

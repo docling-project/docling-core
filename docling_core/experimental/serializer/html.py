@@ -691,7 +691,7 @@ class HTMLInlineSerializer(BaseInlineSerializer):
         )
 
         # Join all parts without separators
-        inline_html = " ".join([p.text for p in parts])
+        inline_html = " ".join([p.text for p in parts if p.text])
 
         # Wrap in span if needed
         if inline_html:

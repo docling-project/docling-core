@@ -520,7 +520,7 @@ class MarkdownDocSerializer(DocSerializer):
         self, *, parts: list[SerializationResult], **kwargs
     ) -> SerializationResult:
         """Serialize a page out of its parts."""
-        text_res = "\n\n".join([p.text for p in parts])
+        text_res = "\n\n".join([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
 
     @override
