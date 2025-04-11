@@ -959,11 +959,14 @@ def test_formula_mathml():
 
     doc_html = doc.export_to_html(formula_to_mathml=True, html_head="")
 
-    gt_html = Path("test/data/docling_document/export/formula_mathml.html").read_text(
-        encoding="utf8"
-    )
-
-    assert doc_html == gt_html
+    file = "test/data/docling_document/export/formula_mathml.html"
+    if GEN_TEST_DATA:
+        with open(file, mode="w", encoding="utf8") as f:
+            f.write(f"{doc_html}\n")
+    else:
+        with open(file, mode="r", encoding="utf8") as f:
+            gt_html = f.read().rstrip()
+        assert doc_html == gt_html
 
 
 def test_formula_with_missing_fallback():

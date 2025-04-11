@@ -476,28 +476,21 @@ class DocTagsDocSerializer(DocSerializer):
     params: DocTagsParams = DocTagsParams()
 
     @override
-    def serialize_page(
-        self, *, parts: list[SerializationResult], **kwargs
-    ) -> SerializationResult:
-        """Serialize a page out of its parts."""
-        delim = _get_delim(params=self.params)
-        text_res = delim.join([p.text for p in parts if p.text])
-        return create_ser_result(text=text_res, span_source=parts)
-
-    @override
     def serialize_doc(
-        self, *, pages: dict[Optional[int], SerializationResult], **kwargs
+        self, *, parts: list[SerializationResult], **kwargs
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
         delim = _get_delim(params=self.params)
+        text_res = delim.join([p.text for p in parts if p.text])
+
         if self.params.add_page_break:
-            page_sep = f"{delim}<{DocumentToken.PAGE_BREAK.value}>{delim}"
-            content = page_sep.join([text for k in pages if (text := pages[k].text)])
-        else:
-            content = self.serialize_page(parts=list(pages.values())).text
+            page_sep = f"<{DocumentToken.PAGE_BREAK.value}>"
+            for full_match, _, _ in self._get_page_breaks(text=text_res):
+                text_res = text_res.replace(full_match, page_sep)
+
         wrap_tag = DocumentToken.DOCUMENT.value
-        text_res = f"<{wrap_tag}>{content}{delim}</{wrap_tag}>"
-        return create_ser_result(text=text_res, span_source=list(pages.values()))
+        text_res = f"<{wrap_tag}>{text_res}{delim}</{wrap_tag}>"
+        return create_ser_result(text=text_res, span_source=parts)
 
     @override
     def serialize_captions(
@@ -526,3 +519,8 @@ class DocTagsDocSerializer(DocSerializer):
         if text_res:
             text_res = _wrap(text=text_res, wrap_tag=DocumentToken.CAPTION.value)
         return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def requires_page_break(self):
+        """Whether to add page breaks."""
+        return self.params.add_page_break

@@ -766,20 +766,8 @@ class HTMLDocSerializer(DocSerializer):
         return f'<a href="{str(hyperlink)}">{text}</a>'
 
     @override
-    def serialize_page(
-        self, parts: list[SerializationResult], **kwargs
-    ) -> SerializationResult:
-        """Serialize a page out of its parts."""
-        # Join all parts with newlines
-        body_content = "\n".join([p.text for p in parts if p.text])
-        return create_ser_result(
-            text=f"<div class='page'>\n{body_content}\n</div>",
-            span_source=parts,
-        )
-
-    @override
     def serialize_doc(
-        self, pages: dict[Optional[int], SerializationResult], **kwargs
+        self, parts: list[SerializationResult], **kwargs
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
         # Create HTML structure
@@ -790,12 +778,28 @@ class HTMLDocSerializer(DocSerializer):
         ]
 
         if self.params.output_style == HTMLOutputStyle.SPLIT_PAGE:
+            html_content = "\n".join([p.text for p in parts if p.text])
+            next_page: Optional[int] = None
+            prev_full_match_end = 0
+            pages = {}
+            for full_match, prev_page, next_page in self._get_page_breaks(html_content):
+                this_match_start = html_content.find(full_match)
+                pages[prev_page] = html_content[prev_full_match_end:this_match_start]
+                prev_full_match_end = this_match_start + len(full_match)
+
+            # capture last page
+            if next_page is not None:
+                pages[next_page] = html_content[prev_full_match_end:]
+
             html_parts.append("<table>")
             html_parts.append("<tbody>")
 
+            applicable_pages = self._get_applicable_pages()
             for page_no, page in pages.items():
 
                 if isinstance(page_no, int):
+                    if applicable_pages is not None and page_no not in applicable_pages:
+                        continue
                     page_img = self.doc.pages[page_no].image
 
                     html_parts.append("<tr>")
@@ -831,7 +835,7 @@ class HTMLDocSerializer(DocSerializer):
                     html_parts.append("</td>")
 
                     html_parts.append("<td>")
-                    html_parts.append(page.text)
+                    html_parts.append(f"<div class='page'>\n{page}\n</div>")
                     html_parts.append("</td>")
 
                     html_parts.append("</tr>")
@@ -845,9 +849,9 @@ class HTMLDocSerializer(DocSerializer):
 
         elif self.params.output_style == HTMLOutputStyle.SINGLE_COLUMN:
             # Add all pages
-            for page_no, page in pages.items():
-                if page.text:
-                    html_parts.append(page.text)
+            html_content = "\n".join([p.text for p in parts if p.text])
+            html_content = f"<div class='page'>\n{html_content}\n</div>"
+            html_parts.append(html_content)
         else:
             raise ValueError(f"unknown output-style: {self.params.output_style}")
 
@@ -857,7 +861,7 @@ class HTMLDocSerializer(DocSerializer):
         # Join with newlines
         html_content = "\n".join(html_parts)
 
-        return create_ser_result(text=html_content, span_source=list(pages.values()))
+        return create_ser_result(text=html_content, span_source=parts)
 
     @override
     def serialize_captions(
@@ -929,3 +933,8 @@ class HTMLDocSerializer(DocSerializer):
     def _get_default_css(self) -> str:
         """Return default CSS styles for the HTML document."""
         return "<style></style>"
+
+    @override
+    def requires_page_break(self):
+        """Whether to add page breaks."""
+        return self.params.output_style == HTMLOutputStyle.SPLIT_PAGE

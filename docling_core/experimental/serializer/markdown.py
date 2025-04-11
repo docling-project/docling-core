@@ -29,6 +29,7 @@ from docling_core.experimental.serializer.base import (
 from docling_core.experimental.serializer.common import (
     CommonParams,
     DocSerializer,
+    _PageBreakSerResult,
     create_ser_result,
 )
 from docling_core.types.doc.base import ImageRefMode
@@ -375,7 +376,11 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 (
                     c.text
                     if c.text and c.text[0] == " "
-                    else f"{indent_str}{f'{i + 1}.' if is_ol else '-'} {c.text}"
+                    else (
+                        f"{indent_str}"
+                        f"{'' if isinstance(c, _PageBreakSerResult) else (f'{i + 1}. ' if is_ol else '- ')}"  # noqa: E501
+                        f"{c.text}"
+                    )
                 )
                 for i, c in enumerate(my_parts)
             ]
@@ -404,6 +409,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
             list_level=list_level,
             is_inline_scope=True,
             visited=my_visited,
+            **kwargs,
         )
         text_res = " ".join([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
@@ -516,21 +522,19 @@ class MarkdownDocSerializer(DocSerializer):
         return res
 
     @override
-    def serialize_page(
+    def serialize_doc(
         self, *, parts: list[SerializationResult], **kwargs
     ) -> SerializationResult:
-        """Serialize a page out of its parts."""
+        """Serialize a document out of its parts."""
         text_res = "\n\n".join([p.text for p in parts if p.text])
+        if self.params.page_break_placeholder:
+            page_sep = self.params.page_break_placeholder or ""
+            for full_match, _, _ in self._get_page_breaks(text=text_res):
+                text_res = text_res.replace(full_match, page_sep)
+
         return create_ser_result(text=text_res, span_source=parts)
 
     @override
-    def serialize_doc(
-        self, *, pages: dict[Optional[int], SerializationResult], **kwargs
-    ) -> SerializationResult:
-        """Serialize a document out of its pages."""
-        if self.params.page_break_placeholder is not None:
-            sep = f"\n\n{self.params.page_break_placeholder}\n\n"
-            text_res = sep.join([text for k in pages if (text := pages[k].text)])
-            return create_ser_result(text=text_res, span_source=list(pages.values()))
-        else:
-            return self.serialize_page(parts=list(pages.values()))
+    def requires_page_break(self):
+        """Whether to add page breaks."""
+        return self.params.page_break_placeholder is not None

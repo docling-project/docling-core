@@ -234,8 +234,13 @@ class BaseDocSerializer(ABC):
         ...
 
     @abstractmethod
-    def get_excluded_refs(self, **kwargs) -> list[str]:
+    def get_excluded_refs(self, **kwargs) -> set[str]:
         """Get references to excluded items."""
+        ...
+
+    @abstractmethod
+    def requires_page_break(self) -> bool:
+        """Whether to add page breaks."""
         ...
 
 

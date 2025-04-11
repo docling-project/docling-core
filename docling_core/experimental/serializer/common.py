@@ -4,12 +4,12 @@
 #
 
 """Define base classes for serialization."""
+import re
 import sys
 from abc import abstractmethod
-from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Iterable, Optional, Tuple, Union
 
 from pydantic import AnyUrl, BaseModel, NonNegativeInt, computed_field
 from typing_extensions import Self, override
@@ -48,6 +48,49 @@ from docling_core.types.doc.labels import DocItemLabel
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 _DEFAULT_LAYERS = {cl for cl in ContentLayer}
+
+
+class _PageBreakNode(NodeItem):
+    """Page break node."""
+
+    prev_page: int
+    next_page: int
+
+
+class _PageBreakSerResult(SerializationResult):
+    """Page break serialization result."""
+
+    node: _PageBreakNode
+
+
+def _iterate_items(
+    doc: DoclingDocument,
+    layers: Optional[set[ContentLayer]],
+    node: Optional[NodeItem] = None,
+    traverse_pictures: bool = False,
+    add_page_breaks: bool = False,
+):
+    prev_page_nr: Optional[int] = None
+    page_break_i = 0
+    for item, _ in doc.iterate_items(
+        root=node,
+        with_groups=True,
+        included_content_layers=layers,
+        traverse_pictures=traverse_pictures,
+    ):
+        if isinstance(item, DocItem):
+            if item.prov:
+                page_no = item.prov[0].page_no
+                if add_page_breaks and (prev_page_nr is None or page_no > prev_page_nr):
+                    if prev_page_nr is not None:  # close previous range
+                        yield _PageBreakNode(
+                            self_ref=f"#/pb/{page_break_i}",
+                            prev_page=prev_page_nr,
+                            next_page=page_no,
+                        )
+                        page_break_i += 1
+                    prev_page_nr = page_no
+        yield item
 
 
 def create_ser_result(
@@ -128,7 +171,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     params: CommonParams = CommonParams()
 
-    _excluded_refs_cache: dict[str, list[str]] = {}
+    _excluded_refs_cache: dict[str, set[str]] = {}
 
     @computed_field  # type: ignore[misc]
     @cached_property
@@ -146,19 +189,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         return refs
 
     @override
-    def get_excluded_refs(self, **kwargs) -> list[str]:
+    def get_excluded_refs(self, **kwargs) -> set[str]:
         """References to excluded items."""
         params = self.params.merge_with_patch(patch=kwargs)
         params_json = params.model_dump_json()
         refs = self._excluded_refs_cache.get(params_json)
         if refs is None:
-            refs = [
+            refs = {
                 item.self_ref
-                for ix, (item, _) in enumerate(
-                    self.doc.iterate_items(
-                        with_groups=True,
+                for ix, item in enumerate(
+                    _iterate_items(
+                        doc=self.doc,
                         traverse_pictures=True,
-                        included_content_layers=params.layers,
+                        layers=params.layers,
                     )
                 )
                 if (
@@ -178,64 +221,21 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                         )
                     )
                 )
-            ]
+            }
             self._excluded_refs_cache[params_json] = refs
         return refs
 
     @abstractmethod
-    def serialize_page(
-        self, *, parts: list[SerializationResult], **kwargs
-    ) -> SerializationResult:
-        """Serialize a page out of its parts."""
-        ...
-
-    @abstractmethod
     def serialize_doc(
-        self, *, pages: dict[Optional[int], SerializationResult], **kwargs
+        self, *, parts: list[SerializationResult], **kwargs
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
         ...
 
     def _serialize_body(self) -> SerializationResult:
         """Serialize the document body."""
-        # find page ranges if available; otherwise regard whole doc as a single page
-        prev_start: int = 0
-        prev_page_nr: Optional[int] = None
-        range_by_page_nr: dict[Optional[int], tuple[int, int]] = {}
-
-        for ix, (item, _) in enumerate(
-            self.doc.iterate_items(
-                with_groups=True,
-                traverse_pictures=True,
-                included_content_layers=self.params.layers,
-            )
-        ):
-            if isinstance(item, DocItem):
-                if item.prov:
-                    page_no = item.prov[0].page_no
-                    if prev_page_nr is None or page_no > prev_page_nr:
-                        if prev_page_nr is not None:  # close previous range
-                            range_by_page_nr[prev_page_nr] = (prev_start, ix)
-
-                        prev_start = ix
-                        # could alternatively always start 1st page from 0:
-                        # prev_start = ix if prev_page_nr is not None else 0
-
-                        prev_page_nr = page_no
-
-        # close last (and single if no pages) range
-        range_by_page_nr[prev_page_nr] = (prev_start, sys.maxsize)
-
-        page_results: dict[Optional[int], SerializationResult] = {}
-        for page_nr in range_by_page_nr:
-            page_range = range_by_page_nr[page_nr]
-            params_to_pass = deepcopy(self.params)
-            params_to_pass.start_idx = page_range[0]
-            params_to_pass.stop_idx = page_range[1]
-            subparts = self.get_parts(**params_to_pass.model_dump())
-            page_res = self.serialize_page(parts=subparts)
-            page_results[page_nr] = page_res
-        res = self.serialize_doc(pages=page_results)
+        subparts = self.get_parts()
+        res = self.serialize_doc(parts=subparts)
         return res
 
     @override
@@ -331,6 +331,11 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 doc=self.doc,
                 **my_kwargs,
             )
+        elif isinstance(item, _PageBreakNode):
+            part = _PageBreakSerResult(
+                text=self._create_page_break(node=item),
+                node=item,
+            )
         else:
             part = self.fallback_serializer.serialize(
                 item=item,
@@ -356,18 +361,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         parts: list[SerializationResult] = []
         my_visited: set[str] = visited if visited is not None else set()
         params = self.params.merge_with_patch(patch=kwargs)
-        for item, _ in self.doc.iterate_items(
-            root=item,
-            with_groups=True,
-            traverse_pictures=traverse_pictures,
-            included_content_layers=params.layers,
+
+        for node in _iterate_items(
+            node=item,
+            doc=self.doc,
+            layers=params.layers,
+            add_page_breaks=self.requires_page_break(),
         ):
-            if item.self_ref in my_visited:
+            if node.self_ref in my_visited:
                 continue
             else:
-                my_visited.add(item.self_ref)
+                my_visited.add(node.self_ref)
             part = self.serialize(
-                item=item,
+                item=node,
                 list_level=list_level,
                 is_inline_scope=is_inline_scope,
                 visited=my_visited,
@@ -450,3 +456,38 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
+
+    def _get_applicable_pages(self) -> Optional[list[int]]:
+        pages = {
+            item.prov[0].page_no: ...
+            for ix, (item, _) in enumerate(
+                self.doc.iterate_items(
+                    with_groups=True,
+                    included_content_layers=self.params.layers,
+                    traverse_pictures=True,
+                )
+            )
+            if (
+                isinstance(item, DocItem)
+                and item.prov
+                and (
+                    self.params.pages is None
+                    or item.prov[0].page_no in self.params.pages
+                )
+                and ix >= self.params.start_idx
+                and ix < self.params.stop_idx
+            )
+        }
+        return [p for p in pages] or None
+
+    def _create_page_break(self, node: _PageBreakNode) -> str:
+        return f"#_#_DOCLING_DOC_PAGE_BREAK_{node.prev_page}_{node.next_page}_#_#"
+
+    def _get_page_breaks(self, text: str) -> Iterable[Tuple[str, int, int]]:
+        pattern = r"#_#_DOCLING_DOC_PAGE_BREAK_(\d+)_(\d+)_#_#"
+        matches = re.finditer(pattern, text)
+        for match in matches:
+            full_match = match.group(0)
+            prev_page_nr = int(match.group(1))
+            next_page_nr = int(match.group(2))
+            yield (full_match, prev_page_nr, next_page_nr)
