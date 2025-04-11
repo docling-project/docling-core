@@ -773,6 +773,7 @@ class HTMLDocSerializer(DocSerializer):
         # Create HTML structure
         html_parts = [
             "<!DOCTYPE html>",
+            "<html>",
             self._generate_head(),
             "<body>",
         ]
