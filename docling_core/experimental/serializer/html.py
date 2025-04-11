@@ -192,7 +192,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         is_inline_scope: bool,
     ) -> str:
         code_text = self._prepare_content(
-            item.text, do_escape_html=True, do_replace_newline=False
+            item.text, do_escape_html=False, do_replace_newline=False
         )
         if is_inline_scope:
             text = f"<code>{code_text}</code>"
