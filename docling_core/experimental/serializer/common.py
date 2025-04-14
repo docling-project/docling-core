@@ -69,7 +69,9 @@ def _iterate_items(
     node: Optional[NodeItem] = None,
     traverse_pictures: bool = False,
     add_page_breaks: bool = False,
+    visited: Optional[set[str]] = None,
 ):
+    my_visited: set[str] = visited if visited is not None else set()
     prev_page_nr: Optional[int] = None
     page_break_i = 0
     for item, _ in doc.iterate_items(
@@ -78,10 +80,33 @@ def _iterate_items(
         included_content_layers=layers,
         traverse_pictures=traverse_pictures,
     ):
-        if isinstance(item, DocItem):
-            if item.prov:
+        if add_page_breaks:
+            if (
+                isinstance(item, (UnorderedList, OrderedList, InlineGroup))
+                and item.self_ref not in my_visited
+            ):
+                # if group starts with new page, yield page break before group node
+                my_visited.add(item.self_ref)
+                for it in _iterate_items(
+                    doc=doc,
+                    layers=layers,
+                    node=item,
+                    traverse_pictures=traverse_pictures,
+                    add_page_breaks=add_page_breaks,
+                    visited=my_visited,
+                ):
+                    if isinstance(it, DocItem) and it.prov:
+                        page_no = it.prov[0].page_no
+                        if prev_page_nr is not None and page_no > prev_page_nr:
+                            yield _PageBreakNode(
+                                self_ref=f"#/pb/{page_break_i}",
+                                prev_page=prev_page_nr,
+                                next_page=page_no,
+                            )
+                        break
+            elif isinstance(item, DocItem) and item.prov:
                 page_no = item.prov[0].page_no
-                if add_page_breaks and (prev_page_nr is None or page_no > prev_page_nr):
+                if prev_page_nr is None or page_no > prev_page_nr:
                     if prev_page_nr is not None:  # close previous range
                         yield _PageBreakNode(
                             self_ref=f"#/pb/{page_break_i}",

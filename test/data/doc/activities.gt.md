@@ -26,3 +26,10 @@ Hmm, what else…
 <!-- page break -->
 - -Yet another one
 - -Stopping it here
+
+Some text.
+
+<!-- page break -->
+
+- -Starting the next page with a list item.
+- -Second item.
