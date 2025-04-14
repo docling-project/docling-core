@@ -58,7 +58,7 @@ pyyaml = ">=5.1,<7.0.0"
 typing-extensions = "^4.12.2"
 transformers = { version = "^4.34.0", optional = true }
 semchunk = { version = "^2.2.0", optional = true }
-typer = "^0.12.5"
+typer = ">=0.12.5,<0.16.0"
 latex2mathml = "^3.77.0"
 
 [tool.poetry.extras]
