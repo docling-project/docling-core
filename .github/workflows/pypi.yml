@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-poetry
       - name: Build and publish
-        run: poetry publish build
+        run: poetry build
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
