@@ -45,6 +45,7 @@ class DocItemLabel(str, Enum):
             DocItemLabel.PAGE_FOOTER: (204, 255, 204),
             DocItemLabel.PAGE_HEADER: (204, 255, 204),
             DocItemLabel.PICTURE: (255, 204, 164),
+            DocItemLabel.CHART: (255, 204, 164),
             DocItemLabel.SECTION_HEADER: (255, 153, 153),
             DocItemLabel.TABLE: (255, 204, 204),
             DocItemLabel.TEXT: (255, 255, 153),
@@ -58,7 +59,7 @@ class DocItemLabel(str, Enum):
             DocItemLabel.PARAGRAPH: (255, 255, 153),
             DocItemLabel.REFERENCE: (176, 224, 230),
         }
-        return color_map[label]
+        return color_map.get(label, (0, 0, 0))
 
 
 class GroupLabel(str, Enum):
