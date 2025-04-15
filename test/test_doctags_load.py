@@ -4,6 +4,7 @@ from PIL import Image as PILImage
 
 from docling_core.types.doc import DoclingDocument
 from docling_core.types.doc.document import DocTagsDocument
+from docling_core.types.doc.document import PictureTabularChartData
 
 
 def test_doctags_load_from_files():
@@ -53,6 +54,22 @@ def test_multipage_doctags_load():
     doctags_doc = DocTagsDocument.from_multipage_doctags_and_images(doctags, None)
     doc.load_from_doctags(doctags_doc)
     # print(doc.export_to_html())
+
+
+def test_doctags_chart():
+    doc = DoclingDocument(name="Document")
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
+        [Path("test/data/doc/barchart.dt")],
+        [Path("test/data/doc/barchart.png")],
+    )
+    doc.load_from_doctags(doctags_doc)
+    for pic in doc.pictures:
+        tabular_chart_annotations = [
+            ann
+            for ann in pic.annotations
+            if isinstance(ann, PictureTabularChartData)
+        ]
+        assert len(tabular_chart_annotations) > 0
 
 
 def test_doctags_table_provenances_and_captions():
