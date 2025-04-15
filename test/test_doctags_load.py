@@ -3,8 +3,7 @@ from pathlib import Path
 from PIL import Image as PILImage
 
 from docling_core.types.doc import DoclingDocument
-from docling_core.types.doc.document import DocTagsDocument
-from docling_core.types.doc.document import PictureTabularChartData
+from docling_core.types.doc.document import DocTagsDocument, PictureTabularChartData
 
 
 def test_doctags_load_from_files():
@@ -65,9 +64,7 @@ def test_doctags_chart():
     doc.load_from_doctags(doctags_doc)
     for pic in doc.pictures:
         tabular_chart_annotations = [
-            ann
-            for ann in pic.annotations
-            if isinstance(ann, PictureTabularChartData)
+            ann for ann in pic.annotations if isinstance(ann, PictureTabularChartData)
         ]
         assert len(tabular_chart_annotations) > 0
 

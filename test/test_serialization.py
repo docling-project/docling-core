@@ -64,6 +64,34 @@ def test_md_cross_page_list_page_break_p2():
     verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
 
 
+def test_html_charts():
+    src = Path("./test/data/doc/barchart.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
+
+
+def test_md_charts():
+    src = Path("./test/data/doc/barchart.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+
+
 def test_html_cross_page_list_page_break():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
