@@ -63,6 +63,7 @@ from docling_core.types.doc.document import (
     TextItem,
     TitleItem,
     UnorderedList,
+    PictureTabularChartData,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
@@ -103,6 +104,9 @@ class HTMLParams(CommonParams):
 
     # Allow for different output styles
     output_style: HTMLOutputStyle = HTMLOutputStyle.SINGLE_COLUMN
+
+    # Enable charts to be printed into HTML as tables
+    enable_chart_tables: bool = True
 
 
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
@@ -402,6 +406,23 @@ class HTMLPictureSerializer(BasePictureSerializer):
                     and item.image.uri.scheme == "data"
                 ):
                     img_text = f'<img src="{quote(str(item.image.uri))}">'
+
+        if params.enable_chart_tables:
+            # Check if picture has attached PictureTabularChartData
+            tabular_chart_annotations = [
+                ann
+                for ann in item.annotations
+                if isinstance(ann, PictureTabularChartData)
+            ]
+            if len(tabular_chart_annotations) > 0:
+                temp_doc = DoclingDocument(name="temp")
+                temp_table = temp_doc.add_table(
+                    data=tabular_chart_annotations[0].chart_data
+                )
+                html_table_content = temp_table.export_to_html(temp_doc)
+                if len(html_table_content) > 0:
+                    res_parts.append(html_table_content)
+
         if img_text:
             res_parts.append(create_ser_result(text=img_text, span_source=item))
 
