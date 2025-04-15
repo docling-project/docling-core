@@ -407,6 +407,9 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 ):
                     img_text = f'<img src="{quote(str(item.image.uri))}">'
 
+        if img_text:
+            res_parts.append(create_ser_result(text=img_text, span_source=item))
+
         if params.enable_chart_tables:
             # Check if picture has attached PictureTabularChartData
             tabular_chart_annotations = [
@@ -421,10 +424,9 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 )
                 html_table_content = temp_table.export_to_html(temp_doc)
                 if len(html_table_content) > 0:
-                    res_parts.append(html_table_content)
-
-        if img_text:
-            res_parts.append(create_ser_result(text=img_text, span_source=item))
+                    res_parts.append(
+                        create_ser_result(text=html_table_content, span_source=item)
+                    )
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
