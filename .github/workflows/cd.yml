@@ -21,6 +21,8 @@ jobs:
 
   code-checks:
     uses: ./.github/workflows/checks.yml
+    with:
+      push_coverage: false
   pre-release-check:
     runs-on: ubuntu-latest
     outputs:
