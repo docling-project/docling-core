@@ -57,13 +57,13 @@ from docling_core.types.doc.document import (
     NodeItem,
     OrderedList,
     PictureItem,
+    PictureTabularChartData,
     SectionHeaderItem,
     TableCell,
     TableItem,
     TextItem,
     TitleItem,
     UnorderedList,
-    PictureTabularChartData,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
