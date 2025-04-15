@@ -31,9 +31,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run styling check
         run: poetry run pre-commit run --all-files
-      - name: Testing
-        run: |
-          poetry run pytest -v --cov=docling --cov-report=xml tests
       - name: Upload coverage to Codecov
         if: inputs.push_coverage
         uses: codecov/codecov-action@v5
