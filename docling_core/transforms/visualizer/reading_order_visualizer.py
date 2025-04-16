@@ -1,0 +1,143 @@
+"""Define classes for reading order visualization."""
+
+from copy import deepcopy
+from typing import Optional
+
+from PIL import ImageDraw
+from PIL.Image import Image
+from typing_extensions import override
+
+from docling_core.transforms.visualizer.base import BaseVisualizer
+from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocument
+
+
+class ReadingOrderVisualizer(BaseVisualizer):
+    """Reading order visualizer."""
+
+    def _draw_arrow(
+        self,
+        draw: ImageDraw.ImageDraw,
+        arrow_coords: tuple[float, float, float, float],
+        line_width: int = 2,
+        color: str = "red",
+    ):
+        """Draw an arrow inside the given draw object."""
+        x0, y0, x1, y1 = arrow_coords
+
+        # Arrow parameters
+        start_point = (x0, y0)  # Starting point of the arrow
+        end_point = (x1, y1)  # Ending point of the arrow
+        arrowhead_length = 20  # Length of the arrowhead
+        arrowhead_width = 10  # Width of the arrowhead
+
+        # Draw the arrow shaft (line)
+        draw.line([start_point, end_point], fill=color, width=line_width)
+
+        # Calculate the arrowhead points
+        dx = end_point[0] - start_point[0]
+        dy = end_point[1] - start_point[1]
+        angle = (dx**2 + dy**2) ** 0.5 + 0.01  # Length of the arrow shaft
+
+        # Normalized direction vector for the arrow shaft
+        ux, uy = dx / angle, dy / angle
+
+        # Base of the arrowhead
+        base_x = end_point[0] - ux * arrowhead_length
+        base_y = end_point[1] - uy * arrowhead_length
+
+        # Left and right points of the arrowhead
+        left_x = base_x - uy * arrowhead_width
+        left_y = base_y + ux * arrowhead_width
+        right_x = base_x + uy * arrowhead_width
+        right_y = base_y - ux * arrowhead_width
+
+        # Draw the arrowhead (triangle)
+        draw.polygon(
+            [end_point, (left_x, left_y), (right_x, right_y)],
+            fill=color,
+        )
+        return draw
+
+    def _draw_doc_reading_order(
+        self,
+        doc: DoclingDocument,
+        images: Optional[dict[Optional[int], Image]] = None,
+    ):
+        """Draw the reading order."""
+        # draw = ImageDraw.Draw(image)
+        x0, y0 = None, None
+        my_images: dict[Optional[int], Image] = images or {}
+        prev_page = None
+        for elem, _ in doc.iterate_items(
+            included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
+        ):
+            if not isinstance(elem, DocItem):
+                continue
+            if len(elem.prov) == 0:
+                continue  # Skip elements without provenances
+            prov = elem.prov[0]
+            page_no = prov.page_no
+            image = my_images.get(page_no)
+
+            if image is None or prev_page is None or page_no > prev_page:
+                # new page begins
+                prev_page = page_no
+                x0 = y0 = None
+
+                if image is None:
+                    page_image = doc.pages[page_no].image
+                    if page_image is None or (pil_img := page_image.pil_image) is None:
+                        raise RuntimeError("Cannot visualize document without images")
+                    else:
+                        image = deepcopy(pil_img)
+                        my_images[page_no] = image
+            draw = ImageDraw.Draw(image)
+
+            # if prov.page_no not in true_doc.pages or prov.page_no != 1:
+            #     logging.error(f"{prov.page_no} not in true_doc.pages -> skipping! ")
+            #     continue
+
+            tlo_bbox = prov.bbox.to_top_left_origin(
+                page_height=doc.pages[prov.page_no].size.height
+            )
+            ro_bbox = tlo_bbox.normalized(doc.pages[prov.page_no].size)
+            ro_bbox.l = round(ro_bbox.l * image.width)  # noqa: E741
+            ro_bbox.r = round(ro_bbox.r * image.width)
+            ro_bbox.t = round(ro_bbox.t * image.height)
+            ro_bbox.b = round(ro_bbox.b * image.height)
+
+            if ro_bbox.b > ro_bbox.t:
+                ro_bbox.b, ro_bbox.t = ro_bbox.t, ro_bbox.b
+
+            if x0 is None and y0 is None:
+                x0 = (ro_bbox.l + ro_bbox.r) / 2.0
+                y0 = (ro_bbox.b + ro_bbox.t) / 2.0
+            else:
+                assert x0 is not None
+                assert y0 is not None
+
+                x1 = (ro_bbox.l + ro_bbox.r) / 2.0
+                y1 = (ro_bbox.b + ro_bbox.t) / 2.0
+
+                draw = self._draw_arrow(
+                    draw=draw,
+                    arrow_coords=(x0, y0, x1, y1),
+                    line_width=2,
+                    color="red",
+                )
+                x0, y0 = x1, y1
+        return my_images
+
+    @override
+    def get_visualization(
+        self,
+        *,
+        doc: DoclingDocument,
+        base_images: Optional[dict[Optional[int], Image]] = None,
+        **kwargs,
+    ) -> dict[Optional[int], Image]:
+        """Get visualization of the document as images by page."""
+        return self._draw_doc_reading_order(
+            doc=doc,
+            images=base_images,
+        )
