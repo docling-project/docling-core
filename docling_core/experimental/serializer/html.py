@@ -802,6 +802,8 @@ class HTMLDocSerializer(DocSerializer):
         ]
 
         if self.params.output_style == HTMLOutputStyle.SPLIT_PAGE:
+            applicable_pages = self._get_applicable_pages()
+
             html_content = "\n".join([p.text for p in parts if p.text])
             next_page: Optional[int] = None
             prev_full_match_end = 0
@@ -815,10 +817,17 @@ class HTMLDocSerializer(DocSerializer):
             if next_page is not None:
                 pages[next_page] = html_content[prev_full_match_end:]
 
+            # Take care of cases with no page-break, eg single image documents
+            if (
+                len(pages) == 0
+                and (applicable_pages is not None)
+                and len(applicable_pages) == 1
+            ):
+                pages[applicable_pages[0]] = html_content
+
             html_parts.append("<table>")
             html_parts.append("<tbody>")
 
-            applicable_pages = self._get_applicable_pages()
             for page_no, page in pages.items():
 
                 if isinstance(page_no, int):
