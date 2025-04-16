@@ -11,9 +11,8 @@ from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc import DocItemLabel
-from docling_core.types.doc.base import BoundingBox
 from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocument
-from docling_core.types.doc.page import TextCell
+from docling_core.types.doc.page import BoundingRectangle, TextCell
 
 
 class Cluster(BaseModel):
@@ -21,7 +20,7 @@ class Cluster(BaseModel):
 
     id: int
     label: DocItemLabel
-    bbox: BoundingBox
+    brec: BoundingRectangle
     confidence: float = 1.0
     cells: list[TextCell] = []
     children: list["Cluster"] = []  # Add child cluster support
@@ -68,7 +67,7 @@ class LayoutVisualizer(BaseVisualizer):
                         fill=cell_color,
                     )
                 # Draw cluster rectangle
-                x0, y0, x1, y1 = c.bbox.as_tuple()
+                x0, y0, x1, y1 = c.brec.to_bounding_box().as_tuple()
                 x0 *= scale_x
                 x1 *= scale_x
                 y0 *= scale_x
@@ -165,7 +164,7 @@ class LayoutVisualizer(BaseVisualizer):
             cluster = Cluster(
                 id=idx,
                 label=elem.label,
-                bbox=BoundingBox.model_validate(tlo_bbox),
+                brec=BoundingRectangle.from_bounding_box(bbox=tlo_bbox),
                 cells=[],
             )
             clusters.append(cluster)
