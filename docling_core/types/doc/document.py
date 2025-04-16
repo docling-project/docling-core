@@ -2888,7 +2888,7 @@ class DoclingDocument(BaseModel):
         mode: str = "json",
         by_alias: bool = True,
         exclude_none: bool = True,
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """Export to dict."""
         out = self.model_dump(mode=mode, by_alias=by_alias, exclude_none=exclude_none)
 
