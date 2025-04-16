@@ -1,7 +1,7 @@
 """Define classes for layout visualization."""
 
 from copy import deepcopy
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from PIL import ImageDraw, ImageFont
 from PIL.Image import Image
@@ -11,19 +11,26 @@ from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc import DocItemLabel
+from docling_core.types.doc.base import CoordOrigin
 from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocument
 from docling_core.types.doc.page import BoundingRectangle, TextCell
 
 
-class Cluster(BaseModel):
-    """Cluster."""
+class _TLBoundingRectangle(BoundingRectangle):
+    coord_origin: Literal[CoordOrigin.TOPLEFT] = CoordOrigin.TOPLEFT
 
+
+class _TLTextCell(TextCell):
+    rect: _TLBoundingRectangle
+
+
+class _TLCluster(BaseModel):
     id: int
     label: DocItemLabel
-    brec: BoundingRectangle
+    brec: _TLBoundingRectangle
     confidence: float = 1.0
-    cells: list[TextCell] = []
-    children: list["Cluster"] = []  # Add child cluster support
+    cells: list[_TLTextCell] = []
+    children: list["_TLCluster"] = []  # Add child cluster support
 
 
 class LayoutVisualizer(BaseVisualizer):
@@ -38,7 +45,7 @@ class LayoutVisualizer(BaseVisualizer):
     params: Params = Params()
 
     def _draw_clusters(
-        self, image: Image, clusters: list[Cluster], scale_x: float, scale_y: float
+        self, image: Image, clusters: list[_TLCluster], scale_x: float, scale_y: float
     ) -> None:
         """Draw clusters on an image."""
         draw = ImageDraw.Draw(image, "RGBA")
@@ -58,7 +65,7 @@ class LayoutVisualizer(BaseVisualizer):
                     cx0, cy0, cx1, cy1 = tc.rect.to_bounding_box().as_tuple()
                     cx0 *= scale_x
                     cx1 *= scale_x
-                    cy0 *= scale_x
+                    cy0 *= scale_y
                     cy1 *= scale_y
 
                     draw.rectangle(
@@ -70,13 +77,8 @@ class LayoutVisualizer(BaseVisualizer):
                 x0, y0, x1, y1 = c.brec.to_bounding_box().as_tuple()
                 x0 *= scale_x
                 x1 *= scale_x
-                y0 *= scale_x
+                y0 *= scale_y
                 y1 *= scale_y
-
-                if y1 <= y0:
-                    y1, y0 = y0, y1
-                if x1 <= x0:
-                    x1, x0 = x0, x1
 
                 cluster_fill_color = (*list(DocItemLabel.get_color(c.label)), 70)
                 cluster_outline_color = (
@@ -123,7 +125,7 @@ class LayoutVisualizer(BaseVisualizer):
         clusters = []
         my_images = images or {}
         prev_image = None
-        prev_page = None
+        prev_page_nr = None
         for idx, (elem, _) in enumerate(
             doc.iterate_items(
                 included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE}
@@ -134,48 +136,48 @@ class LayoutVisualizer(BaseVisualizer):
             if len(elem.prov) == 0:
                 continue  # Skip elements without provenances
             prov = elem.prov[0]
-            page_no = prov.page_no
-            image = my_images.get(page_no)
+            page_nr = prov.page_no
+            image = my_images.get(page_nr)
 
-            if prev_page is None or page_no > prev_page:  # new page begins
-                prev_page = page_no
+            if prev_page_nr is None or page_nr > prev_page_nr:  # new page begins
                 # complete previous drawing
-                if prev_image and clusters:
+                if prev_page_nr is not None and prev_image and clusters:
                     self._draw_clusters(
                         image=prev_image,
                         clusters=clusters,
-                        scale_x=prev_image.width / doc.pages[prov.page_no].size.width,
-                        scale_y=prev_image.height / doc.pages[prov.page_no].size.height,
+                        scale_x=prev_image.width / doc.pages[prev_page_nr].size.width,
+                        scale_y=prev_image.height / doc.pages[prev_page_nr].size.height,
                     )
                     clusters = []
 
                 if image is None:
-                    page_image = doc.pages[page_no].image
+                    page_image = doc.pages[page_nr].image
                     if page_image is None or (pil_img := page_image.pil_image) is None:
                         raise RuntimeError("Cannot visualize document without images")
                     else:
                         image = deepcopy(pil_img)
-                        my_images[prov.page_no] = image
-            prev_image = image
-
+                        my_images[page_nr] = image
             tlo_bbox = prov.bbox.to_top_left_origin(
                 page_height=doc.pages[prov.page_no].size.height
             )
-            cluster = Cluster(
+            cluster = _TLCluster(
                 id=idx,
                 label=elem.label,
-                brec=BoundingRectangle.from_bounding_box(bbox=tlo_bbox),
+                brec=_TLBoundingRectangle.from_bounding_box(bbox=tlo_bbox),
                 cells=[],
             )
             clusters.append(cluster)
 
+            prev_page_nr = page_nr
+            prev_image = image
+
         # complete last drawing
-        if prev_image and clusters:
+        if prev_page_nr is not None and prev_image and clusters:
             self._draw_clusters(
                 image=prev_image,
                 clusters=clusters,
-                scale_x=prev_image.width / doc.pages[prov.page_no].size.width,
-                scale_y=prev_image.height / doc.pages[prov.page_no].size.height,
+                scale_x=prev_image.width / doc.pages[prev_page_nr].size.width,
+                scale_y=prev_image.height / doc.pages[prev_page_nr].size.height,
             )
 
         return my_images
