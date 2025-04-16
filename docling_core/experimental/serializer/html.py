@@ -816,13 +816,7 @@ class HTMLDocSerializer(DocSerializer):
             # capture last page
             if next_page is not None:
                 pages[next_page] = html_content[prev_full_match_end:]
-
-            # Take care of cases with no page-break, eg single image documents
-            if (
-                len(pages) == 0
-                and (applicable_pages is not None)
-                and len(applicable_pages) == 1
-            ):
+            elif applicable_pages is not None and len(applicable_pages) == 1:
                 pages[applicable_pages[0]] = html_content
 
             html_parts.append("<table>")

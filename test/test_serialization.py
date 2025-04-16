@@ -181,3 +181,18 @@ def test_html_split_page_p2():
     )
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}_split_p2.gt.html", actual=actual)
+
+
+def test_html_split_page_no_page_breaks():
+    src = Path("./test/data/doc/2408.09869_p1.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.EMBEDDED,
+            output_style=HTMLOutputStyle.SPLIT_PAGE,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_split.gt.html", actual=actual)
