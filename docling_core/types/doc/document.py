@@ -4055,20 +4055,16 @@ class DoclingDocument(BaseModel):
             ReadingOrderVisualizer,
         )
 
-        layout_viz = LayoutVisualizer(
-            params=LayoutVisualizer.Params(
-                show_label=show_label,
-            )
+        visualizer = ReadingOrderVisualizer(
+            base_visualizer=LayoutVisualizer(
+                params=LayoutVisualizer.Params(
+                    show_label=show_label,
+                ),
+            ),
         )
-        layout_imgs = layout_viz.get_visualization(doc=self)
+        images = visualizer.get_visualization(doc=self)
 
-        reading_order_viz = ReadingOrderVisualizer()
-        reading_order_imgs = reading_order_viz.get_visualization(
-            doc=self,
-            base_images=layout_imgs,
-        )
-
-        return reading_order_imgs
+        return images
 
     @field_validator("version")
     @classmethod

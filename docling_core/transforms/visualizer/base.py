@@ -17,7 +17,6 @@ class BaseVisualizer(BaseModel, ABC):
         self,
         *,
         doc: DoclingDocument,
-        base_images: Optional[dict[Optional[int], Image]] = None,
         **kwargs,
     ) -> dict[Optional[int], Image]:
         """Get visualization of the document as images by page."""

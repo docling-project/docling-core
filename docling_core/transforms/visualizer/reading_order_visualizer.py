@@ -14,6 +14,8 @@ from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocume
 class ReadingOrderVisualizer(BaseVisualizer):
     """Reading order visualizer."""
 
+    base_visualizer: Optional[BaseVisualizer] = None
+
     def _draw_arrow(
         self,
         draw: ImageDraw.ImageDraw,
@@ -133,10 +135,14 @@ class ReadingOrderVisualizer(BaseVisualizer):
         self,
         *,
         doc: DoclingDocument,
-        base_images: Optional[dict[Optional[int], Image]] = None,
         **kwargs,
     ) -> dict[Optional[int], Image]:
         """Get visualization of the document as images by page."""
+        base_images = (
+            self.base_visualizer.get_visualization(doc=doc, **kwargs)
+            if self.base_visualizer
+            else None
+        )
         return self._draw_doc_reading_order(
             doc=doc,
             images=base_images,
