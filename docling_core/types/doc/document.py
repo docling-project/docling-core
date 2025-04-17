@@ -2733,7 +2733,10 @@ class DoclingDocument(BaseModel):
         return result
 
     def _with_pictures_refs(
-        self, image_dir: Path, reference_path: Optional[Path] = None
+        self,
+        image_dir: Path,
+        page_no: Optional[int],
+        reference_path: Optional[Path] = None,
     ) -> "DoclingDocument":
         """Document with images as refs.
 
@@ -2746,7 +2749,7 @@ class DoclingDocument(BaseModel):
         image_dir.mkdir(parents=True, exist_ok=True)
 
         if image_dir.is_dir():
-            for item, level in result.iterate_items(with_groups=False):
+            for item, level in result.iterate_items(page_no=page_no, with_groups=False):
                 if isinstance(item, PictureItem):
 
                     if (
@@ -2821,7 +2824,7 @@ class DoclingDocument(BaseModel):
             os.makedirs(artifacts_dir, exist_ok=True)
 
         new_doc = self._make_copy_with_refmode(
-            artifacts_dir, image_mode, reference_path=reference_path
+            artifacts_dir, image_mode, page_no=None, reference_path=reference_path
         )
 
         out = new_doc.export_to_dict()
@@ -2860,7 +2863,7 @@ class DoclingDocument(BaseModel):
             os.makedirs(artifacts_dir, exist_ok=True)
 
         new_doc = self._make_copy_with_refmode(
-            artifacts_dir, image_mode, reference_path=reference_path
+            artifacts_dir, image_mode, page_no=None, reference_path=reference_path
         )
 
         out = new_doc.export_to_dict()
@@ -2921,7 +2924,7 @@ class DoclingDocument(BaseModel):
             os.makedirs(artifacts_dir, exist_ok=True)
 
         new_doc = self._make_copy_with_refmode(
-            artifacts_dir, image_mode, reference_path=reference_path
+            artifacts_dir, image_mode, page_no, reference_path=reference_path
         )
 
         md_out = new_doc.export_to_markdown(
@@ -3085,7 +3088,7 @@ class DoclingDocument(BaseModel):
             os.makedirs(artifacts_dir, exist_ok=True)
 
         new_doc = self._make_copy_with_refmode(
-            artifacts_dir, image_mode, reference_path=reference_path
+            artifacts_dir, image_mode, page_no, reference_path=reference_path
         )
 
         html_out = new_doc.export_to_html(
@@ -3123,6 +3126,7 @@ class DoclingDocument(BaseModel):
         self,
         artifacts_dir: Path,
         image_mode: ImageRefMode,
+        page_no: Optional[int],
         reference_path: Optional[Path] = None,
     ):
         new_doc = None
@@ -3130,7 +3134,7 @@ class DoclingDocument(BaseModel):
             new_doc = self
         elif image_mode == ImageRefMode.REFERENCED:
             new_doc = self._with_pictures_refs(
-                image_dir=artifacts_dir, reference_path=reference_path
+                image_dir=artifacts_dir, page_no=page_no, reference_path=reference_path
             )
         elif image_mode == ImageRefMode.EMBEDDED:
             new_doc = self._with_embedded_pictures()
