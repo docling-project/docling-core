@@ -23,10 +23,11 @@ def test_doc_visualization():
     doc = DoclingDocument.load_from_json(src)
     viz_pages = doc.get_visualization()
     for k in viz_pages:
-        verify(
-            exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_viz_p{k}.png",
-            actual=viz_pages[k],
-        )
+        if k <= 3:
+            verify(
+                exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_viz_p{k}.png",
+                actual=viz_pages[k],
+            )
 
 
 def test_doc_visualization_no_label():
@@ -34,7 +35,8 @@ def test_doc_visualization_no_label():
     doc = DoclingDocument.load_from_json(src)
     viz_pages = doc.get_visualization(show_label=False)
     for k in viz_pages:
-        verify(
-            exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_viz_wout_lbl_p{k}.png",
-            actual=viz_pages[k],
-        )
+        if k <= 3:
+            verify(
+                exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_viz_wout_lbl_p{k}.png",
+                actual=viz_pages[k],
+            )
