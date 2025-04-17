@@ -5,6 +5,7 @@
 
 import json
 
+import tiktoken
 from transformers import AutoTokenizer
 
 from docling_core.experimental.serializer.markdown import MarkdownTableSerializer
@@ -14,6 +15,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     DocChunk,
 )
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
+from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.document import DoclingDocument
 
@@ -159,6 +161,30 @@ def test_chunk_default():
     )
 
 
+def test_chunk_excplicit_hf_obj():
+    EXPECTED_OUT_FILE = "test/data/chunker/2c_out_chunks.json"
+
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=AutoTokenizer.from_pretrained(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+    )
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
+
+
 def test_contextualize_altered_delim():
     EXPECTED_OUT_FILE = "test/data/chunker/2d_out_ser_chunks.json"
 
@@ -207,6 +233,31 @@ def test_chunk_custom_serializer():
         max_tokens=MAX_TOKENS,
         merge_peers=True,
         serializer_provider=MySerializerProvider(),
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+    )
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_openai():
+    EXPECTED_OUT_FILE = "test/data/chunker/2f_out_chunks.json"
+
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=OpenAITokenizer(
+            tokenizer=tiktoken.encoding_for_model("gpt-4o"),
+            max_tokens=128 * 1024,
+        )
     )
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)

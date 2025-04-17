@@ -63,7 +63,8 @@ latex2mathml = "^3.77.0"
 tiktoken = { version = "^0.9.0", optional = true }
 
 [tool.poetry.extras]
-chunking = ["transformers", "semchunk", "tiktoken"]
+chunking = ["semchunk", "transformers"]
+chunking-openai = ["semchunk", "tiktoken"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"

@@ -3354,9 +3354,10 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-chunking = ["semchunk", "tiktoken", "transformers"]
+chunking = ["semchunk", "transformers"]
+chunking-openai = ["semchunk", "tiktoken"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "4a1e92c18948adc2b6dba5779d9bbbcd810dfc43d0bf7fcddfb6d552e7994b8f"
+content-hash = "3eeb21724cbb41c6268593219e18dd40d8ccf3bd253a9b9029591742c893634c"
