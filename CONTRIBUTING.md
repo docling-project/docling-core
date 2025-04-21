@@ -119,7 +119,7 @@ poetry shell
 To spawn a shell with the Virtual Environment activated. If the Virtual Environment doesn't exist, Poetry will create one for you. Then, to install dependencies, run:
 
 ```bash
-poetry install
+poetry install --all-extras
 ```
 
 **(Advanced) Use a Specific Python Version**
