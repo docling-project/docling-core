@@ -1,7 +1,7 @@
 """Define classes for Doctags serialization."""
 
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 from typing_extensions import override
@@ -91,7 +91,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         item: TextItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         from docling_core.types.doc.document import SectionHeaderItem
@@ -154,7 +154,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
         item: TableItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
@@ -201,7 +201,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
         item: PictureItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
@@ -284,7 +284,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
         item: KeyValueItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
@@ -356,7 +356,7 @@ class DocTagsFormSerializer(BaseFormSerializer):
         item: FormItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         # TODO add actual implementation
@@ -378,7 +378,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         list_level: int = 0,
         is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
@@ -423,7 +423,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         visited: Optional[set[str]] = None,  # refs of visited items
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
@@ -454,7 +454,7 @@ class DocTagsFallbackSerializer(BaseFallbackSerializer):
         item: NodeItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         return create_ser_result()
@@ -477,7 +477,10 @@ class DocTagsDocSerializer(DocSerializer):
 
     @override
     def serialize_doc(
-        self, *, parts: list[SerializationResult], **kwargs
+        self,
+        *,
+        parts: list[SerializationResult],
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
         delim = _get_delim(params=self.params)
@@ -496,7 +499,7 @@ class DocTagsDocSerializer(DocSerializer):
     def serialize_captions(
         self,
         item: FloatingItem,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's captions."""
         params = DocTagsParams(**kwargs)

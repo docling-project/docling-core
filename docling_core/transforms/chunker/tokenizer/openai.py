@@ -21,14 +21,14 @@ class OpenAITokenizer(BaseTokenizer):
     tokenizer: tiktoken.Encoding
     max_tokens: int
 
-    def count_tokens(self, text: str):
+    def count_tokens(self, text: str) -> int:
         """Get number of tokens for given text."""
         return len(self.tokenizer.encode(text=text))
 
-    def get_max_tokens(self):
+    def get_max_tokens(self) -> int:
         """Get maximum number of tokens allowed."""
         return self.max_tokens
 
-    def get_tokenizer(self):
+    def get_tokenizer(self) -> tiktoken.Encoding:
         """Get underlying tokenizer object."""
         return self.tokenizer

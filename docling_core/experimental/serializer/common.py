@@ -214,7 +214,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         return refs
 
     @override
-    def get_excluded_refs(self, **kwargs) -> set[str]:
+    def get_excluded_refs(self, **kwargs: Any) -> set[str]:
         """References to excluded items."""
         params = self.params.merge_with_patch(patch=kwargs)
         params_json = params.model_dump_json()
@@ -252,7 +252,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     @abstractmethod
     def serialize_doc(
-        self, *, parts: list[SerializationResult], **kwargs
+        self,
+        *,
+        parts: list[SerializationResult],
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
         ...
@@ -271,7 +274,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         list_level: int = 0,
         is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a given node."""
         my_visited: set[str] = visited if visited is not None else set()
@@ -380,7 +383,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         list_level: int = 0,
         is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
-        **kwargs,
+        **kwargs: Any,
     ) -> list[SerializationResult]:
         """Get the components to be combined for serializing this node."""
         parts: list[SerializationResult] = []
@@ -415,7 +418,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         *,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
         params = self.params.merge_with_patch(patch=kwargs)
@@ -434,28 +437,31 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         return res
 
     @override
-    def serialize_bold(self, text: str, **kwargs) -> str:
+    def serialize_bold(self, text: str, **kwargs: Any) -> str:
         """Hook for bold formatting serialization."""
         return text
 
     @override
-    def serialize_italic(self, text: str, **kwargs) -> str:
+    def serialize_italic(self, text: str, **kwargs: Any) -> str:
         """Hook for italic formatting serialization."""
         return text
 
     @override
-    def serialize_underline(self, text: str, **kwargs) -> str:
+    def serialize_underline(self, text: str, **kwargs: Any) -> str:
         """Hook for underline formatting serialization."""
         return text
 
     @override
-    def serialize_strikethrough(self, text: str, **kwargs) -> str:
+    def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
         """Hook for strikethrough formatting serialization."""
         return text
 
     @override
     def serialize_hyperlink(
-        self, text: str, hyperlink: Union[AnyUrl, Path], **kwargs
+        self,
+        text: str,
+        hyperlink: Union[AnyUrl, Path],
+        **kwargs: Any,
     ) -> str:
         """Hook for hyperlink serialization."""
         return text
@@ -464,7 +470,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def serialize_captions(
         self,
         item: FloatingItem,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's captions."""
         params = self.params.merge_with_patch(patch=kwargs)

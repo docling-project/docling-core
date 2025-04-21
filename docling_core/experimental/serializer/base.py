@@ -6,7 +6,7 @@
 """Define base classes for serialization."""
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel
 
@@ -51,7 +51,7 @@ class BaseTextSerializer(ABC):
         item: TextItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
@@ -67,7 +67,7 @@ class BaseTableSerializer(ABC):
         item: TableItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
@@ -83,7 +83,7 @@ class BasePictureSerializer(ABC):
         item: PictureItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
@@ -99,7 +99,7 @@ class BaseKeyValueSerializer(ABC):
         item: KeyValueItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
@@ -115,7 +115,7 @@ class BaseFormSerializer(ABC):
         item: FormItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
@@ -131,7 +131,7 @@ class BaseListSerializer(ABC):
         item: Union[UnorderedList, OrderedList],
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
@@ -147,7 +147,7 @@ class BaseInlineSerializer(ABC):
         item: InlineGroup,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
@@ -163,7 +163,7 @@ class BaseFallbackSerializer(ABC):
         item: NodeItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         ...
@@ -174,34 +174,40 @@ class BaseDocSerializer(ABC):
 
     @abstractmethod
     def serialize(
-        self, *, item: Optional[NodeItem] = None, **kwargs
+        self,
+        *,
+        item: Optional[NodeItem] = None,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Run the serialization."""
         ...
 
     @abstractmethod
-    def serialize_bold(self, text: str, **kwargs) -> str:
+    def serialize_bold(self, text: str, **kwargs: Any) -> str:
         """Hook for bold formatting serialization."""
         ...
 
     @abstractmethod
-    def serialize_italic(self, text: str, **kwargs) -> str:
+    def serialize_italic(self, text: str, **kwargs: Any) -> str:
         """Hook for italic formatting serialization."""
         ...
 
     @abstractmethod
-    def serialize_underline(self, text: str, **kwargs) -> str:
+    def serialize_underline(self, text: str, **kwargs: Any) -> str:
         """Hook for underline formatting serialization."""
         ...
 
     @abstractmethod
-    def serialize_strikethrough(self, text: str, **kwargs) -> str:
+    def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
         """Hook for strikethrough formatting serialization."""
         ...
 
     @abstractmethod
     def serialize_hyperlink(
-        self, text: str, hyperlink: Union[AnyUrl, Path], **kwargs
+        self,
+        text: str,
+        hyperlink: Union[AnyUrl, Path],
+        **kwargs: Any,
     ) -> str:
         """Hook for hyperlink serialization."""
         ...
@@ -210,7 +216,7 @@ class BaseDocSerializer(ABC):
     def get_parts(
         self,
         item: Optional[NodeItem] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[SerializationResult]:
         """Get the components to be combined for serializing this node."""
         ...
@@ -219,7 +225,7 @@ class BaseDocSerializer(ABC):
     def post_process(
         self,
         text: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
         ...
@@ -228,13 +234,13 @@ class BaseDocSerializer(ABC):
     def serialize_captions(
         self,
         item: FloatingItem,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's captions."""
         ...
 
     @abstractmethod
-    def get_excluded_refs(self, **kwargs) -> set[str]:
+    def get_excluded_refs(self, **kwargs: Any) -> set[str]:
         """Get references to excluded items."""
         ...
 

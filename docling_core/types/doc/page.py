@@ -10,6 +10,7 @@ from enum import Enum
 from pathlib import Path
 from typing import (
     Annotated,
+    Any,
     Dict,
     Iterator,
     List,
@@ -538,7 +539,7 @@ class SegmentedPdfPage(SegmentedPage):
                 cells.append(pc)
         return cells
 
-    def export_to_dict(self) -> Dict:
+    def export_to_dict(self) -> Dict[str, Any]:
         """Export the page data to a dictionary.
 
         Returns:
@@ -1150,7 +1151,7 @@ class PdfTableOfContents(BaseModel):
 
     children: List["PdfTableOfContents"] = []
 
-    def export_to_dict(self, mode: str = "json") -> Dict:
+    def export_to_dict(self, mode: str = "json") -> Dict[str, Any]:
         """Export the table of contents to a dictionary.
 
         Args:
@@ -1212,7 +1213,7 @@ class ParsedPdfDocument(BaseModel):
     def export_to_dict(
         self,
         mode: str = "json",
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """Export the document to a dictionary.
 
         Args:

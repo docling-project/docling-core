@@ -10,7 +10,7 @@ import logging
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from urllib.parse import quote
 from xml.etree.cElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
@@ -120,7 +120,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed text item to HTML."""
         params = HTMLParams(**kwargs)
@@ -296,7 +296,7 @@ class HTMLTableSerializer(BaseTableSerializer):
         item: TableItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed table item to HTML."""
         nrows = item.data.num_rows
@@ -367,7 +367,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
         item: PictureItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Export picture to HTML format."""
         params = HTMLParams(**kwargs)
@@ -574,7 +574,7 @@ class HTMLKeyValueSerializer(BaseKeyValueSerializer):
         item: KeyValueItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed key-value item to HTML."""
         res_parts: list[SerializationResult] = []
@@ -611,7 +611,7 @@ class HTMLFormSerializer(BaseFormSerializer):
         item: FormItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed form item to HTML."""
         res_parts: list[SerializationResult] = []
@@ -651,7 +651,7 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         list_level: int = 0,
         is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes a list to HTML."""
         my_visited: set[str] = visited if visited is not None else set()
@@ -699,7 +699,7 @@ class HTMLInlineSerializer(BaseInlineSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         visited: Optional[set[str]] = None,  # refs of visited items
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes an inline group to HTML."""
         my_visited: set[str] = visited if visited is not None else set()
@@ -733,7 +733,7 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         item: NodeItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
         if isinstance(item, DocItem):
@@ -762,35 +762,40 @@ class HTMLDocSerializer(DocSerializer):
     params: HTMLParams = HTMLParams()
 
     @override
-    def serialize_bold(self, text: str, **kwargs) -> str:
+    def serialize_bold(self, text: str, **kwargs: Any) -> str:
         """Apply HTML-specific bold serialization."""
         return f"<strong>{text}</strong>"
 
     @override
-    def serialize_italic(self, text: str, **kwargs) -> str:
+    def serialize_italic(self, text: str, **kwargs: Any) -> str:
         """Apply HTML-specific italic serialization."""
         return f"<em>{text}</em>"
 
     @override
-    def serialize_underline(self, text: str, **kwargs) -> str:
+    def serialize_underline(self, text: str, **kwargs: Any) -> str:
         """Apply HTML-specific underline serialization."""
         return f"<u>{text}</u>"
 
     @override
-    def serialize_strikethrough(self, text: str, **kwargs) -> str:
+    def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
         """Apply HTML-specific strikethrough serialization."""
         return f"<del>{text}</del>"
 
     @override
     def serialize_hyperlink(
-        self, text: str, hyperlink: Union[AnyUrl, Path], **kwargs
+        self,
+        text: str,
+        hyperlink: Union[AnyUrl, Path],
+        **kwargs: Any,
     ) -> str:
         """Apply HTML-specific hyperlink serialization."""
         return f'<a href="{str(hyperlink)}">{text}</a>'
 
     @override
     def serialize_doc(
-        self, parts: list[SerializationResult], **kwargs
+        self,
+        parts: list[SerializationResult],
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
         # Create HTML structure
@@ -895,7 +900,7 @@ class HTMLDocSerializer(DocSerializer):
         self,
         item: FloatingItem,
         tag: str = "figcaption",
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's captions."""
         params = self.params.merge_with_patch(patch=kwargs)

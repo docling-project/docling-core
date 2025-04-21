@@ -300,7 +300,7 @@ class TableCell(BaseModel):
     @classmethod
     def from_dict_format(cls, data: Any) -> Any:
         """from_dict_format."""
-        if isinstance(data, Dict):
+        if isinstance(data, dict):
             # Check if this is a native BoundingBox or a bbox from docling-ibm-models
             if (
                 # "bbox" not in data

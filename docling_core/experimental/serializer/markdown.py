@@ -8,7 +8,7 @@ import html
 import re
 import textwrap
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, PositiveInt
 from tabulate import tabulate
@@ -82,7 +82,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = MarkdownParams(**kwargs)
@@ -143,7 +143,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
         item: TableItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         res_parts: list[SerializationResult] = []
@@ -195,7 +195,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         item: PictureItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = MarkdownParams(**kwargs)
@@ -246,7 +246,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         doc: DoclingDocument,
         image_mode: ImageRefMode,
         image_placeholder: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         error_response = (
             "<!-- 🖼️❌ Image not available. "
@@ -298,7 +298,7 @@ class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
         item: KeyValueItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         # TODO add actual implementation
@@ -321,7 +321,7 @@ class MarkdownFormSerializer(BaseFormSerializer):
         item: FormItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         # TODO add actual implementation
@@ -347,7 +347,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         list_level: int = 0,
         is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = MarkdownParams(**kwargs)
@@ -400,7 +400,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         visited: Optional[set[str]] = None,  # refs of visited items
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
@@ -425,7 +425,7 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
         item: NodeItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
-        **kwargs,
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         if isinstance(item, DocItem):
@@ -453,22 +453,27 @@ class MarkdownDocSerializer(DocSerializer):
     params: MarkdownParams = MarkdownParams()
 
     @override
-    def serialize_bold(self, text: str, **kwargs):
+    def serialize_bold(self, text: str, **kwargs: Any):
         """Apply Markdown-specific bold serialization."""
         return f"**{text}**"
 
     @override
-    def serialize_italic(self, text: str, **kwargs):
+    def serialize_italic(self, text: str, **kwargs: Any):
         """Apply Markdown-specific italic serialization."""
         return f"*{text}*"
 
     @override
-    def serialize_strikethrough(self, text: str, **kwargs):
+    def serialize_strikethrough(self, text: str, **kwargs: Any):
         """Apply Markdown-specific strikethrough serialization."""
         return f"~~{text}~~"
 
     @override
-    def serialize_hyperlink(self, text: str, hyperlink: Union[AnyUrl, Path], **kwargs):
+    def serialize_hyperlink(
+        self,
+        text: str,
+        hyperlink: Union[AnyUrl, Path],
+        **kwargs: Any,
+    ):
         """Apply Markdown-specific hyperlink serialization."""
         return f"[{text}]({str(hyperlink)})"
 
@@ -505,7 +510,7 @@ class MarkdownDocSerializer(DocSerializer):
         escape_underscores: bool = True,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
         res = text
@@ -523,7 +528,10 @@ class MarkdownDocSerializer(DocSerializer):
 
     @override
     def serialize_doc(
-        self, *, parts: list[SerializationResult], **kwargs
+        self,
+        *,
+        parts: list[SerializationResult],
+        **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its parts."""
         text_res = "\n\n".join([p.text for p in parts if p.text])
