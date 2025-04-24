@@ -1383,7 +1383,7 @@ class TableItem(FloatingItem):
                     if add_cross_cell:
                         body.append(str(TableToken.OTSL_XCEL.value))
             body.append(str(TableToken.OTSL_NL.value))
-            body_str = "".join(body)
+        body_str = "".join(body)
         return body_str
 
     @deprecated("Use export_to_doctags() instead.")
