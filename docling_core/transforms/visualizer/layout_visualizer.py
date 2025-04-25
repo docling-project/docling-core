@@ -123,7 +123,10 @@ class LayoutVisualizer(BaseVisualizer):
     ):
         """Draw the document clusters and optionaly the reading order."""
         clusters = []
-        my_images = images or {}
+        my_images: dict[Optional[int], Image] = {}
+
+        if images is not None:
+            my_images = images
 
         # Initialise `my_images` beforehand: sometimes, you have the
         # page-images but no DocItems!
