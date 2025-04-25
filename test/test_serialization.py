@@ -8,6 +8,11 @@ from docling_core.experimental.serializer.html import (
     HTMLOutputStyle,
     HTMLParams,
 )
+from docling_core.experimental.serializer.latex import (
+    LaTeXDocSerializer,
+    LaTeXOutputStyle,
+    LaTeXParams,
+)
 from docling_core.experimental.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
@@ -196,3 +201,84 @@ def test_html_split_page_no_page_breaks():
     )
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}_split.gt.html", actual=actual)
+
+
+def test_latex_basic_document():
+    src = Path("./test/data/doc/2408.09869_p1.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = LaTeXDocSerializer(
+        doc=doc,
+        params=LaTeXParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            document_class="article",
+            document_options="a4paper,12pt",
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.tex", actual=actual)
+
+
+def test_latex_presentation():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = LaTeXDocSerializer(
+        doc=doc,
+        params=LaTeXParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            document_class="beamer",
+            presentation_theme="Warsaw",
+            presentation_color_theme="dolphin",
+            presentation_font_theme="structurebold",
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_presentation.gt.tex", actual=actual)
+
+
+def test_latex_tables():
+    src = Path("./test/data/doc/barchart.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = LaTeXDocSerializer(
+        doc=doc,
+        params=LaTeXParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            document_class="article",
+            enable_chart_tables=True,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.tex", actual=actual)
+
+
+def test_latex_formulas():
+    src = Path("./test/data/doc/formulas.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = LaTeXDocSerializer(
+        doc=doc,
+        params=LaTeXParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            document_class="article",
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.tex", actual=actual)
+
+
+def test_latex_cross_page_list():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = LaTeXDocSerializer(
+        doc=doc,
+        params=LaTeXParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            document_class="article",
+            pages={1, 2},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_cross_page.gt.tex", actual=actual)
