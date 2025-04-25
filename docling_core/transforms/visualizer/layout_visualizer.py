@@ -155,9 +155,7 @@ class LayoutVisualizer(BaseVisualizer):
             if page_nr in my_images:
                 image = my_images[page_nr]
             else:
-                raise RuntimeError(
-                    f"Cannot visualize page-image for {page_nr}"
-                )
+                raise RuntimeError(f"Cannot visualize page-image for {page_nr}")
 
             if prev_page_nr is None or page_nr > prev_page_nr:  # new page begins
                 # complete previous drawing
