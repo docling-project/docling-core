@@ -133,8 +133,8 @@ class LayoutVisualizer(BaseVisualizer):
                 raise RuntimeError("Cannot visualize document without images")
             else:
                 image = deepcopy(pil_img)
-                my_images[page_nr] = image            
-        
+                my_images[page_nr] = image
+
         prev_image = None
         prev_page_nr = None
         for idx, (elem, _) in enumerate(
