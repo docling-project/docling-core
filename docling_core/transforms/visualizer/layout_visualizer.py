@@ -134,7 +134,7 @@ class LayoutVisualizer(BaseVisualizer):
             page_image = doc.pages[page_nr].image
             if page_image is None or (pil_img := page_image.pil_image) is None:
                 raise RuntimeError("Cannot visualize document without images")
-            else:
+            elif page_nr not in my_images:
                 image = deepcopy(pil_img)
                 my_images[page_nr] = image
 
@@ -151,7 +151,13 @@ class LayoutVisualizer(BaseVisualizer):
                 continue  # Skip elements without provenances
             prov = elem.prov[0]
             page_nr = prov.page_no
+
             image = my_images.get(page_nr)
+
+            if image is None:
+                raise RuntimeError(
+                    f"Cannot visualize document without images: missing page-image for {page_nr}"
+                )
 
             if prev_page_nr is None or page_nr > prev_page_nr:  # new page begins
                 # complete previous drawing
@@ -164,13 +170,6 @@ class LayoutVisualizer(BaseVisualizer):
                     )
                     clusters = []
 
-                if image is None:
-                    page_image = doc.pages[page_nr].image
-                    if page_image is None or (pil_img := page_image.pil_image) is None:
-                        raise RuntimeError("Cannot visualize document without images")
-                    else:
-                        image = deepcopy(pil_img)
-                        my_images[page_nr] = image
             tlo_bbox = prov.bbox.to_top_left_origin(
                 page_height=doc.pages[prov.page_no].size.height
             )
