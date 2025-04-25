@@ -124,6 +124,17 @@ class LayoutVisualizer(BaseVisualizer):
         """Draw the document clusters and optionaly the reading order."""
         clusters = []
         my_images = images or {}
+
+        # Initialise `my_images` beforehand: sometimes, you have the
+        # page-images but no DocItems!
+        for page_nr, page in doc.pages.items():
+            page_image = doc.pages[page_nr].image
+            if page_image is None or (pil_img := page_image.pil_image) is None:
+                raise RuntimeError("Cannot visualize document without images")
+            else:
+                image = deepcopy(pil_img)
+                my_images[page_nr] = image            
+        
         prev_image = None
         prev_page_nr = None
         for idx, (elem, _) in enumerate(
