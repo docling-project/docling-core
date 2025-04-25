@@ -156,7 +156,7 @@ class LayoutVisualizer(BaseVisualizer):
                 image = my_images[page_nr]
             else:
                 raise RuntimeError(
-                    f"Cannot visualize document without images: missing page-image for {page_nr}"
+                    f"Cannot visualize page-image for {page_nr}"
                 )
 
             if prev_page_nr is None or page_nr > prev_page_nr:  # new page begins
