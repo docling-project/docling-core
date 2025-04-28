@@ -3195,9 +3195,9 @@ class DoclingDocument(BaseModel):
 
         return ser_res.text
 
+    @staticmethod
     def load_from_doctags(  # noqa: C901
-        self,
-        doctag_document: DocTagsDocument,
+        doctag_document: DocTagsDocument, document_name: str = "Document"
     ) -> "DoclingDocument":
         r"""Load Docling document from lists of DocTags and Images."""
         # Maps the recognized tag to a Docling label.
@@ -3220,6 +3220,8 @@ class DoclingDocument(BaseModel):
             "code": DocItemLabel.CODE,
             "key_value_region": DocItemLabel.KEY_VALUE_REGION,
         }
+
+        doc = DoclingDocument(name=document_name)
 
         def extract_bounding_box(text_chunk: str) -> Optional[BoundingBox]:
             """Extract <loc_...> coords from the chunk, normalized by / 500."""
@@ -3244,7 +3246,7 @@ class DoclingDocument(BaseModel):
                 caption_content = caption.group(1)
                 bbox = extract_bounding_box(caption_content)
                 caption_text = extract_inner_text(caption_content)
-                caption_item = self.add_text(
+                caption_item = doc.add_text(
                     label=DocItemLabel.CAPTION,
                     text=caption_text,
                     parent=None,
@@ -3567,7 +3569,7 @@ class DoclingDocument(BaseModel):
                 pg_width = 1
                 pg_height = 1
 
-            self.add_page(
+            doc.add_page(
                 page_no=page_no,
                 size=Size(width=pg_width, height=pg_height),
                 image=ImageRef.from_pil(image=image, dpi=72) if image else None,
@@ -3624,9 +3626,9 @@ class DoclingDocument(BaseModel):
                             charspan=(0, 0),
                             page_no=page_no,
                         )
-                        self.add_table(data=table_data, prov=prov, caption=caption)
+                        doc.add_table(data=table_data, prov=prov, caption=caption)
                     else:
-                        self.add_table(data=table_data, caption=caption)
+                        doc.add_table(data=table_data, caption=caption)
 
                 elif tag_name in [DocItemLabel.PICTURE, DocItemLabel.CHART]:
                     caption, caption_bbox = extract_caption(full_chunk)
@@ -3646,7 +3648,7 @@ class DoclingDocument(BaseModel):
                                 int(bbox.b * im_height),
                             )
                             cropped_image = image.crop(crop_box)
-                            pic = self.add_picture(
+                            pic = doc.add_picture(
                                 parent=None,
                                 image=ImageRef.from_pil(image=cropped_image, dpi=72),
                                 prov=(
@@ -3692,7 +3694,7 @@ class DoclingDocument(BaseModel):
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
-                            pic = self.add_picture(
+                            pic = doc.add_picture(
                                 parent=None,
                                 prov=ProvenanceItem(
                                     bbox=bbox, charspan=(0, 0), page_no=page_no
@@ -3733,7 +3735,7 @@ class DoclingDocument(BaseModel):
                     key_value_data, kv_item_prov = parse_key_value_item(
                         full_chunk, image
                     )
-                    self.add_key_values(graph=key_value_data, prov=kv_item_prov)
+                    doc.add_key_values(graph=key_value_data, prov=kv_item_prov)
                 elif tag_name in [
                     DocumentToken.ORDERED_LIST.value,
                     DocumentToken.UNORDERED_LIST.value,
@@ -3749,7 +3751,7 @@ class DoclingDocument(BaseModel):
                     )
                     li_pattern = re.compile(list_item_pattern, re.DOTALL)
                     # Add list group:
-                    new_list = self.add_group(label=list_label, name="list")
+                    new_list = doc.add_group(label=list_label, name="list")
                     # Pricess list items
                     for li_match in li_pattern.finditer(full_chunk):
                         enum_value += 1
@@ -3760,7 +3762,7 @@ class DoclingDocument(BaseModel):
                         li_bbox = extract_bounding_box(li_full_chunk) if image else None
                         text_content = extract_inner_text(li_full_chunk)
                         # Add list item
-                        self.add_list_item(
+                        doc.add_list_item(
                             marker=enum_marker,
                             enumerated=(tag_name == DocumentToken.ORDERED_LIST.value),
                             parent=new_list,
@@ -3792,13 +3794,13 @@ class DoclingDocument(BaseModel):
                     if tag_name in [DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER]:
                         content_layer = ContentLayer.FURNITURE
 
-                    self.add_text(
+                    doc.add_text(
                         label=doc_label,
                         text=text_content,
                         prov=element_prov,
                         content_layer=content_layer,
                     )
-        return self
+        return doc
 
     @deprecated("Use save_as_doctags instead.")
     def save_as_document_tokens(self, *args, **kwargs):
