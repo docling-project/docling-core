@@ -588,6 +588,8 @@ class SegmentedPdfPage(SegmentedPage):
             cell_unit: Type of text unit to extract
             bbox: Bounding box to extract from
             eps: Epsilon value for position comparison
+        Returns:
+            Extracted text from the cells
         """
         selection = []
         for page_cell in self.iterate_cells(cell_unit):
