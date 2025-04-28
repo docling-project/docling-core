@@ -352,6 +352,7 @@ class TableData(BaseModel):  # TBD
         ]
 
         # Overwrite cells in table data for which there is actual cell content.
+        count = 1
         for cell in self.table_cells:
             for i in range(
                 min(cell.start_row_offset_idx, self.num_rows),
@@ -361,7 +362,11 @@ class TableData(BaseModel):  # TBD
                     min(cell.start_col_offset_idx, self.num_cols),
                     min(cell.end_col_offset_idx, self.num_cols),
                 ):
-                    table_data[i][j] = cell
+                    if count <= len(self.table_cells):
+                        table_data[i][j] = cell
+                        count += 1
+                    else:
+                        break
 
         return table_data
 
