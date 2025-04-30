@@ -25,16 +25,16 @@ except ImportError:
         "`pip install 'docling-core[chunking-openai]'`"
     )
 
-from docling_core.experimental.serializer.base import (
-    BaseDocSerializer,
-    BaseSerializerProvider,
-)
 from docling_core.transforms.chunker import (
     BaseChunk,
     BaseChunker,
     DocChunk,
     DocMeta,
     HierarchicalChunker,
+)
+from docling_core.transforms.serializer.base import (
+    BaseDocSerializer,
+    BaseSerializerProvider,
 )
 from docling_core.types import DoclingDocument
 

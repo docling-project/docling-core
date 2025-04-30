@@ -8,7 +8,6 @@ import json
 import tiktoken
 from transformers import AutoTokenizer
 
-from docling_core.experimental.serializer.markdown import MarkdownTableSerializer
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
@@ -16,6 +15,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 )
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
+from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
 from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.document import DoclingDocument
 

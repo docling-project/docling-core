@@ -2,13 +2,13 @@
 
 from pathlib import Path
 
-from docling_core.experimental.serializer.common import _DEFAULT_LABELS
-from docling_core.experimental.serializer.html import (
+from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLOutputStyle,
     HTMLParams,
 )
-from docling_core.experimental.serializer.markdown import (
+from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
 )

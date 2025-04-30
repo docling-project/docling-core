@@ -872,7 +872,7 @@ class TextItem(DocItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        from docling_core.experimental.serializer.doctags import (
+        from docling_core.transforms.serializer.doctags import (
             DocTagsDocSerializer,
             DocTagsParams,
         )
@@ -930,7 +930,7 @@ class SectionHeaderItem(TextItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        from docling_core.experimental.serializer.doctags import (
+        from docling_core.transforms.serializer.doctags import (
             DocTagsDocSerializer,
             DocTagsParams,
         )
@@ -1020,7 +1020,7 @@ class CodeItem(FloatingItem, TextItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        from docling_core.experimental.serializer.doctags import (
+        from docling_core.transforms.serializer.doctags import (
             DocTagsDocSerializer,
             DocTagsParams,
         )
@@ -1091,7 +1091,7 @@ class PictureItem(FloatingItem):
         image_placeholder: str = "<!-- image -->",
     ) -> str:
         """Export picture to Markdown format."""
-        from docling_core.experimental.serializer.markdown import (
+        from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
             MarkdownParams,
         )
@@ -1118,7 +1118,7 @@ class PictureItem(FloatingItem):
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
     ) -> str:
         """Export picture to HTML format."""
-        from docling_core.experimental.serializer.html import (
+        from docling_core.transforms.serializer.html import (
             HTMLDocSerializer,
             HTMLParams,
         )
@@ -1159,7 +1159,7 @@ class PictureItem(FloatingItem):
         :param # not used at the moment
 
         """
-        from docling_core.experimental.serializer.doctags import (
+        from docling_core.transforms.serializer.doctags import (
             DocTagsDocSerializer,
             DocTagsParams,
         )
@@ -1235,7 +1235,7 @@ class TableItem(FloatingItem):
     def export_to_markdown(self, doc: Optional["DoclingDocument"] = None) -> str:
         """Export the table as markdown."""
         if doc is not None:
-            from docling_core.experimental.serializer.markdown import (
+            from docling_core.transforms.serializer.markdown import (
                 MarkdownDocSerializer,
             )
 
@@ -1282,7 +1282,7 @@ class TableItem(FloatingItem):
     ) -> str:
         """Export the table as html."""
         if doc is not None:
-            from docling_core.experimental.serializer.html import HTMLDocSerializer
+            from docling_core.transforms.serializer.html import HTMLDocSerializer
 
             serializer = HTMLDocSerializer(doc=doc)
             text = serializer.serialize(item=self).text
@@ -1414,7 +1414,7 @@ class TableItem(FloatingItem):
         :param add_caption: bool:  (Default value = True)
 
         """
-        from docling_core.experimental.serializer.doctags import (
+        from docling_core.transforms.serializer.doctags import (
             DocTagsDocSerializer,
             DocTagsParams,
         )
@@ -1512,7 +1512,7 @@ class KeyValueItem(FloatingItem):
         :param add_content: bool:  (Default value = True)
 
         """
-        from docling_core.experimental.serializer.doctags import (
+        from docling_core.transforms.serializer.doctags import (
             DocTagsDocSerializer,
             DocTagsParams,
         )
@@ -2999,7 +2999,7 @@ class DoclingDocument(BaseModel):
         :returns: The exported Markdown representation.
         :rtype: str
         """
-        from docling_core.experimental.serializer.markdown import (
+        from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
             MarkdownParams,
         )
@@ -3153,7 +3153,7 @@ class DoclingDocument(BaseModel):
         split_page_view: bool = False,
     ) -> str:
         r"""Serialize to HTML."""
-        from docling_core.experimental.serializer.html import (
+        from docling_core.transforms.serializer.html import (
             HTMLDocSerializer,
             HTMLOutputStyle,
             HTMLParams,
@@ -3887,7 +3887,7 @@ class DoclingDocument(BaseModel):
         :returns: The content of the document formatted as a DocTags string.
         :rtype: str
         """
-        from docling_core.experimental.serializer.doctags import (
+        from docling_core.transforms.serializer.doctags import (
             DocTagsDocSerializer,
             DocTagsParams,
         )

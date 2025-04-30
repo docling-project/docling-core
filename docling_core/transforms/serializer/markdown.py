@@ -14,7 +14,7 @@ from pydantic import AnyUrl, BaseModel, PositiveInt
 from tabulate import tabulate
 from typing_extensions import override
 
-from docling_core.experimental.serializer.base import (
+from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -26,7 +26,7 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import (
+from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _PageBreakSerResult,

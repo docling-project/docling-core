@@ -14,7 +14,7 @@ from typing import Any, Iterable, Optional, Tuple, Union
 from pydantic import AnyUrl, BaseModel, NonNegativeInt, computed_field
 from typing_extensions import Self, override
 
-from docling_core.experimental.serializer.base import (
+from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,

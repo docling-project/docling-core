@@ -5,13 +5,13 @@
 
 import json
 
-from docling_core.experimental.serializer.markdown import MarkdownTableSerializer
 from docling_core.transforms.chunker import HierarchicalChunker
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
     DocChunk,
 )
+from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
 from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.document import DoclingDocument
 

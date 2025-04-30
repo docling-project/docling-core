@@ -14,19 +14,19 @@ from typing import Any, ClassVar, Final, Iterator, Literal, Optional
 from pydantic import ConfigDict, Field, StringConstraints, field_validator
 from typing_extensions import Annotated, override
 
-from docling_core.experimental.serializer.base import (
+from docling_core.search.package import VERSION_PATTERN
+from docling_core.transforms.chunker import BaseChunk, BaseChunker, BaseMeta
+from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseSerializerProvider,
     BaseTableSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import create_ser_result
-from docling_core.experimental.serializer.markdown import (
+from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
 )
-from docling_core.search.package import VERSION_PATTERN
-from docling_core.transforms.chunker import BaseChunk, BaseChunker, BaseMeta
 from docling_core.types import DoclingDocument as DLDocument
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (

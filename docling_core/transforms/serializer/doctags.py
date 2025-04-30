@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel
 from typing_extensions import override
 
-from docling_core.experimental.serializer.base import (
+from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -18,7 +18,7 @@ from docling_core.experimental.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.experimental.serializer.common import (
+from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     create_ser_result,
