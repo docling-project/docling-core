@@ -149,38 +149,41 @@ class LayoutVisualizer(BaseVisualizer):
                 continue
             if len(elem.prov) == 0:
                 continue  # Skip elements without provenances
-            prov = elem.prov[0]
-            page_nr = prov.page_no
 
-            if page_nr in my_images:
-                image = my_images[page_nr]
-            else:
-                raise RuntimeError(f"Cannot visualize page-image for {page_nr}")
+            for prov in elem.prov:
+                page_nr = prov.page_no
 
-            if prev_page_nr is None or page_nr > prev_page_nr:  # new page begins
-                # complete previous drawing
-                if prev_page_nr is not None and prev_image and clusters:
-                    self._draw_clusters(
-                        image=prev_image,
-                        clusters=clusters,
-                        scale_x=prev_image.width / doc.pages[prev_page_nr].size.width,
-                        scale_y=prev_image.height / doc.pages[prev_page_nr].size.height,
-                    )
-                    clusters = []
+                if page_nr in my_images:
+                    image = my_images[page_nr]
+                else:
+                    raise RuntimeError(f"Cannot visualize page-image for {page_nr}")
 
-            tlo_bbox = prov.bbox.to_top_left_origin(
-                page_height=doc.pages[prov.page_no].size.height
-            )
-            cluster = _TLCluster(
-                id=idx,
-                label=elem.label,
-                brec=_TLBoundingRectangle.from_bounding_box(bbox=tlo_bbox),
-                cells=[],
-            )
-            clusters.append(cluster)
+                if prev_page_nr is None or page_nr > prev_page_nr:  # new page begins
+                    # complete previous drawing
+                    if prev_page_nr is not None and prev_image and clusters:
+                        self._draw_clusters(
+                            image=prev_image,
+                            clusters=clusters,
+                            scale_x=prev_image.width
+                            / doc.pages[prev_page_nr].size.width,
+                            scale_y=prev_image.height
+                            / doc.pages[prev_page_nr].size.height,
+                        )
+                        clusters = []
 
-            prev_page_nr = page_nr
-            prev_image = image
+                tlo_bbox = prov.bbox.to_top_left_origin(
+                    page_height=doc.pages[prov.page_no].size.height
+                )
+                cluster = _TLCluster(
+                    id=idx,
+                    label=elem.label,
+                    brec=_TLBoundingRectangle.from_bounding_box(bbox=tlo_bbox),
+                    cells=[],
+                )
+                clusters.append(cluster)
+
+                prev_page_nr = page_nr
+                prev_image = image
 
         # complete last drawing
         if prev_page_nr is not None and prev_image and clusters:

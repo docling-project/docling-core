@@ -77,57 +77,59 @@ class ReadingOrderVisualizer(BaseVisualizer):
                 continue
             if len(elem.prov) == 0:
                 continue  # Skip elements without provenances
-            prov = elem.prov[0]
-            page_no = prov.page_no
-            image = my_images.get(page_no)
 
-            if image is None or prev_page is None or page_no > prev_page:
-                # new page begins
-                prev_page = page_no
-                x0 = y0 = None
+            for prov in elem.prov:
+                page_no = prov.page_no
+                image = my_images.get(page_no)
 
-                if image is None:
-                    page_image = doc.pages[page_no].image
-                    if page_image is None or (pil_img := page_image.pil_image) is None:
-                        raise RuntimeError("Cannot visualize document without images")
-                    else:
-                        image = deepcopy(pil_img)
-                        my_images[page_no] = image
-            draw = ImageDraw.Draw(image)
+                if image is None or prev_page is None or page_no > prev_page:
+                    # new page begins
+                    prev_page = page_no
+                    x0 = y0 = None
 
-            # if prov.page_no not in true_doc.pages or prov.page_no != 1:
-            #     logging.error(f"{prov.page_no} not in true_doc.pages -> skipping! ")
-            #     continue
+                    if image is None:
+                        page_image = doc.pages[page_no].image
+                        if (
+                            page_image is None
+                            or (pil_img := page_image.pil_image) is None
+                        ):
+                            raise RuntimeError(
+                                "Cannot visualize document without images"
+                            )
+                        else:
+                            image = deepcopy(pil_img)
+                            my_images[page_no] = image
+                draw = ImageDraw.Draw(image)
 
-            tlo_bbox = prov.bbox.to_top_left_origin(
-                page_height=doc.pages[prov.page_no].size.height
-            )
-            ro_bbox = tlo_bbox.normalized(doc.pages[prov.page_no].size)
-            ro_bbox.l = round(ro_bbox.l * image.width)  # noqa: E741
-            ro_bbox.r = round(ro_bbox.r * image.width)
-            ro_bbox.t = round(ro_bbox.t * image.height)
-            ro_bbox.b = round(ro_bbox.b * image.height)
-
-            if ro_bbox.b > ro_bbox.t:
-                ro_bbox.b, ro_bbox.t = ro_bbox.t, ro_bbox.b
-
-            if x0 is None and y0 is None:
-                x0 = (ro_bbox.l + ro_bbox.r) / 2.0
-                y0 = (ro_bbox.b + ro_bbox.t) / 2.0
-            else:
-                assert x0 is not None
-                assert y0 is not None
-
-                x1 = (ro_bbox.l + ro_bbox.r) / 2.0
-                y1 = (ro_bbox.b + ro_bbox.t) / 2.0
-
-                draw = self._draw_arrow(
-                    draw=draw,
-                    arrow_coords=(x0, y0, x1, y1),
-                    line_width=2,
-                    color="red",
+                tlo_bbox = prov.bbox.to_top_left_origin(
+                    page_height=doc.pages[prov.page_no].size.height
                 )
-                x0, y0 = x1, y1
+                ro_bbox = tlo_bbox.normalized(doc.pages[prov.page_no].size)
+                ro_bbox.l = round(ro_bbox.l * image.width)  # noqa: E741
+                ro_bbox.r = round(ro_bbox.r * image.width)
+                ro_bbox.t = round(ro_bbox.t * image.height)
+                ro_bbox.b = round(ro_bbox.b * image.height)
+
+                if ro_bbox.b > ro_bbox.t:
+                    ro_bbox.b, ro_bbox.t = ro_bbox.t, ro_bbox.b
+
+                if x0 is None and y0 is None:
+                    x0 = (ro_bbox.l + ro_bbox.r) / 2.0
+                    y0 = (ro_bbox.b + ro_bbox.t) / 2.0
+                else:
+                    assert x0 is not None
+                    assert y0 is not None
+
+                    x1 = (ro_bbox.l + ro_bbox.r) / 2.0
+                    y1 = (ro_bbox.b + ro_bbox.t) / 2.0
+
+                    draw = self._draw_arrow(
+                        draw=draw,
+                        arrow_coords=(x0, y0, x1, y1),
+                        line_width=2,
+                        color="red",
+                    )
+                    x0, y0 = x1, y1
         return my_images
 
     @override
