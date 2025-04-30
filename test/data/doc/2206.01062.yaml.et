@@ -15,106 +15,106 @@
  14: text
  15: text
  16: picture
- 17: section_header
- 18: text
- 19: section_header
- 20: text
- 21: section_header
- 22: text
+  17: caption
+ 18: section_header
+ 19: text
+ 20: section_header
+ 21: text
+ 22: section_header
  23: text
  24: text
- 25: list with name=list
-  26: list_item
+ 25: text
+ 26: list with name=list
   27: list_item
   28: list_item
   29: list_item
- 30: footnote
- 31: text
- 32: list with name=list
-  33: list_item
- 34: text
+  30: list_item
+ 31: footnote
+ 32: text
+ 33: list with name=list
+  34: list_item
  35: text
- 36: section_header
- 37: text
+ 36: text
+ 37: section_header
  38: text
- 39: section_header
- 40: text
+ 39: text
+ 40: section_header
  41: text
- 42: picture
- 43: text
- 44: text
+ 42: text
+ 43: picture
+  44: caption
  45: text
  46: text
- 47: footnote
+ 47: text
  48: text
- 49: text
+ 49: footnote
  50: text
- 51: section_header
+ 51: text
  52: text
- 53: table
-  54: caption
- 55: picture
- 56: text
- 57: text
- 58: text
+ 53: section_header
+ 54: text
+ 55: table
+  56: caption
+ 57: picture
+  58: caption
  59: text
- 60: footnote
+ 60: text
  61: text
  62: text
- 63: text
- 64: list with name=list
-  65: list_item
-  66: list_item
-  67: list_item
+ 63: footnote
+ 64: text
+ 65: text
+ 66: text
+ 67: list with name=list
   68: list_item
   69: list_item
   70: list_item
- 71: text
- 72: text
- 73: picture
+  71: list_item
+  72: list_item
+  73: list_item
  74: text
- 75: caption
- 76: text
+ 75: text
+ 76: picture
  77: text
- 78: text
- 79: table
+ 78: caption
+ 79: text
  80: text
- 81: section_header
- 82: text
- 83: picture
- 84: text
+ 81: text
+ 82: table
+ 83: text
+ 84: section_header
  85: text
- 86: section_header
- 87: text
+ 86: picture
+  87: caption
  88: text
- 89: table
+ 89: text
  90: section_header
  91: text
- 92: section_header
- 93: text
- 94: text
- 95: table
- 96: text
- 97: section_header
+ 92: text
+ 93: table
+ 94: section_header
+ 95: text
+ 96: section_header
+ 97: text
  98: text
- 99: section_header
+ 99: table
  100: text
- 101: text
- 102: table
- 103: text
+ 101: section_header
+ 102: text
+ 103: section_header
  104: text
- 105: section_header
- 106: text
- 107: section_header
+ 105: text
+ 106: table
+ 107: text
  108: text
- 109: text
+ 109: section_header
  110: text
  111: section_header
- 112: list with name=list
-  113: list_item
-  114: list_item
-  115: list_item
-  116: list_item
+ 112: text
+ 113: text
+ 114: text
+ 115: section_header
+ 116: list with name=list
   117: list_item
   118: list_item
   119: list_item
@@ -124,17 +124,22 @@
   123: list_item
   124: list_item
   125: list_item
- 126: picture
- 127: text
- 128: text
- 129: list with name=list
-  130: list_item
-  131: list_item
-  132: list_item
-  133: list_item
-  134: list_item
+  126: list_item
+  127: list_item
+  128: list_item
+  129: list_item
+ 130: picture
+  131: caption
+ 132: text
+ 133: text
+ 134: list with name=list
   135: list_item
   136: list_item
   137: list_item
   138: list_item
   139: list_item
+  140: list_item
+  141: list_item
+  142: list_item
+  143: list_item
+  144: list_item
