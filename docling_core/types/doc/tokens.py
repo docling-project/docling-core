@@ -6,9 +6,10 @@
 """Tokens used in the docling document model."""
 
 from enum import Enum
-from typing import Tuple
+from typing import Tuple, Union
 
 from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.page import BoundingBox, BoundingRectangle
 
 
 class TableToken(str, Enum):
@@ -42,6 +43,8 @@ class TableToken(str, Enum):
 
 
 _LOC_PREFIX = "loc_"
+_REC_PREFIX = "rec_"
+_POLY_PREFIX = "poly_"
 _SECTION_HEADER_PREFIX = "section_header_level_"
 
 
@@ -261,35 +264,62 @@ class DocumentToken(str, Enum):
         return _CodeLanguageToken(f"<_{code_language}_>").value
 
     @staticmethod
-    def get_location_token(val: float, rnorm: int = 500):  # TODO review
+    def get_location_token(val: float, rnorm: int = 500, prefix=_LOC_PREFIX):  # TODO review
         """Function to get location tokens."""
         val_ = round(rnorm * val)
         val_ = max(val_, 0)
         val_ = min(val_, rnorm - 1)
-        return f"<{_LOC_PREFIX}{val_}>"
+        return f"<{prefix}{val_}>"
 
     @staticmethod
     def get_location(
-        bbox: tuple[float, float, float, float],
+        bbox: Union[tuple[float, float, float, float], BoundingBox, BoundingRectangle],
         page_w: float,
         page_h: float,
         xsize: int = 500,  # TODO review
         ysize: int = 500,  # TODO review
     ):
         """Get the location string give bbox and page-dim."""
-        assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"
-        assert bbox[1] <= bbox[3], f"bbox[1]<=bbox[3] => {bbox[1]}<={bbox[3]}"
+        if isinstance(bbox, BoundingBox):
+            bbox = bbox.to_top_left_origin(page_h).as_tuple()
 
-        x0 = bbox[0] / page_w
-        y0 = bbox[1] / page_h
-        x1 = bbox[2] / page_w
-        y1 = bbox[3] / page_h
+        if isinstance(bbox, tuple):
+            #old case
+            assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"
+            assert bbox[1] <= bbox[3], f"bbox[1]<=bbox[3] => {bbox[1]}<={bbox[3]}"
 
-        x0_tok = DocumentToken.get_location_token(val=min(x0, x1), rnorm=xsize)
-        y0_tok = DocumentToken.get_location_token(val=min(y0, y1), rnorm=ysize)
-        x1_tok = DocumentToken.get_location_token(val=max(x0, x1), rnorm=xsize)
-        y1_tok = DocumentToken.get_location_token(val=max(y0, y1), rnorm=ysize)
+            x0 = bbox[0] / page_w
+            y0 = bbox[1] / page_h
+            x1 = bbox[2] / page_w
+            y1 = bbox[3] / page_h
 
-        loc_str = f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
+            x0_tok = DocumentToken.get_location_token(val=min(x0, x1), rnorm=xsize)
+            y0_tok = DocumentToken.get_location_token(val=min(y0, y1), rnorm=ysize)
+            x1_tok = DocumentToken.get_location_token(val=max(x0, x1), rnorm=xsize)
+            y1_tok = DocumentToken.get_location_token(val=max(y0, y1), rnorm=ysize)
+
+            loc_str = f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
+        
+        elif isinstance(bbox, BoundingRectangle):
+            #use the prefix rec, 4 elements required
+            vertices = bbox.to_top_left_origin(page_h).to_polygon()
+            for vertex in vertices:
+                vertex.x = vertex.x / page_w
+                vertex.y = vertex.y / page_h
+
+            # Convection for the rectangle vertices:
+            #     3 +-------+ 2
+            #       | hello |
+            #     0 +-------+ 1
+            # 0->1 line must be the baseline for the words
+            
+            vertices_tok = []
+            for vertex in vertices:
+                vertices_tok.append(DocumentToken.get_location_token(val=vertex.x, rnorm=xsize, prefix=_REC_PREFIX))
+                vertices_tok.append(DocumentToken.get_location_token(val=vertex.y, rnorm=ysize, prefix=_REC_PREFIX))
+
+            loc_str = ""
+            for vertex_tok in vertices_tok:
+                loc_str += f'{vertex_tok}'
 
         return loc_str
