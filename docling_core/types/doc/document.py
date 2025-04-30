@@ -2657,16 +2657,22 @@ class DoclingDocument(BaseModel):
         if should_yield:
             yield root, my_stack
 
-        pic_filter_mode = isinstance(root, PictureItem) and not traverse_pictures
         my_stack.append(-1)
+
+        allowed_pic_refs: set[str] = (
+            {r.cref for r in root.captions}
+            if (root_is_picture := isinstance(root, PictureItem))
+            else set()
+        )
 
         # Traverse children
         for child_ind, child_ref in enumerate(root.children):
             child = child_ref.resolve(self)
             if (
-                pic_filter_mode
+                root_is_picture
+                and not traverse_pictures
                 and isinstance(child, DocItem)
-                and child.label not in [DocItemLabel.CAPTION, DocItemLabel.FOOTNOTE]
+                and child.self_ref not in allowed_pic_refs
             ):
                 continue
             my_stack[-1] = child_ind
