@@ -1073,7 +1073,7 @@ class PictureItem(FloatingItem):
             image_bytes = self.image._pil.tobytes()
 
             # Create a hash object (e.g., SHA-256)
-            hasher = hashlib.sha256()
+            hasher = hashlib.sha256(usedforsecurity=False)
 
             # Feed the image bytes into the hash object
             hasher.update(image_bytes)

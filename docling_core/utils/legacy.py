@@ -47,7 +47,7 @@ from docling_core.types.legacy_doc.document import ExportedCCSDocument as DsDocu
 
 
 def _create_hash(string: str):
-    hasher = hashlib.sha256()
+    hasher = hashlib.sha256(usedforsecurity=False)
     hasher.update(string.encode("utf-8"))
 
     return hasher.hexdigest()
