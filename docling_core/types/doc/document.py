@@ -3606,7 +3606,9 @@ class DoclingDocument(BaseModel):
                 rf"{DocumentToken.UNORDERED_LIST.value}|"
                 rf"{DocItemLabel.KEY_VALUE_REGION}|"
                 rf"{DocumentToken.CHART.value}|"
-                rf"{DocumentToken.OTSL.value})>.*?</(?P=tag)>"
+                rf"{DocumentToken.OTSL.value})>"
+                rf"(?P<content>.*?)"
+                rf"(?:(?P<closed></(?P=tag)>)|(?P<eof>$))"
             )
             pattern = re.compile(tag_pattern, re.DOTALL)
 
@@ -3616,6 +3618,10 @@ class DoclingDocument(BaseModel):
                 tag_name = match.group("tag")
 
                 bbox = extract_bounding_box(full_chunk)  # Extracts first bbox
+                if not match.group("closed"):
+                    # no closing tag; only the existence of the item is recovered
+                    full_chunk = f"<{tag_name}></{tag_name}>"
+
                 doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.PARAGRAPH)
 
                 if tag_name == DocumentToken.OTSL.value:
