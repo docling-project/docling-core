@@ -78,7 +78,8 @@ class GroupLabel(str, Enum):
     KEY_VALUE_AREA = "key_value_area"
     COMMENT_SECTION = "comment_section"
     INLINE = "inline"
-
+    PICTURE_GROUP = "picture_group"
+    
     def __str__(self):
         """Get string value."""
         return str(self.value)
