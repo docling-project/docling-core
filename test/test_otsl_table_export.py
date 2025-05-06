@@ -15,8 +15,8 @@ def test_table_export_to_otsl():
             start_row_offset_idx=0,
             end_row_offset_idx=1,
             start_col_offset_idx=0,
-            end_col_offset_idx=3,
-            col_header=False,
+            end_col_offset_idx=2,
+            column_header=False,
             row_header=True,
         )
     )
@@ -30,7 +30,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=1,
             start_col_offset_idx=2,
             end_col_offset_idx=3,
-            col_header=False,
+            column_header=False,
             row_header=True,
         )
     )
@@ -45,7 +45,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=2,
             start_col_offset_idx=0,
             end_col_offset_idx=1,
-            col_header=False,
+            column_header=False,
             row_header=True,
         )
     )
@@ -59,7 +59,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=2,
             start_col_offset_idx=1,
             end_col_offset_idx=2,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -73,7 +73,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=2,
             start_col_offset_idx=2,
             end_col_offset_idx=3,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -88,7 +88,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=2,
             start_col_offset_idx=3,
             end_col_offset_idx=6,
-            col_header=True,
+            column_header=True,
             row_header=False,
         )
     )
@@ -103,7 +103,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=4,
             start_col_offset_idx=0,
             end_col_offset_idx=1,
-            col_header=False,
+            column_header=False,
             row_header=True,
         )
     )
@@ -117,7 +117,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=3,
             start_col_offset_idx=1,
             end_col_offset_idx=2,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -131,7 +131,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=3,
             start_col_offset_idx=2,
             end_col_offset_idx=3,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -145,7 +145,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=3,
             start_col_offset_idx=3,
             end_col_offset_idx=4,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -159,7 +159,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=3,
             start_col_offset_idx=4,
             end_col_offset_idx=5,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -173,7 +173,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=3,
             start_col_offset_idx=5,
             end_col_offset_idx=6,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -189,7 +189,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=4,
             start_col_offset_idx=1,
             end_col_offset_idx=2,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -203,7 +203,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=4,
             start_col_offset_idx=2,
             end_col_offset_idx=3,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -217,7 +217,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=4,
             start_col_offset_idx=3,
             end_col_offset_idx=4,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -231,7 +231,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=4,
             start_col_offset_idx=4,
             end_col_offset_idx=5,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -245,7 +245,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=4,
             start_col_offset_idx=5,
             end_col_offset_idx=6,
-            col_header=False,
+            column_header=False,
             row_header=False,
         )
     )
@@ -260,7 +260,7 @@ def test_table_export_to_otsl():
             end_row_offset_idx=5,
             start_col_offset_idx=0,
             end_col_offset_idx=6,
-            col_header=False,
+            column_header=False,
             row_header=False,
             row_section=True,
         )
@@ -269,7 +269,7 @@ def test_table_export_to_otsl():
     # ======================================
     doc = DoclingDocument(name="test_otsl")
     data = TableData(num_rows=num_rows, num_cols=num_cols, table_cells=data_table_cells)
-    doc.add_table(data=data)
+    tbl = doc.add_table(data=data)
 
     otsl_string = doc.tables[0].export_to_otsl(
         add_cell_location=False, add_cell_text=False, doc=doc
@@ -280,5 +280,5 @@ def test_table_export_to_otsl():
         print(s)
     assert (
         otsl_string
-        == "<rhed><lcel><rhed><fcel><xcel><xcel><nl><rhed><fcel><fcel><xcel><xcel><xcel><nl><rhed><fcel><fcel><fcel><ecel><ecel><nl><ucel><fcel><fcel><fcel><fcel><fcel><nl><srow><lcel><lcel><lcel><lcel><lcel><nl>"
+        == "<rhed><lcel><rhed><ched><xcel><xcel><nl><rhed><fcel><fcel><xcel><xcel><xcel><nl><rhed><fcel><fcel><fcel><ecel><ecel><nl><ucel><fcel><fcel><fcel><fcel><fcel><nl><srow><lcel><lcel><lcel><lcel><lcel><nl>"
     )
