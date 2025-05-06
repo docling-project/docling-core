@@ -790,7 +790,9 @@ class DocItem(
 
         return location
 
-    def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> Optional[PILImage.Image]:
+    def get_image(
+        self, doc: "DoclingDocument", prov_index: int = 0
+    ) -> Optional[PILImage.Image]:
         """Returns the image of this DocItem.
 
         The function returns None if this DocItem has no valid provenance or
@@ -973,7 +975,9 @@ class FloatingItem(DocItem):
             text += cap.resolve(doc).text
         return text
 
-    def get_image(self, doc: "DoclingDocument") -> Optional[PILImage.Image]:
+    def get_image(
+        self, doc: "DoclingDocument", prov_index: int = 0
+    ) -> Optional[PILImage.Image]:
         """Returns the image corresponding to this FloatingItem.
 
         This function returns the PIL image from self.image if one is available.
@@ -985,7 +989,7 @@ class FloatingItem(DocItem):
         """
         if self.image is not None:
             return self.image.pil_image
-        return super().get_image(doc=doc)
+        return super().get_image(doc=doc, prov_index=prov_index)
 
 
 class CodeItem(FloatingItem, TextItem):
