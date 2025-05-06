@@ -790,7 +790,7 @@ class DocItem(
 
         return location
 
-    def get_image(self, doc: "DoclingDocument") -> Optional[PILImage.Image]:
+    def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> Optional[PILImage.Image]:
         """Returns the image of this DocItem.
 
         The function returns None if this DocItem has no valid provenance or
@@ -800,7 +800,7 @@ class DocItem(
         if not len(self.prov):
             return None
 
-        page = doc.pages.get(self.prov[0].page_no)
+        page = doc.pages.get(self.prov[prov_index].page_no)
         if page is None or page.size is None or page.image is None:
             return None
 
@@ -808,7 +808,7 @@ class DocItem(
         if not page_image:
             return None
         crop_bbox = (
-            self.prov[0]
+            self.prov[prov_index]
             .bbox.to_top_left_origin(page_height=page.size.height)
             .scale_to_size(old_size=page.size, new_size=page.image.size)
             # .scaled(scale=page_image.height / page.size.height)
