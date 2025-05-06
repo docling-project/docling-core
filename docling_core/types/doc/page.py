@@ -472,7 +472,26 @@ class SegmentedPage(BaseModel):
     word_cells: List[TextCell] = []
     textline_cells: List[TextCell] = []
 
+    # These flags are set to differentiate if above lists of this SegmentedPage
+    # are empty (page had no content) or if they have not been computed (i.e. textline_cells may be present
+    # but word_cells are not)
+    has_chars: bool = False
+    has_words: bool = False
+    has_lines: bool = False
+
     image: Optional[ImageRef] = None
+
+    @model_validator(mode="after")
+    def validate_page(self) -> "SegmentedPage":
+        """Validate page."""
+        if len(self.textline_cells) > 0:
+            self.has_lines = True
+        if len(self.word_cells) > 0:
+            self.has_words = True
+        if len(self.char_cells) > 0:
+            self.has_chars = True
+
+        return self
 
     def iterate_cells(self, unit_type: TextCellUnit) -> Iterator[TextCell]:
         """Iterate through text cells of the specified unit type.
