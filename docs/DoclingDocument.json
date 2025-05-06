@@ -804,7 +804,8 @@
         "form_area",
         "key_value_area",
         "comment_section",
-        "inline"
+        "inline",
+        "picture_area"
       ],
       "title": "GroupLabel",
       "type": "string"
