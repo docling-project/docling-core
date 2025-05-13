@@ -54,6 +54,7 @@ from docling_core.types.doc.document import (
     TextItem,
     TitleItem,
     UnorderedList,
+    PictureDescriptionData
 )
 
 
@@ -62,7 +63,9 @@ class MarkdownParams(CommonParams):
 
     layers: set[ContentLayer] = {ContentLayer.BODY}
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
+    table_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     image_placeholder: str = "<!-- image -->"
+    table_placeholder: str =  "<!-- table -->"
     enable_chart_tables: bool = True
     indent: int = 4
     wrap_width: Optional[PositiveInt] = None
@@ -146,6 +149,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
 
         cap_res = doc_serializer.serialize_captions(
@@ -156,6 +160,14 @@ class MarkdownTableSerializer(BaseTableSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            img_res = self._serialize_table_part(
+                item=item,
+                doc=doc,
+                table_mode=params.table_mode,
+                table_placeholder=params.table_placeholder,
+            )
+            if img_res.text:
+                res_parts.append(img_res)
             rows = [
                 [
                     # make sure that md tables are not broken
@@ -183,6 +195,41 @@ class MarkdownTableSerializer(BaseTableSerializer):
         text_res = "\n\n".join([r.text for r in res_parts])
 
         return create_ser_result(text=text_res, span_source=res_parts)
+
+    def _serialize_table_part(
+    self,
+    item: TableItem,
+    doc: DoclingDocument,
+    table_mode: ImageRefMode,
+    table_placeholder: str,
+    **kwargs: Any,
+) -> SerializationResult:
+        error_response = (
+            "<!-- 🖼️❌ Image not available. "
+            "Please use `PdfPipelineOptions(generate_picture_images=True)`"
+            " -->"
+        )
+        if table_mode == ImageRefMode.PLACEHOLDER:
+            text_res = table_placeholder
+
+        elif table_mode == ImageRefMode.DESCRIPTION:
+            if isinstance(item.image, ImageRef):
+                table_description = ''
+                for annotation in item.annotations:
+                    if not isinstance(annotation, PictureDescriptionData):
+                        continue
+                    table_description+=annotation.text+'\n'
+
+                text = f"![Table]({item.self_ref})\n<Table_Description>\n{table_description}</Table_Description>"
+                text_res = text
+            else:
+                text_res = table_placeholder
+
+        else:
+            text_res = table_placeholder
+
+
+        return create_ser_result(text=text_res, span_source=item)
 
 
 class MarkdownPictureSerializer(BasePictureSerializer):
@@ -282,8 +329,23 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 text_res = image_placeholder
             else:
                 text_res = f"![Image]({str(item.image.uri)})"
+            
+        elif image_mode == ImageRefMode.DESCRIPTION:
+            if isinstance(item.image, ImageRef):
+                picture_description = ''
+                for annotation in item.annotations:
+                    if not isinstance(annotation, PictureDescriptionData):
+                        continue
+                    picture_description+=annotation.text+'\n'
+
+                text = f"![Image]({item.self_ref})\n<Image_Description>\n{picture_description}</Image_Description>"
+                text_res = text
+            else:
+                text_res = image_placeholder
+
         else:
             text_res = image_placeholder
+
 
         return create_ser_result(text=text_res, span_source=item)
 

@@ -1190,6 +1190,8 @@ class TableItem(FloatingItem):
         DocItemLabel.DOCUMENT_INDEX,
         DocItemLabel.TABLE,
     ] = DocItemLabel.TABLE
+    annotations: List[PictureDataType] = []
+
 
     def export_to_dataframe(self) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
@@ -1236,14 +1238,22 @@ class TableItem(FloatingItem):
 
         return df
 
-    def export_to_markdown(self, doc: Optional["DoclingDocument"] = None) -> str:
+    def export_to_markdown(
+            self, 
+            doc: Optional["DoclingDocument"] = None,
+            table_mode: ImageRefMode = ImageRefMode.DESCRIPTION,
+            table_placeholder: str = "<!-- table -->") -> str:
         """Export the table as markdown."""
         if doc is not None:
             from docling_core.transforms.serializer.markdown import (
-                MarkdownDocSerializer,
+                MarkdownDocSerializer, MarkdownParams
             )
 
-            serializer = MarkdownDocSerializer(doc=doc)
+            serializer = MarkdownDocSerializer(doc=doc,
+                                               params=MarkdownParams(
+                    table_mode=table_mode,
+                    table_placeholder=table_placeholder,
+            ))
             text = serializer.serialize(item=self).text
             return text
         else:
@@ -2261,6 +2271,7 @@ class DoclingDocument(BaseModel):
     def add_table(
         self,
         data: TableData,
+        annotations: List[PictureDataType] = [],
         caption: Optional[Union[TextItem, RefItem]] = None,  # This is not cool yet.
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
@@ -2283,7 +2294,7 @@ class DoclingDocument(BaseModel):
         cref = f"#/tables/{table_index}"
 
         tbl_item = TableItem(
-            label=label, data=data, self_ref=cref, parent=parent.get_ref()
+            label=label, annotations=annotations, data=data, self_ref=cref, parent=parent.get_ref()
         )
         if prov:
             tbl_item.prov.append(prov)
@@ -2919,6 +2930,8 @@ class DoclingDocument(BaseModel):
         escaping_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        table_placeholder: str = "<!-- table -->",
+        table_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
         text_width: int = -1,
         page_no: Optional[int] = None,
@@ -2946,6 +2959,8 @@ class DoclingDocument(BaseModel):
             escape_underscores=escaping_underscores,
             image_placeholder=image_placeholder,
             image_mode=image_mode,
+            table_placeholder=table_placeholder,
+            table_mode=table_mode,
             indent=indent,
             text_width=text_width,
             page_no=page_no,
@@ -2965,8 +2980,10 @@ class DoclingDocument(BaseModel):
         strict_text: bool = False,
         escape_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
+        table_placeholder: str = "<!-- table -->",
         enable_chart_tables: bool = True,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        table_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
         text_width: int = -1,
         page_no: Optional[int] = None,
@@ -3033,8 +3050,10 @@ class DoclingDocument(BaseModel):
                 stop_idx=to_element,
                 escape_underscores=escape_underscores,
                 image_placeholder=image_placeholder,
+                table_placeholder=table_placeholder,
                 enable_chart_tables=enable_chart_tables,
                 image_mode=image_mode,
+                table_mode=table_mode,
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
                 page_break_placeholder=page_break_placeholder,
