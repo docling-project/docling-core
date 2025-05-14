@@ -54,6 +54,7 @@ from docling_core.types.doc.document import (
     TextItem,
     TitleItem,
     UnorderedList,
+    PictureDescriptionData
 )
 
 
@@ -282,8 +283,23 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 text_res = image_placeholder
             else:
                 text_res = f"![Image]({str(item.image.uri)})"
+            
+        elif image_mode == ImageRefMode.DESCRIPTION:
+            if isinstance(item.image, ImageRef):
+                picture_description = ''
+                for annotation in item.annotations:
+                    if not isinstance(annotation, PictureDescriptionData):
+                        continue
+                    picture_description+=annotation.text+'\n'
+
+                text = f"![Image]({item.self_ref})\n<Image_Description>\n{picture_description}</Image_Description>"
+                text_res = text
+            else:
+                text_res = image_placeholder
+
         else:
             text_res = image_placeholder
+
 
         return create_ser_result(text=text_res, span_source=item)
 
