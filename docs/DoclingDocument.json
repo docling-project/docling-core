@@ -682,6 +682,7 @@
         "unspecified",
         "key",
         "value",
+        "empty_value",
         "checkbox"
       ],
       "title": "GraphCellLabel",

@@ -25,6 +25,8 @@ class DocItemLabel(str, Enum):
     CHECKBOX_UNSELECTED = "checkbox_unselected"
     FORM = "form"
     KEY_VALUE_REGION = "key_value_region"
+    GRADING_SCALE = "grading_scale"  # for elements in forms, questionaires representing a grading scale
+    # e.g. [strongly disagree | ... | ... | strongly agree]
 
     # Additional labels for markup-based formats (e.g. HTML, Word)
     PARAGRAPH = "paragraph"
@@ -144,16 +146,42 @@ class TableCellLabel(str, Enum):
         """Get string value."""
         return str(self.value)
 
+    @staticmethod
+    def get_color(label: "TableCellLabel") -> Tuple[int, int, int]:
+        """Return the RGB color associated with a given label."""
+        color_map = {
+            TableCellLabel.COLUMN_HEADER: (255, 0, 0),
+            TableCellLabel.ROW_HEADER: (0, 255, 0),
+            TableCellLabel.ROW_SECTION: (0, 0, 255),
+            TableCellLabel.BODY: (0, 255, 255),
+        }
+        return color_map.get(label, (0, 0, 0))
+
 
 class GraphCellLabel(str, Enum):
     """GraphCellLabel."""
 
     UNSPECIFIED = "unspecified"
 
-    KEY = "key"
-    VALUE = "value"
-
+    KEY = "key"  # used to designate a key (label) of a key-value element
+    VALUE = "value"  # Data value with or without explicit Key, but filled in,
+    # e.g. telephone number, address, quantity, name, date
+    EMPTY_VALUE = "empty_value"  # used for empty value fields in fillable forms
     CHECKBOX = "checkbox"
+
+    def __str__(self):
+        """Get string value."""
+        return str(self.value)
+
+    @staticmethod
+    def get_color(label: "GraphCellLabel") -> Tuple[int, int, int]:
+        """Return the RGB color associated with a given label."""
+        color_map = {
+            GraphCellLabel.KEY: (255, 0, 0),
+            GraphCellLabel.VALUE: (0, 255, 0),
+            GraphCellLabel.EMPTY_VALUE: (0, 0, 255),
+        }
+        return color_map.get(label, (0, 0, 0))
 
 
 class GraphLinkLabel(str, Enum):
