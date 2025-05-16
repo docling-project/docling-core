@@ -12,6 +12,7 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
 )
+from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import DoclingDocument
 from docling_core.types.doc.labels import DocItemLabel
@@ -196,3 +197,22 @@ def test_html_split_page_no_page_breaks():
     )
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}_split.gt.html", actual=actual)
+
+
+def test_html_split_page_with_visualizer_p2():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.EMBEDDED,
+            output_style=HTMLOutputStyle.SPLIT_PAGE,
+            pages={2},
+        ),
+    )
+    ser_res = ser.serialize(
+        visualizer=LayoutVisualizer(),
+    )
+    actual = ser_res.text
+    verify(exp_file=src.parent / f"{src.stem}_viz_p2.gt.html", actual=actual)

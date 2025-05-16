@@ -16,6 +16,7 @@ from xml.etree.cElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
 import latex2mathml.converter
+from PIL.Image import Image
 from pydantic import AnyUrl, BaseModel
 from typing_extensions import override
 
@@ -40,6 +41,7 @@ from docling_core.transforms.serializer.html_styles import (
     _get_css_for_single_column,
     _get_css_for_split_page,
 )
+from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     CodeItem,
@@ -821,9 +823,22 @@ class HTMLDocSerializer(DocSerializer):
     def serialize_doc(
         self,
         parts: list[SerializationResult],
+        visualizer: Optional[BaseVisualizer] = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
+
+        def _serialize_page_img(page_img: Image):
+            buffered = BytesIO()
+            page_img.save(buffered, format="PNG")  # Save the image to the byte stream
+            img_bytes = buffered.getvalue()  # Get the byte data
+
+            # Encode to Base64 and decode to string
+            img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+            img_text = f'<img src="data:image/png;base64,{img_base64}">'
+
+            return f"<figure>{img_text}</figure>"
+
         # Create HTML structure
         html_parts = [
             "<!DOCTYPE html>",
@@ -853,19 +868,26 @@ class HTMLDocSerializer(DocSerializer):
             html_parts.append("<table>")
             html_parts.append("<tbody>")
 
+            vized_pages_dict: dict[Optional[int], Image] = {}
+            if visualizer:
+                vized_pages_dict = visualizer.get_visualization(doc=self.doc)
+
             for page_no, page in pages.items():
 
                 if isinstance(page_no, int):
                     if applicable_pages is not None and page_no not in applicable_pages:
                         continue
                     page_img = self.doc.pages[page_no].image
+                    vized_page = vized_pages_dict.get(page_no)
 
                     html_parts.append("<tr>")
 
                     html_parts.append("<td>")
 
+                    if vized_page:
+                        html_parts.append(_serialize_page_img(page_img=vized_page))
                     # short-cut: we already have the image in base64
-                    if (
+                    elif (
                         (page_img is not None)
                         and isinstance(page_img, ImageRef)
                         and isinstance(page_img.uri, AnyUrl)
@@ -875,18 +897,7 @@ class HTMLDocSerializer(DocSerializer):
                         html_parts.append(f"<figure>{img_text}</figure>")
 
                     elif (page_img is not None) and (page_img._pil is not None):
-
-                        buffered = BytesIO()
-                        page_img._pil.save(
-                            buffered, format="PNG"
-                        )  # Save the image to the byte stream
-                        img_bytes = buffered.getvalue()  # Get the byte data
-
-                        # Encode to Base64 and decode to string
-                        img_base64 = base64.b64encode(img_bytes).decode("utf-8")
-                        img_text = f'<img src="data:image/png;base64,{img_base64}">'
-
-                        html_parts.append(f"<figure>{img_text}</figure>")
+                        html_parts.append(_serialize_page_img(page_img=page_img._pil))
                     else:
                         html_parts.append("<figure>no page-image found</figure>")
 

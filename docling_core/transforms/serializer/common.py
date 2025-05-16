@@ -169,7 +169,7 @@ class CommonParams(BaseModel):
 
     def merge_with_patch(self, patch: dict[str, Any]) -> Self:
         """Create an instance by merging the provided patch dict on top of self."""
-        res = self.model_validate({**self.model_dump(), **patch})
+        res = self.model_copy(update=patch)
         return res
 
 
@@ -260,10 +260,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         """Serialize a document out of its pages."""
         ...
 
-    def _serialize_body(self) -> SerializationResult:
+    def _serialize_body(self, **kwargs) -> SerializationResult:
         """Serialize the document body."""
         subparts = self.get_parts()
-        res = self.serialize_doc(parts=subparts)
+        res = self.serialize_doc(parts=subparts, **kwargs)
         return res
 
     @override
@@ -278,12 +278,12 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> SerializationResult:
         """Serialize a given node."""
         my_visited: set[str] = visited if visited is not None else set()
-        my_kwargs = self.params.merge_with_patch(patch=kwargs).model_dump()
+        my_kwargs = {**self.params.model_dump(), **kwargs}
         empty_res = create_ser_result()
         if item is None or item == self.doc.body:
             if self.doc.body.self_ref not in my_visited:
                 my_visited.add(self.doc.body.self_ref)
-                return self._serialize_body()
+                return self._serialize_body(**my_kwargs)
             else:
                 return empty_res
 
