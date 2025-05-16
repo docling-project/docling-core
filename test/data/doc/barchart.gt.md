@@ -1,3 +1,5 @@
+<!-- generated beginning -->Picture type: bar chart<!-- generated end -->
+
 <!-- image -->
 
 |   Number of impellers |   single-frequency |   multi-frequency |

@@ -29,6 +29,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _get_picture_annotation_text,
     _PageBreakSerResult,
     create_ser_result,
 )
@@ -69,6 +70,9 @@ class MarkdownParams(CommonParams):
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
+    include_annotations: bool = True
+    annotation_opening_marker: str = "<!-- generated beginning -->"
+    annotation_closing_marker: str = "<!-- generated end -->"
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -210,6 +214,20 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            if params.include_annotations:
+
+                for ann in item.annotations:
+                    if ann_text := _get_picture_annotation_text(annotation=ann):
+                        ann_ser_res = create_ser_result(
+                            text=(
+                                f"{params.annotation_opening_marker}"
+                                f"{ann_text}"
+                                f"{params.annotation_closing_marker}"
+                            ),
+                            span_source=item,
+                        )
+                        res_parts.append(ann_ser_res)
+
             img_res = self._serialize_image_part(
                 item=item,
                 doc=doc,

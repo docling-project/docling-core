@@ -35,6 +35,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _get_picture_annotation_text,
     create_ser_result,
 )
 from docling_core.transforms.serializer.html_styles import (
@@ -109,6 +110,10 @@ class HTMLParams(CommonParams):
 
     # Enable charts to be printed into HTML as tables
     enable_chart_tables: bool = True
+
+    include_annotations: bool = True
+    annotation_opening_marker: str = "<!-- generated beginning -->"
+    annotation_closing_marker: str = "<!-- generated end -->"
 
 
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
@@ -943,18 +948,37 @@ class HTMLDocSerializer(DocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
         results: list[SerializationResult] = []
         text_res = ""
+        excluded_refs = self.get_excluded_refs(**kwargs)
+
         if DocItemLabel.CAPTION in params.labels:
-            results = [
-                create_ser_result(text=it.text, span_source=it)
-                for cap in item.captions
-                if isinstance(it := cap.resolve(self.doc), TextItem)
-                and it.self_ref not in self.get_excluded_refs(**kwargs)
-            ]
-            text_res = params.caption_delim.join([r.text for r in results])
-            if text_res:
-                text_dir = get_text_direction(text_res)
-                dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
-                text_res = f"<{tag}{dir_str}>{html.escape(text_res)}</{tag}>"
+            results.extend(
+                [
+                    create_ser_result(text=html.escape(it.text), span_source=it)
+                    for cap in item.captions
+                    if isinstance(it := cap.resolve(self.doc), TextItem)
+                    and it.self_ref not in excluded_refs
+                ]
+            )
+
+        if params.include_annotations and item.self_ref not in excluded_refs:
+            if isinstance(item, PictureItem):
+                for ann in item.annotations:
+                    if ann_text := _get_picture_annotation_text(annotation=ann):
+                        ann_ser_res = create_ser_result(
+                            text=(
+                                f"{params.annotation_opening_marker}"
+                                f"{html.escape(ann_text)}"
+                                f"{params.annotation_closing_marker}"
+                            ),
+                            span_source=item,
+                        )
+                        results.append(ann_ser_res)
+
+        text_res = params.caption_delim.join([r.text for r in results])
+        if text_res:
+            text_dir = get_text_direction(text_res)
+            dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
+            text_res = f"<{tag}{dir_str}>{text_res}</{tag}>"
         return create_ser_result(text=text_res, span_source=results)
 
     def _generate_head(self) -> str:

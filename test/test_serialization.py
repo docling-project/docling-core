@@ -146,7 +146,7 @@ def test_md_pb_placeholder_and_page_filter():
         doc=doc,
         params=MarkdownParams(
             page_break_placeholder="<!-- page break -->",
-            pages={4, 6},
+            pages={3, 4, 6},
         ),
     )
     actual = ser.serialize().text
