@@ -535,7 +535,7 @@ class MarkdownDocSerializer(DocSerializer):
     ) -> SerializationResult:
         """Serialize a document out of its parts."""
         text_res = "\n\n".join([p.text for p in parts if p.text])
-        if self.params.page_break_placeholder:
+        if self.requires_page_break():
             page_sep = self.params.page_break_placeholder or ""
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
@@ -543,6 +543,6 @@ class MarkdownDocSerializer(DocSerializer):
         return create_ser_result(text=text_res, span_source=parts)
 
     @override
-    def requires_page_break(self):
+    def requires_page_break(self) -> bool:
         """Whether to add page breaks."""
         return self.params.page_break_placeholder is not None

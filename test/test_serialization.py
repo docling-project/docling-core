@@ -48,6 +48,57 @@ def test_md_cross_page_list_page_break():
     verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
 
 
+def test_md_cross_page_list_page_break_none():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            page_break_placeholder=None,
+            labels=_DEFAULT_LABELS - {DocItemLabel.PICTURE},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_pb_none.gt.md", actual=actual)
+
+
+def test_md_cross_page_list_page_break_empty():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            page_break_placeholder="",
+            labels=_DEFAULT_LABELS - {DocItemLabel.PICTURE},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_pb_empty.gt.md", actual=actual)
+
+
+def test_md_cross_page_list_page_break_non_empty():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            page_break_placeholder="<!-- page-break -->",
+            labels=_DEFAULT_LABELS - {DocItemLabel.PICTURE},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_pb_non_empty.gt.md", actual=actual)
+
+
 def test_md_cross_page_list_page_break_p2():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
