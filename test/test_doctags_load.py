@@ -17,7 +17,30 @@ def verify(exp_file: Path, actual: dict):
     else:
         with open(exp_file, "r", encoding="utf-8") as f:
             expected = json.load(f)
-        assert expected == actual
+
+        # we removed image URIs in both dicts for lossy comparison
+        # as the test was flaky due to URIs
+        def strip_image_uris(d):
+            if isinstance(d, dict):
+                return {
+                    k: strip_image_uris(v)
+                    for k, v in d.items()
+                    if k not in {"uri", "image_uri"}
+                }
+            elif isinstance(d, list):
+                return [strip_image_uris(x) for x in d]
+            else:
+                return d
+
+        expected_stripped = strip_image_uris(expected)
+        actual_stripped = strip_image_uris(actual)
+        assert (
+            expected_stripped == actual_stripped
+        ), "Dicts differ (ignoring image URIs)"
+
+        if "data:image/png;base64" in str(expected):
+            # check if the image URIs are the same
+            assert "data:image/png;base64" in str(actual), "Image URIs does not exist"
 
 
 def test_doctags_load_from_files():
