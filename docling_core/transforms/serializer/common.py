@@ -39,7 +39,11 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     NodeItem,
     OrderedList,
+    PictureClassificationData,
+    PictureDataType,
+    PictureDescriptionData,
     PictureItem,
+    PictureMoleculeData,
     TableItem,
     TextItem,
     UnorderedList,
@@ -116,6 +120,23 @@ def _iterate_items(
                         page_break_i += 1
                     prev_page_nr = page_no
         yield item
+
+
+def _get_picture_annotation_text(annotation: PictureDataType) -> Optional[str]:
+    result = None
+    if isinstance(annotation, PictureClassificationData):
+        predicted_class = (
+            annotation.predicted_classes[0].class_name
+            if annotation.predicted_classes
+            else None
+        )
+        if predicted_class is not None:
+            result = predicted_class.replace("_", " ")
+    elif isinstance(annotation, PictureDescriptionData):
+        result = annotation.text
+    elif isinstance(annotation, PictureMoleculeData):
+        result = annotation.smi
+    return result
 
 
 def create_ser_result(

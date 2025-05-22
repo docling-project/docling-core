@@ -416,7 +416,7 @@ def test_reference_doc():
     _test_serialize_and_reload(doc)
 
     # Call Export methods
-    _test_export_methods(doc, filename=filename)
+    _test_export_methods(doc, filename=filename, test_annotations=True)
 
 
 def test_parse_doc():
@@ -494,7 +494,10 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
 
 
 def _test_export_methods(
-    doc: DoclingDocument, filename: str, page_break_placeholder: Optional[str] = None
+    doc: DoclingDocument,
+    filename: str,
+    page_break_placeholder: Optional[str] = None,
+    test_annotations: bool = False,
 ):
     # Iterate all elements
     et_pred = doc.export_to_element_tree()
@@ -504,6 +507,27 @@ def _test_export_methods(
     md_pred = doc.export_to_markdown()
     _verify_regression_test(md_pred, filename=filename, ext="md")
 
+    # if test_annotations:
+    #     # include_annotations=True and mark_annotations=False is the default
+    #     # include_annotations=False and mark_annotations=True does not make sense
+
+    #     _verify_regression_test(
+    #         pred=doc.export_to_markdown(
+    #             include_annotations=False,
+    #             mark_annotations=False,
+    #         ),
+    #         filename=filename,
+    #         ext="include_annotations_false.md",
+    #     )
+    #     _verify_regression_test(
+    #         pred=doc.export_to_markdown(
+    #             include_annotations=True,
+    #             mark_annotations=True,
+    #         ),
+    #         filename=filename,
+    #         ext="mark_annotations_true.md",
+    #     )
+
     if page_break_placeholder is not None:
         md_pred = doc.export_to_markdown(page_break_placeholder=page_break_placeholder)
         _verify_regression_test(md_pred, filename=filename, ext="paged.md")
@@ -511,6 +535,14 @@ def _test_export_methods(
     # Test sHTML export ...
     html_pred = doc.export_to_html()
     _verify_regression_test(html_pred, filename=filename, ext="html")
+
+    # if test_annotations:
+    #     # include_annotations=True is the default
+    #     _verify_regression_test(
+    #         pred=doc.export_to_html(include_annotations=False),
+    #         filename=filename,
+    #         ext="include_annotations_false.html",
+    #     )
 
     # Test DocTags export ...
     dt_pred = doc.export_to_doctags()
