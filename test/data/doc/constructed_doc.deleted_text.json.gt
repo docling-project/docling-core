@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "name": "Untitled 1",
   "furniture": {
     "self_ref": "#/furniture",
@@ -1203,6 +1203,9 @@
       "data": {
         "table_cells": [
           {
+            "self_ref": "0",
+            "children": [],
+            "content_layer": "body",
             "row_span": 2,
             "col_span": 1,
             "start_row_offset_idx": 0,
@@ -1215,6 +1218,9 @@
             "row_section": false
           },
           {
+            "self_ref": "0",
+            "children": [],
+            "content_layer": "body",
             "row_span": 1,
             "col_span": 2,
             "start_row_offset_idx": 0,
@@ -1227,6 +1233,9 @@
             "row_section": false
           },
           {
+            "self_ref": "0",
+            "children": [],
+            "content_layer": "body",
             "row_span": 1,
             "col_span": 1,
             "start_row_offset_idx": 1,
@@ -1239,6 +1248,9 @@
             "row_section": false
           },
           {
+            "self_ref": "0",
+            "children": [],
+            "content_layer": "body",
             "row_span": 1,
             "col_span": 1,
             "start_row_offset_idx": 1,
@@ -1251,6 +1263,9 @@
             "row_section": false
           },
           {
+            "self_ref": "0",
+            "children": [],
+            "content_layer": "body",
             "row_span": 1,
             "col_span": 1,
             "start_row_offset_idx": 2,
@@ -1263,6 +1278,9 @@
             "row_section": false
           },
           {
+            "self_ref": "0",
+            "children": [],
+            "content_layer": "body",
             "row_span": 1,
             "col_span": 1,
             "start_row_offset_idx": 2,
@@ -1275,6 +1293,9 @@
             "row_section": false
           },
           {
+            "self_ref": "0",
+            "children": [],
+            "content_layer": "body",
             "row_span": 1,
             "col_span": 1,
             "start_row_offset_idx": 2,
@@ -1292,6 +1313,9 @@
         "grid": [
           [
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 2,
               "col_span": 1,
               "start_row_offset_idx": 0,
@@ -1304,6 +1328,9 @@
               "row_section": false
             },
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 1,
               "col_span": 2,
               "start_row_offset_idx": 0,
@@ -1316,6 +1343,9 @@
               "row_section": false
             },
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 1,
               "col_span": 2,
               "start_row_offset_idx": 0,
@@ -1330,6 +1360,9 @@
           ],
           [
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 2,
               "col_span": 1,
               "start_row_offset_idx": 0,
@@ -1342,6 +1375,9 @@
               "row_section": false
             },
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 1,
               "col_span": 1,
               "start_row_offset_idx": 1,
@@ -1354,6 +1390,9 @@
               "row_section": false
             },
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 1,
               "col_span": 1,
               "start_row_offset_idx": 1,
@@ -1368,6 +1407,9 @@
           ],
           [
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 1,
               "col_span": 1,
               "start_row_offset_idx": 2,
@@ -1380,6 +1422,9 @@
               "row_section": false
             },
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 1,
               "col_span": 1,
               "start_row_offset_idx": 2,
@@ -1392,6 +1437,9 @@
               "row_section": false
             },
             {
+              "self_ref": "0",
+              "children": [],
+              "content_layer": "body",
               "row_span": 1,
               "col_span": 1,
               "start_row_offset_idx": 2,

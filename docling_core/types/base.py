@@ -29,7 +29,7 @@ from docling_core.utils.alias import AliasModel
 from docling_core.utils.validators import validate_datetime, validate_unique_list
 
 # (subset of) JSON Pointer URI fragment id format, e.g. "#/main-text/84":
-_JSON_POINTER_REGEX: Final[str] = r"^#(?:/([\w-]+)(?:/(\d+))?)?$"
+_JSON_POINTER_REGEX: Final[str] = r"^(?:#|\d+(?:#)?)(?:/(?:[\w-]+|\d+))*$"
 
 LanguageT = TypeVar("LanguageT", bound=str)
 IdentifierTypeT = TypeVar("IdentifierTypeT", bound=str)

@@ -286,166 +286,214 @@ tables:
   content_layer: body
   data:
     grid:
-    - - col_span: 1
+    - - children: []
+        col_span: 1
         column_header: false
+        content_layer: body
         end_col_offset_idx: 1
         end_row_offset_idx: 2
         row_header: false
         row_section: false
         row_span: 2
+        self_ref: '0'
         start_col_offset_idx: 0
         start_row_offset_idx: 0
         text: Product
-      - col_span: 2
+      - children: []
+        col_span: 2
         column_header: false
+        content_layer: body
         end_col_offset_idx: 3
         end_row_offset_idx: 1
         row_header: false
         row_section: false
         row_span: 1
+        self_ref: '0'
         start_col_offset_idx: 1
         start_row_offset_idx: 0
         text: Years
-      - col_span: 2
+      - children: []
+        col_span: 2
         column_header: false
+        content_layer: body
         end_col_offset_idx: 3
         end_row_offset_idx: 1
         row_header: false
         row_section: false
         row_span: 1
+        self_ref: '0'
         start_col_offset_idx: 1
         start_row_offset_idx: 0
         text: Years
-    - - col_span: 1
+    - - children: []
+        col_span: 1
         column_header: false
+        content_layer: body
         end_col_offset_idx: 1
         end_row_offset_idx: 2
         row_header: false
         row_section: false
         row_span: 2
+        self_ref: '0'
         start_col_offset_idx: 0
         start_row_offset_idx: 0
         text: Product
-      - col_span: 1
+      - children: []
+        col_span: 1
         column_header: false
+        content_layer: body
         end_col_offset_idx: 2
         end_row_offset_idx: 2
         row_header: false
         row_section: false
         row_span: 1
+        self_ref: '0'
         start_col_offset_idx: 1
         start_row_offset_idx: 1
         text: '2016'
-      - col_span: 1
+      - children: []
+        col_span: 1
         column_header: false
+        content_layer: body
         end_col_offset_idx: 3
         end_row_offset_idx: 2
         row_header: false
         row_section: false
         row_span: 1
+        self_ref: '0'
         start_col_offset_idx: 2
         start_row_offset_idx: 1
         text: '2017'
-    - - col_span: 1
+    - - children: []
+        col_span: 1
         column_header: false
+        content_layer: body
         end_col_offset_idx: 1
         end_row_offset_idx: 3
         row_header: false
         row_section: false
         row_span: 1
+        self_ref: '0'
         start_col_offset_idx: 0
         start_row_offset_idx: 2
         text: Apple
-      - col_span: 1
+      - children: []
+        col_span: 1
         column_header: false
+        content_layer: body
         end_col_offset_idx: 2
         end_row_offset_idx: 3
         row_header: false
         row_section: false
         row_span: 1
+        self_ref: '0'
         start_col_offset_idx: 1
         start_row_offset_idx: 2
         text: '49823'
-      - col_span: 1
+      - children: []
+        col_span: 1
         column_header: false
+        content_layer: body
         end_col_offset_idx: 3
         end_row_offset_idx: 3
         row_header: false
         row_section: false
         row_span: 1
+        self_ref: '0'
         start_col_offset_idx: 2
         start_row_offset_idx: 2
         text: '695944'
     num_cols: 3
     num_rows: 3
     table_cells:
-    - col_span: 1
+    - children: []
+      col_span: 1
       column_header: false
+      content_layer: body
       end_col_offset_idx: 1
       end_row_offset_idx: 2
       row_header: false
       row_section: false
       row_span: 2
+      self_ref: '0'
       start_col_offset_idx: 0
       start_row_offset_idx: 0
       text: Product
-    - col_span: 2
+    - children: []
+      col_span: 2
       column_header: false
+      content_layer: body
       end_col_offset_idx: 3
       end_row_offset_idx: 1
       row_header: false
       row_section: false
       row_span: 1
+      self_ref: '0'
       start_col_offset_idx: 1
       start_row_offset_idx: 0
       text: Years
-    - col_span: 1
+    - children: []
+      col_span: 1
       column_header: false
+      content_layer: body
       end_col_offset_idx: 2
       end_row_offset_idx: 2
       row_header: false
       row_section: false
       row_span: 1
+      self_ref: '0'
       start_col_offset_idx: 1
       start_row_offset_idx: 1
       text: '2016'
-    - col_span: 1
+    - children: []
+      col_span: 1
       column_header: false
+      content_layer: body
       end_col_offset_idx: 3
       end_row_offset_idx: 2
       row_header: false
       row_section: false
       row_span: 1
+      self_ref: '0'
       start_col_offset_idx: 2
       start_row_offset_idx: 1
       text: '2017'
-    - col_span: 1
+    - children: []
+      col_span: 1
       column_header: false
+      content_layer: body
       end_col_offset_idx: 1
       end_row_offset_idx: 3
       row_header: false
       row_section: false
       row_span: 1
+      self_ref: '0'
       start_col_offset_idx: 0
       start_row_offset_idx: 2
       text: Apple
-    - col_span: 1
+    - children: []
+      col_span: 1
       column_header: false
+      content_layer: body
       end_col_offset_idx: 2
       end_row_offset_idx: 3
       row_header: false
       row_section: false
       row_span: 1
+      self_ref: '0'
       start_col_offset_idx: 1
       start_row_offset_idx: 2
       text: '49823'
-    - col_span: 1
+    - children: []
+      col_span: 1
       column_header: false
+      content_layer: body
       end_col_offset_idx: 3
       end_row_offset_idx: 3
       row_header: false
       row_section: false
       row_span: 1
+      self_ref: '0'
       start_col_offset_idx: 2
       start_row_offset_idx: 2
       text: '695944'
@@ -1015,4 +1063,4 @@ texts:
   prov: []
   self_ref: '#/texts/50'
   text: The end.
-version: 1.3.0
+version: 1.4.0
