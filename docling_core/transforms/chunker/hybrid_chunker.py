@@ -9,6 +9,7 @@ from functools import cached_property
 from typing import Any, Iterable, Iterator, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from transformers import PreTrainedTokenizerBase
 
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
@@ -70,13 +71,24 @@ class HybridChunker(BaseChunker):
     @model_validator(mode="before")
     @classmethod
     def _patch(cls, data: Any) -> Any:
-        if isinstance(data, dict) and (tokenizer := data.get("tokenizer")):
+        if isinstance(data, dict):
+            tokenizer = data.get("tokenizer")
             max_tokens = data.get("max_tokens")
-            if isinstance(tokenizer, BaseTokenizer):
-                pass
-            else:
+            if not isinstance(tokenizer, BaseTokenizer) and (
+                # some legacy param passed:
+                tokenizer is not None
+                or max_tokens is not None
+            ):
                 from docling_core.transforms.chunker.tokenizer.huggingface import (
                     HuggingFaceTokenizer,
+                )
+
+                warnings.warn(
+                    "Deprecated initialization parameter types for HybridChunker. "
+                    "For updated usage check out "
+                    "https://docling-project.github.io/docling/examples/hybrid_chunking/",
+                    DeprecationWarning,
+                    stacklevel=3,
                 )
 
                 if isinstance(tokenizer, str):
@@ -84,9 +96,12 @@ class HybridChunker(BaseChunker):
                         model_name=tokenizer,
                         max_tokens=max_tokens,
                     )
-                else:
-                    # migrate previous HF-based tokenizers
-                    kwargs = {"tokenizer": tokenizer}
+                elif tokenizer is None or isinstance(
+                    tokenizer, PreTrainedTokenizerBase
+                ):
+                    kwargs = {
+                        "tokenizer": tokenizer or _get_default_tokenizer().tokenizer
+                    }
                     if max_tokens is not None:
                         kwargs["max_tokens"] = max_tokens
                     data["tokenizer"] = HuggingFaceTokenizer(**kwargs)
