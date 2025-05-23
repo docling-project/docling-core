@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import typing
+import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
@@ -4109,7 +4110,10 @@ class DoclingDocument(BaseModel):
     @classmethod
     def validate_document(cls, d: "DoclingDocument"):
         """validate_document."""
-        if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
-            raise ValueError("Document hierachy is inconsistent.")
+        with warnings.catch_warnings():
+            # ignore warning from deprecated furniture
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
+                raise ValueError("Document hierachy is inconsistent.")
 
         return d
