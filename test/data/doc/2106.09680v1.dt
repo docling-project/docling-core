@@ -1,0 +1,564 @@
+<doctag><section_header_level_1><loc_76><loc_60><loc_232><loc_91>Accuracy, Interpretability, and Differential Privacy via Explainable Boosting</section_header_level_1>
+<section_header_level_1><loc_74><loc_100><loc_136><loc_107>Abstract</section_header_level_1>
+<text><loc_74><loc_111><loc_236><loc_203>We show that adding differential privacy to Explainable Boosting Machines (EBMs), a recent method for training interpretable ML models, yields state-of-the-art accuracy while protecting privacy. Our experiments on multiple classification and regression datasets show that DP-EBM models suffer surprisingly little accuracy loss even with strong differential privacy guarantees. In addition to high accuracy, two other benefits of applying DP to EBMs are: a) trained models provide exact global and local interpretability, which is often important in settings where differential privacy is needed; and b) the models can be edited after training without loss of privacy to correct errors which DP noise may have introduced.</text>
+<section_header_level_1><loc_74><loc_224><loc_162><loc_230>Introduction</section_header_level_1>
+<text><loc_74><loc_234><loc_238><loc_368>Security researchers have repeatedly shown that machine learning models can leak information about training data (Carlini et al. , 2018 ; Melis et al. , 2019 ) . In industries like healthcare, finance and criminal justice, models are trained on sensitive information, and this form of leakage can be especially disastrous. To combat this, researchers have embraced differential privacy, which establishes a strong mathematical standard for privacy guarantees on algorithms (Dwork et al. , 2006 , 2014 ) . In many of these high-stakes situations, model interpretability is also important to provide audits, help domain experts such as doctors vet the models, and to correct unwanted errors before deployment (Caruana et al. , 2015 ; Rudin, 2019 ) .
+In this paper, we address both concerns by developing a private algorithm for learning Generalized Additive Models (GAMs) (Hastie and Tibshirani, 1990 ) . We show that this method can provide strong privacy guarantees, high accuracy, and exact global and local interpretability on tabular datasets.</text>
+<text><loc_74><loc_377><loc_239><loc_410><loc_261><loc_60><loc_426><loc_90>While GAMs were traditionally fit using smooth low-order splines (Hastie and Tibshirani, 1990 ) , we focus on Explainable Boosting Machines (EBMs), a modern implementation that learns shape functions using boosted decision trees (Lou et al. , 2012 ; Nori et al. , 2019 ) . EBMs are especially interesting because they often match the accuracy of complex blackbox algorithms like XGBoost and random forests,
+while having a simple optimization procedure and final structure (Chang et al. , 2020 ; Wang et al. , 2020 ) .</text>
+<text><loc_261><loc_100><loc_402><loc_102>Our main contributions for this paper are:</text>
+<unordered_list><list_item><loc_261><loc_112><loc_413><loc_132>We introduce DP-EBMs, a differentially private version of EBMs, and provide a rigorous privacy analysis of this algorithm using the recently introduced GDP framework (Dong et al. , 2019 ) .</list_item>
+<list_item><loc_261><loc_142><loc_425><loc_174>Our experimental results on tabular classification and regression problems show that DP-EBMs significantly outperform other DP learning methods. For example, at ε = 0.5 , DP-EBMs have at most a 0.05 loss in AUC compared to non-private EBMs on benchmark datasets.</list_item>
+<list_item><loc_261><loc_183><loc_423><loc_210>We demonstrate how combining interpretability with differential privacy can address common concerns with DP in practice by enabling users to repair some of the impact of noise on the model and enforce desirable constraints like monotonicity.</list_item>
+</unordered_list>
+<inline><loc_261><loc_225><loc_423><loc_258>
+<text>Before diving into details in the following sections, Figure</text>
+<text>1</text>
+<text>provides a quick peek at the empirical results. In summary, DP-EBMs outperform other differentially private learning methods on a variety of classification and regression tasks for many reasonable values of</text>
+<formula>\varepsilon</formula>
+<text>.</text>
+</inline>
+<picture><loc_281><loc_272><loc_405><loc_305></picture>
+<text><loc_261><loc_318><loc_425><loc_370>Figure 1: Comparison of two variants of DP-EBMs with other DP algorithms on four classification datasets. DP-EBMs significantly outperform other methods in every setting. For the full experimental setup and comparisons on regression models, please see Section 4.</text>
+<section_header_level_1><loc_261><loc_396><loc_348><loc_403>Preliminaries</section_header_level_1>
+<section_header_level_1><loc_263><loc_402><loc_348><loc_403><loc_74><loc_60><loc_203><loc_77>Explainable Boosting Machines</section_header_level_1>
+<page_break>
+<text><loc_74><loc_90><loc_236><loc_111>Explainable Boosting Machines belong to the family of Generalized Additive Models (GAMs), which are restricted machine learning models that have the form:</text>
+<inline><loc_79><loc_119><loc_203><loc_123>
+<formula>g(E[y])=\beta+f_{0}(x_{0})+f_{1}(x_{1})+...f_{k}(x_{k})</formula>
+</inline>
+<inline><loc_74><loc_133><loc_236><loc_159>
+<text>where</text>
+<formula>\beta</formula>
+<text>is an intercept, each</text>
+<formula>f_{j}</formula>
+<text>is a univariate function that operates on a single input feature</text>
+<formula>x_{j}</formula>
+<text>, and</text>
+<formula>g</formula>
+<text>is a link function that adapts the model to different settings like classification and regression</text>
+<text>(Hastie and Tibshirani,1990)</text>
+<text>.</text>
+</inline>
+<inline><loc_74><loc_168><loc_236><loc_261>
+<text>While GAMs are more flexible than linear models (where each function</text>
+<formula>f_{j}</formula>
+<text>is further restricted to be linear), they are significantly less flexible than most machine learning models due to their inability to learn high-order interactions between features (e.g.</text>
+<formula>f(x_{0},x_{1},x_{2})</formula>
+<text>). This restricted additive structure has the benefit of allowing GAMs to provide exact interpretability. At prediction time, each feature contributes a score, which are then summed and passed through a link function. These scores show exactly what each feature contributes to the prediction, and can be sorted, compared, and reasoned about</text>
+<text>(Lundberg and Lee,2017)</text>
+<text>. In addition, each function</text>
+<formula>f_{k}</formula>
+<text>can be visualized to provide an exact global description of how the model operates across varying inputs.</text>
+</inline>
+<text><loc_74><loc_270><loc_234><loc_297>EBMs are a recent, popular open-source implementation of boosted-tree GAMs (Nori et al. , 2019 ) . We extend the EBM package to include DP-EBMs , which makes DP-EBMs as easy to use as regular EBMs or any scikit-learn model.</text>
+<text><loc_74><loc_306><loc_239><loc_374>The EBM training procedure begins by bucketing data from continuous features into discrete bins, ensuring that each bin has approximately equal amounts of data. This pre-processing step is a common optimization in tree-based learning algorithms, and is used by popular packages like LightGBM and XGBoost (Ke et al. , 2017 ; Chen and Guestrin, 2016 ) . The most time consuming part of training a decision tree is finding the best split; discretizing the data before growing trees reduces the search space for splits which can significantly speed up learning with little cost in accuracy.</text>
+<inline><loc_74><loc_62><loc_423><loc_410>
+<text>After pre-processing, the goal is to learn shape functions</text>
+<formula>f_{k}</formula>
+<text>for each feature.
+In traditional boosting, each tree greedily searches the feature space for the next best feature to split. In contrast, EBMs use</text>
+<text>cyclic</text>
+<text>gradient boosting to visit each feature in round-robin fashion.
+To enforce additivity, each tree is only allowed to use one feature, thus preventing interactions from being learned</text>
+<text>(Louet al.,2012)</text>
+<text>.</text>
+</inline>
+<inline><loc_261><loc_88><loc_425><loc_174>
+<text>Cyclic boosting begins by growing a shallow decision tree on the first feature in the dataset.
+The predictions the tree makes on each bin of the histogram are then multiplied by a low learning rate, and these weak predictions for each bin of data become the initial shape function for the first feature.
+The process then iterates to the second feature, where a tree is trained to predict on the residuals (the remaining error) of the first features model. Once a shallow tree has been learned for every feature, the boosting process cycles back to the first feature and continues in a round robin fashion for all</text>
+<formula>E</formula>
+<text>epochs to jointly optimize all functions.
+The pseudocode for this algorithm can be found in Algorithm</text>
+<text>1</text>
+<text>.</text>
+</inline>
+<picture><loc_287><loc_189><loc_425><loc_281></picture>
+<inline><loc_263><loc_295><loc_425><loc_325>
+<text>A single iteration of cyclic boosting, showing how each tree operates on pre-processed data and gets collapsed into the univariate shape function</text>
+<formula>f_{k}</formula>
+<text>.</text>
+</inline>
+<section_header_level_1><loc_263><loc_348><loc_380><loc_356>Differential Privacy</section_header_level_1>
+<text><loc_263><loc_360><loc_405><loc_373>Here we state some basic results in Differential Privacy (DP) that we use in our analysis.</text>
+<section_header_level_1><loc_263><loc_394><loc_389><loc_403>(Differential Privacy)</section_header_level_1>
+<text><loc_281><loc_402><loc_389><loc_405><loc_74><loc_62><loc_236><loc_78>A randomized algorithm  is (  ,  )-differentially private if for all neighboring databases D 1 , D 2  D n , and for all sets  of possible outputs:</text>
+<page_break>
+<section_header_level_1><loc_74><loc_99><loc_209><loc_108>(Gaussian Mechanism)</section_header_level_1>
+<text><loc_74><loc_113><loc_207><loc_125>Given any function f : D   k , the Gaussian Mechanism is defined as:</text>
+<text><loc_74><loc_135><loc_239><loc_156>where  2 is the  2 -sensitivity and Y i are i.i.d. random variables drawn from   ( 0 ,  2 ) . The Gaussian Mechanism is (  ,  )-differentially private when  > 2  ln  1.25 /    2 /  and   ( 0 , 1 ) .</text>
+<text><loc_74><loc_165><loc_239><loc_185>One of the main strengths of DP are the composition theorems, which analyze the cumulative privacy guarantee when applying many differentially private mechanisms.</text>
+<section_header_level_1><loc_74><loc_207><loc_79><loc_213></section_header_level_1>
+<text><loc_74><loc_217><loc_203><loc_226>(Theorem 4.3 from (Kairouz et al. , 2017 ) )</text>
+<text><loc_74><loc_235><loc_239><loc_244>For  > 0 ,  > 0 and   [ 0 , 1 ] , the mechanism that adds Gaussian noise with variance:</text>
+<text><loc_74><loc_253><loc_239><loc_262>satisfies (  ,  ) -differential privacy under k -fold adaptive composition.</text>
+<inline><loc_74><loc_271><loc_229><loc_298>
+<text>A qualitative way to understand the above theorem is that if there are</text>
+<formula>k</formula>
+<text>differentially private mechanisms each of which is</text>
+<formula>(\varepsilon,\delta)</formula>
+<text>-DP acting on the same data set, then the overall privacy loss is roughly</text>
+<formula>\varepsilon\cdot\sqrt{k}</formula>
+<text>.</text>
+</inline>
+<text><loc_74><loc_307><loc_232><loc_375>Unfortunately, Theorem 2 is not the optimal bound one can achieve on the composition of private mechanisms.
+A tighter analysis of composition for Gaussian mechanisms, called Gaussian Differential Privacy (GDP), was recently proposed by (Dong et al. , 2019 ) .
+In our experiments, GDP analysis gave us better privacy bounds. We summarize the main theorems we borrow from (Dong et al. , 2019 ) below. For completeness, we compare the results from both composition methods (EBM-Classic and EBM-GDP) in Tables 2 and 3 .</text>
+<section_header_level_1><loc_76><loc_397><loc_85><loc_403></section_header_level_1>
+<text><loc_76><loc_402><loc_85><loc_405><loc_261><loc_61><loc_423><loc_90>For a dataset D , define the Gaussian mechanism that operates on a univariate statistic  with sensitivity  as M  ( D ) =   ( D ) + N  o  i  s  e , where Noise is sampled from a Gaussian distribution   ( 0 ,  2 /  2 ) . Then, M is  -GDP.</text>
+<inline><loc_261><loc_100><loc_419><loc_114>
+<text>If</text>
+<formula>M_{1},M_{2},\ldots,M_{k}</formula>
+<text>are</text>
+<formula>k</formula>
+<text>GDP mechanisms with parameters</text>
+<formula>\mu_{1},\mu_{2},\ldots,\mu_{k}</formula>
+<text>, then the following GDP composition theorem holds:</text>
+</inline>
+<section_header_level_1><loc_263><loc_135><loc_270><loc_141></section_header_level_1>
+<text><loc_261><loc_145><loc_421><loc_160>The k -fold composition of  i -GDP mechanisms is  1 2 +  2 2 +    k 2 -GDP.</text>
+<inline><loc_261><loc_169><loc_419><loc_183>
+<text>Finally, one can convert GDP guarantees to the standard</text>
+<formula>(\epsilon,\delta)</formula>
+<text>-DP guarantee using the following theorem:</text>
+</inline>
+<section_header_level_1><loc_263><loc_204><loc_272><loc_210></section_header_level_1>
+<text><loc_261><loc_215><loc_425><loc_225>A mechanism is  -GDP if and only if it is (  ,  ) -DP where</text>
+<text><loc_261><loc_239><loc_426><loc_259>Besides the mathematical elegance, a key advantage of GDP is that it provides a tighter analysis of composition guarantees of differentially private mechanisms.</text>
+<section_header_level_1><loc_263><loc_279><loc_331><loc_286>Notation</section_header_level_1>
+<inline><loc_261><loc_296><loc_425><loc_341>
+<text>For rest of the paper, we adopt the following notation.
+We denote by</text>
+<formula>H_{k}</formula>
+<text>the histogram for feature</text>
+<formula>k</formula>
+<text>and</text>
+<formula>\hat{H}_{k}</formula>
+<text>for the corresponding differentially private histogram.
+We use</text>
+<formula>K</formula>
+<text>to denote the total number of features.
+By a slight abuse of notation, we write</text>
+<formula>x_{i}\in H_{k}(b)</formula>
+<text>to mean that the data point</text>
+<formula>x_{i}</formula>
+<text>belongs to the histogram bin</text>
+<formula>b</formula>
+<text>, and use</text>
+<formula>\rho(H_{k},x_{i})</formula>
+<text>to look up the bin</text>
+<formula>b</formula>
+<text>such that</text>
+<formula>x_{i}\in H_{k}(b)</formula>
+<text>.</text>
+</inline>
+<section_header_level_1><loc_263><loc_361><loc_342><loc_369>Algorithms</section_header_level_1>
+<inline><loc_74><loc_61><loc_423><loc_410>
+<text>To add differential privacy guarantees to EBMs, we modify the EBM training procedure Algorithm</text>
+<text>1</text>
+<text>, yielding DP-EBM Algorithm</text>
+<text>2</text>
+<text>.
+We first modify the pre-processing procedure to generate differentially private bins (published as histograms</text>
+<formula>\hat{H}_{k}</formula>
+<text>per feature), which log the bin ranges and how many data points fall in each bin (line 7).
+Next, we analyze the boosting process.
+In traditional tree building, there are two major data-intensive operations: learning the structure of the tree (what feature and feature threshold to install at each node in the tree), and calculating the predicted value of each leaf node</text>
+<text>(Breimanet al.,1984)</text>
+<text>.
+Prior work on differentially private tree learning typically splits budget between choosing which features to split on, where to split them, and learning prediction values for each leaf node</text>
+<text>(Fletcher and Islam,2015;Wanget al.,; Liet al.,2020)</text>
+<text>.</text>
+</inline>
+<page_break>
+<inline><loc_74><loc_142><loc_238><loc_293>
+<text>EBMs naturally avoid spending any privacy budget on choosing which features to include in each tree  the round-robin schedule of visiting features is completely data agnostic. Furthermore, by choosing the splitting thresholds at random, we can learn the entire structure of each tree without looking at any training data (line 14).
+Prior work and our empirical evaluations both show that choosing random splits results in little accuracy loss</text>
+<text>(Geurtset al.,2006; Fletcher and Islam,2019)</text>
+<text>.
+We therefore spend the entirety of our budget per iteration on learning the values for each leaf node, which are simply averages of the residuals for the data belonging to each node (lines 16-18).
+For each leaf, we sum the residuals of data belonging to that leaf, add calibrated Gaussian noise based on their bounded sensitivity</text>
+<formula>R</formula>
+<text>, and divide by a differentially private count of data in each leaf (contained in the previously published</text>
+<formula>\hat{H}_{k}</formula>
+<text>).
+Then, as in non-private EBMs, the noisy tree is merged into the feature function</text>
+<formula>f_{k}</formula>
+<text>(line 20), and the cyclic boosting procedure moves onto the next feature and continues for all</text>
+<formula>E</formula>
+<text>epochs.
+The pseudocode for the DP-EBM algorithm is described in Algorithm</text>
+<text>2</text>
+<text>, with modifications to the non-private version highlighted in blue.</text>
+</inline>
+<inline><loc_74><loc_303><loc_238><loc_383>
+<text>We now provide the privacy analysis of our algorithm using the GDP framework.
+Our proof of privacy has the following two components.
+First we fix a single iteration of the algorithm (lines 13-26), and show that each iteration is</text>
+<formula>\frac{1}{\sigma}-GDP</formula>
+<text>.
+At the end of each iteration, we publicly release the functions</text>
+<formula>f^{t}_{k}</formula>
+<text>for all</text>
+<formula>k</formula>
+<text>.
+Note that although the final model only uses the</text>
+<formula>f^{t}_{k}</formula>
+<text>values of the</text>
+<text>, releasing every</text>
+<formula>f^{t}_{k}</formula>
+<text>leads to a simpler privacy analysis.
+Next, we calculate the total privacy loss of our algorithm by simply viewing it as a composition of</text>
+<formula>E\cdot K</formula>
+<text>private mechanisms.
+It is important to note that composition theorems work even when the mechanisms depend on each other.</text>
+</inline>
+<section_header_level_1><loc_74><loc_382><loc_93><loc_383><loc_263><loc_60><loc_272><loc_66></section_header_level_1>
+<text><loc_263><loc_71><loc_391><loc_80>Each iteration of our algorithm is 1   G  D  P .</text>
+<section_header_level_1><loc_263><loc_103><loc_316><loc_110>Proof.</section_header_level_1>
+<inline><loc_261><loc_121><loc_419><loc_153>
+<text>We observe that calculating</text>
+<formula>T</formula>
+<text>in the line 16 is the only step of our algorithm where we access the sensitive information of the users.
+Thus to prove the theorem we need to argue that the noise we are adding satisfies requirements of Theorem</text>
+<text>3</text>
+<text>.
+Consider</text>
+</inline>
+<inline><loc_261><loc_163><loc_423><loc_261>
+<text>The second equality follows from the definition of</text>
+<formula>r^{t}_{i}</formula>
+<text>as given in the line 25 of the algorithm.
+Further,</text>
+<formula>Z</formula>
+<text>is computed using publicly released</text>
+<formula>f^{t-1}_{k}</formula>
+<text>values from the iteration</text>
+<formula>t-1</formula>
+<text>, and hence does not depend on the user data.
+Therefore, the amount of noise we need to add to the statistic</text>
+<formula>T</formula>
+<text>depends on the sensitivity of quantity</text>
+<formula>\left(\sum_{b\in S_{\ell}}\sum_{x_{i}\in\hat{H}_{k}(b)}y_{i}\right)</formula>
+<text>, which we argue is bounded by at most</text>
+<formula>R</formula>
+<text>.
+This follows from three simple facts: 1) The range of each</text>
+<formula>y_{i}</formula>
+<text>is bounded by at most</text>
+<formula>R</formula>
+<text>; 2) For each feature, each user contributes exactly to one bin of the histogram; 3) Random splits performed in line 14 of our algorithm partition the histogram bins into disjoint splits, hence each users data belongs to precisely one split.
+The proof now follows from Theorem</text>
+<text>3</text>
+<text>.</text>
+</inline>
+<section_header_level_1><loc_263><loc_285><loc_275><loc_292></section_header_level_1>
+<text><loc_261><loc_296><loc_348><loc_305>Our algorithm is E  K   G  D  P .</text>
+<section_header_level_1><loc_263><loc_329><loc_316><loc_335>Proof.</section_header_level_1>
+<inline><loc_261><loc_346><loc_423><loc_367>
+<text>As each iteration of our algorithm is</text>
+<formula>\frac{1}{\sigma}-GDP</formula>
+<text>, the proof follows from the composition of GDP-mechanisms as given in Theorem</text>
+<text>4</text>
+<text>over all</text>
+<formula>E\cdot K</formula>
+<text>iterations.</text>
+</inline>
+<inline><loc_261><loc_376><loc_425><loc_404>
+<text>The GDP bounds can be converted into</text>
+<formula>(\epsilon,\delta)</formula>
+<text>-DP guarantees using Theorem</text>
+<text>5</text>
+<text>.
+To calibrate</text>
+<formula>\sigma</formula>
+<text>in line 17, we fix the</text>
+<formula>\varepsilon</formula>
+<text>and</text>
+<formula>\delta</formula>
+<text>privacy parameters we want to achieve, use Theorem</text>
+<text>5</text>
+<text>to calculate</text>
+<formula>\mu</formula>
+<text>, and finally calculate</text>
+<formula>\sigma</formula>
+<text>by setting</text>
+<formula>\mu</formula>
+<text>=</text>
+<formula>\frac{\sqrt{E\cdot K}}{\sigma}</formula>
+<text>.</text>
+</inline>
+<section_header_level_1><loc_263><loc_402><loc_384><loc_406><loc_76><loc_60><loc_164><loc_67>Experiments</section_header_level_1>
+<page_break>
+<picture><loc_126><loc_82><loc_238><loc_112></picture>
+<text><loc_74><loc_126><loc_238><loc_156>Figure 3: Risk of dying as a function of age from three EBMs trained on the healthcare dataset with varying privacy guarantees.</text>
+<text><loc_74><loc_162><loc_239><loc_177>We compare the following algorithms on four classification and four regression datasets:</text>
+<unordered_list><list_item><loc_74><loc_186><loc_238><loc_243>DP-EBM (Algorithm 2 ): We use the following (default) parameters for all experiments: max_bins = 32, learning_rate = 0.01, n_epochs = 300, max_leaves = 3, with 10- of the total privacy budget allocated to binning and 90- to training. We present two results for DP-EBMs: “EBM-Classic”, where we apply strong composition from (Kairouz et al. , 2017 ) , and “EBM-GDP”, where composition is more tightly tracked via Gaussian Differential Privacy (Dong et al. , 2019 ) .</list_item>
+<list_item><loc_74><loc_252><loc_234><loc_297>Generalized Linear Models: Linear and Logistic Regression are widely used methods for interpretable machine learning. For both models, we use IBM’s differential privacy library (Holohan, 2019 ) which follows the algorithms described in (Sheffet, 2015 ; Imtiaz and Sarwate, 2016 ) for linear regression and in (Chaudhuri et al. , 2011 ) for logistic regression.</list_item>
+<list_item><loc_74><loc_306><loc_232><loc_333>DP Boost: DPBoost is a differentially private gradient boosted decision tree algorithm introduced by (Li et al. , 2020 ) . DPBoost builds on top of LightGBM, a popular tree-based boosting framework (Ke et al. , 2017 ) .</list_item>
+</unordered_list>
+<inline><loc_74><loc_342><loc_238><loc_386>
+<text>To evaluate performance, we generate 25 randomly drawn 80/20 train-test splits and report the average test-set accuracy and standard deviation at varying</text>
+<formula>\varepsilon</formula>
+<text>and fixed</text>
+<formula>\delta=10^{-6}</formula>
+<text>. Results are presented in Tables</text>
+<text>2</text>
+<text>and</text>
+<text>3</text>
+<text>using root mean squared error (RMSE) as the metric for regression and area under the ROC curve (AUROC) for classification.</text>
+</inline>
+<text><loc_74><loc_395><loc_234><loc_410><loc_261><loc_63><loc_423><loc_114>All models were trained using default or recommended parameters from the literature or open source repositories. Hyperparameter tuning is a privacy-sensitive operation, and how to best partition budget and tune parameters of differentially private models is an open research problem (Liu and Talwar, 2019 ; Kusner et al. , 2015 ) .
+We did not tune hyperparameters to avoid this complexity.
+The default parameters for DP-EBMs appear to work well on a variety of datasets, which helps conserve the privacy budget and also makes DP-EBMs easy to use in practice.</text>
+<text><loc_261><loc_124><loc_426><loc_168>The datasets used in these experiments (with the exception of the healthcare data, which contains real patient data) are publicly available and summarized in Table LABEL:table:dataset statistics . We include results from the private healthcare dataset to highlight how these models might perform in a high stakes setting where both privacy and interpretability are critical.</text>
+<text><loc_261><loc_177><loc_418><loc_180>Experiment dataset statistics and descriptions.</text>
+<section_header_level_1><loc_263><loc_201><loc_425><loc_219>Discussion of Experimental Results</section_header_level_1>
+<inline><loc_261><loc_218><loc_425><loc_334>
+<text>As shown in Figure 1 and again in more detail in Tables 2 and 3, DP-EBMs exhibit strong performance across a wide range of</text>
+<formula>\varepsilon</formula>
+<text>values.
+In classification, the difference in AUROC between non-private DP-EBMs and even</text>
+<formula>\varepsilon=0.5</formula>
+<text>DP-EBMs is at most 0.05, which is a comparatively modest tradeoff for strong privacy guarantees.
+At a more modest</text>
+<formula>\varepsilon=4</formula>
+<text>, the average AUROC for DPBoost, Logistic Regression and DP-EBMs is 0.62, 0.56 and 0.88, respectively.
+The datasets chosen are not particularly favorable for EBMs  in the non-private setting, LightGBM outperforms EBMs in over half of our experiments. However, when training with differential privacy, DP-EBMs outperform other models in all 40 experimental settings. In the following sections, we offer some thoughts on why the DP-EBM algorithm might be comparatively well suited for differential privacy.</text>
+</inline>
+<section_header_level_1><loc_263><loc_355><loc_389><loc_373>DP-EBMs vs Linear Models</section_header_level_1>
+<text><loc_261><loc_382><loc_423><loc_410><loc_74><loc_63><loc_236><loc_102>In the case of DP linear and logistic regression  the current standard for intelligible and private learning  we believe the additional accuracy of DP-EBMs might be explained by the extra flexibility of the GAM model class.
+In the non-private setting, the non-linear functions learned by GAMs often result in a boost in accuracy over the linear functions learned by linear models, and this advantage appears to translate to the private setting as well. In addition, the iterative nature of gradient boosting might give DP-EBMs the ability to recover from the impact of noise earlier in training.</text>
+<page_break>
+<section_header_level_1><loc_74><loc_123><loc_217><loc_130>DP-EBMs vs DPBoost</section_header_level_1>
+<inline><loc_74><loc_129><loc_238><loc_262>
+<text>Although it may not be surprising that DP-EBMs outperform restricted models such as DP linear regression, it is a little surprising that DP-EBMs outperform DPBoost which is a less restricted model class than DP-EBMs. We believe this might be due to the significant privacy budget savings when learning each tree. Unlike other DP tree-based learning algorithms, DP-EBMs spend no budget learning the structure of each tree, and focus exclusively on learning the best leaf node values. In addition, by growing shallow trees, each leaf often contains a large proportion of the dataset  with default parameters of 2 random splits, in expectation each leaf contains</text>
+<formula>\approx\frac{1}{3}</formula>
+<text>of the full data. This ensures that the impact of noise in the differentially private average calculated per iteration is dispersed across many training datapoints. In contrast, each tree in LightGBM/DPBoost contains up to 31 leaf nodes, thereby operating on much smaller amounts of data and magnifying the impact of noise.</text>
+</inline>
+<section_header_level_1><loc_74><loc_283><loc_207><loc_303>DP-EBM: Classic Composition vs GDP</section_header_level_1>
+<inline><loc_74><loc_302><loc_236><loc_374>
+<text>We also compare two variants of privacy budget tracking in DP-EBMs: EBM-Classic, which uses strong composition from</text>
+<text>(Kairouzet al.,2017)</text>
+<text>, and EBM-GDP which uses Gaussian differential privacy recently proposed by</text>
+<text>(Donget al.,2019)</text>
+<text>. While we can show analytically that budget tracking with GDP is tighter for our algorithm (and therefore requires less noise for the same privacy loss), it is interesting that the differences in final model accuracy are typically only noticeable in strong privacy settings (</text>
+<formula>\varepsilon\leq 1</formula>
+<text>).</text>
+</inline>
+<text><loc_74><loc_381><loc_232><loc_398>Area Under the ROC Curve (AUROC) algorithm comparison on classification datasets. Higher is better.</text>
+<text><loc_85><loc_406><loc_217><loc_410><loc_261><loc_61><loc_420><loc_67>Root Mean Squared Error (RMSE) algorithm comparison on regression datasets. Lower is better.</text>
+<picture><loc_261><loc_81><loc_395><loc_115></picture>
+<inline><loc_261><loc_129><loc_425><loc_159>
+<text>(Left) Original learned</text>
+<formula>f_{age}</formula>
+<text>from the healthcare dataset with</text>
+<formula>\varepsilon=1</formula>
+<text>.
+(Middle, Right) Postprocessed to enforce monotonicity.</text>
+</inline>
+<section_header_level_1><loc_263><loc_182><loc_338><loc_188>Discussion</section_header_level_1>
+<section_header_level_1><loc_263><loc_200><loc_415><loc_208>Editing DP-EBM Models</section_header_level_1>
+<text><loc_261><loc_207><loc_425><loc_297>While this paper has primarily focused on introducing and comparing DP-EBMs in terms of standard machine learning metrics, we believe it is important to highlight the unique capabilities that arise when combining interpretability with differential privacy. For example, recent work has shown that adding differentially private noise to machine learning algorithms can disproportionately impact minority groups (Cummings et al. , 2019 ; Bagdasaryan and Shmatikov, 2019 ) . This concern is compounded when models are trained and deployed in high-risk domains like finance and healthcare  even small errors on sparse regions of the feature space can have disatrous consequences.</text>
+<inline><loc_261><loc_304><loc_425><loc_398>
+<text>With intelligible models like DP-EBMs, some effects of noise on predictions are visible.
+Figure</text>
+<text>3</text>
+<text>shows the shape function DP-EBMs learned for the Age feature in the healthcare dataset at 3 different levels of privacy. In many healthcare problems, risk should monotonically increase as a function of age. While the non-private and</text>
+<formula>\varepsilon=4</formula>
+<text>models learn this behavior, there is significant distortion as a result of differentially private noise at</text>
+<formula>\varepsilon=1</formula>
+<text>. In this example, the</text>
+<formula>\varepsilon=1</formula>
+<text>model suggests that patients who are 80 are considerably lower risk than those who are 77 or 82, which is almost certainly not a real signal in the dataset. By using an intelligible model, domain experts can inspect the shape function</text>
+<formula>f_{age}</formula>
+<text>and prevent deploying a risky model that under predicts on 80 year olds.</text>
+</inline>
+<inline><loc_74><loc_62><loc_413><loc_410>
+<text>In addition to catching errors, domain experts can also correct unwanted learned effects without impacting privacy.
+Because the shape function</text>
+<formula>f_{age}</formula>
+<text>exactly describes how a model makes predictions, users can edit graphs of any feature to change the model. In our example, modifying y-axis value for</text>
+<formula>f_{age}</formula>
+<text>at ages 78-81 to remove the unwanted blip would remove this noise bias from the model.
+This form of model editing uses no data, and therefore results in no additional privacy loss under the post-processing property of differential privacy</text>
+<text>(Dworket al.,2006)</text>
+<text>. The ability to safely inspect and edit DP-EBM models before deployment is important for creating trust in differentially private models in high risk situations because some of the impacts of noise can be corrected.</text>
+</inline>
+<page_break>
+<section_header_level_1><loc_74><loc_171><loc_198><loc_191>Constraints such as monotonicity</section_header_level_1>
+<inline><loc_74><loc_190><loc_238><loc_268>
+<text>More complex forms of editing are also possible. For example, we can ensure monotonicity across the entire feature by borrowing from the calibration literature and applying</text>
+<text>isotonic regression</text>
+<text>on the shape function</text>
+<text>(Chakravarti,1989)</text>
+<text>.
+Isotonic regression uses the Pool Adjacent Violators (PAV) algorithm to minimize the edits necessary to ensure monotonicity, and is optimal with respect to squared error on the differences between the two functions</text>
+<text>(vanEeden,1958)</text>
+<text>. Importantly, this process only uses public information from DP-EBMs  the learned shape functions</text>
+<formula>f_{k}</formula>
+<text>, and the histogram definition</text>
+<formula>\hat{H}_{k}</formula>
+<text>.</text>
+</inline>
+<inline><loc_74><loc_276><loc_238><loc_328>
+<text>Figure</text>
+<text>4</text>
+<text>shows the effects of applying isotonic regression to the noisy</text>
+<formula>f_{age}</formula>
+<text>.
+While enforcing monotonicity is possible with models more expressive than DP-EBMs, this typically requires additional constraints during training and may consume more privacy budget and complicate the privacy analysis.
+It is a nice advantage of DP-EBMs that monotonicity can be achieved cleanly via post-processing.</text>
+</inline>
+<section_header_level_1><loc_74><loc_349><loc_223><loc_368>Differential Privacy as a Regularizer</section_header_level_1>
+<inline><loc_74><loc_63><loc_425><loc_410>
+<text>Figures</text>
+<text>3</text>
+<text>and</text>
+<text>5</text>
+<text>also show that adding modest amounts of differentially private noise, like</text>
+<formula>\varepsilon=4</formula>
+<text>, can act as a regularizer to the model.
+The rise in risk between ages 50 and 90 here is smoother, whereas the non-private version learns a jumpier function.
+Smoothness is traditionally a difficult property to achieve with tree-based boosted GAMs.
+The non-private EBM algorithm typically wraps the training process in multiple iterations of bagging to make graphs smoother</text>
+<text>(Louet al.,2012; Caruanaet al.,2015)</text>
+<text>.
+Our experiments suggest that modest amounts of differentially private noise might act as an effective regularization tool.</text>
+</inline>
+<text><loc_261><loc_110><loc_423><loc_162>The relationship between smoothness and interpretability is complex: smooth graphs may be easier to interpret, but over-regularization can hide real signals in the data.
+The use of differential privacy as a regularizer is well known (Chaudhuri et al. , 2011 ) . Our paper visibly reinforces this notion through intelligibility, and we believe studying this effect further on GAMs might be interesting future research.</text>
+<section_header_level_1><loc_263><loc_261><loc_341><loc_268>Conclusion</section_header_level_1>
+<text><loc_261><loc_377><loc_425><loc_404>We present DP-EBMs, a differentially private learning algorithm for GAMs which achieves remarkably high accuracy and interpretability with strong privacy guarantees.
+Our empirical evaluations show that DP-EBMs outperform other differentially private learning algorithms for both classification and regression on tabular datasets. Beyond just accuracy, we also show how interpretability can complement differential privacy by enabling users to uncover undesirable effects of noise, edit unwanted bias out of their models, and enforce desirable constraints like monotonicity with no additional privacy loss. These practical advantages might represent an important step forward for enabling the use of differentially private models in industries like healthcare, finance, and criminal justice.</text>
+<page_break>
+<picture><loc_131><loc_112><loc_238><loc_155></picture>
+<inline><loc_74><loc_169><loc_238><loc_267>
+<text>Shape function comparisons for all numeric features in the Adult Income dataset. We include the standard EBMs wrapped in 25 layers of bagging, EBMs without bagging, and two DP-EBMs at different privacy levels (</text>
+<formula>\varepsilon=4</formula>
+<text>and</text>
+<formula>\varepsilon=1</formula>
+<text>). As expected, adding Gaussian DP noise acts as a strong regularizer  the graphs on the right are smoother than those on the left. In some cases this regularization is too strong, yet in other cases such as</text>
+<text>the extra regularization might actually reduce model variance and improve intelligibility.</text>
+</inline>
+<section_header_level_1><loc_74><loc_290><loc_192><loc_298>Acknowledgement</section_header_level_1>
+<text><loc_74><loc_298><loc_232><loc_322>We would like to thank Paul Koch, Scott Lundberg, Samuel Jenkins, and Joshua Allen for their thoughtful discussions and copyediting.</text>
+<section_header_level_1><loc_74><loc_343><loc_154><loc_350>References</section_header_level_1>
+<unordered_list><list_item><loc_74><loc_349><loc_236><loc_374>Differential privacy has disparate impact on model accuracy . arXiv preprint arXiv:1905.12101 . Cited by: §5.1 .</list_item>
+<list_item><loc_74><loc_382><loc_232><loc_392>Classification and regression trees . CRC press . Cited by: §3 .</list_item>
+<list_item><loc_74><loc_400><loc_236><loc_410><loc_263><loc_61><loc_278><loc_67>Deep learning with gaussian differential privacy . Harvard data science review 2020 ( 23 ). Cited by: §8.3 .</list_item>
+<list_item><loc_261><loc_75><loc_419><loc_96>API design for machine learning software: experiences from the scikit-learn project . In ECML PKDD Workshop: Languages for Data Mining and Machine Learning , pp. 108–122 . Cited by: §8.3 .</list_item>
+<list_item><loc_261><loc_103><loc_421><loc_120>The secret sharer: measuring unintended neural network memorization & extracting secrets . Cited by: §1 .</list_item>
+<list_item><loc_261><loc_128><loc_423><loc_156>Intelligible models for healthcare: predicting pneumonia risk and hospital 30-day readmission . In Proceedings of the 21th ACM SIGKDD international conference on knowledge discovery and data mining , pp. 1721–1730 . Cited by: §1 , §5.3 .</list_item>
+<list_item><loc_261><loc_164><loc_421><loc_186>Isotonic median regression: a linear programming approach . Mathematics of operations research 14 ( 2 ), pp. 303–308 . Cited by: §5.2 .</list_item>
+<list_item><loc_261><loc_194><loc_419><loc_204>How interpretable and trustworthy are gams? . arXiv preprint arXiv:2006.06466 . Cited by: §1 .</list_item>
+<list_item><loc_261><loc_211><loc_419><loc_228>Differentially private empirical risk minimization . Journal of Machine Learning Research 12 ( Mar ), pp. 1069–1109 . Cited by: 2nd item , §5.3 .</list_item>
+<list_item><loc_261><loc_236><loc_419><loc_258>Xgboost: a scalable tree boosting system . In Proceedings of the 22nd acm sigkdd international conference on knowledge discovery and data mining , pp. 785–794 . Cited by: §2.1 .</list_item>
+<list_item><loc_261><loc_266><loc_423><loc_287>On the compatibility of privacy and fairness . In Adjunct Publication of the 27th Conference on User Modeling, Adaptation and Personalization , pp. 309–315 . Cited by: §5.1 .</list_item>
+<list_item><loc_261><loc_294><loc_421><loc_311>Gaussian differential privacy . arXiv preprint arXiv:1905.02383 . Cited by: 1st item , §2.2 , 1st item , §4.1.3 .</list_item>
+<list_item><loc_261><loc_319><loc_415><loc_341>UCI machine learning repository . University of California, Irvine, School of Information and Computer Sciences . External Links: Link Cited by: §8.3 .</list_item>
+<list_item><loc_261><loc_348><loc_415><loc_365>Calibrating noise to sensitivity in private data analysis . In Theory of cryptography conference , pp. 265–284 . Cited by: §1 , §5.1 , §8.1 .</list_item>
+<list_item><loc_261><loc_373><loc_423><loc_395>The algorithmic foundations of differential privacy . Foundations and Trends® in Theoretical Computer Science 9 ( 3–4 ), pp. 211–407 . Cited by: §1 , §8.1 , Theorem 1 .</list_item>
+<list_item><loc_270><loc_403><loc_425><loc_408><loc_74><loc_61><loc_161><loc_67>A differentially private decision forest. . AusDM 15 , pp. 99–108 . Cited by: §3 .</list_item>
+<list_item><loc_74><loc_73><loc_236><loc_90>Decision tree classification with differential privacy: a survey . ACM Computing Surveys (CSUR) 52 ( 4 ), pp. 1–33 . Cited by: §3 .</list_item>
+<list_item><loc_74><loc_98><loc_232><loc_108>Extremely randomized trees . Machine learning 63 ( 1 ), pp. 3–42 . Cited by: §3 .</list_item>
+<list_item><loc_74><loc_115><loc_236><loc_132>Array programming with NumPy . Nature 585 ( 7825 ), pp. 357–362 . External Links: Document , Link Cited by: §8.3 .</list_item>
+<list_item><loc_74><loc_141><loc_223><loc_150>Generalized additive models . Vol. 43 , CRC press . Cited by: §1 , §1 , §2.1 .</list_item>
+<list_item><loc_74><loc_158><loc_232><loc_180>Diffprivlib: the ibm differential privacy library . GitHub . Note: https://github.com/IBM/differential-privacy-library Cited by: 2nd item .</list_item>
+<list_item><loc_74><loc_188><loc_238><loc_216>Symmetric matrix perturbation for differentially-private principal component analysis . In 2016 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 2339–2343 . Cited by: 2nd item .</list_item>
+<list_item><loc_85><loc_223><loc_238><loc_229>Montreal, QC . External Links: Link Cited by: §8.3 .</list_item>
+<list_item><loc_74><loc_242><loc_236><loc_264>A practical differentially private random decision tree classifier . In 2009 IEEE International Conference on Data Mining Workshops , pp. 114–121 . Cited by: §8.1 .</list_item>
+<list_item><loc_74><loc_272><loc_238><loc_292>The composition theorem for differential privacy . IEEE Transactions on Information Theory 63 ( 6 ), pp. 4037–4049 . Cited by: 1st item , §4.1.3 , Theorem 2 .</list_item>
+<list_item><loc_74><loc_301><loc_236><loc_323>Lightgbm: a highly efficient gradient boosting decision tree . In Advances in neural information processing systems , pp. 3146–3154 . Cited by: §2.1 , 3rd item .</list_item>
+<list_item><loc_74><loc_330><loc_227><loc_347>Differentially private bayesian optimization . In International conference on machine learning , pp. 918–927 . Cited by: §4 .</list_item>
+<list_item><loc_74><loc_355><loc_238><loc_377>Privacy-preserving gradient boosting decision trees . In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 34 , pp. 784–791 . Cited by: §3 , 3rd item .</list_item>
+<list_item><loc_74><loc_385><loc_232><loc_407>Private selection from private candidates . In Proceedings of the 51st Annual ACM SIGACT Symposium on Theory of Computing , pp. 298–309 . Cited by: §4 .</list_item>
+<list_item><loc_261><loc_68><loc_423><loc_96>Intelligible models for classification and regression . In Proceedings of the 18th ACM SIGKDD international conference on Knowledge discovery and data mining , pp. 150–158 . Cited by: §1 , §2.1 , §5.3 .</list_item>
+<list_item><loc_261><loc_104><loc_423><loc_122>A unified approach to interpreting model predictions . In Advances in neural information processing systems , pp. 4765–4774 . Cited by: §2.1 .</list_item>
+<list_item><loc_261><loc_134><loc_419><loc_156>Exploiting unintended feature leakage in collaborative learning . In 2019 IEEE Symposium on Security and Privacy (SP) , pp. 691–706 . Cited by: §1 .</list_item>
+<list_item><loc_261><loc_162><loc_411><loc_180>InterpretML: a unified framework for machine learning interpretability . arXiv preprint arXiv:1909.09223 . Cited by: §1 , §2.1 .</list_item>
+<list_item><loc_261><loc_186><loc_423><loc_204>Scikit-learn: machine learning in Python . Journal of Machine Learning Research 12 , pp. 2825–2830 . Cited by: §8.3 .</list_item>
+<list_item><loc_261><loc_212><loc_409><loc_233>Stop explaining black box machine learning models for high stakes decisions and use interpretable models instead . Nature Machine Intelligence 1 ( 5 ), pp. 206–215 . Cited by: §1 .</list_item>
+<list_item><loc_261><loc_240><loc_423><loc_258>Private approximations of the 2nd-moment matrix using existing techniques in linear regression . arXiv preprint arXiv:1507.00056 . Cited by: 2nd item .</list_item>
+<list_item><loc_261><loc_266><loc_413><loc_275>Testing and estimating ordered parameters of probability distribution . Cited by: §5.2 .</list_item>
+<list_item><loc_261><loc_283><loc_419><loc_305>SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python . Nature Methods 17 , pp. 261–272 . External Links: Document Cited by: §8.3 .</list_item>
+<list_item><loc_261><loc_312><loc_423><loc_329>In pursuit of interpretable, fair and accurate machine learning for criminal recidivism prediction . arXiv preprint arXiv:2005.04176 . Cited by: §1 .</list_item>
+<list_item><loc_261><loc_337><loc_423><loc_359>K. W. Wang, T. Dick, and M. Balcan Scalable and provably accurate algorithms for differentially private distributed decision tree learning . Cited by: §3 .</list_item>
+</unordered_list>
+<page_break>
+<section_header_level_1><loc_263><loc_393><loc_336><loc_401>Appendix</section_header_level_1>
+<page_break>
+<section_header_level_1><loc_74><loc_60><loc_207><loc_79>Differentially Private Binning</section_header_level_1>
+<inline><loc_74><loc_79><loc_238><loc_133>
+<text>While not a main contribution of this paper, for completeness (and reproducibility) we describe the differentially private binning algorithm used as a preprocessing step to DP-EBMs. Our goal is to create bins for each feature such that each bin contains roughly equal proportions of data. For example, if the goal is to end up with 10 bins per feature, we expect each bin to roughly contain</text>
+<formula>\frac{1}{10}</formula>
+<text>of the data.</text>
+</inline>
+<inline><loc_74><loc_141><loc_238><loc_282>
+<text>Like other DP tree implementations, we assume that the min and max of each feature are supplied by the user</text>
+<text>(Dworket al.,2014; Jagannathanet al.,2009)</text>
+<text>. The algorithm begins by uniformly dividing the feature space into</text>
+<text>equal width</text>
+<text>bins, without looking at any user data. If the user requests</text>
+<formula>m</formula>
+<text>bins in total, the binning procedure creates</text>
+<formula>2\cdot m</formula>
+<text>equal width bins to begin with. We then create a differentially private histogram based on those uniform bin widths, adding noise with sensitivity 1</text>
+<text>(Dworket al.,2006)</text>
+<text>. Theorems</text>
+<text>4</text>
+<text>and</text>
+<text>5</text>
+<text>are also applied here to track cumulative privacy budget across all</text>
+<formula>K</formula>
+<text>features and calibrate how much noise to add. Finally, to transform the noisy equal width bins into equal density bins, the algorithm greedily post-processes the released bin definitions by collapsing small bins into their neighbors until a sufficiently large quantile bin is achieved. While this method can be sub-optimal on highly skewed distributions, we find that it works well in practice on most datasets, and users have some control by choosing appropriate min/max values or applying transforms to features prior to training. The full algorithm is detailed below.</text>
+</inline>
+<section_header_level_1><loc_74><loc_304><loc_207><loc_324>Adaptations to other settings</section_header_level_1>
+<inline><loc_74><loc_323><loc_238><loc_395>
+<text>Algorithm</text>
+<text>2</text>
+<text>in the main body of the paper focuses on regression, which often can be adapted to other settings. It also is possible to use many alternative loss functions in DP-EBMs with no change to the privacy analysis. For example, to adapt DP-EBMs to binary classification, we might prefer residuals to be</text>
+<text>logits</text>
+<text>. Our proof of privacy depends on ensuring that the sensitivity of the sum of residuals is bounded by at most</text>
+<formula>R</formula>
+<text>at each iteration. In the regression setting, we show that the sum of residuals</text>
+<formula>T</formula>
+<text>can be framed as:</text>
+</inline>
+<inline><loc_79><loc_401><loc_198><loc_410>
+<formula>T=\eta\cdot\left(\sum_{b\in S_{\ell}}\sum_{x_{i}\in\hat{H}_{k}(b)}y_{i}\right)\%
+-Z\\</formula>
+</inline>
+<inline><loc_261><loc_73><loc_425><loc_86>
+<text>where</text>
+<formula>Z</formula>
+<text>is entirely public information released from previous iterations of the model. Therefore, simple transformations on Z do not affect the sensitivity of each update or the ultimate privacy guarantee of the algorithm. For binary classification, the only modification is to line 25:</text>
+</inline>
+<inline><loc_263><loc_96><loc_358><loc_102>
+<formula>r^{t}_{i}=y_{i}+\frac{1}{1+e^{\sum{f^{t}_{k}(\rho(H_{k},x_{i}))}}}-1</formula>
+</inline>
+<section_header_level_1><loc_263><loc_123><loc_419><loc_131>Abnormally low AUROCs</section_header_level_1>
+<inline><loc_261><loc_131><loc_425><loc_190>
+<text>In our experiments, some models produce AUROCs substantially lower than 0.5. For example, on the credit fraud dataset for</text>
+<formula>\varepsilon=1</formula>
+<text>, DPBoost had an average test set AUROC of 0.438. This was a bit surprising, as predicting random labels should result in AUCs near 0.5. Further investigation suggests that the noise DP adds to models increases the variance of model predictions enough to make AUCs much larger and smaller than 0.5.</text>
+</inline>
+<inline><loc_261><loc_199><loc_425><loc_250>
+<text>For example, Figure 5 shows the distribution in AUCs for the healthcare dataset when predictions are made completely randomly (left), and also shows the distribution for the same dataset when predictions are made with DP Logistic Regression with</text>
+<formula>\varepsilon=0.5</formula>
+<text>(right). Both distributions have mean 0.5, but the distribution is much wider for the model with</text>
+<formula>\varepsilon=0.5</formula>
+<text>. Similar behavior is observed for all DP algorithms, including DP-EBMs with</text>
+<formula>\varepsilon<0.1</formula>
+<text>.</text>
+</inline>
+<picture><loc_355><loc_264><loc_425><loc_284></picture>
+<inline><loc_261><loc_299><loc_425><loc_333>
+<text>Distribution of AUROCs on 5000 train/test splits of healthcare dataset. Left: Randomly generated predictions.</text>
+<text>Right: DP Logistic Regression (</text>
+<formula>\varepsilon=0.5</formula>
+<text>) test set AUROCs.</text>
+</inline>
+<text></text>
+</doctag>
