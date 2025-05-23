@@ -17,12 +17,14 @@ from docling_core.transforms.serializer.base import (
     BaseTableSerializer,
     BaseTextSerializer,
     SerializationResult,
+    Span,
 )
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     create_ser_result,
 )
+from docling_core.types.doc.base import BoundingBox
 from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
@@ -38,6 +40,7 @@ from docling_core.types.doc.document import (
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
+    ProvenanceItem,
     TableItem,
     TextItem,
     UnorderedList,
@@ -414,6 +417,39 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
 class DocTagsInlineSerializer(BaseInlineSerializer):
     """DocTags-specific inline group serializer."""
 
+    def _get_inline_location_tags(
+        self, doc: DoclingDocument, item: InlineGroup, params: DocTagsParams
+    ) -> SerializationResult:
+
+        prov: Optional[ProvenanceItem] = None
+        boxes: list[BoundingBox] = []
+        doc_items: list[DocItem] = []
+        for it, _ in doc.iterate_items(root=item):
+            if isinstance(it, DocItem):
+                for prov in it.prov:
+                    boxes.append(prov.bbox)
+                    doc_items.append(it)
+        if prov is None:
+            return create_ser_result()
+
+        bbox = BoundingBox.enclosing_bbox(boxes=boxes)
+
+        # using last seen prov as reference for page dims
+        page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
+
+        loc_str = DocumentToken.get_location(
+            bbox=bbox.to_top_left_origin(page_h).as_tuple(),
+            page_w=page_w,
+            page_h=page_h,
+            xsize=params.xsize,
+            ysize=params.ysize,
+        )
+
+        return SerializationResult(
+            text=loc_str,
+            spans=[Span(item=it) for it in doc_items],
+        )
+
     @override
     def serialize(
         self,
@@ -428,12 +464,23 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
-        parts = doc_serializer.get_parts(
-            item=item,
-            list_level=list_level,
-            is_inline_scope=True,
-            visited=my_visited,
-            **kwargs,
+        parts: List[SerializationResult] = []
+        if params.add_location:
+            inline_loc_tags_ser_res = self._get_inline_location_tags(
+                doc=doc,
+                item=item,
+                params=params,
+            )
+            parts.append(inline_loc_tags_ser_res)
+            params.add_location = False  # suppress children location serialization
+        parts.extend(
+            doc_serializer.get_parts(
+                item=item,
+                list_level=list_level,
+                is_inline_scope=True,
+                visited=my_visited,
+                **{**kwargs, **params.model_dump()},
+            )
         )
         wrap_tag = DocumentToken.INLINE.value
         delim = _get_delim(params=params)
