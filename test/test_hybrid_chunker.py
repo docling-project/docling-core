@@ -4,8 +4,8 @@
 #
 
 import json
-import warnings
 
+import pytest
 import tiktoken
 from transformers import AutoTokenizer
 
@@ -100,12 +100,10 @@ def test_chunk_deprecated_max_tokens():
         data_json = f.read()
     dl_doc = DLDocument.model_validate_json(data_json)
 
-    with warnings.catch_warnings(record=True) as w:
+    with pytest.warns(DeprecationWarning, match="Deprecated initialization"):
         chunker = HybridChunker(
             max_tokens=MAX_TOKENS,
         )
-        assert len(w) == 1, "One deprecation warning was expected"
-        assert issubclass(w[-1].category, DeprecationWarning)
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
@@ -203,12 +201,10 @@ def test_chunk_deprecated_explicit_hf_obj():
         data_json = f.read()
     dl_doc = DLDocument.model_validate_json(data_json)
 
-    with warnings.catch_warnings(record=True) as w:
+    with pytest.warns(DeprecationWarning, match="Deprecated initialization"):
         chunker = HybridChunker(
             tokenizer=INNER_TOKENIZER,
         )
-        assert len(w) == 1, "One deprecation warning was expected"
-        assert issubclass(w[-1].category, DeprecationWarning)
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)

@@ -440,7 +440,10 @@ def test_construct_doc():
     doc = _construct_doc()
 
     assert doc.validate_tree(doc.body)
-    assert doc.validate_tree(doc.furniture)
+
+    # check that deprecation warning for furniture has been raised.
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        assert doc.validate_tree(doc.furniture)
 
     _test_export_methods(doc, filename=filename)
     _test_serialize_and_reload(doc)

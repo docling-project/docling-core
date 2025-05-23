@@ -153,12 +153,14 @@ class HybridChunker(BaseChunker):
         doc_serializer: BaseDocSerializer,
     ):
         doc_items = doc_chunk.meta.doc_items[window_start : window_end + 1]
-        meta = DocMeta(
-            doc_items=doc_items,
-            headings=doc_chunk.meta.headings,
-            captions=doc_chunk.meta.captions,
-            origin=doc_chunk.meta.origin,
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            meta = DocMeta(
+                doc_items=doc_items,
+                headings=doc_chunk.meta.headings,
+                captions=doc_chunk.meta.captions,
+                origin=doc_chunk.meta.origin,
+            )
         window_text = (
             doc_chunk.text
             if len(doc_chunk.meta.doc_items) == 1
@@ -250,7 +252,9 @@ class HybridChunker(BaseChunker):
         num_chunks = len(chunks)
         while window_end < num_chunks:
             chunk = chunks[window_end]
-            headings_and_captions = (chunk.meta.headings, chunk.meta.captions)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                headings_and_captions = (chunk.meta.headings, chunk.meta.captions)
             ready_to_append = False
             if window_start == window_end:
                 current_headings_and_captions = headings_and_captions

@@ -11,7 +11,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable, Optional, Tuple, Union
 
-from pydantic import AnyUrl, BaseModel, NonNegativeInt, computed_field
+from pydantic import AnyUrl, BaseModel, ConfigDict, NonNegativeInt, computed_field
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
@@ -176,11 +176,7 @@ class CommonParams(BaseModel):
 class DocSerializer(BaseModel, BaseDocSerializer):
     """Class for document serializers."""
 
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     doc: DoclingDocument
 
