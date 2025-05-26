@@ -153,14 +153,11 @@ class HybridChunker(BaseChunker):
         doc_serializer: BaseDocSerializer,
     ):
         doc_items = doc_chunk.meta.doc_items[window_start : window_end + 1]
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=DeprecationWarning)
-            meta = DocMeta(
-                doc_items=doc_items,
-                headings=doc_chunk.meta.headings,
-                captions=doc_chunk.meta.captions,
-                origin=doc_chunk.meta.origin,
-            )
+        meta = DocMeta(
+            doc_items=doc_items,
+            headings=doc_chunk.meta.headings,
+            origin=doc_chunk.meta.origin,
+        )
         window_text = (
             doc_chunk.text
             if len(doc_chunk.meta.doc_items) == 1
@@ -237,7 +234,9 @@ class HybridChunker(BaseChunker):
             )
             if available_length <= 0:
                 warnings.warn(
-                    f"Headers and captions for this chunk are longer than the total amount of size for the chunk, chunk will be ignored: {doc_chunk.text=}"  # noqa
+                    "Headers and captions for this chunk are longer than the total "
+                    "amount of size for the chunk, chunk will be ignored: "
+                    f"{doc_chunk.text=}"
                 )
                 return []
             text = doc_chunk.text
@@ -252,12 +251,10 @@ class HybridChunker(BaseChunker):
         num_chunks = len(chunks)
         while window_end < num_chunks:
             chunk = chunks[window_end]
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning)
-                headings_and_captions = (chunk.meta.headings, chunk.meta.captions)
+            headings = chunk.meta.headings
             ready_to_append = False
             if window_start == window_end:
-                current_headings_and_captions = headings_and_captions
+                current_headings = headings
                 window_end += 1
                 first_chunk_of_window = chunk
             else:
@@ -268,13 +265,12 @@ class HybridChunker(BaseChunker):
                     text=self.delim.join([chk.text for chk in chks]),
                     meta=DocMeta(
                         doc_items=doc_items,
-                        headings=current_headings_and_captions[0],
-                        captions=current_headings_and_captions[1],
+                        headings=current_headings,
                         origin=chunk.meta.origin,
                     ),
                 )
                 if (
-                    headings_and_captions == current_headings_and_captions
+                    headings == current_headings
                     and self._count_chunk_tokens(doc_chunk=candidate) <= self.max_tokens
                 ):
                     # there is room to include the new chunk so add it to the window and
