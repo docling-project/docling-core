@@ -31,12 +31,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
-      - name: pre-commit cache key
-        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> "$GITHUB_ENV"
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      # - name: pre-commit cache key
+      #   run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> "$GITHUB_ENV"
+      # - uses: actions/cache@v4
+      #   with:
+      #     path: ~/.cache/pre-commit
+      #     key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: Install dependencies
         run: uv sync --frozen --all-extras
       - name: Run styling check
