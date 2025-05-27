@@ -1,3 +1,21 @@
+## [v2.31.2](https://github.com/docling-project/docling-core/releases/tag/v2.31.2) - 2025-05-22
+
+### Fix
+
+* Fix hybrid chunker legacy patching ([#300](https://github.com/docling-project/docling-core/issues/300)) ([`ebc356a`](https://github.com/docling-project/docling-core/commit/ebc356a787a404ca73dbe473d7d5e17fa4951954))
+
+## [v2.31.1](https://github.com/docling-project/docling-core/releases/tag/v2.31.1) - 2025-05-20
+
+### Fix
+
+* **markdown:** Fix case of empty page break string ([#298](https://github.com/docling-project/docling-core/issues/298)) ([`c49a50e`](https://github.com/docling-project/docling-core/commit/c49a50e76ba74579350eb874c2b731490c00ea1f))
+
+## [v2.31.0](https://github.com/docling-project/docling-core/releases/tag/v2.31.0) - 2025-05-18
+
+### Feature
+
+* Provide visualizer option in HTML split view ([#294](https://github.com/docling-project/docling-core/issues/294)) ([`6a7eb53`](https://github.com/docling-project/docling-core/commit/6a7eb537eb6a9f35c3ffa3d43ebbad4e5ce5ab9c))
+
 ## [v2.30.1](https://github.com/docling-project/docling-core/releases/tag/v2.30.1) - 2025-05-14
 
 ### Fix

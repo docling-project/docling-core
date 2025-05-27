@@ -9,6 +9,7 @@ from functools import cached_property
 from typing import Any, Iterable, Iterator, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from transformers import PreTrainedTokenizerBase
 
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
@@ -70,13 +71,24 @@ class HybridChunker(BaseChunker):
     @model_validator(mode="before")
     @classmethod
     def _patch(cls, data: Any) -> Any:
-        if isinstance(data, dict) and (tokenizer := data.get("tokenizer")):
+        if isinstance(data, dict):
+            tokenizer = data.get("tokenizer")
             max_tokens = data.get("max_tokens")
-            if isinstance(tokenizer, BaseTokenizer):
-                pass
-            else:
+            if not isinstance(tokenizer, BaseTokenizer) and (
+                # some legacy param passed:
+                tokenizer is not None
+                or max_tokens is not None
+            ):
                 from docling_core.transforms.chunker.tokenizer.huggingface import (
                     HuggingFaceTokenizer,
+                )
+
+                warnings.warn(
+                    "Deprecated initialization parameter types for HybridChunker. "
+                    "For updated usage check out "
+                    "https://docling-project.github.io/docling/examples/hybrid_chunking/",
+                    DeprecationWarning,
+                    stacklevel=3,
                 )
 
                 if isinstance(tokenizer, str):
@@ -84,9 +96,12 @@ class HybridChunker(BaseChunker):
                         model_name=tokenizer,
                         max_tokens=max_tokens,
                     )
-                else:
-                    # migrate previous HF-based tokenizers
-                    kwargs = {"tokenizer": tokenizer}
+                elif tokenizer is None or isinstance(
+                    tokenizer, PreTrainedTokenizerBase
+                ):
+                    kwargs = {
+                        "tokenizer": tokenizer or _get_default_tokenizer().tokenizer
+                    }
                     if max_tokens is not None:
                         kwargs["max_tokens"] = max_tokens
                     data["tokenizer"] = HuggingFaceTokenizer(**kwargs)
@@ -141,7 +156,6 @@ class HybridChunker(BaseChunker):
         meta = DocMeta(
             doc_items=doc_items,
             headings=doc_chunk.meta.headings,
-            captions=doc_chunk.meta.captions,
             origin=doc_chunk.meta.origin,
         )
         window_text = (
@@ -220,7 +234,9 @@ class HybridChunker(BaseChunker):
             )
             if available_length <= 0:
                 warnings.warn(
-                    f"Headers and captions for this chunk are longer than the total amount of size for the chunk, chunk will be ignored: {doc_chunk.text=}"  # noqa
+                    "Headers and captions for this chunk are longer than the total "
+                    "amount of size for the chunk, chunk will be ignored: "
+                    f"{doc_chunk.text=}"
                 )
                 return []
             text = doc_chunk.text
@@ -235,10 +251,10 @@ class HybridChunker(BaseChunker):
         num_chunks = len(chunks)
         while window_end < num_chunks:
             chunk = chunks[window_end]
-            headings_and_captions = (chunk.meta.headings, chunk.meta.captions)
+            headings = chunk.meta.headings
             ready_to_append = False
             if window_start == window_end:
-                current_headings_and_captions = headings_and_captions
+                current_headings = headings
                 window_end += 1
                 first_chunk_of_window = chunk
             else:
@@ -249,13 +265,12 @@ class HybridChunker(BaseChunker):
                     text=self.delim.join([chk.text for chk in chks]),
                     meta=DocMeta(
                         doc_items=doc_items,
-                        headings=current_headings_and_captions[0],
-                        captions=current_headings_and_captions[1],
+                        headings=current_headings,
                         origin=chunk.meta.origin,
                     ),
                 )
                 if (
-                    headings_and_captions == current_headings_and_captions
+                    headings == current_headings
                     and self._count_chunk_tokens(doc_chunk=candidate) <= self.max_tokens
                 ):
                     # there is room to include the new chunk so add it to the window and
