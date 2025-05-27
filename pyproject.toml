@@ -82,6 +82,9 @@ dev = [
     "python-semantic-release~=7.32",
 ]
 
+[tool.uv]
+package = true
+
 [tool.setuptools.packages.find]
 where = [".", "docling_core/resources/schemas"]
 include = ["docling_core*"]
