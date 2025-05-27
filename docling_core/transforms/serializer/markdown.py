@@ -58,6 +58,23 @@ from docling_core.types.doc.document import (
 )
 
 
+def _get_annotation_ser_result(
+    ann_kind: str, ann_text: str, mark_annotation: bool, doc_item: DocItem
+):
+    return create_ser_result(
+        text=(
+            (
+                f'<!--<annotation kind="{ann_kind}">-->'
+                f"{ann_text}"
+                f"<!--<annotation/>-->"
+            )
+            if mark_annotation
+            else ann_text
+        ),
+        span_source=doc_item,
+    )
+
+
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
@@ -217,17 +234,11 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
                 for ann in item.annotations:
                     if ann_text := _get_picture_annotation_text(annotation=ann):
-                        ann_ser_res = create_ser_result(
-                            text=(
-                                (
-                                    f'<!--<annotation kind="{ann.kind}">-->'
-                                    f"{ann_text}"
-                                    f"<!--<annotation/>-->"
-                                )
-                                if params.mark_annotations
-                                else ann_text
-                            ),
-                            span_source=item,
+                        ann_ser_res = _get_annotation_ser_result(
+                            ann_kind=ann.kind,
+                            ann_text=ann_text,
+                            mark_annotation=params.mark_annotations,
+                            doc_item=item,
                         )
                         res_parts.append(ann_ser_res)
 
