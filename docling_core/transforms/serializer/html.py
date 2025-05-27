@@ -949,22 +949,33 @@ class HTMLDocSerializer(DocSerializer):
         excluded_refs = self.get_excluded_refs(**kwargs)
 
         if DocItemLabel.CAPTION in params.labels:
-            results.extend(
-                [
-                    create_ser_result(text=html.escape(it.text), span_source=it)
-                    for cap in item.captions
-                    if isinstance(it := cap.resolve(self.doc), TextItem)
+            for cap in item.captions:
+                if (
+                    isinstance(it := cap.resolve(self.doc), TextItem)
                     and it.self_ref not in excluded_refs
-                ]
-            )
+                ):
+                    text_cap = it.text
+                    text_dir = get_text_direction(text_cap)
+                    dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
+                    cap_ser_res = create_ser_result(
+                        text=(
+                            f'<div class="caption"{dir_str}>'
+                            f"{html.escape(text_cap)}"
+                            f"</div>"
+                        ),
+                        span_source=it,
+                    )
+                    results.append(cap_ser_res)
 
         if params.include_annotations and item.self_ref not in excluded_refs:
             if isinstance(item, PictureItem):
                 for ann in item.annotations:
                     if ann_text := _get_picture_annotation_text(annotation=ann):
+                        text_dir = get_text_direction(ann_text)
+                        dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                         ann_ser_res = create_ser_result(
                             text=(
-                                f'<div data-annotation-kind="{ann.kind}">'
+                                f'<div data-annotation-kind="{ann.kind}"{dir_str}>'
                                 f"{html.escape(ann_text)}"
                                 f"</div>"
                             ),
@@ -974,9 +985,7 @@ class HTMLDocSerializer(DocSerializer):
 
         text_res = params.caption_delim.join([r.text for r in results])
         if text_res:
-            text_dir = get_text_direction(text_res)
-            dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
-            text_res = f"<{tag}{dir_str}>{text_res}</{tag}>"
+            text_res = f"<{tag}>{text_res}</{tag}>"
         return create_ser_result(text=text_res, span_source=results)
 
     def _generate_head(self) -> str:
