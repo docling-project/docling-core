@@ -146,9 +146,9 @@
 </ol>
 <li>list item 4</li>
 </ul>
-<table><caption>This is the caption of table 1.</caption><tbody><tr><td rowspan="2">Product</td><td colspan="2">Years</td></tr><tr><td>2016</td><td>2017</td></tr><tr><td>Apple</td><td>49823</td><td>695944</td></tr></tbody></table>
-<figure><figcaption>This is the caption of figure 1.</figcaption></figure>
-<figure><figcaption>This is the caption of figure 2.</figcaption><img src="constructed_images/image_000001_f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a.png"></figure>
+<table><caption><div class="caption">This is the caption of table 1.</div></caption><tbody><tr><td rowspan="2">Product</td><td colspan="2">Years</td></tr><tr><td>2016</td><td>2017</td></tr><tr><td>Apple</td><td>49823</td><td>695944</td></tr></tbody></table>
+<figure><figcaption><div class="caption">This is the caption of figure 1.</div></figcaption></figure>
+<figure><figcaption><div class="caption">This is the caption of figure 2.</div></figcaption><img src="constructed_images/image_000001_f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a.png"></figure>
 <ul>
 <li>item 1 of list</li>
 </ul>
