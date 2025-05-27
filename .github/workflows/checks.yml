@@ -39,8 +39,8 @@ jobs:
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: Install dependencies
         run: uv sync --frozen --all-extras
-      - name: Run styling check
-        run: uv run --no-sync pre-commit run --all-files
+      - name: Check style and run tests
+        run: pre-commit run --all-files
       - name: Upload coverage to Codecov
         if: inputs.push_coverage
         uses: codecov/codecov-action@v5
