@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/docling-core)](https://pypi.org/project/docling-core/)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%20%203.11%20%7C%203.12%20%7C%203.13-blue)
-[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
@@ -21,14 +21,14 @@ pip install docling-core
 
 ### Development setup
 
-To develop for Docling Core, you need Python 3.9 / 3.10 / 3.11 / 3.12 / 3.13 and Poetry. You can then install from your local clone's root dir:
+To develop for Docling Core, you need Python 3.9 / 3.10 / 3.11 / 3.12 / 3.13 and uv. You can then install from your local clone's root dir:
 ```bash
-poetry install --all-extras
+uv sync --all-extras
 ```
 
 To run the pytest suite, execute:
 ```
-poetry run pytest test
+uv run pytest -s test
 ```
 
 ## Basic Usage
