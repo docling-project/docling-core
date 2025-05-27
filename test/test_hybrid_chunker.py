@@ -138,7 +138,7 @@ def test_contextualize():
             dict(
                 text=chunk.text,
                 ser_text=(ser_text := chunker.contextualize(chunk)),
-                num_tokens=len(INNER_TOKENIZER.tokenize(ser_text)),
+                num_tokens=chunker.tokenizer.count_tokens(ser_text),
             )
             for chunk in chunks
         ]
@@ -165,26 +165,6 @@ def test_chunk_no_merge_peers():
     )
 
     chunks = chunker.chunk(dl_doc=dl_doc)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
-    _process(
-        act_data=act_data,
-        exp_path_str=EXPECTED_OUT_FILE,
-    )
-
-
-def test_chunk_default():
-    EXPECTED_OUT_FILE = "test/data/chunker/2c_out_chunks.json"
-
-    with open(INPUT_FILE, encoding="utf-8") as f:
-        data_json = f.read()
-    dl_doc = DLDocument.model_validate_json(data_json)
-
-    chunker = HybridChunker()
-
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
-    chunks = list(chunk_iter)
     act_data = dict(
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
@@ -242,6 +222,30 @@ def test_ignore_deprecated_param_if_new_tokenizer_passed():
     )
 
 
+def test_deprecated_no_max_tokens():
+    EXPECTED_OUT_FILE = "test/data/chunker/2c_out_chunks.json"
+
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+        ),
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+    )
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
+
+
 def test_contextualize_altered_delim():
     EXPECTED_OUT_FILE = "test/data/chunker/2d_out_ser_chunks.json"
 
@@ -265,7 +269,7 @@ def test_contextualize_altered_delim():
             dict(
                 text=chunk.text,
                 ser_text=(ser_text := chunker.contextualize(chunk)),
-                num_tokens=len(INNER_TOKENIZER.tokenize(ser_text)),
+                num_tokens=chunker.tokenizer.count_tokens(ser_text),
             )
             for chunk in chunks
         ]
@@ -322,6 +326,51 @@ def test_chunk_openai():
             tokenizer=tiktoken.encoding_for_model("gpt-4o"),
             max_tokens=128 * 1024,
         )
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+    )
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_default():
+    EXPECTED_OUT_FILE = "test/data/chunker/2g_out_chunks.json"
+
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker()
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+    )
+    _process(
+        act_data=act_data,
+        exp_path_str=EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_explicit():
+    EXPECTED_OUT_FILE = "test/data/chunker/2g_out_chunks.json"
+
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer.from_pretrained(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            max_tokens=256,
+        ),
     )
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)

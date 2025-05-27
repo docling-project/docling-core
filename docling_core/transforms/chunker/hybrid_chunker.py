@@ -88,7 +88,6 @@ class HybridChunker(BaseChunker):
                     "For updated usage check out "
                     "https://docling-project.github.io/docling/examples/hybrid_chunking/",
                     DeprecationWarning,
-                    stacklevel=3,
                 )
 
                 if isinstance(tokenizer, str):
