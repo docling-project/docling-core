@@ -50,6 +50,8 @@ dependencies = [
 [project.urls]
 homepage = "https://github.com/docling-project"
 repository = "https://github.com/docling-project/docling-core"
+issues = "https://github.com/docling-project/docling-core/issues"
+changelog = "https://github.com/docling-project/docling-core/blob/main/CHANGELOG.md"
 
 [project.scripts]
 # validate = "docling_core.utils.validate:main"  # use python -m docling_core.utils.validate
