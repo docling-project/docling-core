@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLOutputStyle,
@@ -370,3 +371,12 @@ def test_html_include_annotations_true():
         exp_file=src.parent / f"{src.stem}_p1_include_annotations_true.gt.html",
         actual=actual,
     )
+
+
+def test_doctags_inline_loc_tags():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.out.dt", actual=actual)

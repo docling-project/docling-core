@@ -106,7 +106,7 @@
 <li>· Can leverage different accelerators (GPU, MPS, etc).</li>
 </ul>
 <h2>2 Getting Started</h2>
-<p>To use Docling, you can simply install the docling package from PyPI. Documentation and examples are available in our GitHub repository at github.com/DS4SD/docling. All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance.</p>
+<span class='inline-group'>To use Docling, you can simply install the docling package from PyPI. Documentation and examples are available in our GitHub repository at  <a href="https://github.com/DS4SD/docling">github.com/DS4SD/docling</a> . All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance.</span>
 <p>Docling provides an easy code interface to convert PDF documents from file system, URLs or binary streams, and retrieve the output in either JSON or Markdown format. For convenience, separate methods are offered to convert single documents or batches of documents. A basic usage example is illustrated below. Further examples are available in the Doclign code repository.</p>
 <pre><code>from docling.document_converter import DocumentConverter Large</code></pre>
 <pre><code>source = "https://arxiv.org/pdf/2206.01062" # PDF path or URL converter = DocumentConverter() result = converter.convert_single(source) print(result.render_as_markdown()) # output: "## DocLayNet: A Human -Annotated Dataset for Document -Layout Analysis [...]"</code></pre>

@@ -141,3 +141,26 @@ def test_doctags_picture_provenances_and_captions():
     for picture in doc.pictures:
         assert len(picture.prov) > 0
         assert len(picture.captions) > 0
+
+
+def test_doctags_inline():
+    src_path = Path("test/data/doc/2408.09869v3_enriched.dt")
+    with open(src_path) as f:
+        doctags = f.read()
+    doc = DoclingDocument.load_from_json("test/data/doc/2408.09869v3_enriched.json")
+
+    doctags_doc = DocTagsDocument.from_multipage_doctags_and_images(
+        doctags=doctags,
+        images=[
+            pil_img
+            for p in doc.pages
+            if (img_ref := doc.pages[p].image) and (pil_img := img_ref.pil_image)
+        ],
+    )
+
+    deser_doc = DoclingDocument.load_from_doctags(doctags_doc)
+    exp = f"{src_path.parent / src_path.stem}.out.dt.json"
+    verify(
+        exp_file=exp,
+        actual=deser_doc.export_to_dict(),
+    )

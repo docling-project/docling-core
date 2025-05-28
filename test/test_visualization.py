@@ -30,6 +30,18 @@ def test_doc_visualization():
             )
 
 
+def test_doc_visualization_inline_circumscribed_bbox():
+    src = Path("./test/data/doc/2408.09869v3_enriched.dt.json")
+    doc = DoclingDocument.load_from_json(src)
+    viz_pages = doc.get_visualization()
+    for k in viz_pages:
+        if k == 2:
+            verify(
+                exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_viz_p{k}.png",
+                actual=viz_pages[k],
+            )
+
+
 def test_doc_visualization_no_label():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
