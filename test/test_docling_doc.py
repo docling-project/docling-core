@@ -154,6 +154,7 @@ def test_intersection_area_with():
     with pytest.raises(ValueError):
         bbox1.intersection_area_with(bbox6)
 
+
 def test_x_overlap_with():
     bbox1 = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
     bbox2 = BoundingBox(l=5, t=0, r=15, b=10, coord_origin=CoordOrigin.TOPLEFT)
@@ -227,30 +228,42 @@ def test_y_overlap_with():
 
 def test_union_area_with():
     # Overlapping (TOPLEFT)
-    bbox1 = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT) # Area 100
-    bbox2 = BoundingBox(l=5, t=5, r=15, b=15, coord_origin=CoordOrigin.TOPLEFT) # Area 100
+    bbox1 = BoundingBox(
+        l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT
+    )  # Area 100
+    bbox2 = BoundingBox(
+        l=5, t=5, r=15, b=15, coord_origin=CoordOrigin.TOPLEFT
+    )  # Area 100
     # Intersection area 25
     # Union area = 100 + 100 - 25 = 175
     assert abs(bbox1.union_area_with(bbox2) - 175.0) < 1.0e-3
 
     # Non-overlapping (TOPLEFT)
-    bbox3 = BoundingBox(l=20, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT) # Area 100
+    bbox3 = BoundingBox(
+        l=20, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT
+    )  # Area 100
     # Union area = 100 + 100 - 0 = 200
     assert abs(bbox1.union_area_with(bbox3) - 200.0) < 1.0e-3
 
     # Touching edges (TOPLEFT)
-    bbox4 = BoundingBox(l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT) # Area 100
+    bbox4 = BoundingBox(
+        l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT
+    )  # Area 100
     # Union area = 100 + 100 - 0 = 200
     assert abs(bbox1.union_area_with(bbox4) - 200.0) < 1.0e-3
 
     # Full containment (TOPLEFT)
-    bbox5 = BoundingBox(l=2, t=2, r=8, b=8, coord_origin=CoordOrigin.TOPLEFT) # Area 36
+    bbox5 = BoundingBox(l=2, t=2, r=8, b=8, coord_origin=CoordOrigin.TOPLEFT)  # Area 36
     # Union area = 100 + 36 - 36 = 100
     assert abs(bbox1.union_area_with(bbox5) - 100.0) < 1.0e-3
 
     # Overlapping (BOTTOMLEFT)
-    bbox6 = BoundingBox(l=0, b=0, r=10, t=10, coord_origin=CoordOrigin.BOTTOMLEFT) # Area 100
-    bbox7 = BoundingBox(l=5, b=5, r=15, t=15, coord_origin=CoordOrigin.BOTTOMLEFT) # Area 100
+    bbox6 = BoundingBox(
+        l=0, b=0, r=10, t=10, coord_origin=CoordOrigin.BOTTOMLEFT
+    )  # Area 100
+    bbox7 = BoundingBox(
+        l=5, b=5, r=15, t=15, coord_origin=CoordOrigin.BOTTOMLEFT
+    )  # Area 100
     # Intersection area 25
     # Union area = 100 + 100 - 25 = 175
     assert abs(bbox6.union_area_with(bbox7) - 175.0) < 1.0e-3
@@ -292,7 +305,7 @@ def test_x_union_with():
 
 
 def test_y_union_with():
-    
+
     bbox1_tl = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
     bbox2_tl = BoundingBox(l=0, t=5, r=10, b=15, coord_origin=CoordOrigin.TOPLEFT)
     # y_union = max(10, 15) - min(0, 5) = 15 - 0 = 15
@@ -337,6 +350,7 @@ def test_y_union_with():
     # Different CoordOrigin
     with pytest.raises(ValueError):
         bbox1_tl.y_union_with(bbox1_bl)
+
 
 def test_orientation():
 
