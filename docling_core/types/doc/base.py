@@ -395,3 +395,41 @@ class BoundingBox(BaseModel):
             raise ValueError("BoundingBoxes have different CoordOrigin")
 
         return cls(l=left, t=top, r=right, b=bottom, coord_origin=origin)
+
+    def x_overlap_with(self, other: "BoundingBox") -> float:
+        """Calculates the horizontal overlap with another bounding box."""
+        if self.coord_origin != other.coord_origin:
+            raise ValueError("BoundingBoxes have different CoordOrigin")
+        return max(0.0, min(self.r, other.r) - max(self.l, other.l))
+
+    def y_overlap_with(self, other: "BoundingBox") -> float:
+        """Calculates the vertical overlap with another bounding box, respecting coordinate origin."""
+        if self.coord_origin != other.coord_origin:
+            raise ValueError("BoundingBoxes have different CoordOrigin")
+        if self.coord_origin == CoordOrigin.TOPLEFT:
+            return max(0.0, min(self.b, other.b) - max(self.t, other.t))
+        elif self.coord_origin == CoordOrigin.BOTTOMLEFT:
+            return max(0.0, min(self.t, other.t) - max(self.b, other.b))
+        raise ValueError("Unsupported CoordOrigin")
+
+    def union_area_with(self, other: "BoundingBox") -> float:
+        """Calculates the union area with another bounding box."""
+        if self.coord_origin != other.coord_origin:
+            raise ValueError("BoundingBoxes have different CoordOrigin")
+        return self.area() + other.area() - self.intersection_area_with(other)
+
+    def x_union_with(self, other: "BoundingBox") -> float:
+        """Calculates the horizontal union dimension with another bounding box."""
+        if self.coord_origin != other.coord_origin:
+            raise ValueError("BoundingBoxes have different CoordOrigin")
+        return max(0.0, max(self.r, other.r) - min(self.l, other.l))
+
+    def y_union_with(self, other: "BoundingBox") -> float:
+        """Calculates the vertical union dimension with another bounding box, respecting coordinate origin."""
+        if self.coord_origin != other.coord_origin:
+            raise ValueError("BoundingBoxes have different CoordOrigin")
+        if self.coord_origin == CoordOrigin.TOPLEFT:
+            return max(0.0, max(self.b, other.b) - min(self.t, other.t))
+        elif self.coord_origin == CoordOrigin.BOTTOMLEFT:
+            return max(0.0, max(self.t, other.t) - min(self.b, other.b))
+        raise ValueError("Unsupported CoordOrigin")

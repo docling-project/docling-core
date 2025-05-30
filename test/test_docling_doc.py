@@ -155,6 +155,203 @@ def test_intersection_area_with():
         bbox1.intersection_area_with(bbox6)
 
 
+def test_x_overlap_with():
+    bbox1 = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    bbox2 = BoundingBox(l=5, t=0, r=15, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1.x_overlap_with(bbox2) - 5.0) < 1.0e-3
+
+    # No overlap (disjoint right)
+    bbox3 = BoundingBox(l=11, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1.x_overlap_with(bbox3) - 0.0) < 1.0e-3
+
+    # No overlap (disjoint left)
+    bbox4 = BoundingBox(l=-10, t=0, r=-1, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1.x_overlap_with(bbox4) - 0.0) < 1.0e-3
+
+    # Touching edges
+    bbox5 = BoundingBox(l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1.x_overlap_with(bbox5) - 0.0) < 1.0e-3
+
+    # Full containment
+    bbox6 = BoundingBox(l=2, t=0, r=8, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1.x_overlap_with(bbox6) - 6.0) < 1.0e-3
+
+    # Identical boxes
+    bbox7 = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1.x_overlap_with(bbox7) - 10.0) < 1.0e-3
+
+    # Different CoordOrigin
+    bbox_bl = BoundingBox(l=0, t=10, r=10, b=0, coord_origin=CoordOrigin.BOTTOMLEFT)
+    with pytest.raises(ValueError):
+        bbox1.x_overlap_with(bbox_bl)
+
+
+def test_y_overlap_with():
+    # TOPLEFT origin
+    bbox1_tl = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    bbox2_tl = BoundingBox(l=0, t=5, r=10, b=15, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1_tl.y_overlap_with(bbox2_tl) - 5.0) < 1.0e-3
+
+    # No overlap (disjoint below)
+    bbox3_tl = BoundingBox(l=0, t=11, r=10, b=20, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1_tl.y_overlap_with(bbox3_tl) - 0.0) < 1.0e-3
+
+    # Touching edges
+    bbox4_tl = BoundingBox(l=0, t=10, r=10, b=20, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1_tl.y_overlap_with(bbox4_tl) - 0.0) < 1.0e-3
+
+    # Full containment
+    bbox5_tl = BoundingBox(l=0, t=2, r=10, b=8, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1_tl.y_overlap_with(bbox5_tl) - 6.0) < 1.0e-3
+
+    # BOTTOMLEFT origin
+    bbox1_bl = BoundingBox(l=0, b=0, r=10, t=10, coord_origin=CoordOrigin.BOTTOMLEFT)
+    bbox2_bl = BoundingBox(l=0, b=5, r=10, t=15, coord_origin=CoordOrigin.BOTTOMLEFT)
+    assert abs(bbox1_bl.y_overlap_with(bbox2_bl) - 5.0) < 1.0e-3
+
+    # No overlap (disjoint above)
+    bbox3_bl = BoundingBox(l=0, b=11, r=10, t=20, coord_origin=CoordOrigin.BOTTOMLEFT)
+    assert abs(bbox1_bl.y_overlap_with(bbox3_bl) - 0.0) < 1.0e-3
+
+    # Touching edges
+    bbox4_bl = BoundingBox(l=0, b=10, r=10, t=20, coord_origin=CoordOrigin.BOTTOMLEFT)
+    assert abs(bbox1_bl.y_overlap_with(bbox4_bl) - 0.0) < 1.0e-3
+
+    # Full containment
+    bbox5_bl = BoundingBox(l=0, b=2, r=10, t=8, coord_origin=CoordOrigin.BOTTOMLEFT)
+    assert abs(bbox1_bl.y_overlap_with(bbox5_bl) - 6.0) < 1.0e-3
+
+    # Different CoordOrigin
+    with pytest.raises(ValueError):
+        bbox1_tl.y_overlap_with(bbox1_bl)
+
+
+def test_union_area_with():
+    # Overlapping (TOPLEFT)
+    bbox1 = BoundingBox(
+        l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT
+    )  # Area 100
+    bbox2 = BoundingBox(
+        l=5, t=5, r=15, b=15, coord_origin=CoordOrigin.TOPLEFT
+    )  # Area 100
+    # Intersection area 25
+    # Union area = 100 + 100 - 25 = 175
+    assert abs(bbox1.union_area_with(bbox2) - 175.0) < 1.0e-3
+
+    # Non-overlapping (TOPLEFT)
+    bbox3 = BoundingBox(
+        l=20, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT
+    )  # Area 100
+    # Union area = 100 + 100 - 0 = 200
+    assert abs(bbox1.union_area_with(bbox3) - 200.0) < 1.0e-3
+
+    # Touching edges (TOPLEFT)
+    bbox4 = BoundingBox(
+        l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT
+    )  # Area 100
+    # Union area = 100 + 100 - 0 = 200
+    assert abs(bbox1.union_area_with(bbox4) - 200.0) < 1.0e-3
+
+    # Full containment (TOPLEFT)
+    bbox5 = BoundingBox(l=2, t=2, r=8, b=8, coord_origin=CoordOrigin.TOPLEFT)  # Area 36
+    # Union area = 100 + 36 - 36 = 100
+    assert abs(bbox1.union_area_with(bbox5) - 100.0) < 1.0e-3
+
+    # Overlapping (BOTTOMLEFT)
+    bbox6 = BoundingBox(
+        l=0, b=0, r=10, t=10, coord_origin=CoordOrigin.BOTTOMLEFT
+    )  # Area 100
+    bbox7 = BoundingBox(
+        l=5, b=5, r=15, t=15, coord_origin=CoordOrigin.BOTTOMLEFT
+    )  # Area 100
+    # Intersection area 25
+    # Union area = 100 + 100 - 25 = 175
+    assert abs(bbox6.union_area_with(bbox7) - 175.0) < 1.0e-3
+
+    # Different CoordOrigin
+    with pytest.raises(ValueError):
+        bbox1.union_area_with(bbox6)
+
+
+def test_x_union_with():
+    bbox1 = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    bbox2 = BoundingBox(l=5, t=0, r=15, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    # x_union = max(10, 15) - min(0, 5) = 15 - 0 = 15
+    assert abs(bbox1.x_union_with(bbox2) - 15.0) < 1.0e-3
+
+    # No overlap (disjoint)
+    bbox3 = BoundingBox(l=20, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    # x_union = max(10, 30) - min(0, 20) = 30 - 0 = 30
+    assert abs(bbox1.x_union_with(bbox3) - 30.0) < 1.0e-3
+
+    # Touching edges
+    bbox4 = BoundingBox(l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    # x_union = max(10, 20) - min(0, 10) = 20 - 0 = 20
+    assert abs(bbox1.x_union_with(bbox4) - 20.0) < 1.0e-3
+
+    # Full containment
+    bbox5 = BoundingBox(l=2, t=0, r=8, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    # x_union = max(10, 8) - min(0, 2) = 10 - 0 = 10
+    assert abs(bbox1.x_union_with(bbox5) - 10.0) < 1.0e-3
+
+    # Identical boxes
+    bbox6 = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    assert abs(bbox1.x_union_with(bbox6) - 10.0) < 1.0e-3
+
+    # Different CoordOrigin
+    bbox_bl = BoundingBox(l=0, t=10, r=10, b=0, coord_origin=CoordOrigin.BOTTOMLEFT)
+    with pytest.raises(ValueError):
+        bbox1.x_union_with(bbox_bl)
+
+
+def test_y_union_with():
+
+    bbox1_tl = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    bbox2_tl = BoundingBox(l=0, t=5, r=10, b=15, coord_origin=CoordOrigin.TOPLEFT)
+    # y_union = max(10, 15) - min(0, 5) = 15 - 0 = 15
+    assert abs(bbox1_tl.y_union_with(bbox2_tl) - 15.0) < 1.0e-3
+
+    # No overlap (disjoint below)
+    bbox3_tl = BoundingBox(l=0, t=20, r=10, b=30, coord_origin=CoordOrigin.TOPLEFT)
+    # y_union = max(10, 30) - min(0, 20) = 30 - 0 = 30
+    assert abs(bbox1_tl.y_union_with(bbox3_tl) - 30.0) < 1.0e-3
+
+    # Touching edges
+    bbox4_tl = BoundingBox(l=0, t=10, r=10, b=20, coord_origin=CoordOrigin.TOPLEFT)
+    # y_union = max(10, 20) - min(0, 10) = 20 - 0 = 20
+    assert abs(bbox1_tl.y_union_with(bbox4_tl) - 20.0) < 1.0e-3
+
+    # Full containment
+    bbox5_tl = BoundingBox(l=0, t=2, r=10, b=8, coord_origin=CoordOrigin.TOPLEFT)
+    # y_union = max(10, 8) - min(0, 2) = 10 - 0 = 10
+    assert abs(bbox1_tl.y_union_with(bbox5_tl) - 10.0) < 1.0e-3
+
+    # BOTTOMLEFT origin
+    bbox1_bl = BoundingBox(l=0, b=0, r=10, t=10, coord_origin=CoordOrigin.BOTTOMLEFT)
+    bbox2_bl = BoundingBox(l=0, b=5, r=10, t=15, coord_origin=CoordOrigin.BOTTOMLEFT)
+    # y_union = max(10, 15) - min(0, 5) = 15 - 0 = 15
+    assert abs(bbox1_bl.y_union_with(bbox2_bl) - 15.0) < 1.0e-3
+
+    # No overlap (disjoint above)
+    bbox3_bl = BoundingBox(l=0, b=20, r=10, t=30, coord_origin=CoordOrigin.BOTTOMLEFT)
+    # y_union = max(10, 30) - min(0, 20) = 30 - 0 = 30
+    assert abs(bbox1_bl.y_union_with(bbox3_bl) - 30.0) < 1.0e-3
+
+    # Touching edges
+    bbox4_bl = BoundingBox(l=0, b=10, r=10, t=20, coord_origin=CoordOrigin.BOTTOMLEFT)
+    # y_union = max(10, 20) - min(0, 10) = 20 - 0 = 20
+    assert abs(bbox1_bl.y_union_with(bbox4_bl) - 20.0) < 1.0e-3
+
+    # Full containment
+    bbox5_bl = BoundingBox(l=0, b=2, r=10, t=8, coord_origin=CoordOrigin.BOTTOMLEFT)
+    # y_union = max(10, 8) - min(0, 2) = 10 - 0 = 10
+    assert abs(bbox1_bl.y_union_with(bbox5_bl) - 10.0) < 1.0e-3
+
+    # Different CoordOrigin
+    with pytest.raises(ValueError):
+        bbox1_tl.y_union_with(bbox1_bl)
+
+
 def test_orientation():
 
     page_height = 300
