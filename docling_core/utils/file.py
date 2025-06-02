@@ -10,7 +10,7 @@ import tempfile
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Optional, Union
-
+import re
 import requests
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 from typing_extensions import deprecated
@@ -75,6 +75,17 @@ def resolve_source_to_stream(
         if "user-agent" not in req_headers:
             agent_name = f"docling-core/{importlib.metadata.version('docling-core')}"
             req_headers["user-agent"] = agent_name
+
+        
+
+        # Google Docs, Files, PDF URLs need to be converted for their export extraction
+        googleDocId = re.search(r'google\.com\/(file|document)\/d\/([\w-]+)', http_url)
+        if googleDocId:
+            if googleDocId.group(1) == 'file':
+                http_url = f'https://drive.google.com/uc?export=download&id={googleDocId.group(2)}'
+            else:
+                http_url = f'https://docs.google.com/document/d/{googleDocId.group(2)}/export?format=html'
+
 
         # fetch the page
         res = requests.get(http_url, stream=True, headers=req_headers)
