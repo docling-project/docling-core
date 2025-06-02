@@ -86,6 +86,7 @@ DOCUMENT_TOKENS_EXPORT_LABELS.update(
 )
 
 
+@deprecated("Deprecated class")
 class BasePictureData(BaseModel):
     """BasePictureData."""
 
@@ -99,7 +100,7 @@ class PictureClassificationClass(BaseModel):
     confidence: float
 
 
-class PictureClassificationData(BasePictureData):
+class PictureClassificationData(BaseModel):
     """PictureClassificationData."""
 
     kind: Literal["classification"] = "classification"
@@ -107,12 +108,20 @@ class PictureClassificationData(BasePictureData):
     predicted_classes: List[PictureClassificationClass]
 
 
-class PictureDescriptionData(BasePictureData):
+@deprecated("Use DescriptionAnnotation instead)")
+class PictureDescriptionData(BaseModel):
     """PictureDescriptionData."""
 
     kind: Literal["description"] = "description"
     text: str
     provenance: str
+
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+    class DescriptionAnnotation(PictureDescriptionData):
+        """DescriptionAnnotation."""
 
 
 class PictureMoleculeData(BaseModel):
@@ -127,11 +136,19 @@ class PictureMoleculeData(BaseModel):
     provenance: str
 
 
+@deprecated("Use MiscAnnotation instead")
 class PictureMiscData(BaseModel):
     """PictureMiscData."""
 
     kind: Literal["misc"] = "misc"
     content: Dict[str, Any]
+
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+    class MiscAnnotation(PictureMiscData):
+        """MiscAnnotationData."""
 
 
 class ChartLine(BaseModel):
@@ -382,10 +399,10 @@ class PictureTabularChartData(PictureChartData):
 
 PictureDataType = Annotated[
     Union[
+        DescriptionAnnotation,
+        MiscAnnotation,
         PictureClassificationData,
-        PictureDescriptionData,
         PictureMoleculeData,
-        PictureMiscData,
         PictureTabularChartData,
         PictureLineChartData,
         PictureBarChartData,
@@ -1184,15 +1201,11 @@ class PictureItem(FloatingItem):
         return text
 
 
-class TableMiscData(BaseModel):
-    """TableMiscData."""
-
-    kind: Literal["misc"] = "misc"
-    content: Dict[str, Any]
-
-
 TableAnnotationType = Annotated[
-    Union[TableMiscData,],
+    Union[
+        DescriptionAnnotation,
+        MiscAnnotation,
+    ],
     Field(discriminator="kind"),
 ]
 

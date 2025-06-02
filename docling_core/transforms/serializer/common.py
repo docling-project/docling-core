@@ -30,6 +30,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.types.doc.document import (
     DOCUMENT_TOKENS_EXPORT_LABELS,
     ContentLayer,
+    DescriptionAnnotation,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -41,7 +42,6 @@ from docling_core.types.doc.document import (
     OrderedList,
     PictureClassificationData,
     PictureDataType,
-    PictureDescriptionData,
     PictureItem,
     PictureMoleculeData,
     TableItem,
@@ -132,7 +132,7 @@ def _get_picture_annotation_text(annotation: PictureDataType) -> Optional[str]:
         )
         if predicted_class is not None:
             result = predicted_class.replace("_", " ")
-    elif isinstance(annotation, PictureDescriptionData):
+    elif isinstance(annotation, DescriptionAnnotation):
         result = annotation.text
     elif isinstance(annotation, PictureMoleculeData):
         result = annotation.smi

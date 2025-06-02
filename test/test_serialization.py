@@ -23,7 +23,7 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import DoclingDocument, TableItem, TableMiscData
+from docling_core.types.doc.document import DoclingDocument, MiscAnnotation, TableItem
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -45,7 +45,7 @@ class CustomAnnotationTableSerializer(MarkdownTableSerializer):
 
         if params.include_annotations:
             for ann in item.annotations:
-                if isinstance(ann, TableMiscData):
+                if isinstance(ann, MiscAnnotation):
 
                     # custom serialization logic:
                     ann_txt = "\n".join([f"{k}: {ann.content[k]}" for k in ann.content])

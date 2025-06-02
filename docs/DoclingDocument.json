@@ -375,6 +375,32 @@
       "title": "CoordOrigin",
       "type": "string"
     },
+    "DescriptionAnnotation": {
+      "deprecated": true,
+      "description": "DescriptionAnnotation.",
+      "properties": {
+        "kind": {
+          "const": "description",
+          "default": "description",
+          "title": "Kind",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "provenance": {
+          "title": "Provenance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "provenance"
+      ],
+      "title": "DescriptionAnnotation",
+      "type": "object"
+    },
     "DocumentOrigin": {
       "description": "FileSource.",
       "properties": {
@@ -1093,6 +1119,28 @@
       "title": "ListItem",
       "type": "object"
     },
+    "MiscAnnotation": {
+      "deprecated": true,
+      "description": "MiscAnnotationData.",
+      "properties": {
+        "kind": {
+          "const": "misc",
+          "default": "misc",
+          "title": "Kind",
+          "type": "string"
+        },
+        "content": {
+          "additionalProperties": true,
+          "title": "Content",
+          "type": "object"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "MiscAnnotation",
+      "type": "object"
+    },
     "OrderedList": {
       "additionalProperties": false,
       "description": "OrderedList.",
@@ -1257,31 +1305,6 @@
       "title": "PictureClassificationData",
       "type": "object"
     },
-    "PictureDescriptionData": {
-      "description": "PictureDescriptionData.",
-      "properties": {
-        "kind": {
-          "const": "description",
-          "default": "description",
-          "title": "Kind",
-          "type": "string"
-        },
-        "text": {
-          "title": "Text",
-          "type": "string"
-        },
-        "provenance": {
-          "title": "Provenance",
-          "type": "string"
-        }
-      },
-      "required": [
-        "text",
-        "provenance"
-      ],
-      "title": "PictureDescriptionData",
-      "type": "object"
-    },
     "PictureItem": {
       "additionalProperties": false,
       "description": "PictureItem.",
@@ -1373,9 +1396,9 @@
               "mapping": {
                 "bar_chart_data": "#/$defs/PictureBarChartData",
                 "classification": "#/$defs/PictureClassificationData",
-                "description": "#/$defs/PictureDescriptionData",
+                "description": "#/$defs/DescriptionAnnotation",
                 "line_chart_data": "#/$defs/PictureLineChartData",
-                "misc": "#/$defs/PictureMiscData",
+                "misc": "#/$defs/MiscAnnotation",
                 "molecule_data": "#/$defs/PictureMoleculeData",
                 "pie_chart_data": "#/$defs/PicturePieChartData",
                 "scatter_chart_data": "#/$defs/PictureScatterChartData",
@@ -1386,16 +1409,16 @@
             },
             "oneOf": [
               {
+                "$ref": "#/$defs/DescriptionAnnotation"
+              },
+              {
+                "$ref": "#/$defs/MiscAnnotation"
+              },
+              {
                 "$ref": "#/$defs/PictureClassificationData"
               },
               {
-                "$ref": "#/$defs/PictureDescriptionData"
-              },
-              {
                 "$ref": "#/$defs/PictureMoleculeData"
-              },
-              {
-                "$ref": "#/$defs/PictureMiscData"
               },
               {
                 "$ref": "#/$defs/PictureTabularChartData"
@@ -1463,27 +1486,6 @@
         "lines"
       ],
       "title": "PictureLineChartData",
-      "type": "object"
-    },
-    "PictureMiscData": {
-      "description": "PictureMiscData.",
-      "properties": {
-        "kind": {
-          "const": "misc",
-          "default": "misc",
-          "title": "Kind",
-          "type": "string"
-        },
-        "content": {
-          "additionalProperties": true,
-          "title": "Content",
-          "type": "object"
-        }
-      },
-      "required": [
-        "content"
-      ],
-      "title": "PictureMiscData",
       "type": "object"
     },
     "PictureMoleculeData": {
@@ -2018,13 +2020,17 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "misc": "#/$defs/TableMiscData"
+                "description": "#/$defs/DescriptionAnnotation",
+                "misc": "#/$defs/MiscAnnotation"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TableMiscData"
+                "$ref": "#/$defs/DescriptionAnnotation"
+              },
+              {
+                "$ref": "#/$defs/MiscAnnotation"
               }
             ]
           },
@@ -2037,27 +2043,6 @@
         "data"
       ],
       "title": "TableItem",
-      "type": "object"
-    },
-    "TableMiscData": {
-      "description": "TableMiscData.",
-      "properties": {
-        "kind": {
-          "const": "misc",
-          "default": "misc",
-          "title": "Kind",
-          "type": "string"
-        },
-        "content": {
-          "additionalProperties": true,
-          "title": "Content",
-          "type": "object"
-        }
-      },
-      "required": [
-        "content"
-      ],
-      "title": "TableMiscData",
       "type": "object"
     },
     "TextItem": {
