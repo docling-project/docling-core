@@ -280,7 +280,8 @@ pictures:
   self_ref: '#/pictures/1'
 schema_name: DoclingDocument
 tables:
-- captions:
+- annotations: []
+  captions:
   - $ref: '#/texts/14'
   children: []
   content_layer: body
@@ -1015,4 +1016,4 @@ texts:
   prov: []
   self_ref: '#/texts/50'
   text: The end.
-version: 1.3.0
+version: 1.4.0

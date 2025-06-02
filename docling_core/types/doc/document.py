@@ -30,6 +30,7 @@ from pydantic import (
     computed_field,
     field_validator,
     model_validator,
+    validate_call,
 )
 from tabulate import tabulate
 from typing_extensions import Annotated, Self, deprecated
@@ -53,7 +54,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.3.0"
+CURRENT_VERSION: Final = "1.4.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -1183,6 +1184,19 @@ class PictureItem(FloatingItem):
         return text
 
 
+class TableMiscData(BaseModel):
+    """TableMiscData."""
+
+    kind: Literal["misc"] = "misc"
+    content: Dict[str, Any]
+
+
+TableAnnotationType = Annotated[
+    Union[TableMiscData,],
+    Field(discriminator="kind"),
+]
+
+
 class TableItem(FloatingItem):
     """TableItem."""
 
@@ -1191,6 +1205,8 @@ class TableItem(FloatingItem):
         DocItemLabel.DOCUMENT_INDEX,
         DocItemLabel.TABLE,
     ] = DocItemLabel.TABLE
+
+    annotations: List[TableAnnotationType] = []
 
     def export_to_dataframe(self) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
@@ -1437,6 +1453,11 @@ class TableItem(FloatingItem):
         )
         text = serializer.serialize(item=self).text
         return text
+
+    @validate_call
+    def add_annotation(self, annotation: TableAnnotationType) -> None:
+        """Add an annotation to the table."""
+        self.annotations.append(annotation)
 
 
 class GraphCell(BaseModel):
@@ -2267,6 +2288,7 @@ class DoclingDocument(BaseModel):
         parent: Optional[NodeItem] = None,
         label: DocItemLabel = DocItemLabel.TABLE,
         content_layer: Optional[ContentLayer] = None,
+        annotations: Optional[list[TableAnnotationType]] = None,
     ):
         """add_table.
 
@@ -2284,7 +2306,11 @@ class DoclingDocument(BaseModel):
         cref = f"#/tables/{table_index}"
 
         tbl_item = TableItem(
-            label=label, data=data, self_ref=cref, parent=parent.get_ref()
+            label=label,
+            data=data,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            annotations=annotations or [],
         )
         if prov:
             tbl_item.prov.append(prov)
@@ -2301,7 +2327,7 @@ class DoclingDocument(BaseModel):
 
     def add_picture(
         self,
-        annotations: List[PictureDataType] = [],
+        annotations: Optional[List[PictureDataType]] = None,
         image: Optional[ImageRef] = None,
         caption: Optional[Union[TextItem, RefItem]] = None,
         prov: Optional[ProvenanceItem] = None,
@@ -2310,7 +2336,7 @@ class DoclingDocument(BaseModel):
     ):
         """add_picture.
 
-        :param data: List[PictureData]: (Default value = [])
+        :param data: Optional[List[PictureData]]: (Default value = None)
         :param caption: Optional[Union[TextItem:
         :param RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
@@ -2324,7 +2350,7 @@ class DoclingDocument(BaseModel):
 
         fig_item = PictureItem(
             label=DocItemLabel.PICTURE,
-            annotations=annotations,
+            annotations=annotations or [],
             image=image,
             self_ref=cref,
             parent=parent.get_ref(),
