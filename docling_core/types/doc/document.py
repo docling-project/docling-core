@@ -616,6 +616,7 @@ class ContentLayer(str, Enum):
 
     BODY = "body"
     FURNITURE = "furniture"
+    BACKGROUND = "background"
 
 
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
@@ -2796,22 +2797,44 @@ class DoclingDocument(BaseModel):
 
     def print_element_tree(self):
         """Print_element_tree."""
-        for ix, (item, level) in enumerate(self.iterate_items(with_groups=True)):
+        for ix, (item, level) in enumerate(
+            self.iterate_items(
+                with_groups=True,
+                included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
+            )
+        ):
             if isinstance(item, GroupItem):
                 print(
                     " " * level,
                     f"{ix}: {item.label.value} with name={item.name}",
                 )
+            elif isinstance(item, TextItem):
+                print(
+                    " " * level,
+                    f"{ix}: {item.label.value}: {item.text[:min(len(item.text), 100)]}",
+                )
+
             elif isinstance(item, DocItem):
                 print(" " * level, f"{ix}: {item.label.value}")
 
     def export_to_element_tree(self) -> str:
         """Export_to_element_tree."""
         texts = []
-        for ix, (item, level) in enumerate(self.iterate_items(with_groups=True)):
+        for ix, (item, level) in enumerate(
+            self.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
+            )
+        ):
             if isinstance(item, GroupItem):
                 texts.append(
                     " " * level + f"{ix}: {item.label.value} with name={item.name}"
+                )
+            elif isinstance(item, TextItem):
+                texts.append(
+                    " " * level
+                    + f"{ix}: {item.label.value}: {item.text[:min(len(item.text), 100)]}"
                 )
             elif isinstance(item, DocItem):
                 texts.append(" " * level + f"{ix}: {item.label.value}")
@@ -3220,6 +3243,7 @@ class DoclingDocument(BaseModel):
             "document_index": DocItemLabel.DOCUMENT_INDEX,
             "otsl": DocItemLabel.TABLE,
             "section_header_level_1": DocItemLabel.SECTION_HEADER,
+            "section_header_level_2": DocItemLabel.SECTION_HEADER,
             "checkbox_selected": DocItemLabel.CHECKBOX_SELECTED,
             "checkbox_unselected": DocItemLabel.CHECKBOX_UNSELECTED,
             "text": DocItemLabel.TEXT,
@@ -3606,6 +3630,7 @@ class DoclingDocument(BaseModel):
                 rf"{DocItemLabel.CAPTION}|{DocItemLabel.PICTURE}|"
                 rf"{DocItemLabel.FOOTNOTE}|{DocItemLabel.CODE}|"
                 rf"{DocItemLabel.SECTION_HEADER}_level_1|"
+                rf"{DocItemLabel.SECTION_HEADER}_level_2|"
                 rf"{DocumentToken.ORDERED_LIST.value}|"
                 rf"{DocumentToken.UNORDERED_LIST.value}|"
                 rf"{DocItemLabel.KEY_VALUE_REGION}|"

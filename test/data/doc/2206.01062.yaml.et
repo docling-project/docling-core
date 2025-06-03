@@ -1,145 +1,540 @@
 0: unspecified with name=_root_
- 1: section_header
- 2: text
- 3: text
- 4: text
- 5: text
- 6: text
- 7: section_header
- 8: text
- 9: section_header
- 10: text
- 11: text
- 12: text
- 13: text
- 14: text
- 15: text
- 16: picture
-  17: caption
- 18: section_header
- 19: text
- 20: section_header
- 21: text
- 22: section_header
- 23: text
- 24: text
- 25: text
- 26: list with name=list
-  27: list_item
-  28: list_item
-  29: list_item
-  30: list_item
- 31: footnote
- 32: text
- 33: list with name=list
-  34: list_item
- 35: text
- 36: text
- 37: section_header
- 38: text
- 39: text
- 40: section_header
- 41: text
- 42: text
- 43: picture
-  44: caption
- 45: text
- 46: text
- 47: text
- 48: text
- 49: footnote
- 50: text
- 51: text
- 52: text
- 53: section_header
- 54: text
- 55: table
-  56: caption
- 57: picture
-  58: caption
- 59: text
- 60: text
- 61: text
- 62: text
- 63: footnote
- 64: text
- 65: text
- 66: text
- 67: list with name=list
-  68: list_item
-  69: list_item
-  70: list_item
-  71: list_item
-  72: list_item
-  73: list_item
- 74: text
- 75: text
- 76: picture
- 77: text
- 78: caption
- 79: text
- 80: text
- 81: text
- 82: table
- 83: text
- 84: section_header
- 85: text
- 86: picture
-  87: caption
- 88: text
- 89: text
- 90: section_header
- 91: text
- 92: text
- 93: table
- 94: section_header
- 95: text
- 96: section_header
- 97: text
- 98: text
- 99: table
- 100: text
- 101: section_header
- 102: text
- 103: section_header
- 104: text
- 105: text
- 106: table
- 107: text
- 108: text
- 109: section_header
- 110: text
- 111: section_header
- 112: text
- 113: text
- 114: text
- 115: section_header
- 116: list with name=list
-  117: list_item
-  118: list_item
-  119: list_item
-  120: list_item
-  121: list_item
-  122: list_item
-  123: list_item
-  124: list_item
-  125: list_item
-  126: list_item
-  127: list_item
-  128: list_item
-  129: list_item
- 130: picture
-  131: caption
- 132: text
- 133: text
- 134: list with name=list
-  135: list_item
-  136: list_item
-  137: list_item
-  138: list_item
-  139: list_item
-  140: list_item
-  141: list_item
-  142: list_item
-  143: list_item
-  144: list_item
+ 1: page_header: arXiv:2206.01062v1  [cs.CV]  2 Jun 2022
+ 2: section_header: DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
+ 3: text: Birgit Pfitzmann IBM Research Rueschlikon, Switzerland bpf@zurich.ibm.com
+ 4: text: Christoph Auer IBM Research Rueschlikon, Switzerland cau@zurich.ibm.com
+ 5: text: Michele Dolfi IBM Research Rueschlikon, Switzerland dol@zurich.ibm.com
+ 6: text: Ahmed S. Nassar IBM Research Rueschlikon, Switzerland ahn@zurich.ibm.com
+ 7: text: Peter Staar IBM Research Rueschlikon, Switzerland taa@zurich.ibm.com
+ 8: section_header: ABSTRACT
+ 9: text: Accurate document layout analysis is a key requirement for highquality PDF document conversion. With
+ 10: section_header: CCS CONCEPTS
+ 11: text: · Informationsystems → Documentstructure ; · Appliedcomputing → Document analysis ; · Computing meth
+ 12: text: Permission to make digital or hard copies of part or all of this work for personal or classroom use 
+ 13: text: KDD '22, August 14-18, 2022, Washington, DC, USA
+ 14: text: © 2022 Copyright held by the owner/author(s).
+ 15: text: ACM ISBN 978-1-4503-9385-0/22/08.
+ 16: text: https://doi.org/10.1145/3534678.3539043
+ 17: picture
+  18: caption: Figure 1: Four examples of complex page layouts across different document categories
+  19: text: 13
+  20: text: USING THE VERTICAL TUBE -
+  21: text: MODELS AY11230/11234
+  22: text: 1. The vertical tube can be used for
+  23: text: ional viewing or to photograph
+  24: text: instruct
+  25: text: the image with a digital camera or a
+  26: text: micro TV unit
+  27: text: 2. Loosen the retention screw, then rotate
+  28: text: the adjustment ring to change the
+  29: text: re that both the images in
+  30: text: length of the vertical tube.
+  31: text: 3. Make su
+  32: text: OPERATION (cont.)
+  33: text: SELECTING OBJECTIVE
+  34: text: MAGNIFICATION
+  35: text: 1. There are two objectives. The lower
+  36: text: magnification objective has a greater
+  37: text: depth of field and view.
+  38: text: 2. In order to observe the specimen
+  39: text: easily use the lower magnification
+  40: text: objective first. Then, by rotating the
+  41: text: case, the magnification can be
+  42: text: changed.
+  43: text: CHANGING THE INTERPUPILLARY
+  44: text: DISTANCE
+  45: text: 1. The distance between the observer's
+  46: text: pupils is the interpupil ary distance.
+  47: text: 2. To adjust the interpupil ary distance
+  48: text: rotate the prism caps until both eyes
+  49: text: coincide with the image in the
+  50: text: eyepiece.
+  51: text: FOCUSING
+  52: text: 1. Remove the lens protective cover.
+  53: text: 2. Place the specimen on the working
+  54: text: stage.
+  55: text: 3. Focus the specimen with the left eye
+  56: text: first while turning the focus knob until
+  57: text: the image appears clear and sharp.
+  58: text: 4. Rotate the right eyepiece ring until the
+  59: text: images in each eyepiece coincide and
+  60: text: are sharp and clear.
+  61: text: CHANGING THE BULB
+  62: text: 1. Disconnect the power cord.
+  63: text: 2. When the bulb is cool, remove the
+  64: text: oblique il uminator cap and remove
+  65: text: the halogen bulb with cap.
+  66: text: 3. Replace with a new halogen bulb.
+  67: text: 4. Open the window in the base plate and
+  68: text: replace the halogen lamp or
+  69: text: fluorescent lamp of transmitted
+  70: text: il uminator.
+  71: text: FOCUSING
+  72: text: 1. Turn the focusing knob away or toward
+  73: text: you until a clear image is viewed.
+  74: text: 2. If the image is unclear, adjust the
+  75: text: height of the elevator up or down,
+  76: text: then turn the focusing knob again.
+  77: text: ZOOM MAGNIFICATION
+  78: text: 1. Turn the zoom magnification knob to
+  79: text: the desired magnification and field of
+  80: text: view.
+  81: text: 2. In most situations, it is recommended
+  82: text: that you focus at the lowest
+  83: text: magnification, then move to a higher
+  84: text: magnification and re-focus as
+  85: text: necessary.
+  86: text: 3. If the image is not clear to both eyes
+  87: text: at the same time, the diopter ring may
+  88: text: need adjustment.
+  89: text: DIOPTER RING ADJUSTMENT
+  90: text: 1. To adjust the eyepiece for viewing with
+  91: text: or without eyeglasses and for
+  92: text: differences in acuity between the right
+  93: text: and left eyes, fol ow the fol owing
+  94: text: steps:
+  95: text: a. Observe an image through the left
+  96: text: eyepiece and bring a specific point
+  97: text: into focus using the focus knob.
+  98: text: b. By turning the diopter ring
+  99: text: adjustment for the left eyepiece,
+  100: text: bring the same point into sharp
+  101: text: focus.
+  102: text: c.Then bring the same point into
+  103: text: focus through the right eyepiece
+  104: text: by turning the right diopter ring.
+  105: text: d.With more than one viewer, each
+  106: text: viewer should note their own
+  107: text: diopter ring position for the left
+  108: text: and right eyepieces, then before
+  109: text: viewing set the diopter ring
+  110: text: adjustments to that setting.
+  111: text: CHANGING THE BULB
+  112: text: 1. Disconnect the power cord from the
+  113: text: electrical outlet.
+  114: text: 2. When the bulb is cool, remove the
+  115: text: oblique il uminator cap and remove
+  116: text: the halogen bulb with cap.
+  117: text: 3. Replace with a new halogen bulb.
+  118: text: 4. Open the window in the base plate
+  119: text: and replace the halogen lamp or
+  120: text: fluorescent lamp of transmitted
+  121: text: il uminator.
+  122: text: Model AY11230
+  123: text: Model AY11234
+  124: text: 14
+  125: text: Objectives
+  126: text: Revolving Turret
+  127: text: Coarse
+  128: text: Adjustment
+  129: text: Knob
+  130: text: MODEL AY11236
+  131: text: MICROSCOPE USAGE
+  132: text: BARSKA Model AY11236 is a powerful fixed power compound
+  133: text: microscope designed for biological studies such as specimen
+  134: text: examination. It can also be used for examining bacteria and
+  135: text: for general clinical and medical studies and other scientific uses.
+  136: text: CONSTRUCTION
+  137: text: BARSKA Model AY11236 is a fixed power compound microscope.
+  138: text: It is constructed with two optical paths at the same angle. It is
+  139: text: equipped with transmitted il umination. By using this instrument,
+  140: text: the user can observe specimens at magnification from 40x to
+  141: text: 1000x by selecting the desired objective lens. Coarse and fine
+  142: text: focus adjustments provide accuracy and image detail. The rotating
+  143: text: head al ows the user to position the eyepieces for maximum
+  144: text: viewing comfort and easy access to al  adjustment knobs.
+  145: text: Model AY11236
+  146: text: Fine
+  147: text: Adjustment
+  148: text: Knob
+  149: text: Stage
+  150: text: Condenser
+  151: text: Focusing
+  152: text: Knob
+  153: text: Eyepiece
+  154: text: Stand
+  155: text: Lamp
+  156: text: On/Of
+  157: text: Switch
+  158: text: Lamp
+  159: text: Power
+  160: text: Cord
+  161: text: Rotating Head
+  162: text: Stage Clip
+  163: text: Adjustment
+  164: text: Interpupil ary Slide Adjustment
+  165: text: Circling Minimums
+  166: text: 7KHUHglyph<c=3,font=/AAAAAH+ArialMT>ZDVglyph<c=3,font=/AAAAAH+ArialMT>Dglyph<c=3,font=/AAAAAH+ArialM
+  167: text: improved obstacle protection. To indicate that the new criteria had been applied to a given procedur
+  168: text: is placed on
+  169: text: the circling line of minimums. The new circling tables and explanatory information is located in the
+  170: text: 7KHglyph<c=3,font=/AAAAAH+ArialMT>DSSURDFKHVglyph<c=3,font=/AAAAAH+ArialMT>XVLQJglyph<c=3,font=/AAAA
+  171: text: on the circling line of
+  172: text: minima.
+  173: text: $SSO\glyph<c=3,font=/AAAAAK+Arial-ItalicMT>6WDQGDUGglyph<c=3,font=/AAAAAK+Arial-ItalicMT>&LUFOLQJgly
+  174: text: $SSO\glyph<c=3,font=/AAAAAK+Arial-ItalicMT>([SDQGHGglyph<c=3,font=/AAAAAK+Arial-ItalicMT>&LUFOLQJgly
+  175: text: Table
+  176: text: AIRPORT SKETCH
+  177: text: The airport sketch is a depiction of the airport with emphasis on runway pattern and related
+  178: text: information, positioned in either the lower left or lower right corner of the chart to aid pi-
+  179: text: lot recognition of the airport from the air and to provide some information to aid on ground
+  180: text: navigation of the airport. The runways are drawn to scale and oriented to true north. Runway
+  181: text: dimensions (length and width) are shown for al  active runways.
+  182: text: Runway(s) are depicted based on what type and construction of the runway.
+  183: text: Hard Surface
+  184: text: Other Than
+  185: text: Hard Surface
+  186: text: Metal Surface
+  187: text: Closed Runway
+  188: text: Under Construction
+  189: text: Stopways,
+  190: text: Taxiways, Park-
+  191: text: ing Areas
+  192: text: Displaced
+  193: text: Threshold
+  194: text: Closed
+  195: text: Pavement
+  196: text: Water Runway
+  197: text: Taxiways and aprons are shaded grey. Other runway features that may be shown are runway numbers, run
+  198: text: sions, runway slope, arresting gear, and displaced threshold.
+  199: text: 2WKHUglyph<c=3,font=/AAAAAH+ArialMT>LQIRUPDWLRQglyph<c=3,font=/AAAAAH+ArialMT>FRQFHUQLQJglyph<c=3,fo
+  200: text: -
+  201: text: pads may also be shown.
+  202: text: $LUSRUWglyph<c=3,font=/AAAAAN+Arial-BoldMT>(OHYDWLRQglyph<c=3,font=/AAAAAN+Arial-BoldMT>DQGglyph<c=3
+  203: text: The airport elevation is shown enclosed within a box in the upper left corner of the sketch box and 
+  204: text: 114
+  205: text: FAA Chart Users' Guide - Terminal Procedures Publication (TPP) - Terms
+  206: text: AGL 2013 Financial Calendar
+  207: text: 22 August 2012
+  208: text: 2012 ful  year result and final dividend announced
+  209: text: 30 August 2012
+  210: text: Ex-dividend trading commences
+  211: text: 5 September 2012
+  212: text: Record date for 2012 final dividend
+  213: text: 27 September 2012
+  214: text: Final dividend payable
+  215: text: 23 October 2012
+  216: text: Annual General Meeting
+  217: text: 27 February 2013 1
+  218: text: 2013 interim result and interim dividend announced
+  219: text: 28 August 2013 1
+  220: text: 2013 ful  year results and final dividend announced
+  221: text: 1 Indicative dates only, subject to change/Board confirmation
+  222: text: AGL's Annual General Meeting wil  be held at the City Recital Hal , Angel Place, Sydney
+  223: text: commencing at 10.30am on Tuesday 23 October 2012.
+  224: text: Yesterday
+  225: text: Established in Sydney in 1837, and then
+  226: text: known as The Australian Gas Light Company,
+  227: text: the AGL business has an established history
+  228: text: and reputation for serving the gas and
+  229: text: electricity needs of Australian households.
+  230: text: In 1841, when AGL supplied the gas to light
+  231: text: the first public street lamp, it was reported
+  232: text: in the Sydney Gazette as a 'wonderful
+  233: text: achievement of scientific knowledge, assisted
+  234: text: by mechanical ingenuity.' Within two years,
+  235: text: 165 gas lamps were lighting the City of Sydney.
+  236: text: Looking back on
+  237: text: 175years of
+  238: text: lookingforward.
+  239: text: AGL Energy Limited  ABN 74 115 061 375
+  240: text: 29
+  241: text: signs, signals and road markings
+  242: text: 3
+  243: text: In
+  244: text: chapter 2, you and your vehicle
+  245: text: , you learned about
+  246: text: some of the controls in your vehicle. This chapter is a handy
+  247: text: reference section that gives examples of the most common
+  248: text: signs, signals and road markings that keep traffic organized
+  249: text: and flowing smoothly.
+  250: text: Signs
+  251: text: There are three ways to read signs: by their shape, colour and
+  252: text: the messages printed on them. Understanding these three ways
+  253: text: of classifying signs wil  help you figure out the meaning of signs
+  254: text: that are new to you.
+  255: text: Stop
+  256: text: Yield the right-of-way
+  257: text: Shows driving
+  258: text: regulations
+  259: text: Explains lane use
+  260: text: School zone signs
+  261: text: are fluorescent
+  262: text: yel ow-green
+  263: text: Tel s about motorist
+  264: text: services
+  265: text: Shows a permitted
+  266: text: action
+  267: text: Shows an action that
+  268: text: is not permitted
+  269: text: Warns of hazards
+  270: text: ahead
+  271: text: Warns of
+  272: text: construction zones
+  273: text: Railway crossing
+  274: text: Shows distance and
+  275: text: direction
+  276: text: •  Signs
+  277: text: -
+  278: text: regulatory signs
+  279: text: -
+  280: text: school,
+  281: text: playground and
+  282: text: crosswalk signs
+  283: text: -
+  284: text: lane use signs
+  285: text: -
+  286: text: urn control signs
+  287: text: t
+  288: text: -
+  289: text: parking signs
+  290: text: -
+  291: text: eserved lane
+  292: text: r
+  293: text: signs
+  294: text: -
+  295: text: warning signs
+  296: text: -
+  297: text: object markers
+  298: text: -
+  299: text: onstruction
+  300: text: c
+  301: text: signs
+  302: text: -
+  303: text: information and
+  304: text: destination signs
+  305: text: -
+  306: text: ailway signs
+  307: text: r
+  308: text: •  Signals
+  309: text: -
+  310: text: lane control
+  311: text: signals
+  312: text: -
+  313: text: traffic lights
+  314: text: •  Road markings
+  315: text: -
+  316: text: yel ow lines
+  317: text: -
+  318: text: white lines
+  319: text: -
+  320: text: reserved lane
+  321: text: markings
+  322: text: -
+  323: text: other markings
+  324: text: in this chapter
+ 325: section_header: KEYWORDS
+ 326: text: PDF document conversion, layout segmentation, object-detection, data set, Machine Learning
+ 327: section_header: ACMReference Format:
+ 328: text: Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ahmed S. Nassar, and Peter Staar. 2022. DocLayNet: 
+ 329: page_header: KDD '22, August 14-18, 2022, Washington, DC, USA Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ah
+ 330: section_header: 1 INTRODUCTION
+ 331: text: Despite the substantial improvements achieved with machine-learning (ML) approaches and deep neural 
+ 332: text: Akeyproblem in the process of document conversion is to understand the structure of a single documen
+ 333: text: In this paper, we present the DocLayNet dataset. It provides pageby-page layout annotation ground-tr
+ 334: list with name=list
+  335: list_item: (1) Human Annotation : In contrast to PubLayNet and DocBank, we relied on human annotation instead o
+  336: list_item: (2) Large Layout Variability : We include diverse and complex layouts from a large variety of public
+  337: list_item: (3) Detailed Label Set : We define 11 class labels to distinguish layout features in high detail. Pu
+  338: list_item: (4) Redundant Annotations : A fraction of the pages in the DocLayNet data set carry more than one hu
+ 339: footnote: 1 https://developer.ibm.com/exchanges/data/all/doclaynet
+ 340: text: This enables experimentation with annotation uncertainty and quality control analysis.
+ 341: list with name=list
+  342: list_item: (5) Pre-defined Train-, Test- & Validation-set : Like DocBank, we provide fixed train-, test- & vali
+ 343: text: All aspects outlined above are detailed in Section 3. In Section 4, we will elaborate on how we desi
+ 344: text: In Section 5, we will present baseline accuracy numbers for a variety of object detection methods (F
+ 345: section_header: 2 RELATED WORK
+ 346: text: While early approaches in document-layout analysis used rulebased algorithms and heuristics [8], the
+ 347: text: Lately, new types of ML models for document-layout analysis have emerged in the community [18-21]. T
+ 348: section_header: 3 THE DOCLAYNET DATASET
+ 349: text: DocLayNet contains 80863 PDF pages. Among these, 7059 carry two instances of human annotations, and 
+ 350: text: In addition to open intellectual property constraints for the source documents, we required that the
+ 351: page_header: DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
+ 352: page_header: KDD '22, August 14-18, 2022, Washington, DC, USA
+ 353: picture
+  354: caption: Figure 2: Distribution of DocLayNet pages across document categories.
+  355: text: Patents
+  356: text: 8%
+  357: text: Scientific
+  358: text: 17%
+  359: text: Financial
+  360: text: 32%
+  361: text: Tenders
+  362: text: 6%
+  363: text: Laws
+  364: text: 16%
+  365: text: Manuals
+  366: text: 21%
+ 367: text: to a minimum, since they introduce difficulties in annotation (see Section 4). As a second condition
+ 368: text: The pages in DocLayNet can be grouped into six distinct categories, namely Financial Reports , Manua
+ 369: text: We did not control the document selection with regard to language. The vast majority of documents co
+ 370: text: To ensure that future benchmarks in the document-layout analysis community can be easily compared, w
+ 371: footnote: 2 e.g. AAPL from https://www.annualreports.com/
+ 372: text: Table 1 shows the overall frequency and distribution of the labels among the different sets. Importa
+ 373: text: In order to accommodate the different types of models currently in use by the community, we provide 
+ 374: text: Despite being cost-intense and far less scalable than automation, human annotation has several benef
+ 375: section_header: 4 ANNOTATION CAMPAIGN
+ 376: text: The annotation campaign was carried out in four phases. In phase one, we identified and prepared the
+ 377: page_header: KDD '22, August 14-18, 2022, Washington, DC, USA Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ah
+ 378: table
+  379: caption: Table 1: DocLayNet dataset overview. Along with the frequency of each class label, we present the re
+ 380: picture
+  381: caption: Figure 3: Corpus Conversion Service annotation user interface. The PDF page is shown in the backgrou
+  382: text: Text
+  383: text: Picture
+  384: text: Formula
+  385: text: Code
+  386: text: Complex-form
+  387: text: Section-header
+  388: text: footer
+  389: text: Page-header
+  390: text: Footnote
+  391: text: Table
+  392: text: Caption
+  393: text: List-item
+  394: text: Title
+  395: text: Skip
+  396: text: Filter
+  397: text: Submit
+  398: text: Report problem
+  399: text: Page
+ 400: text: we distributed the annotation workload and performed continuous quality controls. Phase one and two 
+ 401: text: Phase 1: Data selection and preparation. Our inclusion criteria for documents were described in Sect
+ 402: text: Preparation work included uploading and parsing the sourced PDF documents in the Corpus Conversion S
+ 403: text: Phase 2: Label selection and guideline. We reviewed the collected documents and identified the most 
+ 404: footnote: 3 https://arxiv.org/
+ 405: page_header: DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
+ 406: page_header: KDD '22, August 14-18, 2022, Washington, DC, USA
+ 407: text: the textual content of an element, which goes beyond visual layout recognition, in particular outsid
+ 408: text: At first sight, the task of visual document-layout interpretation appears intuitive enough to obtain
+ 409: text: Obviously, this inconsistency in annotations is not desirable for datasets which are intended to be 
+ 410: list with name=list
+  411: list_item: (1) Every list-item is an individual object instance with class label List-item . This definition is
+  412: list_item: (2) A List-item is a paragraph with hanging indentation. Singleline elements can qualify as List-ite
+  413: list_item: (3) For every Caption , there must be exactly one corresponding Picture or Table .
+  414: list_item: (4) Connected sub-pictures are grouped together in one Picture object.
+  415: list_item: (5) Formula numbers are included in a Formula object.
+  416: list_item: (6) Emphasised text (e.g. in italic or bold) at the beginning of a paragraph is not considered a Sec
+ 417: text: The complete annotation guideline is over 100 pages long and a detailed description is obviously out
+ 418: text: Phase 3: Training. After a first trial with a small group of people, we realised that providing the 
+ 419: picture
+  420: text: 1ef23f5e6d7f10d393f9947e8208285dce9ae87250ac483ac4b4a59d51b4e037
+  421: text: Compliant with guidelines
+  422: text: Plausible but invalid alternative
+  423: text: Borderline case: Two guideline-compliant alternatives
+  424: text: 03c31a2ee1ed1b583c28957f475ee545d144e1b5a264dc4dd068c8d2f6a64860
+  425: text: 1a5cd524f1844c1260c8e8c073e1f442423c264583212b0d0b6626fc780e6ed4
+  426: text: A
+  427: text: B
+  428: text: C
+  429: text: D
+ 430: text: 05237a14f2524e3f53c8454b074409d05078038a6a36b770fcc8ec7e540deae0
+ 431: caption: Figure 4: Examples of plausible annotation alternatives for the same page. Criteria in our annotatio
+ 432: text: were carried out over a timeframe of 12 weeks, after which 8 of the 40 initially allocated annotator
+ 433: text: Phase 4: Production annotation. The previously selected 80K pages were annotated with the defined 11
+ 434: page_header: KDD '22, August 14-18, 2022, Washington, DC, USA Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ah
+ 435: text: Table 2: Prediction performance (mAP@0.5-0.95) of object detection networks on DocLayNet test set. T
+ 436: table
+ 437: text: to avoid this at any cost in order to have clear, unbiased baseline numbers for human document-layou
+ 438: section_header: 5 EXPERIMENTS
+ 439: text: The primary goal of DocLayNet is to obtain high-quality ML models capable of accurate document-layou
+ 440: picture
+  441: caption: Figure 5: Prediction performance (mAP@0.5-0.95) of a Mask R-CNNnetworkwithResNet50backbonetrainedoni
+  442: text: 0
+  443: text: 20
+  444: text: 40
+  445: text: 60
+  446: text: 80
+  447: text: 100
+  448: text: % of DocLayNet training set
+  449: text: 50
+  450: text: 55
+  451: text: 60
+  452: text: 65
+  453: text: 70
+  454: text: mAP 0.50:0.95
+  455: text: 10 1
+  456: text: 10 2
+  457: text: 50
+  458: text: 55
+  459: text: 60
+  460: text: 65
+  461: text: 70
+ 462: text: paper and leave the detailed evaluation of more recent methods mentioned in Section 2 for future wor
+ 463: text: In this section, we will present several aspects related to the performance of object detection mode
+ 464: section_header: Baselines for Object Detection
+ 465: text: In Table 2, we present baseline experiments (given in mAP) on Mask R-CNN [12], Faster R-CNN [11], an
+ 466: page_header: DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
+ 467: page_header: KDD '22, August 14-18, 2022, Washington, DC, USA
+ 468: text: Table 3: Performance of a Mask R-CNN R50 network in mAP@0.5-0.95 scores trained on DocLayNet with di
+ 469: table
+ 470: section_header: Learning Curve
+ 471: text: One of the fundamental questions related to any dataset is if it is 'large enough'. To answer this q
+ 472: section_header: Impact of Class Labels
+ 473: text: The choice and number of labels can have a significant effect on the overall model performance. Sinc
+ 474: text: Table 4: Performance of a Mask R-CNN R50 network with document-wise and page-wise split for differen
+ 475: table
+ 476: text: lists in PubLayNet (grouped list-items) versus DocLayNet (separate list-items), the label set of siz
+ 477: section_header: Impact of Document Split in Train and Test Set
+ 478: text: Many documents in DocLayNet have a unique styling. In order to avoid overfitting on a particular sty
+ 479: section_header: Dataset Comparison
+ 480: text: Throughout this paper, we claim that DocLayNet's wider variety of document layouts leads to more rob
+ 481: page_header: KDD '22, August 14-18, 2022, Washington, DC, USA Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ah
+ 482: text: Table 5: Prediction Performance (mAP@0.5-0.95) of a Mask R-CNN R50 network across the PubLayNet, Doc
+ 483: table
+ 484: text: Section-header , Table and Text . Before training, we either mapped or excluded DocLayNet's other la
+ 485: text: For comparison of DocBank with DocLayNet, we trained only on Picture and Table clusters of each data
+ 486: section_header: Example Predictions
+ 487: text: To conclude this section, we illustrate the quality of layout predictions one can expect from DocLay
+ 488: section_header: 6 CONCLUSION
+ 489: text: In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout an
+ 490: text: From the dataset, we have derived on the one hand reference metrics for human performance on documen
+ 491: text: To date, there is still a significant gap between human and ML accuracy on the layout interpretation
+ 492: section_header: REFERENCES
+ 493: list with name=list
+  494: list_item: [1] Max Göbel, Tamir Hassan, Ermelinda Oro, and Giorgio Orsi. Icdar 2013 table competition. In 2013 
+  495: list_item: [2] Christian Clausner, Apostolos Antonacopoulos, and Stefan Pletschacher. Icdar2017 competition on 
+  496: list_item: [3] Hervé Déjean, Jean-Luc Meunier, Liangcai Gao, Yilun Huang, Yu Fang, Florian Kleber, and Eva-Mari
+  497: list_item: [4] Antonio Jimeno Yepes, Peter Zhong, and Douglas Burdick. Competition on scientific literature par
+  498: list_item: [5] Logan Markewich, Hao Zhang, Yubin Xing, Navid Lambert-Shirzad, Jiang Zhexin, Roy Lee, Zhi Li, an
+  499: list_item: [6] Xu Zhong, Jianbin Tang, and Antonio Jimeno-Yepes. Publaynet: Largest dataset ever for document l
+  500: list_item: [7] Minghao Li, Yiheng Xu, Lei Cui, Shaohan Huang, Furu Wei, Zhoujun Li, and Ming Zhou. Docbank: A b
+  501: list_item: [8] Riaz Ahmad, Muhammad Tanvir Afzal, and M. Qadir. Information extraction from pdf sources based o
+  502: list_item: [9] Ross B. Girshick, Jeff Donahue, Trevor Darrell, and Jitendra Malik. Rich feature hierarchies for
+  503: list_item: [10] Ross B. Girshick. Fast R-CNN. In 2015 IEEE International Conference on Computer Vision , ICCV, 
+  504: list_item: [11] Shaoqing Ren, Kaiming He, Ross Girshick, and Jian Sun. Faster r-cnn: Towards real-time object d
+  505: list_item: [12] Kaiming He, Georgia Gkioxari, Piotr Dollár, and Ross B. Girshick. Mask R-CNN. In IEEE Internati
+  506: list_item: [13] Glenn Jocher, Alex Stoken, Ayush Chaurasia, Jirka Borovec, NanoCode012, TaoXie, Yonghye Kwon, K
+ 507: page_header: DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
+ 508: page_header: KDD '22, August 14-18, 2022, Washington, DC, USA
+ 509: picture
+  510: caption: Text Caption List-Item Formula Table Section-Header Picture Page-Header Page-Footer Title
+  511: text: 4bed2a8aa51ac37058e79605821bbc426d032b0b6ca8bdf3409ed8508ccd8c67
+  512: text: MOTION
+  513: text: 2f2a06d08f5ad565d0f5e815f4ddf666365b2cff435cdaeb8850217e8a8efabf
+  514: text: W
+  515: text: 7f2fd7293e04bf4f1756ae51f5779764933da1d1d2002e3915356050570fc75b
+  516: text: OPERATION (cont.
+  517: text: 1b81cf65f47456ad4faa725d1eb09879bd633af16cfe2bf8cea661b87907bfac
+  518: text: b60da9d26f488cb133e47d101d35fda1bdca2671ade60764d1cd569590270327
+  519: text: 2b7b8355a42ebef0cf91583aad9f30f7c9fa63c5b05911730ba15275c024965b
+  520: text: A
+  521: text: B
+  522: text: C
+  523: text: D
+  524: text: E
+  525: text: moti
+  526: text: F
+ 527: text: Figure 6: Example layout predictions on selected pages from the DocLayNet test-set. (A, D) exhibit f
+ 528: text: Diaconu, Mai Thanh Minh, Marc, albinxavi, fatih, oleg, and wanghao yang. ultralytics/yolov5: v6.0 - 
+ 529: list with name=list
+  530: list_item: [20] Shoubin Li, Xuyan Ma, Shuaiqun Pan, Jun Hu, Lin Shi, and Qing Wang. Vtlayout: Fusion of visual 
+  531: list_item: [14] Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Ser
+  532: list_item: [15] Mingxing Tan, Ruoming Pang, and Quoc V. Le. Efficientdet: Scalable and efficient object detecti
+  533: list_item: [16] Tsung-Yi Lin, Michael Maire, Serge J. Belongie, Lubomir D. Bourdev, Ross B. Girshick, James Hay
+  534: list_item: [17] Yuxin Wu, Alexander Kirillov, Francisco Massa, Wan-Yen Lo, and Ross Girshick. Detectron2, 2019.
+  535: list_item: [18] Nikolaos Livathinos, Cesar Berrospi, Maksym Lysak, Viktor Kuropiatnyk, Ahmed Nassar, Andre Carv
+  536: list_item: [19] Yiheng Xu, Minghao Li, Lei Cui, Shaohan Huang, Furu Wei, and Ming Zhou. Layoutlm: Pre-training 
+  537: list_item: [21] Peng Zhang, Can Li, Liang Qiao, Zhanzhan Cheng, Shiliang Pu, Yi Niu, and Fei Wu. Vsr: A unified
+  538: list_item: [22] Peter W J Staar, Michele Dolfi, Christoph Auer, and Costas Bekas. Corpus conversion service: A 
+  539: list_item: [23] Connor Shorten and Taghi M. Khoshgoftaar. A survey on image data augmentation for deep learning

@@ -27,6 +27,9 @@ class DocItemLabel(str, Enum):
     KEY_VALUE_REGION = "key_value_region"
     GRADING_SCALE = "grading_scale"  # for elements in forms, questionaires representing a grading scale
     # e.g. [strongly disagree | ... | ... | strongly agree]
+    # e.g. ★★☆☆☆
+    HANDWRITTEN_TEXT = "handwritten_text"
+    EMPTY_VALUE = "empty_value"  # used for empty value fields in fillable forms
 
     # Additional labels for markup-based formats (e.g. HTML, Word)
     PARAGRAPH = "paragraph"
@@ -60,6 +63,9 @@ class DocItemLabel(str, Enum):
             DocItemLabel.KEY_VALUE_REGION: (183, 65, 14),
             DocItemLabel.PARAGRAPH: (255, 255, 153),
             DocItemLabel.REFERENCE: (176, 224, 230),
+            DocItemLabel.GRADING_SCALE: (255, 204, 204),
+            DocItemLabel.HANDWRITTEN_TEXT: (204, 255, 204),
+            DocItemLabel.EMPTY_VALUE: (220, 220, 220),
         }
         return color_map.get(label, (0, 0, 0))
 
@@ -166,7 +172,6 @@ class GraphCellLabel(str, Enum):
     KEY = "key"  # used to designate a key (label) of a key-value element
     VALUE = "value"  # Data value with or without explicit Key, but filled in,
     # e.g. telephone number, address, quantity, name, date
-    EMPTY_VALUE = "empty_value"  # used for empty value fields in fillable forms
     CHECKBOX = "checkbox"
 
     def __str__(self):
@@ -179,7 +184,6 @@ class GraphCellLabel(str, Enum):
         color_map = {
             GraphCellLabel.KEY: (255, 0, 0),
             GraphCellLabel.VALUE: (0, 255, 0),
-            GraphCellLabel.EMPTY_VALUE: (0, 0, 255),
         }
         return color_map.get(label, (0, 0, 0))
 

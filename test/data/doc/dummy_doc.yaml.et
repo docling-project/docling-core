@@ -1,5 +1,6 @@
 0: unspecified with name=_root_
- 1: title
+ 1: title: DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
  2: picture
- 3: caption
- 4: table
+  3: section_header: OPERATION (cont.)
+ 4: caption: Figure 1: Four examples of complex page layouts across different document categories
+ 5: table
