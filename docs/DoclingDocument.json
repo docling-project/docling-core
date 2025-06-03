@@ -2063,7 +2063,8 @@
             "page_header",
             "paragraph",
             "reference",
-            "text"
+            "text",
+            "empty_value"
           ],
           "title": "Label",
           "type": "string"

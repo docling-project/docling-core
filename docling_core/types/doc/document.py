@@ -842,6 +842,7 @@ class TextItem(DocItem):
         DocItemLabel.PARAGRAPH,
         DocItemLabel.REFERENCE,
         DocItemLabel.TEXT,
+        DocItemLabel.EMPTY_VALUE,
     ]
 
     orig: str  # untreated representation
