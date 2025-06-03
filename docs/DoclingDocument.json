@@ -361,7 +361,8 @@
       "description": "ContentLayer.",
       "enum": [
         "body",
-        "furniture"
+        "furniture",
+        "background"
       ],
       "title": "ContentLayer",
       "type": "string"
@@ -682,7 +683,6 @@
         "unspecified",
         "key",
         "value",
-        "empty_value",
         "checkbox"
       ],
       "title": "GraphCellLabel",

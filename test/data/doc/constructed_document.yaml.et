@@ -1,73 +1,75 @@
 0: unspecified with name=_root_
  1: list with name=group
-  2: list_item
- 3: title
-  4: text
-  5: text
+  2: list_item: item of leading list
+ 3: title: Title of the Document
+  4: text: Author 1
+Affiliation 1
+  5: text: Author 2
+Affiliation 2
  6: chapter with name=Introduction
-  7: section_header
-  8: text
+  7: section_header: 1. Introduction
+  8: text: This paper introduces the biggest invention ever made. ...
   9: list with name=group
-   10: list_item
-   11: list_item
-   12: list_item
+   10: list_item: list item 1
+   11: list_item: list item 2
+   12: list_item: list item 3
     13: ordered_list with name=group
-     14: list_item
-     15: list_item
-     16: list_item
+     14: list_item: list item 3.a
+     15: list_item: list item 3.b
+     16: list_item: list item 3.c
       17: ordered_list with name=group
-       18: list_item
-   19: list_item
- 20: caption
+       18: list_item: list item 3.c.i
+   19: list_item: list item 4
+ 20: caption: This is the caption of table 1.
  21: table
- 22: caption
+ 22: caption: This is the caption of figure 1.
  23: picture
- 24: caption
+ 24: caption: This is the caption of figure 2.
  25: picture
  26: list with name=group
-  27: list_item
+  27: list_item: item 1 of list
  28: list with name=group
  29: list with name=group
-  30: list_item
-  31: list_item
+  30: list_item: item 1 of list after empty list
+  31: list_item: item 2 of list after empty list
  32: list with name=group
-  33: list_item
-  34: list_item
+  33: list_item: item 1 of neighboring list
+  34: list_item: item 2 of neighboring list
    35: list with name=group
-    36: list_item
+    36: list_item: item 1 of sub list
     37: inline with name=group
-     38: text
-     39: code
-     40: text
+     38: text: Here a code snippet:
+     39: code: <p>Hello world</p>
+     40: text: (to be displayed inline)
     41: inline with name=group
-     42: text
-     43: formula
-     44: text
- 45: text
- 46: code
- 47: text
- 48: formula
+     42: text: Here a formula:
+     43: formula: E=mc^2
+     44: text: (to be displayed inline)
+ 45: text: Here a code block:
+ 46: code: print("Hello world")
+ 47: text: Here a formula block:
+ 48: formula: E=mc^2
  49: key_value_region
  50: form
  51: inline with name=group
-  52: text
-  53: text
-  54: text
-  55: text
-  56: text
-  57: text
-  58: text
-  59: text
+  52: text: Some formatting chops:
+  53: text: bold
+  54: text: italic
+  55: text: underline
+  56: text: strikethrough
+  57: text: hyperlink
+  58: text: &
+  59: text: everything at the same time.
  60: ordered_list with name=list A
-  61: list_item
-  62: list_item
-  63: list_item
+  61: list_item: Item 1 in A
+  62: list_item: Item 2 in A
+  63: list_item: Item 3 in A
    64: ordered_list with name=list B
-    65: list_item
-    66: list_item
+    65: list_item: Item 1 in B
+    66: list_item: Item 2 in B
      67: ordered_list with name=list C
-      68: list_item
-      69: list_item
-    70: list_item
-  71: list_item
- 72: text
+      68: list_item: Item 1 in C
+      69: list_item: Item 2 in C
+    70: list_item: Item 3 in B
+  71: list_item: Item 4 in A
+ 72: text: The end.
