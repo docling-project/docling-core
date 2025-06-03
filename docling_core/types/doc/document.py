@@ -3237,6 +3237,11 @@ class DoclingDocument(BaseModel):
             "document_index": DocItemLabel.DOCUMENT_INDEX,
             "otsl": DocItemLabel.TABLE,
             "section_header_level_1": DocItemLabel.SECTION_HEADER,
+            "section_header_level_2": DocItemLabel.SECTION_HEADER,
+            "section_header_level_3": DocItemLabel.SECTION_HEADER,
+            "section_header_level_4": DocItemLabel.SECTION_HEADER,
+            "section_header_level_5": DocItemLabel.SECTION_HEADER,
+            "section_header_level_6": DocItemLabel.SECTION_HEADER,
             "checkbox_selected": DocItemLabel.CHECKBOX_SELECTED,
             "checkbox_unselected": DocItemLabel.CHECKBOX_UNSELECTED,
             "text": DocItemLabel.TEXT,
@@ -3622,7 +3627,7 @@ class DoclingDocument(BaseModel):
                 rf"{DocItemLabel.PAGE_FOOTER}|{DocItemLabel.FORMULA}|"
                 rf"{DocItemLabel.CAPTION}|{DocItemLabel.PICTURE}|"
                 rf"{DocItemLabel.FOOTNOTE}|{DocItemLabel.CODE}|"
-                rf"{DocItemLabel.SECTION_HEADER}_level_1|"
+                rf"{DocItemLabel.SECTION_HEADER}_level_[1-6]|"
                 rf"{DocumentToken.ORDERED_LIST.value}|"
                 rf"{DocumentToken.UNORDERED_LIST.value}|"
                 rf"{DocItemLabel.KEY_VALUE_REGION}|"
@@ -3830,12 +3835,23 @@ class DoclingDocument(BaseModel):
                     if tag_name in [DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER]:
                         content_layer = ContentLayer.FURNITURE
 
-                    doc.add_text(
-                        label=doc_label,
-                        text=text_content,
-                        prov=element_prov,
-                        content_layer=content_layer,
-                    )
+                    if doc_label == DocItemLabel.SECTION_HEADER:
+                        # Extract level from tag_name (e.g. "section_level_header_1" -> 1)
+                        level = int(tag_name.split("_")[-1])
+                        doc.add_heading(
+                            text=text_content,
+                            level=level,
+                            prov=element_prov,
+                            content_layer=content_layer,
+                        )
+                    else:
+                        doc.add_text(
+                            label=doc_label,
+                            text=text_content,
+                            prov=element_prov,
+                            content_layer=content_layer,
+                        )
+
         return doc
 
     @deprecated("Use save_as_doctags instead.")
