@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/docling-core)](https://pypi.org/project/docling-core/)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%20%203.11%20%7C%203.12%20%7C%203.13-blue)
-[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
@@ -10,7 +10,7 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![License MIT](https://img.shields.io/github/license/docling-project/docling-core)](https://opensource.org/licenses/MIT)
 
-Docling Core is a library that defines the data types in [Docling](https://github.com/docling-project/docling), leveraging pydantic models.
+Docling Core is a library that defines core data types and transformations in [Docling](https://github.com/docling-project/docling).
 
 ## Installation
 
@@ -21,54 +21,56 @@ pip install docling-core
 
 ### Development setup
 
-To develop for Docling Core, you need Python 3.9 / 3.10 / 3.11 / 3.12 / 3.13 and Poetry. You can then install from your local clone's root dir:
+To develop for Docling Core, you need Python 3.9 / 3.10 / 3.11 / 3.12 / 3.13 and uv. You can then install from your local clone's root dir:
 ```bash
-poetry install --all-extras
+uv sync --all-extras
 ```
 
 To run the pytest suite, execute:
 ```
-poetry run pytest test
+uv run pytest -s test
 ```
 
-## Basic Usage
+## Main features
 
-- You can validate your JSON objects using the pydantic class definition.
+Docling Core provides the foundational DoclingDocument data model and API, as well as
+additional APIs for tasks like serialization and chunking, which are key to developing
+generative AI applications using Docling.
 
-  ```py
-  from docling_core.types import DoclingDocument
+### DoclingDocument
 
-  data_dict = {...}  # here the object you want to validate, as a dictionary
-  DoclingDocument.model_validate(data_dict)
+Docling Core defines the DoclingDocument as a Pydantic model, allowing for advanced
+data model control, customizability, and interoperability.
 
-  data_str = {...}  # here the object as a JSON string
-  DoclingDocument.model_validate_json(data_str)
-  ```
+In addition to specifying the schema, it provides a handy API for building documents,
+as well as for basic operations, e.g. exporting to various formats, like Markdown, HTML,
+and others.
 
-- You can generate the JSON schema of a model with the script `generate_jsonschema`.
+👉 More details:
+- [Architecture docs](https://docling-project.github.io/docling/concepts/architecture/)
+- [DoclingDocument docs](https://docling-project.github.io/docling/concepts/docling_document/)
 
-  ```py
-  # for the `DoclingDocument` type
-  generate_jsonschema DoclingDocument
+### Serialization
 
-  # for the use `Record` type
-  generate_jsonschema Record
-  ```
+Different users can have varying requirements when it comes to serialization.
+To address this, the Serialization API introduces a design that allows easy extension,
+while providing feature-rich built-in implementations (on which the respective
+DoclingDocument helpers are actually based).
 
-## Documentation
+👉 More details:
+- [Serialization docs](https://docling-project.github.io/docling/concepts/serialization/)
+- [Serialization example](https://docling-project.github.io/docling/examples/serialization/)
 
-Docling Core contains 3 top-level data types:
+### Chunking
 
-- **DoclingDocument** for publications like books, articles, reports, or patents. The JSON that can be exported using Docling follows this schema.
-  The DoclingDocument type also models the metadata that may be attached to the converted document.
-  Check [DoclingDocument](docs/DoclingDocument.json) for the full JSON schema.
-- **Record** for structured database records, centered on an entity or _subject_ that is provided with a list of attributes.
-  Related to records, the statements can represent annotations on text by Natural Language Processing (NLP) tools.
-  Check [Record](docs/Record.json) for the full JSON schema.
-- **Generic** for any data representation, ensuring minimal configuration and maximum flexibility.
-  Check [Generic](docs/Generic.json) for the full JSON schema.
+Similarly to above, the Chunking API provides built-in chunking capabilities as well as
+a design that enables easy extension, this way tackling customization requirements of
+different use cases.
 
-The data schemas are defined using [pydantic](https://pydantic-docs.helpmanual.io/) models, which provide built-in processes to support the creation of data that adhere to those models.
+👉 More details:
+- [Chunking docs](https://docling-project.github.io/docling/concepts/chunking/)
+- [Hybrid chunking example](https://docling-project.github.io/docling/examples/hybrid_chunking/)
+- [Advanced chunking and serialization](https://docling-project.github.io/docling/examples/advanced_chunking_and_serialization/)
 
 ## Contributing
 

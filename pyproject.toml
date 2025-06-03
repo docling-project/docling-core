@@ -1,31 +1,26 @@
-[tool.poetry]
+[project]
 name = "docling-core"
-version = "2.30.1"
+version = "2.33.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["docling", "discovery", "etl", "information retrieval", "analytics", "database", "database schema", "schema", "JSON"]
+readme = "README.md"
 authors = [
-    "Cesar Berrospi Ramis <ceb@zurich.ibm.com>",
-    "Valery Weber <vwe@zurich.ibm.com>",
-    "Peter Staar <taa@zurich.ibm.com>",
-    "Christoph Auer <cau@zurich.ibm.com>",
-    "Tiago Santana <tiago.santana@ibm.com>",
-    "Michele Dolfi <dol@zurich.ibm.com>",
-    "Kasper Dinkla <dkl@zurich.ibm.com>",
-    "Rafael Teixeira de Lima <rtdl@ibm.com>",
-    "Panos Vagenas <pva@zurich.ibm.com>",
+    { name = "Cesar Berrospi Ramis", email = "ceb@zurich.ibm.com" },
+    { name = "Panos Vagenas", email = "pva@zurich.ibm.com" },
+    { name = "Michele Dolfi", email = "dol@zurich.ibm.com" },
+    { name = "Christoph Auer", email = "cau@zurich.ibm.com" },
+    { name = "Peter Staar", email = "taa@zurich.ibm.com" },
 ]
 maintainers = [
-    "Cesar Berrospi Ramis <ceb@zurich.ibm.com>",
-    "Peter Staar <taa@zurich.ibm.com>",
-    "Christoph Auer <cau@zurich.ibm.com>",
-    "Michele Dolfi <dol@zurich.ibm.com>",
-    "Panos Vagenas <pva@zurich.ibm.com>",
+    { name = "Panos Vagenas", email = "pva@zurich.ibm.com" },
+    { name = "Michele Dolfi", email = "dol@zurich.ibm.com" },
+    { name = "Christoph Auer", email = "cau@zurich.ibm.com" },
+    { name = "Peter Staar", email = "taa@zurich.ibm.com" },
+    { name = "Cesar Berrospi Ramis", email = "ceb@zurich.ibm.com" },
 ]
-readme = "README.md"
-homepage = "https://github.com/docling-project"
-repository = "https://github.com/docling-project/docling-core"
-keywords = ["docling", "discovery", "etl", "information retrieval", "analytics", "database", "database schema", "schema", "JSON"]
-classifiers=[
+classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -36,75 +31,69 @@ classifiers=[
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
-    "Programming Language :: Python :: 3"
+    "Programming Language :: Python :: 3",
 ]
-packages = [{ include = "docling_core" }]
+requires-python = '>=3.9,<4.0'
+dependencies = [
+    'jsonschema (>=4.16.0,<5.0.0)',
+    'pydantic (>=2.6.0,<3.0.0,!=2.10.0,!=2.10.1,!=2.10.2)',
+    'jsonref (>=1.1.0,<2.0.0)',
+    'tabulate (>=0.9.0,<0.10.0)',
+    'pandas (>=2.1.4,<3.0.0)',
+    'pillow (>=10.0.0,<12.0.0)',
+    'pyyaml (>=5.1,<7.0.0)',
+    'typing-extensions (>=4.12.2,<5.0.0)',
+    'typer (>=0.12.5,<0.16.0)',
+    'latex2mathml (>=3.77.0,<4.0.0)',
+]
 
-[tool.poetry.scripts]
-validate = "docling_core.utils.validate:main"
-generate_jsonschema = "docling_core.utils.generate_jsonschema:main"
-generate_docs = "docling_core.utils.generate_docs:main"
+[project.urls]
+homepage = "https://github.com/docling-project"
+repository = "https://github.com/docling-project/docling-core"
+issues = "https://github.com/docling-project/docling-core/issues"
+changelog = "https://github.com/docling-project/docling-core/blob/main/CHANGELOG.md"
+
+[project.scripts]
+# validate = "docling_core.utils.validate:main"  # use python -m docling_core.utils.validate
+# generate_jsonschema = "docling_core.utils.generate_jsonschema:main"  # use python -m docling_core.utils.generate_jsonschema
+# generate_docs = "docling_core.utils.generate_docs:main"  # use python -m docling_core.utils.generate_docs
 docling-view = "docling_core.cli.view:app"
 
-[tool.poetry.dependencies]
-python = "^3.9"
-jsonschema = "^4.16.0"
-pydantic = ">=2.6.0,<3.0.0,!=2.10.0,!=2.10.1,!=2.10.2"
-jsonref = "^1.1.0"
-tabulate = "^0.9.0"
-pandas = "^2.1.4"
-pillow = ">=10.0.0,<12.0.0"
-pyyaml = ">=5.1,<7.0.0"
-typing-extensions = "^4.12.2"
-transformers = { version = "^4.34.0", optional = true }
-semchunk = { version = "^2.2.0", optional = true }
-typer = ">=0.12.5,<0.16.0"
-latex2mathml = "^3.77.0"
-tiktoken = { version = "^0.9.0", optional = true }
+[project.optional-dependencies]
+chunking = ['semchunk (>=2.2.0,<3.0.0)', 'transformers (>=4.34.0,<5.0.0)']
+chunking-openai = ['semchunk', 'tiktoken (>=0.9.0,<0.10.0)']
 
-[tool.poetry.extras]
-chunking = ["semchunk", "transformers"]
-chunking-openai = ["semchunk", "tiktoken"]
-
-[tool.poetry.group.dev.dependencies]
-black = "^24.4.2"
-pytest = "^7.1.2"
-mypy = "^1.6.0"
-isort = "^5.10.1"
-pre-commit = "^3.7.1"
-autoflake = "^2.0.0"
-flake8 = "^7.1.0"
-pycodestyle = "^2.10.0"
-flake8-docstrings = "^1.6.0"
-pep8-naming = "^0.13.2"
-jsondiff = "^2.0.0"
-types-setuptools = "^70.3.0"
-python-semantic-release = "^7.32.2"
-pandas-stubs = "^2.1.4.231227"
-ipykernel = "^6.29.5"
-coverage = "^7.6.2"
-pytest-cov = "^6.0.0"
-
-[tool.poetry.group.constraints]
-optional = true
-
-[tool.poetry.group.constraints.dependencies]
-numpy = [
-    { version = ">=1.24.4,<3.0.0", markers = 'python_version >= "3.10"' },
-    { version = ">=1.24.4,<2.1.0", markers = 'python_version < "3.10"' },
+[dependency-groups]
+dev = [
+    "pre-commit~=3.7",
+    "mypy~=1.6",
+    "black~=24.4",
+    "isort~=5.10",
+    "autoflake~=2.0",
+    "flake8~=7.1",
+    "pycodestyle~=2.10",
+    "flake8-docstrings~=1.6",
+    "pep8-naming~=0.13",
+    "jsondiff~=2.0",
+    "types-setuptools~=70.3",
+    "pandas-stubs~=2.1",
+    "ipykernel~=6.29",
+    "coverage~=7.6",
+    "pytest~=8.3",
+    "pytest-cov>=6.1.1",
+    "python-semantic-release~=7.32",
 ]
 
+[tool.uv]
+package = true
+
 [tool.setuptools.packages.find]
-where = ["docling_core/resources/schemas"]
+where = [".", "docling_core/resources/schemas"]
+include = ["docling_core*"]
+namespaces = true
 
 [tool.setuptools.package-data]
-ccs = ["*.json"]
-search = ["*.json"]
-generated = ["*.json"]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+"*" = ["*.json"]
 
 [tool.black]
 line-length = 88

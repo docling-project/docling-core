@@ -1,6 +1,45 @@
 {
     "root": [
         {
+            "text": "In this image we can see a cartoon image of a duck holding a paper.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 261.966552734375,
+                                    "t": 715.8966522216797,
+                                    "r": 348.65899658203125,
+                                    "b": 627.1333770751953,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "Version 1.0",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -813,7 +852,7 @@
             }
         },
         {
-            "text": "Figure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.",
+            "text": "Figure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.\n\nIn this image, we can see some text and images.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -839,6 +878,80 @@
                                 "charspan": [
                                     0,
                                     134
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "self_ref": "#/pictures/1",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/31"
+                            },
+                            {
+                                "$ref": "#/texts/32"
+                            },
+                            {
+                                "$ref": "#/texts/33"
+                            },
+                            {
+                                "$ref": "#/texts/34"
+                            },
+                            {
+                                "$ref": "#/texts/35"
+                            },
+                            {
+                                "$ref": "#/texts/36"
+                            },
+                            {
+                                "$ref": "#/texts/37"
+                            },
+                            {
+                                "$ref": "#/texts/38"
+                            },
+                            {
+                                "$ref": "#/texts/39"
+                            },
+                            {
+                                "$ref": "#/texts/40"
+                            },
+                            {
+                                "$ref": "#/texts/41"
+                            },
+                            {
+                                "$ref": "#/texts/42"
+                            },
+                            {
+                                "$ref": "#/texts/43"
+                            },
+                            {
+                                "$ref": "#/texts/44"
+                            },
+                            {
+                                "$ref": "#/texts/45"
+                            },
+                            {
+                                "$ref": "#/texts/46"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 110.07231140136719,
+                                    "t": 719.2913360595703,
+                                    "r": 500.7577209472656,
+                                    "b": 581.2926177978516,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
                                 ]
                             }
                         ]
@@ -3146,6 +3259,886 @@
             }
         },
         {
+            "text": "In this image there is a table with some text on it.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/2",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/129"
+                            },
+                            {
+                                "$ref": "#/texts/130"
+                            },
+                            {
+                                "$ref": "#/texts/131"
+                            },
+                            {
+                                "$ref": "#/texts/132"
+                            },
+                            {
+                                "$ref": "#/texts/133"
+                            },
+                            {
+                                "$ref": "#/texts/134"
+                            },
+                            {
+                                "$ref": "#/texts/135"
+                            },
+                            {
+                                "$ref": "#/texts/136"
+                            },
+                            {
+                                "$ref": "#/texts/137"
+                            },
+                            {
+                                "$ref": "#/texts/138"
+                            },
+                            {
+                                "$ref": "#/texts/139"
+                            },
+                            {
+                                "$ref": "#/texts/140"
+                            },
+                            {
+                                "$ref": "#/texts/141"
+                            },
+                            {
+                                "$ref": "#/texts/142"
+                            },
+                            {
+                                "$ref": "#/texts/143"
+                            },
+                            {
+                                "$ref": "#/texts/144"
+                            },
+                            {
+                                "$ref": "#/texts/145"
+                            },
+                            {
+                                "$ref": "#/texts/146"
+                            },
+                            {
+                                "$ref": "#/texts/147"
+                            },
+                            {
+                                "$ref": "#/texts/148"
+                            },
+                            {
+                                "$ref": "#/texts/149"
+                            },
+                            {
+                                "$ref": "#/texts/150"
+                            },
+                            {
+                                "$ref": "#/texts/151"
+                            },
+                            {
+                                "$ref": "#/texts/152"
+                            },
+                            {
+                                "$ref": "#/texts/153"
+                            },
+                            {
+                                "$ref": "#/texts/154"
+                            },
+                            {
+                                "$ref": "#/texts/155"
+                            },
+                            {
+                                "$ref": "#/texts/156"
+                            },
+                            {
+                                "$ref": "#/texts/157"
+                            },
+                            {
+                                "$ref": "#/texts/158"
+                            },
+                            {
+                                "$ref": "#/texts/159"
+                            },
+                            {
+                                "$ref": "#/texts/160"
+                            },
+                            {
+                                "$ref": "#/texts/161"
+                            },
+                            {
+                                "$ref": "#/texts/162"
+                            },
+                            {
+                                "$ref": "#/texts/163"
+                            },
+                            {
+                                "$ref": "#/texts/164"
+                            },
+                            {
+                                "$ref": "#/texts/165"
+                            },
+                            {
+                                "$ref": "#/texts/166"
+                            },
+                            {
+                                "$ref": "#/texts/167"
+                            },
+                            {
+                                "$ref": "#/texts/168"
+                            },
+                            {
+                                "$ref": "#/texts/169"
+                            },
+                            {
+                                "$ref": "#/texts/170"
+                            },
+                            {
+                                "$ref": "#/texts/171"
+                            },
+                            {
+                                "$ref": "#/texts/172"
+                            },
+                            {
+                                "$ref": "#/texts/173"
+                            },
+                            {
+                                "$ref": "#/texts/174"
+                            },
+                            {
+                                "$ref": "#/texts/175"
+                            },
+                            {
+                                "$ref": "#/texts/176"
+                            },
+                            {
+                                "$ref": "#/texts/177"
+                            },
+                            {
+                                "$ref": "#/texts/178"
+                            },
+                            {
+                                "$ref": "#/texts/179"
+                            },
+                            {
+                                "$ref": "#/texts/180"
+                            },
+                            {
+                                "$ref": "#/texts/181"
+                            },
+                            {
+                                "$ref": "#/texts/182"
+                            },
+                            {
+                                "$ref": "#/texts/183"
+                            },
+                            {
+                                "$ref": "#/texts/184"
+                            },
+                            {
+                                "$ref": "#/texts/185"
+                            },
+                            {
+                                "$ref": "#/texts/186"
+                            },
+                            {
+                                "$ref": "#/texts/187"
+                            },
+                            {
+                                "$ref": "#/texts/188"
+                            },
+                            {
+                                "$ref": "#/texts/189"
+                            },
+                            {
+                                "$ref": "#/texts/190"
+                            },
+                            {
+                                "$ref": "#/texts/191"
+                            },
+                            {
+                                "$ref": "#/texts/192"
+                            },
+                            {
+                                "$ref": "#/texts/193"
+                            },
+                            {
+                                "$ref": "#/texts/194"
+                            },
+                            {
+                                "$ref": "#/texts/195"
+                            },
+                            {
+                                "$ref": "#/texts/196"
+                            },
+                            {
+                                "$ref": "#/texts/197"
+                            },
+                            {
+                                "$ref": "#/texts/198"
+                            },
+                            {
+                                "$ref": "#/texts/199"
+                            },
+                            {
+                                "$ref": "#/texts/200"
+                            },
+                            {
+                                "$ref": "#/texts/201"
+                            },
+                            {
+                                "$ref": "#/texts/202"
+                            },
+                            {
+                                "$ref": "#/texts/203"
+                            },
+                            {
+                                "$ref": "#/texts/204"
+                            },
+                            {
+                                "$ref": "#/texts/205"
+                            },
+                            {
+                                "$ref": "#/texts/206"
+                            },
+                            {
+                                "$ref": "#/texts/207"
+                            },
+                            {
+                                "$ref": "#/texts/208"
+                            },
+                            {
+                                "$ref": "#/texts/209"
+                            },
+                            {
+                                "$ref": "#/texts/210"
+                            },
+                            {
+                                "$ref": "#/texts/211"
+                            },
+                            {
+                                "$ref": "#/texts/212"
+                            },
+                            {
+                                "$ref": "#/texts/213"
+                            },
+                            {
+                                "$ref": "#/texts/214"
+                            },
+                            {
+                                "$ref": "#/texts/215"
+                            },
+                            {
+                                "$ref": "#/texts/216"
+                            },
+                            {
+                                "$ref": "#/texts/217"
+                            },
+                            {
+                                "$ref": "#/texts/218"
+                            },
+                            {
+                                "$ref": "#/texts/219"
+                            },
+                            {
+                                "$ref": "#/texts/220"
+                            },
+                            {
+                                "$ref": "#/texts/221"
+                            },
+                            {
+                                "$ref": "#/texts/222"
+                            },
+                            {
+                                "$ref": "#/texts/223"
+                            },
+                            {
+                                "$ref": "#/texts/224"
+                            },
+                            {
+                                "$ref": "#/texts/225"
+                            },
+                            {
+                                "$ref": "#/texts/226"
+                            },
+                            {
+                                "$ref": "#/texts/227"
+                            },
+                            {
+                                "$ref": "#/texts/228"
+                            },
+                            {
+                                "$ref": "#/texts/229"
+                            },
+                            {
+                                "$ref": "#/texts/230"
+                            },
+                            {
+                                "$ref": "#/texts/231"
+                            },
+                            {
+                                "$ref": "#/texts/232"
+                            },
+                            {
+                                "$ref": "#/texts/233"
+                            },
+                            {
+                                "$ref": "#/texts/234"
+                            },
+                            {
+                                "$ref": "#/texts/235"
+                            },
+                            {
+                                "$ref": "#/texts/236"
+                            },
+                            {
+                                "$ref": "#/texts/237"
+                            },
+                            {
+                                "$ref": "#/texts/238"
+                            },
+                            {
+                                "$ref": "#/texts/239"
+                            },
+                            {
+                                "$ref": "#/texts/240"
+                            },
+                            {
+                                "$ref": "#/texts/241"
+                            },
+                            {
+                                "$ref": "#/texts/242"
+                            },
+                            {
+                                "$ref": "#/texts/243"
+                            },
+                            {
+                                "$ref": "#/texts/244"
+                            },
+                            {
+                                "$ref": "#/texts/245"
+                            },
+                            {
+                                "$ref": "#/texts/246"
+                            },
+                            {
+                                "$ref": "#/texts/247"
+                            },
+                            {
+                                "$ref": "#/texts/248"
+                            },
+                            {
+                                "$ref": "#/texts/249"
+                            },
+                            {
+                                "$ref": "#/texts/250"
+                            },
+                            {
+                                "$ref": "#/texts/251"
+                            },
+                            {
+                                "$ref": "#/texts/252"
+                            },
+                            {
+                                "$ref": "#/texts/253"
+                            },
+                            {
+                                "$ref": "#/texts/254"
+                            },
+                            {
+                                "$ref": "#/texts/255"
+                            },
+                            {
+                                "$ref": "#/texts/256"
+                            },
+                            {
+                                "$ref": "#/texts/257"
+                            },
+                            {
+                                "$ref": "#/texts/258"
+                            },
+                            {
+                                "$ref": "#/texts/259"
+                            },
+                            {
+                                "$ref": "#/texts/260"
+                            },
+                            {
+                                "$ref": "#/texts/261"
+                            },
+                            {
+                                "$ref": "#/texts/262"
+                            },
+                            {
+                                "$ref": "#/texts/263"
+                            },
+                            {
+                                "$ref": "#/texts/264"
+                            },
+                            {
+                                "$ref": "#/texts/265"
+                            },
+                            {
+                                "$ref": "#/texts/266"
+                            },
+                            {
+                                "$ref": "#/texts/267"
+                            },
+                            {
+                                "$ref": "#/texts/268"
+                            },
+                            {
+                                "$ref": "#/texts/269"
+                            },
+                            {
+                                "$ref": "#/texts/270"
+                            },
+                            {
+                                "$ref": "#/texts/271"
+                            },
+                            {
+                                "$ref": "#/texts/272"
+                            },
+                            {
+                                "$ref": "#/texts/273"
+                            },
+                            {
+                                "$ref": "#/texts/274"
+                            },
+                            {
+                                "$ref": "#/texts/275"
+                            },
+                            {
+                                "$ref": "#/texts/276"
+                            },
+                            {
+                                "$ref": "#/texts/277"
+                            },
+                            {
+                                "$ref": "#/texts/278"
+                            },
+                            {
+                                "$ref": "#/texts/279"
+                            },
+                            {
+                                "$ref": "#/texts/280"
+                            },
+                            {
+                                "$ref": "#/texts/281"
+                            },
+                            {
+                                "$ref": "#/texts/282"
+                            },
+                            {
+                                "$ref": "#/texts/283"
+                            },
+                            {
+                                "$ref": "#/texts/284"
+                            },
+                            {
+                                "$ref": "#/texts/285"
+                            },
+                            {
+                                "$ref": "#/texts/286"
+                            },
+                            {
+                                "$ref": "#/texts/287"
+                            },
+                            {
+                                "$ref": "#/texts/288"
+                            },
+                            {
+                                "$ref": "#/texts/289"
+                            },
+                            {
+                                "$ref": "#/texts/290"
+                            },
+                            {
+                                "$ref": "#/texts/291"
+                            },
+                            {
+                                "$ref": "#/texts/292"
+                            },
+                            {
+                                "$ref": "#/texts/293"
+                            },
+                            {
+                                "$ref": "#/texts/294"
+                            },
+                            {
+                                "$ref": "#/texts/295"
+                            },
+                            {
+                                "$ref": "#/texts/296"
+                            },
+                            {
+                                "$ref": "#/texts/297"
+                            },
+                            {
+                                "$ref": "#/texts/298"
+                            },
+                            {
+                                "$ref": "#/texts/299"
+                            },
+                            {
+                                "$ref": "#/texts/300"
+                            },
+                            {
+                                "$ref": "#/texts/301"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 7,
+                                "bbox": {
+                                    "l": 223.45245361328125,
+                                    "t": 606.3411560058594,
+                                    "r": 277.1462707519531,
+                                    "b": 563.2440032958984,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "ACM Reference Format:"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "In this image we can see a text.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/3",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/302"
+                            },
+                            {
+                                "$ref": "#/texts/303"
+                            },
+                            {
+                                "$ref": "#/texts/304"
+                            },
+                            {
+                                "$ref": "#/texts/305"
+                            },
+                            {
+                                "$ref": "#/texts/306"
+                            },
+                            {
+                                "$ref": "#/texts/307"
+                            },
+                            {
+                                "$ref": "#/texts/308"
+                            },
+                            {
+                                "$ref": "#/texts/309"
+                            },
+                            {
+                                "$ref": "#/texts/310"
+                            },
+                            {
+                                "$ref": "#/texts/311"
+                            },
+                            {
+                                "$ref": "#/texts/312"
+                            },
+                            {
+                                "$ref": "#/texts/313"
+                            },
+                            {
+                                "$ref": "#/texts/314"
+                            },
+                            {
+                                "$ref": "#/texts/315"
+                            },
+                            {
+                                "$ref": "#/texts/316"
+                            },
+                            {
+                                "$ref": "#/texts/317"
+                            },
+                            {
+                                "$ref": "#/texts/318"
+                            },
+                            {
+                                "$ref": "#/texts/319"
+                            },
+                            {
+                                "$ref": "#/texts/320"
+                            },
+                            {
+                                "$ref": "#/texts/321"
+                            },
+                            {
+                                "$ref": "#/texts/322"
+                            },
+                            {
+                                "$ref": "#/texts/323"
+                            },
+                            {
+                                "$ref": "#/texts/324"
+                            },
+                            {
+                                "$ref": "#/texts/325"
+                            },
+                            {
+                                "$ref": "#/texts/326"
+                            },
+                            {
+                                "$ref": "#/texts/327"
+                            },
+                            {
+                                "$ref": "#/texts/328"
+                            },
+                            {
+                                "$ref": "#/texts/329"
+                            },
+                            {
+                                "$ref": "#/texts/330"
+                            },
+                            {
+                                "$ref": "#/texts/331"
+                            },
+                            {
+                                "$ref": "#/texts/332"
+                            },
+                            {
+                                "$ref": "#/texts/333"
+                            },
+                            {
+                                "$ref": "#/texts/334"
+                            },
+                            {
+                                "$ref": "#/texts/335"
+                            },
+                            {
+                                "$ref": "#/texts/336"
+                            },
+                            {
+                                "$ref": "#/texts/337"
+                            },
+                            {
+                                "$ref": "#/texts/338"
+                            },
+                            {
+                                "$ref": "#/texts/339"
+                            },
+                            {
+                                "$ref": "#/texts/340"
+                            },
+                            {
+                                "$ref": "#/texts/341"
+                            },
+                            {
+                                "$ref": "#/texts/342"
+                            },
+                            {
+                                "$ref": "#/texts/343"
+                            },
+                            {
+                                "$ref": "#/texts/344"
+                            },
+                            {
+                                "$ref": "#/texts/345"
+                            },
+                            {
+                                "$ref": "#/texts/346"
+                            },
+                            {
+                                "$ref": "#/texts/347"
+                            },
+                            {
+                                "$ref": "#/texts/348"
+                            },
+                            {
+                                "$ref": "#/texts/349"
+                            },
+                            {
+                                "$ref": "#/texts/350"
+                            },
+                            {
+                                "$ref": "#/texts/351"
+                            },
+                            {
+                                "$ref": "#/texts/352"
+                            },
+                            {
+                                "$ref": "#/texts/353"
+                            },
+                            {
+                                "$ref": "#/texts/354"
+                            },
+                            {
+                                "$ref": "#/texts/355"
+                            },
+                            {
+                                "$ref": "#/texts/356"
+                            },
+                            {
+                                "$ref": "#/texts/357"
+                            },
+                            {
+                                "$ref": "#/texts/358"
+                            },
+                            {
+                                "$ref": "#/texts/359"
+                            },
+                            {
+                                "$ref": "#/texts/360"
+                            },
+                            {
+                                "$ref": "#/texts/361"
+                            },
+                            {
+                                "$ref": "#/texts/362"
+                            },
+                            {
+                                "$ref": "#/texts/363"
+                            },
+                            {
+                                "$ref": "#/texts/364"
+                            },
+                            {
+                                "$ref": "#/texts/365"
+                            },
+                            {
+                                "$ref": "#/texts/366"
+                            },
+                            {
+                                "$ref": "#/texts/367"
+                            },
+                            {
+                                "$ref": "#/texts/368"
+                            },
+                            {
+                                "$ref": "#/texts/369"
+                            },
+                            {
+                                "$ref": "#/texts/370"
+                            },
+                            {
+                                "$ref": "#/texts/371"
+                            },
+                            {
+                                "$ref": "#/texts/372"
+                            },
+                            {
+                                "$ref": "#/texts/373"
+                            },
+                            {
+                                "$ref": "#/texts/374"
+                            },
+                            {
+                                "$ref": "#/texts/375"
+                            },
+                            {
+                                "$ref": "#/texts/376"
+                            },
+                            {
+                                "$ref": "#/texts/377"
+                            },
+                            {
+                                "$ref": "#/texts/378"
+                            },
+                            {
+                                "$ref": "#/texts/379"
+                            },
+                            {
+                                "$ref": "#/texts/380"
+                            },
+                            {
+                                "$ref": "#/texts/381"
+                            },
+                            {
+                                "$ref": "#/texts/382"
+                            },
+                            {
+                                "$ref": "#/texts/383"
+                            },
+                            {
+                                "$ref": "#/texts/384"
+                            },
+                            {
+                                "$ref": "#/texts/385"
+                            },
+                            {
+                                "$ref": "#/texts/386"
+                            },
+                            {
+                                "$ref": "#/texts/387"
+                            },
+                            {
+                                "$ref": "#/texts/388"
+                            },
+                            {
+                                "$ref": "#/texts/389"
+                            },
+                            {
+                                "$ref": "#/texts/390"
+                            },
+                            {
+                                "$ref": "#/texts/391"
+                            },
+                            {
+                                "$ref": "#/texts/392"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 7,
+                                "bbox": {
+                                    "l": 279.03204345703125,
+                                    "t": 607.0251770019531,
+                                    "r": 312.2338562011719,
+                                    "b": 562.7499389648438,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "ACM Reference Format:"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "AGL Energy Limited  ABN 74 1",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -3215,6 +4208,418 @@
                                 "charspan": [
                                     0,
                                     9
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "ACM Reference Format:"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "In this image I can see the text on the image.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/4",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/395"
+                            },
+                            {
+                                "$ref": "#/texts/396"
+                            },
+                            {
+                                "$ref": "#/texts/397"
+                            },
+                            {
+                                "$ref": "#/texts/398"
+                            },
+                            {
+                                "$ref": "#/texts/399"
+                            },
+                            {
+                                "$ref": "#/texts/400"
+                            },
+                            {
+                                "$ref": "#/texts/401"
+                            },
+                            {
+                                "$ref": "#/texts/402"
+                            },
+                            {
+                                "$ref": "#/texts/403"
+                            },
+                            {
+                                "$ref": "#/texts/404"
+                            },
+                            {
+                                "$ref": "#/texts/405"
+                            },
+                            {
+                                "$ref": "#/texts/406"
+                            },
+                            {
+                                "$ref": "#/texts/407"
+                            },
+                            {
+                                "$ref": "#/texts/408"
+                            },
+                            {
+                                "$ref": "#/texts/409"
+                            },
+                            {
+                                "$ref": "#/texts/410"
+                            },
+                            {
+                                "$ref": "#/texts/411"
+                            },
+                            {
+                                "$ref": "#/texts/412"
+                            },
+                            {
+                                "$ref": "#/texts/413"
+                            },
+                            {
+                                "$ref": "#/texts/414"
+                            },
+                            {
+                                "$ref": "#/texts/415"
+                            },
+                            {
+                                "$ref": "#/texts/416"
+                            },
+                            {
+                                "$ref": "#/texts/417"
+                            },
+                            {
+                                "$ref": "#/texts/418"
+                            },
+                            {
+                                "$ref": "#/texts/419"
+                            },
+                            {
+                                "$ref": "#/texts/420"
+                            },
+                            {
+                                "$ref": "#/texts/421"
+                            },
+                            {
+                                "$ref": "#/texts/422"
+                            },
+                            {
+                                "$ref": "#/texts/423"
+                            },
+                            {
+                                "$ref": "#/texts/424"
+                            },
+                            {
+                                "$ref": "#/texts/425"
+                            },
+                            {
+                                "$ref": "#/texts/426"
+                            },
+                            {
+                                "$ref": "#/texts/427"
+                            },
+                            {
+                                "$ref": "#/texts/428"
+                            },
+                            {
+                                "$ref": "#/texts/429"
+                            },
+                            {
+                                "$ref": "#/texts/430"
+                            },
+                            {
+                                "$ref": "#/texts/431"
+                            },
+                            {
+                                "$ref": "#/texts/432"
+                            },
+                            {
+                                "$ref": "#/texts/433"
+                            },
+                            {
+                                "$ref": "#/texts/434"
+                            },
+                            {
+                                "$ref": "#/texts/435"
+                            },
+                            {
+                                "$ref": "#/texts/436"
+                            },
+                            {
+                                "$ref": "#/texts/437"
+                            },
+                            {
+                                "$ref": "#/texts/438"
+                            },
+                            {
+                                "$ref": "#/texts/439"
+                            },
+                            {
+                                "$ref": "#/texts/440"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 7,
+                                "bbox": {
+                                    "l": 224.6795196533203,
+                                    "t": 559.731201171875,
+                                    "r": 268.13018798828125,
+                                    "b": 503.4937438964844,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "ACM Reference Format:"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "In this image there is a paper with some text on it.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/5",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/441"
+                            },
+                            {
+                                "$ref": "#/texts/442"
+                            },
+                            {
+                                "$ref": "#/texts/443"
+                            },
+                            {
+                                "$ref": "#/texts/444"
+                            },
+                            {
+                                "$ref": "#/texts/445"
+                            },
+                            {
+                                "$ref": "#/texts/446"
+                            },
+                            {
+                                "$ref": "#/texts/447"
+                            },
+                            {
+                                "$ref": "#/texts/448"
+                            },
+                            {
+                                "$ref": "#/texts/449"
+                            },
+                            {
+                                "$ref": "#/texts/450"
+                            },
+                            {
+                                "$ref": "#/texts/451"
+                            },
+                            {
+                                "$ref": "#/texts/452"
+                            },
+                            {
+                                "$ref": "#/texts/453"
+                            },
+                            {
+                                "$ref": "#/texts/454"
+                            },
+                            {
+                                "$ref": "#/texts/455"
+                            },
+                            {
+                                "$ref": "#/texts/456"
+                            },
+                            {
+                                "$ref": "#/texts/457"
+                            },
+                            {
+                                "$ref": "#/texts/458"
+                            },
+                            {
+                                "$ref": "#/texts/459"
+                            },
+                            {
+                                "$ref": "#/texts/460"
+                            },
+                            {
+                                "$ref": "#/texts/461"
+                            },
+                            {
+                                "$ref": "#/texts/462"
+                            },
+                            {
+                                "$ref": "#/texts/463"
+                            },
+                            {
+                                "$ref": "#/texts/464"
+                            },
+                            {
+                                "$ref": "#/texts/465"
+                            },
+                            {
+                                "$ref": "#/texts/466"
+                            },
+                            {
+                                "$ref": "#/texts/467"
+                            },
+                            {
+                                "$ref": "#/texts/468"
+                            },
+                            {
+                                "$ref": "#/texts/469"
+                            },
+                            {
+                                "$ref": "#/texts/470"
+                            },
+                            {
+                                "$ref": "#/texts/471"
+                            },
+                            {
+                                "$ref": "#/texts/472"
+                            },
+                            {
+                                "$ref": "#/texts/473"
+                            },
+                            {
+                                "$ref": "#/texts/474"
+                            },
+                            {
+                                "$ref": "#/texts/475"
+                            },
+                            {
+                                "$ref": "#/texts/476"
+                            },
+                            {
+                                "$ref": "#/texts/477"
+                            },
+                            {
+                                "$ref": "#/texts/478"
+                            },
+                            {
+                                "$ref": "#/texts/479"
+                            },
+                            {
+                                "$ref": "#/texts/480"
+                            },
+                            {
+                                "$ref": "#/texts/481"
+                            },
+                            {
+                                "$ref": "#/texts/482"
+                            },
+                            {
+                                "$ref": "#/texts/483"
+                            },
+                            {
+                                "$ref": "#/texts/484"
+                            },
+                            {
+                                "$ref": "#/texts/485"
+                            },
+                            {
+                                "$ref": "#/texts/486"
+                            },
+                            {
+                                "$ref": "#/texts/487"
+                            },
+                            {
+                                "$ref": "#/texts/488"
+                            },
+                            {
+                                "$ref": "#/texts/489"
+                            },
+                            {
+                                "$ref": "#/texts/490"
+                            },
+                            {
+                                "$ref": "#/texts/491"
+                            },
+                            {
+                                "$ref": "#/texts/492"
+                            },
+                            {
+                                "$ref": "#/texts/493"
+                            },
+                            {
+                                "$ref": "#/texts/494"
+                            },
+                            {
+                                "$ref": "#/texts/495"
+                            },
+                            {
+                                "$ref": "#/texts/496"
+                            },
+                            {
+                                "$ref": "#/texts/497"
+                            },
+                            {
+                                "$ref": "#/texts/498"
+                            },
+                            {
+                                "$ref": "#/texts/499"
+                            },
+                            {
+                                "$ref": "#/texts/500"
+                            },
+                            {
+                                "$ref": "#/texts/501"
+                            },
+                            {
+                                "$ref": "#/texts/502"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 7,
+                                "bbox": {
+                                    "l": 269.2328186035156,
+                                    "t": 558.8644409179688,
+                                    "r": 311.74884033203125,
+                                    "b": 502.994873046875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
                                 ]
                             }
                         ]
@@ -3662,6 +5067,49 @@
             }
         },
         {
+            "text": "In this image, we can see a table.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/6",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 8,
+                                "bbox": {
+                                    "l": 366.8663635253906,
+                                    "t": 542.9663391113281,
+                                    "r": 460.8086242675781,
+                                    "b": 450.9350280761719,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "5 EXPERIMENTS"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "Third, achienec",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -3731,6 +5179,49 @@
                                 "charspan": [
                                     0,
                                     40
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "EXPERIMENTS"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "The image is a line graph that shows the percentage of respondents who have used a specific type of training in the past 24 hours. The x-axis represents the time in hours, while the y-axis represents the percentage of respondents. The graph is titled \"Training.\"\n\nThe graph has two lines: one for the training type and one for the training duration. The training type line is labeled \"Training\" and the training duration line is labeled \"Training Duration.\"\n\nThe graph shows that the percentage of respondents who have used the training type increases as the time increases. Specifically, the percentage of respondents who have used the training type increases from 10% to 20% over the 24-hour period. The percentage of respondents who have used the training duration increases from 10% to 20% over the 24-hour period.\n\nThe graph also shows that the percentage of respondents who have used the training type increases as the",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/7",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 8,
+                                "bbox": {
+                                    "l": 237.6404266357422,
+                                    "t": 550.1458740234375,
+                                    "r": 337.0112609863281,
+                                    "b": 477.0093078613281,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
                                 ]
                             }
                         ]
@@ -4264,6 +5755,574 @@
             }
         },
         {
+            "text": "The image consists of a blue circle with the letter \"A\" written in white color. The circle is placed on a white background, which makes the letter \"A\" stand out prominently. The background is a gradient of blue and white, transitioning from a lighter shade at the top to a darker shade at the bottom. The gradient effect gives a sense of depth and movement, making the letter \"A\" stand out more.\n\n### Description of Objects in the Image:\n1. **Circle**: The central element of the image is a blue circle.\n2. **White Letter \"A\"**: The letter \"A\" is written in white color.\n3. **Background**: The background is a gradient of blue and white, transitioning from a lighter shade at the top to a darker shade at the bottom.\n4. **Color Gradient**: The gradient effect is present, with the color transitioning from a lighter shade at the top to a darker shade at the bottom.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/8",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/534"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 9,
+                                "bbox": {
+                                    "l": 110.43017578125,
+                                    "t": 573.9806060791016,
+                                    "r": 124.71578216552734,
+                                    "b": 559.4710540771484,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "Baselines for Object Detection"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "In this image, there is a table with two columns. The first column is labeled \"Class label,\" and the second column is labeled \"Count.\" The first row in the table has the label \"Class label,\" and the count is 22524. The second row in the table has the label \"Count,\" and the count is 204.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/9",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/535"
+                            },
+                            {
+                                "$ref": "#/texts/536"
+                            },
+                            {
+                                "$ref": "#/texts/537"
+                            },
+                            {
+                                "$ref": "#/texts/538"
+                            },
+                            {
+                                "$ref": "#/texts/539"
+                            },
+                            {
+                                "$ref": "#/texts/540"
+                            },
+                            {
+                                "$ref": "#/texts/541"
+                            },
+                            {
+                                "$ref": "#/texts/542"
+                            },
+                            {
+                                "$ref": "#/texts/543"
+                            },
+                            {
+                                "$ref": "#/texts/544"
+                            },
+                            {
+                                "$ref": "#/texts/545"
+                            },
+                            {
+                                "$ref": "#/texts/546"
+                            },
+                            {
+                                "$ref": "#/texts/547"
+                            },
+                            {
+                                "$ref": "#/texts/548"
+                            },
+                            {
+                                "$ref": "#/texts/549"
+                            },
+                            {
+                                "$ref": "#/texts/550"
+                            },
+                            {
+                                "$ref": "#/texts/551"
+                            },
+                            {
+                                "$ref": "#/texts/552"
+                            },
+                            {
+                                "$ref": "#/texts/553"
+                            },
+                            {
+                                "$ref": "#/texts/554"
+                            },
+                            {
+                                "$ref": "#/texts/555"
+                            },
+                            {
+                                "$ref": "#/texts/556"
+                            },
+                            {
+                                "$ref": "#/texts/557"
+                            },
+                            {
+                                "$ref": "#/texts/558"
+                            },
+                            {
+                                "$ref": "#/texts/559"
+                            },
+                            {
+                                "$ref": "#/texts/560"
+                            },
+                            {
+                                "$ref": "#/texts/561"
+                            },
+                            {
+                                "$ref": "#/texts/562"
+                            },
+                            {
+                                "$ref": "#/texts/563"
+                            },
+                            {
+                                "$ref": "#/texts/564"
+                            },
+                            {
+                                "$ref": "#/texts/565"
+                            },
+                            {
+                                "$ref": "#/texts/566"
+                            },
+                            {
+                                "$ref": "#/texts/567"
+                            },
+                            {
+                                "$ref": "#/texts/568"
+                            },
+                            {
+                                "$ref": "#/texts/569"
+                            },
+                            {
+                                "$ref": "#/texts/570"
+                            },
+                            {
+                                "$ref": "#/texts/571"
+                            },
+                            {
+                                "$ref": "#/texts/572"
+                            },
+                            {
+                                "$ref": "#/texts/573"
+                            },
+                            {
+                                "$ref": "#/texts/574"
+                            },
+                            {
+                                "$ref": "#/texts/575"
+                            },
+                            {
+                                "$ref": "#/texts/576"
+                            },
+                            {
+                                "$ref": "#/texts/577"
+                            },
+                            {
+                                "$ref": "#/texts/578"
+                            },
+                            {
+                                "$ref": "#/texts/579"
+                            },
+                            {
+                                "$ref": "#/texts/580"
+                            },
+                            {
+                                "$ref": "#/texts/581"
+                            },
+                            {
+                                "$ref": "#/texts/582"
+                            },
+                            {
+                                "$ref": "#/texts/583"
+                            },
+                            {
+                                "$ref": "#/texts/584"
+                            },
+                            {
+                                "$ref": "#/texts/585"
+                            },
+                            {
+                                "$ref": "#/texts/586"
+                            },
+                            {
+                                "$ref": "#/texts/587"
+                            },
+                            {
+                                "$ref": "#/texts/588"
+                            },
+                            {
+                                "$ref": "#/texts/589"
+                            },
+                            {
+                                "$ref": "#/texts/590"
+                            },
+                            {
+                                "$ref": "#/texts/591"
+                            },
+                            {
+                                "$ref": "#/texts/592"
+                            },
+                            {
+                                "$ref": "#/texts/593"
+                            },
+                            {
+                                "$ref": "#/texts/594"
+                            },
+                            {
+                                "$ref": "#/texts/595"
+                            },
+                            {
+                                "$ref": "#/texts/596"
+                            },
+                            {
+                                "$ref": "#/texts/597"
+                            },
+                            {
+                                "$ref": "#/texts/598"
+                            },
+                            {
+                                "$ref": "#/texts/599"
+                            },
+                            {
+                                "$ref": "#/texts/600"
+                            },
+                            {
+                                "$ref": "#/texts/601"
+                            },
+                            {
+                                "$ref": "#/texts/602"
+                            },
+                            {
+                                "$ref": "#/texts/603"
+                            },
+                            {
+                                "$ref": "#/texts/604"
+                            },
+                            {
+                                "$ref": "#/texts/605"
+                            },
+                            {
+                                "$ref": "#/texts/606"
+                            },
+                            {
+                                "$ref": "#/texts/607"
+                            },
+                            {
+                                "$ref": "#/texts/608"
+                            },
+                            {
+                                "$ref": "#/texts/609"
+                            },
+                            {
+                                "$ref": "#/texts/610"
+                            },
+                            {
+                                "$ref": "#/texts/611"
+                            },
+                            {
+                                "$ref": "#/texts/612"
+                            },
+                            {
+                                "$ref": "#/texts/613"
+                            },
+                            {
+                                "$ref": "#/texts/614"
+                            },
+                            {
+                                "$ref": "#/texts/615"
+                            },
+                            {
+                                "$ref": "#/texts/616"
+                            },
+                            {
+                                "$ref": "#/texts/617"
+                            },
+                            {
+                                "$ref": "#/texts/618"
+                            },
+                            {
+                                "$ref": "#/texts/619"
+                            },
+                            {
+                                "$ref": "#/texts/620"
+                            },
+                            {
+                                "$ref": "#/texts/621"
+                            },
+                            {
+                                "$ref": "#/texts/622"
+                            },
+                            {
+                                "$ref": "#/texts/623"
+                            },
+                            {
+                                "$ref": "#/texts/624"
+                            },
+                            {
+                                "$ref": "#/texts/625"
+                            },
+                            {
+                                "$ref": "#/texts/626"
+                            },
+                            {
+                                "$ref": "#/texts/627"
+                            },
+                            {
+                                "$ref": "#/texts/628"
+                            },
+                            {
+                                "$ref": "#/texts/629"
+                            },
+                            {
+                                "$ref": "#/texts/630"
+                            },
+                            {
+                                "$ref": "#/texts/631"
+                            },
+                            {
+                                "$ref": "#/texts/632"
+                            },
+                            {
+                                "$ref": "#/texts/633"
+                            },
+                            {
+                                "$ref": "#/texts/634"
+                            },
+                            {
+                                "$ref": "#/texts/635"
+                            },
+                            {
+                                "$ref": "#/texts/636"
+                            },
+                            {
+                                "$ref": "#/texts/637"
+                            },
+                            {
+                                "$ref": "#/texts/638"
+                            },
+                            {
+                                "$ref": "#/texts/639"
+                            },
+                            {
+                                "$ref": "#/texts/640"
+                            },
+                            {
+                                "$ref": "#/texts/641"
+                            },
+                            {
+                                "$ref": "#/texts/642"
+                            },
+                            {
+                                "$ref": "#/texts/643"
+                            },
+                            {
+                                "$ref": "#/texts/644"
+                            },
+                            {
+                                "$ref": "#/texts/645"
+                            },
+                            {
+                                "$ref": "#/texts/646"
+                            },
+                            {
+                                "$ref": "#/texts/647"
+                            },
+                            {
+                                "$ref": "#/texts/648"
+                            },
+                            {
+                                "$ref": "#/texts/649"
+                            },
+                            {
+                                "$ref": "#/texts/650"
+                            },
+                            {
+                                "$ref": "#/texts/651"
+                            },
+                            {
+                                "$ref": "#/texts/652"
+                            },
+                            {
+                                "$ref": "#/texts/653"
+                            },
+                            {
+                                "$ref": "#/texts/654"
+                            },
+                            {
+                                "$ref": "#/texts/655"
+                            },
+                            {
+                                "$ref": "#/texts/656"
+                            },
+                            {
+                                "$ref": "#/texts/657"
+                            },
+                            {
+                                "$ref": "#/texts/658"
+                            },
+                            {
+                                "$ref": "#/texts/659"
+                            },
+                            {
+                                "$ref": "#/texts/660"
+                            },
+                            {
+                                "$ref": "#/texts/661"
+                            },
+                            {
+                                "$ref": "#/texts/662"
+                            },
+                            {
+                                "$ref": "#/texts/663"
+                            },
+                            {
+                                "$ref": "#/texts/664"
+                            },
+                            {
+                                "$ref": "#/texts/665"
+                            },
+                            {
+                                "$ref": "#/texts/666"
+                            },
+                            {
+                                "$ref": "#/texts/667"
+                            },
+                            {
+                                "$ref": "#/texts/668"
+                            },
+                            {
+                                "$ref": "#/texts/669"
+                            },
+                            {
+                                "$ref": "#/texts/670"
+                            },
+                            {
+                                "$ref": "#/texts/671"
+                            },
+                            {
+                                "$ref": "#/texts/672"
+                            },
+                            {
+                                "$ref": "#/texts/673"
+                            },
+                            {
+                                "$ref": "#/texts/674"
+                            },
+                            {
+                                "$ref": "#/texts/675"
+                            },
+                            {
+                                "$ref": "#/texts/676"
+                            },
+                            {
+                                "$ref": "#/texts/677"
+                            },
+                            {
+                                "$ref": "#/texts/678"
+                            },
+                            {
+                                "$ref": "#/texts/679"
+                            },
+                            {
+                                "$ref": "#/texts/680"
+                            },
+                            {
+                                "$ref": "#/texts/681"
+                            },
+                            {
+                                "$ref": "#/texts/682"
+                            },
+                            {
+                                "$ref": "#/texts/683"
+                            },
+                            {
+                                "$ref": "#/texts/684"
+                            },
+                            {
+                                "$ref": "#/texts/685"
+                            },
+                            {
+                                "$ref": "#/texts/686"
+                            },
+                            {
+                                "$ref": "#/texts/687"
+                            },
+                            {
+                                "$ref": "#/texts/688"
+                            },
+                            {
+                                "$ref": "#/texts/689"
+                            },
+                            {
+                                "$ref": "#/texts/690"
+                            },
+                            {
+                                "$ref": "#/texts/691"
+                            },
+                            {
+                                "$ref": "#/texts/692"
+                            },
+                            {
+                                "$ref": "#/texts/693"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 9,
+                                "bbox": {
+                                    "l": 110.8309097290039,
+                                    "t": 560.6356811523438,
+                                    "r": 323.92962646484375,
+                                    "b": 477.741455078125,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "Baselines for Object Detection"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "Caption, Count.Count = 22524. Caption, % of Total.Train = 2.04. Caption, % of Total.Test = 1.77. Caption, % of Total.Val = 2.32. Caption, triple inter-annotator mAP @ 0.5-0.95 (%).All = 84-89. Caption, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 40-61. Caption, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 86-92. Caption, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 94-99. Caption, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 95-99. Caption, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 69-78. Caption, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = n/a. Footnote, Count.Count = 6318. Footnote, % of Total.Train = 0.60. Footnote, % of Total.Test = 0.31. Footnote, % of Total.Val = 0.58. Footnote, triple inter-annotator mAP @ 0.5-0.95 (%).All = 83-91. Footnote, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = n/a. Footnote, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 100. Footnote, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 62-88. Footnote, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 85-94. Footnote, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = n/a. Footnote, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 82-97. Formula, Count.Count = 25027. Formula, % of Total.Train = 2.25. Formula, % of Total.Test = 1.90. Formula, % of Total.Val = 2.96. Formula, triple inter-annotator mAP @ 0.5-0.95 (%).All = 83-85. Formula, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = n/a. Formula, triple inter-annotator mAP @ 0.5-0.95 (%).Man = n/a. Formula, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 84-87. Formula, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 86-96. Formula, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = n/a. Formula, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = n/a. List-item, Count.Count = 185660. List-item, % of Total.Train = 17.19. List-item, % of Total.Test = 13.34. List-item, % of Total.Val = 15.82. List-item, triple inter-annotator mAP @ 0.5-0.95 (%).All = 87-88. List-item, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 74-83. List-item, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 90-92. List-item, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 97-97. List-item, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 81-85. List-item, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 75-88. List-item, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 93-95. Page-footer, Count.Count = 70878. Page-footer, % of Total.Train = 6.51. Page-footer, % of Total.Test = 5.58. Page-footer, % of Total.Val = 6.00. Page-footer, triple inter-annotator mAP @ 0.5-0.95 (%).All = 93-94. Page-footer, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 88-90. Page-footer, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 95-96. Page-footer, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 100. Page-footer, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 92-97. Page-footer, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 100. Page-footer, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 96-98. Page-header, Count.Count = 58022. Page-header, % of Total.Train = 5.10. Page-header, % of Total.Test = 6.70. Page-header, % of Total.Val = 5.06. Page-header, triple inter-annotator mAP @ 0.5-0.95 (%).All = 85-89. Page-header, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 66-76. Page-header, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 90-94. Page-header, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 98-100. Page-header, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 91-92. Page-header, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 97-99. Page-header, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 81-86. Picture, Count.Count = 45976. Picture, % of Total.Train = 4.21. Picture, % of Total.Test = 2.78. Picture, % of Total.Val = 5.31. Picture, triple inter-annotator mAP @ 0.5-0.95 (%).All = 69-71. Picture, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 56-59. Picture, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 82-86. Picture, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 69-82. Picture, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 80-95. Picture, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 66-71. Picture, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 59-76. Section-header, Count.Count = 142884. Section-header, % of Total.Train = 12.60. Section-header, % of Total.Test = 15.77. Section-header, % of Total.Val = 12.85. Section-header, triple inter-annotator mAP @ 0.5-0.95 (%).All = 83-84. Section-header, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 76-81. Section-header, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 90-92. Section-header, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 94-95. Section-header, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 87-94. Section-header, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 69-73. Section-header, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 78-86. Table, Count.Count = 34733. Table, % of Total.Train = 3.20. Table, % of Total.Test = 2.27. Table, % of Total.Val = 3.60. Table, triple inter-annotator mAP @ 0.5-0.95 (%).All = 77-81. Table, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 75-80. Table, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 83-86. Table, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 98-99. Table, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 58-80. Table, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 79-84. Table, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 70-85. Text, Count.Count = 510377. Text, % of Total.Train = 45.82. Text, % of Total.Test = 49.28. Text, % of Total.Val = 45.00. Text, triple inter-annotator mAP @ 0.5-0.95 (%).All = 84-86. Text, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 81-86. Text, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 88-93. Text, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 89-93. Text, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 87-92. Text, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 71-79. Text, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 87-95. Title, Count.Count = 5071. Title, % of Total.Train = 0.47. Title, % of Total.Test = 0.30. Title, % of Total.Val = 0.50. Title, triple inter-annotator mAP @ 0.5-0.95 (%).All = 60-72. Title, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 24-63. Title, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 50-63. Title, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 94-100. Title, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 82-96. Title, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 68-79. Title, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 24-56. Total, Count.Count = 1107470. Total, % of Total.Train = 941123. Total, % of Total.Test = 99816. Total, % of Total.Val = 66531. Total, triple inter-annotator mAP @ 0.5-0.95 (%).All = 82-83. Total, triple inter-annotator mAP @ 0.5-0.95 (%).Fin = 71-74. Total, triple inter-annotator mAP @ 0.5-0.95 (%).Man = 79-81. Total, triple inter-annotator mAP @ 0.5-0.95 (%).Sci = 89-94. Total, triple inter-annotator mAP @ 0.5-0.95 (%).Law = 86-91. Total, triple inter-annotator mAP @ 0.5-0.95 (%).Pat = 71-76. Total, triple inter-annotator mAP @ 0.5-0.95 (%).Ten = 68-85",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -4285,6 +6344,53 @@
                                     "t": 560.6356811523438,
                                     "r": 323.92962646484375,
                                     "b": 477.741455078125,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "Baselines for Object Detection"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "In this image I can see a blue circle.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/10",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/694"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 9,
+                                "bbox": {
+                                    "l": 332.130615234375,
+                                    "t": 576.3017578125,
+                                    "r": 346.93829345703125,
+                                    "b": 560.4401550292969,
                                     "coord_origin": "BOTTOMLEFT"
                                 },
                                 "charspan": [
@@ -4433,6 +6539,674 @@
                                 "charspan": [
                                     0,
                                     54
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "Baselines for Object Detection"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "A table with different columns and rows.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/11",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/698"
+                            },
+                            {
+                                "$ref": "#/texts/699"
+                            },
+                            {
+                                "$ref": "#/texts/700"
+                            },
+                            {
+                                "$ref": "#/texts/701"
+                            },
+                            {
+                                "$ref": "#/texts/702"
+                            },
+                            {
+                                "$ref": "#/texts/703"
+                            },
+                            {
+                                "$ref": "#/texts/704"
+                            },
+                            {
+                                "$ref": "#/texts/705"
+                            },
+                            {
+                                "$ref": "#/texts/706"
+                            },
+                            {
+                                "$ref": "#/texts/707"
+                            },
+                            {
+                                "$ref": "#/texts/708"
+                            },
+                            {
+                                "$ref": "#/texts/709"
+                            },
+                            {
+                                "$ref": "#/texts/710"
+                            },
+                            {
+                                "$ref": "#/texts/711"
+                            },
+                            {
+                                "$ref": "#/texts/712"
+                            },
+                            {
+                                "$ref": "#/texts/713"
+                            },
+                            {
+                                "$ref": "#/texts/714"
+                            },
+                            {
+                                "$ref": "#/texts/715"
+                            },
+                            {
+                                "$ref": "#/texts/716"
+                            },
+                            {
+                                "$ref": "#/texts/717"
+                            },
+                            {
+                                "$ref": "#/texts/718"
+                            },
+                            {
+                                "$ref": "#/texts/719"
+                            },
+                            {
+                                "$ref": "#/texts/720"
+                            },
+                            {
+                                "$ref": "#/texts/721"
+                            },
+                            {
+                                "$ref": "#/texts/722"
+                            },
+                            {
+                                "$ref": "#/texts/723"
+                            },
+                            {
+                                "$ref": "#/texts/724"
+                            },
+                            {
+                                "$ref": "#/texts/725"
+                            },
+                            {
+                                "$ref": "#/texts/726"
+                            },
+                            {
+                                "$ref": "#/texts/727"
+                            },
+                            {
+                                "$ref": "#/texts/728"
+                            },
+                            {
+                                "$ref": "#/texts/729"
+                            },
+                            {
+                                "$ref": "#/texts/730"
+                            },
+                            {
+                                "$ref": "#/texts/731"
+                            },
+                            {
+                                "$ref": "#/texts/732"
+                            },
+                            {
+                                "$ref": "#/texts/733"
+                            },
+                            {
+                                "$ref": "#/texts/734"
+                            },
+                            {
+                                "$ref": "#/texts/735"
+                            },
+                            {
+                                "$ref": "#/texts/736"
+                            },
+                            {
+                                "$ref": "#/texts/737"
+                            },
+                            {
+                                "$ref": "#/texts/738"
+                            },
+                            {
+                                "$ref": "#/texts/739"
+                            },
+                            {
+                                "$ref": "#/texts/740"
+                            },
+                            {
+                                "$ref": "#/texts/741"
+                            },
+                            {
+                                "$ref": "#/texts/742"
+                            },
+                            {
+                                "$ref": "#/texts/743"
+                            },
+                            {
+                                "$ref": "#/texts/744"
+                            },
+                            {
+                                "$ref": "#/texts/745"
+                            },
+                            {
+                                "$ref": "#/texts/746"
+                            },
+                            {
+                                "$ref": "#/texts/747"
+                            },
+                            {
+                                "$ref": "#/texts/748"
+                            },
+                            {
+                                "$ref": "#/texts/749"
+                            },
+                            {
+                                "$ref": "#/texts/750"
+                            },
+                            {
+                                "$ref": "#/texts/751"
+                            },
+                            {
+                                "$ref": "#/texts/752"
+                            },
+                            {
+                                "$ref": "#/texts/753"
+                            },
+                            {
+                                "$ref": "#/texts/754"
+                            },
+                            {
+                                "$ref": "#/texts/755"
+                            },
+                            {
+                                "$ref": "#/texts/756"
+                            },
+                            {
+                                "$ref": "#/texts/757"
+                            },
+                            {
+                                "$ref": "#/texts/758"
+                            },
+                            {
+                                "$ref": "#/texts/759"
+                            },
+                            {
+                                "$ref": "#/texts/760"
+                            },
+                            {
+                                "$ref": "#/texts/761"
+                            },
+                            {
+                                "$ref": "#/texts/762"
+                            },
+                            {
+                                "$ref": "#/texts/763"
+                            },
+                            {
+                                "$ref": "#/texts/764"
+                            },
+                            {
+                                "$ref": "#/texts/765"
+                            },
+                            {
+                                "$ref": "#/texts/766"
+                            },
+                            {
+                                "$ref": "#/texts/767"
+                            },
+                            {
+                                "$ref": "#/texts/768"
+                            },
+                            {
+                                "$ref": "#/texts/769"
+                            },
+                            {
+                                "$ref": "#/texts/770"
+                            },
+                            {
+                                "$ref": "#/texts/771"
+                            },
+                            {
+                                "$ref": "#/texts/772"
+                            },
+                            {
+                                "$ref": "#/texts/773"
+                            },
+                            {
+                                "$ref": "#/texts/774"
+                            },
+                            {
+                                "$ref": "#/texts/775"
+                            },
+                            {
+                                "$ref": "#/texts/776"
+                            },
+                            {
+                                "$ref": "#/texts/777"
+                            },
+                            {
+                                "$ref": "#/texts/778"
+                            },
+                            {
+                                "$ref": "#/texts/779"
+                            },
+                            {
+                                "$ref": "#/texts/780"
+                            },
+                            {
+                                "$ref": "#/texts/781"
+                            },
+                            {
+                                "$ref": "#/texts/782"
+                            },
+                            {
+                                "$ref": "#/texts/783"
+                            },
+                            {
+                                "$ref": "#/texts/784"
+                            },
+                            {
+                                "$ref": "#/texts/785"
+                            },
+                            {
+                                "$ref": "#/texts/786"
+                            },
+                            {
+                                "$ref": "#/texts/787"
+                            },
+                            {
+                                "$ref": "#/texts/788"
+                            },
+                            {
+                                "$ref": "#/texts/789"
+                            },
+                            {
+                                "$ref": "#/texts/790"
+                            },
+                            {
+                                "$ref": "#/texts/791"
+                            },
+                            {
+                                "$ref": "#/texts/792"
+                            },
+                            {
+                                "$ref": "#/texts/793"
+                            },
+                            {
+                                "$ref": "#/texts/794"
+                            },
+                            {
+                                "$ref": "#/texts/795"
+                            },
+                            {
+                                "$ref": "#/texts/796"
+                            },
+                            {
+                                "$ref": "#/texts/797"
+                            },
+                            {
+                                "$ref": "#/texts/798"
+                            },
+                            {
+                                "$ref": "#/texts/799"
+                            },
+                            {
+                                "$ref": "#/texts/800"
+                            },
+                            {
+                                "$ref": "#/texts/801"
+                            },
+                            {
+                                "$ref": "#/texts/802"
+                            },
+                            {
+                                "$ref": "#/texts/803"
+                            },
+                            {
+                                "$ref": "#/texts/804"
+                            },
+                            {
+                                "$ref": "#/texts/805"
+                            },
+                            {
+                                "$ref": "#/texts/806"
+                            },
+                            {
+                                "$ref": "#/texts/807"
+                            },
+                            {
+                                "$ref": "#/texts/808"
+                            },
+                            {
+                                "$ref": "#/texts/809"
+                            },
+                            {
+                                "$ref": "#/texts/810"
+                            },
+                            {
+                                "$ref": "#/texts/811"
+                            },
+                            {
+                                "$ref": "#/texts/812"
+                            },
+                            {
+                                "$ref": "#/texts/813"
+                            },
+                            {
+                                "$ref": "#/texts/814"
+                            },
+                            {
+                                "$ref": "#/texts/815"
+                            },
+                            {
+                                "$ref": "#/texts/816"
+                            },
+                            {
+                                "$ref": "#/texts/817"
+                            },
+                            {
+                                "$ref": "#/texts/818"
+                            },
+                            {
+                                "$ref": "#/texts/819"
+                            },
+                            {
+                                "$ref": "#/texts/820"
+                            },
+                            {
+                                "$ref": "#/texts/821"
+                            },
+                            {
+                                "$ref": "#/texts/822"
+                            },
+                            {
+                                "$ref": "#/texts/823"
+                            },
+                            {
+                                "$ref": "#/texts/824"
+                            },
+                            {
+                                "$ref": "#/texts/825"
+                            },
+                            {
+                                "$ref": "#/texts/826"
+                            },
+                            {
+                                "$ref": "#/texts/827"
+                            },
+                            {
+                                "$ref": "#/texts/828"
+                            },
+                            {
+                                "$ref": "#/texts/829"
+                            },
+                            {
+                                "$ref": "#/texts/830"
+                            },
+                            {
+                                "$ref": "#/texts/831"
+                            },
+                            {
+                                "$ref": "#/texts/832"
+                            },
+                            {
+                                "$ref": "#/texts/833"
+                            },
+                            {
+                                "$ref": "#/texts/834"
+                            },
+                            {
+                                "$ref": "#/texts/835"
+                            },
+                            {
+                                "$ref": "#/texts/836"
+                            },
+                            {
+                                "$ref": "#/texts/837"
+                            },
+                            {
+                                "$ref": "#/texts/838"
+                            },
+                            {
+                                "$ref": "#/texts/839"
+                            },
+                            {
+                                "$ref": "#/texts/840"
+                            },
+                            {
+                                "$ref": "#/texts/841"
+                            },
+                            {
+                                "$ref": "#/texts/842"
+                            },
+                            {
+                                "$ref": "#/texts/843"
+                            },
+                            {
+                                "$ref": "#/texts/844"
+                            },
+                            {
+                                "$ref": "#/texts/845"
+                            },
+                            {
+                                "$ref": "#/texts/846"
+                            },
+                            {
+                                "$ref": "#/texts/847"
+                            },
+                            {
+                                "$ref": "#/texts/848"
+                            },
+                            {
+                                "$ref": "#/texts/849"
+                            },
+                            {
+                                "$ref": "#/texts/850"
+                            },
+                            {
+                                "$ref": "#/texts/851"
+                            },
+                            {
+                                "$ref": "#/texts/852"
+                            },
+                            {
+                                "$ref": "#/texts/853"
+                            },
+                            {
+                                "$ref": "#/texts/854"
+                            },
+                            {
+                                "$ref": "#/texts/855"
+                            },
+                            {
+                                "$ref": "#/texts/856"
+                            },
+                            {
+                                "$ref": "#/texts/857"
+                            },
+                            {
+                                "$ref": "#/texts/858"
+                            },
+                            {
+                                "$ref": "#/texts/859"
+                            },
+                            {
+                                "$ref": "#/texts/860"
+                            },
+                            {
+                                "$ref": "#/texts/861"
+                            },
+                            {
+                                "$ref": "#/texts/862"
+                            },
+                            {
+                                "$ref": "#/texts/863"
+                            },
+                            {
+                                "$ref": "#/texts/864"
+                            },
+                            {
+                                "$ref": "#/texts/865"
+                            },
+                            {
+                                "$ref": "#/texts/866"
+                            },
+                            {
+                                "$ref": "#/texts/867"
+                            },
+                            {
+                                "$ref": "#/texts/868"
+                            },
+                            {
+                                "$ref": "#/texts/869"
+                            },
+                            {
+                                "$ref": "#/texts/870"
+                            },
+                            {
+                                "$ref": "#/texts/871"
+                            },
+                            {
+                                "$ref": "#/texts/872"
+                            },
+                            {
+                                "$ref": "#/texts/873"
+                            },
+                            {
+                                "$ref": "#/texts/874"
+                            },
+                            {
+                                "$ref": "#/texts/875"
+                            },
+                            {
+                                "$ref": "#/texts/876"
+                            },
+                            {
+                                "$ref": "#/texts/877"
+                            },
+                            {
+                                "$ref": "#/texts/878"
+                            },
+                            {
+                                "$ref": "#/texts/879"
+                            },
+                            {
+                                "$ref": "#/texts/880"
+                            },
+                            {
+                                "$ref": "#/texts/881"
+                            },
+                            {
+                                "$ref": "#/texts/882"
+                            },
+                            {
+                                "$ref": "#/texts/883"
+                            },
+                            {
+                                "$ref": "#/texts/884"
+                            },
+                            {
+                                "$ref": "#/texts/885"
+                            },
+                            {
+                                "$ref": "#/texts/886"
+                            },
+                            {
+                                "$ref": "#/texts/887"
+                            },
+                            {
+                                "$ref": "#/texts/888"
+                            },
+                            {
+                                "$ref": "#/texts/889"
+                            },
+                            {
+                                "$ref": "#/texts/890"
+                            },
+                            {
+                                "$ref": "#/texts/891"
+                            },
+                            {
+                                "$ref": "#/texts/892"
+                            },
+                            {
+                                "$ref": "#/texts/893"
+                            },
+                            {
+                                "$ref": "#/texts/894"
+                            },
+                            {
+                                "$ref": "#/texts/895"
+                            },
+                            {
+                                "$ref": "#/texts/896"
+                            },
+                            {
+                                "$ref": "#/texts/897"
+                            },
+                            {
+                                "$ref": "#/texts/898"
+                            },
+                            {
+                                "$ref": "#/texts/899"
+                            },
+                            {
+                                "$ref": "#/texts/900"
+                            },
+                            {
+                                "$ref": "#/texts/901"
+                            },
+                            {
+                                "$ref": "#/texts/902"
+                            },
+                            {
+                                "$ref": "#/texts/903"
+                            },
+                            {
+                                "$ref": "#/texts/904"
+                            },
+                            {
+                                "$ref": "#/texts/905"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 9,
+                                "bbox": {
+                                    "l": 334.4932861328125,
+                                    "t": 558.5665130615234,
+                                    "r": 544.7938842773438,
+                                    "b": 414.31744384765625,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
                                 ]
                             }
                         ]
@@ -4877,6 +7651,248 @@
                                 "charspan": [
                                     0,
                                     68
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "Baselines for Object Detection"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "In this image there is a table with some text on it.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/pictures/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/915"
+                            },
+                            {
+                                "$ref": "#/texts/916"
+                            },
+                            {
+                                "$ref": "#/texts/917"
+                            },
+                            {
+                                "$ref": "#/texts/918"
+                            },
+                            {
+                                "$ref": "#/texts/919"
+                            },
+                            {
+                                "$ref": "#/texts/920"
+                            },
+                            {
+                                "$ref": "#/texts/921"
+                            },
+                            {
+                                "$ref": "#/texts/922"
+                            },
+                            {
+                                "$ref": "#/texts/923"
+                            },
+                            {
+                                "$ref": "#/texts/924"
+                            },
+                            {
+                                "$ref": "#/texts/925"
+                            },
+                            {
+                                "$ref": "#/texts/926"
+                            },
+                            {
+                                "$ref": "#/texts/927"
+                            },
+                            {
+                                "$ref": "#/texts/928"
+                            },
+                            {
+                                "$ref": "#/texts/929"
+                            },
+                            {
+                                "$ref": "#/texts/930"
+                            },
+                            {
+                                "$ref": "#/texts/931"
+                            },
+                            {
+                                "$ref": "#/texts/932"
+                            },
+                            {
+                                "$ref": "#/texts/933"
+                            },
+                            {
+                                "$ref": "#/texts/934"
+                            },
+                            {
+                                "$ref": "#/texts/935"
+                            },
+                            {
+                                "$ref": "#/texts/936"
+                            },
+                            {
+                                "$ref": "#/texts/937"
+                            },
+                            {
+                                "$ref": "#/texts/938"
+                            },
+                            {
+                                "$ref": "#/texts/939"
+                            },
+                            {
+                                "$ref": "#/texts/940"
+                            },
+                            {
+                                "$ref": "#/texts/941"
+                            },
+                            {
+                                "$ref": "#/texts/942"
+                            },
+                            {
+                                "$ref": "#/texts/943"
+                            },
+                            {
+                                "$ref": "#/texts/944"
+                            },
+                            {
+                                "$ref": "#/texts/945"
+                            },
+                            {
+                                "$ref": "#/texts/946"
+                            },
+                            {
+                                "$ref": "#/texts/947"
+                            },
+                            {
+                                "$ref": "#/texts/948"
+                            },
+                            {
+                                "$ref": "#/texts/949"
+                            },
+                            {
+                                "$ref": "#/texts/950"
+                            },
+                            {
+                                "$ref": "#/texts/951"
+                            },
+                            {
+                                "$ref": "#/texts/952"
+                            },
+                            {
+                                "$ref": "#/texts/953"
+                            },
+                            {
+                                "$ref": "#/texts/954"
+                            },
+                            {
+                                "$ref": "#/texts/955"
+                            },
+                            {
+                                "$ref": "#/texts/956"
+                            },
+                            {
+                                "$ref": "#/texts/957"
+                            },
+                            {
+                                "$ref": "#/texts/958"
+                            },
+                            {
+                                "$ref": "#/texts/959"
+                            },
+                            {
+                                "$ref": "#/texts/960"
+                            },
+                            {
+                                "$ref": "#/texts/961"
+                            },
+                            {
+                                "$ref": "#/texts/962"
+                            },
+                            {
+                                "$ref": "#/texts/963"
+                            },
+                            {
+                                "$ref": "#/texts/964"
+                            },
+                            {
+                                "$ref": "#/texts/965"
+                            },
+                            {
+                                "$ref": "#/texts/966"
+                            },
+                            {
+                                "$ref": "#/texts/967"
+                            },
+                            {
+                                "$ref": "#/texts/968"
+                            },
+                            {
+                                "$ref": "#/texts/969"
+                            },
+                            {
+                                "$ref": "#/texts/970"
+                            },
+                            {
+                                "$ref": "#/texts/971"
+                            },
+                            {
+                                "$ref": "#/texts/972"
+                            },
+                            {
+                                "$ref": "#/texts/973"
+                            },
+                            {
+                                "$ref": "#/texts/974"
+                            },
+                            {
+                                "$ref": "#/texts/975"
+                            },
+                            {
+                                "$ref": "#/texts/976"
+                            },
+                            {
+                                "$ref": "#/texts/977"
+                            },
+                            {
+                                "$ref": "#/texts/978"
+                            },
+                            {
+                                "$ref": "#/texts/979"
+                            },
+                            {
+                                "$ref": "#/texts/980"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "picture",
+                        "prov": [
+                            {
+                                "page_no": 9,
+                                "bbox": {
+                                    "l": 108.79005432128906,
+                                    "t": 467.1181335449219,
+                                    "r": 329.1195068359375,
+                                    "b": 308.97198486328125,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
                                 ]
                             }
                         ]

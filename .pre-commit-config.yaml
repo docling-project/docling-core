@@ -4,7 +4,7 @@ repos:
     hooks:
       - id: black
         name: Black
-        entry: poetry run black docling_core test
+        entry: uv run --no-sync black docling_core test
         pass_filenames: false
         language: system
         files: '\.py$'
@@ -12,7 +12,7 @@ repos:
     hooks:
       - id: isort
         name: isort
-        entry: poetry run isort docling_core test
+        entry: uv run --no-sync isort docling_core test
         pass_filenames: false
         language: system
         files: '\.py$'
@@ -20,7 +20,7 @@ repos:
     hooks:
       - id: autoflake
         name: autoflake
-        entry: poetry run autoflake docling_core test
+        entry: uv run --no-sync autoflake docling_core test
         pass_filenames: false
         language: system
         files: '\.py$'
@@ -28,7 +28,7 @@ repos:
     hooks:
       - id: mypy
         name: MyPy
-        entry: poetry run mypy docling_core test
+        entry: uv run --no-sync mypy docling_core test
         pass_filenames: false
         language: system
         files: '\.py$'
@@ -36,7 +36,7 @@ repos:
     hooks:
       - id: flake8
         name: Flake8
-        entry: poetry run flake8 docling_core
+        entry: uv run --no-sync flake8 docling_core
         pass_filenames: false
         language: system
         files: '\.py$'
@@ -44,7 +44,7 @@ repos:
     hooks:
       - id: pytest
         name: Pytest
-        entry: poetry run pytest --cov=docling_core --cov-report=xml test/
+        entry: uv run --no-sync pytest --cov=docling_core --cov-report=xml test
         pass_filenames: false
         language: system
         files: '\.py$'
@@ -52,14 +52,11 @@ repos:
     hooks:
       - id: docs
         name: Docs
-        entry: poetry run generate_docs docs
+        entry: uv run --no-sync python -m docling_core.utils.generate_docs docs
         pass_filenames: false
         language: system
         files: '\.py$'
-  - repo: local
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.7.8
     hooks:
-      - id: poetry
-        name: Poetry
-        entry: poetry check --lock
-        pass_filenames: false
-        language: system
+      - id: uv-lock

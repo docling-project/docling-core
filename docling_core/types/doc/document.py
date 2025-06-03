@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import typing
+import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
@@ -2947,6 +2948,7 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         page_break_placeholder: Optional[str] = None,
+        include_annotations: bool = True,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -2974,6 +2976,7 @@ class DoclingDocument(BaseModel):
             page_no=page_no,
             included_content_layers=included_content_layers,
             page_break_placeholder=page_break_placeholder,
+            include_annotations=include_annotations,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -2995,6 +2998,8 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         page_break_placeholder: Optional[str] = None,  # e.g. "<!-- page break -->",
+        include_annotations: bool = True,
+        mark_annotations: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -3014,9 +3019,9 @@ class DoclingDocument(BaseModel):
         :type labels: Optional[set[DocItemLabel]] = None
         :param strict_text: Deprecated.
         :type strict_text: bool = False
-        :param escaping_underscores: bool: Whether to escape underscores in the
+        :param escape_underscores: bool: Whether to escape underscores in the
             text content of the document. (Default value = True).
-        :type escaping_underscores: bool = True
+        :type escape_underscores: bool = True
         :param image_placeholder: The placeholder to include to position
             images in the markdown. (Default value = "\<!-- image --\>").
         :type image_placeholder: str = "<!-- image -->"
@@ -3032,6 +3037,12 @@ class DoclingDocument(BaseModel):
         :param page_break_placeholder: The placeholder to include for marking page
             breaks. None means no page break placeholder will be used.
         :type page_break_placeholder: Optional[str] = None
+        :param include_annotations: bool: Whether to include annotations in the export.
+            (Default value = True).
+        :type include_annotations: bool = True
+        :param mark_annotations: bool: Whether to mark annotations in the export; only
+            relevant if include_annotations is True. (Default value = False).
+        :type mark_annotations: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
         """
@@ -3061,6 +3072,8 @@ class DoclingDocument(BaseModel):
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
                 page_break_placeholder=page_break_placeholder,
+                include_annotations=include_annotations,
+                mark_annotations=mark_annotations,
             ),
         )
         ser_res = serializer.serialize()
@@ -3110,6 +3123,7 @@ class DoclingDocument(BaseModel):
         html_head: str = "null",  # should be deprecated
         included_content_layers: Optional[set[ContentLayer]] = None,
         split_page_view: bool = False,
+        include_annotations: bool = True,
     ):
         """Save to HTML."""
         if isinstance(filename, str):
@@ -3135,6 +3149,7 @@ class DoclingDocument(BaseModel):
             html_head=html_head,
             included_content_layers=included_content_layers,
             split_page_view=split_page_view,
+            include_annotations=include_annotations,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -3187,6 +3202,7 @@ class DoclingDocument(BaseModel):
         html_head: str = "null",  # should be deprecated ...
         included_content_layers: Optional[set[ContentLayer]] = None,
         split_page_view: bool = False,
+        include_annotations: bool = True,
     ) -> str:
         r"""Serialize to HTML."""
         from docling_core.transforms.serializer.html import (
@@ -3218,6 +3234,7 @@ class DoclingDocument(BaseModel):
             html_head=html_head,
             html_lang=html_lang,
             output_style=output_style,
+            include_annotations=include_annotations,
         )
 
         if html_head == "null":
@@ -4134,7 +4151,10 @@ class DoclingDocument(BaseModel):
     @classmethod
     def validate_document(cls, d: "DoclingDocument"):
         """validate_document."""
-        if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
-            raise ValueError("Document hierachy is inconsistent.")
+        with warnings.catch_warnings():
+            # ignore warning from deprecated furniture
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
+                raise ValueError("Document hierachy is inconsistent.")
 
         return d

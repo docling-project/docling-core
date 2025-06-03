@@ -26,14 +26,73 @@ jobs:
         with:
           path: ~/.cache/huggingface
           key: huggingface-cache-py${{ matrix.python-version }}
-      - uses: ./.github/actions/setup-poetry
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Run styling check
-        run: poetry run pre-commit run --all-files
+          enable-cache: true
+      - name: pre-commit cache key
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> "$GITHUB_ENV"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Install dependencies
+        run: uv sync --frozen --all-extras
+      - name: Check style and run tests
+        run: pre-commit run --all-files
       - name: Upload coverage to Codecov
         if: inputs.push_coverage
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
+
+  build-package:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --all-extras
+      - name: Build package
+        run: uv build
+      - name: Check content of wheel
+        run: unzip -l dist/*.whl
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  test-package:
+    needs:
+      - build-package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install package
+        run: uv pip install dist/*.whl
+      - name: Load the DoclingDocument package
+        run: python -c 'from docling_core.types.doc import DoclingDocument'
+      - name: Check if package data is present
+        run: python -c 'from importlib import resources; from pathlib import Path; p=Path(resources.files("docling_core").joinpath("resources/schemas/doc/DOC.json")); assert p.exists()'

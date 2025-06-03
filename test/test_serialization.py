@@ -48,6 +48,57 @@ def test_md_cross_page_list_page_break():
     verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
 
 
+def test_md_cross_page_list_page_break_none():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            page_break_placeholder=None,
+            labels=_DEFAULT_LABELS - {DocItemLabel.PICTURE},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_pb_none.gt.md", actual=actual)
+
+
+def test_md_cross_page_list_page_break_empty():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            page_break_placeholder="",
+            labels=_DEFAULT_LABELS - {DocItemLabel.PICTURE},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_pb_empty.gt.md", actual=actual)
+
+
+def test_md_cross_page_list_page_break_non_empty():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            page_break_placeholder="<!-- page-break -->",
+            labels=_DEFAULT_LABELS - {DocItemLabel.PICTURE},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_pb_non_empty.gt.md", actual=actual)
+
+
 def test_md_cross_page_list_page_break_p2():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
@@ -146,11 +197,67 @@ def test_md_pb_placeholder_and_page_filter():
         doc=doc,
         params=MarkdownParams(
             page_break_placeholder="<!-- page break -->",
-            pages={4, 6},
+            pages={3, 4, 6},
         ),
     )
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+
+
+def test_md_include_annotations_false():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            include_annotations=False,
+            pages={1},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(
+        exp_file=src.parent / f"{src.stem}_p1_include_annotations_false.gt.md",
+        actual=actual,
+    )
+
+
+def test_md_mark_annotations_false():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            include_annotations=True,
+            mark_annotations=False,
+            pages={1},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(
+        exp_file=src.parent / f"{src.stem}_p1_mark_annotations_false.gt.md",
+        actual=actual,
+    )
+
+
+def test_md_mark_annotations_true():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            include_annotations=True,
+            mark_annotations=True,
+            pages={1},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(
+        exp_file=src.parent / f"{src.stem}_p1_mark_annotations_true.gt.md",
+        actual=actual,
+    )
 
 
 def test_html_split_page():
@@ -223,3 +330,43 @@ def test_html_split_page_no_page_breaks():
     )
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}_split.gt.html", actual=actual)
+
+
+def test_html_include_annotations_false():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            include_annotations=False,
+            pages={1},
+            html_head="<head></head>",  # keeping test output minimal
+        ),
+    )
+    actual = ser.serialize().text
+    verify(
+        exp_file=src.parent / f"{src.stem}_p1_include_annotations_false.gt.html",
+        actual=actual,
+    )
+
+
+def test_html_include_annotations_true():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            include_annotations=True,
+            pages={1},
+            html_head="<head></head>",  # keeping test output minimal
+        ),
+    )
+    actual = ser.serialize().text
+    verify(
+        exp_file=src.parent / f"{src.stem}_p1_include_annotations_true.gt.html",
+        actual=actual,
+    )

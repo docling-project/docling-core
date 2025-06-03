@@ -11,7 +11,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable, Optional, Tuple, Union
 
-from pydantic import AnyUrl, BaseModel, NonNegativeInt, computed_field
+from pydantic import AnyUrl, BaseModel, ConfigDict, NonNegativeInt, computed_field
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
@@ -39,7 +39,11 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     NodeItem,
     OrderedList,
+    PictureClassificationData,
+    PictureDataType,
+    PictureDescriptionData,
     PictureItem,
+    PictureMoleculeData,
     TableItem,
     TextItem,
     UnorderedList,
@@ -118,6 +122,23 @@ def _iterate_items(
         yield item
 
 
+def _get_picture_annotation_text(annotation: PictureDataType) -> Optional[str]:
+    result = None
+    if isinstance(annotation, PictureClassificationData):
+        predicted_class = (
+            annotation.predicted_classes[0].class_name
+            if annotation.predicted_classes
+            else None
+        )
+        if predicted_class is not None:
+            result = predicted_class.replace("_", " ")
+    elif isinstance(annotation, PictureDescriptionData):
+        result = annotation.text
+    elif isinstance(annotation, PictureMoleculeData):
+        result = annotation.smi
+    return result
+
+
 def create_ser_result(
     *,
     text: str = "",
@@ -176,11 +197,7 @@ class CommonParams(BaseModel):
 class DocSerializer(BaseModel, BaseDocSerializer):
     """Class for document serializers."""
 
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     doc: DoclingDocument
 

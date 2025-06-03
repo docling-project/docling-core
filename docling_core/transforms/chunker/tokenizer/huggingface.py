@@ -1,10 +1,11 @@
 """HuggingFace tokenization."""
 
-import sys
+import json
 from os import PathLike
 from typing import Optional, Union
 
-from pydantic import ConfigDict, PositiveInt, TypeAdapter, model_validator
+from huggingface_hub import hf_hub_download
+from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
@@ -28,16 +29,23 @@ class HuggingFaceTokenizer(BaseTokenizer):
 
     @model_validator(mode="after")
     def _patch(self) -> Self:
-        if hasattr(self.tokenizer, "model_max_length"):
-            model_max_tokens: PositiveInt = TypeAdapter(PositiveInt).validate_python(
-                self.tokenizer.model_max_length
-            )
-            user_max_tokens = self.max_tokens or sys.maxsize
-            self.max_tokens = min(model_max_tokens, user_max_tokens)
-        elif self.max_tokens is None:
-            raise ValueError(
-                "max_tokens must be defined as model does not define model_max_length"
-            )
+        if self.max_tokens is None:
+            try:
+                # try to use SentenceTransformers-specific config as that seems to be
+                # reliable (whenever available)
+                config_name = "sentence_bert_config.json"
+                config_path = hf_hub_download(
+                    repo_id=self.tokenizer.name_or_path,
+                    filename=config_name,
+                )
+                with open(config_path) as f:
+                    data = json.load(f)
+                self.max_tokens = int(data["max_seq_length"])
+            except Exception as e:
+                raise RuntimeError(
+                    "max_tokens could not be determined automatically; please set "
+                    "explicitly."
+                ) from e
         return self
 
     def count_tokens(self, text: str):

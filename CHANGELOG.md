@@ -1,3 +1,37 @@
+## [v2.33.0](https://github.com/docling-project/docling-core/releases/tag/v2.33.0) - 2025-06-02
+
+### Feature
+
+* Add BoundingBox methods for overlap and union calculations ([#311](https://github.com/docling-project/docling-core/issues/311)) ([`c521766`](https://github.com/docling-project/docling-core/commit/c521766cb7eb0dfb7d2e1eb5befe3e7e13453e9a))
+
+## [v2.32.0](https://github.com/docling-project/docling-core/releases/tag/v2.32.0) - 2025-05-27
+
+### Feature
+
+* Add annotations in MD & HTML serialization ([#295](https://github.com/docling-project/docling-core/issues/295)) ([`f067c51`](https://github.com/docling-project/docling-core/commit/f067c51c48d3ff69438ef9cc301f45a565b341ee))
+
+### Fix
+
+* **HybridChunker:** Refine `max_tokens` auto-detection ([#306](https://github.com/docling-project/docling-core/issues/306)) ([`87b72d6`](https://github.com/docling-project/docling-core/commit/87b72d653789847ae170110fbb551f34277f0399))
+
+## [v2.31.2](https://github.com/docling-project/docling-core/releases/tag/v2.31.2) - 2025-05-22
+
+### Fix
+
+* Fix hybrid chunker legacy patching ([#300](https://github.com/docling-project/docling-core/issues/300)) ([`ebc356a`](https://github.com/docling-project/docling-core/commit/ebc356a787a404ca73dbe473d7d5e17fa4951954))
+
+## [v2.31.1](https://github.com/docling-project/docling-core/releases/tag/v2.31.1) - 2025-05-20
+
+### Fix
+
+* **markdown:** Fix case of empty page break string ([#298](https://github.com/docling-project/docling-core/issues/298)) ([`c49a50e`](https://github.com/docling-project/docling-core/commit/c49a50e76ba74579350eb874c2b731490c00ea1f))
+
+## [v2.31.0](https://github.com/docling-project/docling-core/releases/tag/v2.31.0) - 2025-05-18
+
+### Feature
+
+* Provide visualizer option in HTML split view ([#294](https://github.com/docling-project/docling-core/issues/294)) ([`6a7eb53`](https://github.com/docling-project/docling-core/commit/6a7eb537eb6a9f35c3ffa3d43ebbad4e5ce5ab9c))
+
 ## [v2.30.1](https://github.com/docling-project/docling-core/releases/tag/v2.30.1) - 2025-05-14
 
 ### Fix

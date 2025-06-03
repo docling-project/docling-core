@@ -1475,6 +1475,7 @@
           "type": "string"
         },
         "content": {
+          "additionalProperties": true,
           "title": "Content",
           "type": "object"
         }
