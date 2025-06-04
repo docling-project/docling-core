@@ -319,7 +319,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
                 if len(doc.pages.keys()):
                     page_w, page_h = doc.pages[page_no].size.as_tuple()
                     cell_txt += DocumentToken.get_location(
-                        bbox=cell.prov.bbox.to_top_left_origin(page_h).as_tuple(),
+                        bbox=cell.prov.bbox,
                         page_w=page_w,
                         page_h=page_h,
                         xsize=params.xsize,

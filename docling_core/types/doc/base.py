@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Tuple, NamedTuple
 import numpy as np
 import math
+from shapely.geometry import Polygon
 
 from pydantic import BaseModel
 
@@ -545,6 +546,23 @@ class BoundingRectangle(BaseModel):
             Coord2D(self.r_x2, self.r_y2),
             Coord2D(self.r_x3, self.r_y3),
         ]
+    
+    def to_list(self) -> List[Tuple]:
+        """Convert to a list of tuple point coordinates."""
+        return [
+            (self.r_x0, self.r_y0),
+            (self.r_x1, self.r_y1),
+            (self.r_x2, self.r_y2),
+            (self.r_x3, self.r_y3),
+        ]
+    
+    def to_shapely_polygon(self) -> Polygon:
+        return Polygon([
+            (self.r_x0, self.r_y0),
+            (self.r_x1, self.r_y1),
+            (self.r_x2, self.r_y2),
+            (self.r_x3, self.r_y3),
+        ])
 
     def to_bottom_left_origin(self, page_height: float) -> "BoundingRectangle":
         """Convert coordinates to use bottom-left origin.
@@ -593,5 +611,18 @@ class BoundingRectangle(BaseModel):
                 r_y3=page_height - self.r_y3,
                 coord_origin=CoordOrigin.TOPLEFT,
             )
+
+    def intersection_over_union(
+        self, other: "BoundingRectangle", eps: float = 1.0e-6
+    ) -> float:
+        """intersection_over_union."""
+
+        polygon_other = other.to_shapely_polygon()
+        current_polygon = self.to_shapely_polygon()
+        
+        intersection_area = current_polygon.intersection(polygon_other).area
+        union_area = current_polygon.union(polygon_other).area
+        
+        return intersection_area / (union_area + eps)
 
 
