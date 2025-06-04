@@ -335,6 +335,9 @@ class HTMLTableSerializer(BaseTableSerializer):
                         continue
 
                     content = html.escape(cell.text.strip())
+                    if cell.has_rich_content():
+                        cell_parts = doc_serializer.get_parts(item=cell)
+                        content += "\n" + "\n".join([part.text for part in cell_parts])
                     celltag = "td"
                     if cell.column_header:
                         celltag = "th"

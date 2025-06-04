@@ -53,7 +53,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.3.0"
+CURRENT_VERSION: Final = "1.4.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -282,91 +282,6 @@ class PictureScatterChartData(PictureChartData):
     points: List[ChartPoint]
 
 
-class TableCell(BaseModel):
-    """TableCell."""
-
-    bbox: Optional[BoundingBox] = None
-    row_span: int = 1
-    col_span: int = 1
-    start_row_offset_idx: int
-    end_row_offset_idx: int
-    start_col_offset_idx: int
-    end_col_offset_idx: int
-    text: str
-    column_header: bool = False
-    row_header: bool = False
-    row_section: bool = False
-
-    @model_validator(mode="before")
-    @classmethod
-    def from_dict_format(cls, data: Any) -> Any:
-        """from_dict_format."""
-        if isinstance(data, dict):
-            # Check if this is a native BoundingBox or a bbox from docling-ibm-models
-            if (
-                # "bbox" not in data
-                # or data["bbox"] is None
-                # or isinstance(data["bbox"], BoundingBox)
-                "text"
-                in data
-            ):
-                return data
-            text = data["bbox"].get("token", "")
-            if not len(text):
-                text_cells = data.pop("text_cell_bboxes", None)
-                if text_cells:
-                    for el in text_cells:
-                        text += el["token"] + " "
-
-                text = text.strip()
-            data["text"] = text
-
-        return data
-
-
-class TableData(BaseModel):  # TBD
-    """BaseTableData."""
-
-    table_cells: List[TableCell] = []
-    num_rows: int = 0
-    num_cols: int = 0
-
-    @computed_field  # type: ignore
-    @property
-    def grid(
-        self,
-    ) -> List[List[TableCell]]:
-        """grid."""
-        # Initialise empty table data grid (only empty cells)
-        table_data = [
-            [
-                TableCell(
-                    text="",
-                    start_row_offset_idx=i,
-                    end_row_offset_idx=i + 1,
-                    start_col_offset_idx=j,
-                    end_col_offset_idx=j + 1,
-                )
-                for j in range(self.num_cols)
-            ]
-            for i in range(self.num_rows)
-        ]
-
-        # Overwrite cells in table data for which there is actual cell content.
-        for cell in self.table_cells:
-            for i in range(
-                min(cell.start_row_offset_idx, self.num_rows),
-                min(cell.end_row_offset_idx, self.num_rows),
-            ):
-                for j in range(
-                    min(cell.start_col_offset_idx, self.num_cols),
-                    min(cell.end_col_offset_idx, self.num_cols),
-                ):
-                    table_data[i][j] = cell
-
-        return table_data
-
-
 class PictureTabularChartData(PictureChartData):
     """Base class for picture chart data.
 
@@ -376,7 +291,7 @@ class PictureTabularChartData(PictureChartData):
     """
 
     kind: Literal["tabular_chart_data"] = "tabular_chart_data"
-    chart_data: TableData
+    chart_data: "TableData"
 
 
 PictureDataType = Annotated[
@@ -469,17 +384,40 @@ class RefItem(BaseModel):
 
     def resolve(self, doc: "DoclingDocument"):
         """Resolve the path in the document."""
+        # Split the path and handle the '#' at the beginning
         path_components = self.cref.split("/")
-        if (num_comps := len(path_components)) == 3:
-            _, path, index_str = path_components
-            index = int(index_str)
-            obj = doc.__getattribute__(path)[index]
-        elif num_comps == 2:
-            _, path = path_components
-            obj = doc.__getattribute__(path)
-        else:
-            raise RuntimeError(f"Unsupported number of path components: {num_comps}")
-        return obj
+        start_idx = 1 if path_components[0] in ["#", ""] else 0
+
+        # Start with the document as our current object
+        current = doc
+
+        # Navigate through each path component
+        for i in range(start_idx, len(path_components)):
+            component = path_components[i]
+
+            if not component:  # Skip empty components
+                continue
+
+            try:
+                if component.isdigit():
+                    # Handle array indices
+                    assert isinstance(current, typing.Sequence)
+                    current = current[int(component)]
+                else:
+                    # Try attribute access first (Pydantic v2 way)
+                    try:
+                        current = current.__getattribute__(component)
+                    except AttributeError:
+                        # Fall back to item access for dict-like objects
+                        assert isinstance(current, typing.Mapping)
+                        current = current[component]
+            except (IndexError, KeyError, AttributeError, TypeError) as e:
+                # Only raise for invalid paths with specific message
+                raise ValueError(
+                    f"Invalid path component '{component}' in '{self.cref}': {str(e)}"
+                )
+
+        return current
 
 
 class ImageRef(BaseModel):
@@ -1183,6 +1121,98 @@ class PictureItem(FloatingItem):
         return text
 
 
+class TableCell(NodeItem):
+    """TableCell."""
+
+    bbox: Optional[BoundingBox] = None
+    row_span: int = 1
+    col_span: int = 1
+    start_row_offset_idx: int
+    end_row_offset_idx: int
+    start_col_offset_idx: int
+    end_col_offset_idx: int
+    text: str = ""  # new default
+    column_header: bool = False
+    row_header: bool = False
+    row_section: bool = False
+
+    self_ref: str = Field(pattern=_JSON_POINTER_REGEX, default="0")
+    # 0 is a valid relative JSON pointer, pointing simply to itself.
+    # The absolute JSON pointer must be assigned when TableCell becomes
+    # part of a DoclingDocument table.
+
+    def has_rich_content(self):
+        """Checks if the table has child elements in the document hierarchy.
+
+        Returns:
+            bool: True if the table has child elements, False otherwise.
+        """
+        return len(self.children) > 0
+
+    @model_validator(mode="before")
+    @classmethod
+    def from_dict_format(cls, data: Any) -> Any:
+        """from_dict_format."""
+        if isinstance(data, dict):
+            # Check if this is a native BoundingBox or a bbox from docling-ibm-models
+            if "text" in data:
+                return data
+            text = data["bbox"].get("token", "")
+            if not len(text):
+                text_cells = data.pop("text_cell_bboxes", None)
+                if text_cells:
+                    for el in text_cells:
+                        text += el["token"] + " "
+
+                text = text.strip()
+            data["text"] = text
+
+        return data
+
+
+class TableData(BaseModel):  # TBD
+    """BaseTableData."""
+
+    table_cells: List[TableCell] = []
+    num_rows: int = 0
+    num_cols: int = 0
+
+    @computed_field  # type: ignore
+    @property
+    def grid(
+        self,
+    ) -> List[List[TableCell]]:
+        """grid."""
+        # Initialise empty table data grid (only empty cells)
+        table_data = [
+            [
+                TableCell(
+                    text="",
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                )
+                for j in range(self.num_cols)
+            ]
+            for i in range(self.num_rows)
+        ]
+
+        # Overwrite cells in table data for which there is actual cell content.
+        for cell in self.table_cells:
+            for i in range(
+                min(cell.start_row_offset_idx, self.num_rows),
+                min(cell.end_row_offset_idx, self.num_rows),
+            ):
+                for j in range(
+                    min(cell.start_col_offset_idx, self.num_cols),
+                    min(cell.end_col_offset_idx, self.num_cols),
+                ):
+                    table_data[i][j] = cell
+
+        return table_data
+
+
 class TableItem(FloatingItem):
     """TableItem."""
 
@@ -1191,6 +1221,193 @@ class TableItem(FloatingItem):
         DocItemLabel.DOCUMENT_INDEX,
         DocItemLabel.TABLE,
     ] = DocItemLabel.TABLE
+
+    def update_cell(
+        self,
+        start_row_offset_idx: int,
+        end_row_offset_idx: int,
+        start_col_offset_idx: int,
+        end_col_offset_idx: int,
+        column_header: bool = False,
+        row_header: bool = False,
+        row_section: bool = False,
+        bbox: Optional[BoundingBox] = None,
+        text: Optional[str] = None,
+    ) -> TableCell:
+        """Update a cell in the table with the specified parameters.
+
+        If a cell with the exact same row and column offsets exists, it will be updated.
+        Otherwise, a new cell will be created.
+
+        Args:
+            start_row_offset_idx: The starting row index.
+            end_row_offset_idx: The ending row index (exclusive).
+            start_col_offset_idx: The starting column index.
+            end_col_offset_idx: The ending column index (exclusive).
+            column_header: Whether the cell is a column header.
+            row_header: Whether the cell is a row header.
+            row_section: Whether the cell is a row section.
+            bbox: The bounding box of the cell.
+            text: The text content of the cell.
+
+        Raises:
+            ValueError: If the indices exceed the table dimensions or if the cell overlaps
+            with existing cells.
+        """
+        # Check if indices exceed table dimensions
+        if start_row_offset_idx < 0 or end_row_offset_idx > self.data.num_rows:
+            raise ValueError(
+                f"Row indices out of bounds: {start_row_offset_idx} to {end_row_offset_idx} "
+                f"(table has {self.data.num_rows} rows)"
+            )
+
+        if start_col_offset_idx < 0 or end_col_offset_idx > self.data.num_cols:
+            raise ValueError(
+                f"Column indices out of bounds: {start_col_offset_idx} to {end_col_offset_idx} "
+                f"(table has {self.data.num_cols} columns)"
+            )
+
+        # Calculate row_span and col_span
+        row_span = end_row_offset_idx - start_row_offset_idx
+        col_span = end_col_offset_idx - start_col_offset_idx
+
+        if row_span <= 0 or col_span <= 0:
+            raise ValueError(f"Invalid span: row_span={row_span}, col_span={col_span}")
+
+        # Check if a cell with these exact coordinates already exists
+        existing_cell_index = None
+        for i, cell in enumerate(self.data.table_cells):
+            if (
+                cell.start_row_offset_idx == start_row_offset_idx
+                and cell.end_row_offset_idx == end_row_offset_idx
+                and cell.start_col_offset_idx == start_col_offset_idx
+                and cell.end_col_offset_idx == end_col_offset_idx
+            ):
+                existing_cell_index = i
+                break
+
+        # Check for overlaps with existing cells (excluding the cell we're updating)
+        for i, cell in enumerate(self.data.table_cells):
+            if i == existing_cell_index:
+                continue
+
+            # Check if the new cell overlaps with any existing cell
+            # Note: end indices are exclusive, so cells touching at boundaries don't overlap
+            row_overlap = (
+                start_row_offset_idx < cell.end_row_offset_idx
+                and end_row_offset_idx > cell.start_row_offset_idx
+            )
+            col_overlap = (
+                start_col_offset_idx < cell.end_col_offset_idx
+                and end_col_offset_idx > cell.start_col_offset_idx
+            )
+
+            if row_overlap and col_overlap:
+                raise ValueError(f"New cell overlaps with existing cell: {cell.text}")
+
+        # Create a new cell
+        cell_text = text if text is not None else ""
+        new_cell = TableCell(
+            text=cell_text,
+            row_span=row_span,
+            col_span=col_span,
+            start_row_offset_idx=start_row_offset_idx,
+            end_row_offset_idx=end_row_offset_idx,
+            start_col_offset_idx=start_col_offset_idx,
+            end_col_offset_idx=end_col_offset_idx,
+            column_header=column_header,
+            row_header=row_header,
+            row_section=row_section,
+            bbox=bbox,
+        )
+
+        # Update or add the cell
+        if existing_cell_index is not None:
+            self.data.table_cells[existing_cell_index] = new_cell
+            new_cell.self_ref = (
+                f"{self.self_ref}/data/table_cells/{existing_cell_index}"
+            )
+        else:
+            self.data.table_cells.append(new_cell)
+            new_cell.self_ref = (
+                f"{self.self_ref}/data/table_cells/{len(self.data.table_cells) - 1}"
+            )
+
+        return new_cell
+
+    def delete_cells(
+        self,
+        start_row_offset_idx: int,
+        end_row_offset_idx: int,
+        start_col_offset_idx: int,
+        end_col_offset_idx: int,
+        strictly_contained: bool = False,
+    ) -> int:
+        """Delete cells that interact with the specified range.
+
+        Args:
+            start_row_offset_idx: The starting row index.
+            end_row_offset_idx: The ending row index (exclusive).
+            start_col_offset_idx: The starting column index.
+            end_col_offset_idx: The ending column index (exclusive).
+            strictly_contained: If True, only delete cells that are entirely within the range.
+                            If False, delete any cell that overlaps with the range.
+
+        Returns:
+            The number of cells deleted.
+
+        Raises:
+            ValueError: If the indices exceed the table dimensions.
+        """
+        # Check if indices exceed table dimensions
+        if start_row_offset_idx < 0 or end_row_offset_idx > self.data.num_rows:
+            raise ValueError(
+                f"Row indices out of bounds: {start_row_offset_idx} to {end_row_offset_idx} "
+                f"(table has {self.data.num_rows} rows)"
+            )
+
+        if start_col_offset_idx < 0 or end_col_offset_idx > self.data.num_cols:
+            raise ValueError(
+                f"Column indices out of bounds: {start_col_offset_idx} to {end_col_offset_idx} "
+                f"(table has {self.data.num_cols} columns)"
+            )
+
+        if (
+            start_row_offset_idx >= end_row_offset_idx
+            or start_col_offset_idx >= end_col_offset_idx
+        ):
+            raise ValueError(
+                f"Invalid range: rows={start_row_offset_idx}:{end_row_offset_idx}, "
+                f"cols={start_col_offset_idx}:{end_col_offset_idx}"
+            )
+
+        # Find cells that interact with the specified range
+        cells_to_delete = []
+        for i, cell in enumerate(self.data.table_cells):
+            if strictly_contained:
+                # Check if the cell is entirely within the specified range
+                if (
+                    cell.start_row_offset_idx >= start_row_offset_idx
+                    and cell.end_row_offset_idx <= end_row_offset_idx
+                    and cell.start_col_offset_idx >= start_col_offset_idx
+                    and cell.end_col_offset_idx <= end_col_offset_idx
+                ):
+                    cells_to_delete.append(i)
+            else:
+                # Check if the cell overlaps with the specified range
+                if (
+                    cell.start_row_offset_idx < end_row_offset_idx
+                    and cell.end_row_offset_idx > start_row_offset_idx
+                    and cell.start_col_offset_idx < end_col_offset_idx
+                    and cell.end_col_offset_idx > start_col_offset_idx
+                ):
+                    cells_to_delete.append(i)
+
+        # Delete the cells in reverse order to avoid index shifting issues
+        for index in sorted(cells_to_delete, reverse=True):
+            del self.data.table_cells[index]
+
+        return len(cells_to_delete)
 
     def export_to_dataframe(self) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
