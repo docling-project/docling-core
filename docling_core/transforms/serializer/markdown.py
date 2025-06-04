@@ -29,7 +29,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
-    _get_picture_annotation_text,
+    _get_annotation_text,
     _PageBreakSerResult,
     create_ser_result,
 )
@@ -166,6 +166,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
 
         cap_res = doc_serializer.serialize_captions(
@@ -176,6 +177,18 @@ class MarkdownTableSerializer(BaseTableSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+
+            if params.include_annotations:
+                for ann in item.annotations:
+                    if ann_text := _get_annotation_text(annotation=ann):
+                        ann_ser_res = _get_annotation_ser_result(
+                            ann_kind=ann.kind,
+                            ann_text=ann_text,
+                            mark_annotation=params.mark_annotations,
+                            doc_item=item,
+                        )
+                        res_parts.append(ann_ser_res)
+
             rows = [
                 [
                     # make sure that md tables are not broken
@@ -230,10 +243,10 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            if params.include_annotations:
 
+            if params.include_annotations:
                 for ann in item.annotations:
-                    if ann_text := _get_picture_annotation_text(annotation=ann):
+                    if ann_text := _get_annotation_text(annotation=ann):
                         ann_ser_res = _get_annotation_ser_result(
                             ann_kind=ann.kind,
                             ann_text=ann_text,

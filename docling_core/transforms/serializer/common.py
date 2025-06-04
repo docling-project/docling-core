@@ -44,6 +44,7 @@ from docling_core.types.doc.document import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    TableAnnotationType,
     TableItem,
     TextItem,
     UnorderedList,
@@ -122,7 +123,9 @@ def _iterate_items(
         yield item
 
 
-def _get_picture_annotation_text(annotation: PictureDataType) -> Optional[str]:
+def _get_annotation_text(
+    annotation: Union[PictureDataType, TableAnnotationType],
+) -> Optional[str]:
     result = None
     if isinstance(annotation, PictureClassificationData):
         predicted_class = (

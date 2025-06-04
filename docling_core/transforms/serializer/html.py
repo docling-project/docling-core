@@ -35,7 +35,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
-    _get_picture_annotation_text,
+    _get_annotation_text,
     create_ser_result,
 )
 from docling_core.transforms.serializer.html_styles import (
@@ -968,9 +968,9 @@ class HTMLDocSerializer(DocSerializer):
                     results.append(cap_ser_res)
 
         if params.include_annotations and item.self_ref not in excluded_refs:
-            if isinstance(item, PictureItem):
+            if isinstance(item, (PictureItem, TableItem)):
                 for ann in item.annotations:
-                    if ann_text := _get_picture_annotation_text(annotation=ann):
+                    if ann_text := _get_annotation_text(annotation=ann):
                         text_dir = get_text_direction(ann_text)
                         dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                         ann_ser_res = create_ser_result(
