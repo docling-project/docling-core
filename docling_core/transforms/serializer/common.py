@@ -15,6 +15,7 @@ from pydantic import AnyUrl, BaseModel, ConfigDict, NonNegativeInt, computed_fie
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
+    BaseAnnotationSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -44,6 +45,7 @@ from docling_core.types.doc.document import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    TableAnnotationType,
     TableItem,
     TextItem,
     UnorderedList,
@@ -122,7 +124,9 @@ def _iterate_items(
         yield item
 
 
-def _get_picture_annotation_text(annotation: PictureDataType) -> Optional[str]:
+def _get_annotation_text(
+    annotation: Union[PictureDataType, TableAnnotationType],
+) -> Optional[str]:
     result = None
     if isinstance(annotation, PictureClassificationData):
         predicted_class = (
@@ -210,6 +214,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     list_serializer: BaseListSerializer
     inline_serializer: BaseInlineSerializer
+
+    annotation_serializer: BaseAnnotationSerializer
 
     params: CommonParams = CommonParams()
 
@@ -504,6 +510,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_annotations(
+        self,
+        item: DocItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's annotations."""
+        return self.annotation_serializer.serialize(
+            item=item,
+            doc=self.doc,
+            **kwargs,
+        )
 
     def _get_applicable_pages(self) -> Optional[list[int]]:
         pages = {

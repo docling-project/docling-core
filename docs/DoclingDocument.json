@@ -376,7 +376,6 @@
       "type": "string"
     },
     "DescriptionAnnotation": {
-      "deprecated": true,
       "description": "DescriptionAnnotation.",
       "properties": {
         "kind": {
@@ -1120,8 +1119,7 @@
       "type": "object"
     },
     "MiscAnnotation": {
-      "deprecated": true,
-      "description": "MiscAnnotationData.",
+      "description": "MiscAnnotation.",
       "properties": {
         "kind": {
           "const": "misc",
@@ -1223,14 +1221,14 @@
     "PictureBarChartData": {
       "description": "Represents data of a bar chart.\n\nAttributes:\n    kind (Literal[\"bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    bars (List[ChartBar]): A list of bars in the chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "bar_chart_data",
           "default": "bar_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "x_axis_label": {
@@ -1453,14 +1451,14 @@
     "PictureLineChartData": {
       "description": "Represents data of a line chart.\n\nAttributes:\n    kind (Literal[\"line_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    lines (List[ChartLine]): A list of lines in the chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "line_chart_data",
           "default": "line_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "x_axis_label": {
@@ -1544,14 +1542,14 @@
     "PicturePieChartData": {
       "description": "Represents data of a pie chart.\n\nAttributes:\n    kind (Literal[\"pie_chart_data\"]): The type of the chart.\n    slices (List[ChartSlice]): A list of slices in the pie chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "pie_chart_data",
           "default": "pie_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "slices": {
@@ -1572,14 +1570,14 @@
     "PictureScatterChartData": {
       "description": "Represents data of a scatter chart.\n\nAttributes:\n    kind (Literal[\"scatter_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    points (List[ChartPoint]): A list of points in the scatter chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "scatter_chart_data",
           "default": "scatter_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "x_axis_label": {
@@ -1610,14 +1608,14 @@
     "PictureStackedBarChartData": {
       "description": "Represents data of a stacked bar chart.\n\nAttributes:\n    kind (Literal[\"stacked_bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    stacked_bars (List[ChartStackedBar]): A list of stacked bars in the chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "stacked_bar_chart_data",
           "default": "stacked_bar_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "x_axis_label": {
@@ -1648,14 +1646,14 @@
     "PictureTabularChartData": {
       "description": "Base class for picture chart data.\n\nAttributes:\n    title (str): The title of the chart.\n    chart_data (TableData): Chart data in the table format.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "tabular_chart_data",
           "default": "tabular_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "chart_data": {
