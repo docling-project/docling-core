@@ -15,7 +15,7 @@ import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, Final, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Final, List, Literal, Optional, Sequence, Tuple, Union
 from urllib.parse import unquote
 
 import pandas as pd
@@ -86,9 +86,8 @@ DOCUMENT_TOKENS_EXPORT_LABELS.update(
 )
 
 
-@deprecated("Deprecated class")
-class BasePictureData(BaseModel):
-    """BasePictureData."""
+class BaseAnnotation(BaseModel):
+    """Base class for all annotation types."""
 
     kind: str
 
@@ -100,7 +99,7 @@ class PictureClassificationClass(BaseModel):
     confidence: float
 
 
-class PictureClassificationData(BaseModel):
+class PictureClassificationData(BaseAnnotation):
     """PictureClassificationData."""
 
     kind: Literal["classification"] = "classification"
@@ -108,27 +107,18 @@ class PictureClassificationData(BaseModel):
     predicted_classes: List[PictureClassificationClass]
 
 
-@deprecated("Use DescriptionAnnotation instead)")
-class PictureDescriptionData(BaseModel):
-    """PictureDescriptionData."""
+class DescriptionAnnotation(BaseAnnotation):
+    """DescriptionAnnotation."""
 
     kind: Literal["description"] = "description"
     text: str
     provenance: str
 
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-    class DescriptionAnnotation(PictureDescriptionData):
-        """DescriptionAnnotation."""
-
-
-class PictureMoleculeData(BaseModel):
+class PictureMoleculeData(BaseAnnotation):
     """PictureMoleculeData."""
 
     kind: Literal["molecule_data"] = "molecule_data"
-
     smi: str
     confidence: float
     class_name: str
@@ -136,19 +126,17 @@ class PictureMoleculeData(BaseModel):
     provenance: str
 
 
-@deprecated("Use MiscAnnotation instead")
-class PictureMiscData(BaseModel):
-    """PictureMiscData."""
+class MiscAnnotation(BaseAnnotation):
+    """MiscAnnotation."""
 
     kind: Literal["misc"] = "misc"
     content: Dict[str, Any]
 
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-    class MiscAnnotation(PictureMiscData):
-        """MiscAnnotationData."""
+# deprecated aliases:
+BasePictureData = BaseAnnotation
+PictureDescriptionData = DescriptionAnnotation
+PictureMiscData = MiscAnnotation
 
 
 class ChartLine(BaseModel):
@@ -214,7 +202,7 @@ class ChartPoint(BaseModel):
     value: Tuple[float, float]
 
 
-class PictureChartData(BaseModel):
+class PictureChartData(BaseAnnotation):
     """Base class for picture chart data.
 
     Attributes:
@@ -836,6 +824,10 @@ class DocItem(
         )
         return page_image.crop(crop_bbox.as_tuple())
 
+    def get_annotations(self) -> Sequence[BaseAnnotation]:
+        """Get the annotations of this DocItem."""
+        return []
+
 
 class Formatting(BaseModel):
     """Formatting."""
@@ -1200,6 +1192,10 @@ class PictureItem(FloatingItem):
         text = serializer.serialize(item=self).text
         return text
 
+    def get_annotations(self) -> Sequence[BaseAnnotation]:
+        """Get the annotations of this PictureItem."""
+        return self.annotations
+
 
 TableAnnotationType = Annotated[
     Union[
@@ -1471,6 +1467,10 @@ class TableItem(FloatingItem):
     def add_annotation(self, annotation: TableAnnotationType) -> None:
         """Add an annotation to the table."""
         self.annotations.append(annotation)
+
+    def get_annotations(self) -> Sequence[BaseAnnotation]:
+        """Get the annotations of this TableItem."""
+        return self.annotations
 
 
 class GraphCell(BaseModel):

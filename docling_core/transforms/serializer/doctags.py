@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
+    BaseAnnotationSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -460,6 +461,15 @@ class DocTagsFallbackSerializer(BaseFallbackSerializer):
         return create_ser_result()
 
 
+class DocTagsAnnotationSerializer(BaseAnnotationSerializer):
+    """DocTags-specific annotation serializer."""
+
+    @override
+    def serialize(self, *, item: DocItem, **kwargs: Any) -> SerializationResult:
+        """Serializes the item's annotations."""
+        return create_ser_result()
+
+
 class DocTagsDocSerializer(DocSerializer):
     """DocTags-specific document serializer."""
 
@@ -472,6 +482,8 @@ class DocTagsDocSerializer(DocSerializer):
 
     list_serializer: BaseListSerializer = DocTagsListSerializer()
     inline_serializer: BaseInlineSerializer = DocTagsInlineSerializer()
+
+    annotation_serializer: BaseAnnotationSerializer = DocTagsAnnotationSerializer()
 
     params: DocTagsParams = DocTagsParams()
 

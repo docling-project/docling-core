@@ -15,6 +15,7 @@ from pydantic import AnyUrl, BaseModel, ConfigDict, NonNegativeInt, computed_fie
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
+    BaseAnnotationSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -213,6 +214,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     list_serializer: BaseListSerializer
     inline_serializer: BaseInlineSerializer
+
+    annotation_serializer: BaseAnnotationSerializer
 
     params: CommonParams = CommonParams()
 
@@ -507,6 +510,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_annotations(
+        self,
+        item: DocItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's annotations."""
+        return self.annotation_serializer.serialize(
+            item=item,
+            doc=self.doc,
+            **kwargs,
+        )
 
     def _get_applicable_pages(self) -> Optional[list[int]]:
         pages = {
