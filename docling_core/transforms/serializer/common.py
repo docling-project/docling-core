@@ -455,6 +455,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 res = self.serialize_underline(text=res)
             if formatting.strikethrough:
                 res = self.serialize_strikethrough(text=res)
+            if formatting.subscript:
+                res = self.serialize_subscript(text=res)
+            if formatting.superscript:
+                res = self.serialize_superscript(text=res)
         if params.include_hyperlinks and hyperlink:
             res = self.serialize_hyperlink(text=res, hyperlink=hyperlink)
         return res
@@ -477,6 +481,16 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @override
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
         """Hook for strikethrough formatting serialization."""
+        return text
+
+    @override
+    def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Hook for subscript formatting serialization."""
+        return text
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Hook for superscript formatting serialization."""
         return text
 
     @override

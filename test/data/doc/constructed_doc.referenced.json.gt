@@ -76,7 +76,7 @@
         "$ref": "#/groups/13"
       },
       {
-        "$ref": "#/texts/50"
+        "$ref": "#/texts/52"
       }
     ],
     "content_layer": "body",
@@ -322,6 +322,12 @@
         },
         {
           "$ref": "#/texts/40"
+        },
+        {
+          "$ref": "#/texts/41"
+        },
+        {
+          "$ref": "#/texts/42"
         }
       ],
       "content_layer": "body",
@@ -335,16 +341,16 @@
       },
       "children": [
         {
-          "$ref": "#/texts/41"
-        },
-        {
-          "$ref": "#/texts/42"
-        },
-        {
           "$ref": "#/texts/43"
         },
         {
-          "$ref": "#/texts/49"
+          "$ref": "#/texts/44"
+        },
+        {
+          "$ref": "#/texts/45"
+        },
+        {
+          "$ref": "#/texts/51"
         }
       ],
       "content_layer": "body",
@@ -354,17 +360,17 @@
     {
       "self_ref": "#/groups/14",
       "parent": {
-        "$ref": "#/texts/43"
+        "$ref": "#/texts/45"
       },
       "children": [
         {
-          "$ref": "#/texts/44"
+          "$ref": "#/texts/46"
         },
         {
-          "$ref": "#/texts/45"
+          "$ref": "#/texts/47"
         },
         {
-          "$ref": "#/texts/48"
+          "$ref": "#/texts/50"
         }
       ],
       "content_layer": "body",
@@ -374,14 +380,14 @@
     {
       "self_ref": "#/groups/15",
       "parent": {
-        "$ref": "#/texts/45"
+        "$ref": "#/texts/47"
       },
       "children": [
         {
-          "$ref": "#/texts/46"
+          "$ref": "#/texts/48"
         },
         {
-          "$ref": "#/texts/47"
+          "$ref": "#/texts/49"
         }
       ],
       "content_layer": "body",
@@ -737,8 +743,8 @@
       "content_layer": "body",
       "label": "code",
       "prov": [],
-      "orig": "<p>Hello world</p>",
-      "text": "<p>Hello world</p>",
+      "orig": "print(\"Hello world\")",
+      "text": "print(\"Hello world\")",
       "captions": [],
       "references": [],
       "footnotes": [],
@@ -871,7 +877,9 @@
         "bold": true,
         "italic": false,
         "underline": false,
-        "strikethrough": false
+        "strikethrough": false,
+        "subscript": false,
+        "superscript": false
       }
     },
     {
@@ -889,7 +897,9 @@
         "bold": false,
         "italic": true,
         "underline": false,
-        "strikethrough": false
+        "strikethrough": false,
+        "subscript": false,
+        "superscript": false
       }
     },
     {
@@ -907,7 +917,9 @@
         "bold": false,
         "italic": false,
         "underline": true,
-        "strikethrough": false
+        "strikethrough": false,
+        "subscript": false,
+        "superscript": false
       }
     },
     {
@@ -925,11 +937,53 @@
         "bold": false,
         "italic": false,
         "underline": false,
-        "strikethrough": true
+        "strikethrough": true,
+        "subscript": false,
+        "superscript": false
       }
     },
     {
       "self_ref": "#/texts/38",
+      "parent": {
+        "$ref": "#/groups/12"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "subscript",
+      "text": "subscript",
+      "formatting": {
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "strikethrough": false,
+        "subscript": true,
+        "superscript": false
+      }
+    },
+    {
+      "self_ref": "#/texts/39",
+      "parent": {
+        "$ref": "#/groups/12"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "superscript",
+      "text": "superscript",
+      "formatting": {
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "strikethrough": false,
+        "subscript": false,
+        "superscript": true
+      }
+    },
+    {
+      "self_ref": "#/texts/40",
       "parent": {
         "$ref": "#/groups/12"
       },
@@ -942,7 +996,7 @@
       "hyperlink": "."
     },
     {
-      "self_ref": "#/texts/39",
+      "self_ref": "#/texts/41",
       "parent": {
         "$ref": "#/groups/12"
       },
@@ -954,7 +1008,7 @@
       "text": "&"
     },
     {
-      "self_ref": "#/texts/40",
+      "self_ref": "#/texts/42",
       "parent": {
         "$ref": "#/groups/12"
       },
@@ -968,12 +1022,14 @@
         "bold": true,
         "italic": true,
         "underline": true,
-        "strikethrough": true
+        "strikethrough": true,
+        "subscript": false,
+        "superscript": false
       },
       "hyperlink": "https://github.com/DS4SD/docling"
     },
     {
-      "self_ref": "#/texts/41",
+      "self_ref": "#/texts/43",
       "parent": {
         "$ref": "#/groups/13"
       },
@@ -987,7 +1043,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/42",
+      "self_ref": "#/texts/44",
       "parent": {
         "$ref": "#/groups/13"
       },
@@ -1001,7 +1057,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/43",
+      "self_ref": "#/texts/45",
       "parent": {
         "$ref": "#/groups/13"
       },
@@ -1019,7 +1075,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/44",
+      "self_ref": "#/texts/46",
       "parent": {
         "$ref": "#/groups/14"
       },
@@ -1033,7 +1089,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/45",
+      "self_ref": "#/texts/47",
       "parent": {
         "$ref": "#/groups/14"
       },
@@ -1051,7 +1107,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/46",
+      "self_ref": "#/texts/48",
       "parent": {
         "$ref": "#/groups/15"
       },
@@ -1065,7 +1121,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/47",
+      "self_ref": "#/texts/49",
       "parent": {
         "$ref": "#/groups/15"
       },
@@ -1079,7 +1135,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/48",
+      "self_ref": "#/texts/50",
       "parent": {
         "$ref": "#/groups/14"
       },
@@ -1093,7 +1149,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/49",
+      "self_ref": "#/texts/51",
       "parent": {
         "$ref": "#/groups/13"
       },
@@ -1107,7 +1163,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/50",
+      "self_ref": "#/texts/52",
       "parent": {
         "$ref": "#/body"
       },

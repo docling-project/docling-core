@@ -848,6 +848,16 @@ class HTMLDocSerializer(DocSerializer):
         return f"<del>{text}</del>"
 
     @override
+    def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Apply HTML-specific subscript serialization."""
+        return f"<sub>{text}</sub>"
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Apply HTML-specific superscript serialization."""
+        return f"<sup>{text}</sup>"
+
+    @override
     def serialize_hyperlink(
         self,
         text: str,

@@ -58,16 +58,18 @@
   57: text
   58: text
   59: text
- 60: ordered_list with name=list A
-  61: list_item
-  62: list_item
+  60: text
+  61: text
+ 62: ordered_list with name=list A
   63: list_item
-   64: ordered_list with name=list B
-    65: list_item
-    66: list_item
-     67: ordered_list with name=list C
-      68: list_item
-      69: list_item
-    70: list_item
-  71: list_item
- 72: text
+  64: list_item
+  65: list_item
+   66: ordered_list with name=list B
+    67: list_item
+    68: list_item
+     69: ordered_list with name=list C
+      70: list_item
+      71: list_item
+    72: list_item
+  73: list_item
+ 74: text

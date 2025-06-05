@@ -21,7 +21,7 @@ body:
   - $ref: '#/form_items/0'
   - $ref: '#/groups/12'
   - $ref: '#/groups/13'
-  - $ref: '#/texts/50'
+  - $ref: '#/texts/52'
   content_layer: body
   label: unspecified
   name: _root_
@@ -180,6 +180,8 @@ groups:
   - $ref: '#/texts/38'
   - $ref: '#/texts/39'
   - $ref: '#/texts/40'
+  - $ref: '#/texts/41'
+  - $ref: '#/texts/42'
   content_layer: body
   label: inline
   name: group
@@ -187,10 +189,10 @@ groups:
     $ref: '#/body'
   self_ref: '#/groups/12'
 - children:
-  - $ref: '#/texts/41'
-  - $ref: '#/texts/42'
   - $ref: '#/texts/43'
-  - $ref: '#/texts/49'
+  - $ref: '#/texts/44'
+  - $ref: '#/texts/45'
+  - $ref: '#/texts/51'
   content_layer: body
   label: ordered_list
   name: list A
@@ -198,23 +200,23 @@ groups:
     $ref: '#/body'
   self_ref: '#/groups/13'
 - children:
-  - $ref: '#/texts/44'
-  - $ref: '#/texts/45'
-  - $ref: '#/texts/48'
+  - $ref: '#/texts/46'
+  - $ref: '#/texts/47'
+  - $ref: '#/texts/50'
   content_layer: body
   label: ordered_list
   name: list B
   parent:
-    $ref: '#/texts/43'
+    $ref: '#/texts/45'
   self_ref: '#/groups/14'
 - children:
-  - $ref: '#/texts/46'
-  - $ref: '#/texts/47'
+  - $ref: '#/texts/48'
+  - $ref: '#/texts/49'
   content_layer: body
   label: ordered_list
   name: list C
   parent:
-    $ref: '#/texts/45'
+    $ref: '#/texts/47'
   self_ref: '#/groups/15'
 key_value_items:
 - captions: []
@@ -724,13 +726,13 @@ texts:
   content_layer: body
   footnotes: []
   label: code
-  orig: <p>Hello world</p>
+  orig: print("Hello world")
   parent:
     $ref: '#/groups/10'
   prov: []
   references: []
   self_ref: '#/texts/24'
-  text: <p>Hello world</p>
+  text: print("Hello world")
 - children: []
   content_layer: body
   label: text
@@ -822,6 +824,8 @@ texts:
     bold: true
     italic: false
     strikethrough: false
+    subscript: false
+    superscript: false
     underline: false
   label: text
   orig: bold
@@ -836,6 +840,8 @@ texts:
     bold: false
     italic: true
     strikethrough: false
+    subscript: false
+    superscript: false
     underline: false
   label: text
   orig: italic
@@ -850,6 +856,8 @@ texts:
     bold: false
     italic: false
     strikethrough: false
+    subscript: false
+    superscript: false
     underline: true
   label: text
   orig: underline
@@ -864,6 +872,8 @@ texts:
     bold: false
     italic: false
     strikethrough: true
+    subscript: false
+    superscript: false
     underline: false
   label: text
   orig: strikethrough
@@ -874,13 +884,45 @@ texts:
   text: strikethrough
 - children: []
   content_layer: body
+  formatting:
+    bold: false
+    italic: false
+    strikethrough: false
+    subscript: true
+    superscript: false
+    underline: false
+  label: text
+  orig: subscript
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/38'
+  text: subscript
+- children: []
+  content_layer: body
+  formatting:
+    bold: false
+    italic: false
+    strikethrough: false
+    subscript: false
+    superscript: true
+    underline: false
+  label: text
+  orig: superscript
+  parent:
+    $ref: '#/groups/12'
+  prov: []
+  self_ref: '#/texts/39'
+  text: superscript
+- children: []
+  content_layer: body
   hyperlink: .
   label: text
   orig: hyperlink
   parent:
     $ref: '#/groups/12'
   prov: []
-  self_ref: '#/texts/38'
+  self_ref: '#/texts/40'
   text: hyperlink
 - children: []
   content_layer: body
@@ -889,7 +931,7 @@ texts:
   parent:
     $ref: '#/groups/12'
   prov: []
-  self_ref: '#/texts/39'
+  self_ref: '#/texts/41'
   text: '&'
 - children: []
   content_layer: body
@@ -897,6 +939,8 @@ texts:
     bold: true
     italic: true
     strikethrough: true
+    subscript: false
+    superscript: false
     underline: true
   hyperlink: https://github.com/DS4SD/docling
   label: text
@@ -904,7 +948,7 @@ texts:
   parent:
     $ref: '#/groups/12'
   prov: []
-  self_ref: '#/texts/40'
+  self_ref: '#/texts/42'
   text: everything at the same time.
 - children: []
   content_layer: body
@@ -915,7 +959,7 @@ texts:
   parent:
     $ref: '#/groups/13'
   prov: []
-  self_ref: '#/texts/41'
+  self_ref: '#/texts/43'
   text: Item 1 in A
 - children: []
   content_layer: body
@@ -926,7 +970,7 @@ texts:
   parent:
     $ref: '#/groups/13'
   prov: []
-  self_ref: '#/texts/42'
+  self_ref: '#/texts/44'
   text: Item 2 in A
 - children:
   - $ref: '#/groups/14'
@@ -938,7 +982,7 @@ texts:
   parent:
     $ref: '#/groups/13'
   prov: []
-  self_ref: '#/texts/43'
+  self_ref: '#/texts/45'
   text: Item 3 in A
 - children: []
   content_layer: body
@@ -949,7 +993,7 @@ texts:
   parent:
     $ref: '#/groups/14'
   prov: []
-  self_ref: '#/texts/44'
+  self_ref: '#/texts/46'
   text: Item 1 in B
 - children:
   - $ref: '#/groups/15'
@@ -961,7 +1005,7 @@ texts:
   parent:
     $ref: '#/groups/14'
   prov: []
-  self_ref: '#/texts/45'
+  self_ref: '#/texts/47'
   text: Item 2 in B
 - children: []
   content_layer: body
@@ -972,7 +1016,7 @@ texts:
   parent:
     $ref: '#/groups/15'
   prov: []
-  self_ref: '#/texts/46'
+  self_ref: '#/texts/48'
   text: Item 1 in C
 - children: []
   content_layer: body
@@ -983,7 +1027,7 @@ texts:
   parent:
     $ref: '#/groups/15'
   prov: []
-  self_ref: '#/texts/47'
+  self_ref: '#/texts/49'
   text: Item 2 in C
 - children: []
   content_layer: body
@@ -994,7 +1038,7 @@ texts:
   parent:
     $ref: '#/groups/14'
   prov: []
-  self_ref: '#/texts/48'
+  self_ref: '#/texts/50'
   text: Item 3 in B
 - children: []
   content_layer: body
@@ -1005,7 +1049,7 @@ texts:
   parent:
     $ref: '#/groups/13'
   prov: []
-  self_ref: '#/texts/49'
+  self_ref: '#/texts/51'
   text: Item 4 in A
 - children: []
   content_layer: body
@@ -1014,6 +1058,6 @@ texts:
   parent:
     $ref: '#/body'
   prov: []
-  self_ref: '#/texts/50'
+  self_ref: '#/texts/52'
   text: The end.
 version: 1.4.0

@@ -554,6 +554,16 @@
           "default": false,
           "title": "Strikethrough",
           "type": "boolean"
+        },
+        "subscript": {
+          "default": false,
+          "title": "Subscript",
+          "type": "boolean"
+        },
+        "superscript": {
+          "default": false,
+          "title": "Superscript",
+          "type": "boolean"
         }
       },
       "title": "Formatting",

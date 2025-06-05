@@ -203,6 +203,16 @@ class BaseDocSerializer(ABC):
         ...
 
     @abstractmethod
+    def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Hook for subscript formatting serialization."""
+        ...
+
+    @abstractmethod
+    def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Hook for superscript formatting serialization."""
+        ...
+
+    @abstractmethod
     def serialize_hyperlink(
         self,
         text: str,

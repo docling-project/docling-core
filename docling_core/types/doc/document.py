@@ -836,6 +836,8 @@ class Formatting(BaseModel):
     italic: bool = False
     underline: bool = False
     strikethrough: bool = False
+    subscript: bool = False
+    superscript: bool = False
 
 
 class TextItem(DocItem):

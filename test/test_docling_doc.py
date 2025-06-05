@@ -942,7 +942,7 @@ def _construct_doc() -> DoclingDocument:
         text="Here a code snippet:",
         parent=inline1,
     )
-    doc.add_code(text="<p>Hello world</p>", parent=inline1)
+    doc.add_code(text='print("Hello world")', parent=inline1)
     doc.add_text(
         label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1
     )
@@ -1020,6 +1020,18 @@ def _construct_doc() -> DoclingDocument:
         text="strikethrough",
         parent=inline_fmt,
         formatting=Formatting(strikethrough=True),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="subscript",
+        parent=inline_fmt,
+        formatting=Formatting(subscript=True),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="superscript",
+        parent=inline_fmt,
+        formatting=Formatting(superscript=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
