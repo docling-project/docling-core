@@ -3,7 +3,13 @@
 from enum import Enum
 from typing import Tuple
 
-
+class ScriptMode(str, Enum):
+    """ScriptMode."""
+    
+    BASE = "base_script"
+    SUB = "sub_script"
+    SUPER = "super_script"
+    
 class DocItemLabel(str, Enum):
     """DocItemLabel."""
 

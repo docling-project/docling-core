@@ -46,6 +46,7 @@ from docling_core.types.doc.labels import (
     GraphLinkLabel,
     GroupLabel,
     PictureClassificationLabel,
+    ScriptMode, 
 )
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 from docling_core.types.doc.utils import relative_path
@@ -836,7 +837,7 @@ class Formatting(BaseModel):
     italic: bool = False
     underline: bool = False
     strikethrough: bool = False
-
+    script: ScriptMode = ScriptMode.BASE
 
 class TextItem(DocItem):
     """TextItem."""
