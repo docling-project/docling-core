@@ -821,6 +821,7 @@ texts:
   formatting:
     bold: true
     italic: false
+    script: base_script
     strikethrough: false
     underline: false
   label: text
@@ -835,6 +836,7 @@ texts:
   formatting:
     bold: false
     italic: true
+    script: base_script
     strikethrough: false
     underline: false
   label: text
@@ -849,6 +851,7 @@ texts:
   formatting:
     bold: false
     italic: false
+    script: base_script
     strikethrough: false
     underline: true
   label: text
@@ -863,6 +866,7 @@ texts:
   formatting:
     bold: false
     italic: false
+    script: base_script
     strikethrough: true
     underline: false
   label: text
@@ -896,6 +900,7 @@ texts:
   formatting:
     bold: true
     italic: true
+    script: base_script
     strikethrough: true
     underline: true
   hyperlink: https://github.com/DS4SD/docling

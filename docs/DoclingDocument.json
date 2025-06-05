@@ -554,6 +554,10 @@
           "default": false,
           "title": "Strikethrough",
           "type": "boolean"
+        },
+        "script": {
+          "$ref": "#/$defs/ScriptMode",
+          "default": "base_script"
         }
       },
       "title": "Formatting",
@@ -1714,6 +1718,16 @@
       ],
       "title": "RefItem",
       "type": "object"
+    },
+    "ScriptMode": {
+      "description": "ScriptMode.",
+      "enum": [
+        "base_script",
+        "sub_script",
+        "super_script"
+      ],
+      "title": "ScriptMode",
+      "type": "string"
     },
     "SectionHeaderItem": {
       "additionalProperties": false,
