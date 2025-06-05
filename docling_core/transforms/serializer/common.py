@@ -45,6 +45,7 @@ from docling_core.types.doc.document import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    Script,
     TableAnnotationType,
     TableItem,
     TextItem,
@@ -455,9 +456,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 res = self.serialize_underline(text=res)
             if formatting.strikethrough:
                 res = self.serialize_strikethrough(text=res)
-            if formatting.subscript:
+            if formatting.script == Script.SUB:
                 res = self.serialize_subscript(text=res)
-            if formatting.superscript:
+            elif formatting.script == Script.SUPER:
                 res = self.serialize_superscript(text=res)
         if params.include_hyperlinks and hyperlink:
             res = self.serialize_hyperlink(text=res, hyperlink=hyperlink)

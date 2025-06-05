@@ -33,6 +33,7 @@ from docling_core.types.doc.document import (  # BoundingBox,
     PictureItem,
     ProvenanceItem,
     RefItem,
+    Script,
     SectionHeaderItem,
     Size,
     TableCell,
@@ -1024,14 +1025,16 @@ def _construct_doc() -> DoclingDocument:
     doc.add_text(
         label=DocItemLabel.TEXT,
         text="subscript",
+        orig="subscript",
+        formatting=Formatting(script=Script.SUB),
         parent=inline_fmt,
-        formatting=Formatting(subscript=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
         text="superscript",
+        orig="superscript",
+        formatting=Formatting(script=Script.SUPER),
         parent=inline_fmt,
-        formatting=Formatting(superscript=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,

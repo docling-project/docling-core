@@ -829,6 +829,14 @@ class DocItem(
         return []
 
 
+class Script(str, Enum):
+    """Text script position."""
+
+    BASELINE = "baseline"
+    SUB = "sub"
+    SUPER = "super"
+
+
 class Formatting(BaseModel):
     """Formatting."""
 
@@ -836,8 +844,7 @@ class Formatting(BaseModel):
     italic: bool = False
     underline: bool = False
     strikethrough: bool = False
-    subscript: bool = False
-    superscript: bool = False
+    script: Script = Script.BASELINE
 
 
 class TextItem(DocItem):

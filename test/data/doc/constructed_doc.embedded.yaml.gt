@@ -823,9 +823,8 @@ texts:
   formatting:
     bold: true
     italic: false
+    script: baseline
     strikethrough: false
-    subscript: false
-    superscript: false
     underline: false
   label: text
   orig: bold
@@ -839,9 +838,8 @@ texts:
   formatting:
     bold: false
     italic: true
+    script: baseline
     strikethrough: false
-    subscript: false
-    superscript: false
     underline: false
   label: text
   orig: italic
@@ -855,9 +853,8 @@ texts:
   formatting:
     bold: false
     italic: false
+    script: baseline
     strikethrough: false
-    subscript: false
-    superscript: false
     underline: true
   label: text
   orig: underline
@@ -871,9 +868,8 @@ texts:
   formatting:
     bold: false
     italic: false
+    script: baseline
     strikethrough: true
-    subscript: false
-    superscript: false
     underline: false
   label: text
   orig: strikethrough
@@ -887,9 +883,8 @@ texts:
   formatting:
     bold: false
     italic: false
+    script: sub
     strikethrough: false
-    subscript: true
-    superscript: false
     underline: false
   label: text
   orig: subscript
@@ -903,9 +898,8 @@ texts:
   formatting:
     bold: false
     italic: false
+    script: super
     strikethrough: false
-    subscript: false
-    superscript: true
     underline: false
   label: text
   orig: superscript
@@ -938,9 +932,8 @@ texts:
   formatting:
     bold: true
     italic: true
+    script: baseline
     strikethrough: true
-    subscript: false
-    superscript: false
     underline: true
   hyperlink: https://github.com/DS4SD/docling
   label: text
