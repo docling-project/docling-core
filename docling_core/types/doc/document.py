@@ -3628,6 +3628,52 @@ class DoclingDocument(BaseModel):
 
             return (GraphData(cells=cells, links=links), overall_prov)
 
+        def _add_text(
+            full_chunk: str,
+            bbox: Optional[BoundingBox],
+            pg_width: int,
+            pg_height: int,
+            page_no: int,
+            tag_name: str,
+            doc_label: DocItemLabel,
+            doc: DoclingDocument,
+            parent: Optional[NodeItem],
+        ):
+            # For everything else, treat as text
+            text_content = extract_inner_text(full_chunk)
+            element_prov = (
+                ProvenanceItem(
+                    bbox=bbox.resize_by_scale(pg_width, pg_height),
+                    charspan=(0, len(text_content)),
+                    page_no=page_no,
+                )
+                if bbox
+                else None
+            )
+
+            content_layer = ContentLayer.BODY
+            if tag_name in [DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER]:
+                content_layer = ContentLayer.FURNITURE
+
+            if doc_label == DocItemLabel.SECTION_HEADER:
+                # Extract level from tag_name (e.g. "section_level_header_1" -> 1)
+                level = int(tag_name.split("_")[-1])
+                doc.add_heading(
+                    text=text_content,
+                    level=level,
+                    prov=element_prov,
+                    parent=parent,
+                    content_layer=content_layer,
+                )
+            else:
+                doc.add_text(
+                    label=doc_label,
+                    text=text_content,
+                    prov=element_prov,
+                    parent=parent,
+                    content_layer=content_layer,
+                )
+
         # doc = DoclingDocument(name="Document")
         for pg_idx, doctag_page in enumerate(doctag_document.pages):
             page_doctags = doctag_page.tokens
@@ -3662,7 +3708,7 @@ class DoclingDocument(BaseModel):
             tag_pattern = (
                 rf"<(?P<tag>{DocItemLabel.TITLE}|{DocItemLabel.DOCUMENT_INDEX}|"
                 rf"{DocItemLabel.CHECKBOX_UNSELECTED}|{DocItemLabel.CHECKBOX_SELECTED}|"
-                rf"{DocItemLabel.TEXT}|{DocItemLabel.PAGE_HEADER}|"
+                rf"{DocItemLabel.TEXT}|{DocItemLabel.PAGE_HEADER}|{GroupLabel.INLINE}|"
                 rf"{DocItemLabel.PAGE_FOOTER}|{DocItemLabel.FORMULA}|"
                 rf"{DocItemLabel.CAPTION}|{DocItemLabel.PICTURE}|"
                 rf"{DocItemLabel.FOOTNOTE}|{DocItemLabel.CODE}|"
@@ -3687,7 +3733,7 @@ class DoclingDocument(BaseModel):
                     # no closing tag; only the existence of the item is recovered
                     full_chunk = f"<{tag_name}></{tag_name}>"
 
-                doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.PARAGRAPH)
+                doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.TEXT)
 
                 if tag_name == DocumentToken.OTSL.value:
                     table_data = parse_table_content(full_chunk)
@@ -3709,6 +3755,24 @@ class DoclingDocument(BaseModel):
                         doc.add_table(data=table_data, prov=prov, caption=caption)
                     else:
                         doc.add_table(data=table_data, caption=caption)
+
+                elif tag_name == GroupLabel.INLINE:
+                    inline_group = doc.add_inline_group()
+                    content = match.group("content")
+                    common_bbox = extract_bounding_box(content)
+                    for item_match in pattern.finditer(content):
+                        item_tag = item_match.group("tag")
+                        _add_text(
+                            full_chunk=item_match.group(0),
+                            bbox=common_bbox,
+                            pg_width=pg_width,
+                            pg_height=pg_height,
+                            page_no=page_no,
+                            tag_name=item_tag,
+                            doc_label=tag_to_doclabel.get(item_tag, DocItemLabel.TEXT),
+                            doc=doc,
+                            parent=inline_group,
+                        )
 
                 elif tag_name in [DocItemLabel.PICTURE, DocItemLabel.CHART]:
                     caption, caption_bbox = extract_caption(full_chunk)
@@ -3859,38 +3923,17 @@ class DoclingDocument(BaseModel):
                         )
                 else:
                     # For everything else, treat as text
-                    text_content = extract_inner_text(full_chunk)
-                    element_prov = (
-                        ProvenanceItem(
-                            bbox=bbox.resize_by_scale(pg_width, pg_height),
-                            charspan=(0, len(text_content)),
-                            page_no=page_no,
-                        )
-                        if bbox
-                        else None
+                    _add_text(
+                        full_chunk=full_chunk,
+                        bbox=bbox,
+                        pg_width=pg_width,
+                        pg_height=pg_height,
+                        page_no=page_no,
+                        tag_name=tag_name,
+                        doc_label=doc_label,
+                        doc=doc,
+                        parent=None,
                     )
-
-                    content_layer = ContentLayer.BODY
-                    if tag_name in [DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER]:
-                        content_layer = ContentLayer.FURNITURE
-
-                    if doc_label == DocItemLabel.SECTION_HEADER:
-                        # Extract level from tag_name (e.g. "section_level_header_1" -> 1)
-                        level = int(tag_name.split("_")[-1])
-                        doc.add_heading(
-                            text=text_content,
-                            level=level,
-                            prov=element_prov,
-                            content_layer=content_layer,
-                        )
-                    else:
-                        doc.add_text(
-                            label=doc_label,
-                            text=text_content,
-                            prov=element_prov,
-                            content_layer=content_layer,
-                        )
-
         return doc
 
     @deprecated("Use save_as_doctags instead.")
