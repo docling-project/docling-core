@@ -720,6 +720,15 @@ def _test_export_methods(
     dt_min_pred = doc.export_to_doctags(minified=True)
     _verify_regression_test(dt_min_pred, filename=filename, ext="min.dt")
 
+    # Test pages parameter in DocTags export
+    if doc.pages:  # Only test if document has pages
+        first_page = min(doc.pages.keys())
+        second_page = first_page + 1
+        if second_page in doc.pages:  # Only test if document has at least 2 pages
+            dt_pages_pred = doc.export_to_doctags(pages={first_page, second_page})
+            print(dt_pages_pred)
+            _verify_regression_test(dt_pages_pred, filename=filename, ext="pages.dt")
+
     # Test Tables export ...
     for table in doc.tables:
         table.export_to_markdown()
