@@ -757,6 +757,9 @@ def _construct_doc() -> DoclingDocument:
     leading_list = doc.add_group(parent=None, label=GroupLabel.LIST)
     doc.add_list_item(parent=leading_list, text="item of leading list")
 
+    with pytest.raises(ValueError, match="list group"):
+        doc.add_list_item(text="Misplaced list item")
+
     title = doc.add_title(
         text="Title of the Document"
     )  # can be done if such information is present, or ommitted.
@@ -1616,3 +1619,18 @@ def test_document_manipulation():
 
     filename = Path("test/data/doc/constructed_doc.replaced_item.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+
+def test_misplaced_list_items():
+    filename = Path("test/data/doc/misplaced_list_items.yaml")
+    doc = DoclingDocument.load_from_yaml(filename)
+
+    dt_pred = doc.export_to_doctags()
+    _verify_regression_test(dt_pred, filename=str(filename), ext="dt")
+
+    exp_file = filename.parent / f"{filename.stem}.out.yaml"
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    else:
+        exp_doc = DoclingDocument.load_from_yaml(exp_file)
+        assert doc == exp_doc

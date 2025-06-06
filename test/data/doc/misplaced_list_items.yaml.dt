@@ -1,0 +1,7 @@
+<doctag><ordered_list><list_item>foo</list_item>
+</ordered_list>
+<text>bar</text>
+<unordered_list><list_item>here</list_item>
+<list_item>there</list_item>
+</unordered_list>
+</doctag>

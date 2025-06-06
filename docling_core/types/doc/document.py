@@ -1819,6 +1819,18 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.form_items.append(item)
+
+        elif isinstance(item, (UnorderedList, OrderedList, InlineGroup)):
+            item_label = "groups"
+            item_index = len(self.groups)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.groups.append(item)
+
         else:
             raise ValueError(f"Item {item} is not supported for insertion")
 
@@ -2154,8 +2166,8 @@ class DoclingDocument(BaseModel):
         :param parent: Optional[NodeItem]:  (Default value = None)
 
         """
-        if not parent:
-            parent = self.body
+        if not isinstance(parent, (OrderedList, UnorderedList)):
+            raise ValueError("ListItem's parent must be a list group")
 
         if not orig:
             orig = text
@@ -4197,3 +4209,58 @@ class DoclingDocument(BaseModel):
                 raise ValueError("Document hierachy is inconsistent.")
 
         return d
+
+    @model_validator(mode="after")
+    def validate_misplaced_list_items(self):
+        """validate_misplaced_list_items."""
+        # find list items without list parent, putting succesive ones together
+        misplaced_list_items: list[list[ListItem]] = []
+        prev: Optional[NodeItem] = None
+        for item, _ in self.iterate_items(
+            traverse_pictures=True,
+            included_content_layers={c for c in ContentLayer},
+            with_groups=True,  # so that we can distinguish neighboring lists
+        ):
+            if isinstance(item, ListItem) and (
+                item.parent is None
+                or not isinstance(
+                    item.parent.resolve(doc=self), (OrderedList, UnorderedList)
+                )
+            ):
+                # non_group_list_items.append(item)
+                if prev is None or not isinstance(prev, ListItem):  # if new list
+                    misplaced_list_items.append([item])
+                else:
+                    misplaced_list_items[-1].append(item)
+            prev = item
+
+        for curr_list_items in reversed(misplaced_list_items):
+
+            # add group
+            new_group = (
+                OrderedList(self_ref="#")
+                if curr_list_items[0].enumerated
+                else UnorderedList(self_ref="#")
+            )
+            self.insert_item_before_sibling(
+                new_item=new_group,
+                sibling=curr_list_items[0],
+            )
+
+            # delete list items from document (should not be affected by group addition)
+            self.delete_items(node_items=curr_list_items)
+
+            # add list items to new group
+            for li in curr_list_items:
+                self.add_list_item(
+                    text=li.text,
+                    enumerated=li.enumerated,
+                    marker=li.marker,
+                    orig=li.orig,
+                    prov=li.prov[0] if li.prov else None,
+                    parent=new_group,
+                    content_layer=li.content_layer,
+                    formatting=li.formatting,
+                    hyperlink=li.hyperlink,
+                )
+        return self
