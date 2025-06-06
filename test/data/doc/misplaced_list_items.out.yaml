@@ -1,8 +1,8 @@
 body:
   children:
-  - $ref: '#/groups/1'
-  - $ref: '#/texts/0'
   - $ref: '#/groups/0'
+  - $ref: '#/texts/1'
+  - $ref: '#/groups/1'
   content_layer: body
   label: unspecified
   name: _root_
@@ -16,18 +16,18 @@ furniture:
   self_ref: '#/furniture'
 groups:
 - children:
-  - $ref: '#/texts/1'
-  - $ref: '#/texts/2'
+  - $ref: '#/texts/0'
   content_layer: body
-  label: list
+  label: ordered_list
   name: group
   parent:
     $ref: '#/body'
   self_ref: '#/groups/0'
 - children:
+  - $ref: '#/texts/2'
   - $ref: '#/texts/3'
   content_layer: body
-  label: ordered_list
+  label: list
   name: group
   parent:
     $ref: '#/body'
@@ -41,12 +41,23 @@ tables: []
 texts:
 - children: []
   content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '1.'
+  orig: foo
+  parent:
+    $ref: '#/groups/0'
+  prov: []
+  self_ref: '#/texts/0'
+  text: foo
+- children: []
+  content_layer: body
   label: text
   orig: bar
   parent:
     $ref: '#/body'
   prov: []
-  self_ref: '#/texts/0'
+  self_ref: '#/texts/1'
   text: bar
 - children: []
   content_layer: body
@@ -55,9 +66,9 @@ texts:
   marker: '-'
   orig: here
   parent:
-    $ref: '#/groups/0'
+    $ref: '#/groups/1'
   prov: []
-  self_ref: '#/texts/1'
+  self_ref: '#/texts/2'
   text: here
 - children: []
   content_layer: body
@@ -66,19 +77,8 @@ texts:
   marker: '-'
   orig: there
   parent:
-    $ref: '#/groups/0'
-  prov: []
-  self_ref: '#/texts/2'
-  text: there
-- children: []
-  content_layer: body
-  enumerated: true
-  label: list_item
-  marker: '1.'
-  orig: foo
-  parent:
     $ref: '#/groups/1'
   prov: []
   self_ref: '#/texts/3'
-  text: foo
+  text: there
 version: 1.4.0
