@@ -30,7 +30,7 @@ Affiliation 2</text>
 <list_item>item 2 of neighboring list</list_item>
 <list_item><unordered_list><list_item>item 1 of sub list</list_item>
 <list_item><inline><text>Here a code snippet:</text>
-<code><_unknown_><p>Hello world</p></code>
+<code><_unknown_>print("Hello world")</code>
 <text>(to be displayed inline)</text>
 </inline></list_item>
 <list_item><inline><text>Here a formula:</text>
@@ -49,6 +49,8 @@ Affiliation 2</text>
 <text>italic</text>
 <text>underline</text>
 <text>strikethrough</text>
+<text>subscript</text>
+<text>superscript</text>
 <text>hyperlink</text>
 <text>&</text>
 <text>everything at the same time.</text>

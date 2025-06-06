@@ -1,3 +1,28 @@
+## [v2.34.0](https://github.com/docling-project/docling-core/releases/tag/v2.34.0) - 2025-06-06
+
+### Feature
+
+* **doctags:** Add enclosing bbox to inline ([#302](https://github.com/docling-project/docling-core/issues/302)) ([`dcc198f`](https://github.com/docling-project/docling-core/commit/dcc198f7c6231fe8c781abe4a83194be2ee8d23b))
+* Add subscript & superscript formatting ([#319](https://github.com/docling-project/docling-core/issues/319)) ([`ae96129`](https://github.com/docling-project/docling-core/commit/ae961299a5f729acecf1b2b346113ac23e8b97f0))
+* Add table annotations ([#304](https://github.com/docling-project/docling-core/issues/304)) ([`d8a5256`](https://github.com/docling-project/docling-core/commit/d8a5256b2cb654ceb35a70be1b656ac7463ad335))
+
+### Fix
+
+* Fix misplaced list items ([#317](https://github.com/docling-project/docling-core/issues/317)) ([`c383f64`](https://github.com/docling-project/docling-core/commit/c383f64c44b4e1eb760d19d9422948fea127331c))
+
+## [v2.33.1](https://github.com/docling-project/docling-core/releases/tag/v2.33.1) - 2025-06-04
+
+### Fix
+
+* New typer version with new click ([#315](https://github.com/docling-project/docling-core/issues/315)) ([`e17eabf`](https://github.com/docling-project/docling-core/commit/e17eabf0f92c3e3fde9f47fea083e44081bb9669))
+* Support section_header levels in doctags deserialization ([#313](https://github.com/docling-project/docling-core/issues/313)) ([`defd49e`](https://github.com/docling-project/docling-core/commit/defd49efae08c0cc2ce002f847724b6d65bd1407))
+
+## [v2.33.0](https://github.com/docling-project/docling-core/releases/tag/v2.33.0) - 2025-06-02
+
+### Feature
+
+* Add BoundingBox methods for overlap and union calculations ([#311](https://github.com/docling-project/docling-core/issues/311)) ([`c521766`](https://github.com/docling-project/docling-core/commit/c521766cb7eb0dfb7d2e1eb5befe3e7e13453e9a))
+
 ## [v2.32.0](https://github.com/docling-project/docling-core/releases/tag/v2.32.0) - 2025-05-27
 
 ### Feature
