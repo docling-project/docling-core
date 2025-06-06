@@ -84,7 +84,7 @@ def resolve_source_to_stream(
             if googleDocId.group(1) == 'file':
                 http_url = f'https://drive.google.com/uc?export=download&id={googleDocId.group(2)}'
             else:
-                http_url = f'https://docs.google.com/document/d/{googleDocId.group(2)}/export?format=html'
+                http_url = f'https://docs.google.com/document/d/{googleDocId.group(2)}/export?format=docx'
 
 
         # fetch the page
