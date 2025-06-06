@@ -6,6 +6,7 @@
 """File-related utilities."""
 
 import importlib
+import re
 import tempfile
 from io import BytesIO
 from pathlib import Path
@@ -75,6 +76,32 @@ def resolve_source_to_stream(
         if "user-agent" not in req_headers:
             agent_name = f"docling-core/{importlib.metadata.version('docling-core')}"
             req_headers["user-agent"] = agent_name
+
+        # Google Docs, Files, PDF URLs, Spreadsheets, Presentations: convert to export URL
+        google_doc_id = re.search(
+            r"google\.com\/(file|document|spreadsheets|presentation)\/d\/([\w-]+)",
+            str(http_url),
+        )
+        if google_doc_id:
+            doc_type = google_doc_id.group(1)
+            doc_id = google_doc_id.group(2)
+
+            if doc_type == "file":
+                http_url = TypeAdapter(AnyHttpUrl).validate_python(
+                    f"https://drive.google.com/uc?export=download&id={doc_id}"
+                )
+            elif doc_type == "document":
+                http_url = TypeAdapter(AnyHttpUrl).validate_python(
+                    f"https://docs.google.com/document/d/{doc_id}/export?format=docx"
+                )
+            elif doc_type == "spreadsheets":
+                http_url = TypeAdapter(AnyHttpUrl).validate_python(
+                    f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=xlsx"
+                )
+            elif doc_type == "presentation":
+                http_url = TypeAdapter(AnyHttpUrl).validate_python(
+                    f"https://docs.google.com/presentation/d/{doc_id}/export/pptx"
+                )
 
         # fetch the page
         res = requests.get(http_url, stream=True, headers=req_headers)
