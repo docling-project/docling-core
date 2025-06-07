@@ -70,10 +70,13 @@
         "$ref": "#/groups/9"
       },
       {
+        "$ref": "#/groups/12"
+      },
+      {
         "$ref": "#/texts/42"
       },
       {
-        "$ref": "#/texts/43"
+        "$ref": "#/texts/44"
       }
     ],
     "content_layer": "body",
@@ -310,12 +313,26 @@
           "$ref": "#/texts/39"
         },
         {
-          "$ref": "#/texts/44"
+          "$ref": "#/texts/45"
         }
       ],
       "content_layer": "body",
       "name": "list C",
       "label": "ordered_list"
+    },
+    {
+      "self_ref": "#/groups/12",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/43"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "list"
     }
   ],
   "texts": [
@@ -948,6 +965,20 @@
     {
       "self_ref": "#/texts/43",
       "parent": {
+        "$ref": "#/groups/12"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "List item without parent list group",
+      "text": "List item without parent list group",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/44",
+      "parent": {
         "$ref": "#/body"
       },
       "children": [],
@@ -958,7 +989,7 @@
       "text": "child text appended at body"
     },
     {
-      "self_ref": "#/texts/44",
+      "self_ref": "#/texts/45",
       "parent": {
         "$ref": "#/groups/11"
       },

@@ -197,6 +197,9 @@
 </ol>
 <li>Item 4 in A</li>
 </ol>
+<ul>
+<li>List item without parent list group</li>
+</ul>
 <p>The end.</p>
 </div>
 </body>

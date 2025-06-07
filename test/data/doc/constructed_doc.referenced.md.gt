@@ -73,4 +73,6 @@ Some formatting chops: **bold** *italic* underline ~~strikethrough~~ subscript s
     3. Item 3 in B
 4. Item 4 in A
 
+- List item without parent list group
+
 The end.

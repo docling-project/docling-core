@@ -2167,7 +2167,10 @@ class DoclingDocument(BaseModel):
 
         """
         if not isinstance(parent, (OrderedList, UnorderedList)):
-            raise ValueError("ListItem's parent must be a list group")
+            warnings.warn("ListItem's parent must be a list group.", DeprecationWarning)
+
+        if not parent:
+            parent = self.body
 
         if not orig:
             orig = text
@@ -4270,11 +4273,12 @@ class DoclingDocument(BaseModel):
                     item.parent.resolve(doc=self), (OrderedList, UnorderedList)
                 )
             ):
-                # non_group_list_items.append(item)
-                if prev is None or not isinstance(prev, ListItem):  # if new list
-                    misplaced_list_items.append([item])
-                else:
+                if isinstance(prev, ListItem) and (
+                    prev.parent is None or prev.parent.resolve(self) == self.body
+                ):  # case of continuing list
                     misplaced_list_items[-1].append(item)
+                else:  # case of new list
+                    misplaced_list_items.append([item])
             prev = item
 
         for curr_list_items in reversed(misplaced_list_items):
