@@ -757,9 +757,6 @@ def _construct_doc() -> DoclingDocument:
     leading_list = doc.add_group(parent=None, label=GroupLabel.LIST)
     doc.add_list_item(parent=leading_list, text="item of leading list")
 
-    with pytest.raises(ValueError, match="list group"):
-        doc.add_list_item(text="Misplaced list item")
-
     title = doc.add_title(
         text="Title of the Document"
     )  # can be done if such information is present, or ommitted.
@@ -1079,6 +1076,9 @@ def _construct_doc() -> DoclingDocument:
     doc.add_list_item(text="Item 3 in B", enumerated=True, parent=parent_B)
 
     doc.add_list_item(text="Item 4 in A", enumerated=True, parent=parent_A)
+
+    with pytest.warns(DeprecationWarning, match="list group"):
+        doc.add_list_item(text="List item without parent list group")
 
     doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=None)
 
@@ -1519,7 +1519,9 @@ def test_document_manipulation():
         DoclingDocument.load_from_json(filename=_gt_filename(filename=filename))
 
         # test if the document is the same as the stored GT
-        _verify_loaded_output(filename=filename, pred=doc)
+        _verify_loaded_output(
+            filename=filename, pred=DoclingDocument.model_validate(document)
+        )
 
     image_dir = Path("./test/data/doc/constructed_images/")
 

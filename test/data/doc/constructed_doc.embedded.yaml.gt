@@ -21,6 +21,7 @@ body:
   - $ref: '#/form_items/0'
   - $ref: '#/groups/12'
   - $ref: '#/groups/13'
+  - $ref: '#/groups/16'
   - $ref: '#/texts/52'
   content_layer: body
   label: unspecified
@@ -218,6 +219,14 @@ groups:
   parent:
     $ref: '#/texts/47'
   self_ref: '#/groups/15'
+- children:
+  - $ref: '#/texts/53'
+  content_layer: body
+  label: list
+  name: group
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/16'
 key_value_items:
 - captions: []
   children: []
@@ -1053,4 +1062,15 @@ texts:
   prov: []
   self_ref: '#/texts/52'
   text: The end.
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: List item without parent list group
+  parent:
+    $ref: '#/groups/16'
+  prov: []
+  self_ref: '#/texts/53'
+  text: List item without parent list group
 version: 1.4.0

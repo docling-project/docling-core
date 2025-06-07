@@ -76,6 +76,9 @@
         "$ref": "#/groups/13"
       },
       {
+        "$ref": "#/groups/16"
+      },
+      {
         "$ref": "#/texts/51"
       }
     ],
@@ -396,6 +399,20 @@
       "content_layer": "body",
       "name": "list C",
       "label": "ordered_list"
+    },
+    {
+      "self_ref": "#/groups/16",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/54"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "list"
     }
   ],
   "texts": [
@@ -1181,6 +1198,20 @@
       "prov": [],
       "orig": "new list item (after)",
       "text": "new list item (after)",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/54",
+      "parent": {
+        "$ref": "#/groups/16"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "List item without parent list group",
+      "text": "List item without parent list group",
       "enumerated": false,
       "marker": "-"
     }
