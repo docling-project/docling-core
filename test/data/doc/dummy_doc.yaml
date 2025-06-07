@@ -98,7 +98,7 @@ texts:
 
 
 tables: # All tables...
-  - self_ref: "#/table/0"
+  - self_ref: "#/tables/0"
     label: "table"
     parent:
       $ref: "#/body"

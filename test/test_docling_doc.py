@@ -1624,6 +1624,7 @@ def test_document_manipulation():
 def test_misplaced_list_items():
     filename = Path("test/data/doc/misplaced_list_items.yaml")
     doc = DoclingDocument.load_from_yaml(filename)
+    doc.normalize()
 
     dt_pred = doc.export_to_doctags()
     _verify_regression_test(dt_pred, filename=str(filename), ext="dt")
