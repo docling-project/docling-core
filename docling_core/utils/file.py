@@ -100,7 +100,7 @@ def resolve_source_to_stream(
                 )
             elif doc_type == "presentation":
                 http_url = TypeAdapter(AnyHttpUrl).validate_python(
-                    f"https://docs.google.com/presentation/d/{doc_id}/export/pptx"
+                    f"https://docs.google.com/presentation/d/{doc_id}/export?format=pptx"
                 )
 
         # fetch the page
