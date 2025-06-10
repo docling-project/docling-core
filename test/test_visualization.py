@@ -66,12 +66,3 @@ def test_table_visualization_no_label():
         exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_table_viz_wout_lbl_p5.png",
         actual=viz_pages[5],
     )
-    """
-    viz_pages = doc.get_visualization(show_label=False)
-    for k in viz_pages:
-        if k <= 3:
-            verify(
-                exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_viz_wout_lbl_p{k}.png",
-                actual=viz_pages[k],
-            )
-    """
