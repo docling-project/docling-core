@@ -1874,12 +1874,19 @@ class DoclingDocument(BaseModel):
 
         return item.get_ref()
 
-    def _delete_items(self, refs: list[RefItem]) -> bool:
+    def _delete_items(self, refs: list[RefItem]):
         """Delete document item using the self-reference."""
         to_be_deleted_items: dict[tuple[int, ...], str] = {}  # stack to cref
 
+        if not refs:
+            return
+
         # Identify the to_be_deleted_items
-        for item, stack in self._iterate_items_with_stack(with_groups=True):
+        for item, stack in self._iterate_items_with_stack(
+            with_groups=True,
+            traverse_pictures=True,
+            included_content_layers={c for c in ContentLayer},
+        ):
             ref = item.get_ref()
 
             if ref in refs:
@@ -1890,8 +1897,10 @@ class DoclingDocument(BaseModel):
                 if tuple(substack) in to_be_deleted_items:
                     to_be_deleted_items[tuple(stack)] = ref.cref
 
-        if len(to_be_deleted_items) == 0:
-            raise ValueError("Nothing to be deleted ...")
+        if len(to_be_deleted_items) < len(refs):
+            raise ValueError(
+                f"Cannot find all provided RefItems in doc: {[r.cref for r in refs]}"
+            )
 
         # Clean the tree, reverse the order to not have to update
         for stack_, ref_ in reversed(sorted(to_be_deleted_items.items())):
@@ -1930,8 +1939,6 @@ class DoclingDocument(BaseModel):
         self._update_breadth_first_with_lookup(
             node=self.body, refs_to_be_deleted=refs, lookup=lookup
         )
-
-        return True
 
     # Update the references
     def _update_ref_with_lookup(
