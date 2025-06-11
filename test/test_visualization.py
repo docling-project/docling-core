@@ -2,6 +2,7 @@ from pathlib import Path
 
 import PIL.Image
 
+from docling_core.transforms.visualizer.table_visualizer import TableVisualizer
 from docling_core.types.doc.document import DoclingDocument
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -52,3 +53,16 @@ def test_doc_visualization_no_label():
                 exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_viz_wout_lbl_p{k}.png",
                 actual=viz_pages[k],
             )
+
+
+def test_table_visualization_no_label():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    visualizer = TableVisualizer()
+    viz_pages = visualizer.get_visualization(doc=doc)
+
+    verify(
+        exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_table_viz_wout_lbl_p5.png",
+        actual=viz_pages[5],
+    )
