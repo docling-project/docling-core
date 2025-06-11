@@ -4318,3 +4318,67 @@ class DoclingDocument(BaseModel):
                     hyperlink=li.hyperlink,
                 )
         return self
+
+    def _normalize_references(self) -> None:
+        """Normalize ref numbering by ordering node items as per iterate_items()."""
+        new_body = GroupItem(**self.body.model_dump(exclude={"children"}))
+
+        item_lists: dict[str, list[NodeItem]] = {
+            "groups": [],
+            "texts": [],
+            "pictures": [],
+            "tables": [],
+            "key_value_items": [],
+            "form_items": [],
+        }
+        orig_ref_to_new_ref: dict[str, str] = {}
+
+        # collect items in traversal order
+        for item, _ in self.iterate_items(
+            with_groups=True,
+            traverse_pictures=True,
+            included_content_layers={c for c in ContentLayer},
+        ):
+            key = item.self_ref.split("/")[1]
+            is_body = key == "body"
+            new_cref = "#/body" if is_body else f"#/{key}/{len(item_lists[key])}"
+            # register cref mapping:
+            orig_ref_to_new_ref[item.self_ref] = new_cref
+
+            if not is_body:
+                new_item = copy.deepcopy(item)
+                new_item.children = []
+
+                # put item in the right list
+                item_lists[key].append(new_item)
+
+                # update item's self reference
+                new_item.self_ref = new_cref
+
+                if item.parent:
+                    # set item's parent
+                    new_parent_cref = orig_ref_to_new_ref[item.parent.cref]
+                    new_item.parent = RefItem(cref=new_parent_cref)
+
+                    # add item to parent's children
+                    path_components = new_parent_cref.split("/")
+                    num_components = len(path_components)
+                    parent_node: NodeItem
+                    if num_components == 3:
+                        _, parent_key, parent_index_str = path_components
+                        parent_index = int(parent_index_str)
+                        parent_node = item_lists[parent_key][parent_index]
+                    elif num_components == 2 and path_components[1] == "body":
+                        parent_node = new_body
+                    else:
+                        raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
+                    parent_node.children.append(RefItem(cref=new_cref))
+
+        # update document
+        self.groups = item_lists["groups"]  # type: ignore
+        self.texts = item_lists["texts"]  # type: ignore
+        self.pictures = item_lists["pictures"]  # type: ignore
+        self.tables = item_lists["tables"]  # type: ignore
+        self.key_value_items = item_lists["key_value_items"]  # type: ignore
+        self.form_items = item_lists["form_items"]  # type: ignore
+        self.body = new_body
