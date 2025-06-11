@@ -2873,7 +2873,7 @@ class DoclingDocument(BaseModel):
             self.iterate_items(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
+                included_content_layers={cl for cl in ContentLayer},
             )
         ):
             if isinstance(item, GroupItem):
@@ -2897,7 +2897,7 @@ class DoclingDocument(BaseModel):
             self.iterate_items(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
+                included_content_layers={cl for cl in ContentLayer},
             )
         ):
             if isinstance(item, GroupItem):

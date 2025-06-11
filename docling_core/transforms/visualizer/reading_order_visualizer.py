@@ -71,7 +71,7 @@ class ReadingOrderVisualizer(BaseVisualizer):
         my_images: dict[Optional[int], Image] = images or {}
         prev_page = None
         for elem, _ in doc.iterate_items(
-            included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
+            included_content_layers={cl for cl in ContentLayer},
         ):
             if not isinstance(elem, DocItem):
                 continue

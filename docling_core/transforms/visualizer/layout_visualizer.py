@@ -141,9 +141,7 @@ class LayoutVisualizer(BaseVisualizer):
         prev_image = None
         prev_page_nr = None
         for idx, (elem, _) in enumerate(
-            doc.iterate_items(
-                included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE}
-            )
+            doc.iterate_items(included_content_layers={cl for cl in ContentLayer})
         ):
             if not isinstance(elem, DocItem):
                 continue
