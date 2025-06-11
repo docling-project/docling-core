@@ -5,6 +5,7 @@ from typing import Optional
 
 from PIL import ImageDraw
 from PIL.Image import Image
+from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
@@ -14,7 +15,16 @@ from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocume
 class ReadingOrderVisualizer(BaseVisualizer):
     """Reading order visualizer."""
 
+    class Params(BaseModel):
+        """Layout visualization parameters."""
+
+        show_label: bool = True
+        content_layers: set[ContentLayer] = {
+            cl for cl in ContentLayer if cl != ContentLayer.BACKGROUND
+        }
+
     base_visualizer: Optional[BaseVisualizer] = None
+    params: Params = Params()
 
     def _draw_arrow(
         self,
@@ -71,7 +81,7 @@ class ReadingOrderVisualizer(BaseVisualizer):
         my_images: dict[Optional[int], Image] = images or {}
         prev_page = None
         for elem, _ in doc.iterate_items(
-            included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
+            included_content_layers=self.params.content_layers,
         ):
             if not isinstance(elem, DocItem):
                 continue

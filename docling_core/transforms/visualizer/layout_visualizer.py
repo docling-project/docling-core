@@ -40,6 +40,7 @@ class LayoutVisualizer(BaseVisualizer):
         """Layout visualization parameters."""
 
         show_label: bool = True
+        content_layers: set[ContentLayer] = {cl for cl in ContentLayer}
 
     base_visualizer: Optional[BaseVisualizer] = None
     params: Params = Params()
@@ -141,9 +142,7 @@ class LayoutVisualizer(BaseVisualizer):
         prev_image = None
         prev_page_nr = None
         for idx, (elem, _) in enumerate(
-            doc.iterate_items(
-                included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE}
-            )
+            doc.iterate_items(included_content_layers=self.params.content_layers)
         ):
             if not isinstance(elem, DocItem):
                 continue
