@@ -60,13 +60,19 @@ class TableVisualizer(BaseVisualizer):
                 )
 
     def _draw_doc_tables(
-        self, doc: DoclingDocument, images: Optional[dict[Optional[int], Image]] = None
+        self,
+        doc: DoclingDocument,
+        images: Optional[dict[Optional[int], Image]] = None,
+        included_content_layers: Optional[set[ContentLayer]] = None,
     ):
         """Draw the document tables."""
         my_images: dict[Optional[int], Image] = {}
 
         if images is not None:
             my_images = images
+
+        if included_content_layers is None:
+            included_content_layers = {c for c in ContentLayer}
 
         # Initialise `my_images` beforehand: sometimes, you have the
         # page-images but no DocItems!
@@ -79,9 +85,7 @@ class TableVisualizer(BaseVisualizer):
                 my_images[page_nr] = image
 
         for idx, (elem, _) in enumerate(
-            doc.iterate_items(
-                included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE}
-            )
+            doc.iterate_items(included_content_layers=included_content_layers)
         ):
             if not isinstance(elem, TableItem):
                 continue
@@ -102,10 +106,6 @@ class TableVisualizer(BaseVisualizer):
                             page_image=image,
                             scale_x=image.width / doc.pages[page_nr].size.width,
                             scale_y=image.height / doc.pages[page_nr].size.height,
-                        )
-                    else:
-                        _log.error(
-                            f"Nothing to visualize, update params: {self.params}"
                         )
 
                 else:
