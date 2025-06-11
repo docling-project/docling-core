@@ -1,0 +1,84 @@
+body:
+  children:
+  - $ref: '#/groups/1'
+  - $ref: '#/texts/0'
+  - $ref: '#/groups/0'
+  content_layer: body
+  label: unspecified
+  name: _root_
+  self_ref: '#/body'
+form_items: []
+furniture:
+  children: []
+  content_layer: furniture
+  label: unspecified
+  name: _root_
+  self_ref: '#/furniture'
+groups:
+- children:
+  - $ref: '#/texts/1'
+  - $ref: '#/texts/2'
+  content_layer: body
+  label: list
+  name: group
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/0'
+- children:
+  - $ref: '#/texts/3'
+  content_layer: body
+  label: ordered_list
+  name: group
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/1'
+key_value_items: []
+name: ''
+pages: {}
+pictures: []
+schema_name: DoclingDocument
+tables: []
+texts:
+- children: []
+  content_layer: body
+  label: text
+  orig: bar
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/0'
+  text: bar
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: here
+  parent:
+    $ref: '#/groups/0'
+  prov: []
+  self_ref: '#/texts/1'
+  text: here
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: '-'
+  orig: there
+  parent:
+    $ref: '#/groups/0'
+  prov: []
+  self_ref: '#/texts/2'
+  text: there
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: '1.'
+  orig: foo
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/3'
+  text: foo
+version: 1.4.0

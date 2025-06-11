@@ -15,6 +15,7 @@ from pydantic import AnyUrl, BaseModel, ConfigDict, NonNegativeInt, computed_fie
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
+    BaseAnnotationSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -30,6 +31,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.types.doc.document import (
     DOCUMENT_TOKENS_EXPORT_LABELS,
     ContentLayer,
+    DescriptionAnnotation,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -41,9 +43,10 @@ from docling_core.types.doc.document import (
     OrderedList,
     PictureClassificationData,
     PictureDataType,
-    PictureDescriptionData,
     PictureItem,
     PictureMoleculeData,
+    Script,
+    TableAnnotationType,
     TableItem,
     TextItem,
     UnorderedList,
@@ -122,7 +125,9 @@ def _iterate_items(
         yield item
 
 
-def _get_picture_annotation_text(annotation: PictureDataType) -> Optional[str]:
+def _get_annotation_text(
+    annotation: Union[PictureDataType, TableAnnotationType],
+) -> Optional[str]:
     result = None
     if isinstance(annotation, PictureClassificationData):
         predicted_class = (
@@ -132,7 +137,7 @@ def _get_picture_annotation_text(annotation: PictureDataType) -> Optional[str]:
         )
         if predicted_class is not None:
             result = predicted_class.replace("_", " ")
-    elif isinstance(annotation, PictureDescriptionData):
+    elif isinstance(annotation, DescriptionAnnotation):
         result = annotation.text
     elif isinstance(annotation, PictureMoleculeData):
         result = annotation.smi
@@ -210,6 +215,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     list_serializer: BaseListSerializer
     inline_serializer: BaseInlineSerializer
+
+    annotation_serializer: BaseAnnotationSerializer
 
     params: CommonParams = CommonParams()
 
@@ -449,6 +456,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 res = self.serialize_underline(text=res)
             if formatting.strikethrough:
                 res = self.serialize_strikethrough(text=res)
+            if formatting.script == Script.SUB:
+                res = self.serialize_subscript(text=res)
+            elif formatting.script == Script.SUPER:
+                res = self.serialize_superscript(text=res)
         if params.include_hyperlinks and hyperlink:
             res = self.serialize_hyperlink(text=res, hyperlink=hyperlink)
         return res
@@ -471,6 +482,16 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @override
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
         """Hook for strikethrough formatting serialization."""
+        return text
+
+    @override
+    def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Hook for subscript formatting serialization."""
+        return text
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Hook for superscript formatting serialization."""
         return text
 
     @override
@@ -504,6 +525,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_annotations(
+        self,
+        item: DocItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's annotations."""
+        return self.annotation_serializer.serialize(
+            item=item,
+            doc=self.doc,
+            **kwargs,
+        )
 
     def _get_applicable_pages(self) -> Optional[list[int]]:
         pages = {

@@ -376,6 +376,31 @@
       "title": "CoordOrigin",
       "type": "string"
     },
+    "DescriptionAnnotation": {
+      "description": "DescriptionAnnotation.",
+      "properties": {
+        "kind": {
+          "const": "description",
+          "default": "description",
+          "title": "Kind",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "provenance": {
+          "title": "Provenance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "provenance"
+      ],
+      "title": "DescriptionAnnotation",
+      "type": "object"
+    },
     "DocumentOrigin": {
       "description": "FileSource.",
       "properties": {
@@ -530,6 +555,10 @@
           "default": false,
           "title": "Strikethrough",
           "type": "boolean"
+        },
+        "script": {
+          "$ref": "#/$defs/Script",
+          "default": "baseline"
         }
       },
       "title": "Formatting",
@@ -1093,6 +1122,27 @@
       "title": "ListItem",
       "type": "object"
     },
+    "MiscAnnotation": {
+      "description": "MiscAnnotation.",
+      "properties": {
+        "kind": {
+          "const": "misc",
+          "default": "misc",
+          "title": "Kind",
+          "type": "string"
+        },
+        "content": {
+          "additionalProperties": true,
+          "title": "Content",
+          "type": "object"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "MiscAnnotation",
+      "type": "object"
+    },
     "OrderedList": {
       "additionalProperties": false,
       "description": "OrderedList.",
@@ -1175,14 +1225,14 @@
     "PictureBarChartData": {
       "description": "Represents data of a bar chart.\n\nAttributes:\n    kind (Literal[\"bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    bars (List[ChartBar]): A list of bars in the chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "bar_chart_data",
           "default": "bar_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "x_axis_label": {
@@ -1255,31 +1305,6 @@
         "predicted_classes"
       ],
       "title": "PictureClassificationData",
-      "type": "object"
-    },
-    "PictureDescriptionData": {
-      "description": "PictureDescriptionData.",
-      "properties": {
-        "kind": {
-          "const": "description",
-          "default": "description",
-          "title": "Kind",
-          "type": "string"
-        },
-        "text": {
-          "title": "Text",
-          "type": "string"
-        },
-        "provenance": {
-          "title": "Provenance",
-          "type": "string"
-        }
-      },
-      "required": [
-        "text",
-        "provenance"
-      ],
-      "title": "PictureDescriptionData",
       "type": "object"
     },
     "PictureItem": {
@@ -1373,9 +1398,9 @@
               "mapping": {
                 "bar_chart_data": "#/$defs/PictureBarChartData",
                 "classification": "#/$defs/PictureClassificationData",
-                "description": "#/$defs/PictureDescriptionData",
+                "description": "#/$defs/DescriptionAnnotation",
                 "line_chart_data": "#/$defs/PictureLineChartData",
-                "misc": "#/$defs/PictureMiscData",
+                "misc": "#/$defs/MiscAnnotation",
                 "molecule_data": "#/$defs/PictureMoleculeData",
                 "pie_chart_data": "#/$defs/PicturePieChartData",
                 "scatter_chart_data": "#/$defs/PictureScatterChartData",
@@ -1386,16 +1411,16 @@
             },
             "oneOf": [
               {
+                "$ref": "#/$defs/DescriptionAnnotation"
+              },
+              {
+                "$ref": "#/$defs/MiscAnnotation"
+              },
+              {
                 "$ref": "#/$defs/PictureClassificationData"
               },
               {
-                "$ref": "#/$defs/PictureDescriptionData"
-              },
-              {
                 "$ref": "#/$defs/PictureMoleculeData"
-              },
-              {
-                "$ref": "#/$defs/PictureMiscData"
               },
               {
                 "$ref": "#/$defs/PictureTabularChartData"
@@ -1430,14 +1455,14 @@
     "PictureLineChartData": {
       "description": "Represents data of a line chart.\n\nAttributes:\n    kind (Literal[\"line_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    lines (List[ChartLine]): A list of lines in the chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "line_chart_data",
           "default": "line_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "x_axis_label": {
@@ -1463,27 +1488,6 @@
         "lines"
       ],
       "title": "PictureLineChartData",
-      "type": "object"
-    },
-    "PictureMiscData": {
-      "description": "PictureMiscData.",
-      "properties": {
-        "kind": {
-          "const": "misc",
-          "default": "misc",
-          "title": "Kind",
-          "type": "string"
-        },
-        "content": {
-          "additionalProperties": true,
-          "title": "Content",
-          "type": "object"
-        }
-      },
-      "required": [
-        "content"
-      ],
-      "title": "PictureMiscData",
       "type": "object"
     },
     "PictureMoleculeData": {
@@ -1542,14 +1546,14 @@
     "PicturePieChartData": {
       "description": "Represents data of a pie chart.\n\nAttributes:\n    kind (Literal[\"pie_chart_data\"]): The type of the chart.\n    slices (List[ChartSlice]): A list of slices in the pie chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "pie_chart_data",
           "default": "pie_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "slices": {
@@ -1570,14 +1574,14 @@
     "PictureScatterChartData": {
       "description": "Represents data of a scatter chart.\n\nAttributes:\n    kind (Literal[\"scatter_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    points (List[ChartPoint]): A list of points in the scatter chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "scatter_chart_data",
           "default": "scatter_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "x_axis_label": {
@@ -1608,14 +1612,14 @@
     "PictureStackedBarChartData": {
       "description": "Represents data of a stacked bar chart.\n\nAttributes:\n    kind (Literal[\"stacked_bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    stacked_bars (List[ChartStackedBar]): A list of stacked bars in the chart.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "stacked_bar_chart_data",
           "default": "stacked_bar_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "x_axis_label": {
@@ -1646,14 +1650,14 @@
     "PictureTabularChartData": {
       "description": "Base class for picture chart data.\n\nAttributes:\n    title (str): The title of the chart.\n    chart_data (TableData): Chart data in the table format.",
       "properties": {
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
         "kind": {
           "const": "tabular_chart_data",
           "default": "tabular_chart_data",
           "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "chart_data": {
@@ -1714,6 +1718,16 @@
       ],
       "title": "RefItem",
       "type": "object"
+    },
+    "Script": {
+      "description": "Text script position.",
+      "enum": [
+        "baseline",
+        "sub",
+        "super"
+      ],
+      "title": "Script",
+      "type": "string"
     },
     "SectionHeaderItem": {
       "additionalProperties": false,
@@ -2012,6 +2026,28 @@
         },
         "data": {
           "$ref": "#/$defs/TableData"
+        },
+        "annotations": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "description": "#/$defs/DescriptionAnnotation",
+                "misc": "#/$defs/MiscAnnotation"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DescriptionAnnotation"
+              },
+              {
+                "$ref": "#/$defs/MiscAnnotation"
+              }
+            ]
+          },
+          "title": "Annotations",
+          "type": "array"
         }
       },
       "required": [
@@ -2276,7 +2312,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.3.0",
+      "default": "1.4.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"

@@ -103,6 +103,13 @@ tables: # All tables...
     parent:
       $ref: "#/body"
     children: [ ]
+    annotations:
+      - kind: description
+        text: "A description annotation for this table."
+        provenance: "model3"
+      - kind: misc
+        content:
+          foo: bar
     image:
       mimetype: image/png
       dpi: 72

@@ -39,7 +39,7 @@ Affiliation 2
     36: list_item: item 1 of sub list
     37: inline with name=group
      38: text: Here a code snippet:
-     39: code: <p>Hello world</p>
+     39: code: print("Hello world")
      40: text: (to be displayed inline)
     41: inline with name=group
      42: text: Here a formula:
@@ -57,19 +57,22 @@ Affiliation 2
   54: text: italic
   55: text: underline
   56: text: strikethrough
-  57: text: hyperlink
-  58: text: &
-  59: text: everything at the same time.
- 60: ordered_list with name=list A
-  61: list_item: Item 1 in A
-  62: list_item: Item 2 in A
-  63: list_item: Item 3 in A
-   64: ordered_list with name=list B
-    65: list_item: Item 1 in B
-    66: list_item: Item 2 in B
-     67: ordered_list with name=list C
-      68: list_item: Item 1 in C
-      69: list_item: Item 2 in C
-    70: list_item: Item 3 in B
-  71: list_item: Item 4 in A
- 72: text: The end.
+  57: text: subscript
+  58: text: superscript
+  59: text: hyperlink
+  60: text: &
+  61: text: everything at the same time.
+ 62: ordered_list with name=list A
+  63: list_item: Item 1 in A
+  64: list_item: Item 2 in A
+  65: list_item: Item 3 in A
+   66: ordered_list with name=list B
+    67: list_item: Item 1 in B
+    68: list_item: Item 2 in B
+     69: ordered_list with name=list C
+      70: list_item: Item 1 in C
+      71: list_item: Item 2 in C
+    72: list_item: Item 3 in B
+  73: list_item: Item 4 in A
+ 74: list_item: List item without parent list group
+ 75: text: The end.

@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "name": "Untitled 1",
   "furniture": {
     "self_ref": "#/furniture",
@@ -76,7 +76,10 @@
         "$ref": "#/groups/13"
       },
       {
-        "$ref": "#/texts/49"
+        "$ref": "#/groups/16"
+      },
+      {
+        "$ref": "#/texts/51"
       }
     ],
     "content_layer": "body",
@@ -151,10 +154,10 @@
           "$ref": "#/texts/9"
         },
         {
-          "$ref": "#/texts/50"
+          "$ref": "#/texts/52"
         },
         {
-          "$ref": "#/texts/51"
+          "$ref": "#/texts/53"
         },
         {
           "$ref": "#/texts/10"
@@ -325,6 +328,12 @@
         },
         {
           "$ref": "#/texts/39"
+        },
+        {
+          "$ref": "#/texts/40"
+        },
+        {
+          "$ref": "#/texts/41"
         }
       ],
       "content_layer": "body",
@@ -338,16 +347,16 @@
       },
       "children": [
         {
-          "$ref": "#/texts/40"
-        },
-        {
-          "$ref": "#/texts/41"
-        },
-        {
           "$ref": "#/texts/42"
         },
         {
-          "$ref": "#/texts/48"
+          "$ref": "#/texts/43"
+        },
+        {
+          "$ref": "#/texts/44"
+        },
+        {
+          "$ref": "#/texts/50"
         }
       ],
       "content_layer": "body",
@@ -357,17 +366,17 @@
     {
       "self_ref": "#/groups/14",
       "parent": {
-        "$ref": "#/texts/42"
+        "$ref": "#/texts/44"
       },
       "children": [
         {
-          "$ref": "#/texts/43"
+          "$ref": "#/texts/45"
         },
         {
-          "$ref": "#/texts/44"
+          "$ref": "#/texts/46"
         },
         {
-          "$ref": "#/texts/47"
+          "$ref": "#/texts/49"
         }
       ],
       "content_layer": "body",
@@ -377,19 +386,33 @@
     {
       "self_ref": "#/groups/15",
       "parent": {
-        "$ref": "#/texts/44"
+        "$ref": "#/texts/46"
       },
       "children": [
         {
-          "$ref": "#/texts/45"
+          "$ref": "#/texts/47"
         },
         {
-          "$ref": "#/texts/46"
+          "$ref": "#/texts/48"
         }
       ],
       "content_layer": "body",
       "name": "list C",
       "label": "ordered_list"
+    },
+    {
+      "self_ref": "#/groups/16",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/54"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "list"
     }
   ],
   "texts": [
@@ -726,8 +749,8 @@
       "content_layer": "body",
       "label": "code",
       "prov": [],
-      "orig": "<p>Hello world</p>",
-      "text": "<p>Hello world</p>",
+      "orig": "print(\"Hello world\")",
+      "text": "print(\"Hello world\")",
       "captions": [],
       "references": [],
       "footnotes": [],
@@ -860,7 +883,8 @@
         "bold": true,
         "italic": false,
         "underline": false,
-        "strikethrough": false
+        "strikethrough": false,
+        "script": "baseline"
       }
     },
     {
@@ -878,7 +902,8 @@
         "bold": false,
         "italic": true,
         "underline": false,
-        "strikethrough": false
+        "strikethrough": false,
+        "script": "baseline"
       }
     },
     {
@@ -896,7 +921,8 @@
         "bold": false,
         "italic": false,
         "underline": true,
-        "strikethrough": false
+        "strikethrough": false,
+        "script": "baseline"
       }
     },
     {
@@ -914,11 +940,50 @@
         "bold": false,
         "italic": false,
         "underline": false,
-        "strikethrough": true
+        "strikethrough": true,
+        "script": "baseline"
       }
     },
     {
       "self_ref": "#/texts/37",
+      "parent": {
+        "$ref": "#/groups/12"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "subscript",
+      "text": "subscript",
+      "formatting": {
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "strikethrough": false,
+        "script": "sub"
+      }
+    },
+    {
+      "self_ref": "#/texts/38",
+      "parent": {
+        "$ref": "#/groups/12"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "superscript",
+      "text": "superscript",
+      "formatting": {
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "strikethrough": false,
+        "script": "super"
+      }
+    },
+    {
+      "self_ref": "#/texts/39",
       "parent": {
         "$ref": "#/groups/12"
       },
@@ -931,7 +996,7 @@
       "hyperlink": "."
     },
     {
-      "self_ref": "#/texts/38",
+      "self_ref": "#/texts/40",
       "parent": {
         "$ref": "#/groups/12"
       },
@@ -943,7 +1008,7 @@
       "text": "&"
     },
     {
-      "self_ref": "#/texts/39",
+      "self_ref": "#/texts/41",
       "parent": {
         "$ref": "#/groups/12"
       },
@@ -957,12 +1022,13 @@
         "bold": true,
         "italic": true,
         "underline": true,
-        "strikethrough": true
+        "strikethrough": true,
+        "script": "baseline"
       },
       "hyperlink": "https://github.com/DS4SD/docling"
     },
     {
-      "self_ref": "#/texts/40",
+      "self_ref": "#/texts/42",
       "parent": {
         "$ref": "#/groups/13"
       },
@@ -976,7 +1042,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/41",
+      "self_ref": "#/texts/43",
       "parent": {
         "$ref": "#/groups/13"
       },
@@ -990,7 +1056,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/42",
+      "self_ref": "#/texts/44",
       "parent": {
         "$ref": "#/groups/13"
       },
@@ -1008,7 +1074,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/43",
+      "self_ref": "#/texts/45",
       "parent": {
         "$ref": "#/groups/14"
       },
@@ -1022,7 +1088,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/44",
+      "self_ref": "#/texts/46",
       "parent": {
         "$ref": "#/groups/14"
       },
@@ -1040,7 +1106,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/45",
+      "self_ref": "#/texts/47",
       "parent": {
         "$ref": "#/groups/15"
       },
@@ -1054,7 +1120,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/46",
+      "self_ref": "#/texts/48",
       "parent": {
         "$ref": "#/groups/15"
       },
@@ -1068,7 +1134,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/47",
+      "self_ref": "#/texts/49",
       "parent": {
         "$ref": "#/groups/14"
       },
@@ -1082,7 +1148,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/48",
+      "self_ref": "#/texts/50",
       "parent": {
         "$ref": "#/groups/13"
       },
@@ -1096,7 +1162,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/49",
+      "self_ref": "#/texts/51",
       "parent": {
         "$ref": "#/body"
       },
@@ -1108,7 +1174,7 @@
       "text": "The end."
     },
     {
-      "self_ref": "#/texts/50",
+      "self_ref": "#/texts/52",
       "parent": {
         "$ref": "#/groups/3"
       },
@@ -1122,7 +1188,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/51",
+      "self_ref": "#/texts/53",
       "parent": {
         "$ref": "#/groups/3"
       },
@@ -1132,6 +1198,20 @@
       "prov": [],
       "orig": "new list item (after)",
       "text": "new list item (after)",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/54",
+      "parent": {
+        "$ref": "#/groups/16"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "List item without parent list group",
+      "text": "List item without parent list group",
       "enumerated": false,
       "marker": "-"
     }
@@ -1405,7 +1485,8 @@
             }
           ]
         ]
-      }
+      },
+      "annotations": []
     }
   ],
   "key_value_items": [

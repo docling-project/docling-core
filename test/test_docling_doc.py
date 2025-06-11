@@ -33,6 +33,7 @@ from docling_core.types.doc.document import (  # BoundingBox,
     PictureItem,
     ProvenanceItem,
     RefItem,
+    Script,
     SectionHeaderItem,
     Size,
     TableCell,
@@ -942,7 +943,7 @@ def _construct_doc() -> DoclingDocument:
         text="Here a code snippet:",
         parent=inline1,
     )
-    doc.add_code(text="<p>Hello world</p>", parent=inline1)
+    doc.add_code(text='print("Hello world")', parent=inline1)
     doc.add_text(
         label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1
     )
@@ -1023,6 +1024,20 @@ def _construct_doc() -> DoclingDocument:
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
+        text="subscript",
+        orig="subscript",
+        formatting=Formatting(script=Script.SUB),
+        parent=inline_fmt,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="superscript",
+        orig="superscript",
+        formatting=Formatting(script=Script.SUPER),
+        parent=inline_fmt,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
         text="hyperlink",
         parent=inline_fmt,
         hyperlink=Path("."),
@@ -1061,6 +1076,9 @@ def _construct_doc() -> DoclingDocument:
     doc.add_list_item(text="Item 3 in B", enumerated=True, parent=parent_B)
 
     doc.add_list_item(text="Item 4 in A", enumerated=True, parent=parent_A)
+
+    with pytest.warns(DeprecationWarning, match="list group"):
+        doc.add_list_item(text="List item without parent list group")
 
     doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=None)
 
@@ -1501,7 +1519,9 @@ def test_document_manipulation():
         DoclingDocument.load_from_json(filename=_gt_filename(filename=filename))
 
         # test if the document is the same as the stored GT
-        _verify_loaded_output(filename=filename, pred=doc)
+        _verify_loaded_output(
+            filename=filename, pred=DoclingDocument.model_validate(document)
+        )
 
     image_dir = Path("./test/data/doc/constructed_images/")
 
@@ -1601,3 +1621,18 @@ def test_document_manipulation():
 
     filename = Path("test/data/doc/constructed_doc.replaced_item.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+
+def test_misplaced_list_items():
+    filename = Path("test/data/doc/misplaced_list_items.yaml")
+    doc = DoclingDocument.load_from_yaml(filename)
+
+    dt_pred = doc.export_to_doctags()
+    _verify_regression_test(dt_pred, filename=str(filename), ext="dt")
+
+    exp_file = filename.parent / f"{filename.stem}.out.yaml"
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    else:
+        exp_doc = DoclingDocument.load_from_yaml(exp_file)
+        assert doc == exp_doc
