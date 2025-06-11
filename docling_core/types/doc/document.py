@@ -2802,6 +2802,7 @@ class DoclingDocument(BaseModel):
         for ix, (item, level) in enumerate(
             self.iterate_items(
                 with_groups=True,
+                traverse_pictures=True,
                 included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE},
             )
         ):
