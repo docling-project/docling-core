@@ -46,6 +46,12 @@ class TableVisualizer(BaseVisualizer):
                 tl_bbox = cell.bbox.to_top_left_origin(page_height=page_height)
 
                 cell_color = (256, 0, 0, 32)  # Transparent black for cells
+                if cell.column_header:
+                    cell_color = (0, 256, 0, 32)
+                if cell.row_header:
+                    cell_color = (0, 0, 256, 32)
+                if cell.section_header:
+                    cell_color = (0, 256, 256, 32)
 
                 cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
                 cx0 *= scale_x
