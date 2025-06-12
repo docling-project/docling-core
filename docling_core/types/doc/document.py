@@ -38,7 +38,7 @@ from typing_extensions import Annotated, Self, deprecated
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
-from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -371,6 +371,119 @@ class TableData(BaseModel):  # TBD
                     table_data[i][j] = cell
 
         return table_data
+
+    def get_row_bounding_boxes(self) -> dict[int, BoundingBox]:
+        """Get the minimal bounding box for each row in the table.
+
+        Returns:
+        List[Optional[BoundingBox]]: A list where each element is the minimal
+        bounding box that encompasses all cells in that row, or None if no
+        cells in the row have bounding boxes.
+        """
+        coords = []
+        for cell in self.table_cells:
+            if cell.bbox is not None:
+                coords.append(cell.bbox.coord_origin)
+
+        if len(set(coords)) > 1:
+            raise ValueError(
+                "All bounding boxes must have the same \
+                CoordOrigin to compute their union."
+            )
+
+        row_bboxes: dict[int, BoundingBox] = {}
+
+        for row_idx in range(self.num_rows):
+            row_cells_with_bbox: dict[int, list[BoundingBox]] = {}
+
+            # Collect all cells in this row that have bounding boxes
+            for cell in self.table_cells:
+
+                if (
+                    cell.bbox is not None
+                    and cell.start_row_offset_idx <= row_idx < cell.end_row_offset_idx
+                ):
+
+                    row_span = cell.end_row_offset_idx - cell.start_row_offset_idx
+                    if row_span in row_cells_with_bbox:
+                        row_cells_with_bbox[row_span].append(cell.bbox)
+                    else:
+                        row_cells_with_bbox[row_span] = [cell.bbox]
+
+            # Calculate the enclosing bounding box for this row
+            if len(row_cells_with_bbox) > 0:
+                min_row_span = min(row_cells_with_bbox.keys())
+                row_bbox: BoundingBox = BoundingBox.enclosing_bbox(
+                    row_cells_with_bbox[min_row_span]
+                )
+
+                for rspan, bboxs in row_cells_with_bbox.items():
+                    for bbox in bboxs:
+                        row_bbox.l = min(row_bbox.l, bbox.l)
+                        row_bbox.r = max(row_bbox.r, bbox.r)
+
+                row_bboxes[row_idx] = row_bbox
+
+        return row_bboxes
+
+    def get_column_bounding_boxes(self) -> dict[int, BoundingBox]:
+        """Get the minimal bounding box for each column in the table.
+
+        Returns:
+            List[Optional[BoundingBox]]: A list where each element is the minimal
+            bounding box that encompasses all cells in that column, or None if no
+            cells in the column have bounding boxes.
+        """
+        coords = []
+        for cell in self.table_cells:
+            if cell.bbox is not None:
+                coords.append(cell.bbox.coord_origin)
+
+        if len(set(coords)) > 1:
+            raise ValueError(
+                "All bounding boxes must have the same \
+                CoordOrigin to compute their union."
+            )
+
+        col_bboxes: dict[int, BoundingBox] = {}
+
+        for col_idx in range(self.num_cols):
+            col_cells_with_bbox: dict[int, list[BoundingBox]] = {}
+
+            # Collect all cells in this row that have bounding boxes
+            for cell in self.table_cells:
+
+                if (
+                    cell.bbox is not None
+                    and cell.start_col_offset_idx <= col_idx < cell.end_col_offset_idx
+                ):
+
+                    col_span = cell.end_col_offset_idx - cell.start_col_offset_idx
+                    if col_span in col_cells_with_bbox:
+                        col_cells_with_bbox[col_span].append(cell.bbox)
+                    else:
+                        col_cells_with_bbox[col_span] = [cell.bbox]
+
+            # Calculate the enclosing bounding box for this row
+            if len(col_cells_with_bbox) > 0:
+                min_col_span = min(col_cells_with_bbox.keys())
+                col_bbox: BoundingBox = BoundingBox.enclosing_bbox(
+                    col_cells_with_bbox[min_col_span]
+                )
+
+                for rspan, bboxs in col_cells_with_bbox.items():
+                    for bbox in bboxs:
+                        if bbox.coord_origin == CoordOrigin.TOPLEFT:
+                            col_bbox.b = max(col_bbox.b, bbox.b)
+                            col_bbox.t = min(col_bbox.t, bbox.t)
+
+                        elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
+                            col_bbox.b = min(col_bbox.b, bbox.b)
+                            col_bbox.t = max(col_bbox.t, bbox.t)
+
+                col_bboxes[col_idx] = col_bbox
+
+        return col_bboxes
 
 
 class PictureTabularChartData(PictureChartData):

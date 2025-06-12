@@ -340,7 +340,7 @@ class HTMLTableSerializer(BaseTableSerializer):
 
                     content = html.escape(cell.text.strip())
                     celltag = "td"
-                    if cell.column_header or cell.row_header or cell.section_header:
+                    if cell.column_header or cell.row_header or cell.row_section:
                         celltag = "th"
 
                     opening_tag = f"{celltag}"
