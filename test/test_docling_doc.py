@@ -1636,3 +1636,11 @@ def test_misplaced_list_items():
     else:
         exp_doc = DoclingDocument.load_from_yaml(exp_file)
         assert doc == exp_doc
+
+    doc._normalize_references()
+    exp_file = filename.parent / f"{filename.stem}.norm.out.yaml"
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    else:
+        exp_doc = DoclingDocument.load_from_yaml(exp_file)
+        assert doc == exp_doc
