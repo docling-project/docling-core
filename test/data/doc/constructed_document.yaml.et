@@ -52,27 +52,27 @@ Affiliation 2
  49: key_value_region
  50: form
  51: inline with name=group
-  52: text: Some formatting chops:
-  53: text: bold
-  54: text: italic
-  55: text: underline
-  56: text: strikethrough
-  57: text: subscript
-  58: text: superscript
-  59: text: hyperlink
-  60: text: &
-  61: text: everything at the same time.
+  52: text
+  53: text
+  54: text
+  55: text
+  56: text
+  57: text
+  58: text
+  59: text
+  60: text
+  61: text
  62: ordered_list with name=list A
-  63: list_item: Item 1 in A
-  64: list_item: Item 2 in A
-  65: list_item: Item 3 in A
+  63: list_item
+  64: list_item
+  65: list_item
    66: ordered_list with name=list B
-    67: list_item: Item 1 in B
-    68: list_item: Item 2 in B
+    67: list_item
+    68: list_item
      69: ordered_list with name=list C
-      70: list_item: Item 1 in C
-      71: list_item: Item 2 in C
-    72: list_item: Item 3 in B
-  73: list_item: Item 4 in A
- 74: list_item: List item without parent list group
- 75: text: The end.
+      70: list_item
+      71: list_item
+    72: list_item
+  73: list_item
+ 74: list_item
+ 75: text
