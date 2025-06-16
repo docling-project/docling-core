@@ -19,31 +19,42 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const pr = context.payload.pull_request || context.payload.check_run.pull_requests?.[0];
+            const pr = context.payload.pull_request || context.payload.check_run?.pull_requests?.[0];
             if (!pr) return;
 
             const prNumber = pr.number;
-            const headSha = pr.head ? pr.head.sha : context.payload.check_run.head_sha;
+            const baseRef = pr.base.ref;
+            const headSha =
+              context.payload.check_run?.head_sha ||
+              pr.head?.sha;
 
+            // Get all check runs for the latest commit (headSha)
             const { data: checks } = await github.rest.checks.listForRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: headSha
             });
 
-            const dcoCheck = checks.check_runs.find(run => run.name.toLowerCase().includes("dco"));
+            // Find the DCO check *for this specific commit*
+            const dcoCheck = checks.check_runs.find(run =>
+              run.name.toLowerCase().includes("dco") &&
+              run.head_sha === headSha
+            );
             if (!dcoCheck) return;
 
+            // Get existing comments on the PR
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber
             });
 
+            // Look for a previous bot comment
             const existingComment = comments.find(c =>
               c.body.includes("<!-- dco-advice-bot -->")
             );
 
+            // Define the failure comment body
             const failureBody = [
               '<!-- dco-advice-bot -->',
               '❌ **DCO Check Failed**',
@@ -77,7 +88,7 @@ jobs:
               '',
               '**For multiple commits:**',
               '```bash',
-              `git rebase --signoff origin/${pr.base.ref}`,
+              `git rebase --signoff origin/${baseRef}`,
               'git push --force-with-lease',
               '```',
               '',
