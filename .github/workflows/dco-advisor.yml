@@ -1,6 +1,8 @@
 name: DCO Advisor Bot
 
 on:
+  pull_request:
+    types: [opened, reopened, synchronize]
   check_run:
     types: [completed]
 
