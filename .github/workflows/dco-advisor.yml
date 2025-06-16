@@ -25,6 +25,7 @@ jobs:
             const headSha =
               context.payload.check_run?.head_sha ||
               pr.head?.sha;
+            const username = pr.user.login;
 
             console.log("HEAD SHA:", headSha);
 
