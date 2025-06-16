@@ -54,6 +54,8 @@ jobs:
               console.log(`DCO check ${dcoCheck?.name} --> ${dcoCheck?.conclusion}`);
               console.log(`Actions: ${dcoCheck}`);
               console.log(`Actions: ${dcoCheck?.actions}`);
+              const text = dcoCheck.output.text;
+              console.log(`Check output text: ${text}`);
 
               if (dcoCheck?.conclusion) break;
               console.log(`Waiting for DCO check... (${attempt + 1})`);
