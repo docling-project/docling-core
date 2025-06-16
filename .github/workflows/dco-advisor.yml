@@ -40,10 +40,7 @@ jobs:
               issue_number: prNumber
             });
 
-            const botUsername = (await github.rest.users.getAuthenticated()).data.login;
-
             const existingComment = comments.find(c =>
-              c.user.login === botUsername &&
               c.body.includes("<!-- dco-advice-bot -->")
             );
 
