@@ -52,8 +52,6 @@ jobs:
                 run.head_sha === headSha
               );
 
-              console.log(`DCO check ${dcoCheck?.name} --> ${dcoCheck?.conclusion}`);
-              console.log(`DCO check HTML url: ${dcoCheck?.html_url}`);
 
               if (dcoCheck?.conclusion) break;
               console.log(`Waiting for DCO check... (${attempt + 1})`);
@@ -72,9 +70,9 @@ jobs:
             let badCommits = [];
             let authorName = "";
             let authorEmail = "";
+            let moreInfo = `More info: [DCO check report](${dcoCheck?.html_url})`;
 
             if (isFailure) {
-                console.log(`Now checking all commits with failed sign-off`);
                 const { data: commits } = await github.rest.pulls.listCommits({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -154,7 +152,7 @@ jobs:
                 '',
                 '</details>',
                 '',
-                'More info: [DCO Fix Guide](https://github.com/probot/dco#how-it-works)'
+                moreInfo
               ].join('\n');
             } else {
               body = [
