@@ -42,6 +42,12 @@ jobs:
             );
             if (!dcoCheck) return;
 
+            console.log("HEAD SHA:", headSha);
+            console.log("All check runs:");
+            checks.check_runs.forEach(run => {
+            console.log(`- ${run.name} (${run.status}/${run.conclusion}) @ ${run.head_sha}`);
+            });
+
             // Get existing comments on the PR
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -106,6 +112,7 @@ jobs:
               `Thanks @${pr.user.login}, all your commits are properly signed off. 🎉`
             ].join('\n');
 
+            console.log(`DCO check status for ${headSha}: ${dcoCheck.conclusion}`);
             const newBody = dcoCheck.conclusion === "failure" ? failureBody : successBody;
 
             if (existingComment) {
