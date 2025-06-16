@@ -52,6 +52,7 @@ jobs:
               );
 
               console.log(`DCO check ${dcoCheck?.name} --> ${dcoCheck?.conclusion}`);
+              console.log(`DCO check HTML url: ${dcoCheck?.html_url}`);
 
               if (dcoCheck?.conclusion) break;
               console.log(`Waiting for DCO check... (${attempt + 1})`);
