@@ -127,8 +127,10 @@ jobs:
               `Thanks @${pr.user.login}, all your commits are properly signed off. 🎉`
             ].join('\n');
 
-            console.log(`DCO check status for ${headSha}: ${dcoCheck.conclusion}`);
-            const newBody = dcoCheck.conclusion === "failure" ? failureBody : successBody;
+            const isFailure = ["failure", "action_required"].includes(dcoCheck.conclusion);
+            console.log(`DCO check conclusion for ${headSha}: ${dcoCheck.conclusion} (treated as ${isFailure ? "failure" : "success"})`);
+
+            const newBody = isFailure ? failureBody : successBody;
 
             if (existingComment) {
               await github.rest.issues.updateComment({
