@@ -47,54 +47,56 @@ jobs:
               c.body.includes("<!-- dco-advice-bot -->")
             );
 
-            const failureBody = `<!-- dco-advice-bot -->
-❌ **DCO Check Failed**
+            const failureBody = [
+              '<!-- dco-advice-bot -->',
+              '❌ **DCO Check Failed**',
+              '',
+              `Hi @${pr.user.login}, your pull request has failed the Developer Certificate of Origin (DCO) check.`,
+              '',
+              'Because this repository supports **remediation commits**, you can fix this without rewriting history!',
+              '',
+              '---',
+              '',
+              '### 🛠 Quick Fix: Add a remediation commit',
+              '```bash',
+              'git commit --allow-empty -s -m "chore: DCO remediation for failing commits"',
+              'git push',
+              '```',
+              '',
+              'This adds an empty signed commit to declare you agree with your previous commits.',
+              '',
+              '---',
+              '',
+              '<details>',
+              '<summary>🔧 Advanced: Sign off each commit</summary>',
+              '',
+              'If you prefer to re-sign your existing commits:',
+              '',
+              '**For the latest commit:**',
+              '```bash',
+              'git commit --amend --signoff',
+              'git push --force',
+              '```',
+              '',
+              '**For multiple commits:**',
+              '```bash',
+              `git rebase --signoff origin/${pr.base.ref}`,
+              'git push --force-with-lease',
+              '```',
+              '',
+              '</details>',
+              '',
+              '---',
+              '',
+              'More info: [DCO Fix Guide](https://github.com/probot/dco#how-it-works)'
+            ].join('\n');
 
-Hi @${pr.user.login}, your pull request has failed the Developer Certificate of Origin (DCO) check.
-
-Because this repository supports **remediation commits**, you can fix this without rewriting history!
-
----
-
-### 🛠 Quick Fix: Add a remediation commit
-\`\`\`bash
-git commit --allow-empty -s -m "chore: DCO remediation for failing commits"
-git push
-\`\`\`
-
-This adds an empty signed commit to declare you agree with your previous commits.
-
----
-
-<details>
-<summary>🔧 Advanced: Sign off each commit</summary>
-
-If you prefer to re-sign your existing commits:
-
-**For the latest commit:**
-\`\`\`bash
-git commit --amend --signoff
-git push --force
-\`\`\`
-
-**For multiple commits:**
-\`\`\`bash
-git rebase --signoff origin/${pr.base.ref}
-git push --force-with-lease
-\`\`\`
-
-</details>
-
----
-
-More info: [DCO Fix Guide](https://github.com/probot/dco#how-it-works)
-`;
-
-            const successBody = `<!-- dco-advice-bot -->
-✅ **DCO Check Passed**
-
-Thanks @${pr.user.login}, all your commits are properly signed off. 🎉
-`;
+            const successBody = [
+              '<!-- dco-advice-bot -->',
+              '✅ **DCO Check Passed**',
+              '',
+              `Thanks @${pr.user.login}, all your commits are properly signed off. 🎉`
+            ].join('\n');
 
             const newBody = dcoCheck.conclusion === "failure" ? failureBody : successBody;
 
