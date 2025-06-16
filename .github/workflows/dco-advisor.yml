@@ -14,41 +14,40 @@ jobs:
   dco_advisor:
     runs-on: ubuntu-latest
     steps:
-    - name: Handle DCO check result
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const pr = context.payload.pull_request || context.payload.check_run.pull_requests?.[0];
-          if (!pr) return;
+      - name: Handle DCO check result
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request || context.payload.check_run.pull_requests?.[0];
+            if (!pr) return;
 
-          const prNumber = pr.number;
-          const headSha = pr.head ? pr.head.sha : context.payload.check_run.head_sha;
+            const prNumber = pr.number;
+            const headSha = pr.head ? pr.head.sha : context.payload.check_run.head_sha;
 
-          const { data: checks } = await github.rest.checks.listForRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: headSha
-          });
+            const { data: checks } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: headSha
+            });
 
-          const dcoCheck = checks.check_runs.find(run => run.name.toLowerCase().includes("dco"));
-          if (!dcoCheck) return;
+            const dcoCheck = checks.check_runs.find(run => run.name.toLowerCase().includes("dco"));
+            if (!dcoCheck) return;
 
-          const { data: comments } = await github.rest.issues.listComments({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: prNumber
-          });
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
 
-          const botUsername = (await github.rest.users.getAuthenticated()).data.login;
+            const botUsername = (await github.rest.users.getAuthenticated()).data.login;
 
-          const existingComment = comments.find(c =>
-            c.user.login === botUsername &&
-            c.body.includes("<!-- dco-advice-bot -->")
-          );
+            const existingComment = comments.find(c =>
+              c.user.login === botUsername &&
+              c.body.includes("<!-- dco-advice-bot -->")
+            );
 
-          const failureBody = `
-<!-- dco-advice-bot -->
+            const failureBody = `<!-- dco-advice-bot -->
 ❌ **DCO Check Failed**
 
 Hi @${pr.user.login}, your pull request has failed the Developer Certificate of Origin (DCO) check.
@@ -91,27 +90,26 @@ git push --force-with-lease
 More info: [DCO Fix Guide](https://github.com/probot/dco#how-it-works)
 `;
 
-          const successBody = `
-<!-- dco-advice-bot -->
+            const successBody = `<!-- dco-advice-bot -->
 ✅ **DCO Check Passed**
 
 Thanks @${pr.user.login}, all your commits are properly signed off. 🎉
 `;
 
-          const newBody = dcoCheck.conclusion === "failure" ? failureBody : successBody;
+            const newBody = dcoCheck.conclusion === "failure" ? failureBody : successBody;
 
-          if (existingComment) {
-            await github.rest.issues.updateComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: existingComment.id,
-              body: newBody
-            });
-          } else {
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: newBody
-            });
-          }
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: newBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: newBody
+              });
+            }
