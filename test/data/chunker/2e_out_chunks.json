@@ -1026,11 +1026,6 @@
                         ]
                     }
                 ],
-                "headings": [
-                    "IBM",
-                    "Corporate affairs",
-                    "Business trends"
-                ],
                 "origin": {
                     "mimetype": "application/pdf",
                     "binary_hash": 15535403176419637685,
@@ -1039,7 +1034,7 @@
             }
         },
         {
-            "text": "|--------|---------------------|------------------------|--",
+            "text": "|--------|---------------------|------------------------|-------",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -1070,11 +1065,6 @@
                         ]
                     }
                 ],
-                "headings": [
-                    "IBM",
-                    "Corporate affairs",
-                    "Business trends"
-                ],
                 "origin": {
                     "mimetype": "application/pdf",
                     "binary_hash": 15535403176419637685,
@@ -1083,7 +1073,7 @@
             }
         },
         {
-            "text": "-\n----------|\n|   2014 |                92.7 |                   12   | 379,592     |\n|   2015 |                81.7 |                   13.1 | 377,757     |\nA last paragraph is down here, after the results table.",
+            "text": "-\n-----|\n|   2014 |                92.7 |                   12   | 379,592     |\n|   2015 |                81.7 |                   13.1 | 377,757     |\nA last paragraph is down here, after the results table.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -1188,11 +1178,6 @@
                             }
                         ]
                     }
-                ],
-                "headings": [
-                    "IBM",
-                    "Corporate affairs",
-                    "Business trends"
                 ],
                 "origin": {
                     "mimetype": "application/pdf",

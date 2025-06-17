@@ -112,13 +112,13 @@
         },
         {
             "text": "These are the trends\n2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income",
-            "ser_text": "IBM\nCorporate affairs\nBusiness trends\nThese are the trends\n2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income",
-            "num_tokens": 63
+            "ser_text": "These are the trends\n2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income",
+            "num_tokens": 58
         },
         {
             "text": "(US$ bn) = 13.1. 2015, Employees = 377,757\nA last paragraph is down here, after the results table.",
-            "ser_text": "IBM\nCorporate affairs\nBusiness trends\n(US$ bn) = 13.1. 2015, Employees = 377,757\nA last paragraph is down here, after the results table.",
-            "num_tokens": 36
+            "ser_text": "(US$ bn) = 13.1. 2015, Employees = 377,757\nA last paragraph is down here, after the results table.",
+            "num_tokens": 31
         }
     ]
 }
