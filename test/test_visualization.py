@@ -55,7 +55,7 @@ def test_doc_visualization_no_label():
             )
 
 
-def test_table_visualization_no_label():
+def test_table_visualization_for_cells():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
@@ -64,5 +64,21 @@ def test_table_visualization_no_label():
 
     verify(
         exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_table_viz_wout_lbl_p5.png",
+        actual=viz_pages[5],
+    )
+
+
+def test_table_visualization_for_rows_and_cols():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    visualizer = TableVisualizer(
+        params=TableVisualizer.Params(show_cells=False, show_rows=True, show_cols=True)
+    )
+    viz_pages = visualizer.get_visualization(doc=doc)
+
+    verify(
+        exp_file=VIZ_TEST_DATA_PATH
+        / f"{src.stem}_table_viz_wout_lbl_p5_rows_and_cols.png",
         actual=viz_pages[5],
     )

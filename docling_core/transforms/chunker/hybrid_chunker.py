@@ -234,10 +234,13 @@ class HybridChunker(BaseChunker):
             if available_length <= 0:
                 warnings.warn(
                     "Headers and captions for this chunk are longer than the total "
-                    "amount of size for the chunk, chunk will be ignored: "
-                    f"{doc_chunk.text=}"
+                    "available size for the chunk, so they will be ignored: "
+                    f"{doc_chunk.text=}, {doc_chunk.meta=}"
                 )
-                return []
+                new_chunk = DocChunk(**doc_chunk.export_json_dict())
+                new_chunk.meta.captions = None
+                new_chunk.meta.headings = None
+                return self._split_using_plain_text(doc_chunk=new_chunk)
             text = doc_chunk.text
             segments = sem_chunker.chunk(text)
             chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]

@@ -1,3 +1,27 @@
+## [v2.37.0](https://github.com/docling-project/docling-core/releases/tag/v2.37.0) - 2025-06-13
+
+### Feature
+
+* Add improved table serializer and visualizer ([#328](https://github.com/docling-project/docling-core/issues/328)) ([`3b99879`](https://github.com/docling-project/docling-core/commit/3b998795b880b1fcc25d19111d405993b1ec0fa6))
+
+## [v2.36.0](https://github.com/docling-project/docling-core/releases/tag/v2.36.0) - 2025-06-11
+
+### Feature
+
+* New labels for CVAT annotation ([#314](https://github.com/docling-project/docling-core/issues/314)) ([`aa430d3`](https://github.com/docling-project/docling-core/commit/aa430d377649a31f439cb63aa3c57a99e751a39f))
+
+## [v2.35.0](https://github.com/docling-project/docling-core/releases/tag/v2.35.0) - 2025-06-11
+
+### Feature
+
+* Visualizer for table cells ([#325](https://github.com/docling-project/docling-core/issues/325)) ([`45667c7`](https://github.com/docling-project/docling-core/commit/45667c751bc0c3601635ea575ff204595c1ae4d5))
+
+## [v2.34.2](https://github.com/docling-project/docling-core/releases/tag/v2.34.2) - 2025-06-10
+
+### Fix
+
+* Fix doc traversal for item deletion ([#324](https://github.com/docling-project/docling-core/issues/324)) ([`076ad2b`](https://github.com/docling-project/docling-core/commit/076ad2ba9bd551daf1ee6a0141d360a7be8a18bd))
+
 ## [v2.34.1](https://github.com/docling-project/docling-core/releases/tag/v2.34.1) - 2025-06-08
 
 ### Fix

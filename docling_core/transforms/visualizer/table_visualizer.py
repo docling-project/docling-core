@@ -23,8 +23,23 @@ class TableVisualizer(BaseVisualizer):
 
         # show_Label: bool = False
         show_cells: bool = True
-        # show_rows: bool = False
-        # show_cols: bool = False
+        show_rows: bool = False
+        show_cols: bool = False
+
+        cell_color: tuple[int, int, int, int] = (256, 0, 0, 32)
+        cell_outline: tuple[int, int, int, int] = (256, 0, 0, 128)
+
+        row_color: tuple[int, int, int, int] = (256, 0, 0, 32)
+        row_outline: tuple[int, int, int, int] = (256, 0, 0, 128)
+
+        row_header_color: tuple[int, int, int, int] = (0, 256, 0, 32)
+        row_header_outline: tuple[int, int, int, int] = (0, 256, 0, 128)
+
+        col_color: tuple[int, int, int, int] = (0, 256, 0, 32)
+        col_outline: tuple[int, int, int, int] = (0, 256, 0, 128)
+
+        col_header_color: tuple[int, int, int, int] = (0, 0, 256, 32)
+        col_header_outline: tuple[int, int, int, int] = (0, 0, 256, 128)
 
     base_visualizer: Optional[BaseVisualizer] = None
     params: Params = Params()
@@ -45,7 +60,21 @@ class TableVisualizer(BaseVisualizer):
 
                 tl_bbox = cell.bbox.to_top_left_origin(page_height=page_height)
 
-                cell_color = (256, 0, 0, 32)  # Transparent black for cells
+                cell_color = self.params.cell_color  # Transparent black for cells
+                cell_outline = self.params.cell_outline
+                if cell.column_header:
+                    cell_color = (
+                        self.params.col_header_color
+                    )  # Transparent black for cells
+                    cell_outline = self.params.col_header_outline
+                if cell.row_header:
+                    cell_color = (
+                        self.params.row_header_color
+                    )  # Transparent black for cells
+                    cell_outline = self.params.row_header_outline
+                if cell.row_section:
+                    cell_color = self.params.row_header_color
+                    cell_outline = self.params.row_header_outline
 
                 cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
                 cx0 *= scale_x
@@ -55,9 +84,67 @@ class TableVisualizer(BaseVisualizer):
 
                 draw.rectangle(
                     [(cx0, cy0), (cx1, cy1)],
-                    outline=(256, 0, 0, 128),
+                    outline=cell_outline,
                     fill=cell_color,
                 )
+
+    def _draw_table_rows(
+        self,
+        table: TableItem,
+        page_image: Image,
+        page_height: float,
+        scale_x: float,
+        scale_y: float,
+    ):
+        """Draw individual table cells."""
+        draw = ImageDraw.Draw(page_image, "RGBA")
+
+        rows = table.data.get_row_bounding_boxes()
+
+        for rid, bbox in rows.items():
+
+            tl_bbox = bbox.to_top_left_origin(page_height=page_height)
+
+            cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
+            cx0 *= scale_x
+            cx1 *= scale_x
+            cy0 *= scale_y
+            cy1 *= scale_y
+
+            draw.rectangle(
+                [(cx0, cy0), (cx1, cy1)],
+                outline=self.params.row_outline,
+                fill=self.params.row_color,
+            )
+
+    def _draw_table_cols(
+        self,
+        table: TableItem,
+        page_image: Image,
+        page_height: float,
+        scale_x: float,
+        scale_y: float,
+    ):
+        """Draw individual table cells."""
+        draw = ImageDraw.Draw(page_image, "RGBA")
+
+        cols = table.data.get_column_bounding_boxes()
+
+        for cid, bbox in cols.items():
+
+            tl_bbox = bbox.to_top_left_origin(page_height=page_height)
+
+            cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
+            cx0 *= scale_x
+            cx1 *= scale_x
+            cy0 *= scale_y
+            cy1 *= scale_y
+
+            draw.rectangle(
+                [(cx0, cy0), (cx1, cy1)],
+                outline=self.params.col_outline,
+                fill=self.params.col_color,
+            )
 
     def _draw_doc_tables(
         self,
@@ -101,6 +188,24 @@ class TableVisualizer(BaseVisualizer):
 
                     if self.params.show_cells:
                         self._draw_table_cells(
+                            table=elem,
+                            page_height=doc.pages[page_nr].size.height,
+                            page_image=image,
+                            scale_x=image.width / doc.pages[page_nr].size.width,
+                            scale_y=image.height / doc.pages[page_nr].size.height,
+                        )
+
+                    if self.params.show_rows:
+                        self._draw_table_rows(
+                            table=elem,
+                            page_height=doc.pages[page_nr].size.height,
+                            page_image=image,
+                            scale_x=image.width / doc.pages[page_nr].size.width,
+                            scale_y=image.height / doc.pages[page_nr].size.height,
+                        )
+
+                    if self.params.show_cols:
+                        self._draw_table_cols(
                             table=elem,
                             page_height=doc.pages[page_nr].size.height,
                             page_image=image,

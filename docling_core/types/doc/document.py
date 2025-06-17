@@ -38,7 +38,7 @@ from typing_extensions import Annotated, Self, deprecated
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
-from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -371,6 +371,119 @@ class TableData(BaseModel):  # TBD
                     table_data[i][j] = cell
 
         return table_data
+
+    def get_row_bounding_boxes(self) -> dict[int, BoundingBox]:
+        """Get the minimal bounding box for each row in the table.
+
+        Returns:
+        List[Optional[BoundingBox]]: A list where each element is the minimal
+        bounding box that encompasses all cells in that row, or None if no
+        cells in the row have bounding boxes.
+        """
+        coords = []
+        for cell in self.table_cells:
+            if cell.bbox is not None:
+                coords.append(cell.bbox.coord_origin)
+
+        if len(set(coords)) > 1:
+            raise ValueError(
+                "All bounding boxes must have the same \
+                CoordOrigin to compute their union."
+            )
+
+        row_bboxes: dict[int, BoundingBox] = {}
+
+        for row_idx in range(self.num_rows):
+            row_cells_with_bbox: dict[int, list[BoundingBox]] = {}
+
+            # Collect all cells in this row that have bounding boxes
+            for cell in self.table_cells:
+
+                if (
+                    cell.bbox is not None
+                    and cell.start_row_offset_idx <= row_idx < cell.end_row_offset_idx
+                ):
+
+                    row_span = cell.end_row_offset_idx - cell.start_row_offset_idx
+                    if row_span in row_cells_with_bbox:
+                        row_cells_with_bbox[row_span].append(cell.bbox)
+                    else:
+                        row_cells_with_bbox[row_span] = [cell.bbox]
+
+            # Calculate the enclosing bounding box for this row
+            if len(row_cells_with_bbox) > 0:
+                min_row_span = min(row_cells_with_bbox.keys())
+                row_bbox: BoundingBox = BoundingBox.enclosing_bbox(
+                    row_cells_with_bbox[min_row_span]
+                )
+
+                for rspan, bboxs in row_cells_with_bbox.items():
+                    for bbox in bboxs:
+                        row_bbox.l = min(row_bbox.l, bbox.l)
+                        row_bbox.r = max(row_bbox.r, bbox.r)
+
+                row_bboxes[row_idx] = row_bbox
+
+        return row_bboxes
+
+    def get_column_bounding_boxes(self) -> dict[int, BoundingBox]:
+        """Get the minimal bounding box for each column in the table.
+
+        Returns:
+            List[Optional[BoundingBox]]: A list where each element is the minimal
+            bounding box that encompasses all cells in that column, or None if no
+            cells in the column have bounding boxes.
+        """
+        coords = []
+        for cell in self.table_cells:
+            if cell.bbox is not None:
+                coords.append(cell.bbox.coord_origin)
+
+        if len(set(coords)) > 1:
+            raise ValueError(
+                "All bounding boxes must have the same \
+                CoordOrigin to compute their union."
+            )
+
+        col_bboxes: dict[int, BoundingBox] = {}
+
+        for col_idx in range(self.num_cols):
+            col_cells_with_bbox: dict[int, list[BoundingBox]] = {}
+
+            # Collect all cells in this row that have bounding boxes
+            for cell in self.table_cells:
+
+                if (
+                    cell.bbox is not None
+                    and cell.start_col_offset_idx <= col_idx < cell.end_col_offset_idx
+                ):
+
+                    col_span = cell.end_col_offset_idx - cell.start_col_offset_idx
+                    if col_span in col_cells_with_bbox:
+                        col_cells_with_bbox[col_span].append(cell.bbox)
+                    else:
+                        col_cells_with_bbox[col_span] = [cell.bbox]
+
+            # Calculate the enclosing bounding box for this row
+            if len(col_cells_with_bbox) > 0:
+                min_col_span = min(col_cells_with_bbox.keys())
+                col_bbox: BoundingBox = BoundingBox.enclosing_bbox(
+                    col_cells_with_bbox[min_col_span]
+                )
+
+                for rspan, bboxs in col_cells_with_bbox.items():
+                    for bbox in bboxs:
+                        if bbox.coord_origin == CoordOrigin.TOPLEFT:
+                            col_bbox.b = max(col_bbox.b, bbox.b)
+                            col_bbox.t = min(col_bbox.t, bbox.t)
+
+                        elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
+                            col_bbox.b = min(col_bbox.b, bbox.b)
+                            col_bbox.t = max(col_bbox.t, bbox.t)
+
+                col_bboxes[col_idx] = col_bbox
+
+        return col_bboxes
 
 
 class PictureTabularChartData(PictureChartData):
@@ -4056,6 +4169,7 @@ class DoclingDocument(BaseModel):
         add_table_cell_location: bool = False,
         add_table_cell_text: bool = True,
         minified: bool = False,
+        pages: Optional[set[int]] = None,
     ) -> str:
         r"""Exports the document content to a DocumentToken format.
 
@@ -4074,6 +4188,7 @@ class DoclingDocument(BaseModel):
         :param # table specific flagsadd_table_cell_location: bool
         :param add_table_cell_text: bool:  (Default value = True)
         :param minified: bool:  (Default value = False)
+        :param pages: set[int]: (Default value = None)
         :returns: The content of the document formatted as a DocTags string.
         :rtype: str
         """
@@ -4098,6 +4213,7 @@ class DoclingDocument(BaseModel):
                 add_page_break=add_page_index,
                 add_table_cell_location=add_table_cell_location,
                 add_table_cell_text=add_table_cell_text,
+                pages=pages,
                 mode=(
                     DocTagsParams.Mode.MINIFIED
                     if minified
@@ -4343,3 +4459,67 @@ class DoclingDocument(BaseModel):
                     hyperlink=li.hyperlink,
                 )
         return self
+
+    def _normalize_references(self) -> None:
+        """Normalize ref numbering by ordering node items as per iterate_items()."""
+        new_body = GroupItem(**self.body.model_dump(exclude={"children"}))
+
+        item_lists: dict[str, list[NodeItem]] = {
+            "groups": [],
+            "texts": [],
+            "pictures": [],
+            "tables": [],
+            "key_value_items": [],
+            "form_items": [],
+        }
+        orig_ref_to_new_ref: dict[str, str] = {}
+
+        # collect items in traversal order
+        for item, _ in self.iterate_items(
+            with_groups=True,
+            traverse_pictures=True,
+            included_content_layers={c for c in ContentLayer},
+        ):
+            key = item.self_ref.split("/")[1]
+            is_body = key == "body"
+            new_cref = "#/body" if is_body else f"#/{key}/{len(item_lists[key])}"
+            # register cref mapping:
+            orig_ref_to_new_ref[item.self_ref] = new_cref
+
+            if not is_body:
+                new_item = copy.deepcopy(item)
+                new_item.children = []
+
+                # put item in the right list
+                item_lists[key].append(new_item)
+
+                # update item's self reference
+                new_item.self_ref = new_cref
+
+                if item.parent:
+                    # set item's parent
+                    new_parent_cref = orig_ref_to_new_ref[item.parent.cref]
+                    new_item.parent = RefItem(cref=new_parent_cref)
+
+                    # add item to parent's children
+                    path_components = new_parent_cref.split("/")
+                    num_components = len(path_components)
+                    parent_node: NodeItem
+                    if num_components == 3:
+                        _, parent_key, parent_index_str = path_components
+                        parent_index = int(parent_index_str)
+                        parent_node = item_lists[parent_key][parent_index]
+                    elif num_components == 2 and path_components[1] == "body":
+                        parent_node = new_body
+                    else:
+                        raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
+                    parent_node.children.append(RefItem(cref=new_cref))
+
+        # update document
+        self.groups = item_lists["groups"]  # type: ignore
+        self.texts = item_lists["texts"]  # type: ignore
+        self.pictures = item_lists["pictures"]  # type: ignore
+        self.tables = item_lists["tables"]  # type: ignore
+        self.key_value_items = item_lists["key_value_items"]  # type: ignore
+        self.form_items = item_lists["form_items"]  # type: ignore
+        self.body = new_body
