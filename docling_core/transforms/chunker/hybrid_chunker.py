@@ -234,7 +234,7 @@ class HybridChunker(BaseChunker):
             if available_length <= 0:
                 warnings.warn(
                     "Headers and captions for this chunk are longer than the total "
-                    "amount of size for the chunk, they will be ignored: "
+                    "available size for the chunk, so they will be ignored: "
                     f"{doc_chunk.text=}, {doc_chunk.meta=}"
                 )
                 new_chunk = DocChunk(**doc_chunk.export_json_dict())
