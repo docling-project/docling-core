@@ -4353,7 +4353,9 @@ class DoclingDocument(BaseModel):
         return pitem
 
     def get_visualization(
-        self, show_label: bool = True
+        self,
+        show_label: bool = True,
+        show_branch_numbering: bool = False,
     ) -> dict[Optional[int], PILImage.Image]:
         """Get visualization of the document as images by page."""
         from docling_core.transforms.visualizer.layout_visualizer import (
@@ -4368,6 +4370,9 @@ class DoclingDocument(BaseModel):
                 params=LayoutVisualizer.Params(
                     show_label=show_label,
                 ),
+            ),
+            params=ReadingOrderVisualizer.Params(
+                show_branch_numbering=show_branch_numbering,
             ),
         )
         images = visualizer.get_visualization(doc=self)

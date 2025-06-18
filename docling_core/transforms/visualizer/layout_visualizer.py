@@ -163,8 +163,8 @@ class LayoutVisualizer(BaseVisualizer):
                 else:
                     raise RuntimeError(f"Cannot visualize page-image for {page_nr}")
 
-                if prev_page_nr is None or page_nr > prev_page_nr:  # new page begins
-                    # complete previous drawing
+                if prev_page_nr is None or page_nr != prev_page_nr:  # changing page
+                    # dump previous drawing
                     if prev_page_nr is not None and prev_image and clusters:
                         self._draw_clusters(
                             image=prev_image,

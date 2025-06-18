@@ -1,15 +1,21 @@
 """Define classes for reading order visualization."""
 
 from copy import deepcopy
-from typing import Optional
+from typing import Optional, Union
 
-from PIL import ImageDraw
+from PIL import ImageDraw, ImageFont
 from PIL.Image import Image
+from PIL.ImageFont import FreeTypeFont
 from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocument
+
+
+class _NumberDrawingData(BaseModel):
+    xy: tuple[float, float]
+    text: str
 
 
 class ReadingOrderVisualizer(BaseVisualizer):
@@ -19,6 +25,7 @@ class ReadingOrderVisualizer(BaseVisualizer):
         """Layout visualization parameters."""
 
         show_label: bool = True
+        show_branch_numbering: bool = False
         content_layers: set[ContentLayer] = {
             cl for cl in ContentLayer if cl != ContentLayer.BACKGROUND
         }
@@ -76,10 +83,17 @@ class ReadingOrderVisualizer(BaseVisualizer):
         images: Optional[dict[Optional[int], Image]] = None,
     ):
         """Draw the reading order."""
-        # draw = ImageDraw.Draw(image)
+        font: Union[ImageFont.ImageFont, FreeTypeFont]
+        try:
+            font = ImageFont.truetype("arial.ttf", 12)
+        except OSError:
+            # Fallback to default font if arial is not available
+            font = ImageFont.load_default()
         x0, y0 = None, None
+        number_data_to_draw: dict[Optional[int], list[_NumberDrawingData]] = {}
         my_images: dict[Optional[int], Image] = images or {}
         prev_page = None
+        i = 0
         for elem, _ in doc.iterate_items(
             included_content_layers=self.params.content_layers,
         ):
@@ -92,7 +106,10 @@ class ReadingOrderVisualizer(BaseVisualizer):
                 page_no = prov.page_no
                 image = my_images.get(page_no)
 
-                if image is None or prev_page is None or page_no > prev_page:
+                if page_no not in number_data_to_draw:
+                    number_data_to_draw[page_no] = []
+
+                if image is None or prev_page is None or page_no != prev_page:
                     # new page begins
                     prev_page = page_no
                     x0 = y0 = None
@@ -109,7 +126,7 @@ class ReadingOrderVisualizer(BaseVisualizer):
                         else:
                             image = deepcopy(pil_img)
                             my_images[page_no] = image
-                draw = ImageDraw.Draw(image)
+                draw = ImageDraw.Draw(image, "RGBA")
 
                 tlo_bbox = prov.bbox.to_top_left_origin(
                     page_height=doc.pages[prov.page_no].size.height
@@ -124,9 +141,20 @@ class ReadingOrderVisualizer(BaseVisualizer):
                     ro_bbox.b, ro_bbox.t = ro_bbox.t, ro_bbox.b
 
                 if x0 is None and y0 is None:
+                    # is_root= True
                     x0 = (ro_bbox.l + ro_bbox.r) / 2.0
                     y0 = (ro_bbox.b + ro_bbox.t) / 2.0
+
+                    number_data_to_draw[page_no].append(
+                        _NumberDrawingData(
+                            xy=(x0, y0),
+                            text=f"{i}",
+                        )
+                    )
+                    i += 1
+
                 else:
+                    # is_root = False
                     assert x0 is not None
                     assert y0 is not None
 
@@ -139,7 +167,40 @@ class ReadingOrderVisualizer(BaseVisualizer):
                         line_width=2,
                         color="red",
                     )
+
                     x0, y0 = x1, y1
+
+        if self.params.show_branch_numbering:
+            # post-drawing the numbers to ensure they are rendered on top-layer
+            for page in number_data_to_draw:
+                if (image := my_images.get(page)) is None:
+                    continue
+                draw = ImageDraw.Draw(image, "RGBA")
+
+                for num_item in number_data_to_draw[page]:
+
+                    text_bbox = draw.textbbox(num_item.xy, num_item.text, font)
+                    text_bg_padding = 5
+                    draw.ellipse(
+                        [
+                            (
+                                text_bbox[0] - text_bg_padding,
+                                text_bbox[1] - text_bg_padding,
+                            ),
+                            (
+                                text_bbox[2] + text_bg_padding,
+                                text_bbox[3] + text_bg_padding,
+                            ),
+                        ],
+                        fill="orange",
+                    )
+                    draw.text(
+                        num_item.xy,
+                        text=num_item.text,
+                        fill="black",
+                        font=font,
+                    )
+
         return my_images
 
     @override

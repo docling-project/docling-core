@@ -82,3 +82,16 @@ def test_table_visualization_for_rows_and_cols():
         / f"{src.stem}_table_viz_wout_lbl_p5_rows_and_cols.png",
         actual=viz_pages[5],
     )
+
+
+def test_cross_page_lists_with_branch_nums():
+    src = Path("./test/data/doc/cross_page_lists.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    viz_pages = doc.get_visualization(show_branch_numbering=True)
+
+    for i in range(2):
+        verify(
+            exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_p{i+1}.png",
+            actual=viz_pages[i + 1],
+        )
