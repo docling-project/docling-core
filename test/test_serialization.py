@@ -196,6 +196,20 @@ def test_md_charts():
     verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
 
 
+def test_md_inline_and_formatting():
+    src = Path("./test/data/doc/inline_and_formatting.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.md", actual=actual)
+
+
 def test_html_cross_page_list_page_break():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
