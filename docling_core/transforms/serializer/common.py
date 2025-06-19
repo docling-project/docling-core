@@ -349,6 +349,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                         doc_serializer=self,
                         doc=self.doc,
                         is_inline_scope=is_inline_scope,
+                        visited=my_visited,
                         **my_kwargs,
                     )
                     if item.self_ref not in self.get_excluded_refs(**kwargs)
