@@ -318,11 +318,18 @@ class HTMLTableSerializer(BaseTableSerializer):
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
+            row_idx = 0
 
-            for i in range(nrows):
+            # Iterate over rows directly
+            for row in item.data.grid:
+                if row_idx >= nrows:
+                    break
                 body += "<tr>"
-                for j in range(ncols):
-                    cell: TableCell = item.data.grid[i][j]
+                col_idx = 0
+                # Iterate over cells in the row
+                for cell in row:
+                    if col_idx >= ncols:
+                        break
 
                     rowspan, rowstart = (
                         cell.row_span,
@@ -333,9 +340,11 @@ class HTMLTableSerializer(BaseTableSerializer):
                         cell.start_col_offset_idx,
                     )
 
-                    if rowstart != i:
+                    if rowstart != row_idx:
+                        col_idx += 1
                         continue
-                    if colstart != j:
+                    if colstart != col_idx:
+                        col_idx += 1
                         continue
 
                     content = html.escape(cell.text.strip())
@@ -351,10 +360,12 @@ class HTMLTableSerializer(BaseTableSerializer):
 
                     text_dir = get_text_direction(content)
                     if text_dir == "rtl":
-                        opening_tag += f' dir="{dir}"'
+                        opening_tag += f' dir="{text_dir}"'
 
                     body += f"<{opening_tag}>{content}</{celltag}>"
+                    col_idx += 1
                 body += "</tr>"
+                row_idx += 1
 
             if body:
                 body = f"<tbody>{body}</tbody>"
