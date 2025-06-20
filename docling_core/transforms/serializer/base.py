@@ -40,6 +40,16 @@ class SerializationResult(BaseModel):
     spans: list[Span] = []
     # group: Optional[GroupItem] = None  # set when result reflects specific group item
 
+    def get_unique_doc_items(self) -> list[DocItem]:
+        """Get the doc items corresponding to this result."""
+        seen_doc_item_refs: set[str] = set()
+        doc_items: list[DocItem] = []
+        for span in self.spans:
+            if span.item.self_ref not in seen_doc_item_refs:
+                seen_doc_item_refs.add(span.item.self_ref)
+                doc_items.append(span.item)
+        return doc_items
+
 
 class BaseTextSerializer(ABC):
     """Base class for text item serializers."""

@@ -286,7 +286,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     def _serialize_body(self, **kwargs) -> SerializationResult:
         """Serialize the document body."""
-        subparts = self.get_parts()
+        subparts = self.get_parts(**kwargs)
         res = self.serialize_doc(parts=subparts, **kwargs)
         return res
 
