@@ -197,8 +197,8 @@ def test_md_charts():
 
 
 def test_md_inline_and_formatting():
-    src = Path("./test/data/doc/inline_and_formatting.json")
-    doc = DoclingDocument.load_from_json(src)
+    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
 
     ser = MarkdownDocSerializer(
         doc=doc,
