@@ -58,9 +58,9 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    ListGroup,
     ListItem,
     NodeItem,
-    OrderedList,
     PictureClassificationData,
     PictureItem,
     PictureMoleculeData,
@@ -70,7 +70,6 @@ from docling_core.types.doc.document import (
     TableItem,
     TextItem,
     TitleItem,
-    UnorderedList,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
@@ -162,7 +161,11 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
             text_inner = self._prepare_content(item.text)
-            text = get_html_tag_with_text_direction(html_tag="li", text=text_inner)
+            text = (
+                get_html_tag_with_text_direction(html_tag="li", text=text_inner)
+                if text_inner
+                else ""
+            )
 
         elif is_inline_scope:
             text = self._prepare_content(item.text)
@@ -680,7 +683,7 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
     def serialize(
         self,
         *,
-        item: Union[UnorderedList, OrderedList],
+        item: ListGroup,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
@@ -716,7 +719,7 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             ]
         )
         if text_res:
-            tag = "ol" if isinstance(item, OrderedList) else "ul"
+            tag = "ol" if item.first_item_is_enumerated(doc) else "ul"
             text_res = f"<{tag}>\n{text_res}\n</{tag}>"
 
         return create_ser_result(text=text_res, span_source=parts)

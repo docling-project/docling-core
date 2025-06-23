@@ -1020,6 +1020,56 @@
       "title": "KeyValueItem",
       "type": "object"
     },
+    "ListGroup": {
+      "additionalProperties": false,
+      "description": "ListGroup.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "name": {
+          "default": "group",
+          "title": "Name",
+          "type": "string"
+        },
+        "label": {
+          "const": "list",
+          "default": "list",
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "self_ref"
+      ],
+      "title": "ListGroup",
+      "type": "object"
+    },
     "ListItem": {
       "additionalProperties": false,
       "description": "SectionItem.",
@@ -1141,56 +1191,6 @@
         "content"
       ],
       "title": "MiscAnnotation",
-      "type": "object"
-    },
-    "OrderedList": {
-      "additionalProperties": false,
-      "description": "OrderedList.",
-      "properties": {
-        "self_ref": {
-          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
-          "title": "Self Ref",
-          "type": "string"
-        },
-        "parent": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/RefItem"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "children": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/RefItem"
-          },
-          "title": "Children",
-          "type": "array"
-        },
-        "content_layer": {
-          "$ref": "#/$defs/ContentLayer",
-          "default": "body"
-        },
-        "name": {
-          "default": "group",
-          "title": "Name",
-          "type": "string"
-        },
-        "label": {
-          "const": "ordered_list",
-          "default": "ordered_list",
-          "title": "Label",
-          "type": "string"
-        }
-      },
-      "required": [
-        "self_ref"
-      ],
-      "title": "OrderedList",
       "type": "object"
     },
     "PageItem": {
@@ -2251,56 +2251,6 @@
       ],
       "title": "TitleItem",
       "type": "object"
-    },
-    "UnorderedList": {
-      "additionalProperties": false,
-      "description": "UnorderedList.",
-      "properties": {
-        "self_ref": {
-          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
-          "title": "Self Ref",
-          "type": "string"
-        },
-        "parent": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/RefItem"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "children": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/RefItem"
-          },
-          "title": "Children",
-          "type": "array"
-        },
-        "content_layer": {
-          "$ref": "#/$defs/ContentLayer",
-          "default": "body"
-        },
-        "name": {
-          "default": "group",
-          "title": "Name",
-          "type": "string"
-        },
-        "label": {
-          "const": "list",
-          "default": "list",
-          "title": "Label",
-          "type": "string"
-        }
-      },
-      "required": [
-        "self_ref"
-      ],
-      "title": "UnorderedList",
-      "type": "object"
     }
   },
   "description": "DoclingDocument.",
@@ -2312,7 +2262,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.4.0",
+      "default": "1.5.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"
@@ -2360,10 +2310,7 @@
       "items": {
         "anyOf": [
           {
-            "$ref": "#/$defs/OrderedList"
-          },
-          {
-            "$ref": "#/$defs/UnorderedList"
+            "$ref": "#/$defs/ListGroup"
           },
           {
             "$ref": "#/$defs/InlineGroup"

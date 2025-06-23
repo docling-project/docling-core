@@ -26,7 +26,6 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.document import ContentLayer, GroupItem, ListItem, TableData
-from docling_core.types.doc.labels import GroupLabel
 from docling_core.types.legacy_doc.base import (
     BaseCell,
     BaseText,
@@ -486,7 +485,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
                 item_type in "list-item-level-1" or item.name in {"list", "list-item"}
             ):
                 if current_list is None:
-                    current_list = doc.add_group(label=GroupLabel.LIST, name="list")
+                    current_list = doc.add_list_group(name="list")
             else:
                 current_list = None
 

@@ -32,6 +32,7 @@ from .document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    ListGroup,
     ListItem,
     MiscAnnotation,
     NodeItem,

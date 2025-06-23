@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "name": "Untitled 1",
   "furniture": {
     "self_ref": "#/furniture",
@@ -46,16 +46,16 @@
         "$ref": "#/groups/4"
       },
       {
-        "$ref": "#/texts/19"
-      },
-      {
-        "$ref": "#/texts/20"
-      },
-      {
         "$ref": "#/texts/21"
       },
       {
         "$ref": "#/texts/22"
+      },
+      {
+        "$ref": "#/texts/23"
+      },
+      {
+        "$ref": "#/texts/24"
       },
       {
         "$ref": "#/key_value_items/0"
@@ -73,10 +73,10 @@
         "$ref": "#/groups/12"
       },
       {
-        "$ref": "#/texts/42"
+        "$ref": "#/texts/44"
       },
       {
-        "$ref": "#/texts/45"
+        "$ref": "#/texts/47"
       }
     ],
     "content_layer": "body",
@@ -166,10 +166,10 @@
           "$ref": "#/texts/12"
         },
         {
-          "$ref": "#/groups/6"
+          "$ref": "#/texts/13"
         },
         {
-          "$ref": "#/groups/7"
+          "$ref": "#/texts/17"
         }
       ],
       "content_layer": "body",
@@ -179,17 +179,17 @@
     {
       "self_ref": "#/groups/6",
       "parent": {
-        "$ref": "#/groups/5"
+        "$ref": "#/texts/13"
       },
       "children": [
-        {
-          "$ref": "#/texts/13"
-        },
         {
           "$ref": "#/texts/14"
         },
         {
           "$ref": "#/texts/15"
+        },
+        {
+          "$ref": "#/texts/16"
         }
       ],
       "content_layer": "body",
@@ -199,17 +199,17 @@
     {
       "self_ref": "#/groups/7",
       "parent": {
-        "$ref": "#/groups/5"
+        "$ref": "#/texts/17"
       },
       "children": [
         {
-          "$ref": "#/texts/16"
-        },
-        {
-          "$ref": "#/texts/17"
-        },
-        {
           "$ref": "#/texts/18"
+        },
+        {
+          "$ref": "#/texts/19"
+        },
+        {
+          "$ref": "#/texts/20"
         }
       ],
       "content_layer": "body",
@@ -222,12 +222,6 @@
         "$ref": "#/body"
       },
       "children": [
-        {
-          "$ref": "#/texts/23"
-        },
-        {
-          "$ref": "#/texts/24"
-        },
         {
           "$ref": "#/texts/25"
         },
@@ -251,6 +245,12 @@
         },
         {
           "$ref": "#/texts/32"
+        },
+        {
+          "$ref": "#/texts/33"
+        },
+        {
+          "$ref": "#/texts/34"
         }
       ],
       "content_layer": "body",
@@ -264,28 +264,8 @@
       },
       "children": [
         {
-          "$ref": "#/texts/33"
-        },
-        {
-          "$ref": "#/texts/34"
-        },
-        {
           "$ref": "#/texts/35"
         },
-        {
-          "$ref": "#/texts/41"
-        }
-      ],
-      "content_layer": "body",
-      "name": "list A",
-      "label": "ordered_list"
-    },
-    {
-      "self_ref": "#/groups/10",
-      "parent": {
-        "$ref": "#/texts/35"
-      },
-      "children": [
         {
           "$ref": "#/texts/36"
         },
@@ -293,15 +273,15 @@
           "$ref": "#/texts/37"
         },
         {
-          "$ref": "#/texts/40"
+          "$ref": "#/texts/43"
         }
       ],
       "content_layer": "body",
-      "name": "list B",
-      "label": "ordered_list"
+      "name": "list A",
+      "label": "list"
     },
     {
-      "self_ref": "#/groups/11",
+      "self_ref": "#/groups/10",
       "parent": {
         "$ref": "#/texts/37"
       },
@@ -313,12 +293,32 @@
           "$ref": "#/texts/39"
         },
         {
-          "$ref": "#/texts/44"
+          "$ref": "#/texts/42"
+        }
+      ],
+      "content_layer": "body",
+      "name": "list B",
+      "label": "list"
+    },
+    {
+      "self_ref": "#/groups/11",
+      "parent": {
+        "$ref": "#/texts/39"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/40"
+        },
+        {
+          "$ref": "#/texts/41"
+        },
+        {
+          "$ref": "#/texts/46"
         }
       ],
       "content_layer": "body",
       "name": "list C",
-      "label": "ordered_list"
+      "label": "list"
     },
     {
       "self_ref": "#/groups/12",
@@ -327,7 +327,7 @@
       },
       "children": [
         {
-          "$ref": "#/texts/43"
+          "$ref": "#/texts/45"
         }
       ],
       "content_layer": "body",
@@ -520,6 +520,24 @@
     {
       "self_ref": "#/texts/13",
       "parent": {
+        "$ref": "#/groups/5"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/6"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/14",
+      "parent": {
         "$ref": "#/groups/6"
       },
       "children": [],
@@ -530,7 +548,7 @@
       "text": "Here a code snippet:"
     },
     {
-      "self_ref": "#/texts/14",
+      "self_ref": "#/texts/15",
       "parent": {
         "$ref": "#/groups/6"
       },
@@ -546,7 +564,7 @@
       "code_language": "unknown"
     },
     {
-      "self_ref": "#/texts/15",
+      "self_ref": "#/texts/16",
       "parent": {
         "$ref": "#/groups/6"
       },
@@ -558,7 +576,25 @@
       "text": "(to be displayed inline)"
     },
     {
-      "self_ref": "#/texts/16",
+      "self_ref": "#/texts/17",
+      "parent": {
+        "$ref": "#/groups/5"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/7"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/18",
       "parent": {
         "$ref": "#/groups/7"
       },
@@ -570,7 +606,7 @@
       "text": "Here a formula:"
     },
     {
-      "self_ref": "#/texts/17",
+      "self_ref": "#/texts/19",
       "parent": {
         "$ref": "#/groups/7"
       },
@@ -582,7 +618,7 @@
       "text": "E=mc^2"
     },
     {
-      "self_ref": "#/texts/18",
+      "self_ref": "#/texts/20",
       "parent": {
         "$ref": "#/groups/7"
       },
@@ -594,7 +630,7 @@
       "text": "(to be displayed inline)"
     },
     {
-      "self_ref": "#/texts/19",
+      "self_ref": "#/texts/21",
       "parent": {
         "$ref": "#/body"
       },
@@ -606,7 +642,7 @@
       "text": "Here a code block:"
     },
     {
-      "self_ref": "#/texts/20",
+      "self_ref": "#/texts/22",
       "parent": {
         "$ref": "#/body"
       },
@@ -622,7 +658,7 @@
       "code_language": "unknown"
     },
     {
-      "self_ref": "#/texts/21",
+      "self_ref": "#/texts/23",
       "parent": {
         "$ref": "#/body"
       },
@@ -634,7 +670,7 @@
       "text": "Here a formula block:"
     },
     {
-      "self_ref": "#/texts/22",
+      "self_ref": "#/texts/24",
       "parent": {
         "$ref": "#/body"
       },
@@ -646,7 +682,7 @@
       "text": "E=mc^2"
     },
     {
-      "self_ref": "#/texts/23",
+      "self_ref": "#/texts/25",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -658,7 +694,7 @@
       "text": "Some formatting chops:"
     },
     {
-      "self_ref": "#/texts/24",
+      "self_ref": "#/texts/26",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -677,7 +713,7 @@
       }
     },
     {
-      "self_ref": "#/texts/25",
+      "self_ref": "#/texts/27",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -696,7 +732,7 @@
       }
     },
     {
-      "self_ref": "#/texts/26",
+      "self_ref": "#/texts/28",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -715,7 +751,7 @@
       }
     },
     {
-      "self_ref": "#/texts/27",
+      "self_ref": "#/texts/29",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -734,7 +770,7 @@
       }
     },
     {
-      "self_ref": "#/texts/28",
+      "self_ref": "#/texts/30",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -753,7 +789,7 @@
       }
     },
     {
-      "self_ref": "#/texts/29",
+      "self_ref": "#/texts/31",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -772,7 +808,7 @@
       }
     },
     {
-      "self_ref": "#/texts/30",
+      "self_ref": "#/texts/32",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -785,7 +821,7 @@
       "hyperlink": "."
     },
     {
-      "self_ref": "#/texts/31",
+      "self_ref": "#/texts/33",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -797,7 +833,7 @@
       "text": "&"
     },
     {
-      "self_ref": "#/texts/32",
+      "self_ref": "#/texts/34",
       "parent": {
         "$ref": "#/groups/8"
       },
@@ -817,7 +853,7 @@
       "hyperlink": "https://github.com/DS4SD/docling"
     },
     {
-      "self_ref": "#/texts/33",
+      "self_ref": "#/texts/35",
       "parent": {
         "$ref": "#/groups/9"
       },
@@ -828,10 +864,10 @@
       "orig": "Item 1 in A",
       "text": "Item 1 in A",
       "enumerated": true,
-      "marker": "-"
+      "marker": "1."
     },
     {
-      "self_ref": "#/texts/34",
+      "self_ref": "#/texts/36",
       "parent": {
         "$ref": "#/groups/9"
       },
@@ -842,10 +878,10 @@
       "orig": "Item 2 in A",
       "text": "Item 2 in A",
       "enumerated": true,
-      "marker": "-"
+      "marker": "2."
     },
     {
-      "self_ref": "#/texts/35",
+      "self_ref": "#/texts/37",
       "parent": {
         "$ref": "#/groups/9"
       },
@@ -860,10 +896,10 @@
       "orig": "Item 3 in A",
       "text": "Item 3 in A",
       "enumerated": true,
-      "marker": "-"
+      "marker": "3."
     },
     {
-      "self_ref": "#/texts/36",
+      "self_ref": "#/texts/38",
       "parent": {
         "$ref": "#/groups/10"
       },
@@ -874,10 +910,10 @@
       "orig": "Item 1 in B",
       "text": "Item 1 in B",
       "enumerated": true,
-      "marker": "-"
+      "marker": "1."
     },
     {
-      "self_ref": "#/texts/37",
+      "self_ref": "#/texts/39",
       "parent": {
         "$ref": "#/groups/10"
       },
@@ -892,10 +928,10 @@
       "orig": "Item 2 in B",
       "text": "Item 2 in B",
       "enumerated": true,
-      "marker": "-"
+      "marker": "2."
     },
     {
-      "self_ref": "#/texts/38",
+      "self_ref": "#/texts/40",
       "parent": {
         "$ref": "#/groups/11"
       },
@@ -906,10 +942,10 @@
       "orig": "Item 1 in C",
       "text": "Item 1 in C",
       "enumerated": true,
-      "marker": "-"
+      "marker": "1."
     },
     {
-      "self_ref": "#/texts/39",
+      "self_ref": "#/texts/41",
       "parent": {
         "$ref": "#/groups/11"
       },
@@ -920,10 +956,10 @@
       "orig": "Item 2 in C",
       "text": "Item 2 in C",
       "enumerated": true,
-      "marker": "-"
+      "marker": "2."
     },
     {
-      "self_ref": "#/texts/40",
+      "self_ref": "#/texts/42",
       "parent": {
         "$ref": "#/groups/10"
       },
@@ -934,10 +970,10 @@
       "orig": "Item 3 in B",
       "text": "Item 3 in B",
       "enumerated": true,
-      "marker": "-"
+      "marker": "3."
     },
     {
-      "self_ref": "#/texts/41",
+      "self_ref": "#/texts/43",
       "parent": {
         "$ref": "#/groups/9"
       },
@@ -948,10 +984,10 @@
       "orig": "Item 4 in A",
       "text": "Item 4 in A",
       "enumerated": true,
-      "marker": "-"
+      "marker": "4."
     },
     {
-      "self_ref": "#/texts/42",
+      "self_ref": "#/texts/44",
       "parent": {
         "$ref": "#/body"
       },
@@ -963,7 +999,7 @@
       "text": "The end."
     },
     {
-      "self_ref": "#/texts/43",
+      "self_ref": "#/texts/45",
       "parent": {
         "$ref": "#/groups/12"
       },
@@ -977,7 +1013,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/44",
+      "self_ref": "#/texts/46",
       "parent": {
         "$ref": "#/groups/11"
       },
@@ -991,7 +1027,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/45",
+      "self_ref": "#/texts/47",
       "parent": {
         "$ref": "#/body"
       },

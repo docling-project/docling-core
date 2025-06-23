@@ -18,7 +18,7 @@ groups:
 - children:
   - $ref: '#/texts/0'
   content_layer: body
-  label: ordered_list
+  label: list
   name: group
   parent:
     $ref: '#/body'
@@ -81,4 +81,4 @@ texts:
   prov: []
   self_ref: '#/texts/3'
   text: there
-version: 1.4.0
+version: 1.5.0

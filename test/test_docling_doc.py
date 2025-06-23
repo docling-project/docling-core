@@ -763,7 +763,7 @@ def _construct_doc() -> DoclingDocument:
 
     doc = DoclingDocument(name="Untitled 1")
 
-    leading_list = doc.add_group(parent=None, label=GroupLabel.LIST)
+    leading_list = doc.add_list_group(parent=None)
     doc.add_list_item(parent=leading_list, text="item of leading list")
 
     title = doc.add_title(
@@ -789,7 +789,7 @@ def _construct_doc() -> DoclingDocument:
         text="This paper introduces the biggest invention ever made. ...",
     )
 
-    mylist_level_1 = doc.add_group(parent=chapter1, label=GroupLabel.LIST)
+    mylist_level_1 = doc.add_list_group(parent=chapter1)
 
     doc.add_list_item(
         parent=mylist_level_1,
@@ -801,24 +801,41 @@ def _construct_doc() -> DoclingDocument:
         text="list item 3",
     )
 
-    mylist_level_2 = doc.add_group(parent=li3, label=GroupLabel.ORDERED_LIST)
+    mylist_level_2 = doc.add_list_group(parent=li3)
 
+    i = 1
     doc.add_list_item(
         parent=mylist_level_2,
         text="list item 3.a",
+        enumerated=True,
+        marker=f"{i}.",
     )
-    doc.add_list_item(parent=mylist_level_2, text="list item 3.b")
+    i += 1
+    doc.add_list_item(
+        parent=mylist_level_2,
+        text="list item 3.b",
+        enumerated=True,
+        marker=f"{i}.",
+    )
+    i += 1
     li3c = doc.add_list_item(
         parent=mylist_level_2,
         text="list item 3.c",
+        enumerated=True,
+        marker=f"{i}.",
     )
+    i += 1
 
-    mylist_level_3 = doc.add_group(parent=li3c, label=GroupLabel.ORDERED_LIST)
+    mylist_level_3 = doc.add_list_group(parent=li3c)
 
+    j = 1
     doc.add_list_item(
         parent=mylist_level_3,
         text="list item 3.c.i",
+        enumerated=True,
+        marker=f"{j}.",
     )
+    j += 1
 
     doc.add_list_item(
         parent=mylist_level_1,
@@ -929,24 +946,25 @@ def _construct_doc() -> DoclingDocument:
         image=ImageRef.from_pil(image=fig2_image, dpi=72), caption=fig_caption_2
     )
 
-    g0 = doc.add_group(label=GroupLabel.LIST, parent=None)
+    g0 = doc.add_list_group(parent=None)
     doc.add_list_item(text="item 1 of list", parent=g0)
 
     # an empty list
-    doc.add_group(label=GroupLabel.LIST, parent=None)
+    doc.add_list_group(parent=None)
 
-    g1 = doc.add_group(label=GroupLabel.LIST, parent=None)
+    g1 = doc.add_list_group(parent=None)
     doc.add_list_item(text="item 1 of list after empty list", parent=g1)
     doc.add_list_item(text="item 2 of list after empty list", parent=g1)
 
-    g2 = doc.add_group(label=GroupLabel.LIST, parent=None)
+    g2 = doc.add_list_group(parent=None)
     doc.add_list_item(text="item 1 of neighboring list", parent=g2)
     nli2 = doc.add_list_item(text="item 2 of neighboring list", parent=g2)
 
-    g2_subgroup = doc.add_group(label=GroupLabel.LIST, parent=nli2)
+    g2_subgroup = doc.add_list_group(parent=nli2)
     doc.add_list_item(text="item 1 of sub list", parent=g2_subgroup)
 
-    inline1 = doc.add_group(label=GroupLabel.INLINE, parent=g2_subgroup)
+    g2_subgroup_li_1 = doc.add_list_item(text="", parent=g2_subgroup)
+    inline1 = doc.add_inline_group(parent=g2_subgroup_li_1)
     doc.add_text(
         label=DocItemLabel.TEXT,
         text="Here a code snippet:",
@@ -957,7 +975,8 @@ def _construct_doc() -> DoclingDocument:
         label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1
     )
 
-    inline2 = doc.add_group(label=GroupLabel.INLINE, parent=g2_subgroup)
+    g2_subgroup_li_2 = doc.add_list_item(text="", parent=g2_subgroup)
+    inline2 = doc.add_inline_group(parent=g2_subgroup_li_2)
     doc.add_text(
         label=DocItemLabel.TEXT,
         text="Here a formula:",
@@ -1003,7 +1022,7 @@ def _construct_doc() -> DoclingDocument:
 
     doc.add_form(graph=graph)
 
-    inline_fmt = doc.add_group(label=GroupLabel.INLINE)
+    inline_fmt = doc.add_inline_group()
     doc.add_text(
         label=DocItemLabel.TEXT, text="Some formatting chops:", parent=inline_fmt
     )
@@ -1065,26 +1084,52 @@ def _construct_doc() -> DoclingDocument:
         hyperlink=AnyUrl("https://github.com/DS4SD/docling"),
     )
 
-    parent_A = doc.add_group(name="list A", label=GroupLabel.ORDERED_LIST)
-    doc.add_list_item(text="Item 1 in A", enumerated=True, parent=parent_A)
-    doc.add_list_item(text="Item 2 in A", enumerated=True, parent=parent_A)
-    item_A_3 = doc.add_list_item(text="Item 3 in A", enumerated=True, parent=parent_A)
-
-    parent_B = doc.add_group(
-        parent=item_A_3, name="list B", label=GroupLabel.ORDERED_LIST
+    parent_A = doc.add_list_group(name="list A")
+    i_A = 1
+    doc.add_list_item(
+        text="Item 1 in A", enumerated=True, marker=f"{i_A}.", parent=parent_A
     )
-    doc.add_list_item(text="Item 1 in B", enumerated=True, parent=parent_B)
-    item_B_2 = doc.add_list_item(text="Item 2 in B", enumerated=True, parent=parent_B)
-
-    parent_C = doc.add_group(
-        parent=item_B_2, name="list C", label=GroupLabel.ORDERED_LIST
+    i_A += 1
+    doc.add_list_item(
+        text="Item 2 in A", enumerated=True, marker=f"{i_A}.", parent=parent_A
     )
-    doc.add_list_item(text="Item 1 in C", enumerated=True, parent=parent_C)
-    doc.add_list_item(text="Item 2 in C", enumerated=True, parent=parent_C)
+    i_A += 1
+    item_A_3 = doc.add_list_item(
+        text="Item 3 in A", enumerated=True, marker=f"{i_A}.", parent=parent_A
+    )
+    i_A += 1
 
-    doc.add_list_item(text="Item 3 in B", enumerated=True, parent=parent_B)
+    parent_B = doc.add_list_group(parent=item_A_3, name="list B")
+    i_B = 1
+    doc.add_list_item(
+        text="Item 1 in B", enumerated=True, marker=f"{i_B}.", parent=parent_B
+    )
+    i_B += 1
+    item_B_2 = doc.add_list_item(
+        text="Item 2 in B", enumerated=True, marker=f"{i_B}.", parent=parent_B
+    )
+    i_B += 1
 
-    doc.add_list_item(text="Item 4 in A", enumerated=True, parent=parent_A)
+    parent_C = doc.add_list_group(parent=item_B_2, name="list C")
+    i_C = 1
+    doc.add_list_item(
+        text="Item 1 in C", enumerated=True, marker=f"{i_C}.", parent=parent_C
+    )
+    i_C += 1
+    doc.add_list_item(
+        text="Item 2 in C", enumerated=True, marker=f"{i_C}.", parent=parent_C
+    )
+    i_C += 1
+
+    doc.add_list_item(
+        text="Item 3 in B", enumerated=True, marker=f"{i_B}.", parent=parent_B
+    )
+    i_B += 1
+
+    doc.add_list_item(
+        text="Item 4 in A", enumerated=True, marker=f"{i_A}.", parent=parent_A
+    )
+    i_A += 1
 
     with pytest.warns(DeprecationWarning, match="list group"):
         doc.add_list_item(text="List item without parent list group")
