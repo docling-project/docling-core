@@ -2861,7 +2861,7 @@ class DoclingDocument(BaseModel):
             if (
                 root_is_picture
                 and not traverse_pictures
-                and isinstance(child, DocItem)
+                and isinstance(child, NodeItem)
                 and child.self_ref not in allowed_pic_refs
             ):
                 continue
