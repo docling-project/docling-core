@@ -168,6 +168,15 @@ def test_md_cross_page_list_page_break_p2():
     verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
 
 
+def test_md_picture_children():
+    src = Path("./test/data/doc/2305.03393v1.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.out.md", actual=actual)
+
+
 def test_html_charts():
     src = Path("./test/data/doc/barchart.json")
     doc = DoclingDocument.load_from_json(src)
@@ -443,6 +452,15 @@ def test_html_include_annotations_true():
 
 def test_doctags_inline_loc_tags():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.out.dt", actual=actual)
+
+
+def test_doctags_picture_children():
+    src = Path("./test/data/doc/2305.03393v1.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = DocTagsDocSerializer(doc=doc)
