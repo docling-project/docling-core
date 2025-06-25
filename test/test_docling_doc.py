@@ -764,7 +764,7 @@ def _construct_doc() -> DoclingDocument:
     doc = DoclingDocument(name="Untitled 1")
 
     leading_list = doc.add_list_group(parent=None)
-    doc.add_list_item(parent=leading_list, text="item of leading list")
+    doc.add_list_item(parent=leading_list, text="item of leading list", marker="■")
 
     title = doc.add_title(
         text="Title of the Document"
@@ -791,15 +791,9 @@ def _construct_doc() -> DoclingDocument:
 
     mylist_level_1 = doc.add_list_group(parent=chapter1)
 
-    doc.add_list_item(
-        parent=mylist_level_1,
-        text="list item 1",
-    )
-    doc.add_list_item(parent=mylist_level_1, text="list item 2")
-    li3 = doc.add_list_item(
-        parent=mylist_level_1,
-        text="list item 3",
-    )
+    doc.add_list_item(parent=mylist_level_1, text="list item 1", marker="■")
+    doc.add_list_item(parent=mylist_level_1, text="list item 2", marker="■")
+    li3 = doc.add_list_item(parent=mylist_level_1, text="list item 3", marker="■")
 
     mylist_level_2 = doc.add_list_group(parent=li3)
 
@@ -837,10 +831,7 @@ def _construct_doc() -> DoclingDocument:
     )
     j += 1
 
-    doc.add_list_item(
-        parent=mylist_level_1,
-        text="list item 4",
-    )
+    doc.add_list_item(parent=mylist_level_1, text="list item 4", marker="■")
 
     tab_caption = doc.add_text(
         label=DocItemLabel.CAPTION, text="This is the caption of table 1."
@@ -947,23 +938,23 @@ def _construct_doc() -> DoclingDocument:
     )
 
     g0 = doc.add_list_group(parent=None)
-    doc.add_list_item(text="item 1 of list", parent=g0)
+    doc.add_list_item(text="item 1 of list", parent=g0, marker="■")
 
     # an empty list
     doc.add_list_group(parent=None)
 
     g1 = doc.add_list_group(parent=None)
-    doc.add_list_item(text="item 1 of list after empty list", parent=g1)
-    doc.add_list_item(text="item 2 of list after empty list", parent=g1)
+    doc.add_list_item(text="item 1 of list after empty list", parent=g1, marker="*")
+    doc.add_list_item(text="item 2 of list after empty list", parent=g1, marker="")
 
     g2 = doc.add_list_group(parent=None)
-    doc.add_list_item(text="item 1 of neighboring list", parent=g2)
-    nli2 = doc.add_list_item(text="item 2 of neighboring list", parent=g2)
+    doc.add_list_item(text="item 1 of neighboring list", parent=g2, marker="■")
+    nli2 = doc.add_list_item(text="item 2 of neighboring list", parent=g2, marker="■")
 
     g2_subgroup = doc.add_list_group(parent=nli2)
-    doc.add_list_item(text="item 1 of sub list", parent=g2_subgroup)
+    doc.add_list_item(text="item 1 of sub list", parent=g2_subgroup, marker="□")
 
-    g2_subgroup_li_1 = doc.add_list_item(text="", parent=g2_subgroup)
+    g2_subgroup_li_1 = doc.add_list_item(text="", parent=g2_subgroup, marker="□")
     inline1 = doc.add_inline_group(parent=g2_subgroup_li_1)
     doc.add_text(
         label=DocItemLabel.TEXT,
@@ -975,7 +966,7 @@ def _construct_doc() -> DoclingDocument:
         label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1
     )
 
-    g2_subgroup_li_2 = doc.add_list_item(text="", parent=g2_subgroup)
+    g2_subgroup_li_2 = doc.add_list_item(text="", parent=g2_subgroup, marker="□")
     inline2 = doc.add_inline_group(parent=g2_subgroup_li_2)
     doc.add_text(
         label=DocItemLabel.TEXT,
@@ -1085,19 +1076,15 @@ def _construct_doc() -> DoclingDocument:
     )
 
     parent_A = doc.add_list_group(name="list A")
-    i_A = 1
     doc.add_list_item(
-        text="Item 1 in A", enumerated=True, marker=f"{i_A}.", parent=parent_A
+        text="Item 1 in A", enumerated=True, marker="(i)", parent=parent_A
     )
-    i_A += 1
     doc.add_list_item(
-        text="Item 2 in A", enumerated=True, marker=f"{i_A}.", parent=parent_A
+        text="Item 2 in A", enumerated=True, marker="(ii)", parent=parent_A
     )
-    i_A += 1
     item_A_3 = doc.add_list_item(
-        text="Item 3 in A", enumerated=True, marker=f"{i_A}.", parent=parent_A
+        text="Item 3 in A", enumerated=True, marker="(iii)", parent=parent_A
     )
-    i_A += 1
 
     parent_B = doc.add_list_group(parent=item_A_3, name="list B")
     i_B = 1
@@ -1106,7 +1093,7 @@ def _construct_doc() -> DoclingDocument:
     )
     i_B += 1
     item_B_2 = doc.add_list_item(
-        text="Item 2 in B", enumerated=True, marker=f"{i_B}.", parent=parent_B
+        text="Item 2 in B", enumerated=True, marker="42.", parent=parent_B
     )
     i_B += 1
 
@@ -1127,9 +1114,8 @@ def _construct_doc() -> DoclingDocument:
     i_B += 1
 
     doc.add_list_item(
-        text="Item 4 in A", enumerated=True, marker=f"{i_A}.", parent=parent_A
+        text="Item 4 in A", enumerated=True, marker="(iv)", parent=parent_A
     )
-    i_A += 1
 
     with pytest.warns(DeprecationWarning, match="list group"):
         doc.add_list_item(text="List item without parent list group")

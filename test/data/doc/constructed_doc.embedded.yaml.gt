@@ -473,7 +473,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A0"
   orig: item of leading list
   parent:
     $ref: '#/groups/0'
@@ -540,7 +540,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A0"
   orig: list item 1
   parent:
     $ref: '#/groups/2'
@@ -551,7 +551,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A0"
   orig: list item 2
   parent:
     $ref: '#/groups/2'
@@ -563,7 +563,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A0"
   orig: list item 3
   parent:
     $ref: '#/groups/2'
@@ -619,7 +619,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A0"
   orig: list item 4
   parent:
     $ref: '#/groups/2'
@@ -657,7 +657,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A0"
   orig: item 1 of list
   parent:
     $ref: '#/groups/5'
@@ -668,7 +668,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: '*'
   orig: item 1 of list after empty list
   parent:
     $ref: '#/groups/7'
@@ -690,7 +690,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A0"
   orig: item 1 of neighboring list
   parent:
     $ref: '#/groups/8'
@@ -702,7 +702,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A0"
   orig: item 2 of neighboring list
   parent:
     $ref: '#/groups/8'
@@ -713,7 +713,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A1"
   orig: item 1 of sub list
   parent:
     $ref: '#/groups/9'
@@ -725,7 +725,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A1"
   orig: ''
   parent:
     $ref: '#/groups/9'
@@ -768,7 +768,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: "\u25A1"
   orig: ''
   parent:
     $ref: '#/groups/9'
@@ -980,7 +980,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '1.'
+  marker: (i)
   orig: Item 1 in A
   parent:
     $ref: '#/groups/13'
@@ -991,7 +991,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '2.'
+  marker: (ii)
   orig: Item 2 in A
   parent:
     $ref: '#/groups/13'
@@ -1003,7 +1003,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '3.'
+  marker: (iii)
   orig: Item 3 in A
   parent:
     $ref: '#/groups/13'
@@ -1026,7 +1026,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '2.'
+  marker: '42.'
   orig: Item 2 in B
   parent:
     $ref: '#/groups/14'
@@ -1070,7 +1070,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '4.'
+  marker: (iv)
   orig: Item 4 in A
   parent:
     $ref: '#/groups/13'

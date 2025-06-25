@@ -7,6 +7,7 @@
 import html
 import re
 import textwrap
+from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -78,6 +79,16 @@ def _get_annotation_ser_result(
     )
 
 
+class OrigListItemMarkerMode(str, Enum):
+    """Display mode for original list item marker."""
+
+    NEVER = "never"
+    ALWAYS = "always"
+    ALNUM = "alnum"
+    # ALNUM uses original marker only when it contains alphanumeric chars, in which case
+    # it prevents wrapping with additional numeric marker, i.e wraps with '-', if needed
+
+
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
@@ -92,6 +103,8 @@ class MarkdownParams(CommonParams):
     escape_html: bool = True
     include_annotations: bool = True
     mark_annotations: bool = False
+    orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.ALNUM
+    ensure_valid_list_item_marker: bool = True
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -141,8 +154,51 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 )
 
             if isinstance(item, ListItem):
-                prefix = f"{item.marker} " if item.marker else ""
-                text_part = f"{prefix}{text}"
+                pieces: list[str] = []
+                case_alnum = (
+                    params.orig_list_item_marker_mode == OrigListItemMarkerMode.ALNUM
+                    and bool(re.search(r"[a-zA-Z0-9]", item.marker))
+                )
+                case_already_valid = (
+                    params.ensure_valid_list_item_marker
+                    and params.orig_list_item_marker_mode
+                    != OrigListItemMarkerMode.NEVER
+                    and (
+                        item.marker in ["-", "*", "+"]
+                        or re.fullmatch(r"\d+\.", item.marker)
+                    )
+                )
+
+                # wrap with outer marker (if applicable)
+                if params.ensure_valid_list_item_marker and not case_already_valid:
+                    assert item.parent and isinstance(
+                        (list_group := item.parent.resolve(doc)), ListGroup
+                    )
+                    if (
+                        list_group.first_item_is_enumerated(doc)
+                        and params.orig_list_item_marker_mode
+                        != OrigListItemMarkerMode.ALNUM
+                    ):
+                        pos = -1
+                        for i, child in enumerate(list_group.children):
+                            if child.resolve(doc) == item:
+                                pos = i
+                                break
+                        md_marker = f"{pos + 1}."
+                    else:
+                        md_marker = "-"
+                    pieces.append(md_marker)
+
+                # include original marker (if applicable)
+                if item.marker and (
+                    params.orig_list_item_marker_mode == OrigListItemMarkerMode.ALWAYS
+                    or case_alnum
+                    or case_already_valid
+                ):
+                    pieces.append(item.marker)
+
+                pieces.append(text)
+                text_part = " ".join(pieces)
             else:
                 num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
                 text_part = f"{num_hashes * '#'} {text}"

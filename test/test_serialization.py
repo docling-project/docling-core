@@ -20,6 +20,7 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
     MarkdownTableSerializer,
+    OrigListItemMarkerMode,
     _get_annotation_ser_result,
 )
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
@@ -28,6 +29,7 @@ from docling_core.types.doc.document import DoclingDocument, MiscAnnotation, Tab
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
+from .test_docling_doc import _construct_doc
 
 
 class CustomAnnotationTableSerializer(MarkdownTableSerializer):
@@ -270,6 +272,27 @@ def test_md_pb_placeholder_and_page_filter():
     verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
 
 
+def test_md_list_item_markers():
+    doc = _construct_doc()
+    root_dir = Path("./test/data/doc")
+    for mode in OrigListItemMarkerMode:
+        for valid in [False, True]:
+
+            ser = MarkdownDocSerializer(
+                doc=doc,
+                params=MarkdownParams(
+                    orig_list_item_marker_mode=mode,
+                    ensure_valid_list_item_marker=valid,
+                ),
+            )
+            actual = ser.serialize().text
+            verify(
+                root_dir
+                / f"constructed_mode_{str(mode.value).lower()}_valid_{str(valid).lower()}.gt.md",
+                actual=actual,
+            )
+
+
 def test_md_include_annotations_false():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
@@ -439,6 +462,24 @@ def test_html_include_annotations_true():
         exp_file=src.parent / f"{src.stem}_p1_include_annotations_true.gt.html",
         actual=actual,
     )
+
+
+def test_html_list_item_markers():
+    doc = _construct_doc()
+    root_dir = Path("./test/data/doc")
+    for orig in [False, True]:
+
+        ser = HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(
+                show_original_list_item_marker=orig,
+            ),
+        )
+        actual = ser.serialize().text
+        verify(
+            root_dir / f"constructed_orig_{str(orig).lower()}.gt.html",
+            actual=actual,
+        )
 
 
 def test_doctags_inline_loc_tags():

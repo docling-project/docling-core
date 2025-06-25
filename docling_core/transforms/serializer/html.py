@@ -116,6 +116,8 @@ class HTMLParams(CommonParams):
 
     include_annotations: bool = True
 
+    show_original_list_item_marker: bool = True
+
 
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     """HTML-specific text item serializer."""
@@ -162,7 +164,15 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             # List items are handled by list serializer
             text_inner = self._prepare_content(item.text)
             text = (
-                get_html_tag_with_text_direction(html_tag="li", text=text_inner)
+                get_html_tag_with_text_direction(
+                    html_tag="li",
+                    text=text_inner,
+                    attrs=(
+                        {"style": f"list-style-type: '{item.marker} ';"}
+                        if params.show_original_list_item_marker
+                        else {}
+                    ),
+                )
                 if text_inner
                 else ""
             )
@@ -693,7 +703,7 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
     ) -> SerializationResult:
         """Serializes a list to HTML."""
         my_visited: set[str] = visited if visited is not None else set()
-
+        params = HTMLParams(**kwargs)
         # Get all child parts
         parts = doc_serializer.get_parts(
             item=item,
@@ -709,11 +719,44 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
                 (
                     p.text
                     if (
-                        (p.text.startswith("<li>") and p.text.endswith("</li>"))
-                        or (p.text.startswith("<ol>") and p.text.endswith("</ol>"))
-                        or (p.text.startswith("<ul>") and p.text.endswith("</ul>"))
+                        (
+                            p.text.startswith(("<li>", "<li "))
+                            and p.text.endswith("</li>")
+                        )
+                        or (
+                            p.text.startswith(("<ol>", "<ol "))
+                            and p.text.endswith("</ol>")
+                        )
+                        or (
+                            p.text.startswith(("<ul>", "<ul "))
+                            and p.text.endswith("</ul>")
+                        )
                     )
-                    else f"<li>{p.text}</li>"
+                    else (
+                        get_html_tag_with_text_direction(
+                            html_tag="li",
+                            text=p.text,
+                            attrs=(
+                                {
+                                    "style": f"list-style-type: '{grandparent_item.marker} ';"
+                                }
+                                if params.show_original_list_item_marker
+                                else {}
+                            ),
+                        )
+                        if p.spans
+                        and p.spans[0].item.parent
+                        and isinstance(
+                            (parent_item := p.spans[0].item.parent.resolve(doc)),
+                            InlineGroup,
+                        )
+                        and parent_item.parent
+                        and isinstance(
+                            (grandparent_item := parent_item.parent.resolve(doc)),
+                            ListItem,
+                        )
+                        else f"<li>{p.text}</li>"
+                    )
                 )
                 for p in parts
             ]

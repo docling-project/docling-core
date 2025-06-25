@@ -425,7 +425,7 @@
       "orig": "item of leading list",
       "text": "item of leading list",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a0"
     },
     {
       "self_ref": "#/texts/1",
@@ -507,7 +507,7 @@
       "orig": "list item 1",
       "text": "list item 1",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a0"
     },
     {
       "self_ref": "#/texts/7",
@@ -521,7 +521,7 @@
       "orig": "list item 2",
       "text": "list item 2",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a0"
     },
     {
       "self_ref": "#/texts/8",
@@ -539,7 +539,7 @@
       "orig": "list item 3",
       "text": "list item 3",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a0"
     },
     {
       "self_ref": "#/texts/9",
@@ -613,7 +613,7 @@
       "orig": "list item 4",
       "text": "list item 4",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a0"
     },
     {
       "self_ref": "#/texts/14",
@@ -663,7 +663,7 @@
       "orig": "item 1 of list",
       "text": "item 1 of list",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a0"
     },
     {
       "self_ref": "#/texts/18",
@@ -677,7 +677,7 @@
       "orig": "item 1 of list after empty list",
       "text": "item 1 of list after empty list",
       "enumerated": false,
-      "marker": "-"
+      "marker": "*"
     },
     {
       "self_ref": "#/texts/19",
@@ -705,7 +705,7 @@
       "orig": "item 1 of neighboring list",
       "text": "item 1 of neighboring list",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a0"
     },
     {
       "self_ref": "#/texts/21",
@@ -723,7 +723,7 @@
       "orig": "item 2 of neighboring list",
       "text": "item 2 of neighboring list",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a0"
     },
     {
       "self_ref": "#/texts/22",
@@ -737,7 +737,7 @@
       "orig": "item 1 of sub list",
       "text": "item 1 of sub list",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a1"
     },
     {
       "self_ref": "#/texts/23",
@@ -755,7 +755,7 @@
       "orig": "",
       "text": "",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a1"
     },
     {
       "self_ref": "#/texts/24",
@@ -813,7 +813,7 @@
       "orig": "",
       "text": "",
       "enumerated": false,
-      "marker": "-"
+      "marker": "\u25a1"
     },
     {
       "self_ref": "#/texts/28",
@@ -1086,7 +1086,7 @@
       "orig": "Item 1 in A",
       "text": "Item 1 in A",
       "enumerated": true,
-      "marker": "1."
+      "marker": "(i)"
     },
     {
       "self_ref": "#/texts/46",
@@ -1100,7 +1100,7 @@
       "orig": "Item 2 in A",
       "text": "Item 2 in A",
       "enumerated": true,
-      "marker": "2."
+      "marker": "(ii)"
     },
     {
       "self_ref": "#/texts/47",
@@ -1118,7 +1118,7 @@
       "orig": "Item 3 in A",
       "text": "Item 3 in A",
       "enumerated": true,
-      "marker": "3."
+      "marker": "(iii)"
     },
     {
       "self_ref": "#/texts/48",
@@ -1150,7 +1150,7 @@
       "orig": "Item 2 in B",
       "text": "Item 2 in B",
       "enumerated": true,
-      "marker": "2."
+      "marker": "42."
     },
     {
       "self_ref": "#/texts/50",
@@ -1206,7 +1206,7 @@
       "orig": "Item 4 in A",
       "text": "Item 4 in A",
       "enumerated": true,
-      "marker": "4."
+      "marker": "(iv)"
     },
     {
       "self_ref": "#/texts/54",
