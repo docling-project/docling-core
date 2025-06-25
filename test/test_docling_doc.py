@@ -797,39 +797,29 @@ def _construct_doc() -> DoclingDocument:
 
     mylist_level_2 = doc.add_list_group(parent=li3)
 
-    i = 1
     doc.add_list_item(
         parent=mylist_level_2,
         text="list item 3.a",
         enumerated=True,
-        marker=f"{i}.",
     )
-    i += 1
     doc.add_list_item(
         parent=mylist_level_2,
         text="list item 3.b",
         enumerated=True,
-        marker=f"{i}.",
     )
-    i += 1
     li3c = doc.add_list_item(
         parent=mylist_level_2,
         text="list item 3.c",
         enumerated=True,
-        marker=f"{i}.",
     )
-    i += 1
 
     mylist_level_3 = doc.add_list_group(parent=li3c)
 
-    j = 1
     doc.add_list_item(
         parent=mylist_level_3,
         text="list item 3.c.i",
         enumerated=True,
-        marker=f"{j}.",
     )
-    j += 1
 
     doc.add_list_item(parent=mylist_level_1, text="list item 4", marker="■")
 
@@ -1087,31 +1077,16 @@ def _construct_doc() -> DoclingDocument:
     )
 
     parent_B = doc.add_list_group(parent=item_A_3, name="list B")
-    i_B = 1
-    doc.add_list_item(
-        text="Item 1 in B", enumerated=True, marker=f"{i_B}.", parent=parent_B
-    )
-    i_B += 1
+    doc.add_list_item(text="Item 1 in B", enumerated=True, parent=parent_B)
     item_B_2 = doc.add_list_item(
         text="Item 2 in B", enumerated=True, marker="42.", parent=parent_B
     )
-    i_B += 1
 
     parent_C = doc.add_list_group(parent=item_B_2, name="list C")
-    i_C = 1
-    doc.add_list_item(
-        text="Item 1 in C", enumerated=True, marker=f"{i_C}.", parent=parent_C
-    )
-    i_C += 1
-    doc.add_list_item(
-        text="Item 2 in C", enumerated=True, marker=f"{i_C}.", parent=parent_C
-    )
-    i_C += 1
+    doc.add_list_item(text="Item 1 in C", enumerated=True, parent=parent_C)
+    doc.add_list_item(text="Item 2 in C", enumerated=True, parent=parent_C)
 
-    doc.add_list_item(
-        text="Item 3 in B", enumerated=True, marker=f"{i_B}.", parent=parent_B
-    )
-    i_B += 1
+    doc.add_list_item(text="Item 3 in B", enumerated=True, parent=parent_B)
 
     doc.add_list_item(
         text="Item 4 in A", enumerated=True, marker="(iv)", parent=parent_A
