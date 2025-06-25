@@ -76,7 +76,7 @@
         "$ref": "#/groups/13"
       },
       {
-        "$ref": "#/texts/54"
+        "$ref": "#/groups/16"
       },
       {
         "$ref": "#/texts/55"
@@ -401,6 +401,20 @@
       ],
       "content_layer": "body",
       "name": "list C",
+      "label": "list"
+    },
+    {
+      "self_ref": "#/groups/16",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/54"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
       "label": "list"
     }
   ],
@@ -1203,7 +1217,7 @@
     {
       "self_ref": "#/texts/54",
       "parent": {
-        "$ref": "#/body"
+        "$ref": "#/groups/16"
       },
       "children": [],
       "content_layer": "body",

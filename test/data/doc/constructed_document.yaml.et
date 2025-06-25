@@ -76,5 +76,6 @@ Affiliation 2
       73: list_item: Item 2 in C
     74: list_item: Item 3 in B
   75: list_item: Item 4 in A
- 76: list_item: List item without parent list group
- 77: text: The end.
+ 76: list with name=group
+  77: list_item: List item without parent list group
+ 78: text: The end.

@@ -73,7 +73,7 @@
         "$ref": "#/groups/12"
       },
       {
-        "$ref": "#/texts/44"
+        "$ref": "#/texts/45"
       }
     ],
     "content_layer": "body",
@@ -321,7 +321,7 @@
       },
       "children": [
         {
-          "$ref": "#/texts/45"
+          "$ref": "#/texts/44"
         }
       ],
       "content_layer": "body",
@@ -983,18 +983,6 @@
     {
       "self_ref": "#/texts/44",
       "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [],
-      "orig": "The end.",
-      "text": "The end."
-    },
-    {
-      "self_ref": "#/texts/45",
-      "parent": {
         "$ref": "#/groups/12"
       },
       "children": [],
@@ -1005,6 +993,18 @@
       "text": "List item without parent list group",
       "enumerated": false,
       "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/45",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "The end.",
+      "text": "The end."
     }
   ],
   "pictures": [

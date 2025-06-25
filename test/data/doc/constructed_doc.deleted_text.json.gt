@@ -79,7 +79,7 @@
         "$ref": "#/groups/16"
       },
       {
-        "$ref": "#/texts/53"
+        "$ref": "#/texts/54"
       }
     ],
     "content_layer": "body",
@@ -154,10 +154,10 @@
           "$ref": "#/texts/9"
         },
         {
-          "$ref": "#/texts/54"
+          "$ref": "#/texts/55"
         },
         {
-          "$ref": "#/texts/55"
+          "$ref": "#/texts/56"
         },
         {
           "$ref": "#/texts/10"
@@ -407,7 +407,7 @@
       },
       "children": [
         {
-          "$ref": "#/texts/56"
+          "$ref": "#/texts/53"
         }
       ],
       "content_layer": "body",
@@ -1200,6 +1200,20 @@
     {
       "self_ref": "#/texts/53",
       "parent": {
+        "$ref": "#/groups/16"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "List item without parent list group",
+      "text": "List item without parent list group",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/54",
+      "parent": {
         "$ref": "#/body"
       },
       "children": [],
@@ -1210,7 +1224,7 @@
       "text": "The end."
     },
     {
-      "self_ref": "#/texts/54",
+      "self_ref": "#/texts/55",
       "parent": {
         "$ref": "#/groups/3"
       },
@@ -1224,7 +1238,7 @@
       "marker": "-"
     },
     {
-      "self_ref": "#/texts/55",
+      "self_ref": "#/texts/56",
       "parent": {
         "$ref": "#/groups/3"
       },
@@ -1234,20 +1248,6 @@
       "prov": [],
       "orig": "new list item (after)",
       "text": "new list item (after)",
-      "enumerated": false,
-      "marker": "-"
-    },
-    {
-      "self_ref": "#/texts/56",
-      "parent": {
-        "$ref": "#/groups/16"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "list_item",
-      "prov": [],
-      "orig": "List item without parent list group",
-      "text": "List item without parent list group",
       "enumerated": false,
       "marker": "-"
     }

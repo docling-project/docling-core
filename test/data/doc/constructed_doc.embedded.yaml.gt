@@ -22,7 +22,7 @@ body:
   - $ref: '#/groups/12'
   - $ref: '#/groups/13'
   - $ref: '#/groups/16'
-  - $ref: '#/texts/54'
+  - $ref: '#/texts/55'
   content_layer: body
   label: unspecified
   name: _root_
@@ -220,7 +220,7 @@ groups:
     $ref: '#/texts/49'
   self_ref: '#/groups/15'
 - children:
-  - $ref: '#/texts/55'
+  - $ref: '#/texts/54'
   content_layer: body
   label: list
   name: group
@@ -1079,15 +1079,6 @@ texts:
   text: Item 4 in A
 - children: []
   content_layer: body
-  label: text
-  orig: The end.
-  parent:
-    $ref: '#/body'
-  prov: []
-  self_ref: '#/texts/54'
-  text: The end.
-- children: []
-  content_layer: body
   enumerated: false
   label: list_item
   marker: '-'
@@ -1095,6 +1086,15 @@ texts:
   parent:
     $ref: '#/groups/16'
   prov: []
-  self_ref: '#/texts/55'
+  self_ref: '#/texts/54'
   text: List item without parent list group
+- children: []
+  content_layer: body
+  label: text
+  orig: The end.
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/55'
+  text: The end.
 version: 1.5.0

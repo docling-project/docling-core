@@ -2184,7 +2184,7 @@ class DoclingDocument(BaseModel):
         name: Optional[str] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
-    ) -> GroupItem:
+    ) -> ListGroup:
         """add_list_group."""
         _parent = parent or self.body
         cref = f"#/groups/{len(self.groups)}"
@@ -2231,7 +2231,7 @@ class DoclingDocument(BaseModel):
         name: Optional[str] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
-    ) -> GroupItem:
+    ) -> InlineGroup:
         """add_inline_group."""
         _parent = parent or self.body
         cref = f"#/groups/{len(self.groups)}"
@@ -2302,7 +2302,6 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
-        # try_auto_increment: bool = False,
     ):
         """add_list_item.
 
@@ -2315,35 +2314,13 @@ class DoclingDocument(BaseModel):
         """
         if not isinstance(parent, ListGroup):
             warnings.warn(
-                "ListItem's parent must be a list group, creating on the fly.",
+                "ListItem parent must be a list group, creating one on the fly.",
                 DeprecationWarning,
             )
-            # parent = self.add_list_group(parent=parent)
-
-        if not parent:
-            parent = self.body
+            parent = self.add_list_group(parent=parent)
 
         if not orig:
             orig = text
-
-        # if marker is None:
-        #     if try_auto_increment:
-        #         if parent.children:
-        #             last_child = parent.children[-1].resolve(self)
-        #             if (
-        #                 isinstance(last_child, ListItem)
-        #                 and last_child.marker.endswith(".")
-        #             ):
-        #                 try:
-        #                     marker = f"{int(last_child.marker[:-1]) + 1}."
-        #                 except ValueError:
-        #                     _logger.info(
-        #                         f"Auto-incrementing not possible for {last_child.marker}"
-        #                     )
-        #         else:
-        #             marker = "1."
-        #     else:
-        #         marker = "-"
 
         marker = marker or "-"
 
