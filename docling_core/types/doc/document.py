@@ -540,6 +540,9 @@ class DocumentOrigin(BaseModel):
         "text/asciidoc",
         "text/markdown",
         "text/csv",
+        "audio/x-wav",
+        "audio/wav",
+        "audio/mp3",
     ]
 
     @field_validator("binary_hash", mode="before")
