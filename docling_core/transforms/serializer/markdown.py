@@ -174,10 +174,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                     assert item.parent and isinstance(
                         (list_group := item.parent.resolve(doc)), ListGroup
                     )
-                    if (
-                        list_group.first_item_is_enumerated(doc)
-                        and params.orig_list_item_marker_mode
+                    if list_group.first_item_is_enumerated(doc) and (
+                        params.orig_list_item_marker_mode
                         != OrigListItemMarkerMode.ALNUM
+                        or not item.marker
                     ):
                         pos = -1
                         for i, child in enumerate(list_group.children):

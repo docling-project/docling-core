@@ -904,7 +904,7 @@
       "orig": "Item 1 in B",
       "text": "Item 1 in B",
       "enumerated": true,
-      "marker": "1."
+      "marker": ""
     },
     {
       "self_ref": "#/texts/39",
@@ -936,7 +936,7 @@
       "orig": "Item 1 in C",
       "text": "Item 1 in C",
       "enumerated": true,
-      "marker": "1."
+      "marker": ""
     },
     {
       "self_ref": "#/texts/41",
@@ -950,7 +950,7 @@
       "orig": "Item 2 in C",
       "text": "Item 2 in C",
       "enumerated": true,
-      "marker": "2."
+      "marker": ""
     },
     {
       "self_ref": "#/texts/42",
@@ -964,7 +964,7 @@
       "orig": "Item 3 in B",
       "text": "Item 3 in B",
       "enumerated": true,
-      "marker": "3."
+      "marker": ""
     },
     {
       "self_ref": "#/texts/43",

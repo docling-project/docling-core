@@ -2309,12 +2309,6 @@ class DoclingDocument(BaseModel):
         if not orig:
             orig = text
 
-        my_marker = (
-            f"{len(parent.children) + 1}."
-            if enumerated and marker is None
-            else marker or ""
-        )
-
         text_index = len(self.texts)
         cref = f"#/texts/{text_index}"
         list_item = ListItem(
@@ -2323,7 +2317,7 @@ class DoclingDocument(BaseModel):
             self_ref=cref,
             parent=parent.get_ref(),
             enumerated=enumerated,
-            marker=my_marker,
+            marker=marker or "",
             formatting=formatting,
             hyperlink=hyperlink,
         )

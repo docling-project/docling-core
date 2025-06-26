@@ -137,11 +137,11 @@
 <li style="list-style-type: '■ ';">list item 2</li>
 <li style="list-style-type: '■ ';">list item 3</li>
 <ol>
-<li style="list-style-type: '1. ';">list item 3.a</li>
-<li style="list-style-type: '2. ';">list item 3.b</li>
-<li style="list-style-type: '3. ';">list item 3.c</li>
+<li>list item 3.a</li>
+<li>list item 3.b</li>
+<li>list item 3.c</li>
 <ol>
-<li style="list-style-type: '1. ';">list item 3.c.i</li>
+<li>list item 3.c.i</li>
 </ol>
 </ol>
 <li style="list-style-type: '■ ';">list item 4</li>
@@ -187,13 +187,13 @@
 <li style="list-style-type: '(ii) ';">Item 2 in A</li>
 <li style="list-style-type: '(iii) ';">Item 3 in A</li>
 <ol>
-<li style="list-style-type: '1. ';">Item 1 in B</li>
+<li>Item 1 in B</li>
 <li style="list-style-type: '42. ';">Item 2 in B</li>
 <ol>
-<li style="list-style-type: '1. ';">Item 1 in C</li>
-<li style="list-style-type: '2. ';">Item 2 in C</li>
+<li>Item 1 in C</li>
+<li>Item 2 in C</li>
 </ol>
-<li style="list-style-type: '3. ';">Item 3 in B</li>
+<li>Item 3 in B</li>
 </ol>
 <li style="list-style-type: '(iv) ';">Item 4 in A</li>
 </ol>

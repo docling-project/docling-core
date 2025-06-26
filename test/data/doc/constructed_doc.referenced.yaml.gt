@@ -574,7 +574,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '1.'
+  marker: ''
   orig: list item 3.a
   parent:
     $ref: '#/groups/3'
@@ -585,7 +585,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '2.'
+  marker: ''
   orig: list item 3.b
   parent:
     $ref: '#/groups/3'
@@ -597,7 +597,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '3.'
+  marker: ''
   orig: list item 3.c
   parent:
     $ref: '#/groups/3'
@@ -608,7 +608,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '1.'
+  marker: ''
   orig: list item 3.c.i
   parent:
     $ref: '#/groups/4'
@@ -1014,7 +1014,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '1.'
+  marker: ''
   orig: Item 1 in B
   parent:
     $ref: '#/groups/14'
@@ -1037,7 +1037,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '1.'
+  marker: ''
   orig: Item 1 in C
   parent:
     $ref: '#/groups/15'
@@ -1048,7 +1048,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '2.'
+  marker: ''
   orig: Item 2 in C
   parent:
     $ref: '#/groups/15'
@@ -1059,7 +1059,7 @@ texts:
   content_layer: body
   enumerated: true
   label: list_item
-  marker: '3.'
+  marker: ''
   orig: Item 3 in B
   parent:
     $ref: '#/groups/14'

@@ -15,10 +15,10 @@ This paper introduces the biggest invention ever made. ...
 ■ list item 1
 ■ list item 2
 ■ list item 3
-    1. list item 3.a
-    2. list item 3.b
-    3. list item 3.c
-        1. list item 3.c.i
+    list item 3.a
+    list item 3.b
+    list item 3.c
+        list item 3.c.i
 ■ list item 4
 
 This is the caption of table 1.
@@ -66,11 +66,11 @@ Some formatting chops: **bold** *italic* underline ~~strikethrough~~ subscript s
 (i) Item 1 in A
 (ii) Item 2 in A
 (iii) Item 3 in A
-    1. Item 1 in B
+    Item 1 in B
     42. Item 2 in B
-        1. Item 1 in C
-        2. Item 2 in C
-    3. Item 3 in B
+        Item 1 in C
+        Item 2 in C
+    Item 3 in B
 (iv) Item 4 in A
 
 List item without parent list group
