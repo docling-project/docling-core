@@ -679,7 +679,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: ''
   orig: item 2 of list after empty list
   parent:
     $ref: '#/groups/7'
@@ -1081,7 +1081,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: ''
   orig: List item without parent list group
   parent:
     $ref: '#/groups/16'

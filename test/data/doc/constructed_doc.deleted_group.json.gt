@@ -466,7 +466,7 @@
       "orig": "item 2 of list after empty list",
       "text": "item 2 of list after empty list",
       "enumerated": false,
-      "marker": "-"
+      "marker": ""
     },
     {
       "self_ref": "#/texts/10",
@@ -995,7 +995,7 @@
       "orig": "List item without parent list group",
       "text": "List item without parent list group",
       "enumerated": false,
-      "marker": "-"
+      "marker": ""
     },
     {
       "self_ref": "#/texts/45",

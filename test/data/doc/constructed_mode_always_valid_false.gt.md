@@ -39,7 +39,7 @@ This is the caption of figure 2.
 ■ item 1 of list
 
 * item 1 of list after empty list
-- item 2 of list after empty list
+item 2 of list after empty list
 
 ■ item 1 of neighboring list
 ■ item 2 of neighboring list
@@ -73,6 +73,6 @@ Some formatting chops: **bold** *italic* underline ~~strikethrough~~ subscript s
     3. Item 3 in B
 (iv) Item 4 in A
 
-- List item without parent list group
+List item without parent list group
 
 The end.

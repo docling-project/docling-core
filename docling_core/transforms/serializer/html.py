@@ -169,7 +169,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                     text=text_inner,
                     attrs=(
                         {"style": f"list-style-type: '{item.marker} ';"}
-                        if params.show_original_list_item_marker
+                        if params.show_original_list_item_marker and item.marker
                         else {}
                     ),
                 )
@@ -741,6 +741,7 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
                                     "style": f"list-style-type: '{grandparent_item.marker} ';"
                                 }
                                 if params.show_original_list_item_marker
+                                and grandparent_item.marker
                                 else {}
                             ),
                         )

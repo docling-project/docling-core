@@ -2312,7 +2312,7 @@ class DoclingDocument(BaseModel):
         my_marker = (
             f"{len(parent.children) + 1}."
             if enumerated and marker is None
-            else marker or "-"
+            else marker or ""
         )
 
         text_index = len(self.texts)
