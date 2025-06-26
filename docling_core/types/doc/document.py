@@ -133,12 +133,6 @@ class MiscAnnotation(BaseAnnotation):
     content: Dict[str, Any]
 
 
-# deprecated aliases:
-BasePictureData = BaseAnnotation
-PictureDescriptionData = DescriptionAnnotation
-PictureMiscData = MiscAnnotation
-
-
 class ChartLine(BaseModel):
     """Represents a line in a line chart.
 
@@ -875,13 +869,6 @@ class ListGroup(GroupItem):
             and isinstance(first_child := self.children[0].resolve(doc), ListItem)
             and first_child.enumerated
         )
-
-
-@deprecated("Use ListGroup instead.")
-class UnorderedList(GroupItem):
-    """UnorderedList."""
-
-    label: typing.Literal[GroupLabel.LIST] = GroupLabel.LIST  # type: ignore[assignment]
 
 
 @deprecated("Use ListGroup instead.")
@@ -4551,3 +4538,10 @@ class DoclingDocument(BaseModel):
         self.key_value_items = item_lists["key_value_items"]  # type: ignore
         self.form_items = item_lists["form_items"]  # type: ignore
         self.body = new_body
+
+
+# deprecated aliases (kept for backwards compatibility):
+BasePictureData = BaseAnnotation
+PictureDescriptionData = DescriptionAnnotation
+PictureMiscData = MiscAnnotation
+UnorderedList = ListGroup
