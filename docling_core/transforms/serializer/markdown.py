@@ -84,9 +84,7 @@ class OrigListItemMarkerMode(str, Enum):
 
     NEVER = "never"
     ALWAYS = "always"
-    ALNUM = "alnum"
-    # ALNUM uses original marker only when it contains alphanumeric chars, in which case
-    # it prevents wrapping with additional numeric marker, i.e wraps with '-', if needed
+    AUTO = "auto"
 
 
 class MarkdownParams(CommonParams):
@@ -103,7 +101,7 @@ class MarkdownParams(CommonParams):
     escape_html: bool = True
     include_annotations: bool = True
     mark_annotations: bool = False
-    orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.ALNUM
+    orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
 
 
@@ -155,8 +153,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
             if isinstance(item, ListItem):
                 pieces: list[str] = []
-                case_alnum = (
-                    params.orig_list_item_marker_mode == OrigListItemMarkerMode.ALNUM
+                case_auto = (
+                    params.orig_list_item_marker_mode == OrigListItemMarkerMode.AUTO
                     and bool(re.search(r"[a-zA-Z0-9]", item.marker))
                 )
                 case_already_valid = (
@@ -175,8 +173,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                         (list_group := item.parent.resolve(doc)), ListGroup
                     )
                     if list_group.first_item_is_enumerated(doc) and (
-                        params.orig_list_item_marker_mode
-                        != OrigListItemMarkerMode.ALNUM
+                        params.orig_list_item_marker_mode != OrigListItemMarkerMode.AUTO
                         or not item.marker
                     ):
                         pos = -1
@@ -192,7 +189,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 # include original marker (if applicable)
                 if item.marker and (
                     params.orig_list_item_marker_mode == OrigListItemMarkerMode.ALWAYS
-                    or case_alnum
+                    or case_auto
                     or case_already_valid
                 ):
                     pieces.append(item.marker)
