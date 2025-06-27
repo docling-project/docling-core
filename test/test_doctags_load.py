@@ -10,6 +10,7 @@ from .test_data_gen_flag import GEN_TEST_DATA
 
 
 def verify(exp_file: Path, actual: dict):
+    print("hi")
     if GEN_TEST_DATA:
         with open(exp_file, "w", encoding="utf-8") as f:
             json.dump(actual, f, indent=2)
