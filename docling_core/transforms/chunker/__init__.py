@@ -11,3 +11,4 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     DocMeta,
     HierarchicalChunker,
 )
+from docling_core.transforms.chunker.page_chunker import PageChunker
