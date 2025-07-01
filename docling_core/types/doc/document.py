@@ -820,7 +820,7 @@ class NodeItem(BaseModel):
         after: bool = True,
     ) -> bool:
         """Add sibling node in tree."""
-        if len(stack) == 1 and stack[0] < len(self.children) and (not after):
+        if len(stack) == 1 and stack[0] <= len(self.children) and (not after):
             # ensure the parent is correct
             new_item = new_ref.resolve(doc=doc)
             new_item.parent = self.get_ref()
@@ -1974,7 +1974,7 @@ class DoclingDocument(BaseModel):
         item_index = int(path[2])
 
         if (
-            len(self.__getattribute__(item_label)) + 1 == item_index
+            len(self.__getattribute__(item_label)) == item_index + 1
         ):  # we can only pop the last item
             del self.__getattribute__(item_label)[item_index]
         else:
@@ -2369,17 +2369,6 @@ class DoclingDocument(BaseModel):
 
         elif label in [DocItemLabel.LIST_ITEM]:
             return self.add_list_item(
-                text=text,
-                orig=orig,
-                prov=prov,
-                parent=parent,
-                content_layer=content_layer,
-                formatting=formatting,
-                hyperlink=hyperlink,
-            )
-
-        elif label in [DocItemLabel.TITLE]:
-            return self.add_title(
                 text=text,
                 orig=orig,
                 prov=prov,
@@ -2787,6 +2776,1104 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return form_item
+
+    # ---------------------------
+    # Node Item Insertion Methods
+    # ---------------------------
+
+    def insert_list_group(
+        self,
+        sibling: NodeItem,
+        name: Optional[str] = None,
+        content_layer: Optional[ContentLayer] = None,
+        after: bool = True,
+    ) -> ListGroup:
+        """insert_list_group.
+
+        :param sibling: NodeItem:
+        :param name: Optional[str]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new ListGroup NodeItem
+        cref = f"#/groups/{len(self.groups)}"
+        group = ListGroup(self_ref=cref, parent=parent_ref)
+
+        if name is not None:
+            group.name = name
+        if content_layer:
+            group.content_layer = content_layer
+
+        # Add the new group to the document content
+        self.groups.append(group)
+
+        # Insert the new group into the document structure
+        new_ref = group.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=group)
+
+        return group
+
+    def insert_inline_group(
+        self,
+        sibling: NodeItem,
+        name: Optional[str] = None,
+        content_layer: Optional[ContentLayer] = None,
+        after: bool = True,
+    ) -> InlineGroup:
+        """insert_inline_group.
+
+        :param sibling: NodeItem:
+        :param name: Optional[str]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new InlineGroup NodeItem
+        cref = f"#/groups/{len(self.groups)}"
+        group = InlineGroup(self_ref=cref, parent=parent_ref)
+
+        if name is not None:
+            group.name = name
+        if content_layer:
+            group.content_layer = content_layer
+
+        # Add the new group to the document content
+        self.groups.append(group)
+
+        # Insert the new group into the document structure
+        new_ref = group.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=group)
+
+        return group
+
+    def insert_group(
+        self,
+        sibling: NodeItem,
+        label: Optional[GroupLabel] = None,
+        name: Optional[str] = None,
+        content_layer: Optional[ContentLayer] = None,
+        after: bool = True,
+    ) -> GroupItem:
+        """insert_group.
+
+        :param sibling: NodeItem:
+        :param label: Optional[GroupLabel]:  (Default value = None)
+        :param name: Optional[str]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        if label in [GroupLabel.LIST, GroupLabel.ORDERED_LIST]:
+            return self.insert_list_group(
+                sibling=sibling,
+                name=name,
+                content_layer=content_layer,
+                after=after,
+            )
+        elif label == GroupLabel.INLINE:
+            return self.insert_inline_group(
+                sibling=sibling,
+                name=name,
+                content_layer=content_layer,
+                after=after,
+            )
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new GroupItem NodeItem
+        cref = f"#/groups/{len(self.groups)}"
+        group = GroupItem(self_ref=cref, parent=parent_ref)
+
+        if name is not None:
+            group.name = name
+        if label is not None:
+            group.label = label
+        if content_layer:
+            group.content_layer = content_layer
+
+        # Add the new group to the document content
+        self.groups.append(group)
+
+        # Insert the new group into the document structure
+        new_ref = group.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=group)
+
+        return group
+
+    def insert_list_item(
+        self,
+        sibling: NodeItem,
+        text: str,
+        enumerated: bool = False,
+        marker: Optional[str] = None,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        after: bool = True,
+    ) -> ListItem:
+        """insert_list_item.
+
+        :param sibling: NodeItem:
+        :param text: str:
+        :param enumerated: bool:  (Default value = False)
+        :param marker: Optional[str]:  (Default value = None)
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Ensure the parent is a ListGroup
+
+        parent = parent_ref.resolve(self)
+        set_parent = False
+
+        if not isinstance(parent, ListGroup):
+            warnings.warn(
+                "ListItem parent must be a ListGroup, creating one on the fly.",
+                DeprecationWarning,
+            )
+            parent = self.insert_list_group(sibling=sibling, after=after)
+            parent_ref = parent.get_ref()
+            if after:
+                stack[-1] += 1
+            stack.append(0)
+            after = False
+            set_parent = True
+
+        # Create a new ListItem NodeItem
+        cref = f"#/texts/{len(self.texts)}"
+
+        if not orig:
+            orig = text
+
+        list_item = ListItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent_ref,
+            enumerated=enumerated,
+            marker=marker or "",
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+
+        if prov:
+            list_item.prov.append(prov)
+        if content_layer:
+            list_item.content_layer = content_layer
+
+        # Add the new text to the document content
+        self.texts.append(list_item)
+
+        # Insert the new text into the document structure
+        new_ref = list_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=list_item)
+
+            if set_parent:
+                self.delete_items(node_items=[parent])
+
+        return list_item
+
+    def insert_text(
+        self,
+        sibling: NodeItem,
+        label: DocItemLabel,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        after: bool = True,
+    ) -> TextItem:
+        """insert_text.
+
+        :param sibling: NodeItem:
+        :param label: DocItemLabel:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        if label in [DocItemLabel.TITLE]:
+            return self.insert_title(
+                sibling=sibling,
+                text=text,
+                orig=orig,
+                prov=prov,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                after=after,
+            )
+
+        elif label in [DocItemLabel.LIST_ITEM]:
+            return self.insert_list_item(
+                sibling=sibling,
+                text=text,
+                orig=orig,
+                prov=prov,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                after=after,
+            )
+
+        elif label in [DocItemLabel.SECTION_HEADER]:
+            return self.insert_heading(
+                sibling=sibling,
+                text=text,
+                orig=orig,
+                prov=prov,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                after=after,
+            )
+
+        elif label in [DocItemLabel.CODE]:
+            return self.insert_code(
+                sibling=sibling,
+                text=text,
+                orig=orig,
+                prov=prov,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                after=after,
+            )
+
+        elif label in [DocItemLabel.FORMULA]:
+            return self.insert_formula(
+                sibling=sibling,
+                text=text,
+                orig=orig,
+                prov=prov,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                after=after,
+            )
+
+        else:
+            # Get the stack of the sibling
+            sibling_ref = sibling.get_ref()
+
+            success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+            if not success:
+                raise ValueError(
+                    f"Could not insert at {sibling_ref.cref}: could not find the stack"
+                )
+
+            # Get the parent RefItem
+            parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+            if parent_ref is None:
+                raise ValueError(f"Could not find a parent at stack: {stack}")
+
+            # Create a new TextItem NodeItem
+            cref = f"#/texts/{len(self.texts)}"
+
+            if not orig:
+                orig = text
+
+            text_item = TextItem(
+                label=label,
+                text=text,
+                orig=orig,
+                self_ref=cref,
+                parent=parent_ref,
+                formatting=formatting,
+                hyperlink=hyperlink,
+            )
+
+            if prov:
+                text_item.prov.append(prov)
+            if content_layer:
+                text_item.content_layer = content_layer
+
+            # Add the new text to the document content
+            self.texts.append(text_item)
+
+            # Insert the new text into the document structure
+            new_ref = text_item.get_ref()
+
+            success = self.body._add_sibling(
+                doc=self, stack=stack, new_ref=new_ref, after=after
+            )
+
+            if not success:
+                self._pop_item(item=text_item)
+
+            return text_item
+
+    def insert_table(
+        self,
+        sibling: NodeItem,
+        data: TableData,
+        caption: Optional[Union[TextItem, RefItem]] = None,
+        prov: Optional[ProvenanceItem] = None,
+        label: DocItemLabel = DocItemLabel.TABLE,
+        content_layer: Optional[ContentLayer] = None,
+        annotations: Optional[list[TableAnnotationType]] = None,
+        after: bool = True,
+    ) -> TableItem:
+        """insert_table.
+
+        :param sibling: NodeItem:
+        :param data: TableData:
+        :param caption: Optional[Union[TextItem, RefItem]]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param label: DocItemLabel:  (Default value = DocItemLabel.TABLE)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param annotations: Optional[List[TableAnnotationType]]: (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new ListItem NodeItem
+        cref = f"#/tables/{len(self.tables)}"
+
+        table_item = TableItem(
+            label=label,
+            data=data,
+            self_ref=cref,
+            parent=parent_ref,
+            annotations=annotations or [],
+        )
+
+        if prov:
+            table_item.prov.append(prov)
+        if content_layer:
+            table_item.content_layer = content_layer
+        if caption:
+            table_item.captions.append(caption.get_ref())
+
+        # Add the new table to the document content
+        self.tables.append(table_item)
+
+        # Insert the new table into the document structure
+        new_ref = table_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=table_item)
+
+        return table_item
+
+    def insert_picture(
+        self,
+        sibling: NodeItem,
+        annotations: Optional[List[PictureDataType]] = None,
+        image: Optional[ImageRef] = None,
+        caption: Optional[Union[TextItem, RefItem]] = None,
+        prov: Optional[ProvenanceItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        after: bool = True,
+    ) -> PictureItem:
+        """insert_picture.
+
+        :param sibling: NodeItem:
+        :param annotations: Optional[List[PictureDataType]]: (Default value = None)
+        :param image: Optional[ImageRef]:  (Default value = None)
+        :param caption: Optional[Union[TextItem, RefItem]]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new PictureItem NodeItem
+        cref = f"#/pictures/{len(self.pictures)}"
+
+        picture_item = PictureItem(
+            label=DocItemLabel.PICTURE,
+            annotations=annotations or [],
+            image=image,
+            self_ref=cref,
+            parent=parent_ref,
+        )
+
+        if prov:
+            picture_item.prov.append(prov)
+        if content_layer:
+            picture_item.content_layer = content_layer
+        if caption:
+            picture_item.captions.append(caption.get_ref())
+
+        # Add the new picture to the document content
+        self.pictures.append(picture_item)
+
+        # Insert the new picture into the document structure
+        new_ref = picture_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=picture_item)
+
+        return picture_item
+
+    def insert_title(
+        self,
+        sibling: NodeItem,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        after: bool = True,
+    ) -> TitleItem:
+        """insert_title.
+
+        :param sibling: NodeItem:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new TitleITem NodeItem
+        cref = f"#/texts/{len(self.texts)}"
+
+        if not orig:
+            orig = text
+
+        title_item = TitleItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent_ref,
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+
+        if prov:
+            title_item.prov.append(prov)
+        if content_layer:
+            title_item.content_layer = content_layer
+
+        # Add the new text to the document content
+        self.texts.append(title_item)
+
+        # Insert the new text into the document structure
+        new_ref = title_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=title_item)
+
+        return title_item
+
+    def insert_code(
+        self,
+        sibling: NodeItem,
+        text: str,
+        code_language: Optional[CodeLanguageLabel] = None,
+        orig: Optional[str] = None,
+        caption: Optional[Union[TextItem, RefItem]] = None,
+        prov: Optional[ProvenanceItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        after: bool = True,
+    ) -> CodeItem:
+        """insert_code.
+
+        :param sibling: NodeItem:
+        :param text: str:
+        :param code_language: Optional[str]: (Default value = None)
+        :param orig: Optional[str]:  (Default value = None)
+        :param caption: Optional[Union[TextItem, RefItem]]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new CodeItem NodeItem
+        cref = f"#/texts/{len(self.texts)}"
+
+        if not orig:
+            orig = text
+
+        code_item = CodeItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent_ref,
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+
+        if code_language:
+            code_item.code_language = code_language
+        if content_layer:
+            code_item.content_layer = content_layer
+        if prov:
+            code_item.prov.append(prov)
+        if caption:
+            code_item.captions.append(caption.get_ref())
+
+        # Add the new text to the document content
+        self.texts.append(code_item)
+
+        # Insert the new text into the document structure
+        new_ref = code_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=code_item)
+
+        return code_item
+
+    def insert_formula(
+        self,
+        sibling: NodeItem,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        after: bool = True,
+    ) -> FormulaItem:
+        """insert_formula.
+
+        :param sibling: NodeItem:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new FormulaItem NodeItem
+        cref = f"#/texts/{len(self.texts)}"
+
+        if not orig:
+            orig = text
+
+        formula_item = FormulaItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent_ref,
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+
+        if prov:
+            formula_item.prov.append(prov)
+        if content_layer:
+            formula_item.content_layer = content_layer
+
+        # Add the new text to the document content
+        self.texts.append(formula_item)
+
+        # Insert the new text into the document structure
+        new_ref = formula_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=formula_item)
+
+        return formula_item
+
+    def insert_heading(
+        self,
+        sibling: NodeItem,
+        text: str,
+        orig: Optional[str] = None,
+        level: LevelNumber = 1,
+        prov: Optional[ProvenanceItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        after: bool = True,
+    ) -> SectionHeaderItem:
+        """insert_heading.
+
+        :param sibling: NodeItem:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param level: LevelNumber:  (Default value = 1)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new SectionHeaderItem NodeItem
+        cref = f"#/texts/{len(self.texts)}"
+
+        if not orig:
+            orig = text
+
+        section_header_item = SectionHeaderItem(
+            level=level,
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent_ref,
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+
+        if prov:
+            section_header_item.prov.append(prov)
+        if content_layer:
+            section_header_item.content_layer = content_layer
+
+        # Add the new text to the document content
+        self.texts.append(section_header_item)
+
+        # Insert the new text into the document structure
+        new_ref = section_header_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=section_header_item)
+
+        return section_header_item
+
+    def insert_key_values(
+        self,
+        sibling: NodeItem,
+        graph: GraphData,
+        prov: Optional[ProvenanceItem] = None,
+        after: bool = True,
+    ) -> KeyValueItem:
+        """insert_key_values.
+
+        :param sibling: NodeItem:
+        :param graph: GraphData:
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new KeyValueItem NodeItem
+        cref = f"#/key_value_items/{len(self.key_value_items)}"
+        key_value_item = KeyValueItem(graph=graph, self_ref=cref, parent=parent_ref)
+
+        if prov:
+            key_value_item.prov.append(prov)
+
+        # Add the new key value item to the document content
+        self.key_value_items.append(key_value_item)
+
+        # Insert the new key value item into the document structure
+        new_ref = key_value_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=key_value_item)
+
+        return key_value_item
+
+    def insert_form(
+        self,
+        sibling: NodeItem,
+        graph: GraphData,
+        prov: Optional[ProvenanceItem] = None,
+        after: bool = True,
+    ) -> FormItem:
+        """insert_form.
+
+        :param sibling: NodeItem:
+        :param graph: GraphData:
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        """
+
+        # Get the stack of the sibling
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Get the parent RefItem
+        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
+
+        if parent_ref is None:
+            raise ValueError(f"Could not find a parent at stack: {stack}")
+
+        # Create a new FormItem NodeItem
+        cref = f"#/form_items/{len(self.form_items)}"
+        form_item = FormItem(graph=graph, self_ref=cref, parent=parent_ref)
+
+        if prov:
+            form_item.prov.append(prov)
+
+        # Add the new form item to the document content
+        self.form_items.append(form_item)
+
+        # Insert the new form item into the document structure
+        new_ref = form_item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        if not success:
+            self._pop_item(item=form_item)
+
+        return form_item
+
+    # ---------------------------
+    # Range Manipulation Methods
+    # ---------------------------
+
+    def delete_items_range(
+        self,
+        *,
+        start: NodeItem,
+        end: NodeItem,
+        start_inclusive: bool = True,
+        end_inclusive: bool = True,
+    ) -> None:
+        """Deletes all NodeItems and their children in the range from the start NodeItem to the end NodeItem.
+
+        :param start: NodeItem:  The starting NodeItem of the range
+        :param end: NodeItem:  The ending NodeItem of the range
+        :param start_inclusive: bool:  (Default value = True):  If True, the start NodeItem will also be deleted
+        :param end_inclusive: bool:  (Default value = True):  If True, the end NodeItem will also be deleted
+
+        """
+
+        start_parent_ref = (
+            start.parent if not start.parent is None else self.body.get_ref()
+        )
+        end_parent_ref = end.parent if not end.parent is None else self.body.get_ref()
+
+        if start.parent != end.parent:
+            raise ValueError(
+                "Start and end NodeItems must have the same parent to delete a range."
+            )
+
+        start_ref = start.get_ref()
+        end_ref = end.get_ref()
+
+        start_parent = start_parent_ref.resolve(doc=self)
+        end_parent = end_parent_ref.resolve(doc=self)
+
+        start_index = start_parent.children.index(start_ref)
+        end_index = end_parent.children.index(end_ref)
+
+        if start_index > end_index:
+            raise ValueError(
+                "Start NodeItem must come before or be the same as the end NodeItem in the document structure."
+            )
+
+        to_delete = start_parent.children[start_index : end_index + 1]
+
+        if not start_inclusive:
+            to_delete = to_delete[1:]
+        if not end_inclusive:
+            to_delete = to_delete[:-1]
+
+        self._delete_items(refs=to_delete)
+
+    def extract_items_range(
+        self,
+        *,
+        start: NodeItem,
+        end: NodeItem,
+        start_inclusive: bool = True,
+        end_inclusive: bool = True,
+        delete: bool = False,
+    ) -> "DoclingDocument":
+        """Extracts all NodeItems and their children in the range from the start NodeItem to the end NodeItem as a new DoclingDocument.
+
+        :param start: NodeItem:  The starting NodeItem of the range (must be a direct child of the document body)
+        :param end: NodeItem:  The ending NodeItem of the range  (must be a direct child of the document body)
+        :param start_inclusive: bool:  (Default value = True):  If True, the start NodeItem will also be extracted
+        :param end_inclusive: bool:  (Default value = True):  If True, the end NodeItem will also be extracted
+        :param delete: bool:  (Default value = False):  If True, the extracted items will be deleted from the original document
+
+        """
+
+        if not start.parent == end.parent == self.body.get_ref():
+            raise ValueError(
+                "Start and end NodeItems must be children of the document body to extract a range as a new DoclingDocument."
+            )
+
+        new_doc = self.model_copy(deep=True)
+        new_doc.name = f"{self.name}- Extracted Range"
+
+        # Delete item ranges to end up with the desired inner range
+        new_doc.delete_items_range(
+            start=new_doc.body.children[0].resolve(new_doc),
+            end=start,
+            end_inclusive=not start_inclusive,
+        )
+        new_doc.delete_items_range(
+            start=end,
+            end=new_doc.body.children[-1].resolve(new_doc),
+            start_inclusive=not end_inclusive,
+        )
+
+        if delete:
+            self.delete_items_range(
+                start=start,
+                end=end,
+                start_inclusive=start_inclusive,
+                end_inclusive=end_inclusive,
+            )
+
+        return new_doc
 
     def num_pages(self):
         """num_pages."""
