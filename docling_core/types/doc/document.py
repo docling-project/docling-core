@@ -1957,6 +1957,16 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.groups.append(item)
+        elif isinstance(item, GroupItem):
+            item_label = "groups"
+            item_index = len(self.groups)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.groups.append(item)
 
         else:
             raise ValueError(f"Item {item} is not supported for insertion")
@@ -3831,28 +3841,22 @@ class DoclingDocument(BaseModel):
         start_parent = start_parent_ref.resolve(doc=self)
         end_parent = end_parent_ref.resolve(doc=self)
 
-        start_index = start_parent.children.index(start_ref)
-        end_index = end_parent.children.index(end_ref)
+        start_index = start_parent.children.index(start_ref) + (
+            0 if start_inclusive else 1
+        )
+        end_index = end_parent.children.index(end_ref) + (1 if end_inclusive else 0)
 
         if start_index > end_index:
             raise ValueError(
                 "Start NodeItem must come before or be the same as the end NodeItem in the document structure."
             )
 
-        new_doc = self.model_copy(deep=True)
-        new_doc.name = f"{self.name}- Extracted Range"
+        new_doc = DoclingDocument(name=f"{self.name}- Extracted Range")
 
-        # Delete item ranges to end up with the desired inner range
-        new_doc.delete_items_range(
-            start=new_doc.body.children[0].resolve(new_doc),
-            end=start,
-            end_inclusive=not start_inclusive,
-        )
-        new_doc.delete_items_range(
-            start=end,
-            end=new_doc.body.children[-1].resolve(new_doc),
-            start_inclusive=not end_inclusive,
-        )
+        ref_items = start_parent.children[start_index:end_index]
+        node_items = [ref.resolve(self) for ref in ref_items]
+
+        new_doc.add_node_items(node_items=node_items, doc=self)
 
         if delete:
             self.delete_items_range(
@@ -3864,10 +3868,75 @@ class DoclingDocument(BaseModel):
 
         return new_doc
 
+    def insert_document(
+        self,
+        doc: "DoclingDocument",
+        sibling: NodeItem,
+        after: bool = True,
+    ) -> None:
+        """Inserts the content from the body of a DoclingDocument into this document at a specific position.
+
+        :param doc: DoclingDocument: The document whose content will be inserted
+        :param sibling: NodeItem: The NodeItem after/before which the new items will be inserted
+        :param after: bool: If True, insert after the sibling; if False, insert before (Default value = True)
+        """
+        ref_items = doc.body.children
+        node_items = [ref.resolve(doc) for ref in ref_items]
+        self.insert_node_items(
+            sibling=sibling, node_items=node_items, doc=doc, after=after
+        )
+
+    def add_document(
+        self,
+        doc: "DoclingDocument",
+        parent: Optional[NodeItem] = None,
+    ) -> None:
+        """Adds the content from a DoclingDocument to this document under a specific parent.
+
+        :param doc: DoclingDocument: The document whose content will be added
+        :param parent: Optional[NodeItem]: The parent NodeItem under which new items are added (Default value = None)
+        """
+        ref_items = doc.body.children
+        node_items = [ref.resolve(doc) for ref in ref_items]
+        self.add_node_items(node_items=node_items, doc=doc, parent=parent)
+
+    def add_node_items(
+        self,
+        node_items: List[NodeItem],
+        doc: "DoclingDocument",
+        parent: Optional[NodeItem] = None,
+    ) -> None:
+        """Adds multiple NodeItems and their children under a parent in this document.
+
+        :param node_items: list[NodeItem]: The NodeItems to be added
+        :param doc: DoclingDocument: The document to which the NodeItems and their children belong
+        :param parent: Optional[NodeItem]: The parent NodeItem under which new items are added (Default value = None)
+        """
+        parent = self.body if parent is None else parent
+
+        # Check for ListItem parent violations
+        if not isinstance(parent, ListGroup):
+            for item in node_items:
+                if isinstance(item, ListItem):
+                    raise ValueError("Cannot add ListItem into a non-ListGroup parent.")
+
+        # Append the NodeItems to the document content
+
+        parent_ref = parent.get_ref()
+
+        new_refs = self._append_item_copies(
+            node_items=node_items, parent_ref=parent_ref, doc=doc
+        )
+
+        # Add the new item refs in the document structure
+
+        for ref in new_refs:
+            parent.children.append(ref)
+
     def insert_node_items(
         self,
         sibling: NodeItem,
-        node_items: list[NodeItem],
+        node_items: List[NodeItem],
         doc: "DoclingDocument",
         after: bool = True,
     ) -> None:
