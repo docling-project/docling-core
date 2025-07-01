@@ -2794,9 +2794,7 @@ class DoclingDocument(BaseModel):
         :param name: Optional[str]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -2850,9 +2848,7 @@ class DoclingDocument(BaseModel):
         :param name: Optional[str]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -2908,9 +2904,7 @@ class DoclingDocument(BaseModel):
         :param name: Optional[str]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         if label in [GroupLabel.LIST, GroupLabel.ORDERED_LIST]:
             return self.insert_list_group(
                 sibling=sibling,
@@ -2993,9 +2987,7 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3093,9 +3085,7 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         if label in [DocItemLabel.TITLE]:
             return self.insert_title(
                 sibling=sibling,
@@ -3230,9 +3220,7 @@ class DoclingDocument(BaseModel):
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param annotations: Optional[List[TableAnnotationType]]: (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3301,9 +3289,7 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3374,9 +3360,7 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3453,9 +3437,7 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3532,9 +3514,7 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3609,9 +3589,7 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3677,9 +3655,7 @@ class DoclingDocument(BaseModel):
         :param graph: GraphData:
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3731,9 +3707,7 @@ class DoclingDocument(BaseModel):
         :param graph: GraphData:
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param after: bool:  (Default value = True)
-
         """
-
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -3790,13 +3764,11 @@ class DoclingDocument(BaseModel):
         :param end: NodeItem:  The ending NodeItem of the range
         :param start_inclusive: bool:  (Default value = True):  If True, the start NodeItem will also be deleted
         :param end_inclusive: bool:  (Default value = True):  If True, the end NodeItem will also be deleted
-
         """
-
         start_parent_ref = (
-            start.parent if not start.parent is None else self.body.get_ref()
+            start.parent if start.parent is not None else self.body.get_ref()
         )
-        end_parent_ref = end.parent if not end.parent is None else self.body.get_ref()
+        end_parent_ref = end.parent if end.parent is not None else self.body.get_ref()
 
         if start.parent != end.parent:
             raise ValueError(
@@ -3835,19 +3807,36 @@ class DoclingDocument(BaseModel):
         end_inclusive: bool = True,
         delete: bool = False,
     ) -> "DoclingDocument":
-        """Extracts all NodeItems and their children in the range from the start NodeItem to the end NodeItem as a new DoclingDocument.
+        """Extracts NodeItems and children in the range from the start NodeItem to the end as a new DoclingDocument.
 
         :param start: NodeItem:  The starting NodeItem of the range (must be a direct child of the document body)
         :param end: NodeItem:  The ending NodeItem of the range  (must be a direct child of the document body)
         :param start_inclusive: bool:  (Default value = True):  If True, the start NodeItem will also be extracted
         :param end_inclusive: bool:  (Default value = True):  If True, the end NodeItem will also be extracted
-        :param delete: bool:  (Default value = False):  If True, the extracted items will be deleted from the original document
-
+        :param delete: bool:  (Default value = False):  If True, extracted items are deleted in the original document
         """
-
-        if not start.parent == end.parent == self.body.get_ref():
+        if not start.parent == end.parent:
             raise ValueError(
-                "Start and end NodeItems must be children of the document body to extract a range as a new DoclingDocument."
+                "Start and end NodeItems must have the same parent to extract a range."
+            )
+
+        start_ref = start.get_ref()
+        end_ref = end.get_ref()
+
+        start_parent_ref = (
+            start.parent if start.parent is not None else self.body.get_ref()
+        )
+        end_parent_ref = end.parent if end.parent is not None else self.body.get_ref()
+
+        start_parent = start_parent_ref.resolve(doc=self)
+        end_parent = end_parent_ref.resolve(doc=self)
+
+        start_index = start_parent.children.index(start_ref)
+        end_index = end_parent.children.index(end_ref)
+
+        if start_index > end_index:
+            raise ValueError(
+                "Start NodeItem must come before or be the same as the end NodeItem in the document structure."
             )
 
         new_doc = self.model_copy(deep=True)
@@ -3874,6 +3863,96 @@ class DoclingDocument(BaseModel):
             )
 
         return new_doc
+
+    def insert_node_items(
+        self,
+        sibling: NodeItem,
+        node_items: list[NodeItem],
+        doc: "DoclingDocument",
+        after: bool = True,
+    ) -> None:
+        """Insert multiple NodeItems and their children at a specific position in the document.
+
+        :param sibling: NodeItem: The NodeItem after/before which the new items will be inserted
+        :param node_items: list[NodeItem]: The NodeItems to be inserted
+        :param doc: DoclingDocument: The document to which the NodeItems and their children belong
+        :param after: bool: If True, insert after the sibling; if False, insert before (Default value = True)
+        """
+        # Check for ListItem parent violations
+        parent = sibling.parent.resolve(self) if sibling.parent else self.body
+
+        if not isinstance(parent, ListGroup):
+            for item in node_items:
+                if isinstance(item, ListItem):
+                    raise ValueError(
+                        "Cannot insert ListItem into a non-ListGroup parent."
+                    )
+
+        # Append the NodeItems to the document content
+
+        parent_ref = parent.get_ref()
+
+        new_refs = self._append_item_copies(
+            node_items=node_items, parent_ref=parent_ref, doc=doc
+        )
+
+        # Get the stack of the sibling
+
+        sibling_ref = sibling.get_ref()
+
+        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
+
+        if not success:
+            raise ValueError(
+                f"Could not insert at {sibling_ref.cref}: could not find the stack"
+            )
+
+        # Insert the new item refs in the document structure
+
+        reversed_new_refs = new_refs[::-1]
+
+        for ref in reversed_new_refs:
+            success = self.body._add_sibling(
+                doc=self, stack=stack, new_ref=ref, after=after
+            )
+
+            if not success:
+                raise ValueError(
+                    f"Could not insert item {ref.cref} at {sibling.get_ref().cref}"
+                )
+
+    def _append_item_copies(
+        self,
+        node_items: List[NodeItem],
+        parent_ref: RefItem,
+        doc: "DoclingDocument",
+    ) -> List[RefItem]:
+        """Append node item copies (with their children) from a different document to the content of this document.
+
+        :param node_items: List[NodeItem]: The NodeItems to be appended
+        :param parent_ref: RefItem: The reference of the parent of the new items in this document
+        :param doc: DoclingDocument: The document from which the NodeItems are taken
+        """
+        new_refs: List[RefItem] = []
+
+        for item in node_items:
+            item_copy = item.model_copy(deep=True)
+
+            self._append_item(item=item_copy, parent_ref=parent_ref)
+
+            if item_copy.children:
+                children_node_items = [ref.resolve(doc) for ref in item_copy.children]
+
+                item_copy.children = self._append_item_copies(
+                    node_items=children_node_items,
+                    parent_ref=item_copy.get_ref(),
+                    doc=doc,
+                )
+
+            new_ref = item_copy.get_ref()
+            new_refs.append(new_ref)
+
+        return new_refs
 
     def num_pages(self):
         """num_pages."""
