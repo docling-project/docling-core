@@ -366,6 +366,152 @@ class TableData(BaseModel):  # TBD
 
         return table_data
 
+    def remove_rows(self, indices: List[int]) -> List[List[TableCell]]:
+        """Remove rows from the table by their indices.
+
+        :param indices: List[int]: A list of indices of the rows to remove. (Starting from 0)
+        """
+        if not indices:
+            return []
+
+        indices = sorted(indices, reverse=True)
+
+        removed_cells = []
+        for row_index in indices:
+            if row_index < 0 or row_index >= self.num_rows:
+                raise IndexError(
+                    f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}."
+                )
+            removed_cells.append(self.remove_row(row_index))
+
+        return removed_cells
+
+    def pop_row(self) -> List[TableCell]:
+        """Remove and return the last row from the table."""
+        if self.num_rows == 0:
+            raise IndexError("Cannot pop from an empty table.")
+
+        row_index = self.num_rows - 1
+        return self.remove_row(row_index)
+
+    def remove_row(self, row_index: int) -> List[TableCell]:
+        """Remove a row from the table by its index.
+
+        :param row_index: int: The index of the row to remove. (Starting from 0)
+        """
+        if row_index < 0 or row_index >= self.num_rows:
+            raise IndexError(
+                f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}."
+            )
+
+        start_idx = row_index * self.num_cols
+        end_idx = start_idx + self.num_cols
+        removed_cells = self.table_cells[start_idx:end_idx]
+
+        # Remove the cells from the table
+        self.table_cells = self.table_cells[:start_idx] + self.table_cells[end_idx:]
+
+        # Update the number of rows
+        self.num_rows -= 1
+
+        # Reassign row offset indices for existing cells
+        for index, cell in enumerate(self.table_cells):
+            new_index = index // self.num_cols
+            cell.start_row_offset_idx = new_index
+            cell.end_row_offset_idx = new_index + 1
+
+        return removed_cells
+
+    def insert_rows(
+        self, row_index: int, rows: List[List[str]], after: bool = False
+    ) -> None:
+        """Insert multiple new rows from a list of lists of strings before/after a specific index in the table.
+
+        :param row_index: int: The index at which to insert the new rows. (Starting from 0)
+        :param rows: List[List[str]]: A list of lists, where each inner list represents the content of a new row.
+        :param after: bool: If True, insert the rows after the specified index, otherwise before it. (Default is False)
+        """
+        effective_rows = rows[::-1]
+
+        for row in effective_rows:
+            self.insert_row(row_index, row, after)
+
+    def insert_row(self, row_index: int, row: List[str], after: bool = False) -> None:
+        """Insert a new row from a list of strings before/after a specific index in the table.
+
+        :param row_index: int: The index at which to insert the new row. (Starting from 0)
+        :param row: List[str]: A list of strings representing the content of the new row.
+        :param after: bool: If True, insert the row after the specified index, otherwise before it. (Default is False)
+        """
+        if len(row) != self.num_cols:
+            raise ValueError(
+                f"Row length {len(row)} does not match the number of columns {self.num_cols}."
+            )
+
+        effective_index = row_index + (1 if after else 0)
+
+        if effective_index < 0 or effective_index > self.num_rows:
+            raise IndexError(
+                f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}."
+            )
+
+        new_row_cells = [
+            TableCell(
+                text=text,
+                start_row_offset_idx=effective_index,
+                end_row_offset_idx=effective_index + 1,
+                start_col_offset_idx=j,
+                end_col_offset_idx=j + 1,
+            )
+            for j, text in enumerate(row)
+        ]
+
+        self.table_cells = (
+            self.table_cells[: effective_index * self.num_cols]
+            + new_row_cells
+            + self.table_cells[effective_index * self.num_cols :]
+        )
+
+        # Reassign row offset indices for existing cells
+        for index, cell in enumerate(self.table_cells):
+            new_index = index // self.num_cols
+            cell.start_row_offset_idx = new_index
+            cell.end_row_offset_idx = new_index + 1
+
+        self.num_rows += 1
+
+    def add_rows(self, rows: List[List[str]]) -> None:
+        """Add multiple new rows to the table from a list of lists of strings.
+
+        :param rows: List[List[str]]: A list of lists, where each inner list represents the content of a new row.
+        """
+        for row in rows:
+            self.add_row(row)
+
+    def add_row(self, row: List[str]) -> None:
+        """Add a new row to the table from a list of strings.
+
+        :param row: List[str]: A list of strings representing the content of the new row.
+        """
+        if len(row) != self.num_cols:
+            raise ValueError(
+                f"Row length {len(row)} does not match the number of columns {self.num_cols}."
+            )
+
+        new_row_cells = [
+            TableCell(
+                text=text,
+                start_row_offset_idx=self.num_rows,
+                end_row_offset_idx=self.num_rows + 1,
+                start_col_offset_idx=j,
+                end_col_offset_idx=j + 1,
+            )
+            for j, text in enumerate(row)
+        ]
+
+        self.table_cells.extend(new_row_cells)
+        self.num_rows += 1
+
     def get_row_bounding_boxes(self) -> dict[int, BoundingBox]:
         """Get the minimal bounding box for each row in the table.
 
