@@ -25,7 +25,7 @@ from docling_core.transforms.serializer.common import (
     DocSerializer,
     create_ser_result,
 )
-from docling_core.types.doc.base import BoundingBox
+from docling_core.types.doc.base import BoundingBox, BoundingRectangle
 from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
@@ -423,7 +423,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
     ) -> SerializationResult:
 
         prov: Optional[ProvenanceItem] = None
-        boxes: list[BoundingBox] = []
+        boxes: list[Union[BoundingBox, BoundingRectangle]] = []
         doc_items: list[DocItem] = []
         for it, _ in doc.iterate_items(root=item):
             if isinstance(it, DocItem):

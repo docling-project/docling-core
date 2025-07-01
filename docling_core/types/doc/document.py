@@ -394,7 +394,9 @@ class TableData(BaseModel):  # TBD
         row_bboxes: dict[int, BoundingBox] = {}
 
         for row_idx in range(self.num_rows):
-            row_cells_with_bbox: dict[int, list[BoundingBox]] = {}
+            row_cells_with_bbox: dict[
+                int, list[Union["BoundingBox", "BoundingRectangle"]]
+            ] = {}
 
             # Collect all cells in this row that have bounding boxes
             for cell in self.table_cells:
@@ -448,7 +450,9 @@ class TableData(BaseModel):  # TBD
         col_bboxes: dict[int, BoundingBox] = {}
 
         for col_idx in range(self.num_cols):
-            col_cells_with_bbox: dict[int, list[BoundingBox]] = {}
+            col_cells_with_bbox: dict[
+                int, list[Union["BoundingBox", "BoundingRectangle"]]
+            ] = {}
 
             # Collect all cells in this row that have bounding boxes
             for cell in self.table_cells:

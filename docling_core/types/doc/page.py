@@ -3,31 +3,23 @@
 import copy
 import json
 import logging
-import math
 import re
 import typing
 from enum import Enum
 from pathlib import Path
-from typing import (
-    Annotated,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Literal,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Annotated, Any, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
-import numpy as np
 from PIL import Image as PILImage
 from PIL import ImageColor, ImageDraw, ImageFont
 from PIL.ImageFont import FreeTypeFont
 from pydantic import AnyUrl, BaseModel, Field, model_validator
 
-from docling_core.types.doc.base import BoundingBox, BoundingRectangle, CoordOrigin, Coord2D
+from docling_core.types.doc.base import (
+    BoundingBox,
+    BoundingRectangle,
+    Coord2D,
+    CoordOrigin,
+)
 from docling_core.types.doc.document import ImageRef
 
 _logger = logging.getLogger(__name__)
@@ -79,6 +71,7 @@ class ColorRGBA(BaseModel):
     def __iter__(self):
         """Yield the color components for iteration."""
         yield from (self.r, self.g, self.b, self.a)
+
 
 class OrderedElement(BaseModel):
     """Base model for elements that have an ordering index."""

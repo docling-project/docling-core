@@ -45,6 +45,7 @@ dependencies = [
     'typing-extensions (>=4.12.2,<5.0.0)',
     'typer (>=0.12.5,<0.17.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
+    "shapely>=2.0.7",
 ]
 
 [project.urls]
@@ -155,3 +156,7 @@ branch = "main"
 parser_angular_allowed_types = "build,chore,ci,docs,feat,fix,perf,style,refactor,test"
 parser_angular_minor_types = "feat"
 parser_angular_patch_types = "fix,perf"
+
+[tool.poetry.group.dev.dependencies]
+types-shapely = "^2.1.0.20250512"
+

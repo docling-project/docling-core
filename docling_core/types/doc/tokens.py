@@ -8,8 +8,8 @@
 from enum import Enum
 from typing import Tuple, Union
 
-from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.base import BoundingBox, BoundingRectangle
+from docling_core.types.doc.labels import DocItemLabel
 
 
 class TableToken(str, Enum):
@@ -263,7 +263,9 @@ class DocumentToken(str, Enum):
         return _CodeLanguageToken(f"<_{code_language}_>").value
 
     @staticmethod
-    def get_location_token(val: float, rnorm: int = 500, prefix=_LOC_PREFIX):  # TODO review
+    def get_location_token(
+        val: float, rnorm: int = 500, prefix=_LOC_PREFIX
+    ):  # TODO review
         """Function to get location tokens."""
         val_ = round(rnorm * val)
         val_ = max(val_, 0)
@@ -280,11 +282,11 @@ class DocumentToken(str, Enum):
     ):
         """Get the location string given bbox and page-dim."""
         if isinstance(bbox, BoundingBox):
-            #the transform this case into the old case
+            # the transform this case into the old case
             bbox = bbox.to_top_left_origin(page_h).as_tuple()
 
         if isinstance(bbox, tuple):
-            #old case
+            # old case
             assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"
             assert bbox[1] <= bbox[3], f"bbox[1]<=bbox[3] => {bbox[1]}<={bbox[3]}"
 
@@ -299,25 +301,33 @@ class DocumentToken(str, Enum):
             y1_tok = DocumentToken.get_location_token(val=max(y0, y1), rnorm=ysize)
 
             loc_str = f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
-        
+
         elif isinstance(bbox, BoundingRectangle):
-            #use the prefix rec, 4 elements required
+            # use the prefix rec, 4 elements required
             vertices = bbox.to_top_left_origin(page_h).to_polygon()
             # Convection for the rectangle vertices:
             #     3 +-------+ 2
             #       | hello |
             #     0 +-------+ 1
             # 0->1 line must be the baseline for the words
-            
+
             vertices_tok = []
             for vertex in vertices:
-                vertex_x_norm = vertex.x/ page_w
-                vertices_tok.append(DocumentToken.get_location_token(val= vertex_x_norm, rnorm=xsize, prefix=_REC_PREFIX))
-                vertex_y_norm = vertex.y/ page_h
-                vertices_tok.append(DocumentToken.get_location_token(val=vertex_y_norm, rnorm=ysize, prefix=_REC_PREFIX))
+                vertex_x_norm = vertex.x / page_w
+                vertices_tok.append(
+                    DocumentToken.get_location_token(
+                        val=vertex_x_norm, rnorm=xsize, prefix=_REC_PREFIX
+                    )
+                )
+                vertex_y_norm = vertex.y / page_h
+                vertices_tok.append(
+                    DocumentToken.get_location_token(
+                        val=vertex_y_norm, rnorm=ysize, prefix=_REC_PREFIX
+                    )
+                )
 
             loc_str = ""
             for vertex_tok in vertices_tok:
-                loc_str += f'{vertex_tok}'
+                loc_str += f"{vertex_tok}"
 
         return loc_str

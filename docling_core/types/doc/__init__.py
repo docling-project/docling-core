@@ -70,7 +70,6 @@ from .labels import (
     TableCellLabel,
 )
 from .page import (
-    BoundingRectangle,
     ColorMixin,
     ColorRGBA,
     Coord2D,

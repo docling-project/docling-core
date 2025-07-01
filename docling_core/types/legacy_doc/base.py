@@ -25,6 +25,7 @@ CellHeader = tuple[
 ]
 
 BoundingBox = Annotated[list[float], Field(min_length=4, max_length=4)]
+BoundingRectangle = Annotated[list[float], Field(min_length=8, max_length=8)]
 
 Span = Annotated[list[int], Field(min_length=2, max_length=2)]
 
@@ -69,7 +70,7 @@ class S3Reference(AliasModel):
 class Prov(AliasModel):
     """Provenance."""
 
-    bbox: BoundingBox
+    bbox: Union["BoundingBox", "BoundingRectangle"]
     page: PositiveInt
     span: Span
     ref_s3_data: Optional[StrictStr] = Field(

@@ -1,12 +1,12 @@
 """Models for the base data types."""
 
-from enum import Enum
-from typing import List, Tuple, NamedTuple
-import numpy as np
 import math
-from shapely.geometry import Polygon
+from enum import Enum
+from typing import List, NamedTuple, Tuple, Union
 
+import numpy as np
 from pydantic import BaseModel
+from shapely.geometry import Polygon
 
 
 class ImageRefMode(str, Enum):
@@ -373,7 +373,9 @@ class BoundingBox(BaseModel):
         return False
 
     @classmethod
-    def enclosing_bbox(cls, boxes: List["BoundingBox"]) -> "BoundingBox":
+    def enclosing_bbox(
+        cls, boxes: List[Union["BoundingBox", "BoundingRectangle"]]
+    ) -> "BoundingBox":
         """Create a bounding box that covers all of the given boxes."""
         if not boxes:
             raise ValueError("No bounding boxes provided for union.")
@@ -385,15 +387,21 @@ class BoundingBox(BaseModel):
                 CoordOrigin to compute their union."
             )
 
-        left = min(box.l for box in boxes)
-        right = max(box.r for box in boxes)
+        # transform every BRectangle in the encloser BBox
+        boxes_post = [
+            box.to_bounding_box() if isinstance(box, BoundingRectangle) else box
+            for box in boxes
+        ]
+
+        left = min(box.l for box in boxes_post)
+        right = max(box.r for box in boxes_post)
 
         if origin == CoordOrigin.TOPLEFT:
-            top = min(box.t for box in boxes)
-            bottom = max(box.b for box in boxes)
+            top = min(box.t for box in boxes_post)
+            bottom = max(box.b for box in boxes_post)
         elif origin == CoordOrigin.BOTTOMLEFT:
-            top = max(box.t for box in boxes)
-            bottom = min(box.b for box in boxes)
+            top = max(box.t for box in boxes_post)
+            bottom = min(box.b for box in boxes_post)
         else:
             raise ValueError("BoundingBoxes have different CoordOrigin")
 
@@ -436,6 +444,7 @@ class BoundingBox(BaseModel):
         elif self.coord_origin == CoordOrigin.BOTTOMLEFT:
             return max(0.0, max(self.t, other.t) - min(self.b, other.b))
         raise ValueError("Unsupported CoordOrigin")
+
 
 class Coord2D(NamedTuple):
     """A 2D coordinate with x and y components."""
@@ -503,6 +512,82 @@ class BoundingRectangle(BaseModel):
             self.r_y0 + self.r_y1 + self.r_y2 + self.r_y3
         ) / 4.0
 
+    @property
+    def l(self):  # noqa: E743
+        """Left value of the inclosing rectangle."""
+        return min([self.r_x0, self.r_x1, self.r_x2, self.r_x3])
+
+    @property
+    def r(self):
+        """Right value of the inclosing rectangle."""
+        return max([self.r_x0, self.r_x1, self.r_x2, self.r_x3])
+
+    @property
+    def t(self):
+        """Top value of the inclosing rectangle."""
+        if self.coord_origin == CoordOrigin.BOTTOMLEFT:
+            top = max([self.r_y0, self.r_y1, self.r_y2, self.r_y3])
+        else:
+            top = min([self.r_y0, self.r_y1, self.r_y2, self.r_y3])
+        return top
+
+    @property
+    def b(self):
+        """Bottom value of the inclosing rectangle."""
+        if self.coord_origin == CoordOrigin.BOTTOMLEFT:
+            bottom = min([self.r_y0, self.r_y1, self.r_y2, self.r_y3])
+        else:
+            bottom = max([self.r_y0, self.r_y1, self.r_y2, self.r_y3])
+        return bottom
+
+    def resize_by_scale(self, x_scale: float, y_scale: float):
+        """resize_by_scale."""
+        rect_to_bbox = self.to_bounding_box()
+        return BoundingBox(
+            l=rect_to_bbox.l * x_scale,
+            r=rect_to_bbox.r * x_scale,
+            t=rect_to_bbox.t * y_scale,
+            b=rect_to_bbox.b * y_scale,
+            coord_origin=self.coord_origin,
+        )
+
+    def scale_to_size(self, old_size: Size, new_size: Size):
+        """scale_to_size."""
+        return self.resize_by_scale(
+            x_scale=new_size.width / old_size.width,
+            y_scale=new_size.height / old_size.height,
+        )
+
+    def scaled(self, scale: float):
+        """scaled."""
+        return self.resize_by_scale(x_scale=scale, y_scale=scale)
+
+    def normalized(self, page_size: Size):
+        """normalized."""
+        return self.scale_to_size(
+            old_size=page_size, new_size=Size(height=1.0, width=1.0)
+        )
+
+    def expand_by_scale(self, x_scale: float, y_scale: float) -> "BoundingBox":
+        """expand_to_size."""
+        rect_to_bbox = self.to_bounding_box()
+        if self.coord_origin == CoordOrigin.TOPLEFT:
+            return BoundingBox(
+                l=rect_to_bbox.l - rect_to_bbox.width * x_scale,
+                r=rect_to_bbox.r + rect_to_bbox.width * x_scale,
+                t=rect_to_bbox.t - rect_to_bbox.height * y_scale,
+                b=rect_to_bbox.b + rect_to_bbox.height * y_scale,
+                coord_origin=self.coord_origin,
+            )
+        elif self.coord_origin == CoordOrigin.BOTTOMLEFT:
+            return BoundingBox(
+                l=rect_to_bbox.l - rect_to_bbox.width * x_scale,
+                r=rect_to_bbox.r + rect_to_bbox.width * x_scale,
+                t=rect_to_bbox.t + rect_to_bbox.height * y_scale,
+                b=rect_to_bbox.b - rect_to_bbox.height * y_scale,
+                coord_origin=self.coord_origin,
+            )
+
     def to_bounding_box(self) -> BoundingBox:
         """Convert to a BoundingBox representation."""
         if self.coord_origin == CoordOrigin.BOTTOMLEFT:
@@ -524,8 +609,12 @@ class BoundingRectangle(BaseModel):
         )
 
     @classmethod
-    def from_bounding_box(cls, bbox: BoundingBox) -> "BoundingRectangle":
+    def from_bounding_box(
+        cls, bbox: Union["BoundingRectangle", BoundingBox]
+    ) -> "BoundingRectangle":
         """Convert a BoundingBox into a BoundingRectangle."""
+        if isinstance(bbox, BoundingRectangle):
+            return bbox
         return cls(
             r_x0=bbox.l,
             r_y0=bbox.b,
@@ -546,7 +635,7 @@ class BoundingRectangle(BaseModel):
             Coord2D(self.r_x2, self.r_y2),
             Coord2D(self.r_x3, self.r_y3),
         ]
-    
+
     def to_list(self) -> List[Tuple]:
         """Convert to a list of tuple point coordinates."""
         return [
@@ -555,14 +644,30 @@ class BoundingRectangle(BaseModel):
             (self.r_x2, self.r_y2),
             (self.r_x3, self.r_y3),
         ]
-    
+
+    def as_tuple(self) -> Tuple[float, float, float, float, float, float, float, float]:
+        """as_tuple."""
+        return (
+            self.r_x0,
+            self.r_y0,
+            self.r_x1,
+            self.r_y1,
+            self.r_x2,
+            self.r_y2,
+            self.r_x3,
+            self.r_y3,
+        )
+
     def to_shapely_polygon(self) -> Polygon:
-        return Polygon([
-            (self.r_x0, self.r_y0),
-            (self.r_x1, self.r_y1),
-            (self.r_x2, self.r_y2),
-            (self.r_x3, self.r_y3),
-        ])
+        """To shapely polygon."""
+        return Polygon(
+            [
+                (self.r_x0, self.r_y0),
+                (self.r_x1, self.r_y1),
+                (self.r_x2, self.r_y2),
+                (self.r_x3, self.r_y3),
+            ]
+        )
 
     def to_bottom_left_origin(self, page_height: float) -> "BoundingRectangle":
         """Convert coordinates to use bottom-left origin.
@@ -615,14 +720,11 @@ class BoundingRectangle(BaseModel):
     def intersection_over_union(
         self, other: "BoundingRectangle", eps: float = 1.0e-6
     ) -> float:
-        """intersection_over_union."""
-
+        """Intersection_over_union."""
         polygon_other = other.to_shapely_polygon()
         current_polygon = self.to_shapely_polygon()
-        
+
         intersection_area = current_polygon.intersection(polygon_other).area
         union_area = current_polygon.union(polygon_other).area
-        
+
         return intersection_area / (union_area + eps)
-
-
