@@ -1,0 +1,315 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.3.0",
+  "name": "00e80479997ace55a2e7cc4cb291411b81b2b4111e5be295b8e827436e917530",
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/texts/0"
+      },
+      {
+        "$ref": "#/pictures/0"
+      },
+      {
+        "$ref": "#/texts/1"
+      },
+      {
+        "$ref": "#/groups/0"
+      },
+      {
+        "$ref": "#/texts/4"
+      },
+      {
+        "$ref": "#/texts/5"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [
+    {
+      "self_ref": "#/groups/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/2"
+        },
+        {
+          "$ref": "#/texts/3"
+        }
+      ],
+      "content_layer": "body",
+      "name": "list",
+      "label": "list"
+    }
+  ],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "caption",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "r_x0": 509.66453018188474,
+            "r_y0": 195.2655132293701,
+            "r_x1": 823.4733366966248,
+            "r_y1": 405.85461616516113,
+            "r_x2": 828.5433065414428,
+            "r_y2": 397.4555854797363,
+            "r_x3": 514.4958744049072,
+            "r_y3": 186.9875347137451,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "Figure 2: New car sales by year as modelled by the TCM LS model run",
+      "text": "Figure 2: New car sales by year as modelled by the TCM LS model run"
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "section_header",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "r_x0": 317.1496463298798,
+            "r_y0": 463.0926097869873,
+            "r_x1": 337.6816155910492,
+            "r_y1": 477.51476097106934,
+            "r_x2": 342.38450860977173,
+            "r_y2": 469.4521385192871,
+            "r_x3": 321.8373177051544,
+            "r_y3": 455.03806228637694,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "Notes:",
+      "text": "Notes:",
+      "level": 2
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "r_x0": 279.7723736286163,
+            "r_y0": 527.31781539917,
+            "r_x1": 630.5829946517944,
+            "r_y1": 776.2454526901245,
+            "r_x2": 660.1747346878052,
+            "r_y2": 727.3397632598877,
+            "r_x3": 307.7846315860748,
+            "r_y3": 479.18461761474606,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "\uf0b7 ICV = internal combustion vehicle, HEV = hybrid electric vehicle, PHEV = plug-in hybrid electric  vehicle, EV = electric vehicle, FCV = fuel cell vehicle, E85 = 85% bio-ethanol plus 15% petrol  blend, Biodiesel (2nd gen) ICV = pure (100%) second generation biodiesel.",
+      "text": "\uf0b7 ICV = internal combustion vehicle, HEV = hybrid electric vehicle, PHEV = plug-in hybrid electric  vehicle, EV = electric vehicle, FCV = fuel cell vehicle, E85 = 85% bio-ethanol plus 15% petrol  blend, Biodiesel (2nd gen) ICV = pure (100%) second generation biodiesel.",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/3",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "r_x0": 265.81266660690306,
+            "r_y0": 551.3047462463379,
+            "r_x1": 567.6941934585572,
+            "r_y1": 766.3243297576904,
+            "r_x2": 572.5692830085754,
+            "r_y2": 758.2244688034058,
+            "r_x3": 270.4625407218933,
+            "r_y3": 543.3150146484375,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "\uf0b7 The peak and subsequent drop in new car sales in 2005-07 is based on observed data.",
+      "text": "\uf0b7 The peak and subsequent drop in new car sales in 2005-07 is based on observed data.",
+      "enumerated": false,
+      "marker": "-"
+    },
+    {
+      "self_ref": "#/texts/4",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "r_x0": 123.34899322986602,
+            "r_y0": 796.0989818572998,
+            "r_x1": 470.6539724349975,
+            "r_y1": 1053.1127815246582,
+            "r_x2": 596.6871794700622,
+            "r_y2": 844.9434242248535,
+            "r_x3": 242.61499013900755,
+            "r_y3": 591.1650844573975,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "Two further lifestyle changes were simulated for cars. First, car buyers - whether  private, fleet or business - are assumed to choose smaller cars instead of larger ones.  This is simulated in UKTCM by phasing out the sale of new large cars (engine size  >2.0 litres) by 2020 - starting in 2010, with linear interpolation between 2010 and  2020. Secondly, the tendency towards less overall car use and the increased  membership of car clubs for use of a variety of types of cars for longer distance  journeys is modelled endogenously in UKTCM by assuming significantly lower levels  of maximum car ownership per household in urban and non-urban areas - about half  of the reference value (TCM REF) for households owning \u2018at least 2 cars\u2019 and \u2018at least",
+      "text": "Two further lifestyle changes were simulated for cars. First, car buyers - whether  private, fleet or business - are assumed to choose smaller cars instead of larger ones.  This is simulated in UKTCM by phasing out the sale of new large cars (engine size  >2.0 litres) by 2020 - starting in 2010, with linear interpolation between 2010 and  2020. Secondly, the tendency towards less overall car use and the increased  membership of car clubs for use of a variety of types of cars for longer distance  journeys is modelled endogenously in UKTCM by assuming significantly lower levels  of maximum car ownership per household in urban and non-urban areas - about half  of the reference value (TCM REF) for households owning \u2018at least 2 cars\u2019 and \u2018at least"
+    },
+    {
+      "self_ref": "#/texts/5",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "page_footer",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "r_x0": 270.87814836502076,
+            "r_y0": 950.4819365501403,
+            "r_x1": 281.0608870983124,
+            "r_y1": 958.0538795471191,
+            "r_x2": 285.7220084667206,
+            "r_y2": 950.2045403480529,
+            "r_x3": 275.53167243003844,
+            "r_y3": 942.6361121177673,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "25",
+      "text": "25"
+    }
+  ],
+  "pictures": [
+    {
+      "self_ref": "#/pictures/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "r_x0": 326.52861199378964,
+            "r_y0": 446.9771701812744,
+            "r_x1": 685.4023781776428,
+            "r_y1": 698.4126926422119,
+            "r_x2": 841.0731253623962,
+            "r_y2": 441.2905300140381,
+            "r_x3": 473.6983551979065,
+            "r_y3": 194.0965919494629,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "image": {
+        "mimetype": "image/png",
+        "dpi": 72,
+        "size": {
+          "width": 871.0,
+          "height": 570.0
+        },
+        "uri": "GroundTruthPictures/0"
+      },
+      "annotations": []
+    }
+  ],
+  "tables": [],
+  "key_value_items": [],
+  "form_items": [],
+  "pages": {
+    "1": {
+      "size": {
+        "width": 907.0,
+        "height": 1209.0
+      },
+      "image": {
+        "mimetype": "image/png",
+        "dpi": 72,
+        "size": {
+          "width": 907.0,
+          "height": 1209.0
+        },
+        "uri": "GroundTruthPageImages/1"
+      },
+      "page_no": 1
+    }
+  }
+}

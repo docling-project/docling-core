@@ -25,7 +25,7 @@ from docling_core.transforms.serializer.common import (
     DocSerializer,
     create_ser_result,
 )
-from docling_core.types.doc.base import BoundingBox
+from docling_core.types.doc.base import BoundingBox, BoundingRectangle
 from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
@@ -318,7 +318,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
                 if len(doc.pages.keys()):
                     page_w, page_h = doc.pages[page_no].size.as_tuple()
                     cell_txt += DocumentToken.get_location(
-                        bbox=cell.prov.bbox.to_top_left_origin(page_h).as_tuple(),
+                        bbox=cell.prov.bbox,
                         page_w=page_w,
                         page_h=page_h,
                         xsize=params.xsize,
@@ -422,7 +422,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
     ) -> SerializationResult:
 
         prov: Optional[ProvenanceItem] = None
-        boxes: list[BoundingBox] = []
+        boxes: list[Union[BoundingBox, BoundingRectangle]] = []
         doc_items: list[DocItem] = []
         for it, _ in doc.iterate_items(root=item):
             if isinstance(it, DocItem):

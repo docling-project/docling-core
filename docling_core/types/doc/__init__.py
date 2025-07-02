@@ -5,7 +5,7 @@
 
 """Package for models defined by the Document type."""
 
-from .base import BoundingBox, CoordOrigin, ImageRefMode, Size
+from .base import BoundingBox, BoundingRectangle, CoordOrigin, ImageRefMode, Size
 from .document import (
     BaseAnnotation,
     ChartBar,
@@ -71,7 +71,6 @@ from .labels import (
     TableCellLabel,
 )
 from .page import (
-    BoundingRectangle,
     ColorMixin,
     ColorRGBA,
     Coord2D,

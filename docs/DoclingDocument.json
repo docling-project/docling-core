@@ -33,6 +33,59 @@
       "title": "BoundingBox",
       "type": "object"
     },
+    "BoundingRectangle": {
+      "description": "Model representing a rectangular boundary with four corner points.",
+      "properties": {
+        "r_x0": {
+          "title": "R X0",
+          "type": "number"
+        },
+        "r_y0": {
+          "title": "R Y0",
+          "type": "number"
+        },
+        "r_x1": {
+          "title": "R X1",
+          "type": "number"
+        },
+        "r_y1": {
+          "title": "R Y1",
+          "type": "number"
+        },
+        "r_x2": {
+          "title": "R X2",
+          "type": "number"
+        },
+        "r_y2": {
+          "title": "R Y2",
+          "type": "number"
+        },
+        "r_x3": {
+          "title": "R X3",
+          "type": "number"
+        },
+        "r_y3": {
+          "title": "R Y3",
+          "type": "number"
+        },
+        "coord_origin": {
+          "$ref": "#/$defs/CoordOrigin",
+          "default": "BOTTOMLEFT"
+        }
+      },
+      "required": [
+        "r_x0",
+        "r_y0",
+        "r_x1",
+        "r_y1",
+        "r_x2",
+        "r_y2",
+        "r_x3",
+        "r_y3"
+      ],
+      "title": "BoundingRectangle",
+      "type": "object"
+    },
     "ChartBar": {
       "description": "Represents a bar in a bar chart.\n\nAttributes:\n    label (str): The label for the bar.\n    values (float): The value associated with the bar.",
       "properties": {
@@ -1681,7 +1734,15 @@
           "type": "integer"
         },
         "bbox": {
-          "$ref": "#/$defs/BoundingBox"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingBox"
+            },
+            {
+              "$ref": "#/$defs/BoundingRectangle"
+            }
+          ],
+          "title": "Bbox"
         },
         "charspan": {
           "maxItems": 2,
