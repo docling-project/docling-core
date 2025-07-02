@@ -1,0 +1,9 @@
+<doctag><caption><rec_281><rec_81><rec_454><rec_168><rec_457><rec_164><rec_284><rec_77>Figure 2: New car sales by year as modelled by the TCM LS model run</caption>
+<picture><rec_180><rec_185><rec_378><rec_289><rec_464><rec_183><rec_261><rec_80></picture>
+<section_header_level_2><rec_175><rec_192><rec_186><rec_197><rec_189><rec_194><rec_177><rec_188>Notes:</section_header_level_2>
+<unordered_list><list_item><rec_154><rec_218><rec_348><rec_321><rec_364><rec_301><rec_170><rec_198> ICV = internal combustion vehicle, HEV = hybrid electric vehicle, PHEV = plug-in hybrid electric  vehicle, EV = electric vehicle, FCV = fuel cell vehicle, E85 = 85% bio-ethanol plus 15% petrol  blend, Biodiesel (2nd gen) ICV = pure (100%) second generation biodiesel.</list_item>
+<list_item><rec_147><rec_228><rec_313><rec_317><rec_316><rec_314><rec_149><rec_225> The peak and subsequent drop in new car sales in 2005-07 is based on observed data.</list_item>
+</unordered_list>
+<text><rec_68><rec_329><rec_259><rec_436><rec_329><rec_349><rec_134><rec_244>Two further lifestyle changes were simulated for cars. First, car buyers - whether  private, fleet or business - are assumed to choose smaller cars instead of larger ones.  This is simulated in UKTCM by phasing out the sale of new large cars (engine size  >2.0 litres) by 2020 - starting in 2010, with linear interpolation between 2010 and  2020. Secondly, the tendency towards less overall car use and the increased  membership of car clubs for use of a variety of types of cars for longer distance  journeys is modelled endogenously in UKTCM by assuming significantly lower levels  of maximum car ownership per household in urban and non-urban areas - about half  of the reference value (TCM REF) for households owning ‘at least 2 cars’ and ‘at least</text>
+<page_footer><rec_149><rec_393><rec_155><rec_396><rec_158><rec_393><rec_152><rec_390>25</page_footer>
+</doctag>
