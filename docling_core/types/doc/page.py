@@ -122,6 +122,8 @@ class BoundingRectangle(BaseModel):
         p_1 = ((self.r_x1 + self.r_x2) / 2.0, (self.r_y1 + self.r_y2) / 2.0)
 
         delta_x, delta_y = p_1[0] - p_0[0], p_1[1] - p_0[1]
+        if self.coord_origin == CoordOrigin.TOPLEFT:
+            delta_y = -delta_y
 
         if abs(delta_y) < 1.0e-3:
             angle = 0.0
@@ -131,8 +133,7 @@ class BoundingRectangle(BaseModel):
             angle = math.atan(delta_y / delta_x)
         if delta_x < 0:
             angle += np.pi
-        if angle < 0:
-            angle += 2 * np.pi
+        angle = angle % (2 * np.pi)
         return angle
 
     @property
