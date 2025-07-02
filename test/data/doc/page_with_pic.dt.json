@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "name": "Document",
   "furniture": {
     "self_ref": "#/furniture",
@@ -256,7 +256,7 @@
       "orig": "1. Left-looking cell rule: The left neighbour of an \"L\" cell must be either another \"L\" cell or a \"C\" cell.",
       "text": "1. Left-looking cell rule: The left neighbour of an \"L\" cell must be either another \"L\" cell or a \"C\" cell.",
       "enumerated": false,
-      "marker": "-"
+      "marker": ""
     },
     {
       "self_ref": "#/texts/6",
@@ -285,7 +285,7 @@
       "orig": "2. Up-looking cell rule: The upper neighbour of a \"U\" cell must be either another \"U\" cell or a \"C\" cell.",
       "text": "2. Up-looking cell rule: The upper neighbour of a \"U\" cell must be either another \"U\" cell or a \"C\" cell.",
       "enumerated": false,
-      "marker": "-"
+      "marker": ""
     },
     {
       "self_ref": "#/texts/7",
@@ -314,7 +314,7 @@
       "orig": "3. Cross cell rule:",
       "text": "3. Cross cell rule:",
       "enumerated": false,
-      "marker": "-"
+      "marker": ""
     },
     {
       "self_ref": "#/texts/8",
@@ -370,7 +370,7 @@
       "orig": "4. First row rule: Only \"L\" cells and \"C\" cells are allowed in the first row.",
       "text": "4. First row rule: Only \"L\" cells and \"C\" cells are allowed in the first row.",
       "enumerated": false,
-      "marker": "-"
+      "marker": ""
     },
     {
       "self_ref": "#/texts/10",
@@ -399,7 +399,7 @@
       "orig": "5. First column rule: Only \"U\" cells and \"C\" cells are allowed in the first column.",
       "text": "5. First column rule: Only \"U\" cells and \"C\" cells are allowed in the first column.",
       "enumerated": false,
-      "marker": "-"
+      "marker": ""
     },
     {
       "self_ref": "#/texts/11",
@@ -428,7 +428,7 @@
       "orig": "6. Rectangular rule: The table representation is always rectangular - all rows must have an equal number of tokens, terminated with \"NL\" token.",
       "text": "6. Rectangular rule: The table representation is always rectangular - all rows must have an equal number of tokens, terminated with \"NL\" token.",
       "enumerated": false,
-      "marker": "-"
+      "marker": ""
     },
     {
       "self_ref": "#/texts/12",

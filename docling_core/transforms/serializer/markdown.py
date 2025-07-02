@@ -7,6 +7,7 @@
 import html
 import re
 import textwrap
+from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -31,7 +32,6 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _get_annotation_text,
-    _PageBreakSerResult,
     create_ser_result,
 )
 from docling_core.types.doc.base import ImageRefMode
@@ -48,8 +48,9 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    ListGroup,
+    ListItem,
     NodeItem,
-    OrderedList,
     PictureClassificationData,
     PictureItem,
     PictureMoleculeData,
@@ -58,7 +59,6 @@ from docling_core.types.doc.document import (
     TableItem,
     TextItem,
     TitleItem,
-    UnorderedList,
 )
 
 
@@ -79,6 +79,14 @@ def _get_annotation_ser_result(
     )
 
 
+class OrigListItemMarkerMode(str, Enum):
+    """Display mode for original list item marker."""
+
+    NEVER = "never"
+    ALWAYS = "always"
+    AUTO = "auto"
+
+
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
@@ -93,6 +101,8 @@ class MarkdownParams(CommonParams):
     escape_html: bool = True
     include_annotations: bool = True
     mark_annotations: bool = False
+    orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
+    ensure_valid_list_item_marker: bool = True
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -117,7 +127,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         escape_html = True
         escape_underscores = True
         processing_pending = True
-        if isinstance(item, (TitleItem, SectionHeaderItem)):
+        if isinstance(item, (ListItem, TitleItem, SectionHeaderItem)):
             # case where processing/formatting should be applied first (in inner scope)
             processing_pending = False
             if (
@@ -127,7 +137,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                     (child_group := item.children[0].resolve(doc)), InlineGroup
                 )
             ):
-                # case of heading with inline
+                # case of inline within heading / list item
                 ser_res = doc_serializer.serialize(item=child_group)
                 text = ser_res.text
                 for span in ser_res.spans:
@@ -140,8 +150,55 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
                 )
-            num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
-            text_part = f"{num_hashes * '#'} {text}"
+
+            if isinstance(item, ListItem):
+                pieces: list[str] = []
+                case_auto = (
+                    params.orig_list_item_marker_mode == OrigListItemMarkerMode.AUTO
+                    and bool(re.search(r"[a-zA-Z0-9]", item.marker))
+                )
+                case_already_valid = (
+                    params.ensure_valid_list_item_marker
+                    and params.orig_list_item_marker_mode
+                    != OrigListItemMarkerMode.NEVER
+                    and (
+                        item.marker in ["-", "*", "+"]
+                        or re.fullmatch(r"\d+\.", item.marker)
+                    )
+                )
+
+                # wrap with outer marker (if applicable)
+                if params.ensure_valid_list_item_marker and not case_already_valid:
+                    assert item.parent and isinstance(
+                        (list_group := item.parent.resolve(doc)), ListGroup
+                    )
+                    if list_group.first_item_is_enumerated(doc) and (
+                        params.orig_list_item_marker_mode != OrigListItemMarkerMode.AUTO
+                        or not item.marker
+                    ):
+                        pos = -1
+                        for i, child in enumerate(list_group.children):
+                            if child.resolve(doc) == item:
+                                pos = i
+                                break
+                        md_marker = f"{pos + 1}."
+                    else:
+                        md_marker = "-"
+                    pieces.append(md_marker)
+
+                # include original marker (if applicable)
+                if item.marker and (
+                    params.orig_list_item_marker_mode == OrigListItemMarkerMode.ALWAYS
+                    or case_auto
+                    or case_already_valid
+                ):
+                    pieces.append(item.marker)
+
+                pieces.append(text)
+                text_part = " ".join(pieces)
+            else:
+                num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
+                text_part = f"{num_hashes * '#'} {text}"
         elif isinstance(item, CodeItem):
             text_part = f"`{text}`" if is_inline_scope else f"```\n{text}\n```"
             escape_html = False
@@ -452,7 +509,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
     def serialize(
         self,
         *,
-        item: Union[UnorderedList, OrderedList],
+        item: ListGroup,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
@@ -473,27 +530,24 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         sep = "\n"
         my_parts: list[SerializationResult] = []
         for p in parts:
-            if p.text and p.text[0] == " " and my_parts:
-                my_parts[-1].text = sep.join([my_parts[-1].text, p.text])  # update last
+            if (
+                my_parts
+                and p.text
+                and p.spans
+                and p.spans[0].item.parent
+                and isinstance(p.spans[0].item.parent.resolve(doc), InlineGroup)
+            ):
+                my_parts[-1].text = f"{my_parts[-1].text}{p.text}"  # append to last
                 my_parts[-1].spans.extend(p.spans)
             else:
                 my_parts.append(p)
 
         indent_str = list_level * params.indent * " "
-        is_ol = isinstance(item, OrderedList)
         text_res = sep.join(
             [
                 # avoid additional marker on already evaled sublists
-                (
-                    c.text
-                    if c.text and c.text[0] == " "
-                    else (
-                        f"{indent_str}"
-                        f"{'' if isinstance(c, _PageBreakSerResult) else (f'{i + 1}. ' if is_ol else '- ')}"  # noqa: E501
-                        f"{c.text}"
-                    )
-                )
-                for i, c in enumerate(my_parts)
+                (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
+                for c in my_parts
             ]
         )
         return create_ser_result(text=text_res, span_source=my_parts)

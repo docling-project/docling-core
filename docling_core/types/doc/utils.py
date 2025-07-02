@@ -5,8 +5,10 @@
 
 """Utils for document types."""
 
+import html
 import unicodedata
 from pathlib import Path
+from typing import Optional
 
 
 def relative_path(src: Path, target: Path) -> Path:
@@ -49,14 +51,23 @@ def relative_path(src: Path, target: Path) -> Path:
     return Path(*up_segments, *down_segments)
 
 
-def get_html_tag_with_text_direction(html_tag: str, text: str) -> str:
+def get_html_tag_with_text_direction(
+    html_tag: str, text: str, attrs: Optional[dict] = None
+) -> str:
     """Form the HTML element with tag, text, and optional dir attribute."""
-    text_dir = get_text_direction(text)
-
-    if text_dir == "ltr":
-        return f"<{html_tag}>{text}</{html_tag}>"
-    else:
-        return f'<{html_tag} dir="{text_dir}">{text}</{html_tag}>'
+    my_attrs = attrs or {}
+    if (dir := my_attrs.get("dir")) is not None and dir != "ltr":
+        my_attrs["dir"] = get_text_direction(text)
+    pieces: list[str] = [html_tag]
+    if my_attrs:
+        attrs_str = " ".join(
+            [
+                f'{html.escape(k, quote=False)}="{html.escape(my_attrs[k], quote=False)}"'
+                for k in my_attrs
+            ]
+        )
+        pieces.append(attrs_str)
+    return f"<{' '.join(pieces)}>{text}</{html_tag}>"
 
 
 def get_text_direction(text: str) -> str:

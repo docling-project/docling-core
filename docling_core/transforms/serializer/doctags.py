@@ -1,7 +1,7 @@
 """Define classes for Doctags serialization."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 from typing_extensions import override
@@ -34,9 +34,9 @@ from docling_core.types.doc.document import (
     FormItem,
     InlineGroup,
     KeyValueItem,
+    ListGroup,
     ListItem,
     NodeItem,
-    OrderedList,
     PictureClassificationData,
     PictureItem,
     PictureMoleculeData,
@@ -44,7 +44,6 @@ from docling_core.types.doc.document import (
     ProvenanceItem,
     TableItem,
     TextItem,
-    UnorderedList,
 )
 from docling_core.types.doc.labels import DocItemLabel, PictureClassificationLabel
 from docling_core.types.doc.tokens import DocumentToken
@@ -376,7 +375,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
     def serialize(
         self,
         *,
-        item: Union[UnorderedList, OrderedList],
+        item: ListGroup,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
@@ -406,7 +405,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             text_res = f"{text_res}{delim}"
             wrap_tag = (
                 DocumentToken.ORDERED_LIST.value
-                if isinstance(item, OrderedList)
+                if item.first_item_is_enumerated(doc)
                 else DocumentToken.UNORDERED_LIST.value
             )
             text_res = _wrap(text=text_res, wrap_tag=wrap_tag)

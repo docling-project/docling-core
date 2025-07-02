@@ -17,12 +17,11 @@ from docling_core.types.doc.document import (
     FormItem,
     InlineGroup,
     KeyValueItem,
+    ListGroup,
     NodeItem,
-    OrderedList,
     PictureItem,
     TableItem,
     TextItem,
-    UnorderedList,
 )
 
 
@@ -128,7 +127,7 @@ class BaseListSerializer(ABC):
     def serialize(
         self,
         *,
-        item: Union[UnorderedList, OrderedList],
+        item: ListGroup,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,

@@ -482,6 +482,7 @@ class SegmentedPdfPage(SegmentedPage):
         add_location: bool = True,
         add_fontkey: bool = False,
         add_fontname: bool = True,
+        add_text_direction: bool = True,
     ) -> List[str]:
         """Export text cells as formatted text lines.
 
@@ -508,6 +509,9 @@ class SegmentedPdfPage(SegmentedPage):
 
             if add_fontname and isinstance(cell, PdfTextCell):
                 line += f"{cell.font_name:>10} "
+
+            if add_text_direction and isinstance(cell, PdfTextCell):
+                line += f"{cell.text_direction} "
 
             line += f"{cell.text}"
             lines.append(line)

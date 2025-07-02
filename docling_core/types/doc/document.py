@@ -54,7 +54,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.4.0"
+CURRENT_VERSION: Final = "1.5.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -131,12 +131,6 @@ class MiscAnnotation(BaseAnnotation):
 
     kind: Literal["misc"] = "misc"
     content: Dict[str, Any]
-
-
-# deprecated aliases:
-BasePictureData = BaseAnnotation
-PictureDescriptionData = DescriptionAnnotation
-PictureMiscData = MiscAnnotation
 
 
 class ChartLine(BaseModel):
@@ -544,6 +538,9 @@ class DocumentOrigin(BaseModel):
         "text/asciidoc",
         "text/markdown",
         "text/csv",
+        "audio/x-wav",
+        "audio/wav",
+        "audio/mp3",
     ]
 
     @field_validator("binary_hash", mode="before")
@@ -861,12 +858,27 @@ class GroupItem(NodeItem):  # Container type, can't be a leaf node
     label: GroupLabel = GroupLabel.UNSPECIFIED
 
 
-class UnorderedList(GroupItem):
-    """UnorderedList."""
+class ListGroup(GroupItem):
+    """ListGroup."""
 
     label: typing.Literal[GroupLabel.LIST] = GroupLabel.LIST  # type: ignore[assignment]
 
+    @field_validator("label", mode="before")
+    @classmethod
+    def patch_ordered(cls, value):
+        """patch_ordered."""
+        return GroupLabel.LIST if value == GroupLabel.ORDERED_LIST else value
 
+    def first_item_is_enumerated(self, doc: "DoclingDocument"):
+        """Whether the first list item is enumerated."""
+        return (
+            len(self.children) > 0
+            and isinstance(first_child := self.children[0].resolve(doc), ListItem)
+            and first_child.enumerated
+        )
+
+
+@deprecated("Use ListGroup instead.")
 class OrderedList(GroupItem):
     """OrderedList."""
 
@@ -1753,7 +1765,7 @@ class DoclingDocument(BaseModel):
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
-    groups: List[Union[OrderedList, UnorderedList, InlineGroup, GroupItem]] = []
+    groups: List[Union[ListGroup, InlineGroup, GroupItem]] = []
     texts: List[
         Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]
     ] = []
@@ -1939,7 +1951,7 @@ class DoclingDocument(BaseModel):
 
             self.form_items.append(item)
 
-        elif isinstance(item, (UnorderedList, OrderedList, InlineGroup)):
+        elif isinstance(item, (ListGroup, InlineGroup)):
             item_label = "groups"
             item_index = len(self.groups)
 
@@ -2161,6 +2173,26 @@ class DoclingDocument(BaseModel):
     # TODO: refactor add* methods below
     ###################################
 
+    def add_list_group(
+        self,
+        name: Optional[str] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+    ) -> ListGroup:
+        """add_list_group."""
+        _parent = parent or self.body
+        cref = f"#/groups/{len(self.groups)}"
+        group = ListGroup(self_ref=cref, parent=_parent.get_ref())
+        if name is not None:
+            group.name = name
+        if content_layer:
+            group.content_layer = content_layer
+
+        self.groups.append(group)
+        _parent.children.append(RefItem(cref=cref))
+        return group
+
+    @deprecated("Use add_list_group() instead.")
     def add_ordered_list(
         self,
         name: Optional[str] = None,
@@ -2168,18 +2200,13 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
     ) -> GroupItem:
         """add_ordered_list."""
-        _parent = parent or self.body
-        cref = f"#/groups/{len(self.groups)}"
-        group = OrderedList(self_ref=cref, parent=_parent.get_ref())
-        if name is not None:
-            group.name = name
-        if content_layer:
-            group.content_layer = content_layer
+        return self.add_list_group(
+            name=name,
+            parent=parent,
+            content_layer=content_layer,
+        )
 
-        self.groups.append(group)
-        _parent.children.append(RefItem(cref=cref))
-        return group
-
+    @deprecated("Use add_list_group() instead.")
     def add_unordered_list(
         self,
         name: Optional[str] = None,
@@ -2187,25 +2214,18 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
     ) -> GroupItem:
         """add_unordered_list."""
-        _parent = parent or self.body
-        cref = f"#/groups/{len(self.groups)}"
-        group = UnorderedList(self_ref=cref, parent=_parent.get_ref())
-        if name is not None:
-            group.name = name
-        if content_layer:
-            group.content_layer = content_layer
-
-        self.groups.append(group)
-        _parent.children.append(RefItem(cref=cref))
-        return group
+        return self.add_list_group(
+            name=name,
+            parent=parent,
+            content_layer=content_layer,
+        )
 
     def add_inline_group(
         self,
         name: Optional[str] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
-        # marker: Optional[UnorderedList.ULMarker] = None,
-    ) -> GroupItem:
+    ) -> InlineGroup:
         """add_inline_group."""
         _parent = parent or self.body
         cref = f"#/groups/{len(self.groups)}"
@@ -2233,14 +2253,8 @@ class DoclingDocument(BaseModel):
         :param parent: Optional[NodeItem]:  (Default value = None)
 
         """
-        if label == GroupLabel.LIST:
-            return self.add_unordered_list(
-                name=name,
-                parent=parent,
-                content_layer=content_layer,
-            )
-        elif label == GroupLabel.ORDERED_LIST:
-            return self.add_ordered_list(
+        if label in [GroupLabel.LIST, GroupLabel.ORDERED_LIST]:
+            return self.add_list_group(
                 name=name,
                 parent=parent,
                 content_layer=content_layer,
@@ -2292,16 +2306,15 @@ class DoclingDocument(BaseModel):
         :param parent: Optional[NodeItem]:  (Default value = None)
 
         """
-        if not isinstance(parent, (OrderedList, UnorderedList)):
-            warnings.warn("ListItem's parent must be a list group.", DeprecationWarning)
-
-        if not parent:
-            parent = self.body
+        if not isinstance(parent, ListGroup):
+            warnings.warn(
+                "ListItem parent must be a list group, creating one on the fly.",
+                DeprecationWarning,
+            )
+            parent = self.add_list_group(parent=parent)
 
         if not orig:
             orig = text
-
-        marker = marker or "-"
 
         text_index = len(self.texts)
         cref = f"#/texts/{text_index}"
@@ -2311,7 +2324,7 @@ class DoclingDocument(BaseModel):
             self_ref=cref,
             parent=parent.get_ref(),
             enumerated=enumerated,
-            marker=marker,
+            marker=marker or "",
             formatting=formatting,
             hyperlink=hyperlink,
         )
@@ -2865,7 +2878,7 @@ class DoclingDocument(BaseModel):
             if (
                 root_is_picture
                 and not traverse_pictures
-                and isinstance(child, DocItem)
+                and isinstance(child, NodeItem)
                 and child.self_ref not in allowed_pic_refs
             ):
                 continue
@@ -4057,18 +4070,18 @@ class DoclingDocument(BaseModel):
                     DocumentToken.ORDERED_LIST.value,
                     DocumentToken.UNORDERED_LIST.value,
                 ]:
-                    list_label = GroupLabel.LIST
+                    GroupLabel.LIST
                     enum_marker = ""
                     enum_value = 0
                     if tag_name == DocumentToken.ORDERED_LIST.value:
-                        list_label = GroupLabel.ORDERED_LIST
+                        GroupLabel.ORDERED_LIST
 
                     list_item_pattern = (
                         rf"<(?P<tag>{DocItemLabel.LIST_ITEM})>.*?</(?P=tag)>"
                     )
                     li_pattern = re.compile(list_item_pattern, re.DOTALL)
                     # Add list group:
-                    new_list = doc.add_group(label=list_label, name="list")
+                    new_list = doc.add_list_group(name="list")
                     # Pricess list items
                     for li_match in li_pattern.finditer(full_chunk):
                         enum_value += 1
@@ -4386,17 +4399,17 @@ class DoclingDocument(BaseModel):
     @field_validator("version")
     @classmethod
     def check_version_is_compatible(cls, v: str) -> str:
-        """Check if this document version is compatible with current version."""
-        current_match = re.match(VERSION_PATTERN, CURRENT_VERSION)
+        """Check if this document version is compatible with SDK schema version."""
+        sdk_match = re.match(VERSION_PATTERN, CURRENT_VERSION)
         doc_match = re.match(VERSION_PATTERN, v)
         if (
             doc_match is None
-            or current_match is None
-            or doc_match["major"] != current_match["major"]
-            or doc_match["minor"] > current_match["minor"]
+            or sdk_match is None
+            or doc_match["major"] != sdk_match["major"]
+            or doc_match["minor"] > sdk_match["minor"]
         ):
             raise ValueError(
-                f"incompatible version {v} with schema version {CURRENT_VERSION}"
+                f"Doc version {v} incompatible with SDK schema version {CURRENT_VERSION}"
             )
         else:
             return CURRENT_VERSION
@@ -4426,9 +4439,7 @@ class DoclingDocument(BaseModel):
         ):
             if isinstance(item, ListItem) and (
                 item.parent is None
-                or not isinstance(
-                    item.parent.resolve(doc=self), (OrderedList, UnorderedList)
-                )
+                or not isinstance(item.parent.resolve(doc=self), ListGroup)
             ):
                 if isinstance(prev, ListItem) and (
                     prev.parent is None or prev.parent.resolve(self) == self.body
@@ -4441,11 +4452,7 @@ class DoclingDocument(BaseModel):
         for curr_list_items in reversed(misplaced_list_items):
 
             # add group
-            new_group = (
-                OrderedList(self_ref="#")
-                if curr_list_items[0].enumerated
-                else UnorderedList(self_ref="#")
-            )
+            new_group = ListGroup(self_ref="#")
             self.insert_item_before_sibling(
                 new_item=new_group,
                 sibling=curr_list_items[0],
@@ -4532,3 +4539,10 @@ class DoclingDocument(BaseModel):
         self.key_value_items = item_lists["key_value_items"]  # type: ignore
         self.form_items = item_lists["form_items"]  # type: ignore
         self.body = new_body
+
+
+# deprecated aliases (kept for backwards compatibility):
+BasePictureData = BaseAnnotation
+PictureDescriptionData = DescriptionAnnotation
+PictureMiscData = MiscAnnotation
+UnorderedList = ListGroup

@@ -128,6 +128,7 @@ body:
   label: unspecified
   name: _root_
   self_ref: '#/body'
+form_items: []
 furniture:
   children: []
   content_layer: furniture
@@ -384,7 +385,8 @@ pictures:
   self_ref: '#/pictures/5'
 schema_name: DoclingDocument
 tables:
-- captions:
+- annotations: []
+  captions:
   - $ref: '#/texts/76'
   children:
   - $ref: '#/texts/76'
@@ -1891,7 +1893,8 @@ tables:
     page_no: 9
   references: []
   self_ref: '#/tables/0'
-- captions:
+- annotations: []
+  captions:
   - $ref: '#/texts/82'
   children:
   - $ref: '#/texts/82'
@@ -4811,7 +4814,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: ''
   orig: -'X ' cell cross cell, to merge with both left and upper neighbor cells
   parent:
     $ref: '#/groups/0'
@@ -4832,7 +4835,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: ''
   orig: -'NL ' new-line, switch to the next row.
   parent:
     $ref: '#/groups/0'
@@ -5060,7 +5063,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: ''
   orig: '5. First column rule : Only ''U '' cells and ''C '' cells are allowed in
     the first column.'
   parent:
@@ -6013,7 +6016,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: ''
   orig: "2. Chen, B., Peng, D., Zhang, J., Ren, Y., Jin, L.: Complex table structure\
     \ recognition in the wild using transformer and identity matrix-based augmentation.\
     \ In: Porwal, U., Forn\xE9s, A., Shafait, F. (eds.) Frontiers in Handwriting Recognition.\
@@ -6521,7 +6524,7 @@ texts:
   content_layer: body
   enumerated: false
   label: list_item
-  marker: '-'
+  marker: ''
   orig: '20. Zhang, Z., Zhang, J., Du, J., Wang, F.: Split, embed and merge: An accurate
     table structure recognizer. Pattern Recognition 126, 108565 (2022)'
   parent:
@@ -6615,4 +6618,4 @@ texts:
   text: '23. Zhong, X., Tang, J., Yepes, A.J.: Publaynet: largest dataset ever for
     document layout analysis. In: 2019 International Conference on Document Analysis
     and Recognition (ICDAR). pp. 1015-1022. IEEE (2019)'
-version: 1.1.0
+version: 1.5.0

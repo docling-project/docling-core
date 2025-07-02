@@ -35,11 +35,10 @@ from docling_core.types.doc.document import (
     DocumentOrigin,
     InlineGroup,
     LevelNumber,
-    OrderedList,
+    ListGroup,
     SectionHeaderItem,
     TableItem,
     TitleItem,
-    UnorderedList,
 )
 
 _VERSION: Final = "1.0.0"
@@ -240,7 +239,7 @@ class HierarchicalChunker(BaseChunker):
                     heading_by_level.pop(k, None)
                 continue
             elif (
-                isinstance(item, (OrderedList, UnorderedList, InlineGroup, DocItem))
+                isinstance(item, (ListGroup, InlineGroup, DocItem))
                 and item.self_ref not in visited
             ):
                 ser_res = my_doc_ser.serialize(item=item, visited=visited)

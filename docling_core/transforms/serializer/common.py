@@ -39,8 +39,8 @@ from docling_core.types.doc.document import (
     FormItem,
     InlineGroup,
     KeyValueItem,
+    ListGroup,
     NodeItem,
-    OrderedList,
     PictureClassificationData,
     PictureDataType,
     PictureItem,
@@ -49,7 +49,6 @@ from docling_core.types.doc.document import (
     TableAnnotationType,
     TableItem,
     TextItem,
-    UnorderedList,
 )
 from docling_core.types.doc.labels import DocItemLabel
 
@@ -89,7 +88,7 @@ def _iterate_items(
     ):
         if add_page_breaks:
             if (
-                isinstance(item, (UnorderedList, OrderedList, InlineGroup))
+                isinstance(item, (ListGroup, InlineGroup))
                 and item.self_ref not in my_visited
             ):
                 # if group starts with new page, yield page break before group node
@@ -316,7 +315,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         ########
         # groups
         ########
-        if isinstance(item, (UnorderedList, OrderedList)):
+        if isinstance(item, ListGroup):
             part = self.list_serializer.serialize(
                 item=item,
                 doc_serializer=self,

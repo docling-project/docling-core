@@ -1,3 +1,23 @@
+## [v2.39.0](https://github.com/docling-project/docling-core/releases/tag/v2.39.0) - 2025-06-27
+
+### Feature
+
+* Remodel lists, add MD & HTML ser. params, enable unset marker ([#339](https://github.com/docling-project/docling-core/issues/339)) ([`14a4fde`](https://github.com/docling-project/docling-core/commit/14a4fdee876a033934d2e5d9d60ba7518c828846))
+* Download Google docs and drive files via export url ([#335](https://github.com/docling-project/docling-core/issues/335)) ([`3eeb259`](https://github.com/docling-project/docling-core/commit/3eeb2596c668c5c35d616e1c9e0b66ba9a2eae2f))
+
+## [v2.38.2](https://github.com/docling-project/docling-core/releases/tag/v2.38.2) - 2025-06-25
+
+### Fix
+
+* Add missing mimetypes for asr inputs ([#341](https://github.com/docling-project/docling-core/issues/341)) ([`c2fd20f`](https://github.com/docling-project/docling-core/commit/c2fd20fad7ef0e85ecd2ce16ff10f110d6a6c154))
+* Add text direction to export_to_textlines ([#338](https://github.com/docling-project/docling-core/issues/338)) ([`425b191`](https://github.com/docling-project/docling-core/commit/425b191a90ef48c186567ef4c3bfe605938273bb))
+
+## [v2.38.1](https://github.com/docling-project/docling-core/releases/tag/v2.38.1) - 2025-06-20
+
+### Fix
+
+* **markdown:** Add heading formatting, fix code & formula formatting ([#336](https://github.com/docling-project/docling-core/issues/336)) ([`c9374e8`](https://github.com/docling-project/docling-core/commit/c9374e8fe48de8d82a102f7c4f30b9c90370b4ac))
+
 ## [v2.38.0](https://github.com/docling-project/docling-core/releases/tag/v2.38.0) - 2025-06-18
 
 ### Feature
