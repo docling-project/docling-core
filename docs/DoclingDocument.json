@@ -362,7 +362,9 @@
       "enum": [
         "body",
         "furniture",
-        "background"
+        "background",
+        "concealed",
+        "notes"
       ],
       "title": "ContentLayer",
       "type": "string"

@@ -731,11 +731,12 @@ class ProvenanceItem(BaseModel):
 class ContentLayer(str, Enum):
     """ContentLayer."""
 
-    BODY = "body" # main content of the document
-    FURNITURE = "furniture" # eg page-headers/footers
-    BACKGROUND = "background" # eg watermarks
-    CONCEALED = "concealed" # hidden or invisible text
-    NOTES = "notes" # author/speaker notes, corrections, etc
+    BODY = "body"  # main content of the document
+    FURNITURE = "furniture"  # eg page-headers/footers
+    BACKGROUND = "background"  # eg watermarks
+    CONCEALED = "concealed"  # hidden or invisible text
+    NOTES = "notes"  # author/speaker notes, corrections, etc
+
 
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
 
