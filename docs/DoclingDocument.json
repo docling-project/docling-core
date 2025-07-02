@@ -363,7 +363,7 @@
         "body",
         "furniture",
         "background",
-        "concealed",
+        "invisble",
         "notes"
       ],
       "title": "ContentLayer",
