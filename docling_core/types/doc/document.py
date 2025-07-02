@@ -734,7 +734,7 @@ class ContentLayer(str, Enum):
     BODY = "body"  # main content of the document
     FURNITURE = "furniture"  # eg page-headers/footers
     BACKGROUND = "background"  # eg watermarks
-    INVISIBLE = "invisble"  # hidden or invisible text
+    INVISIBLE = "invisible"  # hidden or invisible text
     NOTES = "notes"  # author/speaker notes, corrections, etc
 
 
