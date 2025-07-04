@@ -2,7 +2,7 @@ import os
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
@@ -2003,3 +2003,92 @@ def test_concatenate():
         with open(exp_html_file, "r", encoding="utf-8") as f:
             exp_html_data = f.read()
         assert html_data == exp_html_data
+
+
+def test_list_group_with_list_items():
+    good_doc = DoclingDocument(name="")
+    l1 = good_doc.add_list_group()
+    good_doc.add_list_item(text="ListItem 1", parent=l1)
+    good_doc.add_list_item(text="ListItem 2", parent=l1)
+
+    good_doc._validate_rules()
+
+
+def test_list_group_with_non_list_items():
+    bad_doc = DoclingDocument(name="")
+    l1 = bad_doc.add_list_group()
+    bad_doc.add_list_item(text="ListItem 1", parent=l1)
+    bad_doc.add_text(
+        text="non-ListItem in ListGroup", label=DocItemLabel.TEXT, parent=l1
+    )
+
+    with pytest.raises(ValueError):
+        bad_doc._validate_rules()
+
+
+def test_list_item_outside_list_group():
+    def unsafe_add_list_item(
+        doc: DoclingDocument,
+        text: str,
+        enumerated: bool = False,
+        marker: Optional[str] = None,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        if not parent:
+            parent = doc.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(doc.texts)
+        cref = f"#/texts/{text_index}"
+        list_item = ListItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            enumerated=enumerated,
+            marker=marker or "",
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+        if prov:
+            list_item.prov.append(prov)
+        if content_layer:
+            list_item.content_layer = content_layer
+
+        doc.texts.append(list_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return list_item
+
+    bad_doc = DoclingDocument(name="")
+    unsafe_add_list_item(doc=bad_doc, text="ListItem outside ListGroup")
+    with pytest.raises(ValueError):
+        bad_doc._validate_rules()
+
+
+def test_list_item_inside_list_group():
+    doc = DoclingDocument(name="")
+    l1 = doc.add_list_group()
+    doc.add_list_item(text="ListItem inside ListGroup", parent=l1)
+    doc._validate_rules()
+
+
+def test_group_with_children():
+    good_doc = DoclingDocument(name="")
+    grp = good_doc.add_group()
+    good_doc.add_text(text="Text in group", label=DocItemLabel.TEXT, parent=grp)
+    good_doc._validate_rules()
+
+
+def test_group_without_children():
+    bad_doc = DoclingDocument(name="")
+    bad_doc.add_group()
+    with pytest.raises(ValueError):
+        bad_doc._validate_rules()

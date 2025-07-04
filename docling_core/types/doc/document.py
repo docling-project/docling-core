@@ -5815,6 +5815,43 @@ class DoclingDocument(BaseModel):
         res_doc._update_from_index(doc_index)
         return res_doc
 
+    def _validate_rules(self):
+        def validate_list_group(doc: DoclingDocument, item: ListGroup):
+            for ref in item.children:
+                child = ref.resolve(doc)
+                if not isinstance(child, ListItem):
+                    raise ValueError(
+                        f"ListGroup {item.self_ref} contains non-ListItem {child.self_ref} ({child.label=})"
+                    )
+
+        def validate_list_item(doc: DoclingDocument, item: ListItem):
+            if item.parent is None:
+                raise ValueError(f"ListItem {item.self_ref} has no parent")
+            if not isinstance(item.parent.resolve(doc), ListGroup):
+                raise ValueError(
+                    f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"
+                )
+
+        def validate_group(doc: DoclingDocument, item: GroupItem):
+            if (
+                item.parent and not item.children
+            ):  # tolerate empty body, but not other groups
+                raise ValueError(f"Group {item.self_ref} has no children")
+
+        for item, _ in self.iterate_items(
+            with_groups=True,
+            traverse_pictures=True,
+            included_content_layers={c for c in ContentLayer},
+        ):
+            if isinstance(item, ListGroup):
+                validate_list_group(self, item)
+
+            elif isinstance(item, GroupItem):
+                validate_group(self, item)
+
+            elif isinstance(item, ListItem):
+                validate_list_item(self, item)
+
 
 # deprecated aliases (kept for backwards compatibility):
 BasePictureData = BaseAnnotation
