@@ -2148,6 +2148,10 @@ class DoclingDocument(BaseModel):
         if not success:
             self._pop_item(item=item)
 
+            raise ValueError(
+                f"Could not insert item: {item} under parent: {parent_ref.resolve(doc=self)}"
+            )
+
         return item.get_ref()
 
     def _delete_items(self, refs: list[RefItem]):
@@ -2978,6 +2982,10 @@ class DoclingDocument(BaseModel):
 
             if created_parent:
                 self.delete_items(node_items=[item.parent.resolve(self)])
+
+            raise ValueError(
+                f"Could not insert item: {item} under parent: {item.parent.resolve(doc=self)}"
+            )
 
     def insert_list_group(
         self,
