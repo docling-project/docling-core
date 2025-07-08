@@ -27,8 +27,7 @@ from PIL import ImageColor, ImageDraw, ImageFont
 from PIL.ImageFont import FreeTypeFont
 from pydantic import AnyUrl, BaseModel, Field, model_validator
 
-from docling_core.types.doc.base import BoundingBox, CoordOrigin
-from docling_core.types.doc.document import ImageRef
+from docling_core.types.doc import BoundingBox, CoordOrigin, ImageRef, RoundedFloat
 
 _logger = logging.getLogger(__name__)
 
@@ -84,24 +83,24 @@ class ColorRGBA(BaseModel):
 class Coord2D(NamedTuple):
     """A 2D coordinate with x and y components."""
 
-    x: float
-    y: float
+    x: RoundedFloat  # float = Field(round_=2)
+    y: RoundedFloat  # float = Field(round_=2)
 
 
 class BoundingRectangle(BaseModel):
     """Model representing a rectangular boundary with four corner points."""
 
-    r_x0: float
-    r_y0: float
+    r_x0: RoundedFloat  # float = Field(round_=2)
+    r_y0: RoundedFloat  # float = Field(round_=2)
 
-    r_x1: float
-    r_y1: float
+    r_x1: RoundedFloat  # float = Field(round_=2)
+    r_y1: RoundedFloat  # float = Field(round_=2)
 
-    r_x2: float
-    r_y2: float
+    r_x2: RoundedFloat  # float = Field(round_=2)
+    r_y2: RoundedFloat  # float = Field(round_=2)
 
-    r_x3: float
-    r_y3: float
+    r_x3: RoundedFloat  # float = Field(round_=2)
+    r_y3: RoundedFloat  # float = Field(round_=2)
 
     coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
 
@@ -271,7 +270,7 @@ class TextCell(ColorMixin, OrderedElement):
 
     text_direction: TextDirection = TextDirection.LEFT_TO_RIGHT
 
-    confidence: float = 1.0
+    confidence: RoundedFloat = 1.0  # float = Field(default=1.0, round_=2)
     from_ocr: bool
 
     def to_bounding_box(self) -> BoundingBox:
@@ -363,7 +362,7 @@ class PdfLine(ColorMixin, OrderedElement):
 
     parent_id: int
     points: List[Coord2D]
-    width: float = 1.0
+    width: RoundedFloat = 1.0  # float = Field(default=1.0, round_=2)
 
     coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
 
@@ -410,7 +409,7 @@ class PdfLine(ColorMixin, OrderedElement):
 class PageGeometry(BaseModel):
     """Model representing dimensions of a page."""
 
-    angle: float
+    angle: RoundedFloat  # float = Field(round_=2)
     rect: BoundingRectangle
 
     @property

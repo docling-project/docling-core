@@ -15,7 +15,18 @@ import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, Final, List, Literal, Optional, Sequence, Tuple, Union
+from typing import (
+    Annotated,
+    Any,
+    Dict,
+    Final,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 from urllib.parse import unquote
 
 import pandas as pd
@@ -33,11 +44,11 @@ from pydantic import (
     validate_call,
 )
 from tabulate import tabulate
-from typing_extensions import Annotated, Self, deprecated
+from typing_extensions import Self, deprecated  # , Annotated
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
-from docling_core.types.doc import BoundingBox, Size
+from docling_core.types.doc import BoundingBox, RoundedFloat, Size
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
@@ -96,7 +107,7 @@ class PictureClassificationClass(BaseModel):
     """PictureClassificationData."""
 
     class_name: str
-    confidence: float
+    confidence: RoundedFloat  # float = Field(round_=2)
 
 
 class PictureClassificationData(BaseAnnotation):
@@ -120,9 +131,9 @@ class PictureMoleculeData(BaseAnnotation):
 
     kind: Literal["molecule_data"] = "molecule_data"
     smi: str
-    confidence: float
+    confidence: RoundedFloat
     class_name: str
-    segmentation: List[Tuple[float, float]]
+    segmentation: List[Tuple[RoundedFloat, RoundedFloat]]
     provenance: str
 
 
@@ -143,7 +154,7 @@ class ChartLine(BaseModel):
     """
 
     label: str
-    values: List[Tuple[float, float]]
+    values: List[Tuple[RoundedFloat, RoundedFloat]]
 
 
 class ChartBar(BaseModel):
@@ -155,7 +166,7 @@ class ChartBar(BaseModel):
     """
 
     label: str
-    values: float
+    values: RoundedFloat
 
 
 class ChartStackedBar(BaseModel):
@@ -182,7 +193,7 @@ class ChartSlice(BaseModel):
     """
 
     label: str
-    value: float
+    value: RoundedFloat
 
 
 class ChartPoint(BaseModel):
@@ -193,7 +204,7 @@ class ChartPoint(BaseModel):
             chart.
     """
 
-    value: Tuple[float, float]
+    value: Tuple[RoundedFloat, RoundedFloat]
 
 
 class PictureChartData(BaseAnnotation):

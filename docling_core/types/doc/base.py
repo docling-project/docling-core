@@ -1,9 +1,12 @@
 """Models for the base data types."""
 
 from enum import Enum
-from typing import List, Tuple
+from typing import Annotated, List, Tuple
 
 from pydantic import BaseModel, Field
+
+# Create type aliases for rounded floats
+RoundedFloat = Annotated[float, Field(round_=2)]
 
 
 class ImageRefMode(str, Enum):
@@ -24,8 +27,8 @@ class CoordOrigin(str, Enum):
 class Size(BaseModel):
     """Size."""
 
-    width: float = Field(default=0.0, round_=2)
-    height: float = Field(default=0.0, round_=2)
+    width: RoundedFloat = 0.0  # float = Field(default=0.0, round_=2)
+    height: RoundedFloat = 0.0  # float = Field(default=0.0, round_=2)
 
     def as_tuple(self):
         """as_tuple."""
@@ -35,10 +38,10 @@ class Size(BaseModel):
 class BoundingBox(BaseModel):
     """BoundingBox."""
 
-    l: float = Field(round_=2) # left
-    t: float = Field(round_=2) # top
-    r: float = Field(round_=2) # right
-    b: float = Field(round_=2) # bottom
+    l: RoundedFloat = 0.0  # float = Field(round_=2)  # left
+    t: RoundedFloat = 0.0  # float = Field(round_=2)  # top
+    r: RoundedFloat = 0.0  # float = Field(round_=2)  # right
+    b: RoundedFloat = 0.0  # float = Field(round_=2)  # bottom
 
     coord_origin: CoordOrigin = CoordOrigin.TOPLEFT
 

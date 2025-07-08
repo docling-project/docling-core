@@ -5,7 +5,7 @@
 
 """Package for models defined by the Document type."""
 
-from .base import BoundingBox, CoordOrigin, ImageRefMode, Size
+from .base import BoundingBox, CoordOrigin, ImageRefMode, RoundedFloat, Size
 from .document import (
     BaseAnnotation,
     ChartBar,

@@ -4,18 +4,26 @@
       "description": "BoundingBox.",
       "properties": {
         "l": {
+          "default": 0.0,
+          "round_": 2,
           "title": "L",
           "type": "number"
         },
         "t": {
+          "default": 0.0,
+          "round_": 2,
           "title": "T",
           "type": "number"
         },
         "r": {
+          "default": 0.0,
+          "round_": 2,
           "title": "R",
           "type": "number"
         },
         "b": {
+          "default": 0.0,
+          "round_": 2,
           "title": "B",
           "type": "number"
         },
@@ -24,12 +32,6 @@
           "default": "TOPLEFT"
         }
       },
-      "required": [
-        "l",
-        "t",
-        "r",
-        "b"
-      ],
       "title": "BoundingBox",
       "type": "object"
     },
@@ -41,6 +43,7 @@
           "type": "string"
         },
         "values": {
+          "round_": 2,
           "title": "Values",
           "type": "number"
         }
@@ -65,9 +68,11 @@
             "minItems": 2,
             "prefixItems": [
               {
+                "round_": 2,
                 "type": "number"
               },
               {
+                "round_": 2,
                 "type": "number"
               }
             ],
@@ -92,9 +97,11 @@
           "minItems": 2,
           "prefixItems": [
             {
+              "round_": 2,
               "type": "number"
             },
             {
+              "round_": 2,
               "type": "number"
             }
           ],
@@ -116,6 +123,7 @@
           "type": "string"
         },
         "value": {
+          "round_": 2,
           "title": "Value",
           "type": "number"
         }
@@ -1270,6 +1278,7 @@
           "type": "string"
         },
         "confidence": {
+          "round_": 2,
           "title": "Confidence",
           "type": "number"
         }
@@ -1506,6 +1515,7 @@
           "type": "string"
         },
         "confidence": {
+          "round_": 2,
           "title": "Confidence",
           "type": "number"
         },
@@ -1519,9 +1529,11 @@
             "minItems": 2,
             "prefixItems": [
               {
+                "round_": 2,
                 "type": "number"
               },
               {
+                "round_": 2,
                 "type": "number"
               }
             ],
@@ -1835,11 +1847,13 @@
       "properties": {
         "width": {
           "default": 0.0,
+          "round_": 2,
           "title": "Width",
           "type": "number"
         },
         "height": {
           "default": 0.0,
+          "round_": 2,
           "title": "Height",
           "type": "number"
         }
