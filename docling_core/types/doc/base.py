@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import List, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ImageRefMode(str, Enum):
@@ -24,8 +24,8 @@ class CoordOrigin(str, Enum):
 class Size(BaseModel):
     """Size."""
 
-    width: float = 0.0
-    height: float = 0.0
+    width: float = Field(default=0.0, round_=2)
+    height: float = Field(default=0.0, round_=2)
 
     def as_tuple(self):
         """as_tuple."""
@@ -35,10 +35,10 @@ class Size(BaseModel):
 class BoundingBox(BaseModel):
     """BoundingBox."""
 
-    l: float  # left
-    t: float  # top
-    r: float  # right
-    b: float  # bottom
+    l: float = Field(round_=2) # left
+    t: float = Field(round_=2) # top
+    r: float = Field(round_=2) # right
+    b: float = Field(round_=2) # bottom
 
     coord_origin: CoordOrigin = CoordOrigin.TOPLEFT
 
