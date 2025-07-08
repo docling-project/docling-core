@@ -1637,6 +1637,253 @@ def test_document_manipulation():
     filename = Path("test/data/doc/constructed_doc.replaced_item.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
+    # Test insert_* methods with mixed insertion before/after sibling
+
+    node = _resolve(doc=doc, cref="#/texts/45")
+
+    last_node = doc.insert_list_group(
+        sibling=node, name="Inserted List Group", after=True
+    )
+    group_node = doc.insert_inline_group(
+        sibling=node, name="Inserted Inline Group", after=False
+    )
+    doc.insert_group(
+        sibling=node,
+        label=GroupLabel.LIST,
+        name="Inserted Group w/ LIST Label",
+        after=True,
+    )
+    doc.insert_group(
+        sibling=node,
+        label=GroupLabel.ORDERED_LIST,
+        name="Inserted Group w/ ORDERED_LIST Label",
+        after=False,
+    )
+    doc.insert_group(
+        sibling=node,
+        label=GroupLabel.INLINE,
+        name="Inserted Group w/ INLINE Label",
+        after=True,
+    )
+    doc.insert_group(
+        sibling=node,
+        label=GroupLabel.UNSPECIFIED,
+        name="Inserted Group w/ UNSPECIFIED Label",
+        after=False,
+    )
+    doc.insert_text(
+        sibling=node,
+        label=DocItemLabel.TITLE,
+        text="Inserted Text w/ TITLE Label",
+        after=True,
+    )
+    doc.insert_text(
+        sibling=node,
+        label=DocItemLabel.SECTION_HEADER,
+        text="Inserted Text w/ SECTION_HEADER Label",
+        after=False,
+    )
+    doc.insert_text(
+        sibling=node,
+        label=DocItemLabel.CODE,
+        text="Inserted Text w/ CODE Label",
+        after=True,
+    )
+    doc.insert_text(
+        sibling=node,
+        label=DocItemLabel.FORMULA,
+        text="Inserted Text w/ FORMULA Label",
+        after=False,
+    )
+    doc.insert_text(
+        sibling=node,
+        label=DocItemLabel.TEXT,
+        text="Inserted Text w/ TEXT Label",
+        after=True,
+    )
+
+    num_rows = 3
+    num_cols = 3
+    table_cells = []
+
+    for i in range(num_rows):
+        for j in range(num_cols):
+            table_cells.append(
+                TableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text=str(i * num_rows + j),
+                )
+            )
+
+    table_data = TableData(
+        table_cells=table_cells, num_rows=num_rows, num_cols=num_cols
+    )
+    doc.insert_table(sibling=node, data=table_data, after=False)
+
+    size = (64, 64)
+    img = PILImage.new("RGB", size, "black")
+    doc.insert_picture(
+        sibling=node, image=ImageRef.from_pil(image=img, dpi=72), after=True
+    )
+
+    doc.insert_title(sibling=node, text="Inserted Title", after=False)
+    doc.insert_code(sibling=node, text="Inserted Code", after=True)
+    doc.insert_formula(sibling=node, text="Inserted Formula", after=False)
+    doc.insert_heading(sibling=node, text="Inserted Heading", after=True)
+
+    graph = GraphData(
+        cells=[
+            GraphCell(
+                label=GraphCellLabel.KEY,
+                cell_id=0,
+                text="number",
+                orig="#",
+            ),
+            GraphCell(
+                label=GraphCellLabel.VALUE,
+                cell_id=1,
+                text="1",
+                orig="1",
+            ),
+        ],
+        links=[
+            GraphLink(
+                label=GraphLinkLabel.TO_VALUE,
+                source_cell_id=0,
+                target_cell_id=1,
+            ),
+            GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0),
+        ],
+    )
+
+    doc.insert_key_values(sibling=node, graph=graph, after=False)
+    doc.insert_form(sibling=node, graph=graph, after=True)
+
+    filename = Path("test/data/doc/constructed_doc.inserted_items_with_insert_*.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    # Test the handling of list items in insert_* methods, both with and without parent groups
+
+    li_sibling = doc.insert_list_item(
+        sibling=node, text="Inserted List Item, Incorrect Parent", after=False
+    )
+    doc.insert_list_item(
+        sibling=li_sibling, text="Inserted List Item, Correct Parent", after=True
+    )
+    doc.insert_text(
+        sibling=li_sibling,
+        label=DocItemLabel.LIST_ITEM,
+        text="Inserted Text with LIST_ITEM Label, Correct Parent",
+        after=False,
+    )
+    doc.insert_text(
+        sibling=node,
+        label=DocItemLabel.LIST_ITEM,
+        text="Inserted Text with LIST_ITEM Label, Incorrect Parent",
+        after=True,
+    )
+
+    filename = Path(
+        "test/data/doc/constructed_doc.inserted_list_items_with_insert_*.json"
+    )
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    # Test the bulk addition of node items
+
+    text_item_6 = TextItem(
+        self_ref="#",
+        text="Bulk Addition 1",
+        orig="Bulk Addition 1",
+        label=DocItemLabel.TEXT,
+    )
+    text_item_7 = TextItem(
+        self_ref="#",
+        text="Bulk Addition 2",
+        orig="Bulk Addition 2",
+        label=DocItemLabel.TEXT,
+    )
+
+    doc.add_node_items(
+        node_items=[text_item_6, text_item_7], doc=doc, parent=group_node
+    )
+
+    filename = Path("test/data/doc/constructed_doc.bulk_item_addition.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    # Test the bulk insertion of node items
+
+    text_item_8 = TextItem(
+        self_ref="#",
+        text="Bulk Insertion 1",
+        orig="Bulk Insertion 1",
+        label=DocItemLabel.TEXT,
+    )
+    text_item_9 = TextItem(
+        self_ref="#",
+        text="Bulk Insertion 2",
+        orig="Bulk Insertion 2",
+        label=DocItemLabel.TEXT,
+    )
+
+    doc.insert_node_items(
+        sibling=node, node_items=[text_item_8, text_item_9], doc=doc, after=False
+    )
+
+    filename = Path("test/data/doc/constructed_doc.bulk_item_insertion.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    # Test table data manipulation methods
+
+    table_data.add_row(["*"] * 3)
+    table_data.add_rows([["a", "b", "c"], ["d", "e", "f"]])
+    table_data.insert_row(1, ["*"] * 3)
+    table_data.insert_rows(1, [["a", "b", "c"], ["d", "e", "f"]], after=True)
+    table_data.pop_row()
+    table_data.remove_row(3)
+    table_data.remove_rows([1, 2, 5])
+
+    # Try to remove a nonexistent row
+    with pytest.raises(IndexError):
+        table_data.remove_row(100)
+
+    filename = Path("test/data/doc/constructed_doc.manipulated_table.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    # Test range manipulation methods
+
+    # Try to extract a range where start is after end
+    with pytest.raises(ValueError):
+        extracted_doc = doc.extract_items_range(start=node, end=group_node)
+
+    # Try to extract a range where start and end have different parents
+    with pytest.raises(ValueError):
+        extracted_doc = doc.extract_items_range(start=li_sibling, end=node)
+
+    extracted_doc = doc.extract_items_range(
+        start=group_node, end=node, end_inclusive=False, delete=True
+    )
+
+    filename = Path("test/data/doc/constructed_doc.extracted_with_deletion.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    doc.add_document(doc=extracted_doc, parent=last_node)
+
+    filename = Path("test/data/doc/constructed_doc.added_extracted_doc.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    doc.insert_document(doc=extracted_doc, sibling=last_node, after=False)
+
+    filename = Path("test/data/doc/constructed_doc.inserted_extracted_doc.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
+    doc.delete_items_range(start=node, end=last_node, start_inclusive=False)
+
+    filename = Path("test/data/doc/constructed_doc.deleted_items_range.json")
+    _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
+
 
 def test_misplaced_list_items():
     filename = Path("test/data/doc/misplaced_list_items.yaml")
