@@ -376,51 +376,46 @@ class TableData(BaseModel):  # TBD
 
         indices = sorted(indices, reverse=True)
 
-        removed_cells = []
+        all_removed_cells = []
         for row_index in indices:
             if row_index < 0 or row_index >= self.num_rows:
                 raise IndexError(
                     f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}."
                 )
-            removed_cells.append(self.remove_row(row_index))
 
-        return removed_cells
+            start_idx = row_index * self.num_cols
+            end_idx = start_idx + self.num_cols
+            removed_cells = self.table_cells[start_idx:end_idx]
+
+            # Remove the cells from the table
+            self.table_cells = self.table_cells[:start_idx] + self.table_cells[end_idx:]
+
+            # Update the number of rows
+            self.num_rows -= 1
+
+            # Reassign row offset indices for existing cells
+            for index, cell in enumerate(self.table_cells):
+                new_index = index // self.num_cols
+                cell.start_row_offset_idx = new_index
+                cell.end_row_offset_idx = new_index + 1
+
+            all_removed_cells.append(removed_cells)
+
+        return all_removed_cells
 
     def pop_row(self) -> List[TableCell]:
         """Remove and return the last row from the table."""
         if self.num_rows == 0:
             raise IndexError("Cannot pop from an empty table.")
 
-        row_index = self.num_rows - 1
-        return self.remove_row(row_index)
+        return self.remove_row(self.num_rows - 1)
 
     def remove_row(self, row_index: int) -> List[TableCell]:
         """Remove a row from the table by its index.
 
         :param row_index: int: The index of the row to remove. (Starting from 0)
         """
-        if row_index < 0 or row_index >= self.num_rows:
-            raise IndexError(
-                f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}."
-            )
-
-        start_idx = row_index * self.num_cols
-        end_idx = start_idx + self.num_cols
-        removed_cells = self.table_cells[start_idx:end_idx]
-
-        # Remove the cells from the table
-        self.table_cells = self.table_cells[:start_idx] + self.table_cells[end_idx:]
-
-        # Update the number of rows
-        self.num_rows -= 1
-
-        # Reassign row offset indices for existing cells
-        for index, cell in enumerate(self.table_cells):
-            new_index = index // self.num_cols
-            cell.start_row_offset_idx = new_index
-            cell.end_row_offset_idx = new_index + 1
-
-        return removed_cells
+        return self.remove_rows([row_index])[0]
 
     def insert_rows(
         self, row_index: int, rows: List[List[str]], after: bool = False
@@ -493,24 +488,7 @@ class TableData(BaseModel):  # TBD
 
         :param row: List[str]: A list of strings representing the content of the new row.
         """
-        if len(row) != self.num_cols:
-            raise ValueError(
-                f"Row length {len(row)} does not match the number of columns {self.num_cols}."
-            )
-
-        new_row_cells = [
-            TableCell(
-                text=text,
-                start_row_offset_idx=self.num_rows,
-                end_row_offset_idx=self.num_rows + 1,
-                start_col_offset_idx=j,
-                end_col_offset_idx=j + 1,
-            )
-            for j, text in enumerate(row)
-        ]
-
-        self.table_cells.extend(new_row_cells)
-        self.num_rows += 1
+        self.insert_row(row_index=self.num_rows - 1, row=row, after=True)
 
     def get_row_bounding_boxes(self) -> dict[int, BoundingBox]:
         """Get the minimal bounding box for each row in the table.
