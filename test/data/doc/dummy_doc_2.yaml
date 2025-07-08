@@ -1,0 +1,240 @@
+body:
+  children:
+  - $ref: '#/texts/1'
+  - $ref: '#/pictures/0'
+  - $ref: '#/texts/3'
+  - $ref: '#/tables/0'
+  content_layer: body
+  label: unspecified
+  name: _root_
+  self_ref: '#/body'
+form_items: []
+furniture:
+  children:
+  - $ref: '#/texts/0'
+  content_layer: body
+  label: unspecified
+  name: _root_
+  self_ref: '#/furniture'
+groups: []
+key_value_items: []
+name: dummy_doc
+origin:
+  binary_hash: 7954723514066505909
+  filename: dummy_doc.pdf
+  mimetype: application/pdf
+pages:
+  '1':
+    image:
+      dpi: 144
+      mimetype: image/png
+      size:
+        height: 1166.0
+        width: 1536.0
+      uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
+    page_no: 1
+    size:
+      height: 583.15
+      width: 768.23
+pictures:
+- annotations:
+  - kind: classification
+    predicted_classes:
+    - class_name: bar_chart
+      confidence: 0.789
+    provenance: model1
+  - kind: description
+    provenance: model2
+    text: '...'
+  - class_name: chemistry_molecular_structure
+    confidence: 0.9876
+    kind: molecule_data
+    provenance: model3-1.0.0
+    segmentation:
+    - - 0.0
+      - 0.0
+    - - 1.0
+      - 0.0
+    - - 0.0
+      - 1.0
+    - - 1.0
+      - 1.0
+    smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
+  - content:
+      myanalysis:
+        prediction: abc
+      something_else:
+        text: aaa
+    kind: misc
+  captions:
+  - $ref: '#/texts/3'
+  children:
+  - $ref: '#/texts/2'
+  content_layer: body
+  footnotes: []
+  image:
+    dpi: 72
+    mimetype: image/png
+    size:
+      height: 351.0
+      width: 231.0
+    uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
+  label: picture
+  parent:
+    $ref: '#/body'
+  prov:
+  - bbox:
+      b: 623.4
+      coord_origin: TOPLEFT
+      l: 456.3
+      r: 702.5
+      t: 145.8
+    charspan:
+    - 0
+    - 288
+    page_no: 1
+  references: []
+  self_ref: '#/pictures/0'
+- annotations: []
+  captions: []
+  children: []
+  content_layer: body
+  footnotes: []
+  image:
+    dpi: 72
+    mimetype: image/png
+    size:
+      height: 2.0
+      width: 2.0
+    uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
+  label: picture
+  parent:
+    $ref: '#/body'
+  prov: []
+  references: []
+  self_ref: '#/pictures/1'
+schema_name: DoclingDocument
+tables:
+- annotations:
+  - kind: description
+    provenance: model3
+    text: A description annotation for this table.
+  - content:
+      foo: bar
+    kind: misc
+  captions: []
+  children: []
+  content_layer: body
+  data:
+    grid: []
+    num_cols: 0
+    num_rows: 0
+    table_cells: []
+  footnotes: []
+  image:
+    dpi: 72
+    mimetype: image/png
+    size:
+      height: 351.123
+      width: 231.123
+    uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
+  label: table
+  parent:
+    $ref: '#/body'
+  prov:
+  - bbox:
+      b: 334.432
+      coord_origin: BOTTOMLEFT
+      l: 323.012
+      r: 376.043
+      t: 354.321
+    charspan:
+    - 1
+    - 423
+    page_no: 1
+  references: []
+  self_ref: '#/tables/0'
+texts:
+- children: []
+  content_layer: body
+  label: page_header
+  orig: arXiv:2206.01062v1 [cs.CV] 2 Jun 2022
+  parent:
+    $ref: '#/furniture'
+  prov:
+  - bbox:
+      b: 476.234
+      coord_origin: TOPLEFT
+      l: 21.342
+      r: 35.215
+      t: 52.397
+    charspan:
+    - 1
+    - 423
+    page_no: 1
+  self_ref: '#/texts/0'
+  text: arXiv:2206.01062v1 [cs.CV] 2 Jun 2022
+- children: []
+  content_layer: body
+  label: title
+  orig: 'DocLayNet: A Large Human-Annotated Dataset for
+
+    Document-Layout Analysis'
+  parent:
+    $ref: '#/body'
+  prov:
+  - bbox:
+      b: 53.4
+      coord_origin: TOPLEFT
+      l: 65.0
+      r: 623.2
+      t: 30.1
+    charspan:
+    - 1
+    - 423
+    page_no: 1
+  self_ref: '#/texts/1'
+  text: 'DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis'
+- children: []
+  content_layer: body
+  label: section_header
+  level: 1
+  orig: OPERATION (cont.)
+  parent:
+    $ref: '#/pictures/0'
+  prov:
+  - bbox:
+      b: 334.4
+      coord_origin: BOTTOMLEFT
+      l: 323.0
+      r: 376.0
+      t: 354.3
+    charspan:
+    - 0
+    - 734
+    page_no: 1
+  self_ref: '#/texts/2'
+  text: OPERATION (cont.)
+- children: []
+  content_layer: body
+  label: caption
+  orig: 'Figure 1: Four examples of complex page layouts across dif-
+
+    ferent document categories'
+  parent:
+    $ref: '#/body'
+  prov:
+  - bbox:
+      b: 334.4
+      coord_origin: BOTTOMLEFT
+      l: 323.0
+      r: 376.0
+      t: 354.3
+    charspan:
+    - 1
+    - 423
+    page_no: 1
+  self_ref: '#/texts/3'
+  text: 'Figure 1: Four examples of complex page layouts across different document
+    categories'
+version: 1.5.0

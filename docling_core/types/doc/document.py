@@ -26,8 +26,10 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    FieldSerializationInfo,
     StringConstraints,
     computed_field,
+    field_serializer,
     field_validator,
     model_validator,
     validate_call,
@@ -38,7 +40,12 @@ from typing_extensions import Annotated, Self, deprecated
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
-from docling_core.types.doc.base import CoordOrigin, ImageRefMode
+from docling_core.types.doc.base import (
+    _CTX_COORD_PREC,
+    CoordOrigin,
+    ImageRefMode,
+    _serialize_precision,
+)
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -85,6 +92,8 @@ DOCUMENT_TOKENS_EXPORT_LABELS.update(
     ]
 )
 
+_CTX_CONFID_PREC = "confid_prec"
+
 
 class BaseAnnotation(BaseModel):
     """Base class for all annotation types."""
@@ -97,6 +106,10 @@ class PictureClassificationClass(BaseModel):
 
     class_name: str
     confidence: float
+
+    @field_serializer("confidence")
+    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
+        return _serialize_precision(value, info, _CTX_CONFID_PREC)
 
 
 class PictureClassificationData(BaseAnnotation):
@@ -124,6 +137,10 @@ class PictureMoleculeData(BaseAnnotation):
     class_name: str
     segmentation: List[Tuple[float, float]]
     provenance: str
+
+    @field_serializer("confidence")
+    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
+        return _serialize_precision(value, info, _CTX_CONFID_PREC)
 
 
 class MiscAnnotation(BaseAnnotation):
@@ -3048,6 +3065,8 @@ class DoclingDocument(BaseModel):
         artifacts_dir: Optional[Path] = None,
         image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
         indent: int = 2,
+        coord_precision: Optional[int] = None,
+        confid_precision: Optional[int] = None,
     ):
         """Save as json."""
         if isinstance(filename, str):
@@ -3061,7 +3080,9 @@ class DoclingDocument(BaseModel):
             artifacts_dir, image_mode, reference_path=reference_path
         )
 
-        out = new_doc.export_to_dict()
+        out = new_doc.export_to_dict(
+            coord_precision=coord_precision, confid_precision=confid_precision
+        )
         with open(filename, "w", encoding="utf-8") as fw:
             json.dump(out, fw, indent=indent)
 
@@ -3087,6 +3108,8 @@ class DoclingDocument(BaseModel):
         artifacts_dir: Optional[Path] = None,
         image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
         default_flow_style: bool = False,
+        coord_precision: Optional[int] = None,
+        confid_precision: Optional[int] = None,
     ):
         """Save as yaml."""
         if isinstance(filename, str):
@@ -3100,7 +3123,9 @@ class DoclingDocument(BaseModel):
             artifacts_dir, image_mode, reference_path=reference_path
         )
 
-        out = new_doc.export_to_dict()
+        out = new_doc.export_to_dict(
+            coord_precision=coord_precision, confid_precision=confid_precision
+        )
         with open(filename, "w", encoding="utf-8") as fw:
             yaml.dump(out, fw, default_flow_style=default_flow_style)
 
@@ -3125,9 +3150,18 @@ class DoclingDocument(BaseModel):
         mode: str = "json",
         by_alias: bool = True,
         exclude_none: bool = True,
+        coord_precision: Optional[int] = None,
+        confid_precision: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Export to dict."""
-        out = self.model_dump(mode=mode, by_alias=by_alias, exclude_none=exclude_none)
+        context = {}
+        if coord_precision is not None:
+            context[_CTX_COORD_PREC] = coord_precision
+        if confid_precision is not None:
+            context[_CTX_CONFID_PREC] = confid_precision
+        out = self.model_dump(
+            mode=mode, by_alias=by_alias, exclude_none=exclude_none, context=context
+        )
 
         return out
 

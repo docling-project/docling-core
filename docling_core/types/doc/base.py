@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import List, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, FieldSerializationInfo, field_serializer
 
 
 class ImageRefMode(str, Enum):
@@ -21,11 +21,27 @@ class CoordOrigin(str, Enum):
     BOTTOMLEFT = "BOTTOMLEFT"
 
 
+_CTX_COORD_PREC = "coord_prec"
+
+
+def _serialize_precision(
+    value: float, info: FieldSerializationInfo, ctx_key: str
+) -> float:
+    precision = info.context.get(ctx_key) if info.context else None
+    if isinstance(precision, int):
+        return round(value, precision)
+    return value
+
+
 class Size(BaseModel):
     """Size."""
 
     width: float = 0.0
     height: float = 0.0
+
+    @field_serializer("width", "height")
+    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
+        return _serialize_precision(value, info, _CTX_COORD_PREC)
 
     def as_tuple(self):
         """as_tuple."""
@@ -51,6 +67,10 @@ class BoundingBox(BaseModel):
     def height(self):
         """height."""
         return abs(self.t - self.b)
+
+    @field_serializer("l", "t", "r", "b")
+    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
+        return _serialize_precision(value, info, _CTX_COORD_PREC)
 
     def resize_by_scale(self, x_scale: float, y_scale: float):
         """resize_by_scale."""

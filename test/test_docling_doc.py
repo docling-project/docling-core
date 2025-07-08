@@ -1463,7 +1463,9 @@ def test_save_to_disk():
 
     filename = Path("test/data/doc/constructed_doc.embedded.json")
     doc.save_as_json(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+        filename=filename,
+        artifacts_dir=image_dir,
+        image_mode=ImageRefMode.EMBEDDED,
     )
     _verify_saved_output(filename=filename, paths=paths)
 
@@ -1472,7 +1474,9 @@ def test_save_to_disk():
 
     filename = Path("test/data/doc/constructed_doc.referenced.json")
     doc.save_as_json(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED
+        filename=filename,
+        artifacts_dir=image_dir,
+        image_mode=ImageRefMode.REFERENCED,
     )
     _verify_saved_output(filename=filename, paths=paths)
 
@@ -1483,13 +1487,17 @@ def test_save_to_disk():
 
     filename = Path("test/data/doc/constructed_doc.embedded.yaml")
     doc.save_as_yaml(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
+        filename=filename,
+        artifacts_dir=image_dir,
+        image_mode=ImageRefMode.EMBEDDED,
     )
     _verify_saved_output(filename=filename, paths=paths)
 
     filename = Path("test/data/doc/constructed_doc.referenced.yaml")
     doc.save_as_yaml(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED
+        filename=filename,
+        artifacts_dir=image_dir,
+        image_mode=ImageRefMode.REFERENCED,
     )
     _verify_saved_output(filename=filename, paths=paths)
 
@@ -1523,7 +1531,11 @@ def test_document_manipulation():
         ref = RefItem(cref=cref)
         return ref.resolve(doc=doc)
 
-    def _verify(filename: Path, document: DoclingDocument, generate: bool = False):
+    def _verify(
+        filename: Path,
+        document: DoclingDocument,
+        generate: bool = False,
+    ):
         if generate or (not os.path.exists(_gt_filename(filename=filename))):
             doc.save_as_json(
                 filename=_gt_filename(filename=filename),
@@ -1659,3 +1671,16 @@ def test_misplaced_list_items():
     else:
         exp_doc = DoclingDocument.load_from_yaml(exp_file)
         assert doc == exp_doc
+
+
+def test_export_with_precision():
+    doc = DoclingDocument.load_from_yaml(filename="test/data/doc/dummy_doc_2.yaml")
+    act_data = doc.export_to_dict(coord_precision=2, confid_precision=1)
+    exp_file = Path("test/data/doc/dummy_doc_2_prec.yaml")
+    if GEN_TEST_DATA:
+        with open(exp_file, "w", encoding="utf-8") as f:
+            yaml.dump(act_data, f, default_flow_style=False)
+    else:
+        with open(exp_file, "r", encoding="utf-8") as f:
+            exp_data = yaml.load(f, Loader=yaml.FullLoader)
+        assert act_data == exp_data
