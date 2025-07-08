@@ -370,6 +370,8 @@ class TableData(BaseModel):  # TBD
         """Remove rows from the table by their indices.
 
         :param indices: List[int]: A list of indices of the rows to remove. (Starting from 0)
+
+        :return: List[List[TableCell]]: A list representation of the removed rows as lists of TableCell objects.
         """
         if not indices:
             return []
@@ -404,7 +406,10 @@ class TableData(BaseModel):  # TBD
         return all_removed_cells
 
     def pop_row(self) -> List[TableCell]:
-        """Remove and return the last row from the table."""
+        """Remove and return the last row from the table.
+
+        :returns: List[TableCell]: A list of TableCell objects representing the popped row.
+        """
         if self.num_rows == 0:
             raise IndexError("Cannot pop from an empty table.")
 
@@ -414,6 +419,8 @@ class TableData(BaseModel):  # TBD
         """Remove a row from the table by its index.
 
         :param row_index: int: The index of the row to remove. (Starting from 0)
+
+        :returns: List[TableCell]: A list of TableCell objects representing the removed row.
         """
         return self.remove_rows([row_index])[0]
 
@@ -425,6 +432,8 @@ class TableData(BaseModel):  # TBD
         :param row_index: int: The index at which to insert the new rows. (Starting from 0)
         :param rows: List[List[str]]: A list of lists, where each inner list represents the content of a new row.
         :param after: bool: If True, insert the rows after the specified index, otherwise before it. (Default is False)
+
+        :returns: None
         """
         effective_rows = rows[::-1]
 
@@ -437,6 +446,8 @@ class TableData(BaseModel):  # TBD
         :param row_index: int: The index at which to insert the new row. (Starting from 0)
         :param row: List[str]: A list of strings representing the content of the new row.
         :param after: bool: If True, insert the row after the specified index, otherwise before it. (Default is False)
+
+        :returns: None
         """
         if len(row) != self.num_cols:
             raise ValueError(
@@ -479,6 +490,8 @@ class TableData(BaseModel):  # TBD
         """Add multiple new rows to the table from a list of lists of strings.
 
         :param rows: List[List[str]]: A list of lists, where each inner list represents the content of a new row.
+
+        :returns: None
         """
         for row in rows:
             self.add_row(row)
@@ -487,6 +500,8 @@ class TableData(BaseModel):  # TBD
         """Add a new row to the table from a list of strings.
 
         :param row: List[str]: A list of strings representing the content of the new row.
+
+        :returns: None
         """
         self.insert_row(row_index=self.num_rows - 1, row=row, after=True)
 
@@ -2945,6 +2960,7 @@ class DoclingDocument(BaseModel):
         created_parent: Optional[bool] = False,
     ) -> None:
         """Insert item into the document structure at the specified stack and handle errors."""
+        # Ensure the item has a parent reference
         if item.parent is None:
             item.parent = self.body.get_ref()
 
@@ -2970,12 +2986,14 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         after: bool = True,
     ) -> ListGroup:
-        """insert_list_group.
+        """Creates a new ListGroup item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param name: Optional[str]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: ListGroup: The newly created ListGroup item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -2998,12 +3016,14 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         after: bool = True,
     ) -> InlineGroup:
-        """insert_inline_group.
+        """Creates a new InlineGroup item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param name: Optional[str]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: InlineGroup: The newly created InlineGroup item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3028,13 +3048,15 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         after: bool = True,
     ) -> GroupItem:
-        """insert_group.
+        """Creates a new GroupItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param label: Optional[GroupLabel]:  (Default value = None)
         :param name: Optional[str]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: GroupItem: The newly created GroupItem.
         """
         if label in [GroupLabel.LIST, GroupLabel.ORDERED_LIST]:
             return self.insert_list_group(
@@ -3081,7 +3103,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         after: bool = True,
     ) -> ListItem:
-        """insert_list_item.
+        """Creates a new ListItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param text: str:
@@ -3093,6 +3115,8 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: ListItem: The newly created ListItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3153,7 +3177,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         after: bool = True,
     ) -> TextItem:
-        """insert_text.
+        """Creates a new TextItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param label: DocItemLabel:
@@ -3164,6 +3188,8 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: TextItem: The newly created TextItem item.
         """
         if label in [DocItemLabel.TITLE]:
             return self.insert_title(
@@ -3263,7 +3289,7 @@ class DoclingDocument(BaseModel):
         annotations: Optional[list[TableAnnotationType]] = None,
         after: bool = True,
     ) -> TableItem:
-        """insert_table.
+        """Creates a new TableItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param data: TableData:
@@ -3273,6 +3299,8 @@ class DoclingDocument(BaseModel):
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param annotations: Optional[List[TableAnnotationType]]: (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: TableItem: The newly created TableItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3307,7 +3335,7 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         after: bool = True,
     ) -> PictureItem:
-        """insert_picture.
+        """Creates a new PictureItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param annotations: Optional[List[PictureDataType]]: (Default value = None)
@@ -3316,6 +3344,8 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: PictureItem: The newly created PictureItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3351,7 +3381,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         after: bool = True,
     ) -> TitleItem:
-        """insert_title.
+        """Creates a new TitleItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param text: str:
@@ -3361,6 +3391,8 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: TitleItem: The newly created TitleItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3400,7 +3432,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         after: bool = True,
     ) -> CodeItem:
-        """insert_code.
+        """Creates a new CodeItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param text: str:
@@ -3412,6 +3444,8 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: CodeItem: The newly created CodeItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3453,7 +3487,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         after: bool = True,
     ) -> FormulaItem:
-        """insert_formula.
+        """Creates a new FormulaItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param text: str:
@@ -3463,6 +3497,8 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: FormulaItem: The newly created FormulaItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3501,7 +3537,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         after: bool = True,
     ) -> SectionHeaderItem:
-        """insert_heading.
+        """Creates a new SectionHeaderItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param text: str:
@@ -3512,6 +3548,8 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: SectionHeaderItem: The newly created SectionHeaderItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3546,12 +3584,14 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         after: bool = True,
     ) -> KeyValueItem:
-        """insert_key_values.
+        """Creates a new KeyValueItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param graph: GraphData:
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: KeyValueItem: The newly created KeyValueItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3573,12 +3613,14 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         after: bool = True,
     ) -> FormItem:
-        """insert_form.
+        """Creates a new FormItem item and inserts it into the document.
 
         :param sibling: NodeItem:
         :param graph: GraphData:
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param after: bool:  (Default value = True)
+
+        :returns: FormItem: The newly created FormItem item.
         """
         # Get stack and parent reference of the sibling
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
@@ -3611,6 +3653,8 @@ class DoclingDocument(BaseModel):
         :param end: NodeItem:  The ending NodeItem of the range
         :param start_inclusive: bool:  (Default value = True):  If True, the start NodeItem will also be deleted
         :param end_inclusive: bool:  (Default value = True):  If True, the end NodeItem will also be deleted
+
+        :returns: None
         """
         start_parent_ref = (
             start.parent if start.parent is not None else self.body.get_ref()
@@ -3661,6 +3705,8 @@ class DoclingDocument(BaseModel):
         :param start_inclusive: bool:  (Default value = True):  If True, the start NodeItem will also be extracted
         :param end_inclusive: bool:  (Default value = True):  If True, the end NodeItem will also be extracted
         :param delete: bool:  (Default value = False):  If True, extracted items are deleted in the original document
+
+        :returns: DoclingDocument: A new document containing the extracted NodeItems and their children
         """
         if not start.parent == end.parent:
             raise ValueError(
@@ -3716,6 +3762,8 @@ class DoclingDocument(BaseModel):
         :param doc: DoclingDocument: The document whose content will be inserted
         :param sibling: NodeItem: The NodeItem after/before which the new items will be inserted
         :param after: bool: If True, insert after the sibling; if False, insert before (Default value = True)
+
+        :returns: None
         """
         ref_items = doc.body.children
         node_items = [ref.resolve(doc) for ref in ref_items]
@@ -3732,6 +3780,8 @@ class DoclingDocument(BaseModel):
 
         :param doc: DoclingDocument: The document whose content will be added
         :param parent: Optional[NodeItem]: The parent NodeItem under which new items are added (Default value = None)
+
+        :returns: None
         """
         ref_items = doc.body.children
         node_items = [ref.resolve(doc) for ref in ref_items]
@@ -3748,6 +3798,8 @@ class DoclingDocument(BaseModel):
         :param node_items: list[NodeItem]: The NodeItems to be added
         :param doc: DoclingDocument: The document to which the NodeItems and their children belong
         :param parent: Optional[NodeItem]: The parent NodeItem under which new items are added (Default value = None)
+
+        :returns: None
         """
         parent = self.body if parent is None else parent
 
@@ -3783,6 +3835,8 @@ class DoclingDocument(BaseModel):
         :param node_items: list[NodeItem]: The NodeItems to be inserted
         :param doc: DoclingDocument: The document to which the NodeItems and their children belong
         :param after: bool: If True, insert after the sibling; if False, insert before (Default value = True)
+
+        :returns: None
         """
         # Check for ListItem parent violations
         parent = sibling.parent.resolve(self) if sibling.parent else self.body
@@ -3838,6 +3892,8 @@ class DoclingDocument(BaseModel):
         :param node_items: List[NodeItem]: The NodeItems to be appended
         :param parent_ref: RefItem: The reference of the parent of the new items in this document
         :param doc: DoclingDocument: The document from which the NodeItems are taken
+
+        :returns: List[RefItem]: A list of references to the newly added items in this document
         """
         new_refs: List[RefItem] = []
 
