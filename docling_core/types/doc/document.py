@@ -2915,20 +2915,10 @@ class DoclingDocument(BaseModel):
     # Node Item Insertion Methods
     # ---------------------------
 
-    def insert_list_group(
-        self,
-        sibling: NodeItem,
-        name: Optional[str] = None,
-        content_layer: Optional[ContentLayer] = None,
-        after: bool = True,
-    ) -> ListGroup:
-        """insert_list_group.
-
-        :param sibling: NodeItem:
-        :param name: Optional[str]:  (Default value = None)
-        :param content_layer: Optional[ContentLayer]:  (Default value = None)
-        :param after: bool:  (Default value = True)
-        """
+    def _get_insertion_stack_and_parent(
+        self, sibling: NodeItem
+    ) -> tuple[list[int], RefItem]:
+        """Get the stack and parent reference for inserting a new item at a sibling."""
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
 
@@ -2945,27 +2935,59 @@ class DoclingDocument(BaseModel):
         if parent_ref is None:
             raise ValueError(f"Could not find a parent at stack: {stack}")
 
-        # Create a new ListGroup NodeItem
-        cref = f"#/groups/{len(self.groups)}"
-        group = ListGroup(self_ref=cref, parent=parent_ref)
+        return stack, parent_ref
+
+    def _insert_in_structure(
+        self,
+        item: NodeItem,
+        stack: list[int],
+        after: bool,
+        created_parent: Optional[bool] = False,
+    ) -> None:
+        """Insert item into the document structure at the specified stack and handle errors."""
+        if item.parent is None:
+            item.parent = self.body.get_ref()
+
+        self._append_item(item=item, parent_ref=item.parent)
+
+        new_ref = item.get_ref()
+
+        success = self.body._add_sibling(
+            doc=self, stack=stack, new_ref=new_ref, after=after
+        )
+
+        # Error handling can be determined here
+        if not success:
+            self._pop_item(item=item)
+
+            if created_parent:
+                self.delete_items(node_items=[item.parent.resolve(self)])
+
+    def insert_list_group(
+        self,
+        sibling: NodeItem,
+        name: Optional[str] = None,
+        content_layer: Optional[ContentLayer] = None,
+        after: bool = True,
+    ) -> ListGroup:
+        """insert_list_group.
+
+        :param sibling: NodeItem:
+        :param name: Optional[str]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param after: bool:  (Default value = True)
+        """
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
+
+        group = ListGroup(self_ref="#", parent=parent_ref)
 
         if name is not None:
             group.name = name
         if content_layer:
             group.content_layer = content_layer
 
-        # Add the new group to the document content
-        self.groups.append(group)
-
-        # Insert the new group into the document structure
-        new_ref = group.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=group)
+        self._insert_in_structure(item=group, stack=stack, after=after)
 
         return group
 
@@ -2983,43 +3005,18 @@ class DoclingDocument(BaseModel):
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new InlineGroup NodeItem
-        cref = f"#/groups/{len(self.groups)}"
-        group = InlineGroup(self_ref=cref, parent=parent_ref)
+        group = InlineGroup(self_ref="#", parent=parent_ref)
 
         if name is not None:
             group.name = name
         if content_layer:
             group.content_layer = content_layer
 
-        # Add the new group to the document content
-        self.groups.append(group)
-
-        # Insert the new group into the document structure
-        new_ref = group.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=group)
+        self._insert_in_structure(item=group, stack=stack, after=after)
 
         return group
 
@@ -3054,25 +3051,11 @@ class DoclingDocument(BaseModel):
                 after=after,
             )
 
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new GroupItem NodeItem
-        cref = f"#/groups/{len(self.groups)}"
-        group = GroupItem(self_ref=cref, parent=parent_ref)
+        group = GroupItem(self_ref="#", parent=parent_ref)
 
         if name is not None:
             group.name = name
@@ -3081,18 +3064,7 @@ class DoclingDocument(BaseModel):
         if content_layer:
             group.content_layer = content_layer
 
-        # Add the new group to the document content
-        self.groups.append(group)
-
-        # Insert the new group into the document structure
-        new_ref = group.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=group)
+        self._insert_in_structure(item=group, stack=stack, after=after)
 
         return group
 
@@ -3122,21 +3094,8 @@ class DoclingDocument(BaseModel):
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Ensure the parent is a ListGroup
 
@@ -3157,15 +3116,13 @@ class DoclingDocument(BaseModel):
             set_parent = True
 
         # Create a new ListItem NodeItem
-        cref = f"#/texts/{len(self.texts)}"
-
         if not orig:
             orig = text
 
         list_item = ListItem(
             text=text,
             orig=orig,
-            self_ref=cref,
+            self_ref="#",
             parent=parent_ref,
             enumerated=enumerated,
             marker=marker or "",
@@ -3178,21 +3135,9 @@ class DoclingDocument(BaseModel):
         if content_layer:
             list_item.content_layer = content_layer
 
-        # Add the new text to the document content
-        self.texts.append(list_item)
-
-        # Insert the new text into the document structure
-        new_ref = list_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
+        self._insert_in_structure(
+            item=list_item, stack=stack, after=after, created_parent=set_parent
         )
-
-        if not success:
-            self._pop_item(item=list_item)
-
-            if set_parent:
-                self.delete_items(node_items=[parent])
 
         return list_item
 
@@ -3281,25 +3226,10 @@ class DoclingDocument(BaseModel):
             )
 
         else:
-            # Get the stack of the sibling
-            sibling_ref = sibling.get_ref()
-
-            success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-            if not success:
-                raise ValueError(
-                    f"Could not insert at {sibling_ref.cref}: could not find the stack"
-                )
-
-            # Get the parent RefItem
-            parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-            if parent_ref is None:
-                raise ValueError(f"Could not find a parent at stack: {stack}")
+            # Get stack and parent reference of the sibling
+            stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
             # Create a new TextItem NodeItem
-            cref = f"#/texts/{len(self.texts)}"
-
             if not orig:
                 orig = text
 
@@ -3307,7 +3237,7 @@ class DoclingDocument(BaseModel):
                 label=label,
                 text=text,
                 orig=orig,
-                self_ref=cref,
+                self_ref="#",
                 parent=parent_ref,
                 formatting=formatting,
                 hyperlink=hyperlink,
@@ -3318,18 +3248,7 @@ class DoclingDocument(BaseModel):
             if content_layer:
                 text_item.content_layer = content_layer
 
-            # Add the new text to the document content
-            self.texts.append(text_item)
-
-            # Insert the new text into the document structure
-            new_ref = text_item.get_ref()
-
-            success = self.body._add_sibling(
-                doc=self, stack=stack, new_ref=new_ref, after=after
-            )
-
-            if not success:
-                self._pop_item(item=text_item)
+            self._insert_in_structure(item=text_item, stack=stack, after=after)
 
             return text_item
 
@@ -3355,29 +3274,14 @@ class DoclingDocument(BaseModel):
         :param annotations: Optional[List[TableAnnotationType]]: (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new ListItem NodeItem
-        cref = f"#/tables/{len(self.tables)}"
-
         table_item = TableItem(
             label=label,
             data=data,
-            self_ref=cref,
+            self_ref="#",
             parent=parent_ref,
             annotations=annotations or [],
         )
@@ -3389,18 +3293,7 @@ class DoclingDocument(BaseModel):
         if caption:
             table_item.captions.append(caption.get_ref())
 
-        # Add the new table to the document content
-        self.tables.append(table_item)
-
-        # Insert the new table into the document structure
-        new_ref = table_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=table_item)
+        self._insert_in_structure(item=table_item, stack=stack, after=after)
 
         return table_item
 
@@ -3424,30 +3317,15 @@ class DoclingDocument(BaseModel):
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new PictureItem NodeItem
-        cref = f"#/pictures/{len(self.pictures)}"
-
         picture_item = PictureItem(
             label=DocItemLabel.PICTURE,
             annotations=annotations or [],
             image=image,
-            self_ref=cref,
+            self_ref="#",
             parent=parent_ref,
         )
 
@@ -3458,18 +3336,7 @@ class DoclingDocument(BaseModel):
         if caption:
             picture_item.captions.append(caption.get_ref())
 
-        # Add the new picture to the document content
-        self.pictures.append(picture_item)
-
-        # Insert the new picture into the document structure
-        new_ref = picture_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=picture_item)
+        self._insert_in_structure(item=picture_item, stack=stack, after=after)
 
         return picture_item
 
@@ -3495,32 +3362,17 @@ class DoclingDocument(BaseModel):
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
-
-        # Create a new TitleITem NodeItem
-        cref = f"#/texts/{len(self.texts)}"
-
+        # Create a new TitleItem NodeItem
         if not orig:
             orig = text
 
         title_item = TitleItem(
             text=text,
             orig=orig,
-            self_ref=cref,
+            self_ref="#",
             parent=parent_ref,
             formatting=formatting,
             hyperlink=hyperlink,
@@ -3531,18 +3383,7 @@ class DoclingDocument(BaseModel):
         if content_layer:
             title_item.content_layer = content_layer
 
-        # Add the new text to the document content
-        self.texts.append(title_item)
-
-        # Insert the new text into the document structure
-        new_ref = title_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=title_item)
+        self._insert_in_structure(item=title_item, stack=stack, after=after)
 
         return title_item
 
@@ -3572,32 +3413,17 @@ class DoclingDocument(BaseModel):
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new CodeItem NodeItem
-        cref = f"#/texts/{len(self.texts)}"
-
         if not orig:
             orig = text
 
         code_item = CodeItem(
             text=text,
             orig=orig,
-            self_ref=cref,
+            self_ref="#",
             parent=parent_ref,
             formatting=formatting,
             hyperlink=hyperlink,
@@ -3612,18 +3438,7 @@ class DoclingDocument(BaseModel):
         if caption:
             code_item.captions.append(caption.get_ref())
 
-        # Add the new text to the document content
-        self.texts.append(code_item)
-
-        # Insert the new text into the document structure
-        new_ref = code_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=code_item)
+        self._insert_in_structure(item=code_item, stack=stack, after=after)
 
         return code_item
 
@@ -3649,32 +3464,17 @@ class DoclingDocument(BaseModel):
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new FormulaItem NodeItem
-        cref = f"#/texts/{len(self.texts)}"
-
         if not orig:
             orig = text
 
         formula_item = FormulaItem(
             text=text,
             orig=orig,
-            self_ref=cref,
+            self_ref="#",
             parent=parent_ref,
             formatting=formatting,
             hyperlink=hyperlink,
@@ -3685,18 +3485,7 @@ class DoclingDocument(BaseModel):
         if content_layer:
             formula_item.content_layer = content_layer
 
-        # Add the new text to the document content
-        self.texts.append(formula_item)
-
-        # Insert the new text into the document structure
-        new_ref = formula_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=formula_item)
+        self._insert_in_structure(item=formula_item, stack=stack, after=after)
 
         return formula_item
 
@@ -3724,25 +3513,10 @@ class DoclingDocument(BaseModel):
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new SectionHeaderItem NodeItem
-        cref = f"#/texts/{len(self.texts)}"
-
         if not orig:
             orig = text
 
@@ -3750,7 +3524,7 @@ class DoclingDocument(BaseModel):
             level=level,
             text=text,
             orig=orig,
-            self_ref=cref,
+            self_ref="#",
             parent=parent_ref,
             formatting=formatting,
             hyperlink=hyperlink,
@@ -3761,18 +3535,7 @@ class DoclingDocument(BaseModel):
         if content_layer:
             section_header_item.content_layer = content_layer
 
-        # Add the new text to the document content
-        self.texts.append(section_header_item)
-
-        # Insert the new text into the document structure
-        new_ref = section_header_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=section_header_item)
+        self._insert_in_structure(item=section_header_item, stack=stack, after=after)
 
         return section_header_item
 
@@ -3790,41 +3553,16 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new KeyValueItem NodeItem
-        cref = f"#/key_value_items/{len(self.key_value_items)}"
-        key_value_item = KeyValueItem(graph=graph, self_ref=cref, parent=parent_ref)
+        key_value_item = KeyValueItem(graph=graph, self_ref="#", parent=parent_ref)
 
         if prov:
             key_value_item.prov.append(prov)
 
-        # Add the new key value item to the document content
-        self.key_value_items.append(key_value_item)
-
-        # Insert the new key value item into the document structure
-        new_ref = key_value_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=key_value_item)
+        self._insert_in_structure(item=key_value_item, stack=stack, after=after)
 
         return key_value_item
 
@@ -3842,41 +3580,16 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param after: bool:  (Default value = True)
         """
-        # Get the stack of the sibling
-        sibling_ref = sibling.get_ref()
-
-        success, stack = self._get_stack_of_refitem(ref=sibling_ref)
-
-        if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
-
-        # Get the parent RefItem
-        parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
-
-        if parent_ref is None:
-            raise ValueError(f"Could not find a parent at stack: {stack}")
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
         # Create a new FormItem NodeItem
-        cref = f"#/form_items/{len(self.form_items)}"
-        form_item = FormItem(graph=graph, self_ref=cref, parent=parent_ref)
+        form_item = FormItem(graph=graph, self_ref="#", parent=parent_ref)
 
         if prov:
             form_item.prov.append(prov)
 
-        # Add the new form item to the document content
-        self.form_items.append(form_item)
-
-        # Insert the new form item into the document structure
-        new_ref = form_item.get_ref()
-
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
-
-        if not success:
-            self._pop_item(item=form_item)
+        self._insert_in_structure(item=form_item, stack=stack, after=after)
 
         return form_item
 
@@ -4015,7 +3728,7 @@ class DoclingDocument(BaseModel):
         doc: "DoclingDocument",
         parent: Optional[NodeItem] = None,
     ) -> None:
-        """Adds the content from a DoclingDocument to this document under a specific parent.
+        """Adds the content from the body of a DoclingDocument to this document under a specific parent.
 
         :param doc: DoclingDocument: The document whose content will be added
         :param parent: Optional[NodeItem]: The parent NodeItem under which new items are added (Default value = None)
