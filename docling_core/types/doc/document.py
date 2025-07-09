@@ -41,6 +41,7 @@ from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
+    _CTX_CONFID_PREC,
     _CTX_COORD_PREC,
     CoordOrigin,
     ImageRefMode,
@@ -91,8 +92,6 @@ DOCUMENT_TOKENS_EXPORT_LABELS.update(
         DocItemLabel.FORM,
     ]
 )
-
-_CTX_CONFID_PREC = "confid_prec"
 
 
 class BaseAnnotation(BaseModel):

@@ -22,6 +22,7 @@ class CoordOrigin(str, Enum):
 
 
 _CTX_COORD_PREC = "coord_prec"
+_CTX_CONFID_PREC = "confid_prec"
 
 
 def _serialize_precision(

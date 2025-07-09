@@ -35,6 +35,7 @@ from pydantic import (
 )
 
 from docling_core.types.doc.base import (
+    _CTX_CONFID_PREC,
     _CTX_COORD_PREC,
     BoundingBox,
     CoordOrigin,
@@ -289,6 +290,10 @@ class TextCell(ColorMixin, OrderedElement):
 
     confidence: float = 1.0
     from_ocr: bool
+
+    @field_serializer("confidence")
+    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
+        return _serialize_precision(value, info, _CTX_CONFID_PREC)
 
     def to_bounding_box(self) -> BoundingBox:
         """Convert the cell rectangle to a BoundingBox."""
