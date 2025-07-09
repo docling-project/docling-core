@@ -35,11 +35,10 @@ from pydantic import (
 )
 
 from docling_core.types.doc.base import (
-    _CTX_CONFID_PREC,
-    _CTX_COORD_PREC,
     BoundingBox,
     CoordOrigin,
-    _serialize_precision,
+    PydanticSerCtxKey,
+    round_pydantic_float,
 )
 from docling_core.types.doc.document import ImageRef
 
@@ -120,7 +119,7 @@ class BoundingRectangle(BaseModel):
 
     @field_serializer("r_x0", "r_y0", "r_x1", "r_y1", "r_x2", "r_y2", "r_x3", "r_y3")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
-        return _serialize_precision(value, info, _CTX_COORD_PREC)
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.COORD_PREC)
 
     @property
     def width(self) -> float:
@@ -293,7 +292,7 @@ class TextCell(ColorMixin, OrderedElement):
 
     @field_serializer("confidence")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
-        return _serialize_precision(value, info, _CTX_CONFID_PREC)
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)
 
     def to_bounding_box(self) -> BoundingBox:
         """Convert the cell rectangle to a BoundingBox."""

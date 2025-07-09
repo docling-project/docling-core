@@ -41,11 +41,10 @@ from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
-    _CTX_CONFID_PREC,
-    _CTX_COORD_PREC,
     CoordOrigin,
     ImageRefMode,
-    _serialize_precision,
+    PydanticSerCtxKey,
+    round_pydantic_float,
 )
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
@@ -108,7 +107,7 @@ class PictureClassificationClass(BaseModel):
 
     @field_serializer("confidence")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
-        return _serialize_precision(value, info, _CTX_CONFID_PREC)
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)
 
 
 class PictureClassificationData(BaseAnnotation):
@@ -139,7 +138,7 @@ class PictureMoleculeData(BaseAnnotation):
 
     @field_serializer("confidence")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
-        return _serialize_precision(value, info, _CTX_CONFID_PREC)
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)
 
 
 class MiscAnnotation(BaseAnnotation):
@@ -4291,9 +4290,9 @@ class DoclingDocument(BaseModel):
         """Export to dict."""
         context = {}
         if coord_precision is not None:
-            context[_CTX_COORD_PREC] = coord_precision
+            context[PydanticSerCtxKey.COORD_PREC.value] = coord_precision
         if confid_precision is not None:
-            context[_CTX_CONFID_PREC] = confid_precision
+            context[PydanticSerCtxKey.CONFID_PREC.value] = confid_precision
         out = self.model_dump(
             mode=mode, by_alias=by_alias, exclude_none=exclude_none, context=context
         )

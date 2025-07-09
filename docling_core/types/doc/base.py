@@ -1,7 +1,7 @@
 """Models for the base data types."""
 
 from enum import Enum
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 from pydantic import BaseModel, FieldSerializationInfo, field_serializer
 
@@ -21,17 +21,23 @@ class CoordOrigin(str, Enum):
     BOTTOMLEFT = "BOTTOMLEFT"
 
 
-_CTX_COORD_PREC = "coord_prec"
-_CTX_CONFID_PREC = "confid_prec"
+class PydanticSerCtxKey(str, Enum):
+    """Pydantic serialization context keys."""
+
+    COORD_PREC = "coord_prec"  # key for coordinates precision
+    CONFID_PREC = "confid_prec"  # key for confidence values precision
 
 
-def _serialize_precision(
-    value: float, info: FieldSerializationInfo, ctx_key: str
+def round_pydantic_float(
+    val: float, ctx: Any, precision_ctx_key: PydanticSerCtxKey
 ) -> float:
-    precision = info.context.get(ctx_key) if info.context else None
-    if isinstance(precision, int):
-        return round(value, precision)
-    return value
+    """Round float, provided the precision is available in the context."""
+    precision = (
+        ctx.get(precision_ctx_key.value)
+        if isinstance(ctx, dict)
+        else getattr(ctx, precision_ctx_key.value, None)
+    )
+    return round(val, precision) if isinstance(precision, int) else val
 
 
 class Size(BaseModel):
@@ -42,7 +48,7 @@ class Size(BaseModel):
 
     @field_serializer("width", "height")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
-        return _serialize_precision(value, info, _CTX_COORD_PREC)
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.COORD_PREC)
 
     def as_tuple(self):
         """as_tuple."""
@@ -71,7 +77,7 @@ class BoundingBox(BaseModel):
 
     @field_serializer("l", "t", "r", "b")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
-        return _serialize_precision(value, info, _CTX_COORD_PREC)
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.COORD_PREC)
 
     def resize_by_scale(self, x_scale: float, y_scale: float):
         """resize_by_scale."""
