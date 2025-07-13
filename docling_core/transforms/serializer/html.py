@@ -1080,7 +1080,7 @@ class HTMLDocSerializer(DocSerializer):
         if self.params.html_head is not None:
             return self.params.html_head
 
-        head_parts = ["<head>", '<meta charset="UTF-8">']
+        head_parts = ["<head>", '<meta charset="UTF-8"/>']
 
         # Add metadata if requested
         if params.add_document_metadata:
@@ -1090,7 +1090,7 @@ class HTMLDocSerializer(DocSerializer):
                 head_parts.append("<title>Docling Document</title>")
 
             head_parts.append(
-                '<meta name="generator" content="Docling HTML Serializer">'
+                '<meta name="generator" content="Docling HTML Serializer"/>'
             )
 
         # Add default styles or custom CSS
