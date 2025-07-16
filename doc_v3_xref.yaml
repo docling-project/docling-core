@@ -1,0 +1,43 @@
+meta:
+  name: My document
+tree:
+- node:
+    label: root
+  children:
+  - $ref: '#/tree/1'
+  - $ref: '#/tree/4'
+  - $ref: '#/tree/5'
+  - $ref: '#/tree/6'
+  - $ref: '#/tree/7'
+  - $ref: '#/tree/8'
+- node:
+    label: list
+  children:
+  - $ref: '#/tree/2'
+  - $ref: '#/tree/3'
+- node:
+    label: list_item
+    text: foo
+    enumerated: true
+- node:
+    label: list_item
+    text: bar
+- node:
+    label: text
+    text: some text
+- node:
+    label: text
+    text: anchor 1
+- node:
+    label: text
+    text: pointing to a pre-occurring node
+  xref:
+    $ref: '#/tree/5'
+- node:
+    label: text
+    text: will point to an upcoming node
+  xref:
+    $ref: '#/tree/8'
+- node:
+    label: text
+    text: anchor 2

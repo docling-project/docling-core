@@ -722,7 +722,7 @@ class DocumentOrigin(BaseModel):
 class RefItem(BaseModel):
     """RefItem."""
 
-    cref: str = Field(alias="$ref", pattern=_JSON_POINTER_REGEX)
+    cref: Annotated[str, Field(alias="$ref", pattern=_JSON_POINTER_REGEX)]
 
     # This method makes RefItem compatible with DocItem
     def get_ref(self):

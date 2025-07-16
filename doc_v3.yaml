@@ -1,0 +1,23 @@
+meta:
+  name: My document
+tree:
+- node:
+    label: root
+  children:
+  - $ref: '#/tree/1'
+  - $ref: '#/tree/4'
+- node:
+    label: list
+  children:
+  - $ref: '#/tree/2'
+  - $ref: '#/tree/3'
+- node:
+    label: list_item
+    text: foo
+    enumerated: true
+- node:
+    label: list_item
+    text: bar
+- node:
+    label: text
+    text: some text

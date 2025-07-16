@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "version": "2.0.0",
+    "name": "My document"
+  },
+  "tree": [
+    {
+      "node": {
+        "label": "root",
+        "layer": "body"
+      },
+      "children": [
+        {
+          "$ref": "#/tree/1"
+        },
+        {
+          "$ref": "#/tree/4"
+        }
+      ]
+    },
+    {
+      "node": {
+        "label": "list",
+        "layer": "body"
+      },
+      "children": [
+        {
+          "$ref": "#/tree/2"
+        },
+        {
+          "$ref": "#/tree/3"
+        }
+      ]
+    },
+    {
+      "node": {
+        "label": "list_item",
+        "layer": "body",
+        "text": "foo",
+        "enumerated": true
+      },
+      "children": []
+    },
+    {
+      "node": {
+        "label": "list_item",
+        "layer": "body",
+        "text": "bar",
+        "enumerated": false
+      },
+      "children": []
+    },
+    {
+      "node": {
+        "label": "text",
+        "layer": "body",
+        "text": "some text"
+      },
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+meta:
+  version: 2.0.0
+  name: My document
+tree:
+- node:
+    label: root
+    layer: body
+  children:
+  - $ref: '#/tree/1'
+  - $ref: '#/tree/4'
+  - $ref: '#/tree/5'
+- node:
+    label: list
+    layer: body
+  children:
+  - $ref: '#/tree/2'
+  - $ref: '#/tree/3'
+- node:
+    label: list_item
+    layer: body
+    text: foo
+    enumerated: true
+  children: []
+- node:
+    label: list_item
+    layer: body
+    text: bar
+    enumerated: false
+  children: []
+- node:
+    label: text
+    layer: body
+    text: some text
+  children: []
+- node:
+    label: table
+    layer: body
+  children:
+  - $ref: '#/tree/6'
+- node:
+    label: table_grid
+    layer: body
+    num_rows: 2
+    num_cols: 3
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children:
+  - $ref: '#/tree/10'
+- node:
+    label: text
+    layer: body
+    text: new text
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
+- node:
+    label: table_cell
+    layer: body
+    bbox: null
+    column_header: false
+    row_header: false
+    row_section: false
+  children: []
