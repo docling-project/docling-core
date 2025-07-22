@@ -1819,9 +1819,10 @@ def test_document_manipulation():
 
     # Test the handling of list items in insert_* methods, both with and without parent groups
 
-    li_sibling = doc.insert_list_item(
-        sibling=node, text="Inserted List Item, Incorrect Parent", after=False
-    )
+    with pytest.warns(DeprecationWarning, match="ListItem parent must be a ListGroup"):
+        li_sibling = doc.insert_list_item(
+            sibling=node, text="Inserted List Item, Incorrect Parent", after=False
+        )
     doc.insert_list_item(
         sibling=li_sibling, text="Inserted List Item, Correct Parent", after=True
     )
@@ -1831,12 +1832,13 @@ def test_document_manipulation():
         text="Inserted Text with LIST_ITEM Label, Correct Parent",
         after=False,
     )
-    doc.insert_text(
-        sibling=node,
-        label=DocItemLabel.LIST_ITEM,
-        text="Inserted Text with LIST_ITEM Label, Incorrect Parent",
-        after=True,
-    )
+    with pytest.warns(DeprecationWarning, match="ListItem parent must be a ListGroup"):
+        doc.insert_text(
+            sibling=node,
+            label=DocItemLabel.LIST_ITEM,
+            text="Inserted Text with LIST_ITEM Label, Incorrect Parent",
+            after=True,
+        )
 
     filename = Path(
         "test/data/doc/constructed_doc.inserted_list_items_with_insert_*.json"

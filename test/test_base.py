@@ -36,8 +36,8 @@ def test_identifier():
     )
 
     # schema_json(): no need to set by_alias since it is True by the default
-    tf = open("test/data/json_schemas/base_identifier.json", encoding="utf-8")
-    gold_json = json.load(tf)
+    with open("test/data/json_schemas/base_identifier.json", encoding="utf-8") as tf:
+        gold_json = json.load(tf)
 
     assert Identifier.model_json_schema() == gold_json
 

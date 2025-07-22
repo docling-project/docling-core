@@ -60,7 +60,8 @@ def test_doctags_load_from_files():
 
 def test_doctags_load_from_memory():
 
-    doctags = Path("test/data/doc/page_with_pic.dt").open("r").read()
+    with Path("test/data/doc/page_with_pic.dt").open() as file:
+        doctags = file.read()
     image = PILImage.open(Path("test/data/doc/page_with_pic.png"))
 
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], [image])
@@ -75,7 +76,8 @@ def test_doctags_load_from_memory():
 
 
 def test_doctags_load_without_image():
-    doctags = Path("test/data/doc/page_with_pic.dt").open("r").read()
+    with Path("test/data/doc/page_with_pic.dt").open() as file:
+        doctags = file.read()
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
     doc = DoclingDocument.load_from_doctags(doctags_doc)
     exp = "test/data/doc/page_without_pic.dt.json"
@@ -86,7 +88,8 @@ def test_doctags_load_without_image():
 
 
 def test_doctags_load_for_kv_region():
-    doctags = Path("test/data/doc/doc_with_kv.dt").open("r").read()
+    with Path("test/data/doc/doc_with_kv.dt").open() as file:
+        doctags = file.read()
     image = PILImage.open(Path("test/data/doc/doc_with_kv.png"))
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], [image])
     doc = DoclingDocument.load_from_doctags(doctags_doc)
@@ -98,7 +101,8 @@ def test_doctags_load_for_kv_region():
 
 
 def test_multipage_doctags_load():
-    doctags = Path("test/data/doc/2206.01062.yaml.dt").open("r").read()
+    with Path("test/data/doc/2206.01062.yaml.dt").open() as file:
+        doctags = file.read()
     doctags_doc = DocTagsDocument.from_multipage_doctags_and_images(doctags, None)
     doc = DoclingDocument.load_from_doctags(doctags_doc)
     exp = "test/data/doc/2206.01062.yaml.dt.json"
