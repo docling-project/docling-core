@@ -713,6 +713,23 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
 
+        # Append nested list to parent list item:
+        i = 0
+        while i < len(parts):
+            prt = parts[i]
+            if prt.text.startswith(("<ul>", "<ol>")):
+                for j in range(i - 1, -1, -1):
+                    if parts[j].text.startswith(("<li>", "<li ")) and parts[
+                        j
+                    ].text.endswith("</li>"):
+                        before, _, _ = parts[j].text.rpartition("</li>")
+                        parts[j].text = f"{before}\n{prt.text}\n</li>"
+                        break
+                if j > -1:
+                    parts.pop(i)
+            else:
+                i += 1
+
         # Add all child parts
         text_res = "\n".join(
             [
