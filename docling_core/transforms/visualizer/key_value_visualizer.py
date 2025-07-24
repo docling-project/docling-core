@@ -1,8 +1,8 @@
 """Key‑value visualizer overlaying key/value cells and their links on page images.
 
-This module complements :pyclass:`layout_visualizer.LayoutVisualizer` by drawing
+This module complements :py:class:`layout_visualizer.LayoutVisualizer` by drawing
 *key* and *value* cells plus the directed links between them.  It can be stacked
-on top of any other :pyclass:`BaseVisualizer` – e.g. first draw the general
+on top of any other :py:class:`BaseVisualizer` – e.g. first draw the general
 layout, then add the key‑value layer.
 """
 
