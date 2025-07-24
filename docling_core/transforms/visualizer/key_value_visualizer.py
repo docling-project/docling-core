@@ -33,7 +33,7 @@ _LABEL_BG_COLOUR = (255, 255, 255, 180)  # semi‑transparent white
 
 
 class KeyValueVisualizer(BaseVisualizer):
-    """Draw key/value graphs stored in :pyattr:`DoclingDocument.key_value_items`."""
+    """Draw key/value graphs stored in :py:attr:`DoclingDocument.key_value_items`."""
 
     class Params(BaseModel):
         """Parameters for KeyValueVisualizer controlling label and cell id display, and content layers to visualize."""
