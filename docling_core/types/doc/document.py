@@ -15,7 +15,18 @@ import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, Final, List, Literal, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Final,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 from urllib.parse import unquote
 
 import pandas as pd
@@ -56,6 +67,9 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 from docling_core.types.doc.utils import relative_path
+
+if TYPE_CHECKING:
+    from docling_core.transforms.visualizer.base import BaseVisualizer
 
 _logger = logging.getLogger(__name__)
 
@@ -5543,8 +5557,26 @@ class DoclingDocument(BaseModel):
         self,
         show_label: bool = True,
         show_branch_numbering: bool = False,
+        visualizer: str = "reading_order",
+        show_cell_id: bool = False,
     ) -> dict[Optional[int], PILImage.Image]:
-        """Get visualization of the document as images by page."""
+        """Get visualization of the document as images by page.
+
+        :param show_label: Show labels on elements (applies to all visualizers).
+        :type show_label: bool
+        :param show_branch_numbering: Show branch numbering (reading order visualizer only).
+        :type show_branch_numbering: bool
+        :param visualizer: Which visualizer to use. One of 'reading_order' (default), 'key_value'.
+        :type visualizer: str
+        :param show_cell_id: Show cell IDs (key value visualizer only).
+        :type show_cell_id: bool
+
+        :returns: Dictionary mapping page numbers to PIL images.
+        :rtype: dict[Optional[int], PILImage.Image]
+        """
+        from docling_core.transforms.visualizer.key_value_visualizer import (
+            KeyValueVisualizer,
+        )
         from docling_core.transforms.visualizer.layout_visualizer import (
             LayoutVisualizer,
         )
@@ -5552,18 +5584,34 @@ class DoclingDocument(BaseModel):
             ReadingOrderVisualizer,
         )
 
-        visualizer = ReadingOrderVisualizer(
-            base_visualizer=LayoutVisualizer(
-                params=LayoutVisualizer.Params(
-                    show_label=show_label,
+        visualizer_obj: BaseVisualizer
+        if visualizer == "reading_order":
+            visualizer_obj = ReadingOrderVisualizer(
+                base_visualizer=LayoutVisualizer(
+                    params=LayoutVisualizer.Params(
+                        show_label=show_label,
+                    ),
                 ),
-            ),
-            params=ReadingOrderVisualizer.Params(
-                show_branch_numbering=show_branch_numbering,
-            ),
-        )
-        images = visualizer.get_visualization(doc=self)
+                params=ReadingOrderVisualizer.Params(
+                    show_branch_numbering=show_branch_numbering,
+                ),
+            )
+        elif visualizer == "key_value":
+            visualizer_obj = KeyValueVisualizer(
+                base_visualizer=LayoutVisualizer(
+                    params=LayoutVisualizer.Params(
+                        show_label=show_label,
+                    ),
+                ),
+                params=KeyValueVisualizer.Params(
+                    show_label=show_label,
+                    show_cell_id=show_cell_id,
+                ),
+            )
+        else:
+            raise ValueError(f"Unknown visualizer: {visualizer}")
 
+        images = visualizer_obj.get_visualization(doc=self)
         return images
 
     @field_validator("version")
