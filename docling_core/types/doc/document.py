@@ -15,18 +15,7 @@ import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Final,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Any, Dict, Final, List, Literal, Optional, Sequence, Tuple, Union
 from urllib.parse import unquote
 
 import pandas as pd
@@ -67,9 +56,6 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 from docling_core.types.doc.utils import relative_path
-
-if TYPE_CHECKING:
-    from docling_core.transforms.visualizer.base import BaseVisualizer
 
 _logger = logging.getLogger(__name__)
 
@@ -5557,7 +5543,7 @@ class DoclingDocument(BaseModel):
         self,
         show_label: bool = True,
         show_branch_numbering: bool = False,
-        visualizer: str = "reading_order",
+        viz_mode: Literal["reading_order", "key_value"] = "reading_order",
         show_cell_id: bool = False,
     ) -> dict[Optional[int], PILImage.Image]:
         """Get visualization of the document as images by page.
@@ -5574,6 +5560,7 @@ class DoclingDocument(BaseModel):
         :returns: Dictionary mapping page numbers to PIL images.
         :rtype: dict[Optional[int], PILImage.Image]
         """
+        from docling_core.transforms.visualizer.base import BaseVisualizer
         from docling_core.transforms.visualizer.key_value_visualizer import (
             KeyValueVisualizer,
         )
@@ -5585,7 +5572,7 @@ class DoclingDocument(BaseModel):
         )
 
         visualizer_obj: BaseVisualizer
-        if visualizer == "reading_order":
+        if viz_mode == "reading_order":
             visualizer_obj = ReadingOrderVisualizer(
                 base_visualizer=LayoutVisualizer(
                     params=LayoutVisualizer.Params(
@@ -5596,7 +5583,7 @@ class DoclingDocument(BaseModel):
                     show_branch_numbering=show_branch_numbering,
                 ),
             )
-        elif visualizer == "key_value":
+        elif viz_mode == "key_value":
             visualizer_obj = KeyValueVisualizer(
                 base_visualizer=LayoutVisualizer(
                     params=LayoutVisualizer.Params(
@@ -5609,7 +5596,7 @@ class DoclingDocument(BaseModel):
                 ),
             )
         else:
-            raise ValueError(f"Unknown visualizer: {visualizer}")
+            raise ValueError(f"Unknown visualization mode: {viz_mode}")
 
         images = visualizer_obj.get_visualization(doc=self)
         return images
