@@ -1373,11 +1373,11 @@ class PictureItem(FloatingItem):
         )  # Encode to Base64 and decode to string
         return img_base64
 
-    def _image_to_hexhash(self) -> Optional[str]:
+    def _image_to_hexhash(self, img: Optional[PILImage.Image]) -> Optional[str]:
         """Hexash from the image."""
-        if self.image is not None and self.image._pil is not None:
+        if img is not None:
             # Convert the image to raw bytes
-            image_bytes = self.image._pil.tobytes()
+            image_bytes = img.tobytes()
 
             # Create a hash object (e.g., SHA-256)
             hasher = hashlib.sha256(usedforsecurity=False)
@@ -4116,16 +4116,10 @@ class DoclingDocument(BaseModel):
         if image_dir.is_dir():
             for item, level in result.iterate_items(page_no=page_no, with_groups=False):
                 if isinstance(item, PictureItem):
+                    img = item.get_image(doc=self)
+                    if img is not None:
 
-                    if (
-                        item.image is not None
-                        and isinstance(item.image.uri, AnyUrl)
-                        and item.image.uri.scheme == "data"
-                        and item.image.pil_image is not None
-                    ):
-                        img = item.image.pil_image
-
-                        hexhash = item._image_to_hexhash()
+                        hexhash = item._image_to_hexhash(img)
 
                         # loc_path = image_dir / f"image_{img_count:06}.png"
                         if hexhash is not None:
@@ -4140,6 +4134,11 @@ class DoclingDocument(BaseModel):
                             else:
                                 obj_path = loc_path
 
+                            if item.image is None:
+                                scale = img.size[0] / item.prov[0].bbox.width
+                                item.image = ImageRef.from_pil(
+                                    image=img, dpi=round(72 * scale)
+                                )
                             item.image.uri = Path(obj_path)
 
                         # if item.image._pil is not None:
@@ -4539,6 +4538,8 @@ class DoclingDocument(BaseModel):
             reference_path = None
         else:
             reference_path = filename.parent
+            artifacts_dir = reference_path / artifacts_dir
+
         return artifacts_dir, reference_path
 
     def _make_copy_with_refmode(

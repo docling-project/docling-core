@@ -1442,10 +1442,11 @@ def test_save_to_disk():
 
     doc: DoclingDocument = _construct_doc()
 
-    image_dir = Path("./test/data/doc/constructed_images/")
+    test_dir = Path("./test/data/doc")
+    image_dir = Path("constructed_images/")  # will be relative to test_dir
 
     doc_with_references = doc._with_pictures_refs(
-        image_dir=image_dir,  # Path("./test/data/constructed_images/")
+        image_dir=(test_dir / image_dir),
         page_no=None,
     )
 
@@ -1455,19 +1456,19 @@ def test_save_to_disk():
 
     ### MarkDown
 
-    filename = Path("test/data/doc/constructed_doc.placeholder.md")
+    filename = test_dir / "constructed_doc.placeholder.md"
     doc.save_as_markdown(
         filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.PLACEHOLDER
     )
     _verify_saved_output(filename=filename, paths=paths)
 
-    filename = Path("test/data/doc/constructed_doc.embedded.md")
+    filename = test_dir / "constructed_doc.embedded.md"
     doc.save_as_markdown(
         filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
     )
     _verify_saved_output(filename=filename, paths=paths)
 
-    filename = Path("test/data/doc/constructed_doc.referenced.md")
+    filename = test_dir / "constructed_doc.referenced.md"
     doc.save_as_markdown(
         filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED
     )
@@ -1475,19 +1476,19 @@ def test_save_to_disk():
 
     ### HTML
 
-    filename = Path("test/data/doc/constructed_doc.placeholder.html")
+    filename = test_dir / "constructed_doc.placeholder.html"
     doc.save_as_html(
         filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.PLACEHOLDER
     )
     _verify_saved_output(filename=filename, paths=paths)
 
-    filename = Path("test/data/doc/constructed_doc.embedded.html")
+    filename = test_dir / "constructed_doc.embedded.html"
     doc.save_as_html(
         filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
     )
     _verify_saved_output(filename=filename, paths=paths)
 
-    filename = Path("test/data/doc/constructed_doc.referenced.html")
+    filename = test_dir / "constructed_doc.referenced.html"
     doc.save_as_html(
         filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED
     )
@@ -1495,13 +1496,13 @@ def test_save_to_disk():
 
     ### Document Tokens
 
-    filename = Path("test/data/doc/constructed_doc.dt")
+    filename = test_dir / "constructed_doc.dt"
     doc.save_as_doctags(filename=filename)
     _verify_saved_output(filename=filename, paths=paths)
 
     ### JSON
 
-    filename = Path("test/data/doc/constructed_doc.embedded.json")
+    filename = test_dir / "constructed_doc.embedded.json"
     doc.save_as_json(
         filename=filename,
         artifacts_dir=image_dir,
@@ -1512,7 +1513,7 @@ def test_save_to_disk():
     doc_emb_loaded = DoclingDocument.load_from_json(filename)
     _verify_loaded_output(filename=filename, pred=doc_emb_loaded)
 
-    filename = Path("test/data/doc/constructed_doc.referenced.json")
+    filename = test_dir / "constructed_doc.referenced.json"
     doc.save_as_json(
         filename=filename,
         artifacts_dir=image_dir,
@@ -1525,7 +1526,7 @@ def test_save_to_disk():
 
     ### YAML
 
-    filename = Path("test/data/doc/constructed_doc.embedded.yaml")
+    filename = test_dir / "constructed_doc.embedded.yaml"
     doc.save_as_yaml(
         filename=filename,
         artifacts_dir=image_dir,
@@ -1533,7 +1534,7 @@ def test_save_to_disk():
     )
     _verify_saved_output(filename=filename, paths=paths)
 
-    filename = Path("test/data/doc/constructed_doc.referenced.yaml")
+    filename = test_dir / "constructed_doc.referenced.yaml"
     doc.save_as_yaml(
         filename=filename,
         artifacts_dir=image_dir,
