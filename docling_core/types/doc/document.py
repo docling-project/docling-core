@@ -1373,7 +1373,8 @@ class PictureItem(FloatingItem):
         )  # Encode to Base64 and decode to string
         return img_base64
 
-    def _image_to_hexhash(self, img: Optional[PILImage.Image]) -> Optional[str]:
+    @staticmethod
+    def _image_to_hexhash(img: Optional[PILImage.Image]) -> Optional[str]:
         """Hexash from the image."""
         if img is not None:
             # Convert the image to raw bytes
@@ -4119,7 +4120,7 @@ class DoclingDocument(BaseModel):
                     img = item.get_image(doc=self)
                     if img is not None:
 
-                        hexhash = item._image_to_hexhash(img)
+                        hexhash = PictureItem._image_to_hexhash(img)
 
                         # loc_path = image_dir / f"image_{img_count:06}.png"
                         if hexhash is not None:
