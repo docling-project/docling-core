@@ -4531,9 +4531,6 @@ class DoclingDocument(BaseModel):
     ) -> Tuple[Path, Optional[Path]]:
         """
         Determines the output directory for artifacts and the reference path for URIs.
-
-        This function correctly handles absolute and relative paths for `filename`
-        and `artifacts_dir` without path duplication.
         """
         if isinstance(filename, str):
             filename = Path(filename)
