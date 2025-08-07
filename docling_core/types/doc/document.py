@@ -4525,23 +4525,33 @@ class DoclingDocument(BaseModel):
 
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(html_out)
-
+    
     def _get_output_paths(
         self, filename: Union[str, Path], artifacts_dir: Optional[Path] = None
     ) -> Tuple[Path, Optional[Path]]:
+        """
+        Determines the output directory for artifacts and the reference path for URIs.
+
+        This function correctly handles absolute and relative paths for `filename`
+        and `artifacts_dir` without path duplication.
+        """
         if isinstance(filename, str):
             filename = Path(filename)
         if artifacts_dir is None:
-            # Remove the extension and add '_pictures'
-            artifacts_dir = filename.with_suffix("")
-            artifacts_dir = artifacts_dir.with_name(artifacts_dir.name + "_artifacts")
-        if artifacts_dir.is_absolute():
+            # Default case: create an '_artifacts' directory alongside the file.
+            final_artifacts_dir = filename.with_name(filename.stem + "_artifacts")
+        else:
+            if isinstance(artifacts_dir, str):
+                artifacts_dir = Path(artifacts_dir)  
+            if artifacts_dir.is_absolute():
+                final_artifacts_dir = artifacts_dir
+            else:
+                final_artifacts_dir = filename.parent / artifacts_dir
+        if final_artifacts_dir.is_absolute():
             reference_path = None
         else:
             reference_path = filename.parent
-            artifacts_dir = reference_path / artifacts_dir
-
-        return artifacts_dir, reference_path
+        return final_artifacts_dir, reference_path
 
     def _make_copy_with_refmode(
         self,
