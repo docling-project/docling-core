@@ -5683,69 +5683,174 @@ class DoclingDocument(BaseModel):
                 )
         return self
 
+    class _DocIndex(BaseModel):
+        """A document merge buffer."""
+
+        groups: list[GroupItem] = []
+        texts: list[TextItem] = []
+        pictures: list[PictureItem] = []
+        tables: list[TableItem] = []
+        key_value_items: list[KeyValueItem] = []
+        form_items: list[FormItem] = []
+
+        pages: dict[int, PageItem] = {}
+
+        _body: Optional[GroupItem] = None
+        _max_page: int = 0
+        _names: list[str] = []
+
+        def get_item_list(self, key: str) -> list[NodeItem]:
+            return getattr(self, key)
+
+        def index(self, doc: "DoclingDocument") -> None:
+
+            orig_ref_to_new_ref: dict[str, str] = {}
+            page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
+
+            if self._body is None:
+                self._body = GroupItem(**doc.body.model_dump(exclude={"children"}))
+
+            self._names.append(doc.name)
+
+            # collect items in traversal order
+            for item, _ in doc.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers={c for c in ContentLayer},
+            ):
+                key = item.self_ref.split("/")[1]
+                is_body = key == "body"
+                new_cref = (
+                    "#/body" if is_body else f"#/{key}/{len(self.get_item_list(key))}"
+                )
+                # register cref mapping:
+                orig_ref_to_new_ref[item.self_ref] = new_cref
+
+                if not is_body:
+                    new_item = copy.deepcopy(item)
+                    new_item.children = []
+
+                    # put item in the right list
+                    self.get_item_list(key).append(new_item)
+
+                    # update item's self reference
+                    new_item.self_ref = new_cref
+
+                    if isinstance(new_item, DocItem):
+                        # update page numbers
+                        # NOTE other prov sources (e.g. GraphCell) currently not covered
+                        for prov in new_item.prov:
+                            prov.page_no += page_delta
+
+                    if item.parent:
+                        # set item's parent
+                        new_parent_cref = orig_ref_to_new_ref[item.parent.cref]
+                        new_item.parent = RefItem(cref=new_parent_cref)
+
+                        # add item to parent's children
+                        path_components = new_parent_cref.split("/")
+                        num_components = len(path_components)
+                        if num_components == 3:
+                            _, parent_key, parent_index_str = path_components
+                            parent_index = int(parent_index_str)
+                            parent_item = self.get_item_list(parent_key)[parent_index]
+
+                            # update captions field (not possible in iterate_items order):
+                            if isinstance(parent_item, FloatingItem):
+                                for cap_it, cap in enumerate(parent_item.captions):
+                                    if cap.cref == item.self_ref:
+                                        parent_item.captions[cap_it] = RefItem(
+                                            cref=new_cref
+                                        )
+                                        break
+
+                        elif num_components == 2 and path_components[1] == "body":
+                            parent_item = self._body
+                        else:
+                            raise RuntimeError(
+                                f"Unsupported ref format: {new_parent_cref}"
+                            )
+                        parent_item.children.append(RefItem(cref=new_cref))
+
+            # update pages
+            new_max_page = None
+            for page_nr in doc.pages:
+                new_page = copy.deepcopy(doc.pages[page_nr])
+                new_page_nr = page_nr + page_delta
+                new_page.page_no = new_page_nr
+                self.pages[new_page_nr] = new_page
+                if new_max_page is None or new_page_nr > new_max_page:
+                    new_max_page = new_page_nr
+            if new_max_page is not None:
+                self._max_page = new_max_page
+
+        # @classmethod
+        # def reuse_from_doc(cls, doc: "DoclingDocument") -> "DoclingDocument._DocIndex":
+        #     doc_index = DoclingDocument._DocIndex(
+        #         groups=doc.groups,
+        #         texts=doc.texts,
+        #         pictures=doc.pictures,
+        #         tables=doc.tables,
+        #         key_value_items=doc.key_value_items,
+        #         form_items=doc.form_items,
+        #         pages=doc.pages,
+        #     )
+        #     doc_index._body = doc.body
+        #     doc_index._max_page = max(doc.pages.keys()) if doc.pages else 0
+        #     doc_index._names = [doc.name]
+        #     return doc_index
+
+        def get_name(self) -> str:
+            return " + ".join(self._names)
+
+    def _update_from_index(self, doc_index: "_DocIndex") -> None:
+        if doc_index._body is not None:
+            self.body = doc_index._body
+        self.groups = doc_index.groups
+        self.texts = doc_index.texts
+        self.pictures = doc_index.pictures
+        self.tables = doc_index.tables
+        self.key_value_items = doc_index.key_value_items
+        self.form_items = doc_index.form_items
+        self.pages = doc_index.pages
+        self.name = doc_index.get_name()
+
     def _normalize_references(self) -> None:
-        """Normalize ref numbering by ordering node items as per iterate_items()."""
-        new_body = GroupItem(**self.body.model_dump(exclude={"children"}))
+        doc_index = DoclingDocument._DocIndex()
+        doc_index.index(doc=self)
+        self._update_from_index(doc_index)
 
-        item_lists: dict[str, list[NodeItem]] = {
-            "groups": [],
-            "texts": [],
-            "pictures": [],
-            "tables": [],
-            "key_value_items": [],
-            "form_items": [],
-        }
-        orig_ref_to_new_ref: dict[str, str] = {}
+    def _extend(
+        self,
+        docs: Sequence["DoclingDocument"],
+        # reuse_buffers_unsafe: bool = False,
+    ) -> None:
+        """Extend present document with other documents."""
+        # if reuse_buffers_unsafe:
+        #     # use present doc's existing buffers on an as-is basis (unsafe)
+        #     doc_index = DoclingDocument._DocIndex.reuse_from_doc(doc=self)
+        # else:
+        doc_index = DoclingDocument._DocIndex()
+        doc_index.index(doc=self)
 
-        # collect items in traversal order
-        for item, _ in self.iterate_items(
-            with_groups=True,
-            traverse_pictures=True,
-            included_content_layers={c for c in ContentLayer},
-        ):
-            key = item.self_ref.split("/")[1]
-            is_body = key == "body"
-            new_cref = "#/body" if is_body else f"#/{key}/{len(item_lists[key])}"
-            # register cref mapping:
-            orig_ref_to_new_ref[item.self_ref] = new_cref
+        for doc in docs:
+            doc_index.index(doc=doc)
 
-            if not is_body:
-                new_item = copy.deepcopy(item)
-                new_item.children = []
+        self._update_from_index(doc_index)
 
-                # put item in the right list
-                item_lists[key].append(new_item)
+        self.origin = None
 
-                # update item's self reference
-                new_item.self_ref = new_cref
+    # @classmethod
+    # def _concatenate(
+    #     cls, docs: Sequence["DoclingDocument"]
+    # ) -> "DoclingDocument":
+    #     doc_index = DoclingDocument._DocIndex()
+    #     for doc in docs:
+    #         doc_index.index(doc=doc)
 
-                if item.parent:
-                    # set item's parent
-                    new_parent_cref = orig_ref_to_new_ref[item.parent.cref]
-                    new_item.parent = RefItem(cref=new_parent_cref)
-
-                    # add item to parent's children
-                    path_components = new_parent_cref.split("/")
-                    num_components = len(path_components)
-                    parent_node: NodeItem
-                    if num_components == 3:
-                        _, parent_key, parent_index_str = path_components
-                        parent_index = int(parent_index_str)
-                        parent_node = item_lists[parent_key][parent_index]
-                    elif num_components == 2 and path_components[1] == "body":
-                        parent_node = new_body
-                    else:
-                        raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
-                    parent_node.children.append(RefItem(cref=new_cref))
-
-        # update document
-        self.groups = item_lists["groups"]  # type: ignore
-        self.texts = item_lists["texts"]  # type: ignore
-        self.pictures = item_lists["pictures"]  # type: ignore
-        self.tables = item_lists["tables"]  # type: ignore
-        self.key_value_items = item_lists["key_value_items"]  # type: ignore
-        self.form_items = item_lists["form_items"]  # type: ignore
-        self.body = new_body
+    #     res_doc = DoclingDocument(name="")
+    #     res_doc._update_from_index(doc_index)
+    #     return res_doc
 
 
 # deprecated aliases (kept for backwards compatibility):
