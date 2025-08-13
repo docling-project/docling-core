@@ -135,11 +135,13 @@
 <ul>
 <li style="list-style-type: '■ ';">list item 1</li>
 <li style="list-style-type: '■ ';">list item 2</li>
-<li style="list-style-type: '■ ';">list item 3
+<li style="list-style-type: '■ ';">
+list item 3
 <ol>
 <li>list item 3.a</li>
 <li>list item 3.b</li>
-<li>list item 3.c
+<li>
+list item 3.c
 <ol>
 <li>list item 3.c.i</li>
 </ol>
@@ -160,11 +162,16 @@
 </ul>
 <ul>
 <li style="list-style-type: '■ ';">item 1 of neighboring list</li>
-<li style="list-style-type: '■ ';">item 2 of neighboring list
+<li style="list-style-type: '■ ';">
+item 2 of neighboring list
 <ul>
 <li style="list-style-type: '□ ';">item 1 of sub list</li>
-<li style="list-style-type: '□ ';"><span class='inline-group'>Here a code snippet: <code>print("Hello world")</code> (to be displayed inline)</span></li>
-<li style="list-style-type: '□ ';"><span class='inline-group'>Here a formula: <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>E</mi><mo>&#x0003D;</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="TeX">E=mc^2</annotation></math> (to be displayed inline)</span></li>
+<li style="list-style-type: '□ ';">
+<span class='inline-group'>Here a code snippet: <code>print("Hello world")</code> (to be displayed inline)</span>
+</li>
+<li style="list-style-type: '□ ';">
+<span class='inline-group'>Here a formula: <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>E</mi><mo>&#x0003D;</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="TeX">E=mc^2</annotation></math> (to be displayed inline)</span>
+</li>
 </ul>
 </li>
 </ul>
@@ -188,10 +195,12 @@
 <ol>
 <li style="list-style-type: '(i) ';">Item 1 in A</li>
 <li style="list-style-type: '(ii) ';">Item 2 in A</li>
-<li style="list-style-type: '(iii) ';">Item 3 in A
+<li style="list-style-type: '(iii) ';">
+Item 3 in A
 <ol>
 <li>Item 1 in B</li>
-<li style="list-style-type: '42. ';">Item 2 in B
+<li style="list-style-type: '42. ';">
+Item 2 in B
 <ol>
 <li>Item 1 in C</li>
 <li>Item 2 in C</li>

@@ -130,11 +130,14 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
+        visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed text item to HTML."""
         params = HTMLParams(**kwargs)
+        my_visited: set[str] = visited if visited is not None else set()
         res_parts: list[SerializationResult] = []
+        post_processed = False
 
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem):
@@ -162,7 +165,28 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
-            text_inner = self._prepare_content(item.text)
+            text_parts: list[str] = []
+            if item_text := self._prepare_content(item.text):
+                item_text = doc_serializer.post_process(
+                    text=item_text,
+                    formatting=item.formatting,
+                    hyperlink=item.hyperlink,
+                )
+                post_processed = True
+                text_parts.append(item_text)
+            nested_parts = [
+                r.text
+                for r in doc_serializer.get_parts(
+                    item=item,
+                    is_inline_scope=is_inline_scope,
+                    visited=my_visited,
+                    **kwargs,
+                )
+            ]
+            text_parts.extend(nested_parts)
+            text_inner = "\n".join(text_parts)
+            if nested_parts:
+                text_inner = f"\n{text_inner}\n"
             text = (
                 get_html_tag_with_text_direction(
                     html_tag="li",
@@ -185,11 +209,12 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             text = get_html_tag_with_text_direction(html_tag="p", text=text_inner)
 
         # Apply formatting and hyperlinks
-        text = doc_serializer.post_process(
-            text=text,
-            formatting=item.formatting,
-            hyperlink=item.hyperlink,
-        )
+        if not post_processed:
+            text = doc_serializer.post_process(
+                text=text,
+                formatting=item.formatting,
+                hyperlink=item.hyperlink,
+            )
 
         if text:
             text_res = create_ser_result(text=text, span_source=item)
@@ -703,7 +728,6 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
     ) -> SerializationResult:
         """Serializes a list to HTML."""
         my_visited: set[str] = visited if visited is not None else set()
-        params = HTMLParams(**kwargs)
         # Get all child parts
         parts = doc_serializer.get_parts(
             item=item,
@@ -713,72 +737,8 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
 
-        # Append nested list to parent list item:
-        i = 0
-        while i < len(parts):
-            prt = parts[i]
-            if prt.text.startswith(("<ul>", "<ol>")):
-                for j in range(i - 1, -1, -1):
-                    if parts[j].text.startswith(("<li>", "<li ")) and parts[
-                        j
-                    ].text.endswith("</li>"):
-                        before, _, _ = parts[j].text.rpartition("</li>")
-                        parts[j].text = f"{before}\n{prt.text}\n</li>"
-                        break
-                if j > -1:
-                    parts.pop(i)
-            else:
-                i += 1
-
         # Add all child parts
-        text_res = "\n".join(
-            [
-                (
-                    p.text
-                    if (
-                        (
-                            p.text.startswith(("<li>", "<li "))
-                            and p.text.endswith("</li>")
-                        )
-                        or (
-                            p.text.startswith(("<ol>", "<ol "))
-                            and p.text.endswith("</ol>")
-                        )
-                        or (
-                            p.text.startswith(("<ul>", "<ul "))
-                            and p.text.endswith("</ul>")
-                        )
-                    )
-                    else (
-                        get_html_tag_with_text_direction(
-                            html_tag="li",
-                            text=p.text,
-                            attrs=(
-                                {
-                                    "style": f"list-style-type: '{grandparent_item.marker} ';"
-                                }
-                                if params.show_original_list_item_marker
-                                and grandparent_item.marker
-                                else {}
-                            ),
-                        )
-                        if p.spans
-                        and p.spans[0].item.parent
-                        and isinstance(
-                            (parent_item := p.spans[0].item.parent.resolve(doc)),
-                            InlineGroup,
-                        )
-                        and parent_item.parent
-                        and isinstance(
-                            (grandparent_item := parent_item.parent.resolve(doc)),
-                            ListItem,
-                        )
-                        else f"<li>{p.text}</li>"
-                    )
-                )
-                for p in parts
-            ]
-        )
+        text_res = "\n".join(p.text for p in parts if p.text)
         if text_res:
             tag = "ol" if item.first_item_is_enumerated(doc) else "ul"
             text_res = f"<{tag}>\n{text_res}\n</{tag}>"
