@@ -1,0 +1,3411 @@
+{
+    "schema_name": "DoclingDocument",
+    "version": "1.5.0",
+    "name": "report on task: `Write me a document on polymers in food-packaging.`",
+    "furniture": {
+      "self_ref": "#/furniture",
+      "children": [],
+      "content_layer": "furniture",
+      "name": "_root_",
+      "label": "unspecified"
+    },
+    "body": {
+      "self_ref": "#/body",
+      "children": [
+        {
+          "$ref": "#/texts/0"
+        },
+        {
+          "$ref": "#/texts/1"
+        },
+        {
+          "$ref": "#/texts/2"
+        },
+        {
+          "$ref": "#/texts/3"
+        },
+        {
+          "$ref": "#/texts/4"
+        },
+        {
+          "$ref": "#/texts/5"
+        },
+        {
+          "$ref": "#/groups/0"
+        },
+        {
+          "$ref": "#/texts/35"
+        },
+        {
+          "$ref": "#/texts/36"
+        },
+        {
+          "$ref": "#/texts/37"
+        },
+        {
+          "$ref": "#/texts/38"
+        },
+        {
+          "$ref": "#/texts/39"
+        },
+        {
+          "$ref": "#/texts/40"
+        },
+        {
+          "$ref": "#/groups/12"
+        },
+        {
+          "$ref": "#/texts/109"
+        },
+        {
+          "$ref": "#/groups/39"
+        },
+        {
+          "$ref": "#/texts/125"
+        },
+        {
+          "$ref": "#/texts/126"
+        },
+        {
+          "$ref": "#/texts/127"
+        },
+        {
+          "$ref": "#/texts/128"
+        },
+        {
+          "$ref": "#/groups/44"
+        }
+      ],
+      "content_layer": "body",
+      "name": "_root_",
+      "label": "unspecified"
+    },
+    "groups": [
+      {
+        "self_ref": "#/groups/0",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/1"
+          }
+        ],
+        "content_layer": "body",
+        "name": "_root_",
+        "label": "unspecified"
+      },
+      {
+        "self_ref": "#/groups/1",
+        "parent": {
+          "$ref": "#/groups/0"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/6"
+          },
+          {
+            "$ref": "#/texts/12"
+          },
+          {
+            "$ref": "#/texts/17"
+          },
+          {
+            "$ref": "#/texts/23"
+          },
+          {
+            "$ref": "#/texts/29"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/2",
+        "parent": {
+          "$ref": "#/texts/6"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/7"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/3",
+        "parent": {
+          "$ref": "#/texts/6"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/8"
+          },
+          {
+            "$ref": "#/texts/9"
+          },
+          {
+            "$ref": "#/texts/10"
+          },
+          {
+            "$ref": "#/texts/11"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/4",
+        "parent": {
+          "$ref": "#/texts/12"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/13"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/5",
+        "parent": {
+          "$ref": "#/texts/12"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/14"
+          },
+          {
+            "$ref": "#/texts/15"
+          },
+          {
+            "$ref": "#/texts/16"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/6",
+        "parent": {
+          "$ref": "#/texts/17"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/18"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/7",
+        "parent": {
+          "$ref": "#/texts/17"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/19"
+          },
+          {
+            "$ref": "#/texts/20"
+          },
+          {
+            "$ref": "#/texts/21"
+          },
+          {
+            "$ref": "#/texts/22"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/8",
+        "parent": {
+          "$ref": "#/texts/23"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/24"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/9",
+        "parent": {
+          "$ref": "#/texts/23"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/25"
+          },
+          {
+            "$ref": "#/texts/26"
+          },
+          {
+            "$ref": "#/texts/27"
+          },
+          {
+            "$ref": "#/texts/28"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/10",
+        "parent": {
+          "$ref": "#/texts/29"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/30"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/11",
+        "parent": {
+          "$ref": "#/texts/29"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/31"
+          },
+          {
+            "$ref": "#/texts/32"
+          },
+          {
+            "$ref": "#/texts/33"
+          },
+          {
+            "$ref": "#/texts/34"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/12",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/41"
+          },
+          {
+            "$ref": "#/groups/13"
+          },
+          {
+            "$ref": "#/texts/108"
+          }
+        ],
+        "content_layer": "body",
+        "name": "_root_",
+        "label": "unspecified"
+      },
+      {
+        "self_ref": "#/groups/13",
+        "parent": {
+          "$ref": "#/groups/12"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/42"
+          },
+          {
+            "$ref": "#/texts/69"
+          },
+          {
+            "$ref": "#/texts/90"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/14",
+        "parent": {
+          "$ref": "#/texts/42"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/43"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/15",
+        "parent": {
+          "$ref": "#/texts/42"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/44"
+          },
+          {
+            "$ref": "#/texts/47"
+          },
+          {
+            "$ref": "#/texts/54"
+          },
+          {
+            "$ref": "#/texts/60"
+          },
+          {
+            "$ref": "#/texts/63"
+          },
+          {
+            "$ref": "#/texts/66"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/16",
+        "parent": {
+          "$ref": "#/texts/44"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/45"
+          },
+          {
+            "$ref": "#/texts/46"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/17",
+        "parent": {
+          "$ref": "#/texts/47"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/48"
+          },
+          {
+            "$ref": "#/texts/49"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/18",
+        "parent": {
+          "$ref": "#/texts/47"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/50"
+          },
+          {
+            "$ref": "#/texts/51"
+          },
+          {
+            "$ref": "#/texts/52"
+          },
+          {
+            "$ref": "#/texts/53"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/19",
+        "parent": {
+          "$ref": "#/texts/54"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/55"
+          },
+          {
+            "$ref": "#/texts/56"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/20",
+        "parent": {
+          "$ref": "#/texts/54"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/57"
+          },
+          {
+            "$ref": "#/texts/58"
+          },
+          {
+            "$ref": "#/texts/59"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/21",
+        "parent": {
+          "$ref": "#/texts/60"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/61"
+          },
+          {
+            "$ref": "#/texts/62"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/22",
+        "parent": {
+          "$ref": "#/texts/63"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/64"
+          },
+          {
+            "$ref": "#/texts/65"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/23",
+        "parent": {
+          "$ref": "#/texts/66"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/67"
+          },
+          {
+            "$ref": "#/texts/68"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/24",
+        "parent": {
+          "$ref": "#/texts/69"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/70"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/25",
+        "parent": {
+          "$ref": "#/texts/69"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/71"
+          },
+          {
+            "$ref": "#/texts/74"
+          },
+          {
+            "$ref": "#/texts/81"
+          },
+          {
+            "$ref": "#/texts/84"
+          },
+          {
+            "$ref": "#/texts/87"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/26",
+        "parent": {
+          "$ref": "#/texts/71"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/72"
+          },
+          {
+            "$ref": "#/texts/73"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/27",
+        "parent": {
+          "$ref": "#/texts/74"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/75"
+          },
+          {
+            "$ref": "#/texts/76"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/28",
+        "parent": {
+          "$ref": "#/texts/74"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/77"
+          },
+          {
+            "$ref": "#/texts/78"
+          },
+          {
+            "$ref": "#/texts/79"
+          },
+          {
+            "$ref": "#/texts/80"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/29",
+        "parent": {
+          "$ref": "#/texts/81"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/82"
+          },
+          {
+            "$ref": "#/texts/83"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/30",
+        "parent": {
+          "$ref": "#/texts/84"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/85"
+          },
+          {
+            "$ref": "#/texts/86"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/31",
+        "parent": {
+          "$ref": "#/texts/87"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/88"
+          },
+          {
+            "$ref": "#/texts/89"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/32",
+        "parent": {
+          "$ref": "#/texts/90"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/91"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/33",
+        "parent": {
+          "$ref": "#/texts/90"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/92"
+          },
+          {
+            "$ref": "#/texts/95"
+          },
+          {
+            "$ref": "#/texts/102"
+          },
+          {
+            "$ref": "#/texts/105"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/34",
+        "parent": {
+          "$ref": "#/texts/92"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/93"
+          },
+          {
+            "$ref": "#/texts/94"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/35",
+        "parent": {
+          "$ref": "#/texts/95"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/96"
+          },
+          {
+            "$ref": "#/texts/97"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/36",
+        "parent": {
+          "$ref": "#/texts/95"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/98"
+          },
+          {
+            "$ref": "#/texts/99"
+          },
+          {
+            "$ref": "#/texts/100"
+          },
+          {
+            "$ref": "#/texts/101"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/37",
+        "parent": {
+          "$ref": "#/texts/102"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/103"
+          },
+          {
+            "$ref": "#/texts/104"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/38",
+        "parent": {
+          "$ref": "#/texts/105"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/106"
+          },
+          {
+            "$ref": "#/texts/107"
+          }
+        ],
+        "content_layer": "body",
+        "name": "group",
+        "label": "inline"
+      },
+      {
+        "self_ref": "#/groups/39",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/40"
+          }
+        ],
+        "content_layer": "body",
+        "name": "_root_",
+        "label": "unspecified"
+      },
+      {
+        "self_ref": "#/groups/40",
+        "parent": {
+          "$ref": "#/groups/39"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/110"
+          },
+          {
+            "$ref": "#/texts/115"
+          },
+          {
+            "$ref": "#/texts/120"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/41",
+        "parent": {
+          "$ref": "#/texts/110"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/111"
+          },
+          {
+            "$ref": "#/texts/112"
+          },
+          {
+            "$ref": "#/texts/113"
+          },
+          {
+            "$ref": "#/texts/114"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/42",
+        "parent": {
+          "$ref": "#/texts/115"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/116"
+          },
+          {
+            "$ref": "#/texts/117"
+          },
+          {
+            "$ref": "#/texts/118"
+          },
+          {
+            "$ref": "#/texts/119"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/43",
+        "parent": {
+          "$ref": "#/texts/120"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/121"
+          },
+          {
+            "$ref": "#/texts/122"
+          },
+          {
+            "$ref": "#/texts/123"
+          },
+          {
+            "$ref": "#/texts/124"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/44",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/45"
+          }
+        ],
+        "content_layer": "body",
+        "name": "_root_",
+        "label": "unspecified"
+      },
+      {
+        "self_ref": "#/groups/45",
+        "parent": {
+          "$ref": "#/groups/44"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/129"
+          },
+          {
+            "$ref": "#/texts/134"
+          },
+          {
+            "$ref": "#/texts/139"
+          },
+          {
+            "$ref": "#/texts/144"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/46",
+        "parent": {
+          "$ref": "#/texts/129"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/130"
+          },
+          {
+            "$ref": "#/texts/131"
+          },
+          {
+            "$ref": "#/texts/132"
+          },
+          {
+            "$ref": "#/texts/133"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/47",
+        "parent": {
+          "$ref": "#/texts/134"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/135"
+          },
+          {
+            "$ref": "#/texts/136"
+          },
+          {
+            "$ref": "#/texts/137"
+          },
+          {
+            "$ref": "#/texts/138"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/48",
+        "parent": {
+          "$ref": "#/texts/139"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/140"
+          },
+          {
+            "$ref": "#/texts/141"
+          },
+          {
+            "$ref": "#/texts/142"
+          },
+          {
+            "$ref": "#/texts/143"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      },
+      {
+        "self_ref": "#/groups/49",
+        "parent": {
+          "$ref": "#/texts/144"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/145"
+          },
+          {
+            "$ref": "#/texts/146"
+          },
+          {
+            "$ref": "#/texts/147"
+          },
+          {
+            "$ref": "#/texts/148"
+          }
+        ],
+        "content_layer": "body",
+        "name": "list",
+        "label": "list"
+      }
+    ],
+    "texts": [
+      {
+        "self_ref": "#/texts/0",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "title",
+        "prov": [],
+        "orig": "Polymers in Food Packaging",
+        "text": "Polymers in Food Packaging"
+      },
+      {
+        "self_ref": "#/texts/1",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Introduction",
+        "text": "Introduction",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/2",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Polymer Classes Used in Food Packaging",
+        "text": "Polymer Classes Used in Food Packaging",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/3",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Thermoplastics",
+        "text": "Thermoplastics",
+        "level": 2
+      },
+      {
+        "self_ref": "#/texts/4",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Elastomers",
+        "text": "Elastomers",
+        "level": 2
+      },
+      {
+        "self_ref": "#/texts/5",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Physical and Chemical Properties Relevant to Food Packaging",
+        "text": "Physical and Chemical Properties Relevant to Food Packaging",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/6",
+        "parent": {
+          "$ref": "#/groups/1"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/2"
+          },
+          {
+            "$ref": "#/groups/3"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/7",
+        "parent": {
+          "$ref": "#/groups/2"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Barrier to gases and moisture",
+        "text": "Barrier to gases and moisture",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/8",
+        "parent": {
+          "$ref": "#/groups/3"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Oxygen transmission rate (OTR) \u2013 how much O\u2082 passes per square meter per hour.",
+        "text": "Oxygen transmission rate (OTR) \u2013 how much O\u2082 passes per square meter per hour.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/9",
+        "parent": {
+          "$ref": "#/groups/3"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Carbon\u2011dioxide transmission rate (CO\u2082TR) \u2013 how much CO\u2082 permeates.",
+        "text": "Carbon\u2011dioxide transmission rate (CO\u2082TR) \u2013 how much CO\u2082 permeates.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/10",
+        "parent": {
+          "$ref": "#/groups/3"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Water\u2011vapor transmission rate (WVTR) \u2013 amount of moisture that diffuses.",
+        "text": "Water\u2011vapor transmission rate (WVTR) \u2013 amount of moisture that diffuses.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/11",
+        "parent": {
+          "$ref": "#/groups/3"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Influence of polymer crystallinity, copolymer composition, and barrier additives on all three rates.",
+        "text": "Influence of polymer crystallinity, copolymer composition, and barrier additives on all three rates.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/12",
+        "parent": {
+          "$ref": "#/groups/1"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/4"
+          },
+          {
+            "$ref": "#/groups/5"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/13",
+        "parent": {
+          "$ref": "#/groups/4"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Tensile strength",
+        "text": "Tensile strength",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/14",
+        "parent": {
+          "$ref": "#/groups/5"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Tensile modulus (MPa) \u2013 stiffness of the material.",
+        "text": "Tensile modulus (MPa) \u2013 stiffness of the material.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/15",
+        "parent": {
+          "$ref": "#/groups/5"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Elongation at break (%) \u2013 flexibility before failure.",
+        "text": "Elongation at break (%) \u2013 flexibility before failure.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/16",
+        "parent": {
+          "$ref": "#/groups/5"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Standard test conditions (temperature, strain rate) that determine the reported values.",
+        "text": "Standard test conditions (temperature, strain rate) that determine the reported values.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/17",
+        "parent": {
+          "$ref": "#/groups/1"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/6"
+          },
+          {
+            "$ref": "#/groups/7"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/18",
+        "parent": {
+          "$ref": "#/groups/6"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Heat resistance",
+        "text": "Heat resistance",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/19",
+        "parent": {
+          "$ref": "#/groups/7"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Glass transition temperature (Tg) \u2013 the temperature at which the polymer softens.",
+        "text": "Glass transition temperature (Tg) \u2013 the temperature at which the polymer softens.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/20",
+        "parent": {
+          "$ref": "#/groups/7"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Heat deflection temperature (HDT) \u2013 the temperature at which it bends under load.",
+        "text": "Heat deflection temperature (HDT) \u2013 the temperature at which it bends under load.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/21",
+        "parent": {
+          "$ref": "#/groups/7"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Thermal degradation onset temperature \u2013 the point where chemical breakdown starts.",
+        "text": "Thermal degradation onset temperature \u2013 the point where chemical breakdown starts.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/22",
+        "parent": {
+          "$ref": "#/groups/7"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Suitability for microwave, oven, or sterilization processes.",
+        "text": "Suitability for microwave, oven, or sterilization processes.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/23",
+        "parent": {
+          "$ref": "#/groups/1"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/8"
+          },
+          {
+            "$ref": "#/groups/9"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/24",
+        "parent": {
+          "$ref": "#/groups/8"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Chemical stability",
+        "text": "Chemical stability",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/25",
+        "parent": {
+          "$ref": "#/groups/9"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Resistance to acids, bases, and organic solvents used in food processing.",
+        "text": "Resistance to acids, bases, and organic solvents used in food processing.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/26",
+        "parent": {
+          "$ref": "#/groups/9"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Oxidative stability \u2013 how well the polymer resists free\u2011radical degradation.",
+        "text": "Oxidative stability \u2013 how well the polymer resists free\u2011radical degradation.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/27",
+        "parent": {
+          "$ref": "#/groups/9"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Interaction with food constituents such as fatty acids, alcohols, and acids.",
+        "text": "Interaction with food constituents such as fatty acids, alcohols, and acids.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/28",
+        "parent": {
+          "$ref": "#/groups/9"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Impact on polymer aging and shelf\u2011life of packaged products.",
+        "text": "Impact on polymer aging and shelf\u2011life of packaged products.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/29",
+        "parent": {
+          "$ref": "#/groups/1"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/10"
+          },
+          {
+            "$ref": "#/groups/11"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/30",
+        "parent": {
+          "$ref": "#/groups/10"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Migration potential",
+        "text": "Migration potential",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/31",
+        "parent": {
+          "$ref": "#/groups/11"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Results of migration tests (e.g., extraction of additives or additives\u2019 leaching).",
+        "text": "Results of migration tests (e.g., extraction of additives or additives\u2019 leaching).",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/32",
+        "parent": {
+          "$ref": "#/groups/11"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Compliance with regulatory limits (e.g., EU Directive 10/2011, FDA food\u2011contact legislation).",
+        "text": "Compliance with regulatory limits (e.g., EU Directive 10/2011, FDA food\u2011contact legislation).",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/33",
+        "parent": {
+          "$ref": "#/groups/11"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Effect of temperature, time, and food type on the amount of material that migrates.",
+        "text": "Effect of temperature, time, and food type on the amount of material that migrates.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/34",
+        "parent": {
+          "$ref": "#/groups/11"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Barrier performance against the migration of contaminants or degradation products.",
+        "text": "Barrier performance against the migration of contaminants or degradation products.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/35",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Applications of Polymers in Food Packaging",
+        "text": "Applications of Polymers in Food Packaging",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/36",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Packaging Types",
+        "text": "Packaging Types",
+        "level": 2
+      },
+      {
+        "self_ref": "#/texts/37",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Films",
+        "text": "Films",
+        "level": 3
+      },
+      {
+        "self_ref": "#/texts/38",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Bottles",
+        "text": "Bottles",
+        "level": 3
+      },
+      {
+        "self_ref": "#/texts/39",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Trays",
+        "text": "Trays",
+        "level": 3
+      },
+      {
+        "self_ref": "#/texts/40",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Safety and Regulatory Considerations",
+        "text": "Safety and Regulatory Considerations",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/41",
+        "parent": {
+          "$ref": "#/groups/12"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Common migration testing methods",
+        "text": "Common migration testing methods",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/42",
+        "parent": {
+          "$ref": "#/groups/13"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/14"
+          },
+          {
+            "$ref": "#/groups/15"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/43",
+        "parent": {
+          "$ref": "#/groups/14"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Extraction in food simulants",
+        "text": "Extraction in food simulants",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/44",
+        "parent": {
+          "$ref": "#/groups/15"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/16"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/45",
+        "parent": {
+          "$ref": "#/groups/16"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "What it is",
+        "text": "What it is",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/46",
+        "parent": {
+          "$ref": "#/groups/16"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": Samples of the packaging material are immersed in a liquid that mimics the chemical properties of a specific food type (e.g., aqueous, acidic, fatty).",
+        "text": ": Samples of the packaging material are immersed in a liquid that mimics the chemical properties of a specific food type (e.g., aqueous, acidic, fatty)."
+      },
+      {
+        "self_ref": "#/texts/47",
+        "parent": {
+          "$ref": "#/groups/15"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/17"
+          },
+          {
+            "$ref": "#/groups/18"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/48",
+        "parent": {
+          "$ref": "#/groups/17"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Typical simulants",
+        "text": "Typical simulants",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/49",
+        "parent": {
+          "$ref": "#/groups/17"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ":",
+        "text": ":"
+      },
+      {
+        "self_ref": "#/texts/50",
+        "parent": {
+          "$ref": "#/groups/18"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "3% acetic acid (for acidic foods)",
+        "text": "3% acetic acid (for acidic foods)",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/51",
+        "parent": {
+          "$ref": "#/groups/18"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "50% ethanol (for alcohol\u2011based foods)",
+        "text": "50% ethanol (for alcohol\u2011based foods)",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/52",
+        "parent": {
+          "$ref": "#/groups/18"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "95% ethanol (for high\u2011fat foods)",
+        "text": "95% ethanol (for high\u2011fat foods)",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/53",
+        "parent": {
+          "$ref": "#/groups/18"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Distilled water (for aqueous foods)",
+        "text": "Distilled water (for aqueous foods)",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/54",
+        "parent": {
+          "$ref": "#/groups/15"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/19"
+          },
+          {
+            "$ref": "#/groups/20"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/55",
+        "parent": {
+          "$ref": "#/groups/19"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Procedure",
+        "text": "Procedure",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/56",
+        "parent": {
+          "$ref": "#/groups/19"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ":",
+        "text": ":"
+      },
+      {
+        "self_ref": "#/texts/57",
+        "parent": {
+          "$ref": "#/groups/20"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Prepare a defined volume of simulant in a sealed vessel.",
+        "text": "Prepare a defined volume of simulant in a sealed vessel.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/58",
+        "parent": {
+          "$ref": "#/groups/20"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Immerse the material for a set time at a controlled temperature (often 50\u202f\u00b0C\u201370\u202f\u00b0C).",
+        "text": "Immerse the material for a set time at a controlled temperature (often 50\u202f\u00b0C\u201370\u202f\u00b0C).",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/59",
+        "parent": {
+          "$ref": "#/groups/20"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Remove, filter, and concentrate the extract for analysis.",
+        "text": "Remove, filter, and concentrate the extract for analysis.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/60",
+        "parent": {
+          "$ref": "#/groups/15"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/21"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/61",
+        "parent": {
+          "$ref": "#/groups/21"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Analysis",
+        "text": "Analysis",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/62",
+        "parent": {
+          "$ref": "#/groups/21"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": GC\u2011MS, LC\u2011MS, or HPLC depending on the analyte class.",
+        "text": ": GC\u2011MS, LC\u2011MS, or HPLC depending on the analyte class."
+      },
+      {
+        "self_ref": "#/texts/63",
+        "parent": {
+          "$ref": "#/groups/15"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/22"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/64",
+        "parent": {
+          "$ref": "#/groups/22"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Advantages",
+        "text": "Advantages",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/65",
+        "parent": {
+          "$ref": "#/groups/22"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": Direct assessment of potential migration into a realistic medium; scalable for routine testing.",
+        "text": ": Direct assessment of potential migration into a realistic medium; scalable for routine testing."
+      },
+      {
+        "self_ref": "#/texts/66",
+        "parent": {
+          "$ref": "#/groups/15"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/23"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/67",
+        "parent": {
+          "$ref": "#/groups/23"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Limitations",
+        "text": "Limitations",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/68",
+        "parent": {
+          "$ref": "#/groups/23"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": Does not account for headspace gas migration; may underestimate migration of highly volatile substances.",
+        "text": ": Does not account for headspace gas migration; may underestimate migration of highly volatile substances."
+      },
+      {
+        "self_ref": "#/texts/69",
+        "parent": {
+          "$ref": "#/groups/13"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/24"
+          },
+          {
+            "$ref": "#/groups/25"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/70",
+        "parent": {
+          "$ref": "#/groups/24"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Headspace analysis",
+        "text": "Headspace analysis",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/71",
+        "parent": {
+          "$ref": "#/groups/25"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/26"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/72",
+        "parent": {
+          "$ref": "#/groups/26"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "What it is",
+        "text": "What it is",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/73",
+        "parent": {
+          "$ref": "#/groups/26"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": Measurement of volatile substances that migrate from the material into the surrounding gas phase.",
+        "text": ": Measurement of volatile substances that migrate from the material into the surrounding gas phase."
+      },
+      {
+        "self_ref": "#/texts/74",
+        "parent": {
+          "$ref": "#/groups/25"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/27"
+          },
+          {
+            "$ref": "#/groups/28"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/75",
+        "parent": {
+          "$ref": "#/groups/27"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Procedure",
+        "text": "Procedure",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/76",
+        "parent": {
+          "$ref": "#/groups/27"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ":",
+        "text": ":"
+      },
+      {
+        "self_ref": "#/texts/77",
+        "parent": {
+          "$ref": "#/groups/28"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Seal the material in a headspace vial or chamber.",
+        "text": "Seal the material in a headspace vial or chamber.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/78",
+        "parent": {
+          "$ref": "#/groups/28"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Equilibrate at a defined temperature (commonly 25\u202f\u00b0C\u201360\u202f\u00b0C).",
+        "text": "Equilibrate at a defined temperature (commonly 25\u202f\u00b0C\u201360\u202f\u00b0C).",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/79",
+        "parent": {
+          "$ref": "#/groups/28"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Sample the gas phase with a gas sampling needle or syringe.",
+        "text": "Sample the gas phase with a gas sampling needle or syringe.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/80",
+        "parent": {
+          "$ref": "#/groups/28"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Analyze via GC\u2011FID, GC\u2011MS, or PTR\u2011MS.",
+        "text": "Analyze via GC\u2011FID, GC\u2011MS, or PTR\u2011MS.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/81",
+        "parent": {
+          "$ref": "#/groups/25"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/29"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/82",
+        "parent": {
+          "$ref": "#/groups/29"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Applications",
+        "text": "Applications",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/83",
+        "parent": {
+          "$ref": "#/groups/29"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": Assessment of aromas, flavor compounds, or volatile contaminants.",
+        "text": ": Assessment of aromas, flavor compounds, or volatile contaminants."
+      },
+      {
+        "self_ref": "#/texts/84",
+        "parent": {
+          "$ref": "#/groups/25"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/30"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/85",
+        "parent": {
+          "$ref": "#/groups/30"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Advantages",
+        "text": "Advantages",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/86",
+        "parent": {
+          "$ref": "#/groups/30"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": Sensitive to low\u2011concentration volatiles; minimal sample preparation.",
+        "text": ": Sensitive to low\u2011concentration volatiles; minimal sample preparation."
+      },
+      {
+        "self_ref": "#/texts/87",
+        "parent": {
+          "$ref": "#/groups/25"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/31"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/88",
+        "parent": {
+          "$ref": "#/groups/31"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Limitations",
+        "text": "Limitations",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/89",
+        "parent": {
+          "$ref": "#/groups/31"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": Does not capture non\u2011volatile migration; results depend on equilibrium time and temperature.",
+        "text": ": Does not capture non\u2011volatile migration; results depend on equilibrium time and temperature."
+      },
+      {
+        "self_ref": "#/texts/90",
+        "parent": {
+          "$ref": "#/groups/13"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/32"
+          },
+          {
+            "$ref": "#/groups/33"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/91",
+        "parent": {
+          "$ref": "#/groups/32"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Direct contact tests",
+        "text": "Direct contact tests",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/92",
+        "parent": {
+          "$ref": "#/groups/33"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/34"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/93",
+        "parent": {
+          "$ref": "#/groups/34"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "What it is",
+        "text": "What it is",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/94",
+        "parent": {
+          "$ref": "#/groups/34"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": The packaging material is placed in direct contact with the food or food simulant, often using a defined food\u2011packaging configuration.",
+        "text": ": The packaging material is placed in direct contact with the food or food simulant, often using a defined food\u2011packaging configuration."
+      },
+      {
+        "self_ref": "#/texts/95",
+        "parent": {
+          "$ref": "#/groups/33"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/35"
+          },
+          {
+            "$ref": "#/groups/36"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/96",
+        "parent": {
+          "$ref": "#/groups/35"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Procedure",
+        "text": "Procedure",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/97",
+        "parent": {
+          "$ref": "#/groups/35"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ":",
+        "text": ":"
+      },
+      {
+        "self_ref": "#/texts/98",
+        "parent": {
+          "$ref": "#/groups/36"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Assemble the material and food (or simulant) in a mold or container that simulates real usage (e.g., sealed pouch, jar).",
+        "text": "Assemble the material and food (or simulant) in a mold or container that simulates real usage (e.g., sealed pouch, jar).",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/99",
+        "parent": {
+          "$ref": "#/groups/36"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Incubate for the intended storage time at the relevant temperature.",
+        "text": "Incubate for the intended storage time at the relevant temperature.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/100",
+        "parent": {
+          "$ref": "#/groups/36"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Extract or sample the food directly (e.g., through the material or by taking a portion of the food).",
+        "text": "Extract or sample the food directly (e.g., through the material or by taking a portion of the food).",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/101",
+        "parent": {
+          "$ref": "#/groups/36"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Analyze for migrated substances.",
+        "text": "Analyze for migrated substances.",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/102",
+        "parent": {
+          "$ref": "#/groups/33"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/37"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/103",
+        "parent": {
+          "$ref": "#/groups/37"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Advantages",
+        "text": "Advantages",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/104",
+        "parent": {
+          "$ref": "#/groups/37"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": Mimics real consumer exposure; captures both liquid and vapor migration pathways.",
+        "text": ": Mimics real consumer exposure; captures both liquid and vapor migration pathways."
+      },
+      {
+        "self_ref": "#/texts/105",
+        "parent": {
+          "$ref": "#/groups/33"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/38"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "",
+        "text": "",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/106",
+        "parent": {
+          "$ref": "#/groups/38"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "Limitations",
+        "text": "Limitations",
+        "formatting": {
+          "bold": false,
+          "italic": true,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        }
+      },
+      {
+        "self_ref": "#/texts/107",
+        "parent": {
+          "$ref": "#/groups/38"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": ": More labor\u2011intensive; requires careful control of contact area, thickness, and sealing integrity.",
+        "text": ": More labor\u2011intensive; requires careful control of contact area, thickness, and sealing integrity."
+      },
+      {
+        "self_ref": "#/texts/108",
+        "parent": {
+          "$ref": "#/groups/12"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [],
+        "orig": "These three approaches\u2014extraction in food simulants, headspace analysis, and direct contact tests\u2014complement each other to provide a comprehensive assessment of potential migration from packaging into food.",
+        "text": "These three approaches\u2014extraction in food simulants, headspace analysis, and direct contact tests\u2014complement each other to provide a comprehensive assessment of potential migration from packaging into food."
+      },
+      {
+        "self_ref": "#/texts/109",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Environmental Impact and Sustainability",
+        "text": "Environmental Impact and Sustainability",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/110",
+        "parent": {
+          "$ref": "#/groups/40"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/41"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Resource consumption",
+        "text": "Resource consumption",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        },
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/111",
+        "parent": {
+          "$ref": "#/groups/41"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Energy usage for manufacturing, transportation, and daily activities",
+        "text": "Energy usage for manufacturing, transportation, and daily activities",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/112",
+        "parent": {
+          "$ref": "#/groups/41"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Water consumption in agriculture, industry, and household use",
+        "text": "Water consumption in agriculture, industry, and household use",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/113",
+        "parent": {
+          "$ref": "#/groups/41"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Extraction of raw materials (mining, drilling, logging)",
+        "text": "Extraction of raw materials (mining, drilling, logging)",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/114",
+        "parent": {
+          "$ref": "#/groups/41"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Associated carbon emissions and climate impact",
+        "text": "Associated carbon emissions and climate impact",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/115",
+        "parent": {
+          "$ref": "#/groups/40"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/42"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Landfill waste",
+        "text": "Landfill waste",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        },
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/116",
+        "parent": {
+          "$ref": "#/groups/42"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Rapid growth in waste volume due to population and consumption increases",
+        "text": "Rapid growth in waste volume due to population and consumption increases",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/117",
+        "parent": {
+          "$ref": "#/groups/42"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Methane production from decomposing organic matter",
+        "text": "Methane production from decomposing organic matter",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/118",
+        "parent": {
+          "$ref": "#/groups/42"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Leachate generation that can contaminate soil and groundwater",
+        "text": "Leachate generation that can contaminate soil and groundwater",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/119",
+        "parent": {
+          "$ref": "#/groups/42"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Limited landfill space leading to overburdened disposal sites",
+        "text": "Limited landfill space leading to overburdened disposal sites",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/120",
+        "parent": {
+          "$ref": "#/groups/40"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/43"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Plastic pollution",
+        "text": "Plastic pollution",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        },
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/121",
+        "parent": {
+          "$ref": "#/groups/43"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Accumulation of large\u2011scale debris in oceans and rivers",
+        "text": "Accumulation of large\u2011scale debris in oceans and rivers",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/122",
+        "parent": {
+          "$ref": "#/groups/43"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Formation of microplastics that enter the food chain",
+        "text": "Formation of microplastics that enter the food chain",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/123",
+        "parent": {
+          "$ref": "#/groups/43"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Low recycling rates and inefficient waste separation",
+        "text": "Low recycling rates and inefficient waste separation",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/124",
+        "parent": {
+          "$ref": "#/groups/43"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Prevalence of single\u2011use plastics contributing to ongoing litter",
+        "text": "Prevalence of single\u2011use plastics contributing to ongoing litter",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/125",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Recyclability",
+        "text": "Recyclability",
+        "level": 2
+      },
+      {
+        "self_ref": "#/texts/126",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Biodegradable Polymers",
+        "text": "Biodegradable Polymers",
+        "level": 2
+      },
+      {
+        "self_ref": "#/texts/127",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Emerging Trends and Future Outlook",
+        "text": "Emerging Trends and Future Outlook",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/128",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [],
+        "orig": "Conclusion",
+        "text": "Conclusion",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/129",
+        "parent": {
+          "$ref": "#/groups/45"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/46"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Polymer Versatility",
+        "text": "Polymer Versatility",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        },
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/130",
+        "parent": {
+          "$ref": "#/groups/46"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Multiple functional groups enable tailoring of mechanical, thermal, and chemical properties for specific applications",
+        "text": "Multiple functional groups enable tailoring of mechanical, thermal, and chemical properties for specific applications",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/131",
+        "parent": {
+          "$ref": "#/groups/46"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Used across diverse fields: electronics (semiconductors, flexible displays), biomedicine (drug delivery, tissue scaffolds), packaging, automotive, and aerospace",
+        "text": "Used across diverse fields: electronics (semiconductors, flexible displays), biomedicine (drug delivery, tissue scaffolds), packaging, automotive, and aerospace",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/132",
+        "parent": {
+          "$ref": "#/groups/46"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Compatible with additive manufacturing techniques (3D printing, fused deposition modeling) for rapid prototyping and custom parts",
+        "text": "Compatible with additive manufacturing techniques (3D printing, fused deposition modeling) for rapid prototyping and custom parts",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/133",
+        "parent": {
+          "$ref": "#/groups/46"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Recyclability and upcycling potential, allowing polymers to be re\u2011processed into higher\u2011value materials",
+        "text": "Recyclability and upcycling potential, allowing polymers to be re\u2011processed into higher\u2011value materials",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/134",
+        "parent": {
+          "$ref": "#/groups/45"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/47"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Regulatory Compliance",
+        "text": "Regulatory Compliance",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        },
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/135",
+        "parent": {
+          "$ref": "#/groups/47"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Adherence to FDA, CE, and ISO standards for medical and consumer products",
+        "text": "Adherence to FDA, CE, and ISO standards for medical and consumer products",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/136",
+        "parent": {
+          "$ref": "#/groups/47"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Compliance with chemical restriction directives such as RoHS, REACH, and TSCA to limit hazardous substances",
+        "text": "Compliance with chemical restriction directives such as RoHS, REACH, and TSCA to limit hazardous substances",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/137",
+        "parent": {
+          "$ref": "#/groups/47"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Robust traceability systems (batch records, chain\u2011of\u2011custody documentation) required for quality assurance",
+        "text": "Robust traceability systems (batch records, chain\u2011of\u2011custody documentation) required for quality assurance",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/138",
+        "parent": {
+          "$ref": "#/groups/47"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Market\u2011specific adaptations: meeting US FDA 510(k) or PMA requirements, EU MDR for medical devices, and emerging guidelines in Asia",
+        "text": "Market\u2011specific adaptations: meeting US FDA 510(k) or PMA requirements, EU MDR for medical devices, and emerging guidelines in Asia",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/139",
+        "parent": {
+          "$ref": "#/groups/45"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/48"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Environmental Sustainability",
+        "text": "Environmental Sustainability",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        },
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/140",
+        "parent": {
+          "$ref": "#/groups/48"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Life\u2011cycle assessments (LCAs) demonstrate reductions in greenhouse gas emissions and energy consumption compared to traditional materials",
+        "text": "Life\u2011cycle assessments (LCAs) demonstrate reductions in greenhouse gas emissions and energy consumption compared to traditional materials",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/141",
+        "parent": {
+          "$ref": "#/groups/48"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Development of renewable monomers (PLA from corn starch, PHA from microbial fermentation) to reduce fossil\u2011fuel dependence",
+        "text": "Development of renewable monomers (PLA from corn starch, PHA from microbial fermentation) to reduce fossil\u2011fuel dependence",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/142",
+        "parent": {
+          "$ref": "#/groups/48"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Biodegradable and compostable polymers that safely break down under industrial or home composting conditions",
+        "text": "Biodegradable and compostable polymers that safely break down under industrial or home composting conditions",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/143",
+        "parent": {
+          "$ref": "#/groups/48"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Closed\u2011loop recycling strategies and chemical depolymerization processes to recover monomers and reduce waste",
+        "text": "Closed\u2011loop recycling strategies and chemical depolymerization processes to recover monomers and reduce waste",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/144",
+        "parent": {
+          "$ref": "#/groups/45"
+        },
+        "children": [
+          {
+            "$ref": "#/groups/49"
+          }
+        ],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Ongoing Research",
+        "text": "Ongoing Research",
+        "formatting": {
+          "bold": true,
+          "italic": false,
+          "underline": false,
+          "strikethrough": false,
+          "script": "baseline"
+        },
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/145",
+        "parent": {
+          "$ref": "#/groups/49"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Creation of smart polymers (shape\u2011memory, self\u2011healing, stimuli\u2011responsive) for adaptive applications in robotics and wearables",
+        "text": "Creation of smart polymers (shape\u2011memory, self\u2011healing, stimuli\u2011responsive) for adaptive applications in robotics and wearables",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/146",
+        "parent": {
+          "$ref": "#/groups/49"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Exploration of polymer nanocomposites to enhance strength, thermal conductivity, and electrical properties",
+        "text": "Exploration of polymer nanocomposites to enhance strength, thermal conductivity, and electrical properties",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/147",
+        "parent": {
+          "$ref": "#/groups/49"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Application of machine\u2011learning algorithms for high\u2011throughput polymer design and property prediction",
+        "text": "Application of machine\u2011learning algorithms for high\u2011throughput polymer design and property prediction",
+        "enumerated": false,
+        "marker": ""
+      },
+      {
+        "self_ref": "#/texts/148",
+        "parent": {
+          "$ref": "#/groups/49"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "list_item",
+        "prov": [],
+        "orig": "Long\u2011term durability studies in extreme environments (high\u2011temperature, corrosive, UV exposure) to validate performance for aerospace and infrastructure use",
+        "text": "Long\u2011term durability studies in extreme environments (high\u2011temperature, corrosive, UV exposure) to validate performance for aerospace and infrastructure use",
+        "enumerated": false,
+        "marker": ""
+      }
+    ],
+    "pictures": [],
+    "tables": [],
+    "key_value_items": [],
+    "form_items": [],
+    "pages": {}
+  }

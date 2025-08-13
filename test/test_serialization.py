@@ -352,6 +352,15 @@ def test_md_mark_annotations_true():
     )
 
 
+def test_md_nested_lists():
+    src = Path("./test/data/doc/polymers.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+
+
 def test_html_split_page():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
@@ -480,6 +489,15 @@ def test_html_list_item_markers():
             root_dir / f"constructed_orig_{str(orig).lower()}.gt.html",
             actual=actual,
         )
+
+
+def test_html_nested_lists():
+    src = Path("./test/data/doc/polymers.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
 
 
 def test_doctags_inline_loc_tags():
