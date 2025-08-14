@@ -3,7 +3,6 @@
 import base64
 import copy
 import hashlib
-import itertools
 import json
 import logging
 import mimetypes
@@ -54,8 +53,8 @@ from docling_core.types.doc.labels import (
     GroupLabel,
     PictureClassificationLabel,
 )
-from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
-from docling_core.types.doc.utils import relative_path
+from docling_core.types.doc.tokens import DocumentToken, TableToken
+from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
 
 _logger = logging.getLogger(__name__)
 
@@ -4688,181 +4687,6 @@ class DoclingDocument(BaseModel):
                 bbox = None
             return caption_item, bbox
 
-        def otsl_parse_texts(texts, tokens):
-            split_word = TableToken.OTSL_NL.value
-            # CLEAN tokens from extra tags, only structural OTSL allowed
-            clean_tokens = []
-            for t in tokens:
-                if t in [
-                    TableToken.OTSL_ECEL.value,
-                    TableToken.OTSL_FCEL.value,
-                    TableToken.OTSL_LCEL.value,
-                    TableToken.OTSL_UCEL.value,
-                    TableToken.OTSL_XCEL.value,
-                    TableToken.OTSL_NL.value,
-                    TableToken.OTSL_CHED.value,
-                    TableToken.OTSL_RHED.value,
-                    TableToken.OTSL_SROW.value,
-                ]:
-                    clean_tokens.append(t)
-            tokens = clean_tokens
-            split_row_tokens = [
-                list(y)
-                for x, y in itertools.groupby(tokens, lambda z: z == split_word)
-                if not x
-            ]
-
-            table_cells = []
-            r_idx = 0
-            c_idx = 0
-
-            def count_right(tokens, c_idx, r_idx, which_tokens):
-                span = 0
-                c_idx_iter = c_idx
-                while tokens[r_idx][c_idx_iter] in which_tokens:
-                    c_idx_iter += 1
-                    span += 1
-                    if c_idx_iter >= len(tokens[r_idx]):
-                        return span
-                return span
-
-            def count_down(tokens, c_idx, r_idx, which_tokens):
-                span = 0
-                r_idx_iter = r_idx
-                while tokens[r_idx_iter][c_idx] in which_tokens:
-                    r_idx_iter += 1
-                    span += 1
-                    if r_idx_iter >= len(tokens):
-                        return span
-                return span
-
-            for i, text in enumerate(texts):
-                cell_text = ""
-                if text in [
-                    TableToken.OTSL_FCEL.value,
-                    TableToken.OTSL_ECEL.value,
-                    TableToken.OTSL_CHED.value,
-                    TableToken.OTSL_RHED.value,
-                    TableToken.OTSL_SROW.value,
-                ]:
-                    row_span = 1
-                    col_span = 1
-                    right_offset = 1
-                    if text != TableToken.OTSL_ECEL.value:
-                        cell_text = texts[i + 1]
-                        right_offset = 2
-
-                    # Check next element(s) for lcel / ucel / xcel,
-                    # set properly row_span, col_span
-                    next_right_cell = ""
-                    if i + right_offset < len(texts):
-                        next_right_cell = texts[i + right_offset]
-
-                    next_bottom_cell = ""
-                    if r_idx + 1 < len(split_row_tokens):
-                        if c_idx < len(split_row_tokens[r_idx + 1]):
-                            next_bottom_cell = split_row_tokens[r_idx + 1][c_idx]
-
-                    if next_right_cell in [
-                        TableToken.OTSL_LCEL.value,
-                        TableToken.OTSL_XCEL.value,
-                    ]:
-                        # we have horisontal spanning cell or 2d spanning cell
-                        col_span += count_right(
-                            split_row_tokens,
-                            c_idx + 1,
-                            r_idx,
-                            [TableToken.OTSL_LCEL.value, TableToken.OTSL_XCEL.value],
-                        )
-                    if next_bottom_cell in [
-                        TableToken.OTSL_UCEL.value,
-                        TableToken.OTSL_XCEL.value,
-                    ]:
-                        # we have a vertical spanning cell or 2d spanning cell
-                        row_span += count_down(
-                            split_row_tokens,
-                            c_idx,
-                            r_idx + 1,
-                            [TableToken.OTSL_UCEL.value, TableToken.OTSL_XCEL.value],
-                        )
-
-                    table_cells.append(
-                        TableCell(
-                            text=cell_text.strip(),
-                            row_span=row_span,
-                            col_span=col_span,
-                            start_row_offset_idx=r_idx,
-                            end_row_offset_idx=r_idx + row_span,
-                            start_col_offset_idx=c_idx,
-                            end_col_offset_idx=c_idx + col_span,
-                        )
-                    )
-                if text in [
-                    TableToken.OTSL_FCEL.value,
-                    TableToken.OTSL_ECEL.value,
-                    TableToken.OTSL_CHED.value,
-                    TableToken.OTSL_RHED.value,
-                    TableToken.OTSL_SROW.value,
-                    TableToken.OTSL_LCEL.value,
-                    TableToken.OTSL_UCEL.value,
-                    TableToken.OTSL_XCEL.value,
-                ]:
-                    c_idx += 1
-                if text == TableToken.OTSL_NL.value:
-                    r_idx += 1
-                    c_idx = 0
-            return table_cells, split_row_tokens
-
-        def otsl_extract_tokens_and_text(s: str):
-            # Pattern to match anything enclosed by < >
-            # (including the angle brackets themselves)
-            pattern = r"(<[^>]+>)"
-            # Find all tokens (e.g. "<otsl>", "<loc_140>", etc.)
-            tokens = re.findall(pattern, s)
-            # Remove any tokens that start with "<loc_"
-            tokens = [
-                token
-                for token in tokens
-                if not (
-                    token.startswith(rf"<{_LOC_PREFIX}")
-                    or token
-                    in [
-                        rf"<{DocumentToken.OTSL.value}>",
-                        rf"</{DocumentToken.OTSL.value}>",
-                    ]
-                )
-            ]
-            # Split the string by those tokens to get the in-between text
-            text_parts = re.split(pattern, s)
-            text_parts = [
-                token
-                for token in text_parts
-                if not (
-                    token.startswith(rf"<{_LOC_PREFIX}")
-                    or token
-                    in [
-                        rf"<{DocumentToken.OTSL.value}>",
-                        rf"</{DocumentToken.OTSL.value}>",
-                    ]
-                )
-            ]
-            # Remove any empty or purely whitespace strings from text_parts
-            text_parts = [part for part in text_parts if part.strip()]
-
-            return tokens, text_parts
-
-        def parse_table_content(otsl_content: str) -> TableData:
-            tokens, mixed_texts = otsl_extract_tokens_and_text(otsl_content)
-            table_cells, split_row_tokens = otsl_parse_texts(mixed_texts, tokens)
-
-            return TableData(
-                num_rows=len(split_row_tokens),
-                num_cols=(
-                    max(len(row) for row in split_row_tokens) if split_row_tokens else 0
-                ),
-                table_cells=table_cells,
-            )
-
         def extract_chart_type(text_chunk: str):
             label = None
             chart_labels = [
@@ -5094,7 +4918,7 @@ class DoclingDocument(BaseModel):
                 doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.TEXT)
 
                 if tag_name == DocumentToken.OTSL.value:
-                    table_data = parse_table_content(full_chunk)
+                    table_data = parse_otsl_table_content(full_chunk)
                     caption, caption_bbox = extract_caption(full_chunk)
                     if caption is not None and caption_bbox is not None:
                         caption.prov.append(
@@ -5137,7 +4961,7 @@ class DoclingDocument(BaseModel):
                     table_data = None
                     chart_type = None
                     if tag_name == DocumentToken.CHART.value:
-                        table_data = parse_table_content(full_chunk)
+                        table_data = parse_otsl_table_content(full_chunk)
                         chart_type = extract_chart_type(full_chunk)
                     if image:
                         if bbox:
