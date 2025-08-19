@@ -1974,3 +1974,32 @@ def test_export_with_precision():
         with open(exp_file, "r", encoding="utf-8") as f:
             exp_data = yaml.load(f, Loader=yaml.FullLoader)
         assert act_data == exp_data
+
+
+def test_concatenate():
+    files = [
+        "test/data/doc/2501.17887v1.json",
+        "test/data/doc/constructed_doc.embedded.json",
+        "test/data/doc/2311.18481v1.json",
+    ]
+    docs = [DoclingDocument.load_from_json(filename=f) for f in files]
+    doc = DoclingDocument.concatenate(docs=docs)
+
+    html_data = doc.export_to_html(
+        image_mode=ImageRefMode.EMBEDDED, split_page_view=True
+    )
+
+    exp_json_file = Path("test/data/doc/concatenated.json")
+    exp_html_file = exp_json_file.with_suffix(".html")
+
+    if GEN_TEST_DATA:
+        doc.save_as_json(exp_json_file)
+        with open(exp_html_file, "w", encoding="utf-8") as f:
+            f.write(html_data)
+    else:
+        exp_doc = DoclingDocument.load_from_json(exp_json_file)
+        assert doc == exp_doc
+
+        with open(exp_html_file, "r", encoding="utf-8") as f:
+            exp_html_data = f.read()
+        assert html_data == exp_html_data

@@ -5784,22 +5784,6 @@ class DoclingDocument(BaseModel):
             if new_max_page is not None:
                 self._max_page = new_max_page
 
-        # @classmethod
-        # def reuse_from_doc(cls, doc: "DoclingDocument") -> "DoclingDocument._DocIndex":
-        #     doc_index = DoclingDocument._DocIndex(
-        #         groups=doc.groups,
-        #         texts=doc.texts,
-        #         pictures=doc.pictures,
-        #         tables=doc.tables,
-        #         key_value_items=doc.key_value_items,
-        #         form_items=doc.form_items,
-        #         pages=doc.pages,
-        #     )
-        #     doc_index._body = doc.body
-        #     doc_index._max_page = max(doc.pages.keys()) if doc.pages else 0
-        #     doc_index._names = [doc.name]
-        #     return doc_index
-
         def get_name(self) -> str:
             return " + ".join(self._names)
 
@@ -5820,37 +5804,16 @@ class DoclingDocument(BaseModel):
         doc_index.index(doc=self)
         self._update_from_index(doc_index)
 
-    def _extend(
-        self,
-        docs: Sequence["DoclingDocument"],
-        # reuse_buffers_unsafe: bool = False,
-    ) -> None:
-        """Extend present document with other documents."""
-        # if reuse_buffers_unsafe:
-        #     # use present doc's existing buffers on an as-is basis (unsafe)
-        #     doc_index = DoclingDocument._DocIndex.reuse_from_doc(doc=self)
-        # else:
+    @classmethod
+    def concatenate(cls, docs: Sequence["DoclingDocument"]) -> "DoclingDocument":
+        """Concatenate multiple documents into a single document."""
         doc_index = DoclingDocument._DocIndex()
-        doc_index.index(doc=self)
-
         for doc in docs:
             doc_index.index(doc=doc)
 
-        self._update_from_index(doc_index)
-
-        self.origin = None
-
-    # @classmethod
-    # def _concatenate(
-    #     cls, docs: Sequence["DoclingDocument"]
-    # ) -> "DoclingDocument":
-    #     doc_index = DoclingDocument._DocIndex()
-    #     for doc in docs:
-    #         doc_index.index(doc=doc)
-
-    #     res_doc = DoclingDocument(name="")
-    #     res_doc._update_from_index(doc_index)
-    #     return res_doc
+        res_doc = DoclingDocument(name=" + ".join([doc.name for doc in docs]))
+        res_doc._update_from_index(doc_index)
+        return res_doc
 
 
 # deprecated aliases (kept for backwards compatibility):
