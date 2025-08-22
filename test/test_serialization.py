@@ -29,7 +29,7 @@ from docling_core.types.doc.document import DoclingDocument, MiscAnnotation, Tab
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
-from .test_docling_doc import _construct_doc
+from .test_docling_doc import _construct_doc, _construct_rich_table_doc
 
 
 class CustomAnnotationTableSerializer(MarkdownTableSerializer):
@@ -361,6 +361,15 @@ def test_md_nested_lists():
     verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
 
 
+def test_md_rich_table():
+    exp_file = Path("./test/data/doc/rich_table.gt.md")
+    doc = _construct_rich_table_doc()
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=exp_file, actual=actual)
+
+
 def test_html_split_page():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
@@ -498,6 +507,15 @@ def test_html_nested_lists():
     ser = HTMLDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
+
+
+def test_html_rich_table():
+    exp_file = Path("./test/data/doc/rich_table.gt.html")
+    doc = _construct_rich_table_doc()
+
+    ser = HTMLDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=exp_file, actual=actual)
 
 
 def test_doctags_inline_loc_tags():

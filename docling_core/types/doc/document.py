@@ -325,7 +325,7 @@ class TableCell(BaseModel):
                 in data
             ):
                 return data
-            text = data["bbox"].get("token", "")
+            text = data.get("bbox", {}).get("token", "")
             if not len(text):
                 text_cells = data.pop("text_cell_bboxes", None)
                 if text_cells:
@@ -338,10 +338,22 @@ class TableCell(BaseModel):
         return data
 
 
+class RichTableCell(TableCell):
+    """RichTableCell."""
+
+    ref: "RefItem"
+
+
+AnyTableCell = Annotated[
+    Union[RichTableCell, TableCell],
+    Field(union_mode="left_to_right"),
+]
+
+
 class TableData(BaseModel):  # TBD
     """BaseTableData."""
 
-    table_cells: List[TableCell] = []
+    table_cells: List[AnyTableCell] = []
     num_rows: int = 0
     num_cols: int = 0
 
@@ -904,6 +916,23 @@ class NodeItem(BaseModel):
     content_layer: ContentLayer = ContentLayer.BODY
 
     model_config = ConfigDict(extra="forbid")
+
+    # def iterate(
+    #     self,
+    #     doc: "DoclingDocument",
+    #     with_groups: bool = False,
+    #     traverse_pictures: bool = False,
+    #     page_no: Optional[int] = None,
+    #     included_content_layers: Optional[set[ContentLayer]] = None,
+    # ) -> typing.Iterable[Tuple["NodeItem", int]]:
+    #     for item, stack in doc._iterate_items_with_stack(
+    #         root=self,
+    #         with_groups=with_groups,
+    #         traverse_pictures=traverse_pictures,
+    #         page_no=page_no,
+    #         included_content_layers=included_content_layers,
+    #     ):
+    #         yield item, len(stack)
 
     def get_ref(self) -> RefItem:
         """get_ref."""
@@ -2304,6 +2333,15 @@ class DoclingDocument(BaseModel):
                 refs_to_be_deleted=refs_to_be_deleted,
                 lookup=lookup,
             )
+            if isinstance(node, TableItem):
+                for cell in node.data.table_cells:
+                    if isinstance(cell, RichTableCell):
+                        path = cell.ref._split_ref_to_path()
+                        cell.ref = self._update_ref_with_lookup(
+                            item_label=path[1],
+                            item_index=int(path[2]),
+                            lookup=lookup,
+                        )
 
         # Update the self_ref reference
         if node.parent is not None:
@@ -3963,7 +4001,7 @@ class DoclingDocument(BaseModel):
         traverse_pictures: bool = False,
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
-        _level: int = 0,  # fixed parameter, carries through the node nesting level
+        _level: int = 0,  # deprecated
     ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
         """Iterate elements with level."""
         for item, stack in self._iterate_items_with_stack(
