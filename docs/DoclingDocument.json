@@ -1721,6 +1721,80 @@
       "title": "RefItem",
       "type": "object"
     },
+    "RichTableCell": {
+      "description": "RichTableCell.",
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundingBox"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "row_span": {
+          "default": 1,
+          "title": "Row Span",
+          "type": "integer"
+        },
+        "col_span": {
+          "default": 1,
+          "title": "Col Span",
+          "type": "integer"
+        },
+        "start_row_offset_idx": {
+          "title": "Start Row Offset Idx",
+          "type": "integer"
+        },
+        "end_row_offset_idx": {
+          "title": "End Row Offset Idx",
+          "type": "integer"
+        },
+        "start_col_offset_idx": {
+          "title": "Start Col Offset Idx",
+          "type": "integer"
+        },
+        "end_col_offset_idx": {
+          "title": "End Col Offset Idx",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "column_header": {
+          "default": false,
+          "title": "Column Header",
+          "type": "boolean"
+        },
+        "row_header": {
+          "default": false,
+          "title": "Row Header",
+          "type": "boolean"
+        },
+        "row_section": {
+          "default": false,
+          "title": "Row Section",
+          "type": "boolean"
+        },
+        "ref": {
+          "$ref": "#/$defs/RefItem"
+        }
+      },
+      "required": [
+        "start_row_offset_idx",
+        "end_row_offset_idx",
+        "start_col_offset_idx",
+        "end_col_offset_idx",
+        "text",
+        "ref"
+      ],
+      "title": "RichTableCell",
+      "type": "object"
+    },
     "Script": {
       "description": "Text script position.",
       "enum": [
@@ -1923,7 +1997,14 @@
         "table_cells": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/TableCell"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/RichTableCell"
+              },
+              {
+                "$ref": "#/$defs/TableCell"
+              }
+            ]
           },
           "title": "Table Cells",
           "type": "array"

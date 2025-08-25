@@ -65,6 +65,7 @@ from docling_core.types.doc.document import (
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
+    RichTableCell,
     SectionHeaderItem,
     TableCell,
     TableItem,
@@ -356,6 +357,7 @@ class HTMLTableSerializer(BaseTableSerializer):
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
+            span_source: Union[DocItem, list[SerializationResult]] = []
 
             for i in range(nrows):
                 body += "<tr>"
@@ -376,7 +378,14 @@ class HTMLTableSerializer(BaseTableSerializer):
                     if colstart != j:
                         continue
 
-                    content = html.escape(cell.text.strip())
+                    if isinstance(cell, RichTableCell):
+                        ser_res = doc_serializer.serialize_cell(cell=cell, **kwargs)
+                        content = ser_res.text
+                        span_source = [ser_res]
+                    else:
+                        content = html.escape(cell.text.strip())
+                        span_source = item
+
                     celltag = "td"
                     if cell.column_header or cell.row_header or cell.row_section:
                         celltag = "th"
@@ -396,7 +405,7 @@ class HTMLTableSerializer(BaseTableSerializer):
 
             if body:
                 body = f"<tbody>{body}</tbody>"
-                res_parts.append(create_ser_result(text=body, span_source=item))
+                res_parts.append(create_ser_result(text=body, span_source=span_source))
 
         text_res = "".join([r.text for r in res_parts])
         text_res = f"<table>{text_res}</table>" if text_res else ""

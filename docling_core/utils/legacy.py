@@ -252,7 +252,7 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
 
                             spans = list(_make_spans(cell, item))
                             table_data[i][j] = GlmTableCell(
-                                text=cell.text,
+                                text=cell._get_text(doc=doc),
                                 bbox=(
                                     cell.bbox.as_tuple()
                                     if cell.bbox is not None

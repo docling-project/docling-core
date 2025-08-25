@@ -320,7 +320,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 [
                     # make sure that md tables are not broken
                     # due to newline chars in the text
-                    col.text.replace("\n", " ")
+                    doc_serializer.serialize_cell(cell=col, **kwargs).text.replace(
+                        "\n", " "
+                    )
                     for col in row
                 ]
                 for row in item.data.grid

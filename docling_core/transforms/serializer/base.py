@@ -20,6 +20,7 @@ from docling_core.types.doc.document import (
     ListGroup,
     NodeItem,
     PictureItem,
+    TableCell,
     TableItem,
     TextItem,
 )
@@ -229,6 +230,15 @@ class BaseDocSerializer(ABC):
         **kwargs: Any,
     ) -> str:
         """Hook for hyperlink serialization."""
+        ...
+
+    # TODO improve
+    def serialize_cell(
+        self,
+        cell: TableCell,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Hook for table cell serialization."""
         ...
 
     @abstractmethod
