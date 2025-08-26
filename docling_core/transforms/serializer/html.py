@@ -357,10 +357,9 @@ class HTMLTableSerializer(BaseTableSerializer):
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
 
-            for i in range(nrows):
+            for i, row in enumerate(item.data.grid):
                 body += "<tr>"
-                for j in range(ncols):
-                    cell: TableCell = item.data.grid[i][j]
+                for j, cell in enumerate(row):
 
                     rowspan, rowstart = (
                         cell.row_span,
