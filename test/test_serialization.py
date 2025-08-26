@@ -525,3 +525,13 @@ def test_doctags_inline_loc_tags():
     ser = DocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}.out.dt", actual=actual)
+
+
+def test_doctags_rich_table():
+
+    exp_file = Path("./test/data/doc/rich_table.out.dt")
+    doc = _construct_rich_table_doc()
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=exp_file, actual=actual)

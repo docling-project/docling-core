@@ -232,7 +232,7 @@ class BaseDocSerializer(ABC):
         """Hook for hyperlink serialization."""
         ...
 
-    # TODO improve
+    @abstractmethod
     def serialize_cell(
         self,
         cell: TableCell,

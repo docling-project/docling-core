@@ -512,7 +512,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         self,
         cell: TableCell,
         **kwargs: Any,
-    ) -> str:
+    ) -> SerializationResult:
         """Hook for table cell serialization."""
         if isinstance(cell, RichTableCell):
             return self.serialize(item=cell.ref.resolve(doc=self.doc), **kwargs)

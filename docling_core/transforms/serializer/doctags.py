@@ -157,6 +157,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
         item: TableItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -179,6 +180,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
                 add_cell_text=params.add_table_cell_text,
                 xsize=params.xsize,
                 ysize=params.ysize,
+                visited=visited,
             )
             res_parts.append(create_ser_result(text=otsl_text, span_source=item))
 

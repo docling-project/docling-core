@@ -2102,17 +2102,35 @@ def _construct_rich_table_doc():
 
     table_item = doc.add_table(
         data=TableData(
-            num_rows=3,
+            num_rows=4,
             num_cols=2,
         ),
     )
 
-    rich_item = doc.add_text(
+    rich_item_1 = doc.add_text(
         parent=table_item,
-        text="rich cell",
+        text="text in italic",
         label=DocItemLabel.TEXT,
         formatting=Formatting(italic=True),
     )
+
+    rich_item_2 = doc.add_list_group(parent=table_item)
+    doc.add_list_item(parent=rich_item_2, text="list item 1")
+    doc.add_list_item(parent=rich_item_2, text="list item 2")
+
+    rich_item_3 = doc.add_table(
+        data=TableData(num_rows=2, num_cols=3), parent=table_item
+    )
+    for i in range(rich_item_3.data.num_rows):
+        for j in range(rich_item_3.data.num_cols):
+            cell = TableCell(
+                text=f"inner cell {i},{j}",
+                start_row_offset_idx=i,
+                end_row_offset_idx=i + 1,
+                start_col_offset_idx=j,
+                end_col_offset_idx=j + 1,
+            )
+            doc.add_table_cell(table_item=rich_item_3, cell=cell)
 
     for i in range(table_item.data.num_rows):
         for j in range(table_item.data.num_cols):
@@ -2122,7 +2140,23 @@ def _construct_rich_table_doc():
                     end_row_offset_idx=i + 1,
                     start_col_offset_idx=j,
                     end_col_offset_idx=j + 1,
-                    ref=rich_item.get_ref(),
+                    ref=rich_item_1.get_ref(),
+                )
+            elif i == 2 and j == 0:
+                cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item_2.get_ref(),
+                )
+            elif i == 3 and j == 1:
+                cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item_3.get_ref(),
                 )
             else:
                 cell = TableCell(
@@ -2132,7 +2166,7 @@ def _construct_rich_table_doc():
                     end_col_offset_idx=j + 1,
                     text=f"cell {i},{j}",
                 )
-            table_item.data.table_cells.append(cell)
+            doc.add_table_cell(table_item=table_item, cell=cell)
 
     return doc
 
@@ -2159,3 +2193,42 @@ def test_doc_manipulation_with_rich_tables():
 
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
     assert doc == exp_doc
+
+
+def test_invalid_rich_table_doc():
+    doc = DoclingDocument(name="")
+    table_item = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    rich_item = doc.add_text(
+        text="rich item",
+        label=DocItemLabel.TEXT,
+        parent=doc.body,  # not the table item
+    )
+    for i in range(table_item.data.num_rows):
+        for j in range(table_item.data.num_cols):
+            if i == 1 and j == 1:
+                table_cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item.get_ref(),
+                )
+
+                # ensure add_table_cell() raises:
+                with pytest.raises(ValueError):
+                    doc.add_table_cell(table_item=table_item, cell=table_cell)
+            else:
+                table_cell = TableCell(
+                    text=f"cell {i},{j}",
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                )
+
+            # discouraged but technically possible:
+            table_item.data.table_cells.append(table_cell)
+
+    # ensure validate_document() raises:
+    with pytest.raises(ValueError):
+        DoclingDocument.validate_document(doc)

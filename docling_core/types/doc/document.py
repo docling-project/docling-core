@@ -337,8 +337,7 @@ class TableCell(BaseModel):
 
         return data
 
-    def _get_text(self, doc: Optional["DoclingDocument"] = None) -> str:
-        """Get cell text."""
+    def _get_text(self, doc: Optional["DoclingDocument"] = None, **kwargs: Any) -> str:
         return self.text
 
 
@@ -348,16 +347,14 @@ class RichTableCell(TableCell):
     ref: "RefItem"
 
     @override
-    def _get_text(self, doc: Optional["DoclingDocument"] = None) -> str:
-        """Get cell text."""
+    def _get_text(self, doc: Optional["DoclingDocument"] = None, **kwargs: Any) -> str:
         from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 
         if doc is not None:
             doc_serializer = MarkdownDocSerializer(doc=doc)
-            ser_res = doc_serializer.serialize_cell(cell=self)
+            ser_res = doc_serializer.serialize_cell(cell=self, **kwargs)
             return ser_res.text
         else:
-            # TODO improve this & probably warn regardless if rich or not
             return "<!-- rich cell -->"
 
 
@@ -951,23 +948,6 @@ class NodeItem(BaseModel):
     content_layer: ContentLayer = ContentLayer.BODY
 
     model_config = ConfigDict(extra="forbid")
-
-    # def iterate(
-    #     self,
-    #     doc: "DoclingDocument",
-    #     with_groups: bool = False,
-    #     traverse_pictures: bool = False,
-    #     page_no: Optional[int] = None,
-    #     included_content_layers: Optional[set[ContentLayer]] = None,
-    # ) -> typing.Iterable[Tuple["NodeItem", int]]:
-    #     for item, stack in doc._iterate_items_with_stack(
-    #         root=self,
-    #         with_groups=with_groups,
-    #         traverse_pictures=traverse_pictures,
-    #         page_no=page_no,
-    #         included_content_layers=included_content_layers,
-    #     ):
-    #         yield item, len(stack)
 
     def get_ref(self) -> RefItem:
         """get_ref."""
@@ -1695,6 +1675,7 @@ class TableItem(FloatingItem):
         add_cell_text: bool = True,
         xsize: int = 500,
         ysize: int = 500,
+        **kwargs: Any,
     ) -> str:
         """Export the table as OTSL."""
         # Possible OTSL tokens...
@@ -1724,7 +1705,7 @@ class TableItem(FloatingItem):
         for i in range(nrows):
             for j in range(ncols):
                 cell: TableCell = self.data.grid[i][j]
-                content = cell._get_text(doc=doc).strip()
+                content = cell._get_text(doc=doc, **kwargs).strip()
                 rowspan, rowstart = (
                     cell.row_span,
                     cell.start_row_offset_idx,
@@ -4026,16 +4007,22 @@ class DoclingDocument(BaseModel):
         """num_pages."""
         return len(self.pages.values())
 
-    def validate_tree(self, root) -> bool:
+    def validate_tree(self, root: NodeItem) -> bool:
         """validate_tree."""
-        res = []
         for child_ref in root.children:
             child = child_ref.resolve(self)
-            if child.parent.resolve(self) != root:
+            if child.parent.resolve(self) != root or not self.validate_tree(child):
                 return False
-            res.append(self.validate_tree(child))
 
-        return all(res) or len(res) == 0
+        if isinstance(root, TableItem):
+            for cell in root.data.table_cells:
+                if isinstance(cell, RichTableCell) and (
+                    (par_ref := cell.ref.resolve(self).parent) is None
+                    or par_ref.resolve(self) != root
+                ):
+                    return False
+
+        return True
 
     def iterate_items(
         self,
@@ -5758,6 +5745,18 @@ class DoclingDocument(BaseModel):
 
             elif isinstance(item, ListItem):
                 validate_list_item(self, item)
+
+    def add_table_cell(self, table_item: TableItem, cell: TableCell) -> None:
+        """Add a table cell to the table."""
+        if isinstance(cell, RichTableCell):
+            item = cell.ref.resolve(doc=self)
+            if isinstance(item, NodeItem) and (
+                (not item.parent) or item.parent.cref != table_item.self_ref
+            ):
+                raise ValueError(
+                    f"Trying to add cell with another parent {item.parent} to {table_item.self_ref}"
+                )
+        table_item.data.table_cells.append(cell)
 
 
 # deprecated aliases (kept for backwards compatibility):
