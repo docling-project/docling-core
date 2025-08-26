@@ -5658,6 +5658,16 @@ class DoclingDocument(BaseModel):
                                         )
                                         break
 
+                            # update rich table cells references:
+                            if isinstance(parent_item, TableItem):
+                                for cell in parent_item.data.table_cells:
+                                    if (
+                                        isinstance(cell, RichTableCell)
+                                        and cell.ref.cref == item.self_ref
+                                    ):
+                                        cell.ref.cref = new_cref
+                                        break
+
                         elif num_components == 2 and path_components[1] == "body":
                             parent_item = self._body
                         else:

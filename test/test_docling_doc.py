@@ -2232,3 +2232,76 @@ def test_invalid_rich_table_doc():
     # ensure validate_document() raises:
     with pytest.raises(ValueError):
         DoclingDocument.validate_document(doc)
+
+
+def test_rich_table_item_insertion_normalization():
+
+    doc = DoclingDocument(name="")
+    doc.add_text(label=DocItemLabel.TITLE, text="Rich tables")
+
+    table_item = doc.add_table(
+        data=TableData(
+            num_rows=4,
+            num_cols=2,
+        ),
+    )
+
+    rich_item = doc.add_text(
+        parent=table_item,
+        text="text in italic",
+        label=DocItemLabel.TEXT,
+        formatting=Formatting(italic=True),
+    )
+
+    for i in range(table_item.data.num_rows):
+        for j in range(table_item.data.num_cols):
+            if i == 1 and j == 1:
+                cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item.get_ref(),
+                )
+            else:
+                cell = TableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text=f"cell {i},{j}",
+                )
+            doc.add_table_cell(table_item=table_item, cell=cell)
+
+    # state before insert:
+    exp_file = Path("test/data/doc/rich_table_item_ins_norm_1.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    exp_doc = DoclingDocument.load_from_yaml(exp_file)
+    assert doc == exp_doc
+
+    doc.insert_item_before_sibling(
+        new_item=TextItem(
+            self_ref="#",
+            text="text before",
+            orig="text before",
+            label=DocItemLabel.TEXT,
+        ),
+        sibling=table_item,
+    )
+
+    # state after insert (prior to normalization):
+    exp_file = Path("test/data/doc/rich_table_item_ins_norm_2.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    exp_doc = DoclingDocument.load_from_yaml(exp_file)
+    assert doc == exp_doc
+
+    doc._normalize_references()
+
+    # state after insert (after normalization):
+    exp_file = Path("test/data/doc/rich_table_item_ins_norm_3.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    exp_doc = DoclingDocument.load_from_yaml(exp_file)
+    assert doc == exp_doc
