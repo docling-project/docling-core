@@ -379,7 +379,9 @@ class HTMLTableSerializer(BaseTableSerializer):
                         continue
 
                     if isinstance(cell, RichTableCell):
-                        ser_res = doc_serializer.serialize_cell(cell=cell, **kwargs)
+                        ser_res = doc_serializer.serialize(
+                            item=cell.ref.resolve(doc=doc), **kwargs
+                        )
                         content = ser_res.text
                         span_source = [ser_res]
                     else:

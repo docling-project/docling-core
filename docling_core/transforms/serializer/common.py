@@ -45,10 +45,8 @@ from docling_core.types.doc.document import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
-    RichTableCell,
     Script,
     TableAnnotationType,
-    TableCell,
     TableItem,
     TextItem,
 )
@@ -506,18 +504,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> str:
         """Hook for hyperlink serialization."""
         return text
-
-    @override
-    def serialize_cell(
-        self,
-        cell: TableCell,
-        **kwargs: Any,
-    ) -> SerializationResult:
-        """Hook for table cell serialization."""
-        if isinstance(cell, RichTableCell):
-            return self.serialize(item=cell.ref.resolve(doc=self.doc), **kwargs)
-        else:
-            return create_ser_result(text=cell.text)
 
     @override
     def serialize_captions(

@@ -352,7 +352,7 @@ class RichTableCell(TableCell):
 
         if doc is not None:
             doc_serializer = MarkdownDocSerializer(doc=doc)
-            ser_res = doc_serializer.serialize_cell(cell=self, **kwargs)
+            ser_res = doc_serializer.serialize(item=self.ref.resolve(doc=doc), **kwargs)
             return ser_res.text
         else:
             return "<!-- rich cell -->"

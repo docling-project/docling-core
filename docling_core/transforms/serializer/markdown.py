@@ -55,6 +55,7 @@ from docling_core.types.doc.document import (
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
+    RichTableCell,
     SectionHeaderItem,
     TableItem,
     TextItem,
@@ -320,9 +321,13 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 [
                     # make sure that md tables are not broken
                     # due to newline chars in the text
-                    doc_serializer.serialize_cell(cell=col, **kwargs).text.replace(
-                        "\n", " "
-                    )
+                    (
+                        doc_serializer.serialize(
+                            item=col.ref.resolve(doc=doc), **kwargs
+                        ).text
+                        if isinstance(col, RichTableCell)
+                        else col.text
+                    ).replace("\n", " ")
                     for col in row
                 ]
                 for row in item.data.grid
