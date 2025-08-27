@@ -351,7 +351,9 @@ class RichTableCell(TableCell):
         from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 
         if doc is not None:
-            doc_serializer = MarkdownDocSerializer(doc=doc)
+            doc_serializer = kwargs.pop(
+                "doc_serializer", MarkdownDocSerializer(doc=doc)
+            )
             ser_res = doc_serializer.serialize(item=self.ref.resolve(doc=doc), **kwargs)
             return ser_res.text
         else:
@@ -1692,6 +1694,9 @@ class TableItem(FloatingItem):
         # Headers (column, row, section row):
         # "ched", "rhed", "srow"
 
+        from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
+
+        doc_serializer = DocTagsDocSerializer(doc=doc)
         body = []
         nrows = self.data.num_rows
         ncols = self.data.num_cols
@@ -1705,7 +1710,9 @@ class TableItem(FloatingItem):
         for i in range(nrows):
             for j in range(ncols):
                 cell: TableCell = self.data.grid[i][j]
-                content = cell._get_text(doc=doc, **kwargs).strip()
+                content = cell._get_text(
+                    doc=doc, doc_serializer=doc_serializer, **kwargs
+                ).strip()
                 rowspan, rowstart = (
                     cell.row_span,
                     cell.start_row_offset_idx,
