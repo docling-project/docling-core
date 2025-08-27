@@ -7,6 +7,7 @@
 
 from .base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from .document import (
+    AnyTableCell,
     BaseAnnotation,
     ChartBar,
     ChartLine,
@@ -52,6 +53,7 @@ from .document import (
     PictureTabularChartData,
     ProvenanceItem,
     RefItem,
+    RichTableCell,
     Script,
     SectionHeaderItem,
     TableCell,
