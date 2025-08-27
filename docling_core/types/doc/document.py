@@ -2800,7 +2800,7 @@ class DoclingDocument(BaseModel):
             item.content_layer = content_layer
 
         self.texts.append(item)
-        parent.children.append(RefItem(cref=cref))
+        parent.children.insert(0,RefItem(cref=cref))
 
         return item
 
