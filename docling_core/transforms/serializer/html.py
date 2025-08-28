@@ -67,7 +67,6 @@ from docling_core.types.doc.document import (
     PictureTabularChartData,
     RichTableCell,
     SectionHeaderItem,
-    TableCell,
     TableItem,
     TextItem,
     TitleItem,
@@ -347,9 +346,6 @@ class HTMLTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed table item to HTML."""
-        nrows = item.data.num_rows
-        ncols = item.data.num_cols
-
         res_parts: list[SerializationResult] = []
         cap_res = doc_serializer.serialize_captions(item=item, tag="caption", **kwargs)
         if cap_res.text:
@@ -359,10 +355,9 @@ class HTMLTableSerializer(BaseTableSerializer):
             body = ""
             span_source: Union[DocItem, list[SerializationResult]] = []
 
-            for i in range(nrows):
+            for i, row in enumerate(item.data.grid):
                 body += "<tr>"
-                for j in range(ncols):
-                    cell: TableCell = item.data.grid[i][j]
+                for j, cell in enumerate(row):
 
                     rowspan, rowstart = (
                         cell.row_span,
