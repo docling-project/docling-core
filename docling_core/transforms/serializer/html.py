@@ -66,7 +66,6 @@ from docling_core.types.doc.document import (
     PictureMoleculeData,
     PictureTabularChartData,
     SectionHeaderItem,
-    TableCell,
     TableItem,
     TextItem,
     TitleItem,
@@ -346,9 +345,6 @@ class HTMLTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed table item to HTML."""
-        nrows = item.data.num_rows
-        ncols = item.data.num_cols
-
         res_parts: list[SerializationResult] = []
         cap_res = doc_serializer.serialize_captions(item=item, tag="caption", **kwargs)
         if cap_res.text:
