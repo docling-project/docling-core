@@ -395,7 +395,7 @@ class HTMLTableSerializer(BaseTableSerializer):
 
                     text_dir = get_text_direction(content)
                     if text_dir == "rtl":
-                        opening_tag += f' dir="{dir}"'
+                        opening_tag += f' dir="{text_dir}"'
 
                     body += f"<{opening_tag}>{content}</{celltag}>"
                 body += "</tr>"
