@@ -31,6 +31,10 @@ class DocItemLabel(str, Enum):
     HANDWRITTEN_TEXT = "handwritten_text"
     EMPTY_VALUE = "empty_value"  # used for empty value fields in fillable forms
 
+    FORM_HEADER = "form_header"
+    FORM_ITEM = "form_item"
+    FORM_TEXT = "form_text"
+    
     # Additional labels for markup-based formats (e.g. HTML, Word)
     PARAGRAPH = "paragraph"
     REFERENCE = "reference"
