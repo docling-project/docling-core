@@ -1,3 +1,18 @@
+## [v2.46.0](https://github.com/docling-project/docling-core/releases/tag/v2.46.0) - 2025-09-01
+
+### Feature
+
+* Add rich table cells ([#368](https://github.com/docling-project/docling-core/issues/368)) ([`1d04154`](https://github.com/docling-project/docling-core/commit/1d04154378311a5268f50eaeadebe0a07ff93b06))
+
+### Fix
+
+* Fix text dir attribute ([#281](https://github.com/docling-project/docling-core/issues/281)) ([`3f25267`](https://github.com/docling-project/docling-core/commit/3f25267d56e6178648c5a1c6e4e8504781824000))
+* Use in-OTSL DocTags for rich table cells ([#375](https://github.com/docling-project/docling-core/issues/375)) ([`b2095b3`](https://github.com/docling-project/docling-core/commit/b2095b31deb6f017845053b04916a7bf1393f3f6))
+
+### Performance
+
+* Cache grid property in HTMLTableSerializer ([#373](https://github.com/docling-project/docling-core/issues/373)) ([`339bbd4`](https://github.com/docling-project/docling-core/commit/339bbd424958b8310283d976bc831bb522cebe18))
+
 ## [v2.45.0](https://github.com/docling-project/docling-core/releases/tag/v2.45.0) - 2025-08-20
 
 ### Feature
