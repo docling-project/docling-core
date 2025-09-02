@@ -1,3 +1,9 @@
+## [v2.47.0](https://github.com/docling-project/docling-core/releases/tag/v2.47.0) - 2025-09-02
+
+### Feature
+
+* Add page filtering to DoclingDocument ([#378](https://github.com/docling-project/docling-core/issues/378)) ([`9dc526d`](https://github.com/docling-project/docling-core/commit/9dc526de532873b056749450197dcacd6c0c4bd6))
+
 ## [v2.46.0](https://github.com/docling-project/docling-core/releases/tag/v2.46.0) - 2025-09-01
 
 ### Feature
