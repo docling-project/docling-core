@@ -4045,7 +4045,7 @@ class DoclingDocument(BaseModel):
             root=root,
             with_groups=with_groups,
             traverse_pictures=traverse_pictures,
-            page_no=page_no,
+            page_nrs={page_no} if page_no is not None else None,
             included_content_layers=included_content_layers,
         ):
             yield item, len(stack)
@@ -4055,7 +4055,7 @@ class DoclingDocument(BaseModel):
         root: Optional[NodeItem] = None,
         with_groups: bool = False,
         traverse_pictures: bool = False,
-        page_no: Optional[int] = None,
+        page_nrs: Optional[set[int]] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         _stack: Optional[list[int]] = None,
     ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
@@ -4078,8 +4078,8 @@ class DoclingDocument(BaseModel):
             and (
                 not isinstance(root, DocItem)
                 or (
-                    page_no is None
-                    or any(prov.page_no == page_no for prov in root.prov)
+                    page_nrs is None
+                    or any(prov.page_no in page_nrs for prov in root.prov)
                 )
             )
             and root.content_layer in my_layers
@@ -4113,7 +4113,7 @@ class DoclingDocument(BaseModel):
                     child,
                     with_groups=with_groups,
                     traverse_pictures=traverse_pictures,
-                    page_no=page_no,
+                    page_nrs=page_nrs,
                     _stack=my_stack,
                     included_content_layers=my_layers,
                 )
@@ -5603,7 +5603,9 @@ class DoclingDocument(BaseModel):
         def get_item_list(self, key: str) -> list[NodeItem]:
             return getattr(self, key)
 
-        def index(self, doc: "DoclingDocument") -> None:
+        def index(
+            self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None
+        ) -> None:
 
             orig_ref_to_new_ref: dict[str, str] = {}
             page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
@@ -5614,10 +5616,11 @@ class DoclingDocument(BaseModel):
             self._names.append(doc.name)
 
             # collect items in traversal order
-            for item, _ in doc.iterate_items(
+            for item, _ in doc._iterate_items_with_stack(
                 with_groups=True,
                 traverse_pictures=True,
                 included_content_layers={c for c in ContentLayer},
+                page_nrs=page_nrs,
             ):
                 key = item.self_ref.split("/")[1]
                 is_body = key == "body"
@@ -5686,12 +5689,13 @@ class DoclingDocument(BaseModel):
             # update pages
             new_max_page = None
             for page_nr in doc.pages:
-                new_page = copy.deepcopy(doc.pages[page_nr])
-                new_page_nr = page_nr + page_delta
-                new_page.page_no = new_page_nr
-                self.pages[new_page_nr] = new_page
-                if new_max_page is None or new_page_nr > new_max_page:
-                    new_max_page = new_page_nr
+                if page_nrs is None or page_nr in page_nrs:
+                    new_page = copy.deepcopy(doc.pages[page_nr])
+                    new_page_nr = page_nr + page_delta
+                    new_page.page_no = new_page_nr
+                    self.pages[new_page_nr] = new_page
+                    if new_max_page is None or new_page_nr > new_max_page:
+                        new_max_page = new_page_nr
             if new_max_page is not None:
                 self._max_page = new_max_page
 
@@ -5714,6 +5718,14 @@ class DoclingDocument(BaseModel):
         doc_index = DoclingDocument._DocIndex()
         doc_index.index(doc=self)
         self._update_from_index(doc_index)
+
+    def filter(self, page_nrs: Optional[set[int]] = None) -> "DoclingDocument":
+        """Create a new document based on the provided filter parameters."""
+        doc_index = DoclingDocument._DocIndex()
+        doc_index.index(doc=self, page_nrs=page_nrs)
+        res_doc = DoclingDocument(name=self.name)
+        res_doc._update_from_index(doc_index)
+        return res_doc
 
     @classmethod
     def concatenate(cls, docs: Sequence["DoclingDocument"]) -> "DoclingDocument":

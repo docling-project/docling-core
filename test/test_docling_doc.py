@@ -2305,3 +2305,28 @@ def test_rich_table_item_insertion_normalization():
         doc.save_as_yaml(exp_file)
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
     assert doc == exp_doc
+
+
+def test_filter_pages():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    orig_doc = DoclingDocument.load_from_json(src)
+    doc = orig_doc.filter(page_nrs={2, 3, 5})
+
+    html_data = doc.export_to_html(
+        image_mode=ImageRefMode.EMBEDDED, split_page_view=True
+    )
+
+    exp_json_file = src.with_name(f"{src.stem}_p2_p3_p5.gt.json")
+    exp_html_file = exp_json_file.with_suffix(".html")
+
+    if GEN_TEST_DATA:
+        doc.save_as_json(exp_json_file)
+        with open(exp_html_file, "w", encoding="utf-8") as f:
+            f.write(html_data)
+    else:
+        exp_doc = DoclingDocument.load_from_json(exp_json_file)
+        assert doc == exp_doc
+
+        with open(exp_html_file, "r", encoding="utf-8") as f:
+            exp_html_data = f.read()
+        assert html_data == exp_html_data
