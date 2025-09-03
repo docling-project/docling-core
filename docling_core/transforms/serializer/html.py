@@ -139,21 +139,34 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         res_parts: list[SerializationResult] = []
         post_processed = False
 
-        # Prepare the HTML based on item type
-        if isinstance(item, TitleItem):
-            text_inner = self._prepare_content(item.text)
-            text = get_html_tag_with_text_direction(html_tag="h1", text=text_inner)
+        has_inline_repr = (
+            item.text == ""
+            and len(item.children) == 1
+            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
+        )
+        if has_inline_repr:
+            text = doc_serializer.serialize(item=child_group, visited=my_visited).text
+            post_processed = True
+        else:
+            text = item.text
+            if not isinstance(item, (CodeItem, FormulaItem)):
+                text = html.escape(text, quote=False)
+                text = text.replace("\n", "<br>")
 
-        elif isinstance(item, SectionHeaderItem):
-            section_level = min(item.level + 1, 6)
-            text_inner = self._prepare_content(item.text)
+        # Prepare the HTML based on item type
+        if isinstance(item, (TitleItem, SectionHeaderItem)):
+            section_level = (
+                min(item.level + 1, 6) if isinstance(item, SectionHeaderItem) else 1
+            )
             text = get_html_tag_with_text_direction(
-                html_tag=f"h{section_level}", text=text_inner
+                html_tag=f"h{section_level}", text=text
             )
 
         elif isinstance(item, FormulaItem):
             text = self._process_formula(
                 item=item,
+                text=text,
+                orig=item.orig,
                 doc=doc,
                 image_mode=params.image_mode,
                 formula_to_mathml=params.formula_to_mathml,
@@ -161,19 +174,26 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             )
 
         elif isinstance(item, CodeItem):
-            text = self._process_code(item=item, is_inline_scope=is_inline_scope)
+            text = (
+                f"<code>{text}</code>"
+                if is_inline_scope
+                else f"<pre><code>{text}</code></pre>"
+            )
 
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
             text_parts: list[str] = []
-            if item_text := self._prepare_content(item.text):
-                item_text = doc_serializer.post_process(
-                    text=item_text,
-                    formatting=item.formatting,
-                    hyperlink=item.hyperlink,
-                )
-                post_processed = True
-                text_parts.append(item_text)
+            if text:
+                if has_inline_repr:
+                    text = f"\n{text}\n"
+                else:
+                    text = doc_serializer.post_process(
+                        text=text,
+                        formatting=item.formatting,
+                        hyperlink=item.hyperlink,
+                    )
+                    post_processed = True
+                text_parts.append(text)
             nested_parts = [
                 r.text
                 for r in doc_serializer.get_parts(
@@ -184,29 +204,26 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 )
             ]
             text_parts.extend(nested_parts)
-            text_inner = "\n".join(text_parts)
+            text = "\n".join(text_parts)
             if nested_parts:
-                text_inner = f"\n{text_inner}\n"
+                text = f"\n{text}\n"
             text = (
                 get_html_tag_with_text_direction(
                     html_tag="li",
-                    text=text_inner,
+                    text=text,
                     attrs=(
                         {"style": f"list-style-type: '{item.marker} ';"}
                         if params.show_original_list_item_marker and item.marker
                         else {}
                     ),
                 )
-                if text_inner
+                if text
                 else ""
             )
 
-        elif is_inline_scope:
-            text = self._prepare_content(item.text)
-        else:
+        elif not is_inline_scope:
             # Regular text item
-            text_inner = self._prepare_content(item.text)
-            text = get_html_tag_with_text_direction(html_tag="p", text=text_inner)
+            text = get_html_tag_with_text_direction(html_tag="p", text=text)
 
         # Apply formatting and hyperlinks
         if not post_processed:
@@ -227,66 +244,44 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         return create_ser_result(text=text, span_source=res_parts)
 
-    def _prepare_content(
-        self, text: str, do_escape_html=True, do_replace_newline=True
-    ) -> str:
-        """Prepare text content for HTML inclusion."""
-        if do_escape_html:
-            text = html.escape(text, quote=False)
-        if do_replace_newline:
-            text = text.replace("\n", "<br>")
-        return text
-
-    def _process_code(
-        self,
-        item: CodeItem,
-        is_inline_scope: bool,
-    ) -> str:
-        code_text = self._prepare_content(
-            item.text, do_escape_html=False, do_replace_newline=False
-        )
-        if is_inline_scope:
-            text = f"<code>{code_text}</code>"
-        else:
-            text = f"<pre><code>{code_text}</code></pre>"
-
-        return text
-
     def _process_formula(
         self,
-        item: FormulaItem,
+        *,
+        item: DocItem,
+        text: str,
+        orig: str,
         doc: DoclingDocument,
         image_mode: ImageRefMode,
         formula_to_mathml: bool,
         is_inline_scope: bool,
     ) -> str:
         """Process a formula item to HTML/MathML."""
-        math_formula = self._prepare_content(
-            item.text, do_escape_html=False, do_replace_newline=False
-        )
-
         # If formula is empty, try to use an image fallback
-        if item.text == "" and item.orig != "":
-            img_fallback = self._get_formula_image_fallback(item, doc)
-            if (
-                image_mode == ImageRefMode.EMBEDDED
-                and len(item.prov) > 0
-                and img_fallback
-            ):
-                return img_fallback
+        if (
+            text == ""
+            and orig != ""
+            and len(item.prov) > 0
+            and image_mode == ImageRefMode.EMBEDDED
+            and (
+                img_fallback := self._get_formula_image_fallback(
+                    item=item, orig=orig, doc=doc
+                )
+            )
+        ):
+            return img_fallback
 
         # Try to generate MathML
-        if formula_to_mathml and math_formula:
+        elif formula_to_mathml and text:
             try:
                 # Set display mode based on context
                 display_mode = "inline" if is_inline_scope else "block"
                 mathml_element = latex2mathml.converter.convert_to_element(
-                    math_formula, display=display_mode
+                    text, display=display_mode
                 )
                 annotation = SubElement(
                     mathml_element, "annotation", dict(encoding="TeX")
                 )
-                annotation.text = math_formula
+                annotation.text = text
                 mathml = unescape(tostring(mathml_element, encoding="unicode"))
 
                 # Don't wrap in div for inline formulas
@@ -296,40 +291,40 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                     return f"<div>{mathml}</div>"
 
             except Exception:
-                img_fallback = self._get_formula_image_fallback(item, doc)
+                img_fallback = self._get_formula_image_fallback(
+                    item=item, orig=orig, doc=doc
+                )
                 if (
                     image_mode == ImageRefMode.EMBEDDED
                     and len(item.prov) > 0
                     and img_fallback
                 ):
                     return img_fallback
-                elif math_formula:
-                    return f"<pre>{math_formula}</pre>"
+                elif text:
+                    return f"<pre>{text}</pre>"
                 else:
                     return "<pre>Formula not decoded</pre>"
 
         _logger.warning("Could not parse formula with MathML")
 
         # Fallback options if we got here
-        if math_formula and is_inline_scope:
-            return f"<code>{math_formula}</code>"
-        elif math_formula and (not is_inline_scope):
-            f"<pre>{math_formula}</pre>"
+        if text and is_inline_scope:
+            return f"<code>{text}</code>"
+        elif text and (not is_inline_scope):
+            f"<pre>{text}</pre>"
         elif is_inline_scope:
             return '<span class="formula-not-decoded">Formula not decoded</span>'
 
         return '<div class="formula-not-decoded">Formula not decoded</div>'
 
     def _get_formula_image_fallback(
-        self, item: TextItem, doc: DoclingDocument
+        self, *, item: DocItem, orig: str, doc: DoclingDocument
     ) -> Optional[str]:
         """Try to get an image fallback for a formula."""
         item_image = item.get_image(doc=doc)
         if item_image is not None:
             img_ref = ImageRef.from_pil(item_image, dpi=72)
-            return (
-                "<figure>" f'<img src="{img_ref.uri}" alt="{item.orig}" />' "</figure>"
-            )
+            return "<figure>" f'<img src="{img_ref.uri}" alt="{orig}" />' "</figure>"
         return None
 
 

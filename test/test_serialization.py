@@ -85,6 +85,11 @@ def verify(exp_file: Path, actual: str):
         assert expected == actual
 
 
+# ===============================
+# Markdown tests
+# ===============================
+
+
 def test_md_cross_page_list_page_break():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
@@ -99,7 +104,7 @@ def test_md_cross_page_list_page_break():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 def test_md_checkboxes():
     src = Path("./test/data/doc/checkboxes.json")
@@ -186,20 +191,6 @@ def test_md_cross_page_list_page_break_p2():
     verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
 
 
-def test_html_charts():
-    src = Path("./test/data/doc/barchart.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
-
-
 def test_md_charts():
     src = Path("./test/data/doc/barchart.json")
     doc = DoclingDocument.load_from_json(src)
@@ -211,7 +202,7 @@ def test_md_charts():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_inline_and_formatting():
@@ -225,51 +216,7 @@ def test_md_inline_and_formatting():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.md", actual=actual)
-
-
-def test_html_cross_page_list_page_break():
-    src = Path("./test/data/doc/activities.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
-
-
-def test_html_cross_page_list_page_break_p1():
-    src = Path("./test/data/doc/activities.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-            pages={1},
-        ),
-    )
-    actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}_p1.gt.html", actual=actual)
-
-
-def test_html_cross_page_list_page_break_p2():
-    src = Path("./test/data/doc/activities.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-            pages={2},
-        ),
-    )
-    actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}_p2.gt.html", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_pb_placeholder_and_page_filter():
@@ -285,7 +232,7 @@ def test_md_pb_placeholder_and_page_filter():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_list_item_markers():
@@ -374,7 +321,7 @@ def test_md_nested_lists():
 
     ser = MarkdownDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_rich_table():
@@ -384,6 +331,69 @@ def test_md_rich_table():
     ser = MarkdownDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
+
+
+# ===============================
+# HTML tests
+# ===============================
+
+
+def test_html_charts():
+    src = Path("./test/data/doc/barchart.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
+def test_html_cross_page_list_page_break():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
+def test_html_cross_page_list_page_break_p1():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            pages={1},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_p1.gt.html", actual=actual)
+
+
+def test_html_cross_page_list_page_break_p2():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            pages={2},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_p2.gt.html", actual=actual)
 
 
 def test_html_split_page():
@@ -522,7 +532,7 @@ def test_html_nested_lists():
 
     ser = HTMLDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
 
 
 def test_html_rich_table():
@@ -534,13 +544,27 @@ def test_html_rich_table():
     verify(exp_file=exp_file, actual=actual)
 
 
+def test_html_inline_and_formatting():
+    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = HTMLDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
+# ===============================
+# DocTags tests
+# ===============================
+
+
 def test_doctags_inline_loc_tags():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = DocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.out.dt", actual=actual)
+    verify(exp_file=src.with_suffix(".out.dt"), actual=actual)
 
 
 def test_doctags_rich_table():
@@ -551,3 +575,12 @@ def test_doctags_rich_table():
     ser = DocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
+
+
+def test_doctags_inline_and_formatting():
+    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)

@@ -42,6 +42,7 @@ from docling_core.types.doc.document import (
     PictureMoleculeData,
     PictureTabularChartData,
     ProvenanceItem,
+    SectionHeaderItem,
     TableItem,
     TextItem,
 )
@@ -94,11 +95,11 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         item: TextItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        from docling_core.types.doc.document import SectionHeaderItem
-
+        my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
         wrap_tag: Optional[str] = DocumentToken.create_token_name_from_doc_item_label(
             label=item.label,
@@ -116,12 +117,21 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(location)
 
         if params.add_content:
-            text_part = item.text
-            text_part = doc_serializer.post_process(
-                text=text_part,
-                formatting=item.formatting,
-                hyperlink=item.hyperlink,
-            )
+            if (
+                item.text == ""
+                and len(item.children) == 1
+                and isinstance(
+                    (child_group := item.children[0].resolve(doc)), InlineGroup
+                )
+            ):
+                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
+                text_part = ser_res.text
+            else:
+                text_part = doc_serializer.post_process(
+                    text=item.text,
+                    formatting=item.formatting,
+                    hyperlink=item.hyperlink,
+                )
 
             if isinstance(item, CodeItem):
                 language_token = DocumentToken.get_code_language_token(
