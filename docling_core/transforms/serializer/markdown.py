@@ -139,10 +139,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 )
             ):
                 # case of inline within heading / list item
-                ser_res = doc_serializer.serialize(item=child_group)
+                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
                 text = ser_res.text
-                for span in ser_res.spans:
-                    my_visited.add(span.item.self_ref)
             else:
                 text = doc_serializer.post_process(
                     text=text,
