@@ -139,11 +139,12 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         res_parts: list[SerializationResult] = []
         post_processed = False
 
-        if inline_repr := (
+        has_inline_repr = (
             item.text == ""
             and len(item.children) == 1
             and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-        ):
+        )
+        if has_inline_repr:
             text = doc_serializer.serialize(item=child_group, visited=my_visited).text
             post_processed = True
         else:
@@ -183,7 +184,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             # List items are handled by list serializer
             text_parts: list[str] = []
             if text:
-                if inline_repr:
+                if has_inline_repr:
                     text = f"\n{text}\n"
                 else:
                     text = doc_serializer.post_process(
