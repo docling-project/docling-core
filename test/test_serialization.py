@@ -104,7 +104,7 @@ def test_md_cross_page_list_page_break():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_cross_page_list_page_break_none():
@@ -186,7 +186,7 @@ def test_md_charts():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_inline_and_formatting():
@@ -200,7 +200,7 @@ def test_md_inline_and_formatting():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.md", actual=actual)
+    verify(exp_file=src.with_suffix(".md"), actual=actual)
 
 
 def test_md_pb_placeholder_and_page_filter():
@@ -216,7 +216,7 @@ def test_md_pb_placeholder_and_page_filter():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_list_item_markers():
@@ -305,7 +305,7 @@ def test_md_nested_lists():
 
     ser = MarkdownDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_rich_table():
@@ -333,7 +333,7 @@ def test_html_charts():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
 
 
 def test_html_cross_page_list_page_break():
@@ -347,7 +347,7 @@ def test_html_cross_page_list_page_break():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
 
 
 def test_html_cross_page_list_page_break_p1():
@@ -516,7 +516,7 @@ def test_html_nested_lists():
 
     ser = HTMLDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
 
 
 def test_html_rich_table():
@@ -539,7 +539,7 @@ def test_doctags_inline_loc_tags():
 
     ser = DocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.out.dt", actual=actual)
+    verify(exp_file=src.with_suffix(".out.dt"), actual=actual)
 
 
 def test_doctags_rich_table():
