@@ -8,7 +8,7 @@ body:
   - $ref: '#/texts/32'
   - $ref: '#/groups/8'
   - $ref: '#/texts/35'
-  - $ref: '#/texts/40'
+  - $ref: '#/texts/41'
   content_layer: body
   label: unspecified
   name: _root_
@@ -121,6 +121,7 @@ groups:
   - $ref: '#/texts/37'
   - $ref: '#/texts/38'
   - $ref: '#/texts/39'
+  - $ref: '#/texts/40'
   content_layer: body
   label: inline
   name: group
@@ -593,10 +594,19 @@ texts:
 - children: []
   content_layer: body
   label: text
+  orig: '& ampersand'
+  parent:
+    $ref: '#/groups/9'
+  prov: []
+  self_ref: '#/texts/40'
+  text: '& ampersand'
+- children: []
+  content_layer: body
+  label: text
   orig: The end.
   parent:
     $ref: '#/body'
   prov: []
-  self_ref: '#/texts/40'
+  self_ref: '#/texts/41'
   text: The end.
 version: 1.3.0

@@ -528,6 +528,15 @@ def test_html_rich_table():
     verify(exp_file=exp_file, actual=actual)
 
 
+def test_html_inline_and_formatting():
+    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = HTMLDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
 # ===============================
 # DocTags tests
 # ===============================
@@ -550,3 +559,12 @@ def test_doctags_rich_table():
     ser = DocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
+
+
+def test_doctags_inline_and_formatting():
+    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)

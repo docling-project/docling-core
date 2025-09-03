@@ -1,0 +1,47 @@
+<doctag><title>Contribution guideline example</title>
+<text>This is simple.</text>
+<inline><text>Foo</text>
+<text>emphasis</text>
+<text>strong emphasis</text>
+<text>both</text>
+<text>.</text>
+</inline>
+<inline><text>Create your feature branch:</text>
+<code><_unknown_>git checkout -b feature/AmazingFeature</code>
+<text>.</text>
+</inline>
+<ordered_list><list_item><inline><text>Pull the</text>
+<text>repository</text>
+<text>.</text>
+</inline></list_item>
+<list_item><inline><text>Create your feature branch (</text>
+<code><_unknown_>git checkout -b feature/AmazingFeature</code>
+<text>)</text>
+</inline></list_item>
+<list_item><inline><text>Commit your changes (</text>
+<code><_unknown_>git commit -m 'Add some AmazingFeature'</code>
+<text>)</text>
+</inline></list_item>
+<list_item><inline><text>Push to the branch (</text>
+<code><_unknown_>git push origin feature/AmazingFeature</code>
+<text>)</text>
+</inline></list_item>
+<list_item>Open a Pull Request</list_item>
+<list_item>Whole list item has same formatting</list_item>
+<list_item><inline><text>List item has</text>
+<text>mixed or partial</text>
+<text>formatting</text>
+</inline></list_item>
+</ordered_list>
+<title>Whole heading is italic</title>
+<inline><text>Some</text>
+<code><_unknown_>formatted_code</code>
+</inline>
+<section_header_level_1><inline><text>Partially formatted</text>
+<text>heading to_escape</text>
+<code><_unknown_>not_to_escape</code>
+<formula>E=mc^2</formula>
+<text>& ampersand</text>
+</inline></section_header_level_1>
+<text>The end.</text>
+</doctag>

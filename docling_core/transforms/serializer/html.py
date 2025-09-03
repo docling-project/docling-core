@@ -138,15 +138,22 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         my_visited: set[str] = visited if visited is not None else set()
         res_parts: list[SerializationResult] = []
         post_processed = False
-
         # Prepare the HTML based on item type
-        if isinstance(item, TitleItem):
-            text_inner = self._prepare_content(item.text)
-            text = get_html_tag_with_text_direction(html_tag="h1", text=text_inner)
-
-        elif isinstance(item, SectionHeaderItem):
-            section_level = min(item.level + 1, 6)
-            text_inner = self._prepare_content(item.text)
+        if isinstance(item, (TitleItem, SectionHeaderItem)):
+            if (
+                item.text == ""
+                and len(item.children) == 1
+                and isinstance(
+                    (child_group := item.children[0].resolve(doc)), InlineGroup
+                )
+            ):
+                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
+                text_inner = ser_res.text
+            else:
+                text_inner = self._prepare_content(item.text)
+            section_level = (
+                min(item.level + 1, 6) if isinstance(item, SectionHeaderItem) else 1
+            )
             text = get_html_tag_with_text_direction(
                 html_tag=f"h{section_level}", text=text_inner
             )
