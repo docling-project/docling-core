@@ -734,7 +734,7 @@ def _test_export_methods(
     for table in doc.tables:
         table.export_to_markdown()
         table.export_to_html(doc)
-        table.export_to_dataframe()
+        table.export_to_dataframe(doc)
         table.export_to_doctags(doc)
 
     # Test Images export ...
