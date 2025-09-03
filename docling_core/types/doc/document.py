@@ -1921,13 +1921,58 @@ class KeyValueItem(FloatingItem):
         return text
 
 
+class FormHeaderItem(SectionHeaderItem):
+    """FormHeaderItem."""
+    
+    label: typing.Literal[DocItemLabel.FORM_HEADER] = DocItemLabel.FORM_HEADER
+
+class FormTextItem(TextItem):
+    """FormTextItem."""
+    
+    label: typing.Literal[DocItemLabel.FORM_TEXT] = DocItemLabel.FORM_TEXT
+    
+class FormListItem(TextItem):
+    """FormListItem."""
+    
+    label: typing.Literal[DocItemLabel.FORM_ITEM] = DocItemLabel.FORM_ITEM
+
+    marker: Optional[TextItem]
+    
+    key: TextItem
+    value: TextItem
+
 class FormItem(FloatingItem):
     """FormItem."""
 
     label: typing.Literal[DocItemLabel.FORM] = DocItemLabel.FORM
 
-    graph: GraphData
+    def add(self, item: Union["FormItem", FormHeaderItem, FormTextItem, FormListItem]):
+        return
 
+    def add_form(self, item: "FormItem") -> NodeItem:
+        item.parent = self.cref
+        self.children.append(item)
+
+        return item
+
+    def add_form_item(self, item: FormItem):
+        item.parent = self.cref
+        self.children.append(item)
+
+        return item
+
+    def add_form_text(self, item: FormTextItem):
+        item.parent = self.cref
+        self.children.append(item)
+
+        return item
+
+    def add_form_header(self, item: FormHeaderItem):
+        item.parent = self.cref
+        self.children.append(item)
+
+        return item
+    
 
 ContentItem = Annotated[
     Union[
@@ -2987,7 +3032,7 @@ class DoclingDocument(BaseModel):
 
     def add_form(
         self,
-        graph: GraphData,
+        form: Optional[FormItem] = None,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
     ):
@@ -3003,11 +3048,12 @@ class DoclingDocument(BaseModel):
         form_index = len(self.form_items)
         cref = f"#/form_items/{form_index}"
 
-        form_item = FormItem(
-            graph=graph,
-            self_ref=cref,
-            parent=parent.get_ref(),
-        )
+        if form is None:
+            form = FormItem(
+                self_ref=cref,
+                parent=parent.get_ref(),
+            )
+
         if prov:
             form_item.prov.append(prov)
 
