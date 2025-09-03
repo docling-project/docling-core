@@ -124,26 +124,24 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         my_visited = visited if visited is not None else set()
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
-        text = item.text
         escape_html = True
         escape_underscores = True
-        processing_pending = True
-        if isinstance(item, (ListItem, TitleItem, SectionHeaderItem)):
-            # case where processing/formatting should be applied first (in inner scope)
+
+        has_inline_repr = (
+            item.text == ""
+            and len(item.children) == 1
+            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
+        )
+        if has_inline_repr:
+            text = doc_serializer.serialize(item=child_group, visited=my_visited).text
             processing_pending = False
-            if (
-                text == ""
-                and len(item.children) == 1
-                and isinstance(
-                    (child_group := item.children[0].resolve(doc)), InlineGroup
-                )
-            ):
-                # case of inline within heading / list item
-                ser_res = doc_serializer.serialize(item=child_group)
-                text = ser_res.text
-                for span in ser_res.spans:
-                    my_visited.add(span.item.self_ref)
-            else:
+        else:
+            text = item.text
+            processing_pending = True
+
+        if isinstance(item, (ListItem, TitleItem, SectionHeaderItem)):
+            if not has_inline_repr:
+                # case where processing/formatting should be applied first (in inner scope)
                 text = doc_serializer.post_process(
                     text=text,
                     escape_html=escape_html,
@@ -151,6 +149,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
                 )
+                processing_pending = False
 
             if isinstance(item, ListItem):
                 pieces: list[str] = []
