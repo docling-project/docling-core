@@ -40,6 +40,7 @@ from docling_core.types.doc.document import (
     ContentLayer,
     DescriptionAnnotation,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
     FloatingItem,
     Formatting,
@@ -128,6 +129,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         escape_html = True
         escape_underscores = True
         processing_pending = True
+        if item.label == DocItemLabel.CHECKBOX_SELECTED:
+            text = f"[x] {text}"
+        if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
+            text = f"[ ] {text}"        
         if isinstance(item, (ListItem, TitleItem, SectionHeaderItem)):
             # case where processing/formatting should be applied first (in inner scope)
             processing_pending = False
