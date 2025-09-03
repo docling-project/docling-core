@@ -85,6 +85,11 @@ def verify(exp_file: Path, actual: str):
         assert expected == actual
 
 
+# ===============================
+# Markdown tests
+# ===============================
+
+
 def test_md_cross_page_list_page_break():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
@@ -170,20 +175,6 @@ def test_md_cross_page_list_page_break_p2():
     verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
 
 
-def test_html_charts():
-    src = Path("./test/data/doc/barchart.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
-
-
 def test_md_charts():
     src = Path("./test/data/doc/barchart.json")
     doc = DoclingDocument.load_from_json(src)
@@ -210,50 +201,6 @@ def test_md_inline_and_formatting():
     )
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}.md", actual=actual)
-
-
-def test_html_cross_page_list_page_break():
-    src = Path("./test/data/doc/activities.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
-
-
-def test_html_cross_page_list_page_break_p1():
-    src = Path("./test/data/doc/activities.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-            pages={1},
-        ),
-    )
-    actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}_p1.gt.html", actual=actual)
-
-
-def test_html_cross_page_list_page_break_p2():
-    src = Path("./test/data/doc/activities.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-            pages={2},
-        ),
-    )
-    actual = ser.serialize().text
-    verify(exp_file=src.parent / f"{src.stem}_p2.gt.html", actual=actual)
 
 
 def test_md_pb_placeholder_and_page_filter():
@@ -368,6 +315,69 @@ def test_md_rich_table():
     ser = MarkdownDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
+
+
+# ===============================
+# HTML tests
+# ===============================
+
+
+def test_html_charts():
+    src = Path("./test/data/doc/barchart.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
+
+
+def test_html_cross_page_list_page_break():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.html", actual=actual)
+
+
+def test_html_cross_page_list_page_break_p1():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            pages={1},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_p1.gt.html", actual=actual)
+
+
+def test_html_cross_page_list_page_break_p2():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            pages={2},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_p2.gt.html", actual=actual)
 
 
 def test_html_split_page():
@@ -516,6 +526,11 @@ def test_html_rich_table():
     ser = HTMLDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
+
+
+# ===============================
+# DocTags tests
+# ===============================
 
 
 def test_doctags_inline_loc_tags():
