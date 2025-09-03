@@ -200,7 +200,7 @@ def test_md_inline_and_formatting():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".md"), actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
 def test_md_pb_placeholder_and_page_filter():
