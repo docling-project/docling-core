@@ -1,3 +1,15 @@
+## [v2.48.0](https://github.com/docling-project/docling-core/releases/tag/v2.48.0) - 2025-09-09
+
+### Feature
+
+* Introduction of fillable TableCell ([#384](https://github.com/docling-project/docling-core/issues/384)) ([`b13267f`](https://github.com/docling-project/docling-core/commit/b13267f18be165091149e99c145ec4de42f72e71))
+* Add support for heading with inline in HTML & DocTags ([#379](https://github.com/docling-project/docling-core/issues/379)) ([`b60ac19`](https://github.com/docling-project/docling-core/commit/b60ac192ef7b31574c2b3b55be9e9a00fd6c8479))
+
+### Fix
+
+* Add `doc` param to all `export_to_dataframe()` calls ([#380](https://github.com/docling-project/docling-core/issues/380)) ([`0512f44`](https://github.com/docling-project/docling-core/commit/0512f4473dfc4827bf2ff3fa5f70116ed916b39c))
+* Fix handling of generic groups in rich table cells ([#383](https://github.com/docling-project/docling-core/issues/383)) ([`2dc57c1`](https://github.com/docling-project/docling-core/commit/2dc57c1769e9e269e6afd05fc559d924799247cc))
+
 ## [v2.47.0](https://github.com/docling-project/docling-core/releases/tag/v2.47.0) - 2025-09-02
 
 ### Feature
