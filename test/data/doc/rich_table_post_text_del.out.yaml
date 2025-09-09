@@ -51,6 +51,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -61,6 +62,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -71,6 +73,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -81,6 +84,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -91,6 +95,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 3
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -101,6 +106,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 3
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -111,6 +117,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 4
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -121,6 +128,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 4
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -131,6 +139,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 5
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -141,6 +150,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 5
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -154,6 +164,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -164,6 +175,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -174,6 +186,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 2
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -184,6 +197,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 2
+      fillable: false
       ref:
         $ref: '#/texts/0'
       row_header: false
@@ -196,6 +210,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 3
+      fillable: false
       ref:
         $ref: '#/groups/0'
       row_header: false
@@ -208,6 +223,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 3
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -218,6 +234,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 4
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -228,6 +245,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 4
+      fillable: false
       ref:
         $ref: '#/tables/1'
       row_header: false
@@ -240,6 +258,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 5
+      fillable: false
       ref:
         $ref: '#/groups/1'
       row_header: false
@@ -252,6 +271,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 5
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -275,6 +295,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -285,6 +306,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -295,6 +317,7 @@ tables:
         column_header: false
         end_col_offset_idx: 3
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -305,6 +328,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -315,6 +339,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -325,6 +350,7 @@ tables:
         column_header: false
         end_col_offset_idx: 3
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -338,6 +364,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -348,6 +375,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -358,6 +386,7 @@ tables:
       column_header: false
       end_col_offset_idx: 3
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -368,6 +397,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 2
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -378,6 +408,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 2
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -388,6 +419,7 @@ tables:
       column_header: false
       end_col_offset_idx: 3
       end_row_offset_idx: 2
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1

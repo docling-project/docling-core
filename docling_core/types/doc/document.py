@@ -310,6 +310,7 @@ class TableCell(BaseModel):
     column_header: bool = False
     row_header: bool = False
     row_section: bool = False
+    fillable: bool = False
 
     @model_validator(mode="before")
     @classmethod
