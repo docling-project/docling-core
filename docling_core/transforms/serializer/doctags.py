@@ -32,6 +32,7 @@ from docling_core.types.doc.document import (
     DoclingDocument,
     FloatingItem,
     FormItem,
+    GroupItem,
     InlineGroup,
     KeyValueItem,
     ListGroup,
@@ -516,7 +517,12 @@ class DocTagsFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        return create_ser_result()
+        if isinstance(item, GroupItem):
+            parts = doc_serializer.get_parts(item=item, **kwargs)
+            text_res = "\n".join([p.text for p in parts if p.text])
+            return create_ser_result(text=text_res, span_source=parts)
+        else:
+            return create_ser_result()
 
 
 class DocTagsAnnotationSerializer(BaseAnnotationSerializer):

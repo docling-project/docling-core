@@ -1,5 +1,6 @@
 <doctag><title>Rich tables</title>
 <otsl><fcel>cell 0,0<fcel>cell 0,1<nl><fcel>cell 1,0<fcel><text>text in italic</text><nl><fcel><unordered_list><list_item>list item 1</list_item>
 <list_item>list item 2</list_item>
-</unordered_list><fcel>cell 2,1<nl><fcel>cell 3,0<fcel><otsl><fcel>inner cell 0,0<fcel>inner cell 0,1<fcel>inner cell 0,2<nl><fcel>inner cell 1,0<fcel>inner cell 1,1<fcel>inner cell 1,2<nl></otsl><nl></otsl>
+</unordered_list><fcel>cell 2,1<nl><fcel>cell 3,0<fcel><otsl><fcel>inner cell 0,0<fcel>inner cell 0,1<fcel>inner cell 0,2<nl><fcel>inner cell 1,0<fcel>inner cell 1,1<fcel>inner cell 1,2<nl></otsl><nl><fcel><text>Some text in a generic group.</text>
+<text>More text in the group.</text><fcel>cell 4,1<nl></otsl>
 </doctag>
