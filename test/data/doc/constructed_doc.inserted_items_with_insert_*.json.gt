@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "name": "Untitled 1",
   "furniture": {
     "self_ref": "#/furniture",
@@ -1346,7 +1346,8 @@
             "text": "Product",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1358,7 +1359,8 @@
             "text": "Years",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1370,7 +1372,8 @@
             "text": "2016",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1382,7 +1385,8 @@
             "text": "2017",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1394,7 +1398,8 @@
             "text": "Apple",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1406,7 +1411,8 @@
             "text": "49823",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1418,7 +1424,8 @@
             "text": "695944",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           }
         ],
         "num_rows": 3,
@@ -1435,7 +1442,8 @@
               "text": "Product",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1447,7 +1455,8 @@
               "text": "Years",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1459,7 +1468,8 @@
               "text": "Years",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             }
           ],
           [
@@ -1473,7 +1483,8 @@
               "text": "Product",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1485,7 +1496,8 @@
               "text": "2016",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1497,7 +1509,8 @@
               "text": "2017",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             }
           ],
           [
@@ -1511,7 +1524,8 @@
               "text": "Apple",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1523,7 +1537,8 @@
               "text": "49823",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1535,7 +1550,8 @@
               "text": "695944",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             }
           ]
         ]
@@ -1566,7 +1582,8 @@
             "text": "0",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1578,7 +1595,8 @@
             "text": "1",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1590,7 +1608,8 @@
             "text": "2",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1602,7 +1621,8 @@
             "text": "3",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1614,7 +1634,8 @@
             "text": "4",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1626,7 +1647,8 @@
             "text": "5",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1638,7 +1660,8 @@
             "text": "6",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1650,7 +1673,8 @@
             "text": "7",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           },
           {
             "row_span": 1,
@@ -1662,7 +1686,8 @@
             "text": "8",
             "column_header": false,
             "row_header": false,
-            "row_section": false
+            "row_section": false,
+            "fillable": false
           }
         ],
         "num_rows": 3,
@@ -1679,7 +1704,8 @@
               "text": "0",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1691,7 +1717,8 @@
               "text": "1",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1703,7 +1730,8 @@
               "text": "2",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             }
           ],
           [
@@ -1717,7 +1745,8 @@
               "text": "3",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1729,7 +1758,8 @@
               "text": "4",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1741,7 +1771,8 @@
               "text": "5",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             }
           ],
           [
@@ -1755,7 +1786,8 @@
               "text": "6",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1767,7 +1799,8 @@
               "text": "7",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             },
             {
               "row_span": 1,
@@ -1779,7 +1812,8 @@
               "text": "8",
               "column_header": false,
               "row_header": false,
-              "row_section": false
+              "row_section": false,
+              "fillable": false
             }
           ]
         ]
