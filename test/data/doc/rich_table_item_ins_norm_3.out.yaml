@@ -250,4 +250,4 @@ texts:
   prov: []
   self_ref: '#/texts/2'
   text: text in italic
-version: 1.6.0
+version: 1.7.0

@@ -60,7 +60,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.6.0"
+CURRENT_VERSION: Final = "1.7.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,

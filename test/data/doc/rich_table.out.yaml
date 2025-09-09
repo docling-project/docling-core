@@ -499,4 +499,4 @@ texts:
   prov: []
   self_ref: '#/texts/5'
   text: More text in the group.
-version: 1.6.0
+version: 1.7.0
