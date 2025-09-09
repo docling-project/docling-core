@@ -1780,6 +1780,11 @@
           "title": "Row Section",
           "type": "boolean"
         },
+        "fillable": {
+          "default": false,
+          "title": "Fillable",
+          "type": "boolean"
+        },
         "ref": {
           "$ref": "#/$defs/RefItem"
         }
@@ -1978,6 +1983,11 @@
         "row_section": {
           "default": false,
           "title": "Row Section",
+          "type": "boolean"
+        },
+        "fillable": {
+          "default": false,
+          "title": "Fillable",
           "type": "boolean"
         }
       },
