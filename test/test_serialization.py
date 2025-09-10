@@ -25,7 +25,13 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import DoclingDocument, MiscAnnotation, TableItem
+from docling_core.types.doc.document import (
+    DoclingDocument,
+    MiscAnnotation,
+    TableCell,
+    TableData,
+    TableItem,
+)
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -311,6 +317,29 @@ def test_md_nested_lists():
 def test_md_rich_table():
     exp_file = Path("./test/data/doc/rich_table.gt.md")
     doc = _construct_rich_table_doc()
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=exp_file, actual=actual)
+
+
+def test_md_single_row_table():
+    exp_file = Path("./test/data/doc/single_row_table.gt.md")
+    words = ["foo", "bar"]
+    doc = DoclingDocument(name="")
+    row_idx = 0
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=len(words)))
+    for col_idx, word in enumerate(words):
+        doc.add_table_cell(
+            table_item=table,
+            cell=TableCell(
+                start_row_offset_idx=row_idx,
+                end_row_offset_idx=row_idx + 1,
+                start_col_offset_idx=col_idx,
+                end_col_offset_idx=col_idx + 1,
+                text=word,
+            ),
+        )
 
     ser = MarkdownDocSerializer(doc=doc)
     actual = ser.serialize().text
