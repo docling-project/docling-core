@@ -332,7 +332,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 ]
                 for row in item.data.grid
             ]
-            if len(rows) > 1 and len(rows[0]) > 0:
+            if len(rows) > 0:
                 try:
                     table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")
                 except ValueError:
