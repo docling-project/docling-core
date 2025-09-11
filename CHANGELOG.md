@@ -1,3 +1,9 @@
+## [v2.48.1](https://github.com/docling-project/docling-core/releases/tag/v2.48.1) - 2025-09-11
+
+### Fix
+
+* **markdown:** Fix single-row table serialization ([#385](https://github.com/docling-project/docling-core/issues/385)) ([`9df7208`](https://github.com/docling-project/docling-core/commit/9df72083c077e328dc4e9c05d2f2c09c7947b43b))
+
 ## [v2.48.0](https://github.com/docling-project/docling-core/releases/tag/v2.48.0) - 2025-09-09
 
 ### Feature
