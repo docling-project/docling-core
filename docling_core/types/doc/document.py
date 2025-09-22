@@ -952,6 +952,8 @@ class NodeItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    summary: Optional[str] = None # 
+    
     def get_ref(self) -> RefItem:
         """get_ref."""
         return RefItem(cref=self.self_ref)
