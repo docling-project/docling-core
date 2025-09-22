@@ -1188,6 +1188,7 @@ class TextItem(DocItem):
         DocItemLabel.REFERENCE,
         DocItemLabel.TEXT,
         DocItemLabel.EMPTY_VALUE,
+        DocItemLabel.FORM_KEY,
     ]
 
     orig: str  # untreated representation
@@ -1920,59 +1921,55 @@ class KeyValueItem(FloatingItem):
         text = serializer.serialize(item=self).text
         return text
 
+class CheckboxItem(ListItem):
+    """FormTextItem."""
+    
+    label: typing.Literal[DocItemLabel.CHECKBOX] = DocItemLabel.CHECKBOX
 
+    checked: bool = False
+
+"""
 class FormHeaderItem(SectionHeaderItem):
-    """FormHeaderItem."""
     
     label: typing.Literal[DocItemLabel.FORM_HEADER] = DocItemLabel.FORM_HEADER
 
 class FormTextItem(TextItem):
-    """FormTextItem."""
     
     label: typing.Literal[DocItemLabel.FORM_TEXT] = DocItemLabel.FORM_TEXT
-    
-class FormListItem(TextItem):
+"""
+
+class FormListItem(DocItem):
     """FormListItem."""
     
-    label: typing.Literal[DocItemLabel.FORM_ITEM] = DocItemLabel.FORM_ITEM
+    label: typing.Literal[DocItemLabel.FORM_LISTITEM] = DocItemLabel.FORM_LISTITEM
 
-    marker: Optional[TextItem]
+    marker: Optional[TextItem] = None
     
     key: TextItem
-    value: TextItem
 
+    def add_value(self, item: Union[CheckboxItem, ListItem, TextItem]) -> NodeItem:    
+        item.parent = self.get_ref()
+        self.children.append(item)
+        
+        return item
+
+
+    
 class FormItem(FloatingItem):
     """FormItem."""
 
     label: typing.Literal[DocItemLabel.FORM] = DocItemLabel.FORM
 
-    def add(self, item: Union["FormItem", FormHeaderItem, FormTextItem, FormListItem]):
-        return
-
-    def add_form(self, item: "FormItem") -> NodeItem:
-        item.parent = self.cref
-        self.children.append(item)
-
+    def add(self, item: Union["FormItem", SectionHeaderItem, TextItem, FormListItem]) -> NodeItem:
+        item.parent = self.get_ref()
+        self.children.append(item.get_ref())
+        
         return item
 
-    def add_form_item(self, item: FormItem):
-        item.parent = self.cref
-        self.children.append(item)
-
+    def add_listitem(self, doc: DoclingDocument, prov: Optional[ProvenanceItem] = None) -> NodeItem:
+        li = FormListItem(self_ref=self.get_ref())
         return item
-
-    def add_form_text(self, item: FormTextItem):
-        item.parent = self.cref
-        self.children.append(item)
-
-        return item
-
-    def add_form_header(self, item: FormHeaderItem):
-        item.parent = self.cref
-        self.children.append(item)
-
-        return item
-    
+        
 
 ContentItem = Annotated[
     Union[
@@ -1985,6 +1982,7 @@ ContentItem = Annotated[
         PictureItem,
         TableItem,
         KeyValueItem,
+        FormItem,
     ],
     Field(discriminator="label"),
 ]

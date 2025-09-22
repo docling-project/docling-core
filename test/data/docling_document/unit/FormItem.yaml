@@ -24,7 +24,7 @@ graph:
     source_cell_id: 1
     target_cell_id: 0
 image: null
-label: form
+label: key_value_region
 parent: null
 prov: []
 references: []

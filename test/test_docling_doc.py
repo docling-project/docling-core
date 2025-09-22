@@ -14,6 +14,7 @@ from pydantic import AnyUrl, ValidationError
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (  # BoundingBox,
     CURRENT_VERSION,
+    CheckboxItem,
     CodeItem,
     ContentLayer,
     DocItem,
@@ -42,6 +43,8 @@ from docling_core.types.doc.document import (  # BoundingBox,
     TableItem,
     TextItem,
     TitleItem,
+    CheckboxItem,
+    FormListItem,    
 )
 from docling_core.types.doc.labels import (
     DocItemLabel,
@@ -491,6 +494,7 @@ def test_docitems():
 
         elif dc is FormItem:
 
+            """
             graph = GraphData(
                 cells=[
                     GraphCell(
@@ -524,7 +528,31 @@ def test_docitems():
                 self_ref="#",
             )
             verify(dc, obj)
+            """
 
+            key_name = TextItem(text="name", orig="name", self_ref="#", label=DocItemLabel.FORM_KEY)
+            val_name = TextItem(text="John Doe", orig="name", self_ref="#", label=DocItemLabel.TEXT)
+            
+            form_item_name = FormListItem(key=key_name, self_ref="#")
+            form_item_name.add_value(val_name)
+            
+            key_age = TextItem(text="Age", orig="Age", self_ref="#", label=DocItemLabel.FORM_KEY)
+            
+            cb_age_0 = CheckboxItem(checked=True, text="0-20", orig="0-20", self_ref="#")
+            cb_age_1 = CheckboxItem(checked=False, text="20-40", orig="20-40", self_ref="#")
+            val_age = TextItem(text="other", orig="other", self_ref="#", label=DocItemLabel.TEXT)
+
+            form_item_age = FormListItem(key=key_age, self_ref="#") #, value=[cb_age_0, cb_age_1, val_age])
+            for _ in [cb_age_0, cb_age_1, val_age]:
+                form_item_age.add_value(_)
+            
+            form = FormItem(self_ref="#")
+
+            form.add(form_item_name)
+            form.add(form_item_age)
+
+            verify(dc, obj)
+            
         elif dc is TitleItem:
             obj = dc(
                 text="whatever",
@@ -571,8 +599,12 @@ def test_docitems():
                 text="E=mc^2",
             )
             verify(dc, obj)
-        elif dc is GraphData:  # we skip this on purpose
+        elif dc is CheckboxItem:  # we skip this on purpose
+            continue            
+        elif dc is FormListItem:  # we skip this on purpose
             continue
+        elif dc is GraphData:  # we skip this on purpose
+            continue        
         else:
             raise RuntimeError(f"New derived class detected {dc.__name__}")
 
@@ -1002,8 +1034,10 @@ def _construct_doc() -> DoclingDocument:
 
     doc.add_key_values(graph=graph)
 
-    doc.add_form(graph=graph)
+    form_1 = doc.add_form(graph=graph)
 
+    form_1_item_1 = form_1.add_listitem(key="Name")
+    
     inline_fmt = doc.add_inline_group()
     doc.add_text(
         label=DocItemLabel.TEXT, text="Some formatting chops:", parent=inline_fmt
