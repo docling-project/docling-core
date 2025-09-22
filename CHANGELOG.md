@@ -1,3 +1,9 @@
+## [v2.48.2](https://github.com/docling-project/docling-core/releases/tag/v2.48.2) - 2025-09-22
+
+### Fix
+
+* Expose escape_html param to DoclingDocument md serialization ([#388](https://github.com/docling-project/docling-core/issues/388)) ([`dd6ebc3`](https://github.com/docling-project/docling-core/commit/dd6ebc34402ee0b7d3a6d23fd00828bed2111870))
+
 ## [v2.48.1](https://github.com/docling-project/docling-core/releases/tag/v2.48.1) - 2025-09-11
 
 ### Fix
