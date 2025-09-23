@@ -10,9 +10,8 @@ from docling_core.transforms.serializer.markdown_summary import (
     MarkdownSummarySerializer,
 )
 
-from .test_docling_doc import _construct_doc
-
 from .test_data_gen_flag import GEN_TEST_DATA
+from .test_docling_doc import _construct_doc
 
 
 def verify(exp_file: Path, actual: str):
@@ -23,6 +22,7 @@ def verify(exp_file: Path, actual: str):
         with open(exp_file, "r", encoding="utf-8") as f:
             expected = f.read().rstrip()
         assert expected == actual
+
 
 @pytest.mark.parametrize(
     "mode",
@@ -57,6 +57,7 @@ def test_markdown_summary_outline(
         / f"constructed_mdsum_{mode.value}_mdhdr_{str(use_md_headers).lower()}_indent_{str(indent_by_section_level).lower()}.gt.md"
     )
     verify(exp_file=exp_path, actual=outline)
+
 
 @pytest.mark.parametrize("use_md_headers", [False, True])
 def test_markdown_summary_indentation(use_md_headers: bool):
