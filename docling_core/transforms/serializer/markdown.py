@@ -141,9 +141,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             processing_pending = True
 
         if item.label == DocItemLabel.CHECKBOX_SELECTED:
-            text = f"[x] {text}"
+            text = f"- [x] {text}"
         if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
-            text = f"[ ] {text}"        
+            text = f"- [ ] {text}"        
         if isinstance(item, (ListItem, TitleItem, SectionHeaderItem)):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
