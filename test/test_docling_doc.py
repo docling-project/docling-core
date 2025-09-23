@@ -423,7 +423,7 @@ def test_docitems():
 
         gold = read(dc.__name__)
         # print(f"\t{dc.__name__}:\n {gold}")
-        
+
         assert pred == gold, f"pred!=gold for {dc.__name__}"
 
     # Iterate over the derived classes of the BaseClass

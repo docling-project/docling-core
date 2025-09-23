@@ -274,7 +274,7 @@ def test_table_export_to_otsl():
     otsl_string = doc.tables[0].export_to_otsl(
         add_cell_location=False, add_cell_text=False, doc=doc
     )
-    print_friendly = otsl_string.split("<nl>")
+    otsl_string.split("<nl>")
     # print("OTSL out:")
     # for s in print_friendly:
     #     print(s)
