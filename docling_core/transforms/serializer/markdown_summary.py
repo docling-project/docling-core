@@ -93,6 +93,11 @@ class MarkdownSummarySerializer(DocSerializer):
         return f"[{text}]({str(hyperlink)})"
 
     @override
+    def requires_page_break(self) -> bool:
+        """Whether to add page breaks."""
+        return False
+    
+    @override
     def get_parts(
         self,
         item: Optional[NodeItem] = None,
