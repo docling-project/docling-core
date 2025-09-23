@@ -275,9 +275,9 @@ def test_table_export_to_otsl():
         add_cell_location=False, add_cell_text=False, doc=doc
     )
     print_friendly = otsl_string.split("<nl>")
-    print("OTSL out:")
-    for s in print_friendly:
-        print(s)
+    # print("OTSL out:")
+    # for s in print_friendly:
+    #     print(s)
     assert (
         otsl_string
         == "<rhed><lcel><rhed><fcel><xcel><xcel><nl><rhed><fcel><fcel><xcel><xcel><xcel><nl><rhed><fcel><fcel><fcel><ecel><ecel><nl><ucel><fcel><fcel><fcel><fcel><fcel><nl><srow><lcel><lcel><lcel><lcel><lcel><nl>"

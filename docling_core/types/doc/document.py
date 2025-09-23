@@ -952,9 +952,7 @@ class NodeItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    summary: Optional[str] = Field(
-        default=None, exclude=True
-    )  # optional, not serialized
+    summary: Optional[str] = None  # serialized only when not None
 
     def get_ref(self) -> RefItem:
         """get_ref."""

@@ -1,10 +1,11 @@
 children: []
+content_layer: body
+formatting: null
+hyperlink: null
 label: title
 orig: whatever
 parent: null
 prov: []
 self_ref: '#'
+summary: null
 text: whatever
-content_layer: body
-formatting: null
-hyperlink: null

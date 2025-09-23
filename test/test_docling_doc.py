@@ -415,14 +415,15 @@ def test_docitems():
     def verify(dc, obj):
         pred = serialise(obj).strip()
 
-        if dc is KeyValueItem or dc is FormItem:
-            write(dc.__name__, pred)
+        # if dc is KeyValueItem or dc is FormItem or dc is TextItem:
+        #    write(dc.__name__, pred)
 
         pred = yaml.safe_load(pred)
-
         # print(f"\t{dc.__name__}:\n {pred}")
-        gold = read(dc.__name__)
 
+        gold = read(dc.__name__)
+        # print(f"\t{dc.__name__}:\n {gold}")
+        
         assert pred == gold, f"pred!=gold for {dc.__name__}"
 
     # Iterate over the derived classes of the BaseClass
@@ -727,7 +728,7 @@ def _test_export_methods(
         second_page = first_page + 1
         if second_page in doc.pages:  # Only test if document has at least 2 pages
             dt_pages_pred = doc.export_to_doctags(pages={first_page, second_page})
-            print(dt_pages_pred)
+            # print(dt_pages_pred)
             _verify_regression_test(dt_pages_pred, filename=filename, ext="pages.dt")
 
     # Test Tables export ...

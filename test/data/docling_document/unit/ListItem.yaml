@@ -1,12 +1,13 @@
 children: []
+content_layer: body
 enumerated: true
+formatting: null
+hyperlink: null
 label: list_item
 marker: (1)
 orig: whatever
 parent: null
 prov: []
 self_ref: '#'
+summary: null
 text: whatever
-content_layer: body
-formatting: null
-hyperlink: null
