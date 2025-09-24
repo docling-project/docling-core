@@ -32,9 +32,8 @@ def verify(exp_file: Path, actual: str):
     ],
 )
 @pytest.mark.parametrize("use_md_headers", [False, True])
-@pytest.mark.parametrize("indent_by_section_level", [False, True])
 def test_markdown_summary_outline(
-    mode: MarkdownSummaryMode, use_md_headers: bool, indent_by_section_level: bool
+    mode: MarkdownSummaryMode, use_md_headers: bool
 ):
     # Build a representative document with title, headers, text, lists, table, and pictures
     doc = _construct_doc()
@@ -44,7 +43,6 @@ def test_markdown_summary_outline(
         params=MarkdownSummaryParams(
             use_markdown_headers=use_md_headers,
             mode=mode,
-            indent_by_section_level=indent_by_section_level,
         ),
     )
 
@@ -54,31 +52,7 @@ def test_markdown_summary_outline(
     root_dir = Path("./test/data/doc")
     exp_path = (
         root_dir
-        / f"constructed_mdsum_{mode.value}_mdhdr_{str(use_md_headers).lower()}_indent_{str(indent_by_section_level).lower()}.gt.md"
+        / f"constructed_mdsum_{mode.value}_mdhdr_{str(use_md_headers).lower()}.gt.md"
     )
     verify(exp_file=exp_path, actual=outline)
 
-
-@pytest.mark.parametrize("use_md_headers", [False, True])
-def test_markdown_summary_indentation(use_md_headers: bool):
-    # Build a representative document
-    doc = _construct_doc()
-
-    ser = MarkdownSummarySerializer(
-        doc=doc,
-        params=MarkdownSummaryParams(
-            use_markdown_headers=use_md_headers,
-            indent_by_section_level=True,
-            indent_size=2,
-        ),
-    )
-
-    outline = ser.serialize().text
-
-    # Compare with or generate ground-truth output for indentation-specific case
-    root_dir = Path("./test/data/doc")
-    exp_path = (
-        root_dir
-        / f"constructed_mdsum_indent_mdhdr_{str(use_md_headers).lower()}_indent_true_size_2.gt.md"
-    )
-    verify(exp_file=exp_path, actual=outline)

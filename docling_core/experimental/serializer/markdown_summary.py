@@ -53,10 +53,6 @@ class MarkdownSummaryParams(MarkdownParams):
     add_references: bool = True
     add_summary: bool = True
 
-    # Indentation control: when enabled, indent each line according to
-    # the latest encountered section-header level (title treated as level 0).
-    indent_by_section_level: bool = False
-    indent_size: int = 2
 
     toc_labels: list[DocItemLabel] = [DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER]
 
@@ -223,24 +219,6 @@ class MarkdownSummarySerializer(MarkdownDocSerializer):
             return node.summary
         return ""
 
-    def _indent_line(
-        self,
-        *,
-        line: str,
-        node: NodeItem,
-        current_section_level: int,
-        params: MarkdownSummaryParams,
-    ) -> str:
-        if not line:
-            return line
-        if not params.indent_by_section_level:
-            return line
-        indent_level = (
-            node.level if isinstance(node, SectionHeaderItem) else current_section_level
-        )
-        indent = " " * (params.indent_size * indent_level)
-        return f"{indent}{line}"
-
     def _create_document_outline(
         self,
         *,
@@ -254,7 +232,6 @@ class MarkdownSummarySerializer(MarkdownDocSerializer):
         label_counter: dict[DocItemLabel, int] = {}
         visited: set[str] = set()
         result: list[SerializationResult] = []
-        current_section_level: int = 0
 
         for node, _level in self.doc.iterate_items(root=root, with_groups=True):
             if node.self_ref in visited:
@@ -284,7 +261,6 @@ class MarkdownSummarySerializer(MarkdownDocSerializer):
                 line = self._line_for_section_header(
                     node=node, params=params, node_label=node_label
                 )
-                current_section_level = node.level
             elif isinstance(node, ListGroup):
                 line = ""  # intentionally skip
             elif isinstance(node, (TextItem, FormItem, CodeItem)):
@@ -306,13 +282,6 @@ class MarkdownSummarySerializer(MarkdownDocSerializer):
 
             if summary:
                 line = f"{line} (summary={summary})" if line else line
-
-            line = self._indent_line(
-                line=line,
-                node=node,
-                current_section_level=current_section_level,
-                params=params,
-            )
 
             if line:
                 result.append(
