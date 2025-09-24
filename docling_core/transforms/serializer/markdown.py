@@ -421,6 +421,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         doc: DoclingDocument,
         image_mode: ImageRefMode,
         image_placeholder: str,
+        image_join_text: str = "\n",
         **kwargs: Any,
     ) -> SerializationResult:
         error_response = (
@@ -457,6 +458,12 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 text_res = image_placeholder
             else:
                 text_res = f"![Image]({str(item.image.uri)})"
+        elif image_mode == ImageRefMode.INLINE:
+            total_text = []
+            for item, level in doc.iterate_items(root=item, traverse_pictures=True):
+                if isinstance(item, TextItem):
+                    total_text.append(item.text)
+            text_res = image_join_text.join(total_text) if total_text else image_placeholder
         else:
             text_res = image_placeholder
 
