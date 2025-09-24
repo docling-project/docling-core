@@ -5,39 +5,15 @@ document outline or a table of contents derived from a Docling document.
 """
 
 from enum import Enum
-from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
-from pydantic import AnyUrl
 from typing_extensions import override
 
-from docling_core.transforms.serializer.base import (
-    BaseAnnotationSerializer,
-    BaseFallbackSerializer,
-    BaseFormSerializer,
-    BaseInlineSerializer,
-    BaseKeyValueSerializer,
-    BaseListSerializer,
-    BasePictureSerializer,
-    BaseTableSerializer,
-    BaseTextSerializer,
-    SerializationResult,
-)
-from docling_core.transforms.serializer.common import (
-    CommonParams,
-    DocSerializer,
-    create_ser_result,
-)
+from docling_core.transforms.serializer.base import SerializationResult
+from docling_core.transforms.serializer.common import create_ser_result
 from docling_core.transforms.serializer.markdown import (
-    MarkdownAnnotationSerializer,
-    MarkdownFallbackSerializer,
-    MarkdownFormSerializer,
-    MarkdownInlineSerializer,
-    MarkdownKeyValueSerializer,
-    MarkdownListSerializer,
-    MarkdownPictureSerializer,
-    MarkdownTableSerializer,
-    MarkdownTextSerializer,
+    MarkdownDocSerializer,
+    MarkdownParams,
 )
 from docling_core.types.doc import (
     CodeItem,
@@ -63,8 +39,11 @@ class MarkdownSummaryMode(str, Enum):
     TABLE_OF_CONTENTS = "table_of_contents"
 
 
-class MarkdownSummaryParams(CommonParams):
-    """Markdown-specific serialization parameters for outline."""
+class MarkdownSummaryParams(MarkdownParams):
+    """Markdown-specific serialization parameters for outline.
+
+    Inherits MarkdownParams to retain Markdown behaviors (escaping, links, etc.).
+    """
 
     mode: MarkdownSummaryMode = MarkdownSummaryMode.OUTLINE
 
@@ -82,56 +61,14 @@ class MarkdownSummaryParams(CommonParams):
     toc_labels: list[DocItemLabel] = [DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER]
 
 
-class MarkdownSummarySerializer(DocSerializer):
-    """Markdown-specific document summary serializer."""
+class MarkdownSummarySerializer(MarkdownDocSerializer):
+    """Markdown-specific document summary serializer.
 
-    # Provide required serializer attributes to satisfy DocSerializer’s model
-    text_serializer: BaseTextSerializer = MarkdownTextSerializer()
-    table_serializer: BaseTableSerializer = MarkdownTableSerializer()
-    picture_serializer: BasePictureSerializer = MarkdownPictureSerializer()
-    key_value_serializer: BaseKeyValueSerializer = MarkdownKeyValueSerializer()
-    form_serializer: BaseFormSerializer = MarkdownFormSerializer()
-    fallback_serializer: BaseFallbackSerializer = MarkdownFallbackSerializer()
-
-    list_serializer: BaseListSerializer = MarkdownListSerializer()
-    inline_serializer: BaseInlineSerializer = MarkdownInlineSerializer()
-
-    annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
+    Inherits MarkdownDocSerializer to reuse Markdown formatting/post-processing
+    and sub-serializers; overrides only the parts selection logic.
+    """
 
     params: MarkdownSummaryParams = MarkdownSummaryParams()
-
-    @override
-    def serialize_bold(self, text: str, **kwargs: Any) -> str:
-        """Apply Markdown bold formatting to ``text``."""
-        return f"**{text}**"
-
-    @override
-    def serialize_italic(self, text: str, **kwargs: Any) -> str:
-        """Apply Markdown italic formatting to ``text``."""
-        return f"*{text}*"
-
-    @override
-    def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
-        """Apply Markdown strikethrough formatting to ``text``."""
-        return f"~~{text}~~"
-
-    @override
-    def serialize_hyperlink(
-        self,
-        text: str,
-        hyperlink: Union[AnyUrl, Path],
-        **kwargs: Any,
-    ) -> str:
-        """Render a Markdown hyperlink around ``text``.
-
-        Returns a ``[text](href)`` string with the provided URL/path.
-        """
-        return f"[{text}]({str(hyperlink)})"
-
-    @override
-    def requires_page_break(self) -> bool:
-        """Whether to add page breaks."""
-        return False
 
     @override
     def get_parts(
@@ -143,17 +80,6 @@ class MarkdownSummarySerializer(DocSerializer):
         return self._create_document_outline(root=item, **kwargs)
 
     # return [create_ser_result(text=outline, span_source=[])] if outline else []
-
-    @override
-    def serialize_doc(
-        self,
-        *,
-        parts: list[SerializationResult],
-        **kwargs: Any,
-    ) -> SerializationResult:
-        """Serialize a document summary from pre-rendered parts."""
-        text_res = "\n\n".join([p.text for p in parts if p.text])
-        return create_ser_result(text=text_res, span_source=parts)
 
     # -------------------------
     # Helper methods (internal)
