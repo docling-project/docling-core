@@ -53,7 +53,6 @@ class MarkdownSummaryParams(MarkdownParams):
     add_references: bool = True
     add_summary: bool = True
 
-
     toc_labels: list[DocItemLabel] = [DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER]
 
 

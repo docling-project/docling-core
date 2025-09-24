@@ -32,9 +32,7 @@ def verify(exp_file: Path, actual: str):
     ],
 )
 @pytest.mark.parametrize("use_md_headers", [False, True])
-def test_markdown_summary_outline(
-    mode: MarkdownSummaryMode, use_md_headers: bool
-):
+def test_markdown_summary_outline(mode: MarkdownSummaryMode, use_md_headers: bool):
     # Build a representative document with title, headers, text, lists, table, and pictures
     doc = _construct_doc()
 
@@ -55,4 +53,3 @@ def test_markdown_summary_outline(
         / f"constructed_mdsum_{mode.value}_mdhdr_{str(use_md_headers).lower()}.gt.md"
     )
     verify(exp_file=exp_path, actual=outline)
-
