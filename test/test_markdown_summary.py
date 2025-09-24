@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from docling_core.transforms.serializer.markdown_summary import (
+from docling_core.experimental.serializer.markdown_summary import (
     MarkdownSummaryMode,
     MarkdownSummaryParams,
     MarkdownSummarySerializer,

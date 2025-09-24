@@ -35,8 +35,8 @@ def test_ccs_document():
             # try as well as dictionary
             doc = json.loads(file_json)
             CCSDocument.model_validate(doc)
-        except ValidationError as e:
-            print(f"Validation error in file {filename}:\n{e.json()}")
+        except ValidationError:
+            # print(f"Validation error in file {filename}:\n{e.json()}")
             raise
 
     # check doc-error-1 is invalid in logs
@@ -47,7 +47,7 @@ def test_ccs_document():
         assert False, f"Data in file {filename} should be invalid for CCSDocument model"
     except ValidationError as e:
         for error in e.errors():
-            print(type(error))
+            # print(type(error))
             assert all(
                 item in error["loc"] for item in ("description", "logs")
             ), f"Data in file {filename} should fail in logs"
