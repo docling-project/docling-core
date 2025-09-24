@@ -14,17 +14,17 @@ LISTE DE VÉRIFICATION DES EXIGENCES RELATIVES À LA SÉCURITÉ (LVERS)
 
 5. a) Will the supplier require access to Controlled Goods? Le fournisseur aura-t-il accès à des marchandises contrôlées?
 
-[x] Yes Oui
+- [x] Yes Oui
 
-[ ] No Non
+- [ ] No Non
 
 5. b) Will the supplier require access to unclassified military technical data subject to the provisions of the Technical Data Control Regulations?
 
 - Le fournisseur aura-t-il accès à des données techniques militaires non classifiées qui sont assujetties aux dispositions du Règlement sur le contrôle des données techniques?
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
 6. Indicate the type of access required - Indiquer le type d'accès requis
 
@@ -40,9 +40,9 @@ LISTE DE VÉRIFICATION DES EXIGENCES RELATIVES À LA SÉCURITÉ (LVERS)
 
 6. c) Is this a commercial courier or delivery requirement with no overnight storage? S'agit-il d'un contrat de messagerie ou de livraison commerciales sans entreposage de nuit?
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
 7. a) Indicate the type of information that the supplier will be required to access / Indiquer le type d'information auquel le fournisseur devra avoir accès
 
@@ -52,15 +52,15 @@ Canada
 
 Foreign / Étranger
 
-[ ] NATO / OTAN
+- [ ] NATO / OTAN
 
 No release restrictions
 
-[ ] Aucune restriction relative à la diffusion
+- [ ] Aucune restriction relative à la diffusion
 
 Not releasable À ne pas diffuser
 
-[ ] Restricted to: / Limité à :
+- [ ] Restricted to: / Limité à :
 
 Specify country(ies): / Préciser le(s) pays :
 
@@ -68,7 +68,7 @@ All NATO countries Tous les pays de l'OTAN
 
 Specify country(ies): / Préciser le(s) pays :
 
-[ ] No release restrictions Aucune restriction relative à la diffusion
+- [ ] No release restrictions Aucune restriction relative à la diffusion
 
 Restricted to: / Limité à :
 
@@ -82,7 +82,7 @@ PROTECTED A PROTÉGÉ A
 
 PROTECTED B PROTÉGÉ B
 
-[ ] PROTECTED C PROTÉGÉ C
+- [ ] PROTECTED C PROTÉGÉ C
 
 CONFIDENTIAL
 
@@ -90,31 +90,31 @@ CONFIDENTIEL
 
 SECRET SECRET
 
-[ ] TOP SECRET TRÈS SECRET
+- [ ] TOP SECRET TRÈS SECRET
 
-[ ] TOP SECRET (SIGINT) TRÈS SECRET (SIGINT)
+- [ ] TOP SECRET (SIGINT) TRÈS SECRET (SIGINT)
 
 NATO UNCLASSIFIED
 
-[ ] NATO NON CLASSIFIÉ
+- [ ] NATO NON CLASSIFIÉ
 
-[ ] NATO RESTRICTED NATO DIFFUSION RESTREINTE
+- [ ] NATO RESTRICTED NATO DIFFUSION RESTREINTE
 
 NATO CONFIDENTIAL
 
-[ ] NATO CONFIDENTIEL
+- [ ] NATO CONFIDENTIEL
 
 PROTECTED A
 
-[ ] PROTÉGÉ A
+- [ ] PROTÉGÉ A
 
-[ ] PROTECTED B
+- [ ] PROTECTED B
 
 PROTÉGÉ B
 
 PROTECTED C
 
-[ ] PROTÉGÉ C
+- [ ] PROTÉGÉ C
 
 CONFIDENTIAL CONFIDENTIEL
 
@@ -122,35 +122,35 @@ SECRET SECRET
 
 TOP SECRET
 
-[ ] TRÈS SECRET
+- [ ] TRÈS SECRET
 
 TOP SECRET (SIGINT)
 
-[ ] TRÈS SECRET (SIGINT)
+- [ ] TRÈS SECRET (SIGINT)
 
 NATO SECRET
 
-[ ] NATO SECRET
+- [ ] NATO SECRET
 
 COSMIC TOP SECRET
 
-[ ] COSMIC TRÈS SECRET
+- [ ] COSMIC TRÈS SECRET
 
 6. a) Will the supplier and its employees require access to PROTECTED and/or CLASSIFIED information or assets? Le fournisseur ainsi que les employés auront-ils accès à des renseignements ou à des biens PROTÉGÉS et/ou CLASSIFIÉS? (Specify the level of access using the chart in Question 7. c)
 
 - (Préciser le niveau d'accès en utilisant le tableau qui se trouve à la question 7. c)
 
-[x] Yes Oui
+- [x] Yes Oui
 
-[ ] No Non
+- [ ] No Non
 
 6. b) Will the supplier and its employees (e.g. cleaners, maintenance personnel) require access to restricted access areas? No access to PROTECTED and/or CLASSIFIED information or assets is permitted. Le fournisseur et ses employés (p.ex. nettoyeurs, personnel d'entretien) auront-ils accès à des zones d'accès restreintes? L'accès à des renseignements ou à des biens PROTÉGÉS et/ou CLASSIFIÉS n'est pas autorisé.
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
-[ ] not applicable
+- [ ] not applicable
 
 The Contractor will perform tasks applicable to the Land Intelligence, Surveillance, Reconnaissance Modernization (LISRM) Project.
 
@@ -172,9 +172,9 @@ Contract Number / Numéro du contrat
 
 Dans l'affirmative, indiquer le niveau de sensibilité :
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
 11. d) Will the supplier be required to use its IT systems to electronically process, produce or store PROTECTED and/or CLASSIFIED information or data?
 
@@ -184,13 +184,13 @@ Dans l'affirmative, indiquer le niveau de sensibilité :
 
 ## INFORMATION TECHNOLOGY (IT) MEDIA / SUPPORT RELATIF À LA TECHNOLOGIE DE L'INFORMATION (TI)
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
 11. c) Will the production (manufacture, and/or repair and/or modification) of PROTECTED and/or CLASSIFIED material or equipment occur at the supplier's site or premises?
 
@@ -200,9 +200,9 @@ PROTÉGÉ et/ou CLASSIFIÉ?
 
 ## PRODUCTION
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
 ## PART C - SAFEGUARDS (SUPPLIER) / PARTIE C - MESURES DE PROTECTION (FOURNISSEUR)
 
@@ -216,13 +216,13 @@ Le fournisseur sera-t-il tenu de protéger des renseignements ou des biens COMSE
 
 INFORMATION / ASSETS / RENSEIGNEMENTS / BIENS
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
 10. b) May unscreened personnel be used for portions of the work?
 
@@ -232,35 +232,35 @@ If Yes, will unscreened personnel be escorted:
 
 Dans l'affirmative, le personnel en question sera-t-il escorté?
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
 ## PART B - PERSONNEL (SUPPLIER) / PARTIE B - PERSONNEL (FOURNISSEUR)
 
 10. a) Personnel security screening level required / Niveau de contrôle de la sécurité du personnel requis
 
-[x] RELIABILITY STATUS COTE DE FIABILITÉ
+- [x] RELIABILITY STATUS COTE DE FIABILITÉ
 
-[ ] CONFIDENTIAL CONFIDENTIEL
+- [ ] CONFIDENTIAL CONFIDENTIEL
 
-[ ] SECRET SECRET
+- [ ] SECRET SECRET
 
-[ ] TOP SECRET TRÈS SECRET
+- [ ] TOP SECRET TRÈS SECRET
 
-[ ] NATO CONFIDENTIAL NATO CONFIDENTIEL
+- [ ] NATO CONFIDENTIAL NATO CONFIDENTIEL
 
-[ ] NATO SECRET NATO SECRET
+- [ ] NATO SECRET NATO SECRET
 
-[ ] COSMIC TOP SECRET COSMIC TRÈS SECRET
+- [ ] COSMIC TOP SECRET COSMIC TRÈS SECRET
 
-[ ] SITE ACCESS ACCÈS AUX EMPLACEMENTS
+- [ ] SITE ACCESS ACCÈS AUX EMPLACEMENTS
 
-[ ] TOP SECRET - SIGINT TRÈS SECRET - SIGINT
+- [ ] TOP SECRET - SIGINT TRÈS SECRET - SIGINT
 
 - 9.
 
@@ -270,9 +270,9 @@ Short Title(s) of material / Titre(s) abrégé(s) du matériel :
 
 Document Number / Numéro du document :
 
-[ ] Yes Oui
+- [ ] Yes Oui
 
-[x] No Non
+- [x] No Non
 
 Special comments:
 
@@ -282,7 +282,7 @@ NOTE: If multiple levels of screening are identified, a Security Classification 
 
 REMARQUE : Si plusieurs niveaux de contrôle de sécurité sont requis, un guide de classification de la sécurité doit être fourni.
 
-[ ] Not applicable
+- [ ] Not applicable
 
 Security Classification / Classification de sécurité
 
