@@ -194,18 +194,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "label": {
           "const": "code",
           "default": "code",
@@ -487,18 +475,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "label": {
           "const": "form",
           "default": "form",
@@ -621,18 +597,6 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
-        },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
         },
         "label": {
           "const": "formula",
@@ -843,18 +807,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -960,18 +912,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -1021,18 +961,6 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
-        },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
         },
         "label": {
           "const": "key_value_region",
@@ -1126,18 +1054,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -1187,18 +1103,6 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
-        },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
         },
         "label": {
           "const": "list_item",
@@ -1436,18 +1340,6 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
-        },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
         },
         "label": {
           "default": "picture",
@@ -1950,18 +1842,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "label": {
           "const": "section_header",
           "default": "section_header",
@@ -2185,18 +2065,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "label": {
           "default": "table",
           "enum": [
@@ -2314,18 +2182,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "label": {
           "enum": [
             "caption",
@@ -2429,18 +2285,6 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
-        "summary": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Summary"
-        },
         "label": {
           "const": "title",
           "default": "title",
@@ -2538,7 +2382,6 @@
         "parent": null,
         "children": [],
         "content_layer": "furniture",
-        "summary": null,
         "name": "_root_",
         "label": "unspecified"
       },
@@ -2551,7 +2394,6 @@
         "parent": null,
         "children": [],
         "content_layer": "body",
-        "summary": null,
         "name": "_root_",
         "label": "unspecified"
       }
