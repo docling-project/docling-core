@@ -1,6 +1,7 @@
 annotations: []
 captions: []
 children: []
+content_layer: body
 footnotes: []
 image: null
 label: picture
@@ -8,4 +9,4 @@ parent: null
 prov: []
 references: []
 self_ref: '#'
-content_layer: body
+summary: null

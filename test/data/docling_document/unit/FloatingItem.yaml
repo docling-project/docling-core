@@ -1,5 +1,6 @@
 captions: []
 children: []
+content_layer: body
 footnotes: []
 image: null
 label: text
@@ -7,4 +8,4 @@ parent: null
 prov: []
 references: []
 self_ref: '#'
-content_layer: body
+summary: null
