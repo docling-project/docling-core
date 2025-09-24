@@ -1189,6 +1189,7 @@ class TextItem(DocItem):
         DocItemLabel.REFERENCE,
         DocItemLabel.TEXT,
         DocItemLabel.EMPTY_VALUE,
+        DocItemLabel.FORM_KEY,
     ]
 
     orig: str  # untreated representation
@@ -1921,14 +1922,55 @@ class KeyValueItem(FloatingItem):
         text = serializer.serialize(item=self).text
         return text
 
+class CheckboxItem(ListItem):
+    """FormTextItem."""
+    
+    label: typing.Literal[DocItemLabel.CHECKBOX] = DocItemLabel.CHECKBOX
 
+    checked: bool = False
+
+"""
+class FormHeaderItem(SectionHeaderItem):
+    
+    label: typing.Literal[DocItemLabel.FORM_HEADER] = DocItemLabel.FORM_HEADER
+
+class FormTextItem(TextItem):
+    
+    label: typing.Literal[DocItemLabel.FORM_TEXT] = DocItemLabel.FORM_TEXT
+"""
+
+class FormListItem(DocItem):
+    """FormListItem."""
+    
+    label: typing.Literal[DocItemLabel.FORM_LISTITEM] = DocItemLabel.FORM_LISTITEM
+
+    marker: Optional[TextItem] = None
+    
+    key: TextItem
+
+    def add_value(self, item: Union[CheckboxItem, ListItem, TextItem]) -> NodeItem:    
+        item.parent = self.get_ref()
+        self.children.append(item)
+        
+        return item
+
+
+    
 class FormItem(FloatingItem):
     """FormItem."""
 
     label: typing.Literal[DocItemLabel.FORM] = DocItemLabel.FORM
 
-    graph: GraphData
+    def add(self, item: Union["FormItem", SectionHeaderItem, TextItem, FormListItem]) -> NodeItem:
+        item.parent = self.get_ref()
+        self.children.append(item.get_ref())
+        
+        return item
 
+    def add_listitem(self, doc: DoclingDocument, prov: Optional[ProvenanceItem] = None) -> NodeItem:
+        li = FormListItem(self_ref=self.get_ref())
+        return item
+        
 
 ContentItem = Annotated[
     Union[
@@ -1941,6 +1983,7 @@ ContentItem = Annotated[
         PictureItem,
         TableItem,
         KeyValueItem,
+        FormItem,
     ],
     Field(discriminator="label"),
 ]
@@ -2988,7 +3031,7 @@ class DoclingDocument(BaseModel):
 
     def add_form(
         self,
-        graph: GraphData,
+        form: Optional[FormItem] = None,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
     ):
@@ -3004,11 +3047,12 @@ class DoclingDocument(BaseModel):
         form_index = len(self.form_items)
         cref = f"#/form_items/{form_index}"
 
-        form_item = FormItem(
-            graph=graph,
-            self_ref=cref,
-            parent=parent.get_ref(),
-        )
+        if form is None:
+            form = FormItem(
+                self_ref=cref,
+                parent=parent.get_ref(),
+            )
+
         if prov:
             form_item.prov.append(prov)
 
