@@ -106,6 +106,7 @@ def test_md_cross_page_list_page_break():
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
+
 def test_md_checkboxes():
     src = Path("./test/data/doc/checkboxes.json")
     doc = DoclingDocument.load_from_json(src)
