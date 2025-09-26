@@ -113,6 +113,23 @@ def test_md_cross_page_list_page_break():
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
+def test_md_checkboxes():
+    src = Path("./test/data/doc/checkboxes.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            page_break_placeholder="<!-- page break -->",
+            labels=_DEFAULT_LABELS - {DocItemLabel.PICTURE},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}.gt.md", actual=actual)
+
+
 def test_md_cross_page_list_page_break_none():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
