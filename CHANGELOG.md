@@ -1,3 +1,9 @@
+## [v2.48.3](https://github.com/docling-project/docling-core/releases/tag/v2.48.3) - 2025-09-29
+
+### Fix
+
+* Pin larger range of typer ([#394](https://github.com/docling-project/docling-core/issues/394)) ([`26d21e3`](https://github.com/docling-project/docling-core/commit/26d21e3b522998b2bb30519265764aac5d8d0515))
+
 ## [v2.48.2](https://github.com/docling-project/docling-core/releases/tag/v2.48.2) - 2025-09-22
 
 ### Fix
