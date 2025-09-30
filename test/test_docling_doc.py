@@ -1973,7 +1973,7 @@ def test_export_with_precision():
             yaml.dump(act_data, f, default_flow_style=False)
     else:
         with open(exp_file, "r", encoding="utf-8") as f:
-            exp_data = yaml.load(f, Loader=yaml.FullLoader)
+            exp_data = yaml.load(f, Loader=yaml.SafeLoader)
         assert act_data == exp_data
 
 
