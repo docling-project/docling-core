@@ -145,7 +145,7 @@ class TripletTableSerializer(BaseTableSerializer):
             parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            table_df = item.export_to_dataframe()
+            table_df = item.export_to_dataframe(doc)
             if table_df.shape[0] >= 1 and table_df.shape[1] >= 2:
 
                 # copy header as first row and shift all rows by one

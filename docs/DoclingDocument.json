@@ -1780,6 +1780,11 @@
           "title": "Row Section",
           "type": "boolean"
         },
+        "fillable": {
+          "default": false,
+          "title": "Fillable",
+          "type": "boolean"
+        },
         "ref": {
           "$ref": "#/$defs/RefItem"
         }
@@ -1978,6 +1983,11 @@
         "row_section": {
           "default": false,
           "title": "Row Section",
+          "type": "boolean"
+        },
+        "fillable": {
+          "default": false,
+          "title": "Fillable",
           "type": "boolean"
         }
       },
@@ -2345,7 +2355,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.6.0",
+      "default": "1.7.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"

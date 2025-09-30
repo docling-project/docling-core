@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.47.0"  # DO NOT EDIT, updated automatically
+version = "2.48.3"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -43,7 +43,7 @@ dependencies = [
     'pillow (>=10.0.0,<12.0.0)',
     'pyyaml (>=5.1,<7.0.0)',
     'typing-extensions (>=4.12.2,<5.0.0)',
-    'typer (>=0.12.5,<0.17.0)',
+    'typer (>=0.12.5,<0.20.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
 ]
 

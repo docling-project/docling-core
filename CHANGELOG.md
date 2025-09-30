@@ -1,3 +1,33 @@
+## [v2.48.3](https://github.com/docling-project/docling-core/releases/tag/v2.48.3) - 2025-09-29
+
+### Fix
+
+* Pin larger range of typer ([#394](https://github.com/docling-project/docling-core/issues/394)) ([`26d21e3`](https://github.com/docling-project/docling-core/commit/26d21e3b522998b2bb30519265764aac5d8d0515))
+
+## [v2.48.2](https://github.com/docling-project/docling-core/releases/tag/v2.48.2) - 2025-09-22
+
+### Fix
+
+* Expose escape_html param to DoclingDocument md serialization ([#388](https://github.com/docling-project/docling-core/issues/388)) ([`dd6ebc3`](https://github.com/docling-project/docling-core/commit/dd6ebc34402ee0b7d3a6d23fd00828bed2111870))
+
+## [v2.48.1](https://github.com/docling-project/docling-core/releases/tag/v2.48.1) - 2025-09-11
+
+### Fix
+
+* **markdown:** Fix single-row table serialization ([#385](https://github.com/docling-project/docling-core/issues/385)) ([`9df7208`](https://github.com/docling-project/docling-core/commit/9df72083c077e328dc4e9c05d2f2c09c7947b43b))
+
+## [v2.48.0](https://github.com/docling-project/docling-core/releases/tag/v2.48.0) - 2025-09-09
+
+### Feature
+
+* Introduction of fillable TableCell ([#384](https://github.com/docling-project/docling-core/issues/384)) ([`b13267f`](https://github.com/docling-project/docling-core/commit/b13267f18be165091149e99c145ec4de42f72e71))
+* Add support for heading with inline in HTML & DocTags ([#379](https://github.com/docling-project/docling-core/issues/379)) ([`b60ac19`](https://github.com/docling-project/docling-core/commit/b60ac192ef7b31574c2b3b55be9e9a00fd6c8479))
+
+### Fix
+
+* Add `doc` param to all `export_to_dataframe()` calls ([#380](https://github.com/docling-project/docling-core/issues/380)) ([`0512f44`](https://github.com/docling-project/docling-core/commit/0512f4473dfc4827bf2ff3fa5f70116ed916b39c))
+* Fix handling of generic groups in rich table cells ([#383](https://github.com/docling-project/docling-core/issues/383)) ([`2dc57c1`](https://github.com/docling-project/docling-core/commit/2dc57c1769e9e269e6afd05fc559d924799247cc))
+
 ## [v2.47.0](https://github.com/docling-project/docling-core/releases/tag/v2.47.0) - 2025-09-02
 
 ### Feature

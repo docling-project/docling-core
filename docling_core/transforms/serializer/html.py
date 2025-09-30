@@ -55,6 +55,7 @@ from docling_core.types.doc.document import (
     FormItem,
     FormulaItem,
     GraphData,
+    GroupItem,
     ImageRef,
     InlineGroup,
     KeyValueItem,
@@ -787,21 +788,30 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
     """HTML-specific fallback serializer."""
 
     @override
-    def serialize(self, *, item: NodeItem, **kwargs: Any) -> SerializationResult:
+    def serialize(
+        self,
+        *,
+        item: NodeItem,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
-        if isinstance(item, DocItem):
+        if isinstance(item, GroupItem):
+            parts = doc_serializer.get_parts(item=item, **kwargs)
+            text_res = "\n".join([p.text for p in parts if p.text])
+            return create_ser_result(text=text_res, span_source=parts)
+        else:
             return create_ser_result(
                 text=f"<!-- Unhandled item type: {item.__class__.__name__} -->",
-                span_source=item,
+                span_source=item if isinstance(item, DocItem) else [],
             )
-        else:
-            # For group items, we don't generate any markup
-            return create_ser_result()
 
 
 class HTMLAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
     """HTML-specific annotation serializer."""
 
+    @override
     def serialize(
         self,
         *,

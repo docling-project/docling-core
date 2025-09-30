@@ -60,7 +60,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.6.0"
+CURRENT_VERSION: Final = "1.7.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -310,6 +310,7 @@ class TableCell(BaseModel):
     column_header: bool = False
     row_header: bool = False
     row_section: bool = False
+    fillable: bool = False
 
     @model_validator(mode="before")
     @classmethod
@@ -4385,6 +4386,7 @@ class DoclingDocument(BaseModel):
         to_element: int = sys.maxsize,
         labels: Optional[set[DocItemLabel]] = None,
         strict_text: bool = False,
+        escape_html: bool = True,
         escaping_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
@@ -4413,6 +4415,7 @@ class DoclingDocument(BaseModel):
             to_element=to_element,
             labels=labels,
             strict_text=strict_text,
+            escape_html=escape_html,
             escape_underscores=escaping_underscores,
             image_placeholder=image_placeholder,
             image_mode=image_mode,
@@ -4434,6 +4437,7 @@ class DoclingDocument(BaseModel):
         to_element: int = sys.maxsize,
         labels: Optional[set[DocItemLabel]] = None,
         strict_text: bool = False,
+        escape_html: bool = True,
         escape_underscores: bool = True,
         image_placeholder: str = "<!-- image -->",
         enable_chart_tables: bool = True,
@@ -4464,6 +4468,8 @@ class DoclingDocument(BaseModel):
         :type labels: Optional[set[DocItemLabel]] = None
         :param strict_text: Deprecated.
         :type strict_text: bool = False
+        :param escape_html: bool: Whether to escape HTML reserved characters in the
+            text content of the document. (Default value = True).
         :param escape_underscores: bool: Whether to escape underscores in the
             text content of the document. (Default value = True).
         :type escape_underscores: bool = True
@@ -4510,6 +4516,7 @@ class DoclingDocument(BaseModel):
                 pages={page_no} if page_no is not None else None,
                 start_idx=from_element,
                 stop_idx=to_element,
+                escape_html=escape_html,
                 escape_underscores=escape_underscores,
                 image_placeholder=image_placeholder,
                 enable_chart_tables=enable_chart_tables,

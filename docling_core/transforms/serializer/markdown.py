@@ -46,6 +46,7 @@ from docling_core.types.doc.document import (
     Formatting,
     FormItem,
     FormulaItem,
+    GroupItem,
     ImageRef,
     InlineGroup,
     KeyValueItem,
@@ -336,7 +337,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 ]
                 for row in item.data.grid
             ]
-            if len(rows) > 1 and len(rows[0]) > 0:
+            if len(rows) > 0:
                 try:
                     table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")
                 except ValueError:
@@ -604,13 +605,15 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        if isinstance(item, DocItem):
+        if isinstance(item, GroupItem):
+            parts = doc_serializer.get_parts(item=item, **kwargs)
+            text_res = "\n\n".join([p.text for p in parts if p.text])
+            return create_ser_result(text=text_res, span_source=parts)
+        else:
             return create_ser_result(
                 text="<!-- missing-text -->",
-                span_source=item,
+                span_source=item if isinstance(item, DocItem) else [],
             )
-        else:
-            return create_ser_result()
 
 
 class MarkdownDocSerializer(DocSerializer):

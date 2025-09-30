@@ -22,6 +22,15 @@ groups:
   parent:
     $ref: '#/tables/0'
   self_ref: '#/groups/0'
+- children:
+  - $ref: '#/texts/3'
+  - $ref: '#/texts/4'
+  content_layer: body
+  label: unspecified
+  name: group
+  parent:
+    $ref: '#/tables/0'
+  self_ref: '#/groups/1'
 key_value_items: []
 name: ''
 pages: {}
@@ -34,6 +43,7 @@ tables:
   - $ref: '#/texts/0'
   - $ref: '#/groups/0'
   - $ref: '#/tables/1'
+  - $ref: '#/groups/1'
   content_layer: body
   data:
     grid:
@@ -41,6 +51,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -51,6 +62,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -61,6 +73,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -71,6 +84,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -81,6 +95,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 3
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -91,6 +106,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 3
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -101,6 +117,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 4
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -111,19 +128,43 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 4
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
         start_col_offset_idx: 1
         start_row_offset_idx: 3
         text: ''
+    - - col_span: 1
+        column_header: false
+        end_col_offset_idx: 1
+        end_row_offset_idx: 5
+        fillable: false
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 0
+        start_row_offset_idx: 4
+        text: ''
+      - col_span: 1
+        column_header: false
+        end_col_offset_idx: 2
+        end_row_offset_idx: 5
+        fillable: false
+        row_header: false
+        row_section: false
+        row_span: 1
+        start_col_offset_idx: 1
+        start_row_offset_idx: 4
+        text: cell 4,1
     num_cols: 2
-    num_rows: 4
+    num_rows: 5
     table_cells:
     - col_span: 1
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -134,6 +175,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -144,6 +186,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 2
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -154,6 +197,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 2
+      fillable: false
       ref:
         $ref: '#/texts/0'
       row_header: false
@@ -166,6 +210,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 3
+      fillable: false
       ref:
         $ref: '#/groups/0'
       row_header: false
@@ -178,6 +223,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 3
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -188,6 +234,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 4
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -198,6 +245,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 4
+      fillable: false
       ref:
         $ref: '#/tables/1'
       row_header: false
@@ -206,6 +254,30 @@ tables:
       start_col_offset_idx: 1
       start_row_offset_idx: 3
       text: ''
+    - col_span: 1
+      column_header: false
+      end_col_offset_idx: 1
+      end_row_offset_idx: 5
+      fillable: false
+      ref:
+        $ref: '#/groups/1'
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 0
+      start_row_offset_idx: 4
+      text: ''
+    - col_span: 1
+      column_header: false
+      end_col_offset_idx: 2
+      end_row_offset_idx: 5
+      fillable: false
+      row_header: false
+      row_section: false
+      row_span: 1
+      start_col_offset_idx: 1
+      start_row_offset_idx: 4
+      text: cell 4,1
   footnotes: []
   label: table
   parent:
@@ -223,6 +295,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -233,6 +306,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -243,6 +317,7 @@ tables:
         column_header: false
         end_col_offset_idx: 3
         end_row_offset_idx: 1
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -253,6 +328,7 @@ tables:
         column_header: false
         end_col_offset_idx: 1
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -263,6 +339,7 @@ tables:
         column_header: false
         end_col_offset_idx: 2
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -273,6 +350,7 @@ tables:
         column_header: false
         end_col_offset_idx: 3
         end_row_offset_idx: 2
+        fillable: false
         row_header: false
         row_section: false
         row_span: 1
@@ -286,6 +364,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -296,6 +375,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -306,6 +386,7 @@ tables:
       column_header: false
       end_col_offset_idx: 3
       end_row_offset_idx: 1
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -316,6 +397,7 @@ tables:
       column_header: false
       end_col_offset_idx: 1
       end_row_offset_idx: 2
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -326,6 +408,7 @@ tables:
       column_header: false
       end_col_offset_idx: 2
       end_row_offset_idx: 2
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -336,6 +419,7 @@ tables:
       column_header: false
       end_col_offset_idx: 3
       end_row_offset_idx: 2
+      fillable: false
       row_header: false
       row_section: false
       row_span: 1
@@ -387,4 +471,22 @@ texts:
   prov: []
   self_ref: '#/texts/2'
   text: list item 2
-version: 1.6.0
+- children: []
+  content_layer: body
+  label: text
+  orig: Some text in a generic group.
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/3'
+  text: Some text in a generic group.
+- children: []
+  content_layer: body
+  label: text
+  orig: More text in the group.
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/4'
+  text: More text in the group.
+version: 1.7.0

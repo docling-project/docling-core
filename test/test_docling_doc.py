@@ -734,7 +734,7 @@ def _test_export_methods(
     for table in doc.tables:
         table.export_to_markdown()
         table.export_to_html(doc)
-        table.export_to_dataframe()
+        table.export_to_dataframe(doc)
         table.export_to_doctags(doc)
 
     # Test Images export ...
@@ -2102,7 +2102,7 @@ def _construct_rich_table_doc():
 
     table_item = doc.add_table(
         data=TableData(
-            num_rows=4,
+            num_rows=5,
             num_cols=2,
         ),
     )
@@ -2121,6 +2121,17 @@ def _construct_rich_table_doc():
     rich_item_3 = doc.add_table(
         data=TableData(num_rows=2, num_cols=3), parent=table_item
     )
+
+    rich_item_4 = doc.add_group(parent=table_item, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(
+        parent=rich_item_4,
+        text="Some text in a generic group.",
+        label=DocItemLabel.TEXT,
+    )
+    doc.add_text(
+        parent=rich_item_4, text="More text in the group.", label=DocItemLabel.TEXT
+    )
+
     for i in range(rich_item_3.data.num_rows):
         for j in range(rich_item_3.data.num_cols):
             cell = TableCell(
@@ -2157,6 +2168,14 @@ def _construct_rich_table_doc():
                     start_col_offset_idx=j,
                     end_col_offset_idx=j + 1,
                     ref=rich_item_3.get_ref(),
+                )
+            elif i == 4 and j == 0:
+                cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item_4.get_ref(),
                 )
             else:
                 cell = TableCell(
