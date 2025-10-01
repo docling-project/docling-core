@@ -1,3 +1,9 @@
+## [v2.48.4](https://github.com/docling-project/docling-core/releases/tag/v2.48.4) - 2025-10-01
+
+### Fix
+
+* Switch to safe YAML loader ([#396](https://github.com/docling-project/docling-core/issues/396)) ([`3e8d628`](https://github.com/docling-project/docling-core/commit/3e8d628eeeae50f0f8f239c8c7fea773d065d80c))
+
 ## [v2.48.3](https://github.com/docling-project/docling-core/releases/tag/v2.48.3) - 2025-09-29
 
 ### Fix
