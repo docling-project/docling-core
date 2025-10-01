@@ -4354,7 +4354,7 @@ class DoclingDocument(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         with open(filename, encoding="utf-8") as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
+            data = yaml.load(f, Loader=yaml.SafeLoader)
         return DoclingDocument.model_validate(data)
 
     def export_to_dict(
