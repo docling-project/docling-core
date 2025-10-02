@@ -1,0 +1,94 @@
+{
+    "root": [
+        {
+            "text": "package com.acmeair;\n\npublic interface AcmeAirConstants {\n\n\t\n}",
+            "meta": {
+                "part_name": "AcmeAirConstants",
+                "docstring": "",
+                "sha256": 802233348002430704981298093765030369309512619867,
+                "start_line": 2,
+                "end_line": 5,
+                "end_line_signature": 5,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 4721786809665574388,
+                    "filename": "AcmeAirConstants.java",
+                    "uri": "https://github.com/acmeair/acmeair/blob/abc123def456/AcmeAirConstants.java"
+                },
+                "chunk_type": "class"
+            }
+        },
+        {
+            "text": "package com.acmeair.loader;\nimport com.acmeair.entities.Customer.PhoneType;\nimport com.acmeair.entities.Customer;\nimport com.acmeair.entities.CustomerAddress;\nimport com.acmeair.service.CustomerService;\nimport com.acmeair.service.ServiceLocator;\npublic class CustomerLoader {\n\n private CustomerService customerService = ServiceLocator.instance().getService(CustomerService.class);} public void loadCustomers(long numCustomers) {\n\t\tCustomerAddress address = customerService.createAddress(\"123 Main St.\", null, \"Anytown\", \"NC\", \"USA\", \"27617\");\n\t\tfor (long ii = 0; ii < numCustomers; ii++) {\n\t\t\tcustomerService.createCustomer(\"uid\"+ii+\"@email.com\", \"password\", Customer.MemberShipStatus.GOLD, 1000000, 1000, \"919-123-4567\", PhoneType.BUSINESS, address);\n\t\t}\n\t}",
+            "meta": {
+                "part_name": "loadCustomers",
+                "docstring": "",
+                "sha256": 216694729768327235646074424271588504079937437501,
+                "start_line": 29,
+                "end_line": 34,
+                "end_line_signature": 29,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 16652446628586613798,
+                    "filename": "CustomerLoader.java",
+                    "uri": "https://github.com/acmeair/acmeair/blob/abc123def456/CustomerLoader.java"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "package com.acmeair.loader;\nimport com.acmeair.entities.AirportCodeMapping;\nimport com.acmeair.service.FlightService;\nimport com.acmeair.service.ServiceLocator;\nimport java.io.InputStream;\nimport java.io.InputStreamReader;\nimport java.io.LineNumberReader;\nimport java.math.*;\nimport java.util.*;\npublic class FlightLoader {\n\n private static final int MAX_FLIGHTS_PER_SEGMENT = 30; private FlightService flightService = ServiceLocator.instance().getService(FlightService.class);} public void loadFlights() throws Exception {\n\t\tInputStream csvInputStream = FlightLoader.class.getResourceAsStream(\"/mileage.csv\");\n\t\t\n\t\tLineNumberReader lnr = new LineNumberReader(new InputStreamReader(csvInputStream));\n\t\tString line1 = lnr.readLine();\n\t\tStringTokenizer st = new StringTokenizer(line1, \",\");\n\t\tArrayList<AirportCodeMapping> airports = new ArrayList<AirportCodeMapping>();\n\t\t\n\t\t// read the first line which are airport names\n\t\twhile (st.hasMoreTokens()) {\n\t\t\tAirportCodeMapping acm = flightService.createAirportCodeMapping(null, st.nextToken());\n\t\t//\tacm.setAirportName(st.nextToken());\n\t\t\tairports.add(acm);\n\t\t}\n\t\t// read the second line which contains matching airport codes for the first line\n\t\tString line2 = lnr.readLine();\n\t\tst = new StringTokenizer(line2, \",\");\n\t\tint ii = 0;\n\t\twhile (st.hasMoreTokens()) {\n\t\t\tString airportCode = st.nextToken();\n\t\t\tairports.get(ii).setAirportCode(airportCode);\n\t\t\tii++;\n\t\t}\n\t\t// read the other lines which are of format:\n\t\t// airport name, aiport code, distance from this airport to whatever airport is in the column from lines one and two\n\t\tString line;\n\t\tint flightNumber = 0;\n\t\twhile (true) {\n\t\t\tline = lnr.readLine();\n\t\t\tif (line == null || line.trim().equals(\"\")) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tst = new StringTokenizer(line, \",\");\n\t\t\tString airportName = st.nextToken();\n\t\t\tString airportCode = st.nextToken();\n\t\t\tif (!alreadyInCollection(airportCode, airports)) {\n\t\t\t\tAirportCodeMapping acm = flightService.createAirportCodeMapping(airportCode, airportName);\n\t\t\t\tairports.add(acm);\n\t\t\t}\n\t\t\tint indexIntoTopLine = 0;\n\t\t\twhile (st.hasMoreTokens()) {\n\t\t\t\tString milesString = st.nextToken();\n\t\t\t\tif (milesString.equals(\"NA\")) {\n\t\t\t\t\tindexIntoTopLine++;\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\t\t\t\tint miles = Integer.parseInt(milesString);\n\t\t\t\tString toAirport = airports.get(indexIntoTopLine).getAirportCode();\n\t\t\t\tString flightId = \"AA\" + flightNumber;\t\t\t\n\t\t\t\tflightService.storeFlightSegment(flightId, airportCode, toAirport, miles);\n\t\t\t\tDate now = new Date();\n\t\t\t\tfor (int daysFromNow = 0; daysFromNow < MAX_FLIGHTS_PER_SEGMENT; daysFromNow++) {\n\t\t\t\t\tCalendar c = Calendar.getInstance();\n\t\t\t\t\tc.setTime(now);\n\t\t\t\t\tc.set(Calendar.HOUR_OF_DAY, 0);\n\t\t\t\t    c.set(Calendar.MINUTE, 0);\n\t\t\t\t    c.set(Calendar.SECOND, 0);\n\t\t\t\t    c.set(Calendar.MILLISECOND, 0);\n\t\t\t\t\tc.add(Calendar.DATE, daysFromNow);\n\t\t\t\t\tDate departureTime = c.getTime();\n\t\t\t\t\tDate arrivalTime = getArrivalTime(departureTime, miles);\n\t\t\t\t\tflightService.createNewFlight(flightId, departureTime, arrivalTime, new BigDecimal(500), new BigDecimal(200), 10, 200, \"B747\");\n\t\t\t\t\t\n\t\t\t\t}\n\t\t\t\tflightNumber++;\n\t\t\t\tindexIntoTopLine++;\n\t\t\t}\n\t\t}\n\t\t\n\t\tfor (int jj = 0; jj < airports.size(); jj++) {\n\t\t\tflightService.storeAirportMapping(airports.get(jj));\n\t\t}\n\t\tlnr.close();\n\t}",
+            "meta": {
+                "part_name": "loadFlights",
+                "docstring": "",
+                "sha256": 1402513010551547847601046795871134853016900337764,
+                "start_line": 37,
+                "end_line": 110,
+                "end_line_signature": 37,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 13929779701984022643,
+                    "filename": "FlightLoader.java",
+                    "uri": "https://github.com/acmeair/acmeair/blob/abc123def456/FlightLoader.java"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "package com.acmeair.loader;\nimport com.acmeair.service.FlightService;\nimport com.acmeair.service.ServiceLocator;\nimport java.math.*;\nimport java.util.*;\npublic class FlightLoader {\n\n private static final int MAX_FLIGHTS_PER_SEGMENT = 30; private FlightService flightService = ServiceLocator.instance().getService(FlightService.class);} private static Date getArrivalTime(Date departureTime, int mileage) {\n\t\tdouble averageSpeed = 600.0; // 600 miles/hours\n\t\tdouble hours = (double) mileage / averageSpeed; // miles / miles/hour = hours\n\t\tdouble partsOfHour = hours % 1.0;\n\t\tint minutes = (int)(60.0 * partsOfHour);\n\t\tCalendar c = Calendar.getInstance();\n\t\tc.setTime(departureTime);\n\t\tc.add(Calendar.HOUR, (int)hours);\n\t\tc.add(Calendar.MINUTE, minutes);\n\t\treturn c.getTime();\n\t}",
+            "meta": {
+                "part_name": "getArrivalTime",
+                "docstring": "",
+                "sha256": 498682806925350255052209347840878724203772545481,
+                "start_line": 112,
+                "end_line": 122,
+                "end_line_signature": 112,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 13929779701984022643,
+                    "filename": "FlightLoader.java",
+                    "uri": "https://github.com/acmeair/acmeair/blob/abc123def456/FlightLoader.java"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "package com.acmeair.loader;\nimport com.acmeair.entities.AirportCodeMapping;\nimport com.acmeair.service.FlightService;\nimport com.acmeair.service.ServiceLocator;\nimport java.math.*;\nimport java.util.*;\npublic class FlightLoader {\n\n private static final int MAX_FLIGHTS_PER_SEGMENT = 30; private FlightService flightService = ServiceLocator.instance().getService(FlightService.class);} static private boolean alreadyInCollection(String airportCode, ArrayList<AirportCodeMapping> airports) {\n\t\tfor (int ii = 0; ii < airports.size(); ii++) {\n\t\t\tif (airports.get(ii).getAirportCode().equals(airportCode)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}",
+            "meta": {
+                "part_name": "alreadyInCollection",
+                "docstring": "",
+                "sha256": 846281520348793854081127747386039365962060314516,
+                "start_line": 124,
+                "end_line": 131,
+                "end_line_signature": 124,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 13929779701984022643,
+                    "filename": "FlightLoader.java",
+                    "uri": "https://github.com/acmeair/acmeair/blob/abc123def456/FlightLoader.java"
+                },
+                "chunk_type": "function"
+            }
+        }
+    ]
+}
