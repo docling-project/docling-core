@@ -4607,6 +4607,46 @@ class DoclingDocument(BaseModel):
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(html_out)
 
+    def save_as_latex(
+        self,
+        filename: Union[str, Path],
+        artifacts_dir: Optional[Path] = None,
+        from_element: int = 0,
+        to_element: int = sys.maxsize,
+        labels: Optional[set[DocItemLabel]] = None,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        page_no: Optional[int] = None,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        include_annotations: bool = True,
+        page_break_command: Optional[str] = None,
+    ):
+        """Save to LaTeX."""
+        if isinstance(filename, str):
+            filename = Path(filename)
+
+        artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
+
+        if image_mode == ImageRefMode.REFERENCED:
+            os.makedirs(artifacts_dir, exist_ok=True)
+
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir, image_mode, page_no, reference_path=reference_path
+        )
+
+        latex_out = new_doc.export_to_latex(
+            from_element=from_element,
+            to_element=to_element,
+            labels=labels,
+            image_mode=image_mode,
+            page_no=page_no,
+            included_content_layers=included_content_layers,
+            include_annotations=include_annotations,
+            page_break_command=page_break_command,
+        )
+
+        with open(filename, "w", encoding="utf-8") as fw:
+            fw.write(latex_out)
+
     def _get_output_paths(
         self, filename: Union[str, Path], artifacts_dir: Optional[Path] = None
     ) -> Tuple[Path, Optional[Path]]:
@@ -4696,6 +4736,57 @@ class DoclingDocument(BaseModel):
             params.html_head = None
 
         serializer = HTMLDocSerializer(
+            doc=self,
+            params=params,
+        )
+        ser_res = serializer.serialize()
+
+        return ser_res.text
+
+    def export_to_latex(
+        self,
+        from_element: int = 0,
+        to_element: int = sys.maxsize,
+        labels: Optional[set[DocItemLabel]] = None,
+        enable_chart_tables: bool = True,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        page_no: Optional[int] = None,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        include_annotations: bool = True,
+        page_break_command: Optional[str] = None,
+        indent: int = 2,
+        image_placeholder: str = "% image",
+        escape_latex: bool = True,
+    ) -> str:
+        """Serialize to LaTeX."""
+        from docling_core.transforms.serializer.latex import (
+            LaTeXDocSerializer,
+            LaTeXParams,
+        )
+
+        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
+        my_layers = (
+            included_content_layers
+            if included_content_layers is not None
+            else DEFAULT_CONTENT_LAYERS
+        )
+
+        params = LaTeXParams(
+            labels=my_labels,
+            layers=my_layers,
+            pages={page_no} if page_no is not None else None,
+            start_idx=from_element,
+            stop_idx=to_element,
+            image_mode=image_mode,
+            enable_chart_tables=enable_chart_tables,
+            include_annotations=include_annotations,
+            page_break_command=page_break_command,
+            indent=indent,
+            image_placeholder=image_placeholder,
+            escape_latex=escape_latex,
+        )
+
+        serializer = LaTeXDocSerializer(
             doc=self,
             params=params,
         )

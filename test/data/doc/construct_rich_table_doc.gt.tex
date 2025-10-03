@@ -1,0 +1,12 @@
+\section*{Rich tables}
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+cell 0,0 & cell 0,1 \\ \hline
+cell 1,0 & \textit{text in italic} \\ \hline
+\begin{itemize} \item list item 1 \item list item 2 \end{itemize} & cell 2,1 \\ \hline
+cell 3,0 & \begin{table}[h] \begin{tabular}{|l|l|l|} \hline inner cell 0,0 & inner cell 0,1 & inner cell 0,2 \\ \hline inner cell 1,0 & inner cell 1,1 & inner cell 1,2 \\ \hline \end{tabular} \end{table} \\ \hline
+Some text in a generic group.  More text in the group. & cell 4,1 \\ \hline
+\end{tabular}
+\end{table}
