@@ -1,0 +1,175 @@
+{
+    "root": [
+        {
+            "text": "import Model from \"./base/Model\";\nclass Comment extends Model\n  public get isResolved(): boolean {\n    return !!this.resolvedAt || !!this.parentComment?.isResolved;\n  }",
+            "meta": {
+                "part_name": "isResolved",
+                "docstring": "",
+                "sha256": 1268395403700592019784717617222283727541873921424,
+                "start_line": 100,
+                "end_line": 102,
+                "end_line_signature": 102,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 13313267827846711454,
+                    "filename": "Comment.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/Comment.ts"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "import Model from \"./base/Model\";\nclass Comment extends Model\n  public get isReply() {\n    return !!this.parentCommentId;\n  }",
+            "meta": {
+                "part_name": "isReply",
+                "docstring": "",
+                "sha256": 1365364938419899639010891183359481253853232355963,
+                "start_line": 108,
+                "end_line": 110,
+                "end_line_signature": 110,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 13313267827846711454,
+                    "filename": "Comment.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/Comment.ts"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "import Model from \"./base/Model\";\nclass Comment extends Model\n  public resolve() {\n    return this.store.rootStore.comments.resolve(this.id);\n  }",
+            "meta": {
+                "part_name": "resolve",
+                "docstring": "/**\n   * Resolve the comment\n   */",
+                "sha256": 991119951853749619459124936919291768908369832281,
+                "start_line": 115,
+                "end_line": 117,
+                "end_line_signature": 117,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 13313267827846711454,
+                    "filename": "Comment.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/Comment.ts"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "import Model from \"./base/Model\";\nclass Comment extends Model\n  public unresolve() {\n    return this.store.rootStore.comments.unresolve(this.id);\n  }",
+            "meta": {
+                "part_name": "unresolve",
+                "docstring": "/**\n   * Unresolve the comment\n   */",
+                "sha256": 737181169666352833175846995267642651601564437701,
+                "start_line": 122,
+                "end_line": 124,
+                "end_line_signature": 124,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 13313267827846711454,
+                    "filename": "Comment.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/Comment.ts"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "import invariant from \"invariant\";\nimport uniq from \"lodash/uniq\";\nimport { action, computed, observable } from \"mobx\";\nimport { Pagination } from \"@shared/constants\";\nimport type { ProsemirrorData, ReactionSummary } from \"@shared/types\";\nimport User from \"~/models/User\";\nimport { client } from \"~/utils/ApiClient\";\nimport Document from \"./Document\";\n\nimport Field from \"./decorators/Field\";\nimport Relation from \"./decorators/Relation\";\n\nexport default Comment;",
+            "meta": {
+                "sha256": 127587344566918131981664969548384712413573188523,
+                "start_line": 1,
+                "end_line": 279,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 13313267827846711454,
+                    "filename": "Comment.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/Comment.ts"
+                },
+                "chunk_type": "preamble"
+            }
+        },
+        {
+            "text": "import Group from \"./Group\";\nimport Model from \"./base/Model\";\nimport Relation from \"./decorators/Relation\";\nimport User from \"./User\";\n\nclass GroupUser extends Model {\n  static modelName = \"GroupUser\";\n\n  /** The ID of the user. */\n  userId: string;\n\n  /** The user that belongs to the group. */\n  @Relation(() => User, { onDelete: \"cascade\" })\n  user: User;\n\n  /** The ID of the group. */\n  groupId: string;\n\n  /** The group that the user belongs to. */\n  @Relation(() => Group, { onDelete: \"cascade\" })\n  group: Group;\n}",
+            "meta": {
+                "part_name": "GroupUser",
+                "docstring": "/**\n * Represents a user's membership to a group.\n */",
+                "sha256": 819039209099366519772307112685515925657900275191,
+                "start_line": 8,
+                "end_line": 24,
+                "end_line_signature": 24,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 1986469258069411733,
+                    "filename": "GroupUser.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/GroupUser.ts"
+                },
+                "chunk_type": "class"
+            }
+        },
+        {
+            "text": "export default GroupUser;",
+            "meta": {
+                "sha256": 1202573002644555545724623497903246581585285637847,
+                "start_line": 25,
+                "end_line": 28,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 1986469258069411733,
+                    "filename": "GroupUser.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/GroupUser.ts"
+                },
+                "chunk_type": "preamble"
+            }
+        },
+        {
+            "text": "import {\n  Action,\n  ActionContext,\n  ActionV2,\n  ActionV2Group,\n  ActionV2Separator as TActionV2Separator,\n  ActionV2Variant,\n  ActionV2WithChildren,\n  CommandBarAction,\n  ExternalLinkActionV2,\n  InternalLinkActionV2,\n  MenuExternalLink,\n  MenuInternalLink,\n  MenuItem,\n  MenuItemButton,\n  MenuItemWithChildren,\n} from \"~/types\";\nfunction resolve<T>(value: any, context: ActionContext): T {\n  return typeof value === \"function\" ? value(context) : value;\n}",
+            "meta": {
+                "part_name": "resolve",
+                "docstring": "",
+                "sha256": 1289291728661617648625599715448098966958049316632,
+                "start_line": 24,
+                "end_line": 26,
+                "end_line_signature": 26,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 16803020185603763773,
+                    "filename": "index.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/index.ts"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "import {\n  Action,\n  ActionContext,\n  ActionV2,\n  ActionV2Group,\n  ActionV2Separator as TActionV2Separator,\n  ActionV2Variant,\n  ActionV2WithChildren,\n  CommandBarAction,\n  ExternalLinkActionV2,\n  InternalLinkActionV2,\n  MenuExternalLink,\n  MenuInternalLink,\n  MenuItem,\n  MenuItemButton,\n  MenuItemWithChildren,\n} from \"~/types\";\nfunction hasVisibleItems(items: MenuItem[]) {\n  const applicableTypes = [\"button\", \"link\", \"route\", \"group\", \"submenu\"];\n  return items.some(\n    (item) => applicableTypes.includes(item.type) && item.visible\n  );\n}",
+            "meta": {
+                "part_name": "hasVisibleItems",
+                "docstring": "",
+                "sha256": 1279869349240065760172944255546797254943234495037,
+                "start_line": 359,
+                "end_line": 364,
+                "end_line_signature": 364,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 16803020185603763773,
+                    "filename": "index.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/index.ts"
+                },
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "import flattenDeep from \"lodash/flattenDeep\";\nimport { toast } from \"sonner\";\nimport { Optional } from \"utility-types\";\nimport { v4 as uuidv4 } from \"uuid\";\n\nimport Analytics from \"~/utils/Analytics\";\nimport history from \"~/utils/history\";\n\nexport function createAction(definition: Optional<Action, \"id\">): Action {\n  return {\n    ...definition,\n    perform: definition.perform\n      ? (context) => {\n          // We must use the specific analytics name here as the action name is\n          // translated and potentially contains user strings.\n          if (definition.analyticsName) {\n            Analytics.track(\"perform_action\", definition.analyticsName, {\n              context: context.isButton\n                ? \"button\"\n                : context.isCommandBar\n                  ? \"commandbar\"\n                  : \"contextmenu\",\n            });\n          }\n          return definition.perform?.(context);\n        }\n      : undefined,\n    id: definition.id ?? uuidv4(),\n  };\n}\n\nexport function actionToMenuItem(\n  action: Action,\n  context: ActionContext\n): MenuItemButton | MenuExternalLink | MenuInternalLink | MenuItemWithChildren {\n  const resolvedIcon = resolve<React.ReactElement<any>>(action.icon, context);\n  const resolvedChildren = resolve<Action[]>(action.children, context);\n  const visible = action.visible ? action.visible(context) : true;\n  const title = resolve<string>(action.name, context);\n  const icon =\n    resolvedIcon && action.iconInContextMenu !== false\n      ? resolvedIcon\n      : undefined;\n\n  if (resolvedChildren) {\n    const items = resolvedChildren\n      .map((a) => actionToMenuItem(a, context))\n      .filter(Boolean)\n      .filter((a) => a.visible);\n\n    return {\n      type: \"submenu\",\n      title,\n      icon,\n      items,\n      visible: visible && items.length > 0,\n    };\n  }\n\n  if (action.to) {\n    return typeof action.to === \"string\"\n      ? {\n          type: \"route\",\n          title,\n          icon,\n          visible,\n          to: action.to,\n          selected: action.selected?.(context),\n        }\n      : {\n          type: \"link\",\n          title,\n          icon,\n          visible,\n          href: action.to,\n          selected: action.selected?.(context),\n        };\n  }\n\n  return {\n    type: \"button\",\n    title,\n    icon,\n    visible,\n    dangerous: action.dangerous,\n    onClick: () => performAction(action, context),\n    selected: action.selected?.(context),\n  };\n}\n\nexport function actionToKBar(\n  action: Action,\n  context: ActionContext\n): CommandBarAction[] {\n  if (typeof action.visible === \"function\" && !action.visible(context)) {\n    return [];\n  }\n\n  const resolvedIcon = resolve<React.ReactElement>(action.icon, context);\n  const resolvedChildren = resolve<Action[]>(action.children, context);\n  const resolvedSection = resolve<string>(action.section, context);\n  const resolvedName = resolve<string>(action.name, context);\n  const resolvedPlaceholder = resolve<string>(action.placeholder, context);\n  const children = resolvedChildren\n    ? flattenDeep(resolvedChildren.map((a) => actionToKBar(a, context))).filter(\n        (a) => !!a\n      )\n    : [];\n\n  const sectionPriority =\n    typeof action.section !== \"string\" && \"priority\" in action.section\n      ? ((action.section.priority as number) ?? 0)\n      : 0;\n\n  return [\n    {\n      id: action.id,\n      name: resolvedName,\n      analyticsName: action.analyticsName,\n      section: resolvedSection,\n      placeholder: resolvedPlaceholder,\n      keywords: action.keywords ?? \"\",\n      shortcut: action.shortcut || [],\n      icon: resolvedIcon,\n      priority: (1 + (action.priority ?? 0)) * (1 + (sectionPriority ?? 0)),\n      perform:\n        action.perform || action.to\n          ? () => performAction(action, context)\n          : undefined,\n    },\n  ].concat(\n    // @ts-expect-error ts-migrate(2769) FIXME: No overload matches this call.\n    children.map((child) => ({ ...child, parent: child.parent ?? action.id }))\n  );\n}\n\nexport async function performAction(action: Action, context: ActionContext) {\n  const result = action.perform\n    ? action.perform(context)\n    : action.to\n      ? typeof action.to === \"string\"\n        ? history.push(action.to)\n        : window.open(action.to.url, action.to.target)\n      : undefined;\n\n  if (result instanceof Promise) {\n    return result.catch((err: Error) => {\n      toast.error(err.message);\n    });\n  }\n\n  return result;\n}\n\n/** Actions V2 */\n\nexport const ActionV2Separator: TActionV2Separator = {\n  type: \"action_separator\",\n};\n\nexport function createActionV2(\n  definition: Optional<Omit<ActionV2, \"type\" | \"variant\">, \"id\">\n): ActionV2 {\n  return {\n    ...definition,\n    type: \"action\",\n    variant: \"action\",\n    perform: definition.perform\n      ? (context) => {\n          // We must use the specific analytics name here as the action name is\n          // translated and potentially contains user strings.\n          if (definition.analyticsName) {\n            Analytics.track(\"perform_action\", definition.analyticsName, {\n              context: context.isButton\n                ? \"button\"\n                : context.isCommandBar\n                  ? \"commandbar\"\n                  : \"contextmenu\",\n            });\n          }\n          return definition.perform(context);\n        }\n      : () => {},\n    id: definition.id ?? uuidv4(),\n  };\n}\n\nexport function createInternalLinkActionV2(\n  definition: Optional<Omit<InternalLinkActionV2, \"type\" | \"variant\">, \"id\">\n): InternalLinkActionV2 {\n  return {\n    ...definition,\n    type: \"action\",\n    variant: \"internal_link\",\n    id: definition.id ?? uuidv4(),\n  };\n}\n\nexport function createExternalLinkActionV2(\n  definition: Optional<Omit<ExternalLinkActionV2, \"type\" | \"variant\">, \"id\">\n): ExternalLinkActionV2 {\n  return {\n    ...definition,\n    type: \"action\",\n    variant: \"external_link\",\n    id: definition.id ?? uuidv4(),\n  };\n}\n\nexport function createActionV2WithChildren(\n  definition: Optional<Omit<ActionV2WithChildren, \"type\" | \"variant\">, \"id\">\n): ActionV2WithChildren {\n  return {\n    ...definition,\n    type: \"action\",\n    variant: \"action_with_children\",\n    id: definition.id ?? uuidv4(),\n  };\n}\n\nexport function createActionV2Group(\n  definition: Omit<ActionV2Group, \"type\">\n): ActionV2Group {\n  return {\n    ...definition,\n    type: \"action_group\",\n  };\n}\n\nexport function createRootMenuAction(\n  actions: (ActionV2Variant | ActionV2Group | TActionV2Separator)[]\n): ActionV2WithChildren {\n  return {\n    id: uuidv4(),\n    type: \"action\",\n    variant: \"action_with_children\",\n    name: \"root_action\",\n    section: \"Root\",\n    children: actions,\n  };\n}\n\nexport function actionV2ToMenuItem(\n  action: ActionV2Variant | ActionV2Group | TActionV2Separator,\n  context: ActionContext\n): MenuItem {\n  switch (action.type) {\n    case \"action\": {\n      const title = resolve<string>(action.name, context);\n      const visible = resolve<boolean>(action.visible, context);\n      const icon =\n        !!action.icon && action.iconInContextMenu !== false\n          ? action.icon\n          : undefined;\n\n      switch (action.variant) {\n        case \"action\":\n          return {\n            type: \"button\",\n            title,\n            icon,\n            visible,\n            dangerous: action.dangerous,\n            onClick: () => performActionV2(action, context),\n          };\n\n        case \"internal_link\":\n          return {\n            type: \"route\",\n            title,\n            icon,\n            visible,\n            to: action.to,\n          };\n\n        case \"external_link\":\n          return {\n            type: \"link\",\n            title,\n            icon,\n            visible,\n            href: action.target\n              ? { url: action.url, target: action.target }\n              : action.url,\n          };\n\n        case \"action_with_children\": {\n          const children = resolve<\n            (ActionV2Variant | ActionV2Group | TActionV2Separator)[]\n          >(action.children, context);\n          const subMenuItems = children.map((a) =>\n            actionV2ToMenuItem(a, context)\n          );\n          return {\n            type: \"submenu\",\n            title,\n            icon,\n            items: subMenuItems,\n            visible: visible && hasVisibleItems(subMenuItems),\n          };\n        }\n\n        default:\n          throw Error(\"invalid action variant\");\n      }\n    }\n\n    case \"action_group\": {\n      const groupItems = action.actions.map((a) =>\n        actionV2ToMenuItem(a, context)\n      );\n      return {\n        type: \"group\",\n        title: resolve<string>(action.name, context),\n        visible: hasVisibleItems(groupItems),\n        items: groupItems,\n      };\n    }\n\n    case \"action_separator\":\n      return { type: \"separator\" };\n  }\n}\n\nexport async function performActionV2(\n  action: ActionV2,\n  context: ActionContext\n) {\n  const result = action.perform(context);\n\n  if (result instanceof Promise) {\n    return result.catch((err: Error) => {\n      toast.error(err.message);\n    });\n  }\n\n  return result;\n}",
+            "meta": {
+                "sha256": 1201606939402032044701817936630056161927504135324,
+                "start_line": 1,
+                "end_line": 359,
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 16803020185603763773,
+                    "filename": "index.ts",
+                    "uri": "https://github.com/outline/outline/blob/abc123def456/index.ts"
+                },
+                "chunk_type": "preamble"
+            }
+        }
+    ]
+}
