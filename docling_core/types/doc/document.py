@@ -5655,7 +5655,29 @@ class DoclingDocument(BaseModel):
 
                     if item.parent:
                         # set item's parent
-                        new_parent_cref = orig_ref_to_new_ref[item.parent.cref]
+                        new_parent_cref = orig_ref_to_new_ref.get(item.parent.cref)
+                        if new_parent_cref is None:
+
+                            parent_ref = item.parent
+                            while new_parent_cref is None and parent_ref is not None:
+                                parent_ref = RefItem(
+                                    cref=parent_ref.resolve(doc).parent.cref
+                                )
+                                new_parent_cref = orig_ref_to_new_ref.get(
+                                    parent_ref.cref
+                                )
+
+                            if new_parent_cref is not None:
+                                warnings.warn(
+                                    f"Parent {item.parent.cref} not found in indexed nodes, "
+                                    f"using ancestor {new_parent_cref} instead"
+                                )
+                            else:
+                                warnings.warn(
+                                    "No ancestor found in indexed nodes, using body as parent"
+                                )
+                                new_parent_cref = "#/body"
+
                         new_item.parent = RefItem(cref=new_parent_cref)
 
                         # add item to parent's children
