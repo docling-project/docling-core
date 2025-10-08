@@ -8,6 +8,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseChartSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -27,6 +28,7 @@ from docling_core.transforms.serializer.common import (
 )
 from docling_core.types.doc.base import BoundingBox
 from docling_core.types.doc.document import (
+    ChartItem,
     CodeItem,
     DocItem,
     DoclingDocument,
@@ -205,6 +207,23 @@ class DocTagsTableSerializer(BaseTableSerializer):
             text_res = _wrap(text=text_res, wrap_tag=DocumentToken.OTSL.value)
 
         return create_ser_result(text=text_res, span_source=res_parts)
+
+
+class DocTagsChartSerializer(BaseChartSerializer):
+    """DocTags-specific chart item serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: ChartItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        # TODO add actual implementation
+        return create_ser_result()
 
 
 class DocTagsPictureSerializer(BasePictureSerializer):
@@ -539,6 +558,7 @@ class DocTagsDocSerializer(DocSerializer):
 
     text_serializer: BaseTextSerializer = DocTagsTextSerializer()
     table_serializer: BaseTableSerializer = DocTagsTableSerializer()
+    chart_serializer: BaseChartSerializer = DocTagsChartSerializer()
     picture_serializer: BasePictureSerializer = DocTagsPictureSerializer()
     key_value_serializer: BaseKeyValueSerializer = DocTagsKeyValueSerializer()
     form_serializer: BaseFormSerializer = DocTagsFormSerializer()

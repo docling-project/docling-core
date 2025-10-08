@@ -16,6 +16,7 @@ from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseChartSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -30,6 +31,7 @@ from docling_core.transforms.serializer.base import (
 )
 from docling_core.types.doc.document import (
     DOCUMENT_TOKENS_EXPORT_LABELS,
+    ChartItem,
     ContentLayer,
     DescriptionAnnotation,
     DocItem,
@@ -207,6 +209,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     text_serializer: BaseTextSerializer
     table_serializer: BaseTableSerializer
+    chart_serializer: BaseChartSerializer
     picture_serializer: BasePictureSerializer
     key_value_serializer: BaseKeyValueSerializer
     form_serializer: BaseFormSerializer
@@ -356,6 +359,14 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 )
         elif isinstance(item, TableItem):
             part = self.table_serializer.serialize(
+                item=item,
+                doc_serializer=self,
+                doc=self.doc,
+                visited=my_visited,
+                **my_kwargs,
+            )
+        elif isinstance(item, ChartItem):
+            part = self.chart_serializer.serialize(
                 item=item,
                 doc_serializer=self,
                 doc=self.doc,

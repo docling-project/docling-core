@@ -68,6 +68,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.SECTION_HEADER,
     DocItemLabel.PARAGRAPH,
     DocItemLabel.TABLE,
+    DocItemLabel.CHART,
     DocItemLabel.PICTURE,
     DocItemLabel.FORMULA,
     DocItemLabel.CHECKBOX_UNSELECTED,
@@ -707,6 +708,16 @@ PictureDataType = Annotated[
     ],
     Field(discriminator="kind"),
 ]
+
+
+class ChartData(BaseModel):
+    """BaseChartData."""
+
+    title: str
+    kind: str
+    is_categorical: bool = False
+    series: List[Tuple[str, list]]
+    categories: Optional[List[str]] = None
 
 
 class DocumentOrigin(BaseModel):
@@ -1826,6 +1837,48 @@ class TableItem(FloatingItem):
         return self.annotations
 
 
+class ChartItem(FloatingItem):
+    """ChartItem."""
+
+    data: ChartData
+    label: typing.Literal[
+        DocItemLabel.DOCUMENT_INDEX,
+        DocItemLabel.CHART,
+    ] = DocItemLabel.CHART
+
+    def export_to_markdown(self, doc: Optional["DoclingDocument"] = None) -> str:
+        """Export the chart as markdown."""
+        if doc is not None:
+            from docling_core.transforms.serializer.markdown import (
+                MarkdownDocSerializer,
+            )
+
+            serializer = MarkdownDocSerializer(doc=doc)
+            text = serializer.serialize(item=self).text
+            return text
+        return "Failed"
+
+    def export_to_dataframe(
+        self, doc: Optional["DoclingDocument"] = None
+    ) -> pd.DataFrame:
+        """Export the chart as a Pandas DataFrame."""
+        if doc is None:
+            _logger.warning(
+                "Usage of ChartItem.export_to_dataframe() without `doc` argument is deprecated."
+            )
+
+        if len(self.data.series) == 0:
+            return pd.DataFrame()
+
+        data = {name: data for name, data in self.data.series}
+
+        df = pd.DataFrame(
+            data=data,
+        )
+
+        return df
+
+
 class GraphCell(BaseModel):
     """GraphCell."""
 
@@ -1984,6 +2037,7 @@ class DoclingDocument(BaseModel):
     ] = []
     pictures: List[PictureItem] = []
     tables: List[TableItem] = []
+    charts: List[ChartItem] = []
     key_value_items: List[KeyValueItem] = []
     form_items: List[FormItem] = []
 
@@ -2130,6 +2184,17 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.tables.append(item)
+
+        elif isinstance(item, ChartItem):
+            item_label = "charts"
+            item_index = len(self.charts)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.charts.append(item)
 
         elif isinstance(item, PictureItem):
             item_label = "pictures"
@@ -2725,6 +2790,40 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return tbl_item
+
+    def add_chart(
+        self,
+        data: ChartData,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        label: DocItemLabel = DocItemLabel.CHART,
+    ):
+        """add_chart.
+
+        :param data: ChartData:
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param label: DocItemLabel:  (Default value = DocItemLabel.CHART)
+        """
+        if not parent:
+            parent = self.body
+
+        chart_index = len(self.charts)
+        cref = f"#/charts/{chart_index}"
+
+        chart_item = ChartItem(
+            label=label,
+            data=data,
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if prov:
+            chart_item.prov.append(prov)
+
+        self.charts.append(chart_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return chart_item
 
     def add_picture(
         self,
@@ -3729,6 +3828,39 @@ class DoclingDocument(BaseModel):
         self._insert_in_structure(item=form_item, stack=stack, after=after)
 
         return form_item
+
+    def insert_chart(
+        self,
+        sibling: NodeItem,
+        data: ChartData,
+        prov: Optional[ProvenanceItem] = None,
+        label: DocItemLabel = DocItemLabel.CHART,
+        after: bool = True,
+    ) -> ChartItem:
+        """Creates a new ChartItem item and inserts it into the document.
+
+        :param sibling: NodeItem:
+        :param data: ChartData:
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param label: DocItemLabel:  (Default value = DocItemLabel.CHART)
+        :param after: bool:  (Default value = True)
+        :returns: ChartItem: The newly created ChartItem item.
+        """
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
+
+        chart_item = ChartItem(
+            label=label,
+            data=data,
+            self_ref="#",
+            parent=parent_ref,
+        )
+
+        if prov:
+            chart_item.prov.append(prov)
+
+        self._insert_in_structure(item=chart_item, stack=stack, after=after)
+
+        return chart_item
 
     # ---------------------------
     # Range Manipulation Methods
@@ -5598,6 +5730,7 @@ class DoclingDocument(BaseModel):
         texts: list[TextItem] = []
         pictures: list[PictureItem] = []
         tables: list[TableItem] = []
+        charts: list[ChartItem] = []
         key_value_items: list[KeyValueItem] = []
         form_items: list[FormItem] = []
 
@@ -5716,6 +5849,7 @@ class DoclingDocument(BaseModel):
         self.texts = doc_index.texts
         self.pictures = doc_index.pictures
         self.tables = doc_index.tables
+        self.charts = doc_index.charts
         self.key_value_items = doc_index.key_value_items
         self.form_items = doc_index.form_items
         self.pages = doc_index.pages
