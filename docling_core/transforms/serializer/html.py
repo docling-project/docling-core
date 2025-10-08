@@ -22,6 +22,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseChartSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -46,6 +47,7 @@ from docling_core.transforms.serializer.html_styles import (
 from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    ChartItem,
     CodeItem,
     ContentLayer,
     DescriptionAnnotation,
@@ -404,6 +406,23 @@ class HTMLTableSerializer(BaseTableSerializer):
         text_res = f"<table>{text_res}</table>" if text_res else ""
 
         return create_ser_result(text=text_res, span_source=res_parts)
+
+
+class HTMLChartSerializer(BaseChartSerializer):
+    """HTML-specific chart item serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: ChartItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Export chart to HTML format."""
+        # TODO add actual implementation
+        return create_ser_result()
 
 
 class HTMLPictureSerializer(BasePictureSerializer):
@@ -850,6 +869,7 @@ class HTMLDocSerializer(DocSerializer):
 
     text_serializer: BaseTextSerializer = HTMLTextSerializer()
     table_serializer: BaseTableSerializer = HTMLTableSerializer()
+    chart_serializer: BaseChartSerializer = HTMLChartSerializer()
     picture_serializer: BasePictureSerializer = HTMLPictureSerializer()
     key_value_serializer: BaseKeyValueSerializer = HTMLKeyValueSerializer()
     form_serializer: BaseFormSerializer = HTMLFormSerializer()

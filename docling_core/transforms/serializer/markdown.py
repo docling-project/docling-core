@@ -17,6 +17,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseChartSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -36,6 +37,7 @@ from docling_core.transforms.serializer.common import (
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    ChartItem,
     CodeItem,
     ContentLayer,
     DescriptionAnnotation,
@@ -357,6 +359,62 @@ class MarkdownTableSerializer(BaseTableSerializer):
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
+class MarkdownChartSerializer(BaseChartSerializer):
+    """Mardown-specific chart item serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: ChartItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        params = MarkdownParams(**kwargs)
+        res_parts: list[SerializationResult] = []
+        cap_res = doc_serializer.serialize_captions(
+            item=item,
+            **kwargs,
+        )
+
+        if cap_res.text:
+            res_parts.append(cap_res)
+
+        if item.self_ref not in doc_serializer.get_excluded_refs():
+            if params.include_annotations:
+                ann_res = doc_serializer.serialize_annotations(
+                    item=item,
+                    **kwargs,
+                )
+                if ann_res.text:
+                    res_parts.append(ann_res)
+
+            res_parts.append(create_ser_result(text=item.data.title, span_source=item))
+            res_parts.append(create_ser_result(text=item.data.kind, span_source=item))
+            if item.data.is_categorical and item.data.categories:
+                categories = ", ".join(item.data.categories)
+                if categories:
+                    res_parts.append(
+                        create_ser_result(
+                            text=f"Categories: {categories}", span_source=item
+                        )
+                    )
+            if item.data.series:
+                series_text = ""
+                for series_name, series_data in item.data.series:
+                    series_text += f"- {series_name}: {series_data}\n"
+                if series_text:
+                    res_parts.append(
+                        create_ser_result(text=series_text.strip(), span_source=item)
+                    )
+
+        text_res = "\n\n".join([r.text for r in res_parts])
+
+        return create_ser_result(text=text_res, span_source=res_parts)
+
+
 class MarkdownPictureSerializer(BasePictureSerializer):
     """Markdown-specific picture item serializer."""
 
@@ -621,6 +679,7 @@ class MarkdownDocSerializer(DocSerializer):
 
     text_serializer: BaseTextSerializer = MarkdownTextSerializer()
     table_serializer: BaseTableSerializer = MarkdownTableSerializer()
+    chart_serializer: BaseChartSerializer = MarkdownChartSerializer()
     picture_serializer: BasePictureSerializer = MarkdownPictureSerializer()
     key_value_serializer: BaseKeyValueSerializer = MarkdownKeyValueSerializer()
     form_serializer: BaseFormSerializer = MarkdownFormSerializer()

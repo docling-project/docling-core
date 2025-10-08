@@ -6,6 +6,7 @@ body:
   label: unspecified
   name: _root_
   self_ref: '#/body'
+charts: []
 form_items: []
 furniture:
   children: []

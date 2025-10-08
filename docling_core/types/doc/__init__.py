@@ -10,6 +10,8 @@ from .document import (
     AnyTableCell,
     BaseAnnotation,
     ChartBar,
+    ChartData,
+    ChartItem,
     ChartLine,
     ChartPoint,
     ChartSlice,

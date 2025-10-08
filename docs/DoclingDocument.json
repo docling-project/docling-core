@@ -52,6 +52,159 @@
       "title": "ChartBar",
       "type": "object"
     },
+    "ChartData": {
+      "description": "BaseChartData.",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "is_categorical": {
+          "default": false,
+          "title": "Is Categorical",
+          "type": "boolean"
+        },
+        "series": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {},
+                "type": "array"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Series",
+          "type": "array"
+        },
+        "categories": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Categories"
+        }
+      },
+      "required": [
+        "title",
+        "kind",
+        "series"
+      ],
+      "title": "ChartData",
+      "type": "object"
+    },
+    "ChartItem": {
+      "additionalProperties": false,
+      "description": "ChartItem.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "label": {
+          "default": "chart",
+          "enum": [
+            "document_index",
+            "chart"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "captions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Captions",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "footnotes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Footnotes",
+          "type": "array"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "data": {
+          "$ref": "#/$defs/ChartData"
+        }
+      },
+      "required": [
+        "self_ref",
+        "data"
+      ],
+      "title": "ChartItem",
+      "type": "object"
+    },
     "ChartLine": {
       "description": "Represents a line in a line chart.\n\nAttributes:\n    label (str): The label for the line.\n    values (List[Tuple[float, float]]): A list of (x, y) coordinate pairs\n        representing the line's data points.",
       "properties": {
@@ -2457,6 +2610,14 @@
         "$ref": "#/$defs/TableItem"
       },
       "title": "Tables",
+      "type": "array"
+    },
+    "charts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ChartItem"
+      },
+      "title": "Charts",
       "type": "array"
     },
     "key_value_items": {

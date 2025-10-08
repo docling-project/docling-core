@@ -11,6 +11,7 @@ from typing import Any, Optional, Union
 from pydantic import AnyUrl, BaseModel
 
 from docling_core.types.doc.document import (
+    ChartItem,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -74,6 +75,22 @@ class BaseTableSerializer(ABC):
         self,
         *,
         item: TableItem,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        ...
+
+
+class BaseChartSerializer(ABC):
+    """Basr class for chart item serializers."""
+
+    @abstractmethod
+    def serialize(
+        self,
+        *,
+        item: ChartItem,
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,

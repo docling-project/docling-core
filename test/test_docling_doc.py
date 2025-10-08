@@ -14,6 +14,8 @@ from pydantic import AnyUrl, ValidationError
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (  # BoundingBox,
     CURRENT_VERSION,
+    ChartData,
+    ChartItem,
     CodeItem,
     ContentLayer,
     DocItem,
@@ -573,6 +575,18 @@ def test_docitems():
             verify(dc, obj)
         elif dc is GraphData:  # we skip this on purpose
             continue
+        elif dc is ChartItem:
+            obj = dc(
+                self_ref="#",
+                data=ChartData(
+                    title="My Chart",
+                    categories=["A", "B", "C"],
+                    series=[("Series 1", [10, 20, 30]), ("Series 2", [15, 25, 35])],
+                    is_categorical=True,
+                    kind="COLUMN_CLUSTERED",
+                ),
+            )
+            verify(dc, obj)
         else:
             raise RuntimeError(f"New derived class detected {dc.__name__}")
 
