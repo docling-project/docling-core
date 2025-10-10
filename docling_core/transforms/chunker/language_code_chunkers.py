@@ -450,6 +450,7 @@ class JavaFunctionChunker(CodeChunker):
     @override
     def _file_prefix(self, root_node: Node) -> Tuple[str, List[Tuple[int, int]]]:
         used_ranges = []
+        prefix = ""
         for child in root_node.children:
             if child.type == self.package_declaration:
                 prefix = to_str(child).strip() + "\n"

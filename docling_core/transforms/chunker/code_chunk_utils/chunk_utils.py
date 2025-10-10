@@ -3,7 +3,7 @@ from typing import Iterator, List, Tuple
 
 from tree_sitter import Node
 
-from docling_core.transforms.chunker.code_chunk_utils.types import (
+from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkType,
     CodeChunk,
     CodeDocMeta,

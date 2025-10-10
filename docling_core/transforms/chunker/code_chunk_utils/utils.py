@@ -10,6 +10,7 @@ from tree_sitter import Language as Lang
 from tree_sitter import Node, Tree
 
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
+from docling_core.types.doc.labels import CodeLanguageLabel
 
 
 class Language(str, Enum):
@@ -46,6 +47,17 @@ class Language(str, Enum):
             return Lang(ts_c.language())
         else:
             return None
+
+    def to_code_language_label(self):
+
+        mapping = {
+            Language.PYTHON: CodeLanguageLabel.PYTHON,
+            Language.JAVA: CodeLanguageLabel.JAVA,
+            Language.C: CodeLanguageLabel.C,
+            Language.TYPESCRIPT: CodeLanguageLabel.TYPESCRIPT,
+            Language.JAVASCRIPT: CodeLanguageLabel.JAVASCRIPT,
+        }
+        return mapping.get(self, CodeLanguageLabel.UNKNOWN)
 
     def get_import_query(self) -> Optional[str]:
         if self == Language.PYTHON:

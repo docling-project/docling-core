@@ -13,15 +13,21 @@ from docling_core.transforms.chunker.code_chunk_utils.chunk_utils import (
     ChunkSizeProcessor,
     RangeTracker,
 )
-from docling_core.transforms.chunker.code_chunk_utils.types import (
+from docling_core.transforms.chunker.code_chunk_utils.utils import Language
+from docling_core.transforms.chunker.code_chunking_strategy import (
+    CodeChunkingStrategyFactory,
+    DefaultCodeChunkingStrategy,
+    LanguageDetector,
+    NoOpCodeChunkingStrategy,
+)
+from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkType,
     CodeChunk,
+    CodeChunkingStrategy,
     CodeDocMeta,
-)
-from docling_core.transforms.chunker.code_chunk_utils.utils import Language
-from docling_core.transforms.chunker.hierarchical_chunker import (
     DocChunk,
     DocMeta,
     HierarchicalChunker,
 )
+from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.transforms.chunker.page_chunker import PageChunker

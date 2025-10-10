@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, ClassVar, Final, Iterator, Literal, Optional
+from enum import Enum
+from typing import Any, ClassVar, Final, Iterator, Literal, Optional, Protocol
 
 from pydantic import ConfigDict, Field, StringConstraints, field_validator
 from typing_extensions import Annotated, override
@@ -40,6 +41,7 @@ from docling_core.types.doc.document import (
     TableItem,
     TitleItem,
 )
+from docling_core.types.doc.labels import DocItemLabel
 
 _VERSION: Final = "1.0.0"
 
@@ -114,6 +116,45 @@ class DocMeta(BaseMeta):
             raise ValueError(f"incompatible version {v} with schema version {_VERSION}")
         else:
             return _VERSION
+
+
+class CodeDocMeta(DocMeta):
+    """Data model for CodeChunker metadata."""
+
+    doc_items: Optional[list[DocItem]] = Field(default=None, alias=_KEY_DOC_ITEMS)
+    part_name: Optional[str] = Field(default=None)
+    docstring: Optional[str] = Field(default=None)
+    sha256: Optional[int] = Field(default=None)
+    start_line: Optional[int] = Field(default=None)
+    end_line: Optional[int] = Field(default=None)
+    end_line_signature: Optional[int] = Field(default=None)
+    chunk_type: Optional[str] = Field(default=None)
+
+
+class CodeChunk(BaseChunk):
+    """Data model for code chunks."""
+
+    meta: CodeDocMeta
+
+
+class ChunkType(str, Enum):
+    """Chunk type"""
+
+    FUNCTION = "function"
+    METHOD = "method"
+    PREAMBLE = "preamble"
+    CLASS = "class"
+    CODE_BLOCK = "code_block"
+
+
+class CodeChunkingStrategy(Protocol):
+    """Protocol for code chunking strategies that can be plugged into HierarchicalChunker."""
+
+    def chunk_code_item(
+        self, code_text: str, language: Any, **kwargs: Any
+    ) -> Iterator[CodeChunk]:
+        """Chunk a single code item."""
+        ...
 
 
 class DocChunk(BaseChunk):
@@ -199,11 +240,15 @@ class HierarchicalChunker(BaseChunker):
         merge_list_items (bool): Whether to merge successive list items.
             Defaults to True.
         delim (str): Delimiter to use for merging text. Defaults to "\n".
+        code_chunking_strategy (CodeChunkingStrategy): Optional strategy for chunking code items.
+            If provided, code items will be processed using this strategy instead of being
+            treated as regular text. Defaults to None (no special code processing).
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
+    code_chunking_strategy: Optional[Any] = Field(default=None)
 
     # deprecated:
     merge_list_items: Annotated[bool, Field(deprecated=True)] = True
@@ -242,6 +287,37 @@ class HierarchicalChunker(BaseChunker):
                 isinstance(item, (ListGroup, InlineGroup, DocItem))
                 and item.self_ref not in visited
             ):
+                if (
+                    isinstance(item, DocItem)
+                    and hasattr(item, "label")
+                    and item.label == DocItemLabel.CODE
+                    and self.code_chunking_strategy is not None
+                ):
+
+                    from docling_core.transforms.chunker.code_chunking_strategy import (
+                        LanguageDetector,
+                    )
+
+                    language = LanguageDetector.detect_language(
+                        item.text,
+                        (
+                            getattr(dl_doc.origin, "filename", None)
+                            if dl_doc.origin
+                            else None
+                        ),
+                    )
+
+                    if language:
+                        for code_chunk in self.code_chunking_strategy.chunk_code_item(
+                            item.text,
+                            language,
+                            original_doc=dl_doc,
+                            original_item=item,
+                            **kwargs,
+                        ):
+                            yield code_chunk
+                        continue
+
                 ser_res = my_doc_ser.serialize(item=item, visited=visited)
             else:
                 continue
