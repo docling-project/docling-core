@@ -1,10 +1,14 @@
+import glob
 import json
 import os
 import pathlib
+from typing import List
 
+import git
 import pytest
 
 from docling_core.transforms.chunker.base_code_chunker import CodeChunk
+from docling_core.transforms.chunker.code_chunk_utils.utils import Language
 from docling_core.transforms.chunker.language_code_chunkers import (
     CFunctionChunker,
     JavaFunctionChunker,
@@ -12,10 +16,76 @@ from docling_core.transforms.chunker.language_code_chunkers import (
     PythonFunctionChunker,
     TypeScriptFunctionChunker,
 )
+from docling_core.types.doc import DoclingDocument, DocumentOrigin
 from docling_core.types.doc.labels import DocItemLabel
+from docling_core.utils.legacy import _create_hash
 
 from .test_data_gen_flag import GEN_TEST_DATA
-from .test_utils_repo_ds import create_ds, language_to_extension
+
+
+def get_latest_commit_id(file_dir: str) -> str:
+    """Returns the latest commit ID in the given Git repository directory."""
+    try:
+        repo = git.Repo(file_dir, search_parent_directories=True)
+        return repo.head.commit.hexsha
+    except Exception:
+        return ""
+
+
+def create_documents_from_repository(
+    file_dir: str, repo_url: str, commit_id: str = None
+) -> List[DoclingDocument]:
+    """Build DoclingDocument objects from a local checkout, one per code file."""
+
+    documents: List[DoclingDocument] = []
+    if commit_id is None:
+        commit_id = get_latest_commit_id(file_dir)
+
+    all_extensions = set()
+    for language in Language:
+        all_extensions.update(language.file_extensions())
+
+    all_files = []
+    for extension in all_extensions:
+        all_files.extend(
+            [
+                f
+                for f in sorted(
+                    glob.glob(f"{file_dir}/**/*{extension}", recursive=True)
+                )
+            ]
+        )
+
+    all_files = sorted(list(set(all_files)))
+
+    for file_path in all_files:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                file_content = f.read()
+
+            file_relative = os.path.relpath(file_path, start=file_dir).replace(
+                "\\", "/"
+            )
+
+            origin = DocumentOrigin(
+                filename=file_relative,
+                uri=(
+                    f"{repo_url}/blob/{commit_id}/{file_relative}"
+                    if commit_id
+                    else f"{repo_url}/{file_relative}"
+                ),
+                mimetype="text/plain",
+                binary_hash=_create_hash(file_content),
+            )
+
+            doc = DoclingDocument(name=file_relative, origin=origin)
+            doc.add_code(text=file_content)
+            documents.append(doc)
+        except Exception:
+            continue
+
+    return documents
+
 
 HERE = pathlib.Path(__file__).parent
 DATA = HERE / "data" / "chunker_repo"
@@ -75,13 +145,14 @@ def test_function_chunkers_repo(name, local_path, repo_url, chunker_factory):
     if not os.path.isdir(local_path_full):
         pytest.skip(f"Missing repo at {local_path_full}; skipping {name} test.")
 
-    docs = create_ds(local_path_full, repo_url, commit_id="abc123def456")
+    docs = create_documents_from_repository(
+        local_path_full, repo_url, commit_id="abc123def456"
+    )
     docs = [
         doc
         for doc in docs
         if any(text.label == DocItemLabel.CODE and text.text for text in doc.texts)
     ]
-    docs = [doc for doc in docs if doc.name.endswith(language_to_extension[name])]
     if not docs:
         pytest.skip(f"No documents found in {local_path_full} for {name}.")
 

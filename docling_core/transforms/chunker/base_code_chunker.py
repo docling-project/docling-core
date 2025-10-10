@@ -8,12 +8,12 @@ from docling_core.transforms.chunker.code_chunk_utils.chunk_utils import (
     ChunkSizeProcessor,
     RangeTracker,
 )
-from docling_core.transforms.chunker.code_chunk_utils.types import CodeChunk
 from docling_core.transforms.chunker.code_chunk_utils.utils import (
     Language,
     get_children,
     to_str,
 )
+from docling_core.transforms.chunker.hierarchical_chunker import CodeChunk
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.types import DoclingDocument as DLDocument
 from docling_core.types.doc.labels import DocItemLabel

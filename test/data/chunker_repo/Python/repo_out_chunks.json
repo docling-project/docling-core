@@ -3,1221 +3,1357 @@
         {
             "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Cluster(BaseModel):\n\n    id: int\n    label: DocItemLabel\n    bbox: BoundingBox\n    confidence: float = 1.0\n    cells: List[TextCell] = []\n    children: List[\"Cluster\"] = []\n    @field_serializer(\"confidence\")\n    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:\n        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "_serialize",
                 "docstring": "",
                 "sha256": 1370311415977656221876886741900648971627414401247,
                 "start_line": 150,
                 "end_line": 151,
                 "end_line_signature": 151,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass FigureElement(BasePageElement):\n\n    annotations: List[PictureDataType] = []\n    provenance: Optional[str] = None\n    predicted_class: Optional[str] = None\n    confidence: Optional[float] = None\n    @field_serializer(\"confidence\")\n    def _serialize(\n        self, value: Optional[float], info: FieldSerializationInfo\n    ) -> Optional[float]:\n        return (\n            round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)\n            if value is not None\n            else None\n        )",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "_serialize",
                 "docstring": "",
                 "sha256": 548765170194758372904020338821756398576566540703,
                 "start_line": 206,
                 "end_line": 213,
                 "end_line_signature": 209,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: Dict[float, Image] = (\n        {}\n    )\n    @property\n    def cells(self) -> List[TextCell]:\n        \"\"\"Return text cells as a read-only view of parsed_page.textline_cells.\"\"\"\n        if self.parsed_page is not None:\n            return self.parsed_page.textline_cells\n        else:\n            return []",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "cells",
                 "docstring": "",
                 "sha256": 808130656114478424554213379229194132787588082937,
                 "start_line": 269,
                 "end_line": 274,
                 "end_line_signature": 270,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: Dict[float, Image] = (\n        {}\n    )\n    def get_image(\n        self,\n        scale: float = 1.0,\n        max_size: Optional[int] = None,\n        cropbox: Optional[BoundingBox] = None,\n    ) -> Optional[Image]:\n        if self._backend is None:\n            return self._image_cache.get(scale, None)\n\n        if max_size:\n            assert self.size is not None\n            scale = min(scale, max_size / max(self.size.as_tuple()))\n\n        if scale not in self._image_cache:\n            if cropbox is None:\n                self._image_cache[scale] = self._backend.get_page_image(scale=scale)\n            else:\n                return self._backend.get_page_image(scale=scale, cropbox=cropbox)\n\n        if cropbox is None:\n            return self._image_cache[scale]\n        else:\n            page_im = self._image_cache[scale]\n            assert self.size is not None\n            return page_im.crop(\n                cropbox.to_top_left_origin(page_height=self.size.height)\n                .scaled(scale=scale)\n                .as_tuple()\n            )",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "get_image",
                 "docstring": "",
                 "sha256": 730486712684958979505969494702830191562221418826,
                 "start_line": 276,
                 "end_line": 304,
                 "end_line_signature": 282,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: Dict[float, Image] = (\n        {}\n    )\n    @property\n    def image(self) -> Optional[Image]:\n        return self.get_image(scale=self._default_image_scale)",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "image",
                 "docstring": "",
                 "sha256": 411118430431318207465607893315291238177524289712,
                 "start_line": 307,
                 "end_line": 308,
                 "end_line_signature": 308,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nimport numpy as np\nclass PageConfidenceScores(BaseModel):\n\n    parse_score: ScoreValue = np.nan\n    layout_score: ScoreValue = np.nan\n    table_score: ScoreValue = np.nan\n    ocr_score: ScoreValue = np.nan\n    def _score_to_grade(self, score: ScoreValue) -> QualityGrade:\n        if score < 0.5:\n            return QualityGrade.POOR\n        elif score < 0.8:\n            return QualityGrade.FAIR\n        elif score < 0.9:\n            return QualityGrade.GOOD\n        elif score >= 0.9:\n            return QualityGrade.EXCELLENT\n\n        return QualityGrade.UNSPECIFIED",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "_score_to_grade",
                 "docstring": "",
                 "sha256": 1226961229592084659714241042350075927273793479169,
                 "start_line": 361,
                 "end_line": 371,
                 "end_line_signature": 362,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nimport numpy as np\nclass PageConfidenceScores(BaseModel):\n\n    parse_score: ScoreValue = np.nan\n    layout_score: ScoreValue = np.nan\n    table_score: ScoreValue = np.nan\n    ocr_score: ScoreValue = np.nan\n    @computed_field  # type: ignore\n    @property\n    def mean_grade(self) -> QualityGrade:\n        return self._score_to_grade(self.mean_score)",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "mean_grade",
                 "docstring": "",
                 "sha256": 970148436571335637993437576490782463715252886019,
                 "start_line": 375,
                 "end_line": 376,
                 "end_line_signature": 376,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nimport numpy as np\nclass PageConfidenceScores(BaseModel):\n\n    parse_score: ScoreValue = np.nan\n    layout_score: ScoreValue = np.nan\n    table_score: ScoreValue = np.nan\n    ocr_score: ScoreValue = np.nan\n    @computed_field  # type: ignore\n    @property\n    def low_grade(self) -> QualityGrade:\n        return self._score_to_grade(self.low_score)",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "low_grade",
                 "docstring": "",
                 "sha256": 1414417851083571439151429300774211251904833950620,
                 "start_line": 380,
                 "end_line": 381,
                 "end_line_signature": 381,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nimport numpy as np\nScoreValue = float\nclass PageConfidenceScores(BaseModel):\n\n    parse_score: ScoreValue = np.nan\n    layout_score: ScoreValue = np.nan\n    table_score: ScoreValue = np.nan\n    ocr_score: ScoreValue = np.nan\n    @computed_field  # type: ignore\n    @property\n    def mean_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [\n                    self.ocr_score,\n                    self.table_score,\n                    self.layout_score,\n                    self.parse_score,\n                ]\n            )\n        )",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "mean_score",
                 "docstring": "",
                 "sha256": 1258375186580609407958319910033845627450381020082,
                 "start_line": 385,
                 "end_line": 395,
                 "end_line_signature": 386,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nimport numpy as np\nScoreValue = float\nclass PageConfidenceScores(BaseModel):\n\n    parse_score: ScoreValue = np.nan\n    layout_score: ScoreValue = np.nan\n    table_score: ScoreValue = np.nan\n    ocr_score: ScoreValue = np.nan\n    @computed_field  # type: ignore\n    @property\n    def low_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanquantile(\n                [\n                    self.ocr_score,\n                    self.table_score,\n                    self.layout_score,\n                    self.parse_score,\n                ],\n                q=0.05,\n            )\n        )",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "low_score",
                 "docstring": "",
                 "sha256": 530920199340573617576130514840888087666895770482,
                 "start_line": 399,
                 "end_line": 410,
                 "end_line_signature": 400,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nimport numpy as np\nScoreValue = float\nclass ConfidenceReport(PageConfidenceScores):\n\n    pages: Dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n    @computed_field  # type: ignore\n    @property\n    def mean_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.mean_score for c in self.pages.values()],\n            )\n        )",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "mean_score",
                 "docstring": "",
                 "sha256": 132450849266989335217771535733536814236612441736,
                 "start_line": 420,
                 "end_line": 425,
                 "end_line_signature": 421,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nimport numpy as np\nScoreValue = float\nclass ConfidenceReport(PageConfidenceScores):\n\n    pages: Dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n    @computed_field  # type: ignore\n    @property\n    def low_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.low_score for c in self.pages.values()],\n            )\n        )",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "low_score",
                 "docstring": "",
                 "sha256": 970153367204825604327172702664272609484373919390,
                 "start_line": 429,
                 "end_line": 434,
                 "end_line_signature": 430,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from enum import Enum\nclass ConversionStatus(str, Enum):\n    PENDING = \"pending\"\n    STARTED = \"started\"\n    FAILURE = \"failure\"\n    SUCCESS = \"success\"\n    PARTIAL_SUCCESS = \"partial_success\"\n    SKIPPED = \"skipped\"",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "ConversionStatus",
                 "docstring": "",
                 "sha256": 620766103743608450410859564155193221612617787030,
                 "start_line": 32,
                 "end_line": 38,
                 "end_line_signature": 38,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from enum import Enum\nimport numpy as np\nclass InputFormat(str, Enum):\n    \"\"\"A document format supported by document backend parsers.\"\"\"\n\n    DOCX = \"docx\"\n    PPTX = \"pptx\"\n    HTML = \"html\"\n    IMAGE = \"image\"\n    PDF = \"pdf\"\n    ASCIIDOC = \"asciidoc\"\n    MD = \"md\"\n    CSV = \"csv\"\n    XLSX = \"xlsx\"\n    XML_USPTO = \"xml_uspto\"\n    XML_JATS = \"xml_jats\"\n    JSON_DOCLING = \"json_docling\"\n    AUDIO = \"audio\"",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "InputFormat",
                 "docstring": "",
                 "sha256": 892216703579506331579469699340486405594949995133,
                 "start_line": 41,
                 "end_line": 56,
                 "end_line_signature": 56,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from enum import Enum\nclass OutputFormat(str, Enum):\n    MARKDOWN = \"md\"\n    JSON = \"json\"\n    HTML = \"html\"\n    HTML_SPLIT_PAGE = \"html_split_page\"\n    TEXT = \"text\"\n    DOCTAGS = \"doctags\"",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "OutputFormat",
                 "docstring": "",
                 "sha256": 1347846176447908013052242174477254615853046589425,
                 "start_line": 59,
                 "end_line": 65,
                 "end_line_signature": 65,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from enum import Enum\nimport numpy as np\nclass DocInputType(str, Enum):\n    PATH = \"path\"\n    STREAM = \"stream\"",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "DocInputType",
                 "docstring": "",
                 "sha256": 1223714591888346503494526053642460574025115616826,
                 "start_line": 123,
                 "end_line": 125,
                 "end_line_signature": 125,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from enum import Enum\nimport numpy as np\nclass DoclingComponentType(str, Enum):\n    DOCUMENT_BACKEND = \"document_backend\"\n    MODEL = \"model\"\n    DOC_ASSEMBLER = \"doc_assembler\"\n    USER_INPUT = \"user_input\"",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "DoclingComponentType",
                 "docstring": "",
                 "sha256": 1044618506138011322142671349003262389011658625241,
                 "start_line": 128,
                 "end_line": 132,
                 "end_line_signature": 132,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass ErrorItem(BaseModel):\n    component_type: DoclingComponentType\n    module_name: str\n    error_message: str",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "ErrorItem",
                 "docstring": "",
                 "sha256": 1086117531920474775755100836319966340621867981803,
                 "start_line": 135,
                 "end_line": 138,
                 "end_line_signature": 138,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Cluster(BaseModel):\n    id: int\n    label: DocItemLabel\n    bbox: BoundingBox\n    confidence: float = 1.0\n    cells: List[TextCell] = []\n    children: List[\"Cluster\"] = []  # Add child cluster support\n\n    @field_serializer(\"confidence\")\n    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:\n        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "Cluster",
                 "docstring": "",
                 "sha256": 1265293438447400808420129430722899990479108904146,
                 "start_line": 141,
                 "end_line": 151,
                 "end_line_signature": 151,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass BasePageElement(BaseModel):\n    label: DocItemLabel\n    id: int\n    page_no: int\n    cluster: Cluster\n    text: Optional[str] = None",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "BasePageElement",
                 "docstring": "",
                 "sha256": 27686403131898710443755657765582374638708518770,
                 "start_line": 154,
                 "end_line": 159,
                 "end_line_signature": 159,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass LayoutPrediction(BaseModel):\n    clusters: List[Cluster] = []",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "LayoutPrediction",
                 "docstring": "",
                 "sha256": 987561170389338380550072794621774259794654494830,
                 "start_line": 162,
                 "end_line": 163,
                 "end_line_signature": 163,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass VlmPredictionToken(BaseModel):\n    text: str = \"\"\n    token: int = -1\n    logprob: float = -1",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "VlmPredictionToken",
                 "docstring": "",
                 "sha256": 65603519381706971863039126377096035311378651150,
                 "start_line": 166,
                 "end_line": 169,
                 "end_line_signature": 169,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass VlmPrediction(BaseModel):\n    text: str = \"\"\n    generated_tokens: list[VlmPredictionToken] = []\n    generation_time: float = -1",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "VlmPrediction",
                 "docstring": "",
                 "sha256": 1001170426609364857440748112674472207227386338107,
                 "start_line": 172,
                 "end_line": 175,
                 "end_line_signature": 175,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass ContainerElement(\n    BasePageElement\n):  # Used for Form and Key-Value-Regions, only for typing.\n    pass",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "ContainerElement",
                 "docstring": "",
                 "sha256": 595661713802144347628508983545186540799570992038,
                 "start_line": 178,
                 "end_line": 181,
                 "end_line_signature": 181,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Table(BasePageElement):\n    otsl_seq: List[str]\n    num_rows: int = 0\n    num_cols: int = 0\n    table_cells: List[TableCell]",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "Table",
                 "docstring": "",
                 "sha256": 899700098549855605262894705349504270338610789745,
                 "start_line": 184,
                 "end_line": 188,
                 "end_line_signature": 188,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass TableStructurePrediction(BaseModel):\n    table_map: Dict[int, Table] = {}",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "TableStructurePrediction",
                 "docstring": "",
                 "sha256": 10390869097689903408310238897062292721124859701,
                 "start_line": 191,
                 "end_line": 192,
                 "end_line_signature": 192,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "\nclass TextElement(BasePageElement):\n    text: str",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "TextElement",
                 "docstring": "",
                 "sha256": 910599684044725278502405469110289841532247426179,
                 "start_line": 195,
                 "end_line": 196,
                 "end_line_signature": 196,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass FigureElement(BasePageElement):\n    annotations: List[PictureDataType] = []\n    provenance: Optional[str] = None\n    predicted_class: Optional[str] = None\n    confidence: Optional[float] = None\n\n    @field_serializer(\"confidence\")\n    def _serialize(\n        self, value: Optional[float], info: FieldSerializationInfo\n    ) -> Optional[float]:\n        return (\n            round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)\n            if value is not None\n            else None\n        )",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "FigureElement",
                 "docstring": "",
                 "sha256": 49150437793556841766787782882109128052965382281,
                 "start_line": 199,
                 "end_line": 213,
                 "end_line_signature": 213,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass FigureClassificationPrediction(BaseModel):\n    figure_count: int = 0\n    figure_map: Dict[int, FigureElement] = {}",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "FigureClassificationPrediction",
                 "docstring": "",
                 "sha256": 393470850502283580013047324181028663675467213132,
                 "start_line": 216,
                 "end_line": 218,
                 "end_line_signature": 218,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass EquationPrediction(BaseModel):\n    equation_count: int = 0\n    equation_map: Dict[int, TextElement] = {}",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "EquationPrediction",
                 "docstring": "",
                 "sha256": 283019580808330812046385053785548970241882616440,
                 "start_line": 221,
                 "end_line": 223,
                 "end_line_signature": 223,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass PagePredictions(BaseModel):\n    layout: Optional[LayoutPrediction] = None\n    tablestructure: Optional[TableStructurePrediction] = None\n    figures_classification: Optional[FigureClassificationPrediction] = None\n    equations_prediction: Optional[EquationPrediction] = None\n    vlm_response: Optional[VlmPrediction] = None",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "PagePredictions",
                 "docstring": "",
                 "sha256": 1048734808182693909263635311132078575228024326882,
                 "start_line": 226,
                 "end_line": 231,
                 "end_line_signature": 231,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass AssembledUnit(BaseModel):\n    elements: List[PageElement] = []\n    body: List[PageElement] = []\n    headers: List[PageElement] = []",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "AssembledUnit",
                 "docstring": "",
                 "sha256": 1094387419928066226155485436524594727573943352114,
                 "start_line": 237,
                 "end_line": 240,
                 "end_line_signature": 240,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass ItemAndImageEnrichmentElement(BaseModel):\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n\n    item: NodeItem\n    image: Image",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "ItemAndImageEnrichmentElement",
                 "docstring": "",
                 "sha256": 30748452496409606175686443467765939596665570803,
                 "start_line": 243,
                 "end_line": 247,
                 "end_line_signature": 247,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\n## OpenAI API Request / Response Models ##\nclass OpenAiChatMessage(BaseModel):\n    role: str\n    content: str",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "OpenAiChatMessage",
                 "docstring": "",
                 "sha256": 515012574841107792563852565513091992302046287434,
                 "start_line": 314,
                 "end_line": 316,
                 "end_line_signature": 316,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass OpenAiResponseChoice(BaseModel):\n    index: int\n    message: OpenAiChatMessage\n    finish_reason: Optional[str]",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "OpenAiResponseChoice",
                 "docstring": "",
                 "sha256": 337899610582669912657797333467719843029840509833,
                 "start_line": 319,
                 "end_line": 322,
                 "end_line_signature": 322,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass OpenAiResponseUsage(BaseModel):\n    prompt_tokens: int\n    completion_tokens: int\n    total_tokens: int",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "OpenAiResponseUsage",
                 "docstring": "",
                 "sha256": 130433137267720616513765827820400685577191918977,
                 "start_line": 325,
                 "end_line": 328,
                 "end_line_signature": 328,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass OpenAiApiResponse(BaseModel):\n    model_config = ConfigDict(\n        protected_namespaces=(),\n    )\n\n    id: str\n    model: Optional[str] = None  # returned by openai\n    choices: List[OpenAiResponseChoice]\n    created: int\n    usage: OpenAiResponseUsage",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "OpenAiApiResponse",
                 "docstring": "",
                 "sha256": 891404258682255341223304052944928949828473242768,
                 "start_line": 331,
                 "end_line": 340,
                 "end_line_signature": 340,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from enum import Enum\nclass QualityGrade(str, Enum):\n    POOR = \"poor\"\n    FAIR = \"fair\"\n    GOOD = \"good\"\n    EXCELLENT = \"excellent\"\n    UNSPECIFIED = \"unspecified\"",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "QualityGrade",
                 "docstring": "",
                 "sha256": 193399221256625706292721394797930754087225969626,
                 "start_line": 347,
                 "end_line": 352,
                 "end_line_signature": 352,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nimport numpy as np\nclass ConfidenceReport(PageConfidenceScores):\n    pages: Dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n\n    @computed_field  # type: ignore\n    @property\n    def mean_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.mean_score for c in self.pages.values()],\n            )\n        )\n\n    @computed_field  # type: ignore\n    @property\n    def low_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.low_score for c in self.pages.values()],\n            )\n        )",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 17127733993255342652,
+                    "filename": "base_models.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
+                },
                 "part_name": "ConfidenceReport",
                 "docstring": "",
                 "sha256": 1446615132461763223157668983795322811472146148315,
                 "start_line": 413,
                 "end_line": 434,
                 "end_line_signature": 434,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
-                    "filename": "base_models.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "if TYPE_CHECKING:\n\nFormatToExtensions: Dict[InputFormat, List[str]] = {\n    InputFormat.DOCX: [\"docx\", \"dotx\", \"docm\", \"dotm\"],\n    InputFormat.PPTX: [\"pptx\", \"potx\", \"ppsx\", \"pptm\", \"potm\", \"ppsm\"],\n    InputFormat.PDF: [\"pdf\"],\n    InputFormat.MD: [\"md\"],\n    InputFormat.HTML: [\"html\", \"htm\", \"xhtml\"],\n    InputFormat.XML_JATS: [\"xml\", \"nxml\"],\n    InputFormat.IMAGE: [\"jpg\", \"jpeg\", \"png\", \"tif\", \"tiff\", \"bmp\", \"webp\"],\n    InputFormat.ASCIIDOC: [\"adoc\", \"asciidoc\", \"asc\"],\n    InputFormat.CSV: [\"csv\"],\n    InputFormat.XLSX: [\"xlsx\", \"xlsm\"],\n    InputFormat.XML_USPTO: [\"xml\", \"txt\"],\n    InputFormat.JSON_DOCLING: [\"json\"],\n    InputFormat.AUDIO: [\"wav\", \"mp3\"],\n}\n\nFormatToMimeType: Dict[InputFormat, List[str]] = {\n    InputFormat.DOCX: [\n        \"application/vnd.openxmlformats-officedocument.wordprocessingml.document\",\n        \"application/vnd.openxmlformats-officedocument.wordprocessingml.template\",\n    ],\n    InputFormat.PPTX: [\n        \"application/vnd.openxmlformats-officedocument.presentationml.template\",\n        \"application/vnd.openxmlformats-officedocument.presentationml.slideshow\",\n        \"application/vnd.openxmlformats-officedocument.presentationml.presentation\",\n    ],\n    InputFormat.HTML: [\"text/html\", \"application/xhtml+xml\"],\n    InputFormat.XML_JATS: [\"application/xml\"],\n    InputFormat.IMAGE: [\n        \"image/png\",\n        \"image/jpeg\",\n        \"image/tiff\",\n        \"image/gif\",\n        \"image/bmp\",\n        \"image/webp\",\n    ],\n    InputFormat.PDF: [\"application/pdf\"],\n    InputFormat.ASCIIDOC: [\"text/asciidoc\"],\n    InputFormat.MD: [\"text/markdown\", \"text/x-markdown\"],\n    InputFormat.CSV: [\"text/csv\"],\n    InputFormat.XLSX: [\n        \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"\n    ],\n    InputFormat.XML_USPTO: [\"application/xml\", \"text/plain\"],\n    InputFormat.JSON_DOCLING: [\"application/json\"],\n    InputFormat.AUDIO: [\"audio/x-wav\", \"audio/mpeg\", \"audio/wav\", \"audio/mp3\"],\n}\n\nMimeTypeToFormat: dict[str, list[InputFormat]] = {\n    mime: [fmt for fmt in FormatToMimeType if mime in FormatToMimeType[fmt]]\n    for value in FormatToMimeType.values()\n    for mime in value\n}\n\nPageElement = Union[TextElement, Table, FigureElement, ContainerElement]",
             "meta": {
-                "sha256": 937534938268631177739242095765995242760409532040,
-                "start_line": 27,
-                "end_line": 237,
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
                 "origin": {
                     "mimetype": "text/plain",
                     "binary_hash": 17127733993255342652,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
+                "sha256": 937534938268631177739242095765995242760409532040,
+                "start_line": 27,
+                "end_line": 237,
                 "chunk_type": "preamble"
             }
         },
         {
             "text": "from collections.abc import Iterable\nfrom docling.datamodel.document import ConversionResult, Page\nfrom docling_core.types.doc import BoundingBox, CoordOrigin\nfrom docling_core.types.legacy_doc.base import BaseCell, BaseText, Ref, Table\nfrom typing import Any, Dict, List, Tuple, Union\n_log = logging.getLogger(__name__)\ndef generate_multimodal_pages(\n    doc_result: ConversionResult,\n) -> Iterable[Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]], Page]]:\n    label_to_doclaynet = {\n        \"title\": \"title\",\n        \"table-of-contents\": \"document_index\",\n        \"subtitle-level-1\": \"section_header\",\n        \"checkbox-selected\": \"checkbox_selected\",\n        \"checkbox-unselected\": \"checkbox_unselected\",\n        \"caption\": \"caption\",\n        \"page-header\": \"page_header\",\n        \"page-footer\": \"page_footer\",\n        \"footnote\": \"footnote\",\n        \"table\": \"table\",\n        \"formula\": \"formula\",\n        \"list-item\": \"list_item\",\n        \"code\": \"code\",\n        \"figure\": \"picture\",\n        \"picture\": \"picture\",\n        \"reference\": \"text\",\n        \"paragraph\": \"text\",\n        \"text\": \"text\",\n    }\n\n    content_text = \"\"\n    page_no = 0\n    start_ix = 0\n    end_ix = 0\n    doc_items: List[Tuple[int, Union[BaseCell, BaseText]]] = []\n\n    doc = doc_result.legacy_document\n\n    def _process_page_segments(doc_items: list[Tuple[int, BaseCell]], page: Page):\n        segments = []\n\n        for ix, item in doc_items:\n            item_type = item.obj_type\n            label = label_to_doclaynet.get(item_type, None)\n\n            if label is None or item.prov is None or page.size is None:\n                continue\n\n            bbox = BoundingBox.from_tuple(\n                tuple(item.prov[0].bbox), origin=CoordOrigin.BOTTOMLEFT\n            )\n            new_bbox = bbox.to_top_left_origin(page_height=page.size.height).normalized(\n                page_size=page.size\n            )\n\n            new_segment = {\n                \"index_in_doc\": ix,\n                \"label\": label,\n                \"text\": item.text if item.text is not None else \"\",\n                \"bbox\": new_bbox.as_tuple(),\n                \"data\": [],\n            }\n\n            if isinstance(item, Table):\n                table_html = item.export_to_html()\n                new_segment[\"data\"].append(\n                    {\n                        \"html_seq\": table_html,\n                        \"otsl_seq\": \"\",\n                    }\n                )\n\n            segments.append(new_segment)\n\n        return segments\n\n    def _process_page_cells(page: Page):\n        cells: List[dict] = []\n        if page.size is None:\n            return cells\n        for cell in page.cells:\n            new_bbox = (\n                cell.rect.to_bounding_box()\n                .to_top_left_origin(page_height=page.size.height)\n                .normalized(page_size=page.size)\n            )\n            is_ocr = cell.from_ocr\n            ocr_confidence = cell.confidence\n            cells.append(\n                {\n                    \"text\": cell.text,\n                    \"bbox\": new_bbox.as_tuple(),\n                    \"ocr\": is_ocr,\n                    \"ocr_confidence\": ocr_confidence,\n                }\n            )\n        return cells\n\n    def _process_page():\n        page_ix = page_no - 1\n        page = doc_result.pages[page_ix]\n\n        page_cells = _process_page_cells(page=page)\n        page_segments = _process_page_segments(doc_items=doc_items, page=page)\n        content_md = doc.export_to_markdown(\n            main_text_start=start_ix, main_text_stop=end_ix\n        )\n        # No page-tagging since we only do 1 page at the time\n        content_dt = doc.export_to_document_tokens(\n            main_text_start=start_ix, main_text_stop=end_ix, add_page_index=False\n        )\n\n        return content_text, content_md, content_dt, page_cells, page_segments, page\n\n    if doc.main_text is None:\n        return\n    for ix, orig_item in enumerate(doc.main_text):\n        item = doc._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item\n        if item is None or item.prov is None or len(item.prov) == 0:\n            _log.debug(f\"Skipping item {orig_item}\")\n            continue\n\n        item_page = item.prov[0].page\n\n        # Page is complete\n        if page_no > 0 and item_page > page_no:\n            yield _process_page()\n\n            start_ix = ix\n            doc_items = []\n            content_text = \"\"\n\n        page_no = item_page\n        end_ix = ix\n        doc_items.append((ix, item))\n        if item.text is not None and item.text != \"\":\n            content_text += item.text + \" \"\n\n    if len(doc_items) > 0:\n        yield _process_page()",
             "meta": {
-                "part_name": "generate_multimodal_pages",
-                "docstring": "",
-                "sha256": 1004790262158132739538587728436826033595593751761,
-                "start_line": 12,
-                "end_line": 145,
-                "end_line_signature": 15,
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
                 "origin": {
                     "mimetype": "text/plain",
                     "binary_hash": 11028592083014135829,
                     "filename": "export.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/export.py"
                 },
+                "part_name": "generate_multimodal_pages",
+                "docstring": "",
+                "sha256": 1004790262158132739538587728436826033595593751761,
+                "start_line": 12,
+                "end_line": 145,
+                "end_line_signature": 15,
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    @override\n    def is_valid(self) -> bool:\n        return self.valid",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "is_valid",
                 "docstring": "",
                 "sha256": 1389299177428647533914300122685171886284474960790,
                 "start_line": 120,
                 "end_line": 121,
                 "end_line_signature": 121,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    @classmethod\n    @override\n    def supports_pagination(cls) -> bool:\n        return False",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "supports_pagination",
                 "docstring": "",
                 "sha256": 189133244729867257087740036829509886476419053207,
                 "start_line": 125,
                 "end_line": 126,
                 "end_line_signature": 126,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    @override\n    def unload(self):\n        if isinstance(self.path_or_stream, BytesIO):\n            self.path_or_stream.close()\n        self.path_or_stream = None",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "unload",
                 "docstring": "",
                 "sha256": 19733788426265514145027761479429042000417200591,
                 "start_line": 129,
                 "end_line": 132,
                 "end_line_signature": 130,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.base_models import InputFormat\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    @classmethod\n    @override\n    def supported_formats(cls) -> set[InputFormat]:\n        return {InputFormat.XML_JATS}",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "supported_formats",
                 "docstring": "",
                 "sha256": 95992898799884786951251283661078353705554191150,
                 "start_line": 136,
                 "end_line": 137,
                 "end_line_signature": 137,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nimport traceback\n_log = logging.getLogger(__name__)\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    @override\n    def convert(self) -> DoclingDocument:\n        try:\n            # Create empty document\n            origin = DocumentOrigin(\n                filename=self.file.name or \"file\",\n                mimetype=\"application/xml\",\n                binary_hash=self.document_hash,\n            )\n            doc = DoclingDocument(name=self.file.stem or \"file\", origin=origin)\n            self.hlevel = 0\n\n            # Get metadata XML components\n            xml_components: XMLComponents = self._parse_metadata()\n\n            # Add metadata to the document\n            self._add_metadata(doc, xml_components)\n\n            # walk over the XML body\n            body = self.tree.xpath(\"//body\")\n            if self.root and len(body) > 0:\n                self._walk_linear(doc, self.root, body[0])\n\n            # walk over the XML back matter\n            back = self.tree.xpath(\"//back\")\n            if self.root and len(back) > 0:\n                self._walk_linear(doc, self.root, back[0])\n        except Exception:\n            _log.error(traceback.format_exc())\n\n        return doc",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "convert",
                 "docstring": "",
                 "sha256": 401268109311259531613842418991708895011320755673,
                 "start_line": 140,
                 "end_line": 169,
                 "end_line_signature": 141,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    @staticmethod\n    def _get_text(node: etree._Element, sep: Optional[str] = None) -> str:\n        skip_tags = [\"term\", \"disp-formula\", \"inline-formula\"]\n        text: str = (\n            node.text.replace(\"\\n\", \" \")\n            if (node.tag not in skip_tags and node.text)\n            else \"\"\n        )\n        for child in list(node):\n            if child.tag not in skip_tags:\n                # TODO: apply styling according to child.tag when supported by docling-core\n                text += JatsDocumentBackend._get_text(child, sep)\n            if sep:\n                text = text.rstrip(sep) + sep\n            text += child.tail.replace(\"\\n\", \" \") if child.tail else \"\"\n\n        return text",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_get_text",
                 "docstring": "",
                 "sha256": 766714162982515447138884963963637052165120920700,
                 "start_line": 172,
                 "end_line": 187,
                 "end_line_signature": 173,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _find_metadata(self) -> Optional[etree._Element]:\n        meta_names: list[str] = [\"article-meta\", \"book-part-meta\"]\n        meta: Optional[etree._Element] = None\n        for name in meta_names:\n            node = self.tree.xpath(f\".//{name}\")\n            if len(node) > 0:\n                meta = node[0]\n                break\n\n        return meta",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_find_metadata",
                 "docstring": "",
                 "sha256": 864269816803865464490166888555034068213906212092,
                 "start_line": 189,
                 "end_line": 198,
                 "end_line_signature": 190,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _parse_abstract(self) -> list[Abstract]:\n        # TODO: address cases with multiple sections\n        abs_list: list[Abstract] = []\n\n        for abs_node in self.tree.xpath(\".//abstract\"):\n            abstract: Abstract = dict(label=\"\", content=\"\")\n            texts = []\n            for abs_par in abs_node.xpath(\"p\"):\n                texts.append(JatsDocumentBackend._get_text(abs_par).strip())\n            abstract[\"content\"] = \" \".join(texts)\n\n            label_node = abs_node.xpath(\"title|label\")\n            if len(label_node) > 0:\n                abstract[\"label\"] = label_node[0].text.strip()\n\n            abs_list.append(abstract)\n\n        return abs_list",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_parse_abstract",
                 "docstring": "",
                 "sha256": 270615732461062541428727022585950585711717687697,
                 "start_line": 200,
                 "end_line": 217,
                 "end_line_signature": 202,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _parse_authors(self) -> list[Author]:\n        # Get mapping between affiliation ids and names\n        authors: list[Author] = []\n        meta: Optional[etree._Element] = self._find_metadata()\n        if meta is None:\n            return authors\n\n        affiliation_names = []\n        for affiliation_node in meta.xpath(\".//aff[@id]\"):\n            aff = \", \".join([t for t in affiliation_node.itertext() if t.strip()])\n            aff = aff.replace(\"\\n\", \" \")\n            label = affiliation_node.xpath(\"label\")\n            if label:\n                # TODO: once superscript is supported, add label with formatting\n                aff = aff.removeprefix(f\"{label[0].text}, \")\n            affiliation_names.append(aff)\n        affiliation_ids_names = dict(\n            zip(meta.xpath(\".//aff[@id]/@id\"), affiliation_names)\n        )\n\n        # Get author names and affiliation names\n        for author_node in meta.xpath(\n            './/contrib-group/contrib[@contrib-type=\"author\"]'\n        ):\n            author: Author = {\n                \"name\": \"\",\n                \"affiliation_names\": [],\n            }\n\n            # Affiliation names\n            affiliation_ids = [\n                a.attrib[\"rid\"] for a in author_node.xpath('xref[@ref-type=\"aff\"]')\n            ]\n            for id in affiliation_ids:\n                if id in affiliation_ids_names:\n                    author[\"affiliation_names\"].append(affiliation_ids_names[id])\n\n            # Name\n            author[\"name\"] = (\n                author_node.xpath(\"name/given-names\")[0].text\n                + \" \"\n                + author_node.xpath(\"name/surname\")[0].text\n            )\n\n            authors.append(author)\n\n        return authors",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_parse_authors",
                 "docstring": "",
                 "sha256": 285578325238635728078594781795591481429703102959,
                 "start_line": 219,
                 "end_line": 265,
                 "end_line_signature": 221,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _parse_title(self) -> str:\n        meta_names: list[str] = [\n            \"article-meta\",\n            \"collection-meta\",\n            \"book-meta\",\n            \"book-part-meta\",\n        ]\n        title_names: list[str] = [\"article-title\", \"subtitle\", \"title\", \"label\"]\n        titles: list[str] = [\n            \" \".join(\n                elem.text.replace(\"\\n\", \" \").strip()\n                for elem in list(title_node)\n                if elem.tag in title_names\n            ).strip()\n            for title_node in self.tree.xpath(\n                \"|\".join([f\".//{item}/title-group\" for item in meta_names])\n            )\n        ]\n\n        text = \" - \".join(titles)\n\n        return text",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_parse_title",
                 "docstring": "",
                 "sha256": 211107707856227464327571216206163890165368281377,
                 "start_line": 267,
                 "end_line": 288,
                 "end_line_signature": 268,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _parse_metadata(self) -> XMLComponents:\n        \"\"\"Parsing JATS document metadata.\"\"\"\n        xml_components: XMLComponents = {\n            \"title\": self._parse_title(),\n            \"authors\": self._parse_authors(),\n            \"abstract\": self._parse_abstract(),\n        }\n        return xml_components",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_parse_metadata",
                 "docstring": "",
                 "sha256": 6721807935708893971952263073653597579122214521,
                 "start_line": 290,
                 "end_line": 297,
                 "end_line_signature": 291,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nDEFAULT_HEADER_ABSTRACT: Final = \"Abstract\"\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_abstract(\n        self, doc: DoclingDocument, xml_components: XMLComponents\n    ) -> None:\n        for abstract in xml_components[\"abstract\"]:\n            text: str = abstract[\"content\"]\n            title: str = abstract[\"label\"] or DEFAULT_HEADER_ABSTRACT\n            if not text:\n                continue\n            parent = doc.add_heading(\n                parent=self.root, text=title, level=self.hlevel + 1\n            )\n            doc.add_text(\n                parent=parent,\n                text=text,\n                label=DocItemLabel.TEXT,\n            )\n\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_abstract",
                 "docstring": "",
                 "sha256": 532581450273390935568634548645819886174208360025,
                 "start_line": 299,
                 "end_line": 316,
                 "end_line_signature": 302,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_authors(self, doc: DoclingDocument, xml_components: XMLComponents) -> None:\n        # TODO: once docling supports text formatting, add affiliation reference to\n        # author names through superscripts\n        authors: list = [item[\"name\"] for item in xml_components[\"authors\"]]\n        authors_str = \", \".join(authors)\n        affiliations: list = [\n            item\n            for author in xml_components[\"authors\"]\n            for item in author[\"affiliation_names\"]\n        ]\n        affiliations_str = \"; \".join(list(dict.fromkeys(affiliations)))\n        if authors_str:\n            doc.add_text(\n                parent=self.root,\n                text=authors_str,\n                label=DocItemLabel.PARAGRAPH,\n            )\n        if affiliations_str:\n            doc.add_text(\n                parent=self.root,\n                text=affiliations_str,\n                label=DocItemLabel.PARAGRAPH,\n            )\n\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_authors",
                 "docstring": "",
                 "sha256": 1338802139689470366285923911940829378081971981022,
                 "start_line": 318,
                 "end_line": 342,
                 "end_line_signature": 321,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_citation(self, doc: DoclingDocument, parent: NodeItem, text: str) -> None:\n        if isinstance(parent, GroupItem) and parent.label == GroupLabel.LIST:\n            doc.add_list_item(text=text, enumerated=False, parent=parent)\n        else:\n            doc.add_text(text=text, label=DocItemLabel.TEXT, parent=parent)\n\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_citation",
                 "docstring": "",
                 "sha256": 886159930357800932034845911444780765912823069638,
                 "start_line": 344,
                 "end_line": 350,
                 "end_line_signature": 345,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nDEFAULT_TEXT_ETAL: Final = \"et al.\"\n_log = logging.getLogger(__name__)\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _parse_element_citation(self, node: etree._Element) -> str:  # noqa: C901\n        citation: Citation = {\n            \"author_names\": \"\",\n            \"title\": \"\",\n            \"source\": \"\",\n            \"year\": \"\",\n            \"volume\": \"\",\n            \"page\": \"\",\n            \"pub_id\": \"\",\n            \"publisher_name\": \"\",\n            \"publisher_loc\": \"\",\n        }\n\n        _log.debug(\"Citation parsing started\")\n\n        # Author names\n        names = []\n        for name_node in node.xpath(\".//name\"):\n            name_str = (\n                name_node.xpath(\"surname\")[0].text.replace(\"\\n\", \" \").strip()\n                + \" \"\n                + name_node.xpath(\"given-names\")[0].text.replace(\"\\n\", \" \").strip()\n            )\n            names.append(name_str)\n        etal_node = node.xpath(\".//etal\")\n        if len(etal_node) > 0:\n            etal_text = etal_node[0].text or DEFAULT_TEXT_ETAL\n            names.append(etal_text)\n        citation[\"author_names\"] = \", \".join(names)\n\n        titles: list[str] = [\n            \"article-title\",\n            \"chapter-title\",\n            \"data-title\",\n            \"issue-title\",\n            \"part-title\",\n            \"trans-title\",\n        ]\n        title_node: Optional[etree._Element] = None\n        for name in titles:\n            name_node = node.xpath(name)\n            if len(name_node) > 0:\n                title_node = name_node[0]\n                break\n        citation[\"title\"] = (\n            JatsDocumentBackend._get_text(title_node)\n            if title_node is not None\n            else node.text.replace(\"\\n\", \" \").strip()\n        )\n\n        # Journal, year, publisher name, publisher location, volume, elocation\n        fields: list[str] = [\n            \"source\",\n            \"year\",\n            \"publisher-name\",\n            \"publisher-loc\",\n            \"volume\",\n        ]\n        for item in fields:\n            item_node = node.xpath(item)\n            if len(item_node) > 0:\n                citation[item.replace(\"-\", \"_\")] = (  # type: ignore[literal-required]\n                    item_node[0].text.replace(\"\\n\", \" \").strip()\n                )\n\n        # Publication identifier\n        if len(node.xpath(\"pub-id\")) > 0:\n            pub_id: list[str] = []\n            for id_node in node.xpath(\"pub-id\"):\n                id_type = id_node.get(\"assigning-authority\") or id_node.get(\n                    \"pub-id-type\"\n                )\n                id_text = id_node.text\n                if id_type and id_text:\n                    pub_id.append(\n                        id_type.replace(\"\\n\", \" \").strip().upper()\n                        + \": \"\n                        + id_text.replace(\"\\n\", \" \").strip()\n                    )\n            if pub_id:\n                citation[\"pub_id\"] = \", \".join(pub_id)\n\n        # Pages\n        if len(node.xpath(\"elocation-id\")) > 0:\n            citation[\"page\"] = (\n                node.xpath(\"elocation-id\")[0].text.replace(\"\\n\", \" \").strip()\n            )\n        elif len(node.xpath(\"fpage\")) > 0:\n            citation[\"page\"] = node.xpath(\"fpage\")[0].text.replace(\"\\n\", \" \").strip()\n            if len(node.xpath(\"lpage\")) > 0:\n                citation[\"page\"] += (\n                    \"\u2013\"\n                    + node.xpath(\"lpage\")[0]\n                    .text.replace(\"\\n\", \" \")\n                    .strip()  # noqa: RUF001\n                )\n\n        # Flatten the citation to string\n\n        text = \"\"\n        if citation[\"author_names\"]:\n            text += citation[\"author_names\"].rstrip(\".\") + \". \"\n        if citation[\"title\"]:\n            text += citation[\"title\"] + \". \"\n        if citation[\"source\"]:\n            text += citation[\"source\"] + \". \"\n        if citation[\"publisher_name\"]:\n            if citation[\"publisher_loc\"]:\n                text += f\"{citation['publisher_loc']}: \"\n            text += citation[\"publisher_name\"] + \". \"\n        if citation[\"volume\"]:\n            text = text.rstrip(\". \")\n            text += f\" {citation['volume']}. \"\n        if citation[\"page\"]:\n            text = text.rstrip(\". \")\n            if citation[\"volume\"]:\n                text += \":\"\n            text += citation[\"page\"] + \". \"\n        if citation[\"year\"]:\n            text = text.rstrip(\". \")\n            text += f\" ({citation['year']}).\"\n        if citation[\"pub_id\"]:\n            text = text.rstrip(\".\") + \". \"\n            text += citation[\"pub_id\"]\n\n        _log.debug(\"Citation flattened\")\n\n        return text",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_parse_element_citation",
                 "docstring": "",
                 "sha256": 270746555936847738057126604179455710215169149513,
                 "start_line": 352,
                 "end_line": 479,
                 "end_line_signature": 353,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_equation(\n        self, doc: DoclingDocument, parent: NodeItem, node: etree._Element\n    ) -> None:\n        math_text = node.text\n        math_parts = math_text.split(\"$$\")\n        if len(math_parts) == 3:\n            math_formula = math_parts[1]\n            doc.add_text(label=DocItemLabel.FORMULA, text=math_formula, parent=parent)\n\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_equation",
                 "docstring": "",
                 "sha256": 1414534615925307980331912092067693530565141108001,
                 "start_line": 481,
                 "end_line": 490,
                 "end_line_signature": 484,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_figure_captions(\n        self, doc: DoclingDocument, parent: NodeItem, node: etree._Element\n    ) -> None:\n        label_node = node.xpath(\"label\")\n        label: Optional[str] = (\n            JatsDocumentBackend._get_text(label_node[0]).strip() if label_node else \"\"\n        )\n\n        caption_node = node.xpath(\"caption\")\n        caption: Optional[str]\n        if len(caption_node) > 0:\n            caption = \"\"\n            for caption_par in list(caption_node[0]):\n                if caption_par.xpath(\".//supplementary-material\"):\n                    continue\n                caption += JatsDocumentBackend._get_text(caption_par).strip() + \" \"\n            caption = caption.strip()\n        else:\n            caption = None\n\n        # TODO: format label vs caption once styling is supported\n        fig_text: str = f\"{label}{' ' if label and caption else ''}{caption}\"\n        fig_caption: Optional[TextItem] = (\n            doc.add_text(label=DocItemLabel.CAPTION, text=fig_text)\n            if fig_text\n            else None\n        )\n\n        doc.add_picture(parent=parent, caption=fig_caption)\n\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_figure_captions",
                 "docstring": "",
                 "sha256": 835512377408024386136672483548752387568193882073,
                 "start_line": 492,
                 "end_line": 522,
                 "end_line_signature": 495,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_metadata(\n        self, doc: DoclingDocument, xml_components: XMLComponents\n    ) -> None:\n        self._add_title(doc, xml_components)\n        self._add_authors(doc, xml_components)\n        self._add_abstract(doc, xml_components)\n\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_metadata",
                 "docstring": "",
                 "sha256": 153982142573938397014666471275555982493113402407,
                 "start_line": 531,
                 "end_line": 538,
                 "end_line_signature": 534,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from bs4 import BeautifulSoup, Tag\nfrom docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.backend.html_backend import HTMLDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_table(\n        self, doc: DoclingDocument, parent: NodeItem, table_xml_component: Table\n    ) -> None:\n        soup = BeautifulSoup(table_xml_component[\"content\"], \"html.parser\")\n        table_tag = soup.find(\"table\")\n        if not isinstance(table_tag, Tag):\n            return\n\n        data = HTMLDocumentBackend.parse_table_data(table_tag)\n\n        # TODO: format label vs caption once styling is supported\n        label = table_xml_component[\"label\"]\n        caption = table_xml_component[\"caption\"]\n        table_text: str = f\"{label}{' ' if label and caption else ''}{caption}\"\n        table_caption: Optional[TextItem] = (\n            doc.add_text(label=DocItemLabel.CAPTION, text=table_text)\n            if table_text\n            else None\n        )\n\n        if data is not None:\n            doc.add_table(data=data, parent=parent, caption=table_caption)\n\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_table",
                 "docstring": "",
                 "sha256": 1342802968890476187190364473245592459773739883169,
                 "start_line": 540,
                 "end_line": 563,
                 "end_line_signature": 543,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\n_log = logging.getLogger(__name__)\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_tables(\n        self, doc: DoclingDocument, parent: NodeItem, node: etree._Element\n    ) -> None:\n        table: Table = {\"label\": \"\", \"caption\": \"\", \"content\": \"\"}\n\n        # Content\n        if len(node.xpath(\"table\")) > 0:\n            table_content_node = node.xpath(\"table\")[0]\n        elif len(node.xpath(\"alternatives/table\")) > 0:\n            table_content_node = node.xpath(\"alternatives/table\")[0]\n        else:\n            table_content_node = None\n        if table_content_node is not None:\n            table[\"content\"] = etree.tostring(table_content_node).decode(\"utf-8\")\n\n        # Caption\n        caption_node = node.xpath(\"caption\")\n        caption: Optional[str]\n        if caption_node:\n            caption = \"\"\n            for caption_par in list(caption_node[0]):\n                if caption_par.xpath(\".//supplementary-material\"):\n                    continue\n                caption += JatsDocumentBackend._get_text(caption_par).strip() + \" \"\n            caption = caption.strip()\n        else:\n            caption = None\n        if caption is not None:\n            table[\"caption\"] = caption\n\n        # Label\n        if len(node.xpath(\"label\")) > 0:\n            table[\"label\"] = node.xpath(\"label\")[0].text\n\n        try:\n            self._add_table(doc, parent, table)\n        except Exception:\n            _log.warning(f\"Skipping unsupported table in {self.file!s}\")\n\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_tables",
                 "docstring": "",
                 "sha256": 1033621645055163687215987453641177660800797256694,
                 "start_line": 565,
                 "end_line": 604,
                 "end_line_signature": 568,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _add_title(self, doc: DoclingDocument, xml_components: XMLComponents) -> None:\n        self.root = doc.add_text(\n            parent=None,\n            text=xml_components[\"title\"],\n            label=DocItemLabel.TITLE,\n        )\n        return",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_add_title",
                 "docstring": "",
                 "sha256": 974332749105219020038962392126855200985294853221,
                 "start_line": 606,
                 "end_line": 612,
                 "end_line_signature": 607,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from docling.backend.abstract_backend import DeclarativeDocumentBackend\nfrom docling.datamodel.document import InputDocument\nfrom docling_core.types.doc import (\n    DocItemLabel,\n    DoclingDocument,\n    DocumentOrigin,\n    GroupItem,\n    GroupLabel,\n    NodeItem,\n    TextItem,\n)\nfrom io import BytesIO\nfrom lxml import etree\nfrom pathlib import Path\nfrom typing import Final, Optional, Union\nfrom typing_extensions import TypedDict, override\nDEFAULT_HEADER_ACKNOWLEDGMENTS: Final = \"Acknowledgments\"\nDEFAULT_HEADER_REFERENCES: Final = \"References\"\nclass JatsDocumentBackend(DeclarativeDocumentBackend):\n\n\n    @override\n    def __init__(\n        self, in_doc: \"InputDocument\", path_or_stream: Union[BytesIO, Path]\n    ) -> None:\n        super().__init__(in_doc, path_or_stream)\n        self.path_or_stream = path_or_stream\n\n        # Initialize the root of the document hierarchy\n        self.root: Optional[NodeItem] = None\n        self.hlevel: int = 0\n        self.valid: bool = False\n        try:\n            if isinstance(self.path_or_stream, BytesIO):\n                self.path_or_stream.seek(0)\n            self.tree: etree._ElementTree = etree.parse(self.path_or_stream)\n\n            doc_info: etree.DocInfo = self.tree.docinfo\n            if doc_info.system_url and any(\n                kwd in doc_info.system_url for kwd in JATS_DTD_URL\n            ):\n                self.valid = True\n                return\n            for ent in doc_info.internalDTD.iterentities():\n                if ent.system_url and any(\n                    kwd in ent.system_url for kwd in JATS_DTD_URL\n                ):\n                    self.valid = True\n                    return\n        except Exception as exc:\n            raise RuntimeError(\n                f\"Could not initialize JATS backend for file with hash {self.document_hash}.\"\n            ) from exc\n    def _walk_linear(  # noqa: C901\n        self, doc: DoclingDocument, parent: NodeItem, node: etree._Element\n    ) -> str:\n        skip_tags = [\"term\"]\n        flush_tags = [\"ack\", \"sec\", \"list\", \"boxed-text\", \"disp-formula\", \"fig\"]\n        new_parent: NodeItem = parent\n        node_text: str = (\n            node.text.replace(\"\\n\", \" \")\n            if (node.tag not in skip_tags and node.text)\n            else \"\"\n        )\n\n        for child in list(node):\n            stop_walk: bool = False\n\n            # flush text into TextItem for some tags in paragraph nodes\n            if node.tag == \"p\" and node_text.strip() and child.tag in flush_tags:\n                doc.add_text(\n                    label=DocItemLabel.TEXT, text=node_text.strip(), parent=parent\n                )\n                node_text = \"\"\n\n            # add elements and decide whether to stop walking\n            if child.tag in (\"sec\", \"ack\"):\n                header = child.xpath(\"title|label\")\n                text: Optional[str] = None\n                if len(header) > 0:\n                    text = JatsDocumentBackend._get_text(header[0])\n                elif child.tag == \"ack\":\n                    text = DEFAULT_HEADER_ACKNOWLEDGMENTS\n                if text:\n                    self.hlevel += 1\n                    new_parent = doc.add_heading(\n                        text=text, parent=parent, level=self.hlevel\n                    )\n            elif child.tag == \"list\":\n                new_parent = doc.add_group(\n                    label=GroupLabel.LIST, name=\"list\", parent=parent\n                )\n            elif child.tag == \"list-item\":\n                # TODO: address any type of content (another list, formula,...)\n                # TODO: address list type and item label\n                text = JatsDocumentBackend._get_text(child).strip()\n                new_parent = doc.add_list_item(text=text, parent=parent)\n                stop_walk = True\n            elif child.tag == \"fig\":\n                self._add_figure_captions(doc, parent, child)\n                stop_walk = True\n            elif child.tag == \"table-wrap\":\n                self._add_tables(doc, parent, child)\n                stop_walk = True\n            elif child.tag == \"suplementary-material\":\n                stop_walk = True\n            elif child.tag == \"fn-group\":\n                # header = child.xpath(\".//title\") or child.xpath(\".//label\")\n                # if header:\n                #     text = JatsDocumentBackend._get_text(header[0])\n                #     fn_parent = doc.add_heading(text=text, parent=new_parent)\n                # self._add_footnote_group(doc, fn_parent, child)\n                stop_walk = True\n            elif child.tag == \"ref-list\" and node.tag != \"ref-list\":\n                header = child.xpath(\"title|label\")\n                text = (\n                    JatsDocumentBackend._get_text(header[0])\n                    if len(header) > 0\n                    else DEFAULT_HEADER_REFERENCES\n                )\n                new_parent = doc.add_heading(text=text, parent=parent)\n                new_parent = doc.add_group(\n                    parent=new_parent, label=GroupLabel.LIST, name=\"list\"\n                )\n            elif child.tag == \"element-citation\":\n                text = self._parse_element_citation(child)\n                self._add_citation(doc, parent, text)\n                stop_walk = True\n            elif child.tag == \"mixed-citation\":\n                text = JatsDocumentBackend._get_text(child).strip()\n                self._add_citation(doc, parent, text)\n                stop_walk = True\n            elif child.tag == \"tex-math\":\n                self._add_equation(doc, parent, child)\n                stop_walk = True\n            elif child.tag == \"inline-formula\":\n                # TODO: address inline formulas when supported by docling-core\n                stop_walk = True\n\n            # step into child\n            if not stop_walk:\n                new_text = self._walk_linear(doc, new_parent, child)\n                if not (node.getparent().tag == \"p\" and node.tag in flush_tags):\n                    node_text += new_text\n                if child.tag in (\"sec\", \"ack\") and text:\n                    self.hlevel -= 1\n\n            # pick up the tail text\n            node_text += child.tail.replace(\"\\n\", \" \") if child.tail else \"\"\n\n        # create paragraph\n        if node.tag == \"p\" and node_text.strip():\n            doc.add_text(label=DocItemLabel.TEXT, text=node_text.strip(), parent=parent)\n            return \"\"\n        else:\n            # backpropagate the text\n            return node_text",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "_walk_linear",
                 "docstring": "",
                 "sha256": 1396734027815047329843267767563675798505988021776,
                 "start_line": 614,
                 "end_line": 717,
                 "end_line_signature": 617,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "function"
             }
         },
         {
             "text": "from typing_extensions import TypedDict, override\nclass Abstract(TypedDict):\n    label: str\n    content: str",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "Abstract",
                 "docstring": "",
                 "sha256": 794614712107844233737490895996588109287861339811,
                 "start_line": 33,
                 "end_line": 35,
                 "end_line_signature": 35,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from io import BytesIO\nfrom typing_extensions import TypedDict, override\nclass Author(TypedDict):\n    name: str\n    affiliation_names: list[str]",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "Author",
                 "docstring": "",
                 "sha256": 618469300419808735784045889717450654715997143657,
                 "start_line": 38,
                 "end_line": 40,
                 "end_line_signature": 40,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from io import BytesIO\nfrom typing_extensions import TypedDict, override\nclass Citation(TypedDict):\n    author_names: str\n    title: str\n    source: str\n    year: str\n    volume: str\n    page: str\n    pub_id: str\n    publisher_name: str\n    publisher_loc: str",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "Citation",
                 "docstring": "",
                 "sha256": 47216956481538603575192296942081985433567090375,
                 "start_line": 43,
                 "end_line": 52,
                 "end_line_signature": 52,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from io import BytesIO\nfrom typing_extensions import TypedDict, override\nclass Table(TypedDict):\n    label: str\n    caption: str\n    content: str",
             "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12767849390864590006,
+                    "filename": "jats_backend.py",
+                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
+                },
                 "part_name": "Table",
                 "docstring": "",
                 "sha256": 652205560496743097978957542262426472701689171417,
                 "start_line": 55,
                 "end_line": 58,
                 "end_line_signature": 58,
-                "origin": {
-                    "mimetype": "text/plain",
-                    "binary_hash": 12767849390864590006,
-                    "filename": "jats_backend.py",
-                    "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
-                },
                 "chunk_type": "class"
             }
         },
         {
             "text": "from typing_extensions import TypedDict, override\nclass XMLComponents(TypedDict):\n    title: str\n    authors: list[Author]\n    abstract: list[Abstract]",
             "meta": {
-                "part_name": "XMLComponents",
-                "docstring": "",
-                "sha256": 1130452765636835800645360676517087324676223612005,
-                "start_line": 61,
-                "end_line": 64,
-                "end_line_signature": 64,
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
                 "origin": {
                     "mimetype": "text/plain",
                     "binary_hash": 12767849390864590006,
                     "filename": "jats_backend.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/jats_backend.py"
                 },
+                "part_name": "XMLComponents",
+                "docstring": "",
+                "sha256": 1130452765636835800645360676517087324676223612005,
+                "start_line": 61,
+                "end_line": 64,
+                "end_line_signature": 64,
                 "chunk_type": "class"
             }
         }

@@ -264,3 +264,16 @@ class CodeLanguageLabel(str, Enum):
     def __str__(self):
         """Get string value."""
         return str(self.value)
+
+    def to_language(self):
+        """Convert CodeLanguageLabel to Language enum."""
+        from docling_core.transforms.chunker.code_chunk_utils.utils import Language
+
+        mapping = {
+            CodeLanguageLabel.PYTHON: Language.PYTHON,
+            CodeLanguageLabel.JAVA: Language.JAVA,
+            CodeLanguageLabel.C: Language.C,
+            CodeLanguageLabel.TYPESCRIPT: Language.TYPESCRIPT,
+            CodeLanguageLabel.JAVASCRIPT: Language.JAVASCRIPT,
+        }
+        return mapping.get(self, None)
