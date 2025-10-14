@@ -118,7 +118,12 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
         is_inline_scope: bool = False,
         **kwargs: Any,
     ) -> SerializationResult:
-        params = LaTeXParams(**kwargs)
+        """Serialize a ``TextItem`` into LaTeX, handling lists, titles, headers, code and formulas.
+
+        Applies post-processing (escape, formatting, hyperlinks) when appropriate and
+        returns a ``SerializationResult`` ready to be joined into the document.
+        """
+        LaTeXParams(**kwargs)
         parts: list[SerializationResult] = []
 
         # Inline group passthrough
@@ -225,6 +230,7 @@ class LaTeXAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize supported annotations of ``item`` as LaTeX comments."""
         params = LaTeXParams(**kwargs)
         res_parts: list[SerializationResult] = []
         if not params.include_annotations:
@@ -263,6 +269,7 @@ class LaTeXTableSerializer(BaseTableSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize a ``TableItem`` into a LaTeX ``tabular`` wrapped in ``table``."""
         params = LaTeXParams(**kwargs)
         res_parts: list[SerializationResult] = []
 
@@ -282,7 +289,9 @@ class LaTeXTableSerializer(BaseTableSerializer):
                         ).text
                     else:
                         cell_text = (
-                            _escape_latex(cell.text) if params.escape_latex else cell.text
+                            _escape_latex(cell.text)
+                            if params.escape_latex
+                            else cell.text
                         )
                     body_row.append(cell_text.replace("\n", " "))
                 body_rows.append(body_row)
@@ -293,8 +302,10 @@ class LaTeXTableSerializer(BaseTableSerializer):
             ncols = max(len(r) for r in body_rows)
             colspec = "|" + "|".join(["l"] * ncols) + "|"
             lines = [f"\\begin{{tabular}}{{{colspec}}}", "\\hline"]
-            for row in body_rows:
-                line = " & ".join(row) + r" \\ \hline"
+            # Use a distinct variable name to avoid shadowing the earlier
+            # 'row' (which iterates over TableCell lists) and confusing type inference
+            for str_row in body_rows:
+                line = " & ".join(str_row) + r" \\ \hline"
                 lines.append(line)
             lines.append("\\end{tabular}")
             table_text = "\n".join(lines)
@@ -311,9 +322,14 @@ class LaTeXTableSerializer(BaseTableSerializer):
             if table_text:
                 content.append(table_text)
             content.append("\\end{table}")
-            res_parts.append(create_ser_result(text="\n".join(content), span_source=item))
+            res_parts.append(
+                create_ser_result(text="\n".join(content), span_source=item)
+            )
 
-        return create_ser_result(text="\n\n".join([r.text for r in res_parts if r.text]), span_source=res_parts)
+        return create_ser_result(
+            text="\n\n".join([r.text for r in res_parts if r.text]),
+            span_source=res_parts,
+        )
 
 
 class LaTeXPictureSerializer(BasePictureSerializer):
@@ -328,6 +344,7 @@ class LaTeXPictureSerializer(BasePictureSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize a ``PictureItem`` into a LaTeX ``figure`` with optional caption and notes."""
         params = LaTeXParams(**kwargs)
         res_parts: list[SerializationResult] = []
 
@@ -358,7 +375,9 @@ class LaTeXPictureSerializer(BasePictureSerializer):
                     fig_lines.append(ann_res.text)
 
             fig_lines.append("\\end{figure}")
-            res_parts.append(create_ser_result(text="\n".join(fig_lines), span_source=item))
+            res_parts.append(
+                create_ser_result(text="\n".join(fig_lines), span_source=item)
+            )
 
         # Optional chart data as a simple table after the figure
         if params.enable_chart_tables:
@@ -372,9 +391,9 @@ class LaTeXPictureSerializer(BasePictureSerializer):
                 temp_table = temp_doc.add_table(
                     data=tabular_chart_annotations[0].chart_data
                 )
-                latex_table_content = LaTeXDocSerializer(doc=temp_doc).serialize(
-                    item=temp_table
-                ).text
+                latex_table_content = (
+                    LaTeXDocSerializer(doc=temp_doc).serialize(item=temp_table).text
+                )
                 if latex_table_content:
                     res_parts.append(
                         create_ser_result(
@@ -383,7 +402,10 @@ class LaTeXPictureSerializer(BasePictureSerializer):
                         )
                     )
 
-        return create_ser_result(text="\n\n".join([r.text for r in res_parts if r.text]), span_source=res_parts)
+        return create_ser_result(
+            text="\n\n".join([r.text for r in res_parts if r.text]),
+            span_source=res_parts,
+        )
 
     def _serialize_image_part(
         self,
@@ -424,6 +446,7 @@ class LaTeXKeyValueSerializer(BaseKeyValueSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize a ``KeyValueItem``; emits a placeholder when not excluded."""
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             return create_ser_result(text="% missing-key-value-item", span_source=item)
         else:
@@ -442,6 +465,7 @@ class LaTeXFormSerializer(BaseFormSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize a ``FormItem``; emits a placeholder when not excluded."""
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             return create_ser_result(text="% missing-form-item", span_source=item)
         else:
@@ -462,6 +486,7 @@ class LaTeXListSerializer(BaseModel, BaseListSerializer):
         is_inline_scope: bool = False,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize a list group into a nested ``itemize``/``enumerate`` environment."""
         params = LaTeXParams(**kwargs)
         parts = doc_serializer.get_parts(
             item=item,
@@ -493,6 +518,7 @@ class LaTeXInlineSerializer(BaseInlineSerializer):
         list_level: int = 0,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize inline children joining them with spaces for LaTeX output."""
         parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level,
@@ -515,12 +541,16 @@ class LaTeXFallbackSerializer(BaseFallbackSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize generic nodes by concatenating serialized children or a placeholder."""
         if isinstance(item, GroupItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
         else:
-            return create_ser_result(text="% missing-text", span_source=item if isinstance(item, DocItem) else [])
+            return create_ser_result(
+                text="% missing-text",
+                span_source=item if isinstance(item, DocItem) else [],
+            )
 
 
 class LaTeXDocSerializer(DocSerializer):
@@ -542,27 +572,32 @@ class LaTeXDocSerializer(DocSerializer):
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:
+        """Return LaTeX for bold text."""
         return f"\\textbf{{{text}}}"
 
     @override
     def serialize_italic(self, text: str, **kwargs: Any) -> str:
+        """Return LaTeX for italic text."""
         return f"\\textit{{{text}}}"
 
     @override
     def serialize_underline(self, text: str, **kwargs: Any) -> str:
+        """Return LaTeX for underlined text."""
         return f"\\underline{{{text}}}"
 
     @override
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
-        # Requires \usepackage[normalem]{ulem}
+        """Return LaTeX for strikethrough text (requires ``ulem`` package)."""
         return f"\\sout{{{text}}}"
 
     @override
     def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Return LaTeX for subscript text."""
         return f"$_{{{text}}}$"
 
     @override
     def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Return LaTeX for superscript text."""
         return f"$^{{{text}}}$"
 
     @override
@@ -572,7 +607,7 @@ class LaTeXDocSerializer(DocSerializer):
         hyperlink: Union[AnyUrl, Path],
         **kwargs: Any,
     ) -> str:
-        # Requires \usepackage{hyperref}
+        """Return LaTeX hyperlink command (requires ``hyperref`` package)."""
         return f"\\href{{{str(hyperlink)}}}{{{text}}}"
 
     @override
@@ -582,6 +617,7 @@ class LaTeXDocSerializer(DocSerializer):
         parts: list[SerializationResult],
         **kwargs: Any,
     ) -> SerializationResult:
+        """Assemble serialized parts into the final LaTeX document text."""
         text_res = "\n\n".join([p.text for p in parts if p.text])
         if self.requires_page_break():
             page_cmd = self.params.page_break_command or ""
@@ -591,6 +627,7 @@ class LaTeXDocSerializer(DocSerializer):
 
     @override
     def requires_page_break(self) -> bool:
+        """Return True if page break replacement is enabled."""
         return self.params.page_break_command is not None
 
     def post_process(
