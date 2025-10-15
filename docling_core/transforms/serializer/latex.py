@@ -317,7 +317,11 @@ class LaTeXTableSerializer(BaseTableSerializer):
             ]
             if any(m in content for m in block_markers) or "\n\n" in content:
                 return (
-                    r"\begin{minipage}[t]{\linewidth}" + "\n" + content + "\n" + r"\end{minipage}"
+                    r"\begin{minipage}[t]{\linewidth}"
+                    + "\n"
+                    + content
+                    + "\n"
+                    + r"\end{minipage}"
                 )
             # single-line or inline-safe rich content
             return content
@@ -356,8 +360,16 @@ class LaTeXTableSerializer(BaseTableSerializer):
 
                         start_row = cell.start_row_offset_idx
                         start_col = cell.start_col_offset_idx
-                        rowspan = getattr(cell, "row_span", max(1, cell.end_row_offset_idx - cell.start_row_offset_idx))
-                        colspan = getattr(cell, "col_span", max(1, cell.end_col_offset_idx - cell.start_col_offset_idx))
+                        rowspan = getattr(
+                            cell,
+                            "row_span",
+                            max(1, cell.end_row_offset_idx - cell.start_row_offset_idx),
+                        )
+                        colspan = getattr(
+                            cell,
+                            "col_span",
+                            max(1, cell.end_col_offset_idx - cell.start_col_offset_idx),
+                        )
 
                         is_start = (start_row == i) and (start_col == j)
 
@@ -373,9 +385,7 @@ class LaTeXTableSerializer(BaseTableSerializer):
 
                             token = content
                             if rowspan > 1 and colspan > 1:
-                                token = (
-                                    rf"\multicolumn{{{colspan}}}{{l}}{{\multirow{{{rowspan}}}{{*}}{{{content}}}}}"
-                                )
+                                token = rf"\multicolumn{{{colspan}}}{{l}}{{\multirow{{{rowspan}}}{{*}}{{{content}}}}}"
                             elif colspan > 1:
                                 token = rf"\multicolumn{{{colspan}}}{{l}}{{{content}}}"
                             elif rowspan > 1:
@@ -392,7 +402,9 @@ class LaTeXTableSerializer(BaseTableSerializer):
                             # Continuation of multirow coming from above at same column
                             if (origin_col == j) and (origin_row < i) and (rowspan > 1):
                                 if colspan > 1:
-                                    row_tokens.append(rf"\multicolumn{{{colspan}}}{{l}}{{}}")
+                                    row_tokens.append(
+                                        rf"\multicolumn{{{colspan}}}{{l}}{{}}"
+                                    )
                                     j += colspan
                                 else:
                                     row_tokens.append("")
@@ -418,15 +430,15 @@ class LaTeXTableSerializer(BaseTableSerializer):
 
         # Wrap in table environment when we have either content or caption
         if table_text or cap_text:
-            content = []
-            content.append("\\begin{table}[h]")
+            env_lines: list[str] = []
+            env_lines.append("\\begin{table}[h]")
             if cap_text:
-                content.append(f"\\caption{{{cap_text}}}")
+                env_lines.append(f"\\caption{{{cap_text}}}")
             if table_text:
-                content.append(table_text)
-            content.append("\\end{table}")
+                env_lines.append(table_text)
+            env_lines.append("\\end{table}")
             res_parts.append(
-                create_ser_result(text="\n".join(content), span_source=item)
+                create_ser_result(text="\n".join(env_lines), span_source=item)
             )
 
         return create_ser_result(
