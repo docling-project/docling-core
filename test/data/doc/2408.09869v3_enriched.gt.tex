@@ -5,6 +5,9 @@
 \usepackage{hyperref}       % hyperlinks
 \usepackage{url}            % simple URL typesetting
 \usepackage{booktabs}       % professional-quality tables
+\usepackage{array}          % extended column defs
+\usepackage{multirow}       % multirow cells
+\usepackage{makecell}       % line breaks in cells
 \usepackage{amsfonts}       % blackboard math symbols
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
@@ -128,12 +131,14 @@ torch runtimes backing the Docling pipeline. We will deliver updates on this top
 
 \begin{table}[h]
 \caption{Table 1: Runtime characteristics of Docling with the standard model pipeline and settings, on our test dataset of 225 pages, on two different systems. OCR is disabled. We show the time-to-solution (TTS), computed throughput in pages per second, and the peak memory used (resident set size) for both the Docling-native PDF backend and for the pypdfium backend, using 4 and 16 threads.}
-\begin{tabular}{|l|l|l|l|l|l|l|l|}
-\hline
-CPU & Thread budget & native backend & native backend & native backend & pypdfium backend & pypdfium backend & pypdfium backend \\ \hline
- &  & TTS & Pages/s & Mem & TTS & Pages/s & Mem \\ \hline
-Apple M3 Max & 4 & 177 s 167 s & 1.27 1.34 & 6.20 GB & 103 s 92 s & 2.18 2.45 & 2.56 GB \\ \hline
-(16 cores) Intel(R) Xeon E5-2690 & 16 4 16 & 375 s 244 s & 0.60 0.92 & 6.16 GB & 239 s 143 s & 0.94 1.57 & 2.42 GB \\ \hline
+\begin{tabular}{llllllll}
+\toprule
+CPU & Thread budget & \multicolumn{3}{l}{native backend} & \multicolumn{3}{l}{pypdfium backend} \\
+\midrule
+ &  & TTS & Pages/s & Mem & TTS & Pages/s & Mem \\
+Apple M3 Max & 4 & 177 s 167 s & 1.27 1.34 & 6.20 GB & 103 s 92 s & 2.18 2.45 & 2.56 GB \\
+(16 cores) Intel(R) Xeon E5-2690 & 16 4 16 & 375 s 244 s & 0.60 0.92 & 6.16 GB & 239 s 143 s & 0.94 1.57 & 2.42 GB \\
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -276,10 +281,12 @@ KDD '22, August 14-18, 2022, Washington, DC, USA Birgit Pfitzmann, Christoph Aue
 Table 2: Prediction performance (mAP@0.5-0.95) of object detection networks on DocLayNet test set. The MRCNN (Mask R-CNN) and FRCNN (Faster R-CNN) models with ResNet-50 or ResNet-101 backbone were trained based on the network architectures from the detectron2 model zoo (Mask R-CNN R50, R101-FPN 3x, Faster R-CNN R101-FPN 3x), with default configurations. The YOLO implementation utilized was YOLOv5x6 [13]. All models were initialised using pre-trained weights from the COCO 2017 dataset.
 
 \begin{table}[h]
-\begin{tabular}{|l|l|l|l|l|}
-\hline
- & human & MRCNN R50 R101 & FRCNN R101 & YOLO v5x6 \\ \hline
-Caption Footnote Formula List-item Page-footer Page-header Picture Section-header Table Text Title All & 84-89 83-91 83-85 87-88 93-94 85-89 69-71 83-84 77-81 84-86 & 68.4 71.5 70.9 60.1 63.4 81.2 80.8 61.6 59.3 71.9 70.0 71.7 72.7 67.6 69.3 82.2 82.9 85.8 76.7 80.4 72.4 73.5 & 70.1 73.7 63.5 81.0 58.9 72.0 72.0 68.4 82.2 85.4 79.9 73.4 & 77.7 77.2 66.2 86.2 61.1 67.9 74.6 86.3 88.1 82.7 76.8 \\ \hline
+\begin{tabular}{lllll}
+\toprule
+ & human & MRCNN R50 R101 & FRCNN R101 & YOLO v5x6 \\
+\midrule
+Caption Footnote Formula List-item Page-footer Page-header Picture Section-header Table Text Title All & 84-89 83-91 83-85 87-88 93-94 85-89 69-71 83-84 77-81 84-86 & 68.4 71.5 70.9 60.1 63.4 81.2 80.8 61.6 59.3 71.9 70.0 71.7 72.7 67.6 69.3 82.2 82.9 85.8 76.7 80.4 72.4 73.5 & 70.1 73.7 63.5 81.0 58.9 72.0 72.0 68.4 82.2 85.4 79.9 73.4 & 77.7 77.2 66.2 86.2 61.1 67.9 74.6 86.3 88.1 82.7 76.8 \\
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -356,22 +363,24 @@ The background of the circle is a gradient, transitioning from a lighter blue at
 \end{figure}
 
 \begin{table}[h]
-\begin{tabular}{|l|l|l|l|l|l|l|l|l|l|l|l|}
-\hline
-class label & Count & \% of Total & \% of Total & \% of Total & triple inter-annotator mAP @ 0.5-0.95 (\%) & triple inter-annotator mAP @ 0.5-0.95 (\%) & triple inter-annotator mAP @ 0.5-0.95 (\%) & triple inter-annotator mAP @ 0.5-0.95 (\%) & triple inter-annotator mAP @ 0.5-0.95 (\%) & triple inter-annotator mAP @ 0.5-0.95 (\%) & triple inter-annotator mAP @ 0.5-0.95 (\%) \\ \hline
-class label & Count & Train & Test & Val & All & Fin & Man & Sci & Law & Pat & Ten \\ \hline
-Caption & 22524 & 2.04 & 1.77 & 2.32 & 84-89 & 40-61 & 86-92 & 94-99 & 95-99 & 69-78 & n/a \\ \hline
-Footnote & 6318 & 0.60 & 0.31 & 0.58 & 83-91 & n/a & 100 & 62-88 & 85-94 & n/a & 82-97 \\ \hline
-Formula & 25027 & 2.25 & 1.90 & 2.96 & 83-85 & n/a & n/a & 84-87 & 86-96 & n/a & n/a \\ \hline
-List-item & 185660 & 17.19 & 13.34 & 15.82 & 87-88 & 74-83 & 90-92 & 97-97 & 81-85 & 75-88 & 93-95 \\ \hline
-Page-footer & 70878 & 6.51 & 5.58 & 6.00 & 93-94 & 88-90 & 95-96 & 100 & 92-97 & 100 & 96-98 \\ \hline
-Page-header & 58022 & 5.10 & 6.70 & 5.06 & 85-89 & 66-76 & 90-94 & 98-100 & 91-92 & 97-99 & 81-86 \\ \hline
-Picture & 45976 & 4.21 & 2.78 & 5.31 & 69-71 & 56-59 & 82-86 & 69-82 & 80-95 & 66-71 & 59-76 \\ \hline
-Section-header & 142884 & 12.60 & 15.77 & 12.85 & 83-84 & 76-81 & 90-92 & 94-95 & 87-94 & 69-73 & 78-86 \\ \hline
-Table & 34733 & 3.20 & 2.27 & 3.60 & 77-81 & 75-80 & 83-86 & 98-99 & 58-80 & 79-84 & 70-85 \\ \hline
-Text & 510377 & 45.82 & 49.28 & 45.00 & 84-86 & 81-86 & 88-93 & 89-93 & 87-92 & 71-79 & 87-95 \\ \hline
-Title & 5071 & 0.47 & 0.30 & 0.50 & 60-72 & 24-63 & 50-63 & 94-100 & 82-96 & 68-79 & 24-56 \\ \hline
-Total & 1107470 & 941123 & 99816 & 66531 & 82-83 & 71-74 & 79-81 & 89-94 & 86-91 & 71-76 & 68-85 \\ \hline
+\begin{tabular}{llllllllllll}
+\toprule
+\multirow{2}{*}{class label} & \multirow{2}{*}{Count} & \multicolumn{3}{l}{\% of Total} & \multicolumn{7}{l}{triple inter-annotator mAP @ 0.5-0.95 (\%)} \\
+\midrule
+ &  & Train & Test & Val & All & Fin & Man & Sci & Law & Pat & Ten \\
+Caption & 22524 & 2.04 & 1.77 & 2.32 & 84-89 & 40-61 & 86-92 & 94-99 & 95-99 & 69-78 & n/a \\
+Footnote & 6318 & 0.60 & 0.31 & 0.58 & 83-91 & n/a & 100 & 62-88 & 85-94 & n/a & 82-97 \\
+Formula & 25027 & 2.25 & 1.90 & 2.96 & 83-85 & n/a & n/a & 84-87 & 86-96 & n/a & n/a \\
+List-item & 185660 & 17.19 & 13.34 & 15.82 & 87-88 & 74-83 & 90-92 & 97-97 & 81-85 & 75-88 & 93-95 \\
+Page-footer & 70878 & 6.51 & 5.58 & 6.00 & 93-94 & 88-90 & 95-96 & 100 & 92-97 & 100 & 96-98 \\
+Page-header & 58022 & 5.10 & 6.70 & 5.06 & 85-89 & 66-76 & 90-94 & 98-100 & 91-92 & 97-99 & 81-86 \\
+Picture & 45976 & 4.21 & 2.78 & 5.31 & 69-71 & 56-59 & 82-86 & 69-82 & 80-95 & 66-71 & 59-76 \\
+Section-header & 142884 & 12.60 & 15.77 & 12.85 & 83-84 & 76-81 & 90-92 & 94-95 & 87-94 & 69-73 & 78-86 \\
+Table & 34733 & 3.20 & 2.27 & 3.60 & 77-81 & 75-80 & 83-86 & 98-99 & 58-80 & 79-84 & 70-85 \\
+Text & 510377 & 45.82 & 49.28 & 45.00 & 84-86 & 81-86 & 88-93 & 89-93 & 87-92 & 71-79 & 87-95 \\
+Title & 5071 & 0.47 & 0.30 & 0.50 & 60-72 & 24-63 & 50-63 & 94-100 & 82-96 & 68-79 & 24-56 \\
+Total & 1107470 & 941123 & 99816 & 66531 & 82-83 & 71-74 & 79-81 & 89-94 & 86-91 & 71-76 & 68-85 \\
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -392,22 +401,24 @@ annotated pages, from which we obtain accuracy ranges.
 \end{figure}
 
 \begin{table}[h]
-\begin{tabular}{|l|l|l|l|l|l|l|l|l|l|l|l|}
-\hline
- &  & \% of Total & \% of Total & \% of Total & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) \\ \hline
-class label & Count & Train & Test & Val & All & Fin & Man & Sci & Law & Pat & Ten \\ \hline
-Caption & 22524 & 2.04 & 1.77 & 2.32 & 84-89 & 40-61 & 86-92 & 94-99 & 95-99 & 69-78 & n/a \\ \hline
-Footnote & 6318 & 0.60 & 0.31 & 0.58 & 83-91 & n/a & 100 & 62-88 & 85-94 & n/a & 82-97 \\ \hline
-Formula & 25027 & 2.25 & 1.90 & 2.96 & 83-85 & n/a & n/a & 84-87 & 86-96 & n/a & n/a \\ \hline
-List-item & 185660 & 17.19 & 13.34 & 15.82 & 87-88 & 74-83 & 90-92 & 97-97 & 81-85 & 75-88 & 93-95 \\ \hline
-Page- footer & 70878 & 6.51 & 5.58 & 6.00 & 93-94 & 88-90 & 95-96 & 100 & 92-97 & 100 & 96-98 \\ \hline
-Page- header & 58022 & 5.10 & 6.70 & 5.06 & 85-89 & 66-76 & 90-94 & 98-100 & 91-92 & 97-99 & 81-86 \\ \hline
-Picture & 45976 & 4.21 & 2.78 & 5.31 & 69-71 & 56-59 & 82-86 & 69-82 & 80-95 & 66-71 & 59-76 \\ \hline
-Section- header & 142884 & 12.60 & 15.77 & 12.85 & 83-84 & 76-81 & 90-92 & 94-95 & 87-94 & 69-73 & 78-86 \\ \hline
-Table & 34733 & 3.20 & 2.27 & 3.60 & 77-81 & 75-80 & 83-86 & 98-99 & 58-80 & 79-84 & 70-85 \\ \hline
-Text & 510377 & 45.82 & 49.28 & 45.00 & 84-86 & 81-86 & 88-93 & 89-93 & 87-92 & 71-79 & 87-95 \\ \hline
-Title & 5071 & 0.47 & 0.30 & 0.50 & 60-72 & 24-63 & 50-63 & 94-100 & 82-96 & 68-79 & 24-56 \\ \hline
-Total & 1107470 & 941123 & 99816 & 66531 & 82-83 & 71-74 & 79-81 & 89-94 & 86-91 & 71-76 & 68-85 \\ \hline
+\begin{tabular}{llllllllllll}
+\toprule
+ &  & \% of Total & \% of Total & \% of Total & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) & triple inter- annotator mAP @ 0.5-0.95 (\%) \\
+\midrule
+class label & Count & Train & Test & Val & All & Fin & Man & Sci & Law & Pat & Ten \\
+Caption & 22524 & 2.04 & 1.77 & 2.32 & 84-89 & 40-61 & 86-92 & 94-99 & 95-99 & 69-78 & n/a \\
+Footnote & 6318 & 0.60 & 0.31 & 0.58 & 83-91 & n/a & 100 & 62-88 & 85-94 & n/a & 82-97 \\
+Formula & 25027 & 2.25 & 1.90 & 2.96 & 83-85 & n/a & n/a & 84-87 & 86-96 & n/a & n/a \\
+List-item & 185660 & 17.19 & 13.34 & 15.82 & 87-88 & 74-83 & 90-92 & 97-97 & 81-85 & 75-88 & 93-95 \\
+Page- footer & 70878 & 6.51 & 5.58 & 6.00 & 93-94 & 88-90 & 95-96 & 100 & 92-97 & 100 & 96-98 \\
+Page- header & 58022 & 5.10 & 6.70 & 5.06 & 85-89 & 66-76 & 90-94 & 98-100 & 91-92 & 97-99 & 81-86 \\
+Picture & 45976 & 4.21 & 2.78 & 5.31 & 69-71 & 56-59 & 82-86 & 69-82 & 80-95 & 66-71 & 59-76 \\
+Section- header & 142884 & 12.60 & 15.77 & 12.85 & 83-84 & 76-81 & 90-92 & 94-95 & 87-94 & 69-73 & 78-86 \\
+Table & 34733 & 3.20 & 2.27 & 3.60 & 77-81 & 75-80 & 83-86 & 98-99 & 58-80 & 79-84 & 70-85 \\
+Text & 510377 & 45.82 & 49.28 & 45.00 & 84-86 & 81-86 & 88-93 & 89-93 & 87-92 & 71-79 & 87-95 \\
+Title & 5071 & 0.47 & 0.30 & 0.50 & 60-72 & 24-63 & 50-63 & 94-100 & 82-96 & 68-79 & 24-56 \\
+Total & 1107470 & 941123 & 99816 & 66531 & 82-83 & 71-74 & 79-81 & 89-94 & 86-91 & 71-76 & 68-85 \\
+\bottomrule
 \end{tabular}
 \end{table}
 
