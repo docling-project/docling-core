@@ -30,14 +30,16 @@ cell 1,0 & \textit{text in italic} \\
 \item list item 2
 \end{itemize}
 \end{minipage} & cell 2,1 \\
-cell 3,0 & \begin{table}[h]
+cell 3,0 & \begin{minipage}[t]{\linewidth}
+\begin{table}[h]
 \begin{tabular}{lll}
 \toprule
 inner cell 0,0 & inner cell 0,1 & inner cell 0,2 \\
 inner cell 1,0 & inner cell 1,1 & inner cell 1,2 \\
 \bottomrule
 \end{tabular}
-\end{table} \\
+\end{table}
+\end{minipage} \\
 \begin{minipage}[t]{\linewidth}
 Some text in a generic group.
 

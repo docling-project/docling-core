@@ -314,6 +314,7 @@ class LaTeXTableSerializer(BaseTableSerializer):
                 r"\section{",
                 r"\subsection{",
                 r"\subsubsection{",
+                r"\begin{tabular}",
             ]
             if any(m in content for m in block_markers) or "\n\n" in content:
                 return (
