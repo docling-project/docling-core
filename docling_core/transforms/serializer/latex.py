@@ -6,9 +6,10 @@
 """Define classes for LaTeX serialization."""
 
 from pathlib import Path
+import re
 from typing import Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl, BaseModel, Field
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -78,6 +79,25 @@ class LaTeXParams(CommonParams):
 
     # Escape LaTeX special characters in text
     escape_latex: bool = True
+
+    # Optional LaTeX preamble configuration
+    # When provided, emitted before the document environment
+    # Example: "\\documentclass[11pt,a4paper]{article}"
+    document_class: str = r"\documentclass[11pt,a4paper]{article}"
+    # List of packages to include. Accepts either full lines
+    # like "\\usepackage{graphicx}" or bare package names like "graphicx".
+    packages: list[str] = [
+        r"\usepackage[utf8]{inputenc} % allow utf-8 input",
+        r"\usepackage[T1]{fontenc}    % use 8-bit T1 fonts",
+        r"\usepackage{hyperref}       % hyperlinks",
+        r"\usepackage{url}            % simple URL typesetting",
+        r"\usepackage{booktabs}       % professional-quality tables",
+        r"\usepackage{amsfonts}       % blackboard math symbols",
+        r"\usepackage{nicefrac}       % compact symbols for 1/2, etc.",
+        r"\usepackage{microtype}      % microtypography",
+        r"\usepackage{xcolor}         % colors",
+        r"\usepackage{graphicx}       % graphics",
+    ]
 
 
 def _escape_latex(text: str) -> str:
@@ -151,32 +171,30 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
                 text_part = f"\\item {text}"
                 post_process = False
             elif isinstance(item, TitleItem):
-                # Treat document title as an unnumbered section
+                # Emit document title using \title{...}
                 if post_process:
                     text = doc_serializer.post_process(
                         text=text,
                         formatting=item.formatting,
                         hyperlink=item.hyperlink,
                     )
-                text_part = f"\\section*{{{text}}}"
+                text_part = f"\\title{{{text}}}"
                 post_process = False
             else:
-                # Section headers: level 0->section, 1->subsection, ... up to subparagraph
+                # Section headers: level 1->section, 2->subsection, 3->subsubsection
+                # Raise error for unsupported levels
                 if post_process:
                     text = doc_serializer.post_process(
                         text=text,
                         formatting=item.formatting,
                         hyperlink=item.hyperlink,
                     )
-                level_map = [
-                    "section",
-                    "subsection",
-                    "subsubsection",
-                    "paragraph",
-                    "subparagraph",
-                ]
-                idx = max(0, min(item.level, len(level_map) - 1))
-                cmd = level_map[idx]
+                lvl = item.level
+                if lvl <= 0 or lvl >= 4:
+                    raise ValueError(
+                        "LaTeX serializer: SectionHeaderItem.level must be in [1, 3]"
+                    )
+                cmd = {1: "section", 2: "subsection", 3: "subsubsection"}[lvl]
                 text_part = f"\\{cmd}{{{text}}}"
                 post_process = False
 
@@ -617,18 +635,91 @@ class LaTeXDocSerializer(DocSerializer):
         parts: list[SerializationResult],
         **kwargs: Any,
     ) -> SerializationResult:
-        """Assemble serialized parts into the final LaTeX document text."""
-        text_res = "\n\n".join([p.text for p in parts if p.text])
-        if self.requires_page_break():
-            page_cmd = self.params.page_break_command or ""
-            for full_match, _, _ in self._get_page_breaks(text=text_res):
-                text_res = text_res.replace(full_match, page_cmd)
-        return create_ser_result(text=text_res, span_source=parts)
+        r"""Assemble serialized parts into a LaTeX document with environment wrapper.
+
+        Adds optional preamble lines (document class and packages), ensures the
+        output starts with "\\begin{document}" and ends with "\\end{document}".
+        """
+        # Merge any runtime overrides into params
+        params = self.params.merge_with_patch(patch=kwargs)
+
+        # Join body content and handle page break replacement within the body
+        body_text = "\n\n".join([p.text for p in parts if p.text])
+        if params.page_break_command is not None:
+            for full_match, _, _ in self._get_page_breaks(text=body_text):
+                body_text = body_text.replace(full_match, params.page_break_command)
+
+        # Post-process title: move any \title{...} into the preamble
+        # and add \maketitle after \begin{document}
+        title_cmd, body_text, needs_maketitle = self._post_process_title(body_text)
+
+        # Build optional preamble
+        preamble_lines: list[str] = []
+        if params.document_class:
+            preamble_lines.append(params.document_class+"\n")
+        for pkg in params.packages:
+            line = pkg.strip()
+            if not line:
+                continue
+            if line.startswith("\\"):
+                preamble_lines.append(line)
+            else:
+                preamble_lines.append(f"\\usepackage{{{line}}}")
+
+        # Ensure title (if any) is before \begin{document}
+        if title_cmd:
+            preamble_lines.append(title_cmd)
+
+        header = (
+            "\n".join(preamble_lines + ["\n\\begin{document}"])
+            if preamble_lines
+            else "\\begin{document}"
+        )
+        footer = "\\end{document}"
+
+        # Compose final document with optional \maketitle after begin{document}
+        body_parts: list[str] = []
+        if needs_maketitle:
+            body_parts.append("\\maketitle")
+        if body_text:
+            body_parts.append(body_text)
+        body_block = "\n\n".join(body_parts)
+
+        if body_block:
+            full_text = f"{header}\n\n{body_block}\n\n{footer}"
+        else:
+            full_text = f"{header}\n\n{footer}"
+
+        return create_ser_result(text=full_text, span_source=parts)
 
     @override
     def requires_page_break(self) -> bool:
         """Return True if page break replacement is enabled."""
         return self.params.page_break_command is not None
+
+    def _post_process_title(self, body_text: str) -> tuple[Optional[str], str, bool]:
+        """Detect and relocate LaTeX \title{...} commands.
+
+        - Extracts the first \title{...} command found in the body.
+        - Removes all \title{...} occurrences from the body.
+        - Returns (title_cmd, new_body_text, needs_maketitle).
+
+        Note: Regex assumes no nested braces inside \title{...}.
+        """
+        # Match \title{...} allowing whitespace, but not nested braces
+        pattern = re.compile(r"\\title\s*\{([^{}]*)\}", re.DOTALL)
+        first = pattern.search(body_text)
+        if not first:
+            # Nothing to do
+            return None, body_text, False
+
+        title_content = first.group(1)
+        title_cmd = f"\\title{{{title_content}}}"
+        # Remove all \title occurrences from the body
+        new_body = pattern.sub("", body_text)
+        # Trim excess empty lines that might remain
+        new_body = re.sub(r"\n{3,}", "\n\n", new_body).strip()
+        return title_cmd, new_body, True
 
     def post_process(
         self,
