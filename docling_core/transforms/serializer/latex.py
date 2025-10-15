@@ -5,11 +5,11 @@
 
 """Define classes for LaTeX serialization."""
 
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AnyUrl, BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -656,7 +656,7 @@ class LaTeXDocSerializer(DocSerializer):
         # Build optional preamble
         preamble_lines: list[str] = []
         if params.document_class:
-            preamble_lines.append(params.document_class+"\n")
+            preamble_lines.append(params.document_class + "\n")
         for pkg in params.packages:
             line = pkg.strip()
             if not line:
@@ -698,7 +698,7 @@ class LaTeXDocSerializer(DocSerializer):
         return self.params.page_break_command is not None
 
     def _post_process_title(self, body_text: str) -> tuple[Optional[str], str, bool]:
-        """Detect and relocate LaTeX \title{...} commands.
+        r"""Detect and relocate LaTeX \title{...} commands.
 
         - Extracts the first \title{...} command found in the body.
         - Removes all \title{...} occurrences from the body.
