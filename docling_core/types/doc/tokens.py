@@ -87,6 +87,16 @@ class _PictureClassificationToken(str, Enum):
     CAD_DRAWING = "<cad_drawing>"
     ELECTRICAL_DIAGRAM = "<electrical_diagram>"
 
+    # New class tokens
+    BARCODE = "<bar_code>"
+    CHART = "<chart>"
+    DECORATION = "<decoration>"
+    ILLUSTRATION = "<illustration>"
+    INFOGRAPHIC = "<infographic>"
+    PERSON = "<person>"
+    PICTOGRAM = "<pictogram>"
+    UI_ELEMENT = "<ui_element>"
+
 
 class _CodeLanguageToken(str, Enum):
     """CodeLanguageToken."""
