@@ -48,7 +48,7 @@ _SECTION_HEADER_PREFIX = "section_header_level_"
 class _PictureClassificationToken(str, Enum):
     """PictureClassificationToken."""
 
-    OTHER = "<other>"
+    # OTHER = "<other>"
 
     # If more than one picture is grouped together, it
     # is generally not possible to assign a label
@@ -88,14 +88,16 @@ class _PictureClassificationToken(str, Enum):
     ELECTRICAL_DIAGRAM = "<electrical_diagram>"
 
     # New class tokens
-    BARCODE = "<bar_code>"
-    CHART = "<chart>"
-    DECORATION = "<decoration>"
-    ILLUSTRATION = "<illustration>"
-    INFOGRAPHIC = "<infographic>"
-    PERSON = "<person>"
-    PICTOGRAM = "<pictogram>"
-    UI_ELEMENT = "<ui_element>"
+    BARCODE = "<BARCODE>"
+    CHART = "<CHART>"
+    DECORATION = "<DECORATION>"
+    ILLUSTRATION = "<ILLUSTRATION>"
+    INFOGRAPHIC = "<INFOGRAPHIC>"
+    PERSON = "<PERSON>"
+    PICTOGRAM = "<PICTOGRAM>"
+    UI_ELEMENT = "<UI_ELEMENT>"
+    LOGO_2 = "<LOGO>"
+    OTHER = "<OTHER>"
 
 
 class _CodeLanguageToken(str, Enum):
