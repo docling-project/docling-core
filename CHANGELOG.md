@@ -1,3 +1,10 @@
+## [v2.49.0](https://github.com/docling-project/docling-core/releases/tag/v2.49.0) - 2025-10-16
+
+### Feature
+
+* Python 3.14 compatibility ([#403](https://github.com/docling-project/docling-core/issues/403)) ([`47b70d3`](https://github.com/docling-project/docling-core/commit/47b70d3c246f7aa8fe4967cbad07660c15d0b505))
+* Rendering of checkboxes in markdown ([#381](https://github.com/docling-project/docling-core/issues/381)) ([`abfa81f`](https://github.com/docling-project/docling-core/commit/abfa81f0651e70c1b3bc479f5621f706d66f0cbd))
+
 ## [v2.48.4](https://github.com/docling-project/docling-core/releases/tag/v2.48.4) - 2025-10-01
 
 ### Fix
