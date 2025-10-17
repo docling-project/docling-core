@@ -1,0 +1,52 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{array}          % extended column defs
+\usepackage{multirow}       % multirow cells
+\usepackage{makecell}       % line breaks in cells
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{graphicx}       % graphics
+\title{Rich tables}
+
+\begin{document}
+
+\maketitle
+
+\begin{table}[h]
+\begin{tabular}{ll}
+\toprule
+cell 0,0 & cell 0,1 \\
+cell 1,0 & \textit{text in italic} \\
+\begin{minipage}[t]{\linewidth}
+\begin{itemize}
+\item list item 1
+\item list item 2
+\end{itemize}
+\end{minipage} & cell 2,1 \\
+cell 3,0 & \begin{minipage}[t]{\linewidth}
+\begin{table}[h]
+\begin{tabular}{lll}
+\toprule
+inner cell 0,0 & inner cell 0,1 & inner cell 0,2 \\
+inner cell 1,0 & inner cell 1,1 & inner cell 1,2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}
+Some text in a generic group.
+
+More text in the group.
+\end{minipage} & cell 4,1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}
