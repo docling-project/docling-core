@@ -55,6 +55,7 @@ class _PictureClassificationToken(str, Enum):
     PICTURE_GROUP = "<picture_group>"
 
     # General
+    CHART = "<chart>"
     PIE_CHART = "<pie_chart>"
     BAR_CHART = "<bar_chart>"
     STACKED_BAR_CHART = "<stacked_bar_chart>"
@@ -63,8 +64,12 @@ class _PictureClassificationToken(str, Enum):
     SCATTER_CHART = "<scatter_chart>"
     HEATMAP = "<heatmap>"
     REMOTE_SENSING = "<remote_sensing>"
+    INFOGRAPHIC = "<infographic>"
+    DECORATION = "<decoration>"
+    ILLUSTRATION = "<illustration>"
 
     NATURAL_IMAGE = "<natural_image>"
+    PERSON = "<person>"
 
     # Chemistry
     MOLECULAR_STRUCTURE = "<chemistry_molecular_structure>"
@@ -78,6 +83,7 @@ class _PictureClassificationToken(str, Enum):
     QR_CODE = "<qr_code>"
     BAR_CODE = "<bar_code>"
     SCREENSHOT = "<screenshot>"
+    UI_ELEMENT = "<ui_element>"
 
     # Geology/Geography
     GEOGRAPHIC_MAP = "<map>"
