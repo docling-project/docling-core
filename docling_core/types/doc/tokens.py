@@ -48,13 +48,14 @@ _SECTION_HEADER_PREFIX = "section_header_level_"
 class _PictureClassificationToken(str, Enum):
     """PictureClassificationToken."""
 
-    # OTHER = "<other>"
+    OTHER = "<other>"
 
     # If more than one picture is grouped together, it
     # is generally not possible to assign a label
     PICTURE_GROUP = "<picture_group>"
 
     # General
+    CHART = "<chart>"
     PIE_CHART = "<pie_chart>"
     BAR_CHART = "<bar_chart>"
     STACKED_BAR_CHART = "<stacked_bar_chart>"
@@ -63,8 +64,12 @@ class _PictureClassificationToken(str, Enum):
     SCATTER_CHART = "<scatter_chart>"
     HEATMAP = "<heatmap>"
     REMOTE_SENSING = "<remote_sensing>"
+    INFOGRAPHIC = "<infographic>"
+    DECORATION = "<decoration>"
+    ILLUSTRATION = "<illustration>"
 
     NATURAL_IMAGE = "<natural_image>"
+    PERSON = "<person>"
 
     # Chemistry
     MOLECULAR_STRUCTURE = "<chemistry_molecular_structure>"
@@ -72,12 +77,14 @@ class _PictureClassificationToken(str, Enum):
 
     # Company
     ICON = "<icon>"
+    PICTOGRAM = "<pictogram>"
     LOGO = "<logo>"
     SIGNATURE = "<signature>"
     STAMP = "<stamp>"
     QR_CODE = "<qr_code>"
     BAR_CODE = "<bar_code>"
     SCREENSHOT = "<screenshot>"
+    UI_ELEMENT = "<ui_element>"
 
     # Geology/Geography
     GEOGRAPHIC_MAP = "<map>"
@@ -86,18 +93,6 @@ class _PictureClassificationToken(str, Enum):
     # Engineering
     CAD_DRAWING = "<cad_drawing>"
     ELECTRICAL_DIAGRAM = "<electrical_diagram>"
-
-    # New class tokens
-    BARCODE = "<BARCODE>"
-    CHART = "<CHART>"
-    DECORATION = "<DECORATION>"
-    ILLUSTRATION = "<ILLUSTRATION>"
-    INFOGRAPHIC = "<INFOGRAPHIC>"
-    PERSON = "<PERSON>"
-    PICTOGRAM = "<PICTOGRAM>"
-    UI_ELEMENT = "<UI_ELEMENT>"
-    LOGO_2 = "<LOGO>"
-    OTHER = "<OTHER>"
 
 
 class _CodeLanguageToken(str, Enum):
