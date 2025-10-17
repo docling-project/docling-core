@@ -77,7 +77,6 @@ class _PictureClassificationToken(str, Enum):
 
     # Company
     ICON = "<icon>"
-    PICTOGRAM = "<pictogram>"
     LOGO = "<logo>"
     SIGNATURE = "<signature>"
     STAMP = "<stamp>"
