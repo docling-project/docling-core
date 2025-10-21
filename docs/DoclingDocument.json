@@ -194,6 +194,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "const": "code",
           "default": "code",
@@ -357,6 +368,25 @@
       "title": "CodeLanguageLabel",
       "type": "string"
     },
+    "CommonMeta": {
+      "additionalProperties": true,
+      "description": "Common metadata model.",
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SummaryModel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "CommonMeta",
+      "type": "object"
+    },
     "ContentLayer": {
       "description": "ContentLayer.",
       "enum": [
@@ -474,6 +504,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "const": "form",
@@ -597,6 +638,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "const": "formula",
@@ -807,6 +859,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -912,6 +975,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -961,6 +1035,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "const": "key_value_region",
@@ -1054,6 +1139,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -1103,6 +1199,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "const": "list_item",
@@ -1341,6 +1448,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "default": "picture",
           "enum": [
@@ -1490,6 +1608,113 @@
         "lines"
       ],
       "title": "PictureLineChartData",
+      "type": "object"
+    },
+    "PictureMeta": {
+      "additionalProperties": true,
+      "description": "Picture metadata model.",
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SummaryModel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "classification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureClassificationData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "molecule": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureMoleculeData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tabular_chart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureTabularChartData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "line_chart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureLineChartData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bar_chart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureBarChartData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "stacked_bar_chart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureStackedBarChartData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pie_chart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PicturePieChartData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scatter_chart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureScatterChartData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "PictureMeta",
       "type": "object"
     },
     "PictureMoleculeData": {
@@ -1842,6 +2067,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "const": "section_header",
           "default": "section_header",
@@ -1924,6 +2160,59 @@
         }
       },
       "title": "Size",
+      "type": "object"
+    },
+    "SummaryInstance": {
+      "description": "Single summary data point.",
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provenance"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "SummaryInstance",
+      "type": "object"
+    },
+    "SummaryModel": {
+      "description": "Summary data.",
+      "properties": {
+        "instances": {
+          "items": {
+            "$ref": "#/$defs/SummaryInstance"
+          },
+          "minItems": 1,
+          "title": "Instances",
+          "type": "array"
+        }
+      },
+      "title": "SummaryModel",
       "type": "object"
     },
     "TableCell": {
@@ -2065,6 +2354,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TableMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "default": "table",
           "enum": [
@@ -2150,6 +2450,36 @@
       "title": "TableItem",
       "type": "object"
     },
+    "TableMeta": {
+      "additionalProperties": true,
+      "description": "Table metadata model.",
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SummaryModel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DescriptionAnnotation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "TableMeta",
+      "type": "object"
+    },
     "TextItem": {
       "additionalProperties": false,
       "description": "TextItem.",
@@ -2181,6 +2511,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "enum": [
@@ -2285,6 +2626,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CommonMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "const": "title",
           "default": "title",
@@ -2382,6 +2734,7 @@
         "parent": null,
         "children": [],
         "content_layer": "furniture",
+        "meta": null,
         "name": "_root_",
         "label": "unspecified"
       },
@@ -2394,6 +2747,7 @@
         "parent": null,
         "children": [],
         "content_layer": "body",
+        "meta": null,
         "name": "_root_",
         "label": "unspecified"
       }

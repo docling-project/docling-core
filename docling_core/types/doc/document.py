@@ -941,6 +941,55 @@ class ContentLayer(str, Enum):
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
 
 
+class BaseMeta(BaseModel):
+    """Base class for metadata."""
+
+    model_config = ConfigDict(extra="allow")
+
+
+class SummaryInstance(BaseModel):
+    """Single summary data point."""
+
+    text: str
+    confidence: Optional[float] = None
+    provenance: Optional[str] = None
+
+
+class SummaryModel(BaseModel):
+    """Summary data."""
+
+    # convention: the first instance represents the main summary
+    instances: List[SummaryInstance] = Field(default_factory=list, min_length=1)
+    # NOTE: if needed, can add validator to coerce simpler forms to instances
+
+
+class CommonMeta(BaseMeta):
+    """Common metadata model."""
+
+    summary: Optional[SummaryModel] = None
+
+
+class PictureMeta(CommonMeta):
+    """Picture metadata model."""
+
+    # TODO the previous classes include "kind" for disambiguation, which is not needed here
+    classification: Optional[PictureClassificationData] = None
+    molecule: Optional[PictureMoleculeData] = None
+    tabular_chart: Optional[PictureTabularChartData] = None
+    line_chart: Optional[PictureLineChartData] = None
+    bar_chart: Optional[PictureBarChartData] = None
+    stacked_bar_chart: Optional[PictureStackedBarChartData] = None
+    pie_chart: Optional[PicturePieChartData] = None
+    scatter_chart: Optional[PictureScatterChartData] = None
+
+
+class TableMeta(CommonMeta):
+    """Table metadata model."""
+
+    # TODO the previous classes include "kind" for disambiguation, which is not needed here
+    description: Optional[DescriptionAnnotation] = None
+
+
 class NodeItem(BaseModel):
     """NodeItem."""
 
@@ -951,6 +1000,8 @@ class NodeItem(BaseModel):
     content_layer: ContentLayer = ContentLayer.BODY
 
     model_config = ConfigDict(extra="forbid")
+
+    meta: Optional[BaseMeta] = None
 
     def get_ref(self) -> RefItem:
         """get_ref."""
@@ -1048,6 +1099,8 @@ class NodeItem(BaseModel):
 class GroupItem(NodeItem):  # Container type, can't be a leaf node
     """GroupItem."""
 
+    meta: Optional[CommonMeta] = None
+
     name: str = (
         "group"  # Name of the group, e.g. "Introduction Chapter",
         # "Slide 5", "Navigation menu list", ...
@@ -1098,6 +1151,7 @@ class DocItem(
 
     label: DocItemLabel
     prov: List[ProvenanceItem] = []
+    meta: Optional[CommonMeta] = None
 
     def get_location_tokens(
         self,
@@ -1407,6 +1461,7 @@ class PictureItem(FloatingItem):
     )
 
     annotations: List[PictureDataType] = []
+    meta: Optional[PictureMeta] = None
 
     # Convert the image to Base64
     def _image_to_base64(self, pil_image, format="PNG"):
@@ -1555,6 +1610,7 @@ class TableItem(FloatingItem):
     ] = DocItemLabel.TABLE
 
     annotations: List[TableAnnotationType] = []
+    meta: Optional[TableMeta] = None
 
     def export_to_dataframe(
         self, doc: Optional["DoclingDocument"] = None
@@ -5746,6 +5802,13 @@ class DoclingDocument(BaseModel):
         return res_doc
 
     def _validate_rules(self):
+
+        def validate_furniture(doc: DoclingDocument):
+            if doc.furniture.children:
+                raise ValueError(
+                    f"Deprecated furniture node {doc.furniture.self_ref} has children"
+                )
+
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
             for ref in item.children:
                 child = ref.resolve(doc)
@@ -5767,6 +5830,8 @@ class DoclingDocument(BaseModel):
                 item.parent and not item.children
             ):  # tolerate empty body, but not other groups
                 raise ValueError(f"Group {item.self_ref} has no children")
+
+        validate_furniture(self)
 
         for item, _ in self.iterate_items(
             with_groups=True,
