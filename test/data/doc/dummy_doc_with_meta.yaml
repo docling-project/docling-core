@@ -81,12 +81,6 @@ pictures:
     uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
   label: picture
   meta:
-    classification:
-      kind: classification
-      predicted_classes:
-      - class_name: bar_chart
-        confidence: 0.78
-      provenance: model1
     example_custom_description_field:
       provenance: model2
       text: '...'
@@ -211,13 +205,9 @@ texts:
   meta:
     example_custom_field_1: More stuff here.
     summary:
-      instances:
-      - confidence: 0.95
-        provenance: model1
-        text: This is a title.
-      - confidence: 0.42
-        provenance: model2
-        text: This is a figure.
+      confidence: 0.95
+      provenance: model1
+      text: This is a title.
   orig: 'DocLayNet: A Large Human-Annotated Dataset for
 
     Document-Layout Analysis'
@@ -242,8 +232,7 @@ texts:
   level: 1
   meta:
     summary:
-      instances:
-      - text: This is a section header.
+      text: This is a section header.
   orig: OPERATION (cont.)
   parent:
     $ref: '#/pictures/0'

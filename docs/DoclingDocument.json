@@ -1,5 +1,24 @@
 {
   "$defs": {
+    "BaseMeta": {
+      "additionalProperties": true,
+      "description": "Base class for metadata.",
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SummaryMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "BaseMeta",
+      "type": "object"
+    },
     "BoundingBox": {
       "description": "BoundingBox.",
       "properties": {
@@ -197,7 +216,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -368,25 +387,6 @@
       "title": "CodeLanguageLabel",
       "type": "string"
     },
-    "CommonMeta": {
-      "additionalProperties": true,
-      "description": "Common metadata model.",
-      "properties": {
-        "summary": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/SummaryModel"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        }
-      },
-      "title": "CommonMeta",
-      "type": "object"
-    },
     "ContentLayer": {
       "description": "ContentLayer.",
       "enum": [
@@ -508,7 +508,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -642,7 +642,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -862,7 +862,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -978,7 +978,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -1039,7 +1039,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -1142,7 +1142,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -1203,7 +1203,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -1416,6 +1416,72 @@
       "title": "PictureClassificationData",
       "type": "object"
     },
+    "PictureClassificationMetaField": {
+      "description": "Picture classification metadata field.",
+      "properties": {
+        "predictions": {
+          "items": {
+            "$ref": "#/$defs/PictureClassificationPrediction"
+          },
+          "minItems": 1,
+          "title": "Predictions",
+          "type": "array"
+        }
+      },
+      "title": "PictureClassificationMetaField",
+      "type": "object"
+    },
+    "PictureClassificationPrediction": {
+      "description": "Picture classification instance.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provenance"
+        },
+        "details": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Details"
+        },
+        "class_name": {
+          "title": "Class Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "class_name"
+      ],
+      "title": "PictureClassificationPrediction",
+      "type": "object"
+    },
     "PictureItem": {
       "additionalProperties": false,
       "description": "PictureItem.",
@@ -1513,6 +1579,7 @@
         },
         "annotations": {
           "default": [],
+          "deprecated": true,
           "items": {
             "discriminator": {
               "mapping": {
@@ -1617,7 +1684,7 @@
         "summary": {
           "anyOf": [
             {
-              "$ref": "#/$defs/SummaryModel"
+              "$ref": "#/$defs/SummaryMetaField"
             },
             {
               "type": "null"
@@ -1628,7 +1695,7 @@
         "classification": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PictureClassificationData"
+              "$ref": "#/$defs/PictureClassificationMetaField"
             },
             {
               "type": "null"
@@ -2070,7 +2137,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -2162,13 +2229,9 @@
       "title": "Size",
       "type": "object"
     },
-    "SummaryInstance": {
-      "description": "Single summary data point.",
+    "SummaryMetaField": {
+      "description": "Summary data.",
       "properties": {
-        "text": {
-          "title": "Text",
-          "type": "string"
-        },
         "confidence": {
           "anyOf": [
             {
@@ -2192,27 +2255,29 @@
           ],
           "default": null,
           "title": "Provenance"
+        },
+        "details": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Details"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
         }
       },
       "required": [
         "text"
       ],
-      "title": "SummaryInstance",
-      "type": "object"
-    },
-    "SummaryModel": {
-      "description": "Summary data.",
-      "properties": {
-        "instances": {
-          "items": {
-            "$ref": "#/$defs/SummaryInstance"
-          },
-          "minItems": 1,
-          "title": "Instances",
-          "type": "array"
-        }
-      },
-      "title": "SummaryModel",
+      "title": "SummaryMetaField",
       "type": "object"
     },
     "TableCell": {
@@ -2357,7 +2422,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/TableMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -2422,6 +2487,7 @@
         },
         "annotations": {
           "default": [],
+          "deprecated": true,
           "items": {
             "discriminator": {
               "mapping": {
@@ -2448,36 +2514,6 @@
         "data"
       ],
       "title": "TableItem",
-      "type": "object"
-    },
-    "TableMeta": {
-      "additionalProperties": true,
-      "description": "Table metadata model.",
-      "properties": {
-        "summary": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/SummaryModel"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "description": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/DescriptionAnnotation"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        }
-      },
-      "title": "TableMeta",
       "type": "object"
     },
     "TextItem": {
@@ -2515,7 +2551,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"
@@ -2629,7 +2665,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CommonMeta"
+              "$ref": "#/$defs/BaseMeta"
             },
             {
               "type": "null"

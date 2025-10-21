@@ -80,6 +80,12 @@ pictures:
       width: 231.0
     uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
   label: picture
+  meta:
+    classification:
+      predictions:
+      - class_name: bar_chart
+        confidence: 0.8
+        provenance: model1
   parent:
     $ref: '#/body'
   prov:

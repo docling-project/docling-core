@@ -27,6 +27,8 @@ from pydantic import (
     Field,
     FieldSerializationInfo,
     StringConstraints,
+    TypeAdapter,
+    ValidationError,
     computed_field,
     field_serializer,
     field_validator,
@@ -941,39 +943,51 @@ class ContentLayer(str, Enum):
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
 
 
+class BasePrediction(BaseModel):
+    """Prediction field."""
+
+    confidence: Optional[float] = None
+    provenance: Optional[str] = None
+    details: Optional[dict[str, Any]] = None
+
+    @field_serializer("confidence")
+    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)
+
+
+class SummaryMetaField(BasePrediction):
+    """Summary data."""
+
+    text: str
+
+
 class BaseMeta(BaseModel):
     """Base class for metadata."""
 
     model_config = ConfigDict(extra="allow")
+    summary: Optional[SummaryMetaField] = None
 
 
-class SummaryInstance(BaseModel):
-    """Single summary data point."""
+class PictureClassificationPrediction(BasePrediction):
+    """Picture classification instance."""
 
-    text: str
-    confidence: Optional[float] = None
-    provenance: Optional[str] = None
+    class_name: str
 
 
-class SummaryModel(BaseModel):
-    """Summary data."""
+class PictureClassificationMetaField(BaseModel):
+    """Picture classification metadata field."""
 
-    # convention: the first instance represents the main summary
-    instances: List[SummaryInstance] = Field(default_factory=list, min_length=1)
-    # NOTE: if needed, can add validator to coerce simpler forms to instances
-
-
-class CommonMeta(BaseMeta):
-    """Common metadata model."""
-
-    summary: Optional[SummaryModel] = None
+    predictions: list[PictureClassificationPrediction] = Field(
+        default_factory=list, min_length=1
+    )
 
 
-class PictureMeta(CommonMeta):
+class PictureMeta(BaseMeta):
     """Picture metadata model."""
 
+    classification: Optional[PictureClassificationMetaField] = None
+
     # TODO the previous classes include "kind" for disambiguation, which is not needed here
-    classification: Optional[PictureClassificationData] = None
     molecule: Optional[PictureMoleculeData] = None
     tabular_chart: Optional[PictureTabularChartData] = None
     line_chart: Optional[PictureLineChartData] = None
@@ -981,13 +995,6 @@ class PictureMeta(CommonMeta):
     stacked_bar_chart: Optional[PictureStackedBarChartData] = None
     pie_chart: Optional[PicturePieChartData] = None
     scatter_chart: Optional[PictureScatterChartData] = None
-
-
-class TableMeta(CommonMeta):
-    """Table metadata model."""
-
-    # TODO the previous classes include "kind" for disambiguation, which is not needed here
-    description: Optional[DescriptionAnnotation] = None
 
 
 class NodeItem(BaseModel):
@@ -1099,7 +1106,7 @@ class NodeItem(BaseModel):
 class GroupItem(NodeItem):  # Container type, can't be a leaf node
     """GroupItem."""
 
-    meta: Optional[CommonMeta] = None
+    meta: Optional[BaseMeta] = None
 
     name: str = (
         "group"  # Name of the group, e.g. "Introduction Chapter",
@@ -1151,7 +1158,7 @@ class DocItem(
 
     label: DocItemLabel
     prov: List[ProvenanceItem] = []
-    meta: Optional[CommonMeta] = None
+    meta: Optional[BaseMeta] = None
 
     def get_location_tokens(
         self,
@@ -1460,8 +1467,46 @@ class PictureItem(FloatingItem):
         DocItemLabel.PICTURE
     )
 
-    annotations: List[PictureDataType] = []
+    annotations: Annotated[
+        List[PictureDataType],
+        Field(deprecated="The `annotations` field is deprecated; use `meta` instead."),
+    ] = []
     meta: Optional[PictureMeta] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_annotations_to_meta(cls, data: Any) -> Any:
+        """Migrate the `annotations` field to `meta`."""
+        if isinstance(data, dict) and (annotations := data.get("annotations")):
+
+            for raw_ann in annotations:
+                # migrate annotations to meta
+                try:
+                    # Use Pydantic TypeAdapter to validate the annotation type according to the instruction.
+
+                    ann: PictureDataType = TypeAdapter(PictureDataType).validate_python(
+                        raw_ann
+                    )
+                    if isinstance(ann, PictureClassificationData):
+                        # ensure meta field is present
+                        data.setdefault("meta", {})
+                        data["meta"].setdefault(
+                            "classification",
+                            PictureClassificationMetaField(
+                                predictions=[
+                                    PictureClassificationPrediction(
+                                        class_name=pred.class_name,
+                                        confidence=pred.confidence,
+                                        provenance=ann.provenance,
+                                    )
+                                    for pred in ann.predicted_classes
+                                ],
+                            ).model_dump(),
+                        )
+                except ValidationError as e:
+                    raise e
+
+        return data
 
     # Convert the image to Base64
     def _image_to_base64(self, pil_image, format="PNG"):
@@ -1609,8 +1654,10 @@ class TableItem(FloatingItem):
         DocItemLabel.TABLE,
     ] = DocItemLabel.TABLE
 
-    annotations: List[TableAnnotationType] = []
-    meta: Optional[TableMeta] = None
+    annotations: Annotated[
+        List[TableAnnotationType],
+        deprecated("The `annotations` field is deprecated; use `meta` instead."),
+    ] = []
 
     def export_to_dataframe(
         self, doc: Optional["DoclingDocument"] = None
