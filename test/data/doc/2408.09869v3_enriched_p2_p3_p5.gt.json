@@ -1901,6 +1901,12 @@
         }
       ],
       "content_layer": "body",
+      "meta": {
+        "summary": {
+          "provenance": "HuggingFaceTB/SmolVLM-256M-Instruct",
+          "text": "In this image, we can see some text and images."
+        }
+      },
       "label": "picture",
       "prov": [
         {

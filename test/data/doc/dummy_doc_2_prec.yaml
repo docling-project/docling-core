@@ -86,6 +86,31 @@ pictures:
       - class_name: bar_chart
         confidence: 0.8
         provenance: model1
+    docling_internal_misc:
+      content:
+        myanalysis:
+          prediction: abc
+        something_else:
+          text: aaa
+      kind: misc
+    docling_internal_molecule_data:
+      class_name: chemistry_molecular_structure
+      confidence: 0.9876
+      kind: molecule_data
+      provenance: model3-1.0.0
+      segmentation:
+      - - 0.0
+        - 0.0
+      - - 1.0
+        - 0.0
+      - - 0.0
+        - 1.0
+      - - 1.0
+        - 1.0
+      smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
+    summary:
+      provenance: model2
+      text: '...'
   parent:
     $ref: '#/body'
   prov:

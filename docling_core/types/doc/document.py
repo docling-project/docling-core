@@ -943,12 +943,27 @@ class ContentLayer(str, Enum):
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
 
 
-class BasePrediction(BaseModel):
+class ExtraAllowingModel(BaseModel):
+    """Base model allowing extra fields."""
+
+    model_config = ConfigDict(extra="allow")
+
+    def _get_extra_dict(self) -> dict[str, Any]:
+        """Get the extra fields as a dictionary."""
+        return self.__pydantic_extra__ or {}
+
+    def _copy_without_extra(self) -> Self:
+        """Create a copy without the extra fields."""
+        return self.model_validate(
+            self.model_dump(exclude={ex for ex in self._get_extra_dict()})
+        )
+
+
+class BasePrediction(ExtraAllowingModel):
     """Prediction field."""
 
     confidence: Optional[float] = None
     provenance: Optional[str] = None
-    details: Optional[dict[str, Any]] = None
 
     @field_serializer("confidence")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
@@ -961,10 +976,9 @@ class SummaryMetaField(BasePrediction):
     text: str
 
 
-class BaseMeta(BaseModel):
+class BaseMeta(ExtraAllowingModel):
     """Base class for metadata."""
 
-    model_config = ConfigDict(extra="allow")
     summary: Optional[SummaryMetaField] = None
 
 
@@ -974,7 +988,7 @@ class PictureClassificationPrediction(BasePrediction):
     class_name: str
 
 
-class PictureClassificationMetaField(BaseModel):
+class PictureClassificationMetaField(ExtraAllowingModel):
     """Picture classification metadata field."""
 
     predictions: list[PictureClassificationPrediction] = Field(
@@ -1469,7 +1483,7 @@ class PictureItem(FloatingItem):
 
     annotations: Annotated[
         List[PictureDataType],
-        Field(deprecated="The `annotations` field is deprecated; use `meta` instead."),
+        deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
     meta: Optional[PictureMeta] = None
 
@@ -1478,33 +1492,54 @@ class PictureItem(FloatingItem):
     def migrate_annotations_to_meta(cls, data: Any) -> Any:
         """Migrate the `annotations` field to `meta`."""
         if isinstance(data, dict) and (annotations := data.get("annotations")):
-
+            _logger.warning(
+                "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
+                "Note that only the first available instance of each annotation type will be migrated."
+            )
             for raw_ann in annotations:
                 # migrate annotations to meta
-                try:
-                    # Use Pydantic TypeAdapter to validate the annotation type according to the instruction.
 
+                try:
                     ann: PictureDataType = TypeAdapter(PictureDataType).validate_python(
                         raw_ann
                     )
-                    if isinstance(ann, PictureClassificationData):
-                        # ensure meta field is present
-                        data.setdefault("meta", {})
-                        data["meta"].setdefault(
-                            "classification",
-                            PictureClassificationMetaField(
-                                predictions=[
-                                    PictureClassificationPrediction(
-                                        class_name=pred.class_name,
-                                        confidence=pred.confidence,
-                                        provenance=ann.provenance,
-                                    )
-                                    for pred in ann.predicted_classes
-                                ],
-                            ).model_dump(),
-                        )
                 except ValidationError as e:
                     raise e
+
+                # ensure meta field is present
+                data.setdefault("meta", {})
+
+                if isinstance(ann, PictureClassificationData):
+                    data["meta"].setdefault(
+                        "classification",
+                        PictureClassificationMetaField(
+                            predictions=[
+                                PictureClassificationPrediction(
+                                    class_name=pred.class_name,
+                                    confidence=pred.confidence,
+                                    provenance=ann.provenance,
+                                )
+                                for pred in ann.predicted_classes
+                            ],
+                        ).model_dump(mode="json"),
+                    )
+                # migrate description annotation to summary meta field
+                elif isinstance(ann, DescriptionAnnotation):
+                    data["meta"].setdefault(
+                        "summary",
+                        SummaryMetaField(
+                            text=ann.text,
+                            provenance=ann.provenance,
+                        ).model_dump(mode="json"),
+                    )
+                # TODO add other relevant annotation types...
+                else:
+                    # fall back to reusing (namespaced) original annotation type name
+                    data["meta"].setdefault(
+                        f"docling_internal_{ann.kind}",
+                        ann.model_dump(mode="json"),
+                    )
+                # TODO: add other annotation types to meta
 
         return data
 
@@ -1656,7 +1691,7 @@ class TableItem(FloatingItem):
 
     annotations: Annotated[
         List[TableAnnotationType],
-        deprecated("The `annotations` field is deprecated; use `meta` instead."),
+        deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
     def export_to_dataframe(

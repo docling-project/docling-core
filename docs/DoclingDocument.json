@@ -1417,6 +1417,7 @@
       "type": "object"
     },
     "PictureClassificationMetaField": {
+      "additionalProperties": true,
       "description": "Picture classification metadata field.",
       "properties": {
         "predictions": {
@@ -1432,6 +1433,7 @@
       "type": "object"
     },
     "PictureClassificationPrediction": {
+      "additionalProperties": true,
       "description": "Picture classification instance.",
       "properties": {
         "confidence": {
@@ -1457,19 +1459,6 @@
           ],
           "default": null,
           "title": "Provenance"
-        },
-        "details": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Details"
         },
         "class_name": {
           "title": "Class Name",
@@ -2230,6 +2219,7 @@
       "type": "object"
     },
     "SummaryMetaField": {
+      "additionalProperties": true,
       "description": "Summary data.",
       "properties": {
         "confidence": {
@@ -2255,19 +2245,6 @@
           ],
           "default": null,
           "title": "Provenance"
-        },
-        "details": {
-          "anyOf": [
-            {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Details"
         },
         "text": {
           "title": "Text",

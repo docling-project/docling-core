@@ -80,31 +80,6 @@ pictures:
       width: 231.0
     uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
   label: picture
-  meta:
-    example_custom_description_field:
-      provenance: model2
-      text: '...'
-    example_custom_misc_field:
-      content:
-        myanalysis:
-          prediction: abc
-        something_else:
-          text: aaa
-    molecule:
-      class_name: chemistry_molecular_structure
-      confidence: 0.98
-      kind: molecule_data
-      provenance: model3-1.0.0
-      segmentation:
-      - - 0.0
-        - 0.0
-      - - 1.0
-        - 0.0
-      - - 0.0
-        - 1.0
-      - - 1.0
-        - 1.0
-      smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
   parent:
     $ref: '#/body'
   prov:
@@ -203,11 +178,11 @@ texts:
   content_layer: body
   label: title
   meta:
-    example_custom_field_1: More stuff here.
     summary:
       confidence: 0.95
       provenance: model1
       text: This is a title.
+    my_corp_custom_field_1: More stuff here.
   orig: 'DocLayNet: A Large Human-Annotated Dataset for
 
     Document-Layout Analysis'

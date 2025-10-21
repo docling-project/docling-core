@@ -86,16 +86,14 @@ pictures:
       - class_name: bar_chart
         confidence: 0.78
         provenance: model1
-    example_custom_description_field:
-      provenance: model2
-      text: '...'
-    example_custom_misc_field:
+    docling_internal_misc:
       content:
         myanalysis:
           prediction: abc
         something_else:
           text: aaa
-    molecule:
+      kind: misc
+    docling_internal_molecule_data:
       class_name: chemistry_molecular_structure
       confidence: 0.98
       kind: molecule_data
@@ -110,6 +108,9 @@ pictures:
       - - 1.0
         - 1.0
       smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
+    summary:
+      provenance: model2
+      text: '...'
   parent:
     $ref: '#/body'
   prov:
@@ -208,7 +209,7 @@ texts:
   content_layer: body
   label: title
   meta:
-    example_custom_field_1: More stuff here.
+    my_corp_custom_field_1: More stuff here.
     summary:
       confidence: 0.95
       provenance: model1
