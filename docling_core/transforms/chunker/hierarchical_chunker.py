@@ -10,7 +10,16 @@ from __future__ import annotations
 import logging
 import re
 from enum import Enum
-from typing import Any, ClassVar, Final, Iterator, Literal, Optional, Protocol
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Final,
+    Iterator,
+    Literal,
+    Optional,
+    Protocol,
+)
 
 from pydantic import ConfigDict, Field, StringConstraints, field_validator
 from typing_extensions import Annotated, override
@@ -119,7 +128,7 @@ class DocMeta(BaseMeta):
 
 
 class CodeDocMeta(DocMeta):
-    """Data model for CodeChunker metadata."""
+    """Data model for code chunk metadata."""
 
     doc_items: Optional[list[DocItem]] = Field(default=None, alias=_KEY_DOC_ITEMS)
     part_name: Optional[str] = Field(default=None)
@@ -137,7 +146,7 @@ class CodeChunk(BaseChunk):
     meta: CodeDocMeta
 
 
-class ChunkType(str, Enum):
+class CodeChunkType(str, Enum):
     """Chunk type"""
 
     FUNCTION = "function"
@@ -155,6 +164,12 @@ class CodeChunkingStrategy(Protocol):
     ) -> Iterator[CodeChunk]:
         """Chunk a single code item."""
         ...
+
+
+if TYPE_CHECKING:
+    CodeChunkingStrategyType = CodeChunkingStrategy
+else:
+    CodeChunkingStrategyType = Any
 
 
 class DocChunk(BaseChunk):
@@ -248,7 +263,7 @@ class HierarchicalChunker(BaseChunker):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
-    code_chunking_strategy: Optional[Any] = Field(default=None)
+    code_chunking_strategy: Optional[CodeChunkingStrategyType] = Field(default=None)
 
     # deprecated:
     merge_list_items: Annotated[bool, Field(deprecated=True)] = True
@@ -308,14 +323,21 @@ class HierarchicalChunker(BaseChunker):
                     )
 
                     if language:
-                        for code_chunk in self.code_chunking_strategy.chunk_code_item(
-                            item.text,
-                            language,
-                            original_doc=dl_doc,
-                            original_item=item,
-                            **kwargs,
-                        ):
-                            yield code_chunk
+                        ser_res = my_doc_ser.serialize(item=item, visited=visited)
+                        if ser_res.text:
+                            code_text = self._strip_markdown_code_formatting(
+                                ser_res.text
+                            )
+                            for (
+                                code_chunk
+                            ) in self.code_chunking_strategy.chunk_code_item(
+                                code_text,
+                                language,
+                                original_doc=dl_doc,
+                                original_item=item,
+                                **kwargs,
+                            ):
+                                yield code_chunk
                         continue
 
                 ser_res = my_doc_ser.serialize(item=item, visited=visited)
@@ -335,3 +357,14 @@ class HierarchicalChunker(BaseChunker):
                     ),
                 )
                 yield c
+
+    def _strip_markdown_code_formatting(self, text: str) -> str:
+        """Strip markdown code block formatting from text."""
+        if not text.startswith("```") or not text.endswith("```"):
+            return text
+
+        lines = text.split("\n")
+        if len(lines) >= 3 and lines[0].startswith("```") and lines[-1] == "```":
+            return "\n".join(lines[1:-1])
+
+        return text

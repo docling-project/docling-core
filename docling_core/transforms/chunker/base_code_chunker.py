@@ -19,7 +19,7 @@ from docling_core.types import DoclingDocument as DLDocument
 from docling_core.types.doc.labels import DocItemLabel
 
 
-class CodeChunker(BaseChunker):
+class _CodeChunker(BaseChunker):
     """Data model for code chunker."""
 
     language: Language

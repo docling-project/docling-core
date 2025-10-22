@@ -4,8 +4,8 @@ from typing import Iterator, List, Tuple
 from tree_sitter import Node
 
 from docling_core.transforms.chunker.hierarchical_chunker import (
-    ChunkType,
     CodeChunk,
+    CodeChunkType,
     CodeDocMeta,
 )
 from docling_core.types.doc.document import DocumentOrigin
@@ -99,7 +99,7 @@ class ChunkMetadataBuilder:
             end_line=end_line,
             end_line_signature=signature_end_line,
             origin=self.origin,
-            chunk_type=ChunkType.FUNCTION,
+            chunk_type=CodeChunkType.FUNCTION,
         )
 
     def build_class_metadata(
@@ -119,7 +119,7 @@ class ChunkMetadataBuilder:
             end_line=end_line,
             end_line_signature=end_line,
             origin=self.origin,
-            chunk_type=ChunkType.CLASS,
+            chunk_type=CodeChunkType.CLASS,
         )
 
     def build_preamble_metadata(
@@ -131,7 +131,7 @@ class ChunkMetadataBuilder:
             start_line=start_line,
             end_line=end_line,
             origin=self.origin,
-            chunk_type=ChunkType.PREAMBLE,
+            chunk_type=CodeChunkType.PREAMBLE,
         )
 
     def calculate_line_numbers(

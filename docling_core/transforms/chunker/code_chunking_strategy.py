@@ -1,18 +1,18 @@
 from typing import Any, Dict, Iterator, Optional
 
-from docling_core.transforms.chunker.base_code_chunker import CodeChunker
+from docling_core.transforms.chunker.base_code_chunker import _CodeChunker
 from docling_core.transforms.chunker.code_chunk_utils.utils import Language
 from docling_core.transforms.chunker.hierarchical_chunker import (
-    ChunkType,
     CodeChunk,
+    CodeChunkType,
     CodeDocMeta,
 )
 from docling_core.transforms.chunker.language_code_chunkers import (
-    CFunctionChunker,
-    JavaFunctionChunker,
-    JavaScriptFunctionChunker,
-    PythonFunctionChunker,
-    TypeScriptFunctionChunker,
+    _CFunctionChunker,
+    _JavaFunctionChunker,
+    _JavaScriptFunctionChunker,
+    _PythonFunctionChunker,
+    _TypeScriptFunctionChunker,
 )
 from docling_core.types.doc.base import Size
 from docling_core.types.doc.document import (
@@ -183,15 +183,15 @@ class CodeChunkingStrategyFactory:
     """Factory for creating language-specific code chunking strategies."""
 
     @staticmethod
-    def create_chunker(language: Language, **kwargs: Any) -> CodeChunker:
+    def create_chunker(language: Language, **kwargs: Any) -> _CodeChunker:
         """Create a language-specific code chunker."""
 
         chunker_map = {
-            Language.PYTHON: PythonFunctionChunker,
-            Language.TYPESCRIPT: TypeScriptFunctionChunker,
-            Language.JAVASCRIPT: JavaScriptFunctionChunker,
-            Language.C: CFunctionChunker,
-            Language.JAVA: JavaFunctionChunker,
+            Language.PYTHON: _PythonFunctionChunker,
+            Language.TYPESCRIPT: _TypeScriptFunctionChunker,
+            Language.JAVASCRIPT: _JavaScriptFunctionChunker,
+            Language.C: _CFunctionChunker,
+            Language.JAVA: _JavaFunctionChunker,
         }
 
         chunker_class = chunker_map.get(language)
@@ -208,9 +208,9 @@ class DefaultCodeChunkingStrategy:
         """Initialize the strategy with optional chunker parameters."""
 
         self.chunker_kwargs = chunker_kwargs
-        self._chunker_cache: Dict[Language, CodeChunker] = {}
+        self._chunker_cache: Dict[Language, _CodeChunker] = {}
 
-    def _get_chunker(self, language: Language) -> CodeChunker:
+    def _get_chunker(self, language: Language) -> _CodeChunker:
         """Get or create a chunker for the given language."""
 
         if language not in self._chunker_cache:
@@ -238,10 +238,12 @@ class DefaultCodeChunkingStrategy:
             filename = original_doc.origin.filename or "code_chunk"
             mimetype = original_doc.origin.mimetype or "text/plain"
             binary_hash = _create_hash(code_text)
+            uri = getattr(original_doc.origin, "uri", None)
         else:
             filename = "code_chunk"
             mimetype = "text/plain"
             binary_hash = _create_hash(code_text)
+            uri = None
 
         if original_item and hasattr(original_item, "self_ref"):
             self_ref = original_item.self_ref
@@ -255,7 +257,7 @@ class DefaultCodeChunkingStrategy:
             texts=[code_item],
             pages={0: PageItem(page_no=0, size=Size(width=612.0, height=792.0))},
             origin=DocumentOrigin(
-                filename=filename, mimetype=mimetype, binary_hash=binary_hash
+                filename=filename, mimetype=mimetype, binary_hash=binary_hash, uri=uri
             ),
         )
 
@@ -279,7 +281,7 @@ class NoOpCodeChunkingStrategy:
             return
 
         meta = CodeDocMeta(
-            chunk_type=ChunkType.CODE_BLOCK,
+            chunk_type=CodeChunkType.CODE_BLOCK,
             start_line=1,
             end_line=len(code_text.splitlines()),
         )

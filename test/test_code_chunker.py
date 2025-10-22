@@ -9,13 +9,10 @@ import pytest
 
 from docling_core.transforms.chunker.base_code_chunker import CodeChunk
 from docling_core.transforms.chunker.code_chunk_utils.utils import Language
-from docling_core.transforms.chunker.language_code_chunkers import (
-    CFunctionChunker,
-    JavaFunctionChunker,
-    JavaScriptFunctionChunker,
-    PythonFunctionChunker,
-    TypeScriptFunctionChunker,
+from docling_core.transforms.chunker.code_chunking_strategy import (
+    DefaultCodeChunkingStrategy,
 )
+from docling_core.transforms.chunker.hierarchical_chunker import HierarchicalChunker
 from docling_core.types.doc import DoclingDocument, DocumentOrigin
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.utils.legacy import _create_hash
@@ -96,31 +93,41 @@ REPO_SPECS = [
         "Java",
         "/test/data/chunker_repo/repos/acmeair",
         "https://github.com/acmeair/acmeair",
-        lambda: JavaFunctionChunker(max_tokens=5000),
+        lambda: HierarchicalChunker(
+            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+        ),
     ),
     (
         "TypeScript",
         "/test/data/chunker_repo/repos/outline",
         "https://github.com/outline/outline",
-        lambda: TypeScriptFunctionChunker(max_tokens=5000),
+        lambda: HierarchicalChunker(
+            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+        ),
     ),
     (
         "JavaScript",
         "/test/data/chunker_repo/repos/jquery",
         "https://github.com/jquery/jquery",
-        lambda: JavaScriptFunctionChunker(max_tokens=5000),
+        lambda: HierarchicalChunker(
+            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+        ),
     ),
     (
         "Python",
         "/test/data/chunker_repo/repos/docling",
         "https://github.com/docling-project/docling",
-        lambda: PythonFunctionChunker(max_tokens=5000),
+        lambda: HierarchicalChunker(
+            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+        ),
     ),
     (
         "C",
         "/test/data/chunker_repo/repos/json-c",
         "https://github.com/json-c/json-c",
-        lambda: CFunctionChunker(max_tokens=5000),
+        lambda: HierarchicalChunker(
+            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+        ),
     ),
 ]
 

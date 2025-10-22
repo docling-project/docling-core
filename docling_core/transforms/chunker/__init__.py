@@ -6,7 +6,6 @@
 """Define the chunker types."""
 
 from docling_core.transforms.chunker.base import BaseChunk, BaseChunker, BaseMeta
-from docling_core.transforms.chunker.base_code_chunker import CodeChunker
 from docling_core.transforms.chunker.code_chunk_utils.chunk_utils import (
     ChunkBuilder,
     ChunkMetadataBuilder,
@@ -21,9 +20,9 @@ from docling_core.transforms.chunker.code_chunking_strategy import (
     NoOpCodeChunkingStrategy,
 )
 from docling_core.transforms.chunker.hierarchical_chunker import (
-    ChunkType,
     CodeChunk,
     CodeChunkingStrategy,
+    CodeChunkType,
     CodeDocMeta,
     DocChunk,
     DocMeta,

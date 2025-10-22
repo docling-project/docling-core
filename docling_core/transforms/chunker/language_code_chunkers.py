@@ -4,7 +4,7 @@ from pydantic import Field
 from tree_sitter import Node, Tree
 from typing_extensions import override
 
-from docling_core.transforms.chunker.base_code_chunker import CodeChunker
+from docling_core.transforms.chunker.base_code_chunker import _CodeChunker
 from docling_core.transforms.chunker.code_chunk_utils.utils import (
     Language,
     _get_default_tokenizer,
@@ -16,7 +16,7 @@ from docling_core.transforms.chunker.code_chunk_utils.utils import (
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 
 
-class PythonFunctionChunker(CodeChunker):
+class _PythonFunctionChunker(_CodeChunker):
 
     language: Language = Language.PYTHON
     ts_language: Any = Field(default=None)
@@ -151,7 +151,7 @@ class PythonFunctionChunker(CodeChunker):
         return False
 
 
-class TypeScriptFunctionChunker(CodeChunker):
+class _TypeScriptFunctionChunker(_CodeChunker):
     language: Language = Language.TYPESCRIPT
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
@@ -232,12 +232,12 @@ class TypeScriptFunctionChunker(CodeChunker):
         return {}
 
 
-class JavaScriptFunctionChunker(TypeScriptFunctionChunker):
+class _JavaScriptFunctionChunker(_TypeScriptFunctionChunker):
     def __init__(self, **data):
         super().__init__(language=Language.JAVASCRIPT)
 
 
-class CFunctionChunker(CodeChunker):
+class _CFunctionChunker(_CodeChunker):
     language: Language = Language.C
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
@@ -389,7 +389,7 @@ class CFunctionChunker(CodeChunker):
         return used_macros
 
 
-class JavaFunctionChunker(CodeChunker):
+class _JavaFunctionChunker(_CodeChunker):
 
     language: Language = Language.JAVA
     ts_language: Any = Field(default=None)
