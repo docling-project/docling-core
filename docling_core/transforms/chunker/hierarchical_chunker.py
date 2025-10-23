@@ -130,6 +130,10 @@ class DocMeta(BaseMeta):
 class CodeDocMeta(DocMeta):
     """Data model for code chunk metadata."""
 
+    schema_name: Literal["docling_core.transforms.chunker.CodeDocMeta"] = Field(  # type: ignore[assignment]
+        default="docling_core.transforms.chunker.CodeDocMeta",
+        alias=_KEY_SCHEMA_NAME,
+    )
     doc_items: Optional[list[DocItem]] = Field(default=None, alias=_KEY_DOC_ITEMS)
     part_name: Optional[str] = Field(default=None)
     docstring: Optional[str] = Field(default=None)
