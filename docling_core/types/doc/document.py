@@ -1005,6 +1005,18 @@ class PictureClassificationMetaField(_ExtraAllowingModel):
         default_factory=list, min_length=1
     )
 
+    def get_main_prediction(self) -> PictureClassificationPrediction:
+        """Get prediction with highest confidence (if confidence not available, first is used by convention)."""
+        max_conf_pos: Optional[int] = None
+        max_conf: Optional[float] = None
+        for i, pred in enumerate(self.predictions):
+            if pred.confidence is not None and (
+                max_conf is None or pred.confidence > max_conf
+            ):
+                max_conf_pos = i
+                max_conf = pred.confidence
+        return self.predictions[max_conf_pos if max_conf_pos is not None else 0]
+
 
 class MoleculeMetaField(BasePrediction):
     """Molecule metadata field."""
