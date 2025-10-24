@@ -5529,17 +5529,18 @@ class DoclingDocument(BaseModel):
         else:
             return CURRENT_VERSION
 
-    @model_validator(mode="after")  # type: ignore
-    @classmethod
-    def validate_document(cls, d: "DoclingDocument"):
+    @model_validator(mode="after")
+    def validate_document(self) -> Self:
         """validate_document."""
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
+            if not self.validate_tree(self.body) or not self.validate_tree(
+                self.furniture
+            ):
                 raise ValueError("Document hierachy is inconsistent.")
 
-        return d
+        return self
 
     @model_validator(mode="after")
     def validate_misplaced_list_items(self):
