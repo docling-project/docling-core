@@ -1302,6 +1302,63 @@
       "title": "MiscAnnotation",
       "type": "object"
     },
+    "MoleculeMetaField": {
+      "additionalProperties": true,
+      "description": "Molecule metadata field.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "smi": {
+          "title": "Smi",
+          "type": "string"
+        },
+        "class_name": {
+          "title": "Class Name",
+          "type": "string"
+        },
+        "segmentation": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Segmentation",
+          "type": "array"
+        }
+      },
+      "required": [
+        "smi",
+        "class_name",
+        "segmentation"
+      ],
+      "title": "MoleculeMetaField",
+      "type": "object"
+    },
     "PageItem": {
       "description": "PageItem.",
       "properties": {
@@ -1439,6 +1496,8 @@
         "confidence": {
           "anyOf": [
             {
+              "maximum": 1,
+              "minimum": 0,
               "type": "number"
             },
             {
@@ -1446,19 +1505,12 @@
             }
           ],
           "default": null,
-          "title": "Confidence"
-        },
-        "provenance": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
           ],
-          "default": null,
-          "title": "Provenance"
+          "title": "Confidence"
         },
         "class_name": {
           "title": "Class Name",
@@ -1668,7 +1720,7 @@
     },
     "PictureMeta": {
       "additionalProperties": true,
-      "description": "Picture metadata model.",
+      "description": "Metadata model for pictures.",
       "properties": {
         "summary": {
           "anyOf": [
@@ -1695,7 +1747,7 @@
         "molecule": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PictureMoleculeData"
+              "$ref": "#/$defs/MoleculeMetaField"
             },
             {
               "type": "null"
@@ -1706,62 +1758,7 @@
         "tabular_chart": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PictureTabularChartData"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "line_chart": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PictureLineChartData"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "bar_chart": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PictureBarChartData"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "stacked_bar_chart": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PictureStackedBarChartData"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "pie_chart": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PicturePieChartData"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "scatter_chart": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PictureScatterChartData"
+              "$ref": "#/$defs/TabularChartMetaField"
             },
             {
               "type": "null"
@@ -2225,6 +2222,8 @@
         "confidence": {
           "anyOf": [
             {
+              "maximum": 1,
+              "minimum": 0,
               "type": "number"
             },
             {
@@ -2232,19 +2231,12 @@
             }
           ],
           "default": null,
-          "title": "Confidence"
-        },
-        "provenance": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
           ],
-          "default": null,
-          "title": "Provenance"
+          "title": "Confidence"
         },
         "text": {
           "title": "Text",
@@ -2491,6 +2483,44 @@
         "data"
       ],
       "title": "TableItem",
+      "type": "object"
+    },
+    "TabularChartMetaField": {
+      "additionalProperties": true,
+      "description": "Tabular chart metadata field.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "chart_data": {
+          "$ref": "#/$defs/TableData"
+        }
+      },
+      "required": [
+        "title",
+        "chart_data"
+      ],
+      "title": "TabularChartMetaField",
       "type": "object"
     },
     "TextItem": {

@@ -85,19 +85,16 @@ pictures:
       predictions:
       - class_name: bar_chart
         confidence: 0.78
-        provenance: model1
+        docling_internal_provenance: model1
     docling_internal_misc:
-      content:
-        myanalysis:
-          prediction: abc
-        something_else:
-          text: aaa
-      kind: misc
-    docling_internal_molecule_data:
+      myanalysis:
+        prediction: abc
+      something_else:
+        text: aaa
+    molecule:
       class_name: chemistry_molecular_structure
       confidence: 0.98
-      kind: molecule_data
-      provenance: model3-1.0.0
+      docling_internal_provenance: model3-1.0.0
       segmentation:
       - - 0.0
         - 0.0
@@ -109,7 +106,7 @@ pictures:
         - 1.0
       smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
     summary:
-      provenance: model2
+      docling_internal_provenance: model2
       text: '...'
   parent:
     $ref: '#/body'
@@ -170,6 +167,12 @@ tables:
       width: 231.0
     uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
   label: table
+  meta:
+    docling_internal_misc:
+      foo: bar
+    summary:
+      docling_internal_provenance: model3
+      text: A description annotation for this table.
   parent:
     $ref: '#/body'
   prov:

@@ -943,7 +943,7 @@ class ContentLayer(str, Enum):
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
 
 
-class ExtraAllowingModel(BaseModel):
+class _ExtraAllowingModel(BaseModel):
     """Base model allowing extra fields."""
 
     model_config = ConfigDict(extra="allow")
@@ -959,11 +959,21 @@ class ExtraAllowingModel(BaseModel):
         )
 
 
-class BasePrediction(ExtraAllowingModel):
+class BasePrediction(_ExtraAllowingModel):
     """Prediction field."""
 
-    confidence: Optional[float] = None
-    provenance: Optional[str] = None
+    confidence: Optional[float] = Field(
+        default=None,
+        ge=0,
+        le=1,
+        description="The confidence of the prediction.",
+        examples=[0.9, 0.42],
+    )
+    # source: Optional[str] = Field(
+    #     default=None,
+    #     description="The origin of the prediction.",
+    #     examples=["ibm-granite/granite-docling-258M"],
+    # )
 
     @field_serializer("confidence")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
@@ -976,7 +986,7 @@ class SummaryMetaField(BasePrediction):
     text: str
 
 
-class BaseMeta(ExtraAllowingModel):
+class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
     summary: Optional[SummaryMetaField] = None
@@ -988,7 +998,7 @@ class PictureClassificationPrediction(BasePrediction):
     class_name: str
 
 
-class PictureClassificationMetaField(ExtraAllowingModel):
+class PictureClassificationMetaField(_ExtraAllowingModel):
     """Picture classification metadata field."""
 
     predictions: list[PictureClassificationPrediction] = Field(
@@ -996,19 +1006,29 @@ class PictureClassificationMetaField(ExtraAllowingModel):
     )
 
 
+class MoleculeMetaField(BasePrediction):
+    """Molecule metadata field."""
+
+    # TODO: remove / rename / document / further specify fields?
+
+    smi: str
+    class_name: str
+    segmentation: List[Tuple[float, float]]
+
+
+class TabularChartMetaField(BasePrediction):
+    """Tabular chart metadata field."""
+
+    title: str
+    chart_data: TableData
+
+
 class PictureMeta(BaseMeta):
-    """Picture metadata model."""
+    """Metadata model for pictures."""
 
     classification: Optional[PictureClassificationMetaField] = None
-
-    # TODO the previous classes include "kind" for disambiguation, which is not needed here
-    molecule: Optional[PictureMoleculeData] = None
-    tabular_chart: Optional[PictureTabularChartData] = None
-    line_chart: Optional[PictureLineChartData] = None
-    bar_chart: Optional[PictureBarChartData] = None
-    stacked_bar_chart: Optional[PictureStackedBarChartData] = None
-    pie_chart: Optional[PicturePieChartData] = None
-    scatter_chart: Optional[PictureScatterChartData] = None
+    molecule: Optional[MoleculeMetaField] = None
+    tabular_chart: Optional[TabularChartMetaField] = None
 
 
 class NodeItem(BaseModel):
@@ -1474,6 +1494,12 @@ class FormulaItem(TextItem):
     )
 
 
+def _create_internal_meta_field_name(
+    suffix: str, prefix: str = "docling_internal_"
+) -> str:
+    return f"{prefix}{suffix}"
+
+
 class PictureItem(FloatingItem):
     """PictureItem."""
 
@@ -1481,11 +1507,11 @@ class PictureItem(FloatingItem):
         DocItemLabel.PICTURE
     )
 
+    meta: Optional[PictureMeta] = None
     annotations: Annotated[
         List[PictureDataType],
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
-    meta: Optional[PictureMeta] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -1517,7 +1543,11 @@ class PictureItem(FloatingItem):
                                 PictureClassificationPrediction(
                                     class_name=pred.class_name,
                                     confidence=pred.confidence,
-                                    provenance=ann.provenance,
+                                    **{
+                                        _create_internal_meta_field_name(
+                                            "provenance"
+                                        ): ann.provenance
+                                    },
                                 )
                                 for pred in ann.predicted_classes
                             ],
@@ -1529,17 +1559,47 @@ class PictureItem(FloatingItem):
                         "summary",
                         SummaryMetaField(
                             text=ann.text,
-                            provenance=ann.provenance,
+                            **{
+                                _create_internal_meta_field_name(
+                                    "provenance"
+                                ): ann.provenance
+                            },
                         ).model_dump(mode="json"),
                     )
-                # TODO add other relevant annotation types...
-                else:
-                    # fall back to reusing (namespaced) original annotation type name
+                elif isinstance(ann, PictureMoleculeData):
                     data["meta"].setdefault(
-                        f"docling_internal_{ann.kind}",
+                        "molecule",
+                        MoleculeMetaField(
+                            smi=ann.smi,
+                            class_name=ann.class_name,
+                            segmentation=ann.segmentation,
+                            confidence=ann.confidence,
+                            **{
+                                _create_internal_meta_field_name(
+                                    "provenance"
+                                ): ann.provenance
+                            },
+                        ).model_dump(mode="json"),
+                    )
+                elif isinstance(ann, PictureTabularChartData):
+                    data["meta"].setdefault(
+                        "tabular_chart",
+                        TabularChartMetaField(
+                            title=ann.title,
+                            chart_data=ann.chart_data,
+                        ).model_dump(mode="json"),
+                    )
+                elif isinstance(ann, MiscAnnotation):
+                    data["meta"].setdefault(
+                        _create_internal_meta_field_name(ann.kind),
+                        ann.content,
+                    )
+                else:
+                    # fall back to reusing original annotation type name (in namespaced format)
+                    data["meta"].setdefault(
+                        _create_internal_meta_field_name(ann.kind),
                         ann.model_dump(mode="json"),
                     )
-                # TODO: add other annotation types to meta
 
         return data
 
@@ -1693,6 +1753,55 @@ class TableItem(FloatingItem):
         List[TableAnnotationType],
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_annotations_to_meta(cls, data: Any) -> Any:
+        """Migrate the `annotations` field to `meta`."""
+        if isinstance(data, dict) and (annotations := data.get("annotations")):
+            _logger.warning(
+                "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
+                "Note that only the first available instance of each annotation type will be migrated."
+            )
+            for raw_ann in annotations:
+                # migrate annotations to meta
+
+                try:
+                    ann: TableAnnotationType = TypeAdapter(
+                        TableAnnotationType
+                    ).validate_python(raw_ann)
+                except ValidationError as e:
+                    raise e
+
+                # ensure meta field is present
+                data.setdefault("meta", {})
+
+                # migrate description annotation to summary meta field
+                if isinstance(ann, DescriptionAnnotation):
+                    data["meta"].setdefault(
+                        "summary",
+                        SummaryMetaField(
+                            text=ann.text,
+                            **{
+                                _create_internal_meta_field_name(
+                                    "provenance"
+                                ): ann.provenance
+                            },
+                        ).model_dump(mode="json"),
+                    )
+                elif isinstance(ann, MiscAnnotation):
+                    data["meta"].setdefault(
+                        _create_internal_meta_field_name(ann.kind),
+                        ann.content,
+                    )
+                else:
+                    # fall back to reusing original annotation type name (in namespaced format)
+                    data["meta"].setdefault(
+                        _create_internal_meta_field_name(ann.kind),
+                        ann.model_dump(mode="json"),
+                    )
+
+        return data
 
     def export_to_dataframe(
         self, doc: Optional["DoclingDocument"] = None
