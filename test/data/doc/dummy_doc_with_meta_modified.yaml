@@ -85,8 +85,8 @@ pictures:
       predictions:
       - class_name: bar_chart
         confidence: 0.78
-        docling_internal_provenance: model1
-    docling_internal_misc:
+        docling_internal__provenance: model1
+    docling_internal__misc:
       myanalysis:
         prediction: abc
       something_else:
@@ -94,7 +94,7 @@ pictures:
     molecule:
       class_name: chemistry_molecular_structure
       confidence: 0.98
-      docling_internal_provenance: model3-1.0.0
+      docling_internal__provenance: model3-1.0.0
       segmentation:
       - - 0.0
         - 0.0
@@ -106,7 +106,7 @@ pictures:
         - 1.0
       smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
     summary:
-      docling_internal_provenance: model2
+      docling_internal__provenance: model2
       text: '...'
   parent:
     $ref: '#/body'
@@ -168,10 +168,10 @@ tables:
     uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
   label: table
   meta:
-    docling_internal_misc:
+    docling_internal__misc:
       foo: bar
     summary:
-      docling_internal_provenance: model3
+      docling_internal__provenance: model3
       text: A description annotation for this table.
   parent:
     $ref: '#/body'
@@ -212,10 +212,10 @@ texts:
   content_layer: body
   label: title
   meta:
-    my_corp_custom_field_1: More stuff here.
+    my_corp__foo: More stuff here.
     summary:
       confidence: 0.95
-      provenance: model1
+      docling_internal__provenance: model1
       text: This is a title.
   orig: 'DocLayNet: A Large Human-Annotated Dataset for
 
@@ -240,7 +240,9 @@ texts:
   label: section_header
   level: 1
   meta:
-    example_custom_field_added_programmaticaly: true
+    my_corp__coords:
+      latitude: 8.5417
+      longitude: 47.3769
     summary:
       text: This is a section header.
   orig: OPERATION (cont.)

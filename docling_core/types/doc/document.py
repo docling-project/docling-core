@@ -948,15 +948,40 @@ class _ExtraAllowingModel(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    def _get_extra_dict(self) -> dict[str, Any]:
+    def get_custom_part(self) -> dict[str, Any]:
         """Get the extra fields as a dictionary."""
         return self.__pydantic_extra__ or {}
 
     def _copy_without_extra(self) -> Self:
         """Create a copy without the extra fields."""
         return self.model_validate(
-            self.model_dump(exclude={ex for ex in self._get_extra_dict()})
+            self.model_dump(exclude={ex for ex in self.get_custom_part()})
         )
+
+    def _check_custom_field_format(self, key: str) -> None:
+        parts = key.split(_META_FIELD_NAMESPACE_DELIMITER, maxsplit=1)
+        if len(parts) != 2 or (not parts[0]) or (not parts[1]):
+            raise ValueError(
+                f"Custom meta field name must be in format 'namespace__field_name' (e.g. 'my_corp__max_size'): {key}"
+            )
+
+    @model_validator(mode="after")
+    def _validate_field_names(self) -> Self:
+        extra_dict = self.get_custom_part()
+        for key in self.model_dump():
+            if key in extra_dict:
+                self._check_custom_field_format(key=key)
+            elif _META_FIELD_NAMESPACE_DELIMITER in key:
+                raise ValueError(
+                    f"Standard meta field name must not contain '__': {key}"
+                )
+
+        return self
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if name in self.get_custom_part():
+            self._check_custom_field_format(key=name)
 
 
 class BasePrediction(_ExtraAllowingModel):
@@ -1506,10 +1531,23 @@ class FormulaItem(TextItem):
     )
 
 
-def _create_internal_meta_field_name(
-    suffix: str, prefix: str = "docling_internal_"
+_META_FIELD_NAMESPACE_DELIMITER = "__"
+
+
+def create_meta_field_name(
+    *,
+    namespace: str,
+    name: str,
 ) -> str:
-    return f"{prefix}{suffix}"
+    """Create a meta field name."""
+    return f"{namespace}{_META_FIELD_NAMESPACE_DELIMITER}{name}"
+
+
+def _create_migrated_meta_field_name(
+    *,
+    name: str,
+) -> str:
+    return create_meta_field_name(namespace="docling_internal", name=name)
 
 
 class PictureItem(FloatingItem):
@@ -1527,7 +1565,7 @@ class PictureItem(FloatingItem):
 
     @model_validator(mode="before")
     @classmethod
-    def migrate_annotations_to_meta(cls, data: Any) -> Any:
+    def _migrate_annotations_to_meta(cls, data: Any) -> Any:
         """Migrate the `annotations` field to `meta`."""
         if isinstance(data, dict) and (annotations := data.get("annotations")):
             _logger.warning(
@@ -1556,8 +1594,8 @@ class PictureItem(FloatingItem):
                                     class_name=pred.class_name,
                                     confidence=pred.confidence,
                                     **{
-                                        _create_internal_meta_field_name(
-                                            "provenance"
+                                        _create_migrated_meta_field_name(
+                                            name="provenance"
                                         ): ann.provenance
                                     },
                                 )
@@ -1572,8 +1610,8 @@ class PictureItem(FloatingItem):
                         SummaryMetaField(
                             text=ann.text,
                             **{
-                                _create_internal_meta_field_name(
-                                    "provenance"
+                                _create_migrated_meta_field_name(
+                                    name="provenance"
                                 ): ann.provenance
                             },
                         ).model_dump(mode="json"),
@@ -1587,8 +1625,8 @@ class PictureItem(FloatingItem):
                             segmentation=ann.segmentation,
                             confidence=ann.confidence,
                             **{
-                                _create_internal_meta_field_name(
-                                    "provenance"
+                                _create_migrated_meta_field_name(
+                                    name="provenance"
                                 ): ann.provenance
                             },
                         ).model_dump(mode="json"),
@@ -1603,13 +1641,13 @@ class PictureItem(FloatingItem):
                     )
                 elif isinstance(ann, MiscAnnotation):
                     data["meta"].setdefault(
-                        _create_internal_meta_field_name(ann.kind),
+                        _create_migrated_meta_field_name(name=ann.kind),
                         ann.content,
                     )
                 else:
                     # fall back to reusing original annotation type name (in namespaced format)
                     data["meta"].setdefault(
-                        _create_internal_meta_field_name(ann.kind),
+                        _create_migrated_meta_field_name(name=ann.kind),
                         ann.model_dump(mode="json"),
                     )
 
@@ -1795,21 +1833,21 @@ class TableItem(FloatingItem):
                         SummaryMetaField(
                             text=ann.text,
                             **{
-                                _create_internal_meta_field_name(
-                                    "provenance"
+                                _create_migrated_meta_field_name(
+                                    name="provenance"
                                 ): ann.provenance
                             },
                         ).model_dump(mode="json"),
                     )
                 elif isinstance(ann, MiscAnnotation):
                     data["meta"].setdefault(
-                        _create_internal_meta_field_name(ann.kind),
+                        _create_migrated_meta_field_name(name=ann.kind),
                         ann.content,
                     )
                 else:
                     # fall back to reusing original annotation type name (in namespaced format)
                     data["meta"].setdefault(
-                        _create_internal_meta_field_name(ann.kind),
+                        _create_migrated_meta_field_name(name=ann.kind),
                         ann.model_dump(mode="json"),
                     )
 
@@ -5789,16 +5827,17 @@ class DoclingDocument(BaseModel):
             return CURRENT_VERSION
 
     @model_validator(mode="after")  # type: ignore
-    @classmethod
-    def validate_document(cls, d: "DoclingDocument"):
+    def validate_document(self) -> Self:
         """validate_document."""
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
+            if not self.validate_tree(self.body) or not self.validate_tree(
+                self.furniture
+            ):
                 raise ValueError("Document hierachy is inconsistent.")
 
-        return d
+        return self
 
     @model_validator(mode="after")
     def validate_misplaced_list_items(self):

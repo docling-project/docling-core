@@ -180,9 +180,9 @@ texts:
   meta:
     summary:
       confidence: 0.95
-      provenance: model1
+      docling_internal__provenance: model1
       text: This is a title.
-    my_corp_custom_field_1: More stuff here.
+    my_corp__foo: More stuff here.
   orig: 'DocLayNet: A Large Human-Annotated Dataset for
 
     Document-Layout Analysis'

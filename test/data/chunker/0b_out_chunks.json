@@ -16,7 +16,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image we can see a cartoon image of a duck holding a paper.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -947,7 +947,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image, we can see some text and images.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -3806,7 +3806,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image there is a table with some text on it.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -4129,7 +4129,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image we can see a text.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -4403,7 +4403,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image I can see the text on the image.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -4639,7 +4639,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image there is a paper with some text on it.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -5118,7 +5118,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image, we can see a table.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -5253,7 +5253,7 @@
                         "meta": {
                             "summary": {
                                 "text": "The image is a line graph that shows the percentage of respondents who have used a specific type of training in the past 24 hours. The x-axis represents the time in hours, while the y-axis represents the percentage of respondents. The graph is titled \"Training.\"\n\nThe graph has two lines: one for the training type and one for the training duration. The training type line is labeled \"Training\" and the training duration line is labeled \"Training Duration.\"\n\nThe graph shows that the percentage of respondents who have used the training type increases as the time increases. Specifically, the percentage of respondents who have used the training type increases from 10% to 20% over the 24-hour period. The percentage of respondents who have used the training duration increases from 10% to 20% over the 24-hour period.\n\nThe graph also shows that the percentage of respondents who have used the training type increases as the",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -5822,7 +5822,7 @@
                         "meta": {
                             "summary": {
                                 "text": "The image consists of a blue circle with the letter \"A\" written in white color. The circle is placed on a white background, which makes the letter \"A\" stand out prominently. The background is a gradient of blue and white, transitioning from a lighter shade at the top to a darker shade at the bottom. The gradient effect gives a sense of depth and movement, making the letter \"A\" stand out more.\n\n### Description of Objects in the Image:\n1. **Circle**: The central element of the image is a blue circle.\n2. **White Letter \"A\"**: The letter \"A\" is written in white color.\n3. **Background**: The background is a gradient of blue and white, transitioning from a lighter shade at the top to a darker shade at the bottom.\n4. **Color Gradient**: The gradient effect is present, with the color transitioning from a lighter shade at the top to a darker shade at the bottom.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -6349,7 +6349,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image, there is a table with two columns. The first column is labeled \"Class label,\" and the second column is labeled \"Count.\" The first row in the table has the label \"Class label,\" and the count is 22524. The second row in the table has the label \"Count,\" and the count is 204.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -6445,7 +6445,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image I can see a blue circle.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -7262,7 +7262,7 @@
                         "meta": {
                             "summary": {
                                 "text": "A table with different columns and rows.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
@@ -7954,7 +7954,7 @@
                         "meta": {
                             "summary": {
                                 "text": "In this image there is a table with some text on it.",
-                                "docling_internal_provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
+                                "docling_internal__provenance": "HuggingFaceTB/SmolVLM-256M-Instruct"
                             }
                         },
                         "label": "picture",
