@@ -1,3 +1,5 @@
+"""Utility classes for code chunking operations."""
+
 import hashlib
 from typing import Iterator, List, Tuple
 
@@ -20,6 +22,7 @@ class RangeTracker:
     """Handles tracking and management of used byte ranges in code."""
 
     def __init__(self):
+        """Initialize the range tracker with an empty list of used ranges."""
         self.used_ranges: List[Tuple[int, int]] = []
 
     def mark_used(self, start_byte: int, end_byte: int) -> None:
@@ -79,6 +82,7 @@ class ChunkMetadataBuilder:
     """Builds metadata for code chunks."""
 
     def __init__(self, origin: DocumentOrigin):
+        """Initialize the metadata builder with document origin."""
         self.origin = origin
 
     def build_function_metadata(
@@ -152,6 +156,7 @@ class ChunkBuilder:
     """Builds code chunks from nodes and content."""
 
     def __init__(self, origin: DocumentOrigin):
+        """Initialize the chunk builder with document origin."""
         self.metadata_builder = ChunkMetadataBuilder(origin)
 
     def build_function_chunk(
@@ -231,6 +236,7 @@ class ChunkSizeProcessor:
     def __init__(
         self, tokenizer, max_tokens: int, min_chunk_size: int = 300, chunker=None
     ):
+        """Initialize the chunk size processor with tokenizer and size constraints."""
         self.tokenizer = tokenizer
         self.max_tokens = max_tokens
         self.min_chunk_size = min_chunk_size
@@ -322,7 +328,7 @@ class ChunkSizeProcessor:
 
             new_meta = chunk.meta.model_copy()
             new_meta.part_name = (
-                f"{chunk.meta.part_name}_part_{i+1}"
+                f"{chunk.meta.part_name}_part_{i + 1}"
                 if len(chunks) > 1
                 else chunk.meta.part_name
             )

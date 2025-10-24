@@ -2,7 +2,7 @@ import glob
 import json
 import os
 import pathlib
-from typing import List
+from typing import List, Optional
 
 import git
 import pytest
@@ -30,7 +30,7 @@ def get_latest_commit_id(file_dir: str) -> str:
 
 
 def create_documents_from_repository(
-    file_dir: str, repo_url: str, commit_id: str = None
+    file_dir: str, repo_url: str, commit_id: Optional[str] = None
 ) -> List[DoclingDocument]:
     """Build DoclingDocument objects from a local checkout, one per code file."""
 

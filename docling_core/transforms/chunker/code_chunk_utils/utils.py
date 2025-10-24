@@ -1,3 +1,5 @@
+"""Utility functions and classes for code language detection and processing."""
+
 from enum import Enum
 from typing import List, Optional
 
@@ -14,6 +16,8 @@ from docling_core.types.doc.labels import CodeLanguageLabel
 
 
 class Language(str, Enum):
+    """Supported programming languages for code chunking."""
+
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
@@ -21,6 +25,7 @@ class Language(str, Enum):
     C = "c"
 
     def file_extensions(self) -> List[str]:
+        """Get the file extensions associated with this language."""
         if self == Language.PYTHON:
             return [".py"]
         elif self == Language.TYPESCRIPT:
@@ -35,6 +40,7 @@ class Language(str, Enum):
             return []
 
     def get_tree_sitter_language(self):
+        """Get the tree-sitter language object for this language."""
         if self == Language.PYTHON:
             return Lang(ts_python.language())
         elif self == Language.TYPESCRIPT:
@@ -49,7 +55,7 @@ class Language(str, Enum):
             return None
 
     def to_code_language_label(self):
-
+        """Convert this language to a CodeLanguageLabel."""
         mapping = {
             Language.PYTHON: CodeLanguageLabel.PYTHON,
             Language.JAVA: CodeLanguageLabel.JAVA,
@@ -60,6 +66,7 @@ class Language(str, Enum):
         return mapping.get(self, CodeLanguageLabel.UNKNOWN)
 
     def get_import_query(self) -> Optional[str]:
+        """Get the tree-sitter query string for finding imports in this language."""
         if self == Language.PYTHON:
             return """
                 (import_statement) @import
@@ -101,6 +108,7 @@ class Language(str, Enum):
             return None
 
     def get_function_name(self, node: Node) -> Optional[str]:
+        """Extract the function name from a function node."""
         if self == Language.C:
             declarator = node.child_by_field_name("declarator")
             if declarator:
@@ -115,6 +123,7 @@ class Language(str, Enum):
             return None
 
     def is_collectable_function(self, node: Node, constructor_name: str) -> bool:
+        """Check if a function should be collected for chunking."""
         if self == Language.C:
             return True
         else:
@@ -126,6 +135,7 @@ class Language(str, Enum):
 
 
 def _get_default_tokenizer() -> "BaseTokenizer":
+    """Get the default tokenizer instance."""
     from docling_core.transforms.chunker.tokenizer.huggingface import (
         HuggingFaceTokenizer,
     )
@@ -136,10 +146,12 @@ def _get_default_tokenizer() -> "BaseTokenizer":
 
 
 def has_child(node: Node, child_name: str) -> bool:
+    """Check if a node has a child with the specified name."""
     return bool(node and node.child_by_field_name(child_name))
 
 
 def get_children(node: Node, child_types: List[str]) -> List[Node]:
+    """Get all children of a node that match the specified types."""
     if not node.children:
         return []
 
@@ -147,6 +159,7 @@ def get_children(node: Node, child_types: List[str]) -> List[Node]:
 
 
 def to_str(node: Node) -> str:
+    """Convert a tree-sitter node to a string."""
     if not node or not node.text:
         return ""
     text = node.text.decode()

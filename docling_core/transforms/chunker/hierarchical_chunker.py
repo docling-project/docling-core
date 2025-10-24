@@ -19,6 +19,7 @@ from typing import (
     Literal,
     Optional,
     Protocol,
+    cast,
 )
 
 from pydantic import ConfigDict, Field, StringConstraints, field_validator
@@ -134,7 +135,7 @@ class CodeDocMeta(DocMeta):
         default="docling_core.transforms.chunker.CodeDocMeta",
         alias=_KEY_SCHEMA_NAME,
     )
-    doc_items: Optional[list[DocItem]] = Field(default=None, alias=_KEY_DOC_ITEMS)
+    doc_items: Optional[list[DocItem]] = Field(default=None, alias=_KEY_DOC_ITEMS)  # type: ignore[assignment]
     part_name: Optional[str] = Field(default=None)
     docstring: Optional[str] = Field(default=None)
     sha256: Optional[int] = Field(default=None)
@@ -151,7 +152,7 @@ class CodeChunk(BaseChunk):
 
 
 class CodeChunkType(str, Enum):
-    """Chunk type"""
+    """Chunk type."""
 
     FUNCTION = "function"
     METHOD = "method"
@@ -317,8 +318,9 @@ class HierarchicalChunker(BaseChunker):
                         LanguageDetector,
                     )
 
+                    text_item = cast(Any, item)
                     language = LanguageDetector.detect_language(
-                        item.text,
+                        text_item.text,
                         (
                             getattr(dl_doc.origin, "filename", None)
                             if dl_doc.origin

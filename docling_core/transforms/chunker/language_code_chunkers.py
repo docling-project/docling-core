@@ -1,3 +1,5 @@
+"""Language-specific code chunker implementations."""
+
 from typing import Any, Dict, List, Tuple
 
 from pydantic import Field
@@ -31,7 +33,7 @@ class _PythonFunctionChunker(_CodeChunker):
     function_body: str = "block"
     tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
     min_chunk_size: int = 300
-    max_tokens: int = 50
+    max_tokens: int = 5000
     docs_types: List[str] = ["body", "comment"]
     dotted_name: str = "dotted_name"
     aliased_import: str = "aliased_import"
@@ -112,6 +114,7 @@ class _PythonFunctionChunker(_CodeChunker):
         used_vars = set()
 
         def collect_identifiers(node, depth=0):
+            """Collect identifiers from node."""
             "  " * depth
             if node.type in self.identifiers:
                 var_name = node.text.decode(self.utf8_encoding)
@@ -365,6 +368,7 @@ class _CFunctionChunker(_CodeChunker):
         used_macros = set()
 
         def collect_identifiers(node, depth=0):
+            """Collect identifiers from node."""
             "  " * depth
             if node.type in self.identifiers:
                 macro_name = node.text.decode(self.utf8_encoding)

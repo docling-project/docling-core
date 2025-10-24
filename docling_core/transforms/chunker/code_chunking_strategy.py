@@ -1,3 +1,5 @@
+"""Code chunking strategy implementations for different programming languages."""
+
 from typing import Any, Dict, Iterator, Optional
 
 from docling_core.transforms.chunker.base_code_chunker import _CodeChunker
@@ -30,7 +32,6 @@ class LanguageDetector:
     @staticmethod
     def detect_from_extension(filename: Optional[str]) -> Optional[Language]:
         """Detect language from file extension."""
-
         if not filename:
             return None
 
@@ -45,7 +46,6 @@ class LanguageDetector:
     @staticmethod
     def detect_from_content(code_text: str) -> Optional[Language]:
         """Detect language from code content using heuristics."""
-
         if not code_text:
             return None
 
@@ -65,7 +65,20 @@ class LanguageDetector:
             ]
         ) and not any(
             pattern in code_lower
-            for pattern in ["public class", "private ", "protected ", "package "]
+            for pattern in [
+                "public class",
+                "private ",
+                "protected ",
+                "package ",
+                "package main",
+                "func main()",
+                'import "fmt"',
+                "chan ",
+                "interface{}",
+                "go func",
+                "defer ",
+                ":= ",
+            ]
         ):
             return Language.PYTHON
 
@@ -169,7 +182,6 @@ class LanguageDetector:
         code_text: str, filename: Optional[str] = None
     ) -> Optional[Language]:
         """Detect language from both filename and content."""
-
         if filename:
             lang = LanguageDetector.detect_from_extension(filename)
             if lang:
@@ -185,7 +197,6 @@ class CodeChunkingStrategyFactory:
     @staticmethod
     def create_chunker(language: Language, **kwargs: Any) -> _CodeChunker:
         """Create a language-specific code chunker."""
-
         chunker_map = {
             Language.PYTHON: _PythonFunctionChunker,
             Language.TYPESCRIPT: _TypeScriptFunctionChunker,
@@ -206,13 +217,11 @@ class DefaultCodeChunkingStrategy:
 
     def __init__(self, **chunker_kwargs: Any):
         """Initialize the strategy with optional chunker parameters."""
-
         self.chunker_kwargs = chunker_kwargs
         self._chunker_cache: Dict[Language, _CodeChunker] = {}
 
     def _get_chunker(self, language: Language) -> _CodeChunker:
         """Get or create a chunker for the given language."""
-
         if language not in self._chunker_cache:
             self._chunker_cache[language] = CodeChunkingStrategyFactory.create_chunker(
                 language, **self.chunker_kwargs
@@ -228,7 +237,6 @@ class DefaultCodeChunkingStrategy:
         **kwargs: Any,
     ) -> Iterator[CodeChunk]:
         """Chunk a single code item using the appropriate language chunker."""
-
         if not code_text.strip():
             return
 
@@ -276,7 +284,6 @@ class NoOpCodeChunkingStrategy:
         **kwargs: Any,
     ) -> Iterator[CodeChunk]:
         """Return the code as a single chunk without further processing."""
-
         if not code_text.strip():
             return
 

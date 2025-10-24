@@ -1,3 +1,5 @@
+"""Base code chunker implementation for parsing and chunking code files."""
+
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from tree_sitter import Node, Parser, Tree
@@ -58,13 +60,8 @@ class _CodeChunker(BaseChunker):
         if self.parser is None:
             self.parser = Parser(self.ts_language)
 
-    @property
-    def max_tokens(self) -> int:
-        """Get maximum number of tokens allowed."""
-        return self.tokenizer.get_max_tokens()
-
     def parse_code(self, code: str) -> Tree:
-        """Get tree sitter parser"""
+        """Get tree sitter parser."""
         return self.parser.parse(bytes(code, self.utf8_encoding))
 
     def chunk(self, dl_doc: DLDocument, **kwargs: Any) -> Iterator[CodeChunk]:
@@ -199,7 +196,10 @@ class _CodeChunker(BaseChunker):
             function_content.replace(docstring, "") if docstring else function_content
         )
 
-        base_content = f"{prefix}{imports}{module_variable_definitions}{additional_context_no_docstring}{function_no_docstring}"
+        base_content = (
+            f"{prefix}{imports}{module_variable_definitions}"
+            f"{additional_context_no_docstring}{function_no_docstring}"
+        )
 
         if chunk_builder:
             yield chunk_builder.build_function_chunk(
@@ -437,7 +437,6 @@ class _CodeChunker(BaseChunker):
 
     def _get_node_with_comments(self, node: Node) -> str:
         """Get node text including any preceding comments."""
-
         current = node.prev_sibling
         comment_parts: List[str] = []
 
@@ -516,7 +515,7 @@ class _CodeChunker(BaseChunker):
         return context, context_no_docstring
 
     def _is_docstring(self, node: Node) -> bool:
-        """Determines if a node is a docstring"""
+        """Determines if a node is a docstring."""
         return bool(
             node.type == self.expression_statement
             and node.named_children
