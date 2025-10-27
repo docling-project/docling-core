@@ -1325,36 +1325,30 @@
           ],
           "title": "Confidence"
         },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
         "smi": {
+          "description": "The SMILES representation of the molecule.",
           "title": "Smi",
           "type": "string"
-        },
-        "class_name": {
-          "title": "Class Name",
-          "type": "string"
-        },
-        "segmentation": {
-          "items": {
-            "maxItems": 2,
-            "minItems": 2,
-            "prefixItems": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "type": "array"
-          },
-          "title": "Segmentation",
-          "type": "array"
         }
       },
       "required": [
-        "smi",
-        "class_name",
-        "segmentation"
+        "smi"
       ],
       "title": "MoleculeMetaField",
       "type": "object"
@@ -1511,6 +1505,22 @@
             0.42
           ],
           "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
         },
         "class_name": {
           "title": "Class Name",
@@ -2238,6 +2248,22 @@
           ],
           "title": "Confidence"
         },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
         "text": {
           "title": "Text",
           "type": "string"
@@ -2507,6 +2533,22 @@
             0.42
           ],
           "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
         },
         "title": {
           "title": "Title",

@@ -983,6 +983,12 @@ class _ExtraAllowingModel(BaseModel):
         if name in self.get_custom_part():
             self._check_custom_field_format(key=name)
 
+    def set_custom_field(self, namespace: str, name: str, value: Any) -> str:
+        """Set a custom field and return the key."""
+        key = create_meta_field_name(namespace=namespace, name=name)
+        setattr(self, key, value)
+        return key
+
 
 class BasePrediction(_ExtraAllowingModel):
     """Prediction field."""
@@ -994,11 +1000,11 @@ class BasePrediction(_ExtraAllowingModel):
         description="The confidence of the prediction.",
         examples=[0.9, 0.42],
     )
-    # source: Optional[str] = Field(
-    #     default=None,
-    #     description="The origin of the prediction.",
-    #     examples=["ibm-granite/granite-docling-258M"],
-    # )
+    created_by: Optional[str] = Field(
+        default=None,
+        description="The origin of the prediction.",
+        examples=["ibm-granite/granite-docling-258M"],
+    )
 
     @field_serializer("confidence")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
@@ -1046,11 +1052,7 @@ class PictureClassificationMetaField(_ExtraAllowingModel):
 class MoleculeMetaField(BasePrediction):
     """Molecule metadata field."""
 
-    # TODO: remove / rename / document / further specify fields?
-
-    smi: str
-    class_name: str
-    segmentation: List[Tuple[float, float]]
+    smi: str = Field(description="The SMILES representation of the molecule.")
 
 
 class TabularChartMetaField(BasePrediction):
@@ -1547,7 +1549,7 @@ def _create_migrated_meta_field_name(
     *,
     name: str,
 ) -> str:
-    return create_meta_field_name(namespace="docling_internal", name=name)
+    return create_meta_field_name(namespace="docling_legacy", name=name)
 
 
 class PictureItem(FloatingItem):
@@ -1593,11 +1595,7 @@ class PictureItem(FloatingItem):
                                 PictureClassificationPrediction(
                                     class_name=pred.class_name,
                                     confidence=pred.confidence,
-                                    **{
-                                        _create_migrated_meta_field_name(
-                                            name="provenance"
-                                        ): ann.provenance
-                                    },
+                                    created_by=ann.provenance,
                                 )
                                 for pred in ann.predicted_classes
                             ],
@@ -1609,11 +1607,7 @@ class PictureItem(FloatingItem):
                         "summary",
                         SummaryMetaField(
                             text=ann.text,
-                            **{
-                                _create_migrated_meta_field_name(
-                                    name="provenance"
-                                ): ann.provenance
-                            },
+                            created_by=ann.provenance,
                         ).model_dump(mode="json"),
                     )
                 elif isinstance(ann, PictureMoleculeData):
@@ -1621,13 +1615,15 @@ class PictureItem(FloatingItem):
                         "molecule",
                         MoleculeMetaField(
                             smi=ann.smi,
-                            class_name=ann.class_name,
-                            segmentation=ann.segmentation,
                             confidence=ann.confidence,
+                            created_by=ann.provenance,
                             **{
                                 _create_migrated_meta_field_name(
-                                    name="provenance"
-                                ): ann.provenance
+                                    name="segmentation"
+                                ): ann.segmentation,
+                                _create_migrated_meta_field_name(
+                                    name="class_name"
+                                ): ann.class_name,
                             },
                         ).model_dump(mode="json"),
                     )
@@ -1832,11 +1828,7 @@ class TableItem(FloatingItem):
                         "summary",
                         SummaryMetaField(
                             text=ann.text,
-                            **{
-                                _create_migrated_meta_field_name(
-                                    name="provenance"
-                                ): ann.provenance
-                            },
+                            created_by=ann.provenance,
                         ).model_dump(mode="json"),
                     )
                 elif isinstance(ann, MiscAnnotation):

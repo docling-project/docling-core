@@ -3,12 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-from docling_core.types.doc.document import (
-    DoclingDocument,
-    NodeItem,
-    RefItem,
-    create_meta_field_name,
-)
+from docling_core.types.doc.document import DoclingDocument, NodeItem, RefItem
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -24,9 +19,11 @@ def test_metadata_usage():
     assert example_item.meta is not None
 
     # add a custom metadata object to the item
-    target_name = create_meta_field_name(namespace="my_corp", name="coords")
     value = CustomCoordinates(longitude=47.3769, latitude=8.5417)
-    setattr(example_item.meta, target_name, value)
+    target_name = example_item.meta.set_custom_field(
+        namespace="my_corp", name="coords", value=value
+    )
+    assert target_name == "my_corp__coords"
 
     # save the document
     exp_file = src.parent / f"{src.stem}_modified.yaml"
