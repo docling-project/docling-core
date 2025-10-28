@@ -23,7 +23,6 @@ groups:
   content_layer: body
   label: chapter
   meta:
-    my_corp__test: value
     summary:
       text: This chapter discusses foo and bar.
   name: '1'
@@ -36,6 +35,7 @@ groups:
   content_layer: body
   label: section
   meta:
+    my_corp__test_1: custom field value 1
     summary:
       text: This section talks about foo.
   name: 1a
@@ -59,6 +59,7 @@ groups:
   content_layer: body
   label: section
   meta:
+    my_corp__test_2: custom field value 2
     summary:
       text: This section talks about bar.
   name: 1b

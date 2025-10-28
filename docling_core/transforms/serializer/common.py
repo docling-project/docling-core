@@ -208,6 +208,14 @@ class CommonParams(BaseModel):
     use_legacy_annotations: bool = Field(
         default=False, description="Use legacy annotation serialization."
     )
+    allowed_meta_names: Optional[set[str]] = Field(
+        default=None,
+        description="Meta name to allow; None means all meta names are allowed.",
+    )
+    blocked_meta_names: set[str] = Field(
+        default_factory=set,
+        description="Meta name to block; takes precedence over allowed_meta_names.",
+    )
 
     def merge_with_patch(self, patch: dict[str, Any]) -> Self:
         """Create an instance by merging the provided patch dict on top of self."""
@@ -587,7 +595,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 return self.meta_serializer.serialize(
                     item=item,
                     doc=self.doc,
-                    **kwargs,
+                    **(self.params.model_dump() | kwargs),
                 )
             else:
                 return create_ser_result(

@@ -1017,6 +1017,17 @@ class SummaryMetaField(BasePrediction):
     text: str
 
 
+# NOTE: should be manually kept in sync with top-level BaseMeta hierarchy fields
+class MetaFieldName(str, Enum):
+    """Standard meta field names."""
+
+    SUMMARY = "summary"
+    DESCRIPTION = "description"
+    CLASSIFICATION = "classification"
+    MOLECULE = "molecule"
+    TABULAR_CHART = "tabular_chart"
+
+
 class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
@@ -1600,7 +1611,7 @@ class PictureItem(FloatingItem):
 
                 if isinstance(ann, PictureClassificationData):
                     data["meta"].setdefault(
-                        "classification",
+                        MetaFieldName.CLASSIFICATION.value,
                         PictureClassificationMetaField(
                             predictions=[
                                 PictureClassificationPrediction(
@@ -1614,7 +1625,7 @@ class PictureItem(FloatingItem):
                     )
                 elif isinstance(ann, DescriptionAnnotation):
                     data["meta"].setdefault(
-                        "description",
+                        MetaFieldName.DESCRIPTION.value,
                         DescriptionMetaField(
                             text=ann.text,
                             created_by=ann.provenance,
@@ -1622,7 +1633,7 @@ class PictureItem(FloatingItem):
                     )
                 elif isinstance(ann, PictureMoleculeData):
                     data["meta"].setdefault(
-                        "molecule",
+                        MetaFieldName.MOLECULE.value,
                         MoleculeMetaField(
                             smi=ann.smi,
                             confidence=ann.confidence,
@@ -1639,7 +1650,7 @@ class PictureItem(FloatingItem):
                     )
                 elif isinstance(ann, PictureTabularChartData):
                     data["meta"].setdefault(
-                        "tabular_chart",
+                        MetaFieldName.TABULAR_CHART.value,
                         TabularChartMetaField(
                             title=ann.title,
                             chart_data=ann.chart_data,
@@ -1834,7 +1845,7 @@ class TableItem(FloatingItem):
 
                 if isinstance(ann, DescriptionAnnotation):
                     data["meta"].setdefault(
-                        "description",
+                        MetaFieldName.DESCRIPTION.value,
                         DescriptionMetaField(
                             text=ann.text,
                             created_by=ann.provenance,
@@ -4753,8 +4764,10 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         mark_annotations: bool = False,
         *,
-        mark_meta: bool = False,
         use_legacy_annotations: bool = False,
+        allowed_meta_names: Optional[set[str]] = None,
+        blocked_meta_names: Optional[set[str]] = None,
+        mark_meta: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4808,6 +4821,10 @@ class DoclingDocument(BaseModel):
         :type mark_meta: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
+        :param allowed_meta_names: Optional[set[str]]: Meta names to allow; None means all meta names are allowed.
+        :type allowed_meta_names: Optional[set[str]] = None
+        :param blocked_meta_names: Optional[set[str]]: Meta names to block; takes precedence over allowed_meta_names.
+        :type blocked_meta_names: Optional[set[str]] = None
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -4836,10 +4853,11 @@ class DoclingDocument(BaseModel):
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
                 page_break_placeholder=page_break_placeholder,
-                # allowed_meta_names=set() if use_legacy_annotations else allowed_meta_names,
-                # blocked_meta_names=blocked_meta_names or set(),
                 mark_meta=mark_meta,
-                include_annotations=include_annotations and use_legacy_annotations,
+                include_annotations=include_annotations,
+                use_legacy_annotations=use_legacy_annotations,
+                allowed_meta_names=allowed_meta_names,
+                blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
             ),
         )

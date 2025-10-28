@@ -109,7 +109,6 @@ class MarkdownParams(CommonParams):
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
-    # include_meta: bool = Field(default=True, description="Include item meta.")
     mark_meta: bool = Field(default=False, description="Mark meta sections.")
     include_annotations: bool = Field(
         default=True,
@@ -284,8 +283,15 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                         + list(item.meta.get_custom_part())
                     )
                     if (
-                        tmp := self._serialize_meta_field(
-                            item.meta, key, params.mark_meta
+                        (
+                            params.allowed_meta_names is None
+                            or key in params.allowed_meta_names
+                        )
+                        and (key not in params.blocked_meta_names)
+                        and (
+                            tmp := self._serialize_meta_field(
+                                item.meta, key, params.mark_meta
+                            )
                         )
                     )
                 ]
@@ -293,6 +299,7 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                 else []
             ),
             span_source=item if isinstance(item, DocItem) else [],
+            # NOTE for now using an empty span source for GroupItems
         )
 
     def _serialize_meta_field(

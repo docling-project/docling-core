@@ -16,9 +16,11 @@ from docling_core.types.doc.document import (
     BaseMeta,
     DocItem,
     DoclingDocument,
+    MetaFieldName,
     NodeItem,
     RefItem,
     SummaryMetaField,
+    create_meta_field_name,
 )
 from docling_core.types.doc.labels import DocItemLabel, GroupLabel
 
@@ -89,7 +91,9 @@ def _create_doc_with_group_with_metadata() -> DoclingDocument:
     grp1a.meta = BaseMeta(
         summary=SummaryMetaField(text="This section talks about foo.")
     )
-    grp1.meta.set_custom_field(namespace="my_corp", name="test", value="value")
+    grp1a.meta.set_custom_field(
+        namespace="my_corp", name="test_1", value="custom field value 1"
+    )
     txt1 = doc.add_text(text="Regarding foo...", label=DocItemLabel.TEXT, parent=grp1a)
     txt1.meta = BaseMeta(
         summary=SummaryMetaField(text="This paragraph provides more details about foo.")
@@ -104,6 +108,9 @@ def _create_doc_with_group_with_metadata() -> DoclingDocument:
     grp1b = doc.add_group(parent=grp1, name="1b", label=GroupLabel.SECTION)
     grp1b.meta = BaseMeta(
         summary=SummaryMetaField(text="This section talks about bar.")
+    )
+    grp1b.meta.set_custom_field(
+        namespace="my_corp", name="test_2", value="custom field value 2"
     )
     doc.add_text(text="Regarding bar...", label=DocItemLabel.TEXT, parent=grp1b)
 
@@ -126,9 +133,7 @@ def test_md_ser_default():
     doc = _create_doc_with_group_with_metadata()
 
     # test exporting to Markdown
-    params = MarkdownParams(
-        include_annotations=False,
-    )
+    params = MarkdownParams()
     ser = MarkdownDocSerializer(doc=doc, params=params)
     ser_res = ser.serialize()
     actual = ser_res.text
@@ -147,13 +152,74 @@ def test_md_ser_marked():
 
     # test exporting to Markdown
     params = MarkdownParams(
-        include_annotations=False,
         mark_meta=True,
     )
     ser = MarkdownDocSerializer(doc=doc, params=params)
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_marked.md")
+    if GEN_TEST_DATA:
+        with open(exp_file, "w", encoding="utf-8") as f:
+            f.write(actual)
+    else:
+        with open(exp_file, "r", encoding="utf-8") as f:
+            expected = f.read()
+        assert actual == expected
+
+
+def test_md_ser_allowed_meta_names():
+    doc = _create_doc_with_group_with_metadata()
+    params = MarkdownParams(
+        allowed_meta_names={
+            create_meta_field_name(namespace="my_corp", name="test_1"),
+        },
+        mark_meta=True,
+    )
+    ser = MarkdownDocSerializer(doc=doc, params=params)
+    ser_res = ser.serialize()
+    actual = ser_res.text
+    exp_file = Path("test/data/doc/group_with_metadata_allowed_meta_names.md")
+    if GEN_TEST_DATA:
+        with open(exp_file, "w", encoding="utf-8") as f:
+            f.write(actual)
+    else:
+        with open(exp_file, "r", encoding="utf-8") as f:
+            expected = f.read()
+        assert actual == expected
+
+
+def test_md_ser_blocked_meta_names():
+    doc = _create_doc_with_group_with_metadata()
+    params = MarkdownParams(
+        blocked_meta_names={
+            create_meta_field_name(namespace="my_corp", name="test_1"),
+            MetaFieldName.SUMMARY.value,
+        },
+        mark_meta=True,
+    )
+    ser = MarkdownDocSerializer(doc=doc, params=params)
+    ser_res = ser.serialize()
+    actual = ser_res.text
+    exp_file = Path("test/data/doc/group_with_metadata_blocked_meta_names.md")
+    if GEN_TEST_DATA:
+        with open(exp_file, "w", encoding="utf-8") as f:
+            f.write(actual)
+    else:
+        with open(exp_file, "r", encoding="utf-8") as f:
+            expected = f.read()
+        assert actual == expected
+
+
+def test_md_ser_without_non_meta():
+    doc = _create_doc_with_group_with_metadata()
+    params = MarkdownParams(
+        include_non_meta=False,
+        mark_meta=True,
+    )
+    ser = MarkdownDocSerializer(doc=doc, params=params)
+    ser_res = ser.serialize()
+    actual = ser_res.text
+    exp_file = Path("test/data/doc/group_with_metadata_without_non_meta.md")
     if GEN_TEST_DATA:
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(actual)
@@ -213,29 +279,10 @@ def test_ser_custom_meta_serializer():
             else:
                 return None
 
-    # class SummaryMarkdownDocSerializer(MarkdownDocSerializer):
-    #     # just for overriding the delimiter to single newline:
-    #     @override
-    #     def serialize_doc(
-    #         self,
-    #         *,
-    #         parts: list[SerializationResult],
-    #         **kwargs: Any,
-    #     ) -> SerializationResult:
-    #         """Serialize a document out of its parts."""
-    #         text_res = "\n".join([p.text for p in parts if p.text])
-    #         if self.requires_page_break():
-    #             page_sep = self.params.page_break_placeholder or ""
-    #             for full_match, _, _ in self._get_page_breaks(text=text_res):
-    #                 text_res = text_res.replace(full_match, page_sep)
-
-    #         return create_ser_result(text=text_res, span_source=parts)
-
     doc = _create_doc_with_group_with_metadata()
 
     # test exporting to Markdown
     params = MarkdownParams(
-        include_annotations=False,
         include_non_meta=False,
     )
     ser = MarkdownDocSerializer(
