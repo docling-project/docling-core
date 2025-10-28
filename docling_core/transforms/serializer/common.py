@@ -81,7 +81,7 @@ def _iterate_items(
     traverse_pictures: bool = False,
     add_page_breaks: bool = False,
     visited: Optional[set[str]] = None,
-):
+) -> Iterable[Tuple[NodeItem, int]]:
     my_visited: set[str] = visited if visited is not None else set()
     prev_page_nr: Optional[int] = None
     page_break_i = 0
@@ -262,7 +262,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         if refs is None:
             refs = {
                 item.self_ref
-                for ix, item in enumerate(
+                for ix, (item, _) in enumerate(
                     _iterate_items(
                         doc=self.doc,
                         traverse_pictures=True,
