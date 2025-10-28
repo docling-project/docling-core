@@ -41,6 +41,7 @@ from docling_core.types.doc.document import (
     CodeItem,
     ContentLayer,
     DescriptionAnnotation,
+    DescriptionMetaField,
     DocItem,
     DocItemLabel,
     DoclingDocument,
@@ -108,7 +109,7 @@ class MarkdownParams(CommonParams):
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
-    include_meta: bool = Field(default=True, description="Include item meta.")
+    # include_meta: bool = Field(default=True, description="Include item meta.")
     mark_meta: bool = Field(default=False, description="Mark meta sections.")
     include_annotations: bool = Field(
         default=True,
@@ -278,16 +279,17 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
             text="\n\n".join(
                 [
                     tmp
-                    for key in list(item.meta.__class__.model_fields)
-                    + list(item.meta.get_custom_part())
+                    for key in (
+                        list(item.meta.__class__.model_fields)
+                        + list(item.meta.get_custom_part())
+                    )
                     if (
                         tmp := self._serialize_meta_field(
                             item.meta, key, params.mark_meta
                         )
                     )
-                    is not None
                 ]
-                if params.include_meta and item.meta
+                if item.meta
                 else []
             ),
             span_source=item if isinstance(item, DocItem) else [],
@@ -297,8 +299,9 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
         self, meta: BaseMeta, name: str, mark_meta: bool
     ) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
-            # NOTE: currently only considering field type, not field name
             if isinstance(field_val, SummaryMetaField):
+                txt = field_val.text
+            elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
             elif isinstance(field_val, PictureClassificationMetaField):
                 txt = self._humanize_text(field_val.get_main_prediction().class_name)

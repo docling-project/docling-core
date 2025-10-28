@@ -216,7 +216,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/BaseMeta"
+              "$ref": "#/$defs/FloatingMeta"
             },
             {
               "type": "null"
@@ -433,6 +433,56 @@
       "title": "DescriptionAnnotation",
       "type": "object"
     },
+    "DescriptionMetaField": {
+      "additionalProperties": true,
+      "description": "Description metadata field.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "DescriptionMetaField",
+      "type": "object"
+    },
     "DocumentOrigin": {
       "description": "FileSource.",
       "properties": {
@@ -473,6 +523,36 @@
       "title": "DocumentOrigin",
       "type": "object"
     },
+    "FloatingMeta": {
+      "additionalProperties": true,
+      "description": "Metadata model for floating.",
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SummaryMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DescriptionMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "FloatingMeta",
+      "type": "object"
+    },
     "FormItem": {
       "additionalProperties": false,
       "description": "FormItem.",
@@ -508,7 +588,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/BaseMeta"
+              "$ref": "#/$defs/FloatingMeta"
             },
             {
               "type": "null"
@@ -1039,7 +1119,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/BaseMeta"
+              "$ref": "#/$defs/FloatingMeta"
             },
             {
               "type": "null"
@@ -1743,6 +1823,17 @@
           ],
           "default": null
         },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DescriptionMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "classification": {
           "anyOf": [
             {
@@ -2417,7 +2508,7 @@
         "meta": {
           "anyOf": [
             {
-              "$ref": "#/$defs/BaseMeta"
+              "$ref": "#/$defs/FloatingMeta"
             },
             {
               "type": "null"

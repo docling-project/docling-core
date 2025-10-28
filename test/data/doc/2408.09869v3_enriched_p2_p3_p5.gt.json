@@ -1902,7 +1902,7 @@
       ],
       "content_layer": "body",
       "meta": {
-        "summary": {
+        "description": {
           "created_by": "HuggingFaceTB/SmolVLM-256M-Instruct",
           "text": "In this image, we can see some text and images."
         }

@@ -1,16 +1,26 @@
 from pathlib import Path
+from typing import Any, Optional
 
 import pytest
 from pydantic import BaseModel
+from typing_extensions import override
 
+from docling_core.transforms.serializer.base import SerializationResult
+from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.transforms.serializer.markdown import (
+    MarkdownDocSerializer,
+    MarkdownMetaSerializer,
+    MarkdownParams,
+)
 from docling_core.types.doc.document import (
     BaseMeta,
+    DocItem,
     DoclingDocument,
     NodeItem,
     RefItem,
     SummaryMetaField,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, GroupLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -64,16 +74,43 @@ def test_namespace_absence_raises():
 
 def _create_doc_with_group_with_metadata() -> DoclingDocument:
     doc = DoclingDocument(name="")
-    grp = doc.add_group()
-    grp.meta = BaseMeta(
-        summary=SummaryMetaField(text="This part talks about foo and bar.")
+    doc.body.meta = BaseMeta(
+        summary=SummaryMetaField(text="This document talks about various topics.")
     )
-    doc.add_text(text="Foo", label=DocItemLabel.TEXT)
-    doc.add_text(text="Bar", label=DocItemLabel.TEXT)
+    grp1 = doc.add_group(name="1", label=GroupLabel.CHAPTER)
+    grp1.meta = BaseMeta(
+        summary=SummaryMetaField(text="This chapter discusses foo and bar.")
+    )
+    doc.add_text(
+        text="This is some introductory text.", label=DocItemLabel.TEXT, parent=grp1
+    )
+
+    grp1a = doc.add_group(parent=grp1, name="1a", label=GroupLabel.SECTION)
+    grp1a.meta = BaseMeta(
+        summary=SummaryMetaField(text="This section talks about foo.")
+    )
+    grp1.meta.set_custom_field(namespace="my_corp", name="test", value="value")
+    txt1 = doc.add_text(text="Regarding foo...", label=DocItemLabel.TEXT, parent=grp1a)
+    txt1.meta = BaseMeta(
+        summary=SummaryMetaField(text="This paragraph provides more details about foo.")
+    )
+    lst1a = doc.add_list_group(parent=grp1a)
+    lst1a.meta = BaseMeta(
+        summary=SummaryMetaField(text="Here some foo specifics are listed.")
+    )
+    doc.add_list_item(text="lorem", parent=lst1a, enumerated=True)
+    doc.add_list_item(text="ipsum", parent=lst1a, enumerated=True)
+
+    grp1b = doc.add_group(parent=grp1, name="1b", label=GroupLabel.SECTION)
+    grp1b.meta = BaseMeta(
+        summary=SummaryMetaField(text="This section talks about bar.")
+    )
+    doc.add_text(text="Regarding bar...", label=DocItemLabel.TEXT, parent=grp1b)
+
     return doc
 
 
-def test_group_with_metadata():
+def test_ser_deser():
     doc = _create_doc_with_group_with_metadata()
 
     # test dumping to and loading from YAML
@@ -84,38 +121,133 @@ def test_group_with_metadata():
         expected = DoclingDocument.load_from_yaml(filename=exp_file)
         assert doc == expected
 
+
+def test_md_ser_default():
+    doc = _create_doc_with_group_with_metadata()
+
     # test exporting to Markdown
-    exp_file = exp_file.with_suffix(".md")
+    params = MarkdownParams(
+        include_annotations=False,
+    )
+    ser = MarkdownDocSerializer(doc=doc, params=params)
+    ser_res = ser.serialize()
+    actual = ser_res.text
+    exp_file = Path("test/data/doc/group_with_metadata_default.md")
     if GEN_TEST_DATA:
-        doc.save_as_markdown(filename=exp_file)
+        with open(exp_file, "w", encoding="utf-8") as f:
+            f.write(actual)
     else:
-        actual = doc.export_to_markdown()
         with open(exp_file, "r", encoding="utf-8") as f:
             expected = f.read()
         assert actual == expected
 
 
-def test_legacy_annotations():
-    inp = Path("test/data/doc/dummy_doc.yaml")
-    doc = DoclingDocument.load_from_yaml(filename=inp)
-    exp_file = inp.parent / f"{inp.stem}_legacy_annotations.md"
+def test_md_ser_marked():
+    doc = _create_doc_with_group_with_metadata()
+
+    # test exporting to Markdown
+    params = MarkdownParams(
+        include_annotations=False,
+        mark_meta=True,
+    )
+    ser = MarkdownDocSerializer(doc=doc, params=params)
+    ser_res = ser.serialize()
+    actual = ser_res.text
+    exp_file = Path("test/data/doc/group_with_metadata_marked.md")
     if GEN_TEST_DATA:
-        doc.save_as_markdown(filename=exp_file, use_legacy_annotations=True)
+        with open(exp_file, "w", encoding="utf-8") as f:
+            f.write(actual)
     else:
-        actual = doc.export_to_markdown(use_legacy_annotations=True)
         with open(exp_file, "r", encoding="utf-8") as f:
             expected = f.read()
         assert actual == expected
 
 
-def test_mark_meta():
-    inp = Path("test/data/doc/dummy_doc.yaml")
-    doc = DoclingDocument.load_from_yaml(filename=inp)
-    exp_file = inp.parent / f"{inp.stem}_mark_meta.md"
+def test_ser_custom_meta_serializer():
+
+    class SummaryMarkdownMetaSerializer(MarkdownMetaSerializer):
+
+        @override
+        def serialize(
+            self,
+            *,
+            item: NodeItem,
+            doc: DoclingDocument,
+            level: Optional[int] = None,
+            **kwargs: Any,
+        ) -> SerializationResult:
+            """Serialize the item's meta."""
+            params = MarkdownParams(**kwargs)
+            return create_ser_result(
+                text="\n\n".join(
+                    [
+                        f"{'  ' * (level or 0)}[{item.self_ref}] [{item.__class__.__name__}:{item.label.value}] {tmp}"  # type:ignore[attr-defined]
+                        for key in (
+                            list(item.meta.__class__.model_fields)
+                            + list(item.meta.get_custom_part())
+                        )
+                        if (
+                            tmp := self._serialize_meta_field(
+                                item.meta, key, params.mark_meta
+                            )
+                        )
+                    ]
+                    if item.meta
+                    else []
+                ),
+                span_source=item if isinstance(item, DocItem) else [],
+            )
+
+        def _serialize_meta_field(
+            self, meta: BaseMeta, name: str, mark_meta: bool
+        ) -> Optional[str]:
+            if (field_val := getattr(meta, name)) is not None and isinstance(
+                field_val, SummaryMetaField
+            ):
+                txt = field_val.text
+                return (
+                    f"[{self._humanize_text(name, title=True)}] {txt}"
+                    if mark_meta
+                    else txt
+                )
+            else:
+                return None
+
+    class SummaryMarkdownDocSerializer(MarkdownDocSerializer):
+        # just for overriding the delimiter to single newline:
+        @override
+        def serialize_doc(
+            self,
+            *,
+            parts: list[SerializationResult],
+            **kwargs: Any,
+        ) -> SerializationResult:
+            """Serialize a document out of its parts."""
+            text_res = "\n".join([p.text for p in parts if p.text])
+            if self.requires_page_break():
+                page_sep = self.params.page_break_placeholder or ""
+                for full_match, _, _ in self._get_page_breaks(text=text_res):
+                    text_res = text_res.replace(full_match, page_sep)
+
+            return create_ser_result(text=text_res, span_source=parts)
+
+    doc = _create_doc_with_group_with_metadata()
+
+    # test exporting to Markdown
+    params = MarkdownParams(
+        include_annotations=False,
+        include_non_meta=False,
+    )
+    ser = SummaryMarkdownDocSerializer(
+        doc=doc, params=params, meta_serializer=SummaryMarkdownMetaSerializer()
+    )
+    ser_res = ser.serialize()
+    actual = ser_res.text
+    exp_file = Path("test/data/doc/group_with_metadata_summaries.md")
     if GEN_TEST_DATA:
-        doc.save_as_markdown(filename=exp_file, mark_meta=True)
+        with open(exp_file, "w", encoding="utf-8") as f:
+            f.write(actual)
     else:
-        actual = doc.export_to_markdown(mark_meta=True)
         with open(exp_file, "r", encoding="utf-8") as f:
             expected = f.read()
         assert actual == expected

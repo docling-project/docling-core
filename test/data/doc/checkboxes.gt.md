@@ -1,3 +1,7 @@
+<!-- image -->
+
+<!-- image -->
+
 Security Classification / Classification de sécurité
 
 Contract Number / Numéro du contrat
@@ -161,6 +165,8 @@ TBS/SCT 350-103 (2004/12)
 UNCLASSIFIED
 
 <!-- page break -->
+
+<!-- image -->
 
 Security Classification / Classification de sécurité
 

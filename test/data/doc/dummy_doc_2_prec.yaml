@@ -86,6 +86,9 @@ pictures:
       - class_name: bar_chart
         confidence: 0.8
         created_by: model1
+    description:
+      created_by: model2
+      text: '...'
     docling_legacy__misc:
       myanalysis:
         prediction: abc
@@ -105,9 +108,6 @@ pictures:
       - - 1.0
         - 1.0
       smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
-    summary:
-      created_by: model2
-      text: '...'
   parent:
     $ref: '#/body'
   prov:
@@ -168,11 +168,11 @@ tables:
     uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
   label: table
   meta:
-    docling_legacy__misc:
-      foo: bar
-    summary:
+    description:
       created_by: model3
       text: A description annotation for this table.
+    docling_legacy__misc:
+      foo: bar
   parent:
     $ref: '#/body'
   prov:

@@ -1,10 +1,6 @@
 # DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
 
-Figure 1: Four examples of complex page layouts across different document categories
-
-<!-- image -->
-
-[Summary] ...
+[Description] ...
 
 [Classification] Bar chart
 
@@ -12,6 +8,10 @@ Figure 1: Four examples of complex page layouts across different document catego
 
 [Docling Legacy Misc] {'myanalysis': {'prediction': 'abc'}, 'something_else': {'text': 'aaa'}}
 
-[Summary] A description annotation for this table.
+Figure 1: Four examples of complex page layouts across different document categories
+
+<!-- image -->
+
+[Description] A description annotation for this table.
 
 [Docling Legacy Misc] {'foo': 'bar'}

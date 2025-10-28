@@ -1,10 +1,11 @@
 body:
   children:
   - $ref: '#/groups/0'
-  - $ref: '#/texts/0'
-  - $ref: '#/texts/1'
   content_layer: body
   label: unspecified
+  meta:
+    summary:
+      text: This document talks about various topics.
   name: _root_
   self_ref: '#/body'
 form_items: []
@@ -15,16 +16,55 @@ furniture:
   name: _root_
   self_ref: '#/furniture'
 groups:
-- children: []
+- children:
+  - $ref: '#/texts/0'
+  - $ref: '#/groups/1'
+  - $ref: '#/groups/3'
   content_layer: body
-  label: unspecified
+  label: chapter
   meta:
+    my_corp__test: value
     summary:
-      text: This part talks about foo and bar.
-  name: group
+      text: This chapter discusses foo and bar.
+  name: '1'
   parent:
     $ref: '#/body'
   self_ref: '#/groups/0'
+- children:
+  - $ref: '#/texts/1'
+  - $ref: '#/groups/2'
+  content_layer: body
+  label: section
+  meta:
+    summary:
+      text: This section talks about foo.
+  name: 1a
+  parent:
+    $ref: '#/groups/0'
+  self_ref: '#/groups/1'
+- children:
+  - $ref: '#/texts/2'
+  - $ref: '#/texts/3'
+  content_layer: body
+  label: list
+  meta:
+    summary:
+      text: Here some foo specifics are listed.
+  name: group
+  parent:
+    $ref: '#/groups/1'
+  self_ref: '#/groups/2'
+- children:
+  - $ref: '#/texts/4'
+  content_layer: body
+  label: section
+  meta:
+    summary:
+      text: This section talks about bar.
+  name: 1b
+  parent:
+    $ref: '#/groups/0'
+  self_ref: '#/groups/3'
 key_value_items: []
 name: ''
 pages: {}
@@ -35,19 +75,53 @@ texts:
 - children: []
   content_layer: body
   label: text
-  orig: Foo
+  orig: This is some introductory text.
   parent:
-    $ref: '#/body'
+    $ref: '#/groups/0'
   prov: []
   self_ref: '#/texts/0'
-  text: Foo
+  text: This is some introductory text.
 - children: []
   content_layer: body
   label: text
-  orig: Bar
+  meta:
+    summary:
+      text: This paragraph provides more details about foo.
+  orig: Regarding foo...
   parent:
-    $ref: '#/body'
+    $ref: '#/groups/1'
   prov: []
   self_ref: '#/texts/1'
-  text: Bar
+  text: Regarding foo...
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: ''
+  orig: lorem
+  parent:
+    $ref: '#/groups/2'
+  prov: []
+  self_ref: '#/texts/2'
+  text: lorem
+- children: []
+  content_layer: body
+  enumerated: true
+  label: list_item
+  marker: ''
+  orig: ipsum
+  parent:
+    $ref: '#/groups/2'
+  prov: []
+  self_ref: '#/texts/3'
+  text: ipsum
+- children: []
+  content_layer: body
+  label: text
+  orig: Regarding bar...
+  parent:
+    $ref: '#/groups/3'
+  prov: []
+  self_ref: '#/texts/4'
+  text: Regarding bar...
 version: 1.7.0

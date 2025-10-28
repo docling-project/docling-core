@@ -1023,6 +1023,12 @@ class BaseMeta(_ExtraAllowingModel):
     summary: Optional[SummaryMetaField] = None
 
 
+class DescriptionMetaField(BasePrediction):
+    """Description metadata field."""
+
+    text: str
+
+
 class PictureClassificationPrediction(BasePrediction):
     """Picture classification instance."""
 
@@ -1062,7 +1068,13 @@ class TabularChartMetaField(BasePrediction):
     chart_data: TableData
 
 
-class PictureMeta(BaseMeta):
+class FloatingMeta(BaseMeta):
+    """Metadata model for floating."""
+
+    description: Optional[DescriptionMetaField] = None
+
+
+class PictureMeta(FloatingMeta):
     """Metadata model for pictures."""
 
     classification: Optional[PictureClassificationMetaField] = None
@@ -1179,8 +1191,6 @@ class NodeItem(BaseModel):
 class GroupItem(NodeItem):  # Container type, can't be a leaf node
     """GroupItem."""
 
-    meta: Optional[BaseMeta] = None
-
     name: str = (
         "group"  # Name of the group, e.g. "Introduction Chapter",
         # "Slide 5", "Navigation menu list", ...
@@ -1231,7 +1241,6 @@ class DocItem(
 
     label: DocItemLabel
     prov: List[ProvenanceItem] = []
-    meta: Optional[BaseMeta] = None
 
     def get_location_tokens(
         self,
@@ -1446,6 +1455,8 @@ class ListItem(TextItem):
 class FloatingItem(DocItem):
     """FloatingItem."""
 
+    meta: Optional[FloatingMeta] = None
+
     captions: List[RefItem] = []
     references: List[RefItem] = []
     footnotes: List[RefItem] = []
@@ -1601,11 +1612,10 @@ class PictureItem(FloatingItem):
                             ],
                         ).model_dump(mode="json"),
                     )
-                # migrate description annotation to summary meta field
                 elif isinstance(ann, DescriptionAnnotation):
                     data["meta"].setdefault(
-                        "summary",
-                        SummaryMetaField(
+                        "description",
+                        DescriptionMetaField(
                             text=ann.text,
                             created_by=ann.provenance,
                         ).model_dump(mode="json"),
@@ -1822,11 +1832,10 @@ class TableItem(FloatingItem):
                 # ensure meta field is present
                 data.setdefault("meta", {})
 
-                # migrate description annotation to summary meta field
                 if isinstance(ann, DescriptionAnnotation):
                     data["meta"].setdefault(
-                        "summary",
-                        SummaryMetaField(
+                        "description",
+                        DescriptionMetaField(
                             text=ann.text,
                             created_by=ann.provenance,
                         ).model_dump(mode="json"),
@@ -4686,7 +4695,6 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,
         include_annotations: bool = True,
         *,
-        include_meta: bool = True,
         mark_meta: bool = False,
         use_legacy_annotations: bool = False,
     ):
@@ -4719,7 +4727,6 @@ class DoclingDocument(BaseModel):
             page_break_placeholder=page_break_placeholder,
             include_annotations=include_annotations,
             use_legacy_annotations=use_legacy_annotations,
-            include_meta=include_meta,
             mark_meta=mark_meta,
         )
 
@@ -4746,7 +4753,6 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         mark_annotations: bool = False,
         *,
-        include_meta: bool = True,
         mark_meta: bool = False,
         use_legacy_annotations: bool = False,
     ) -> str:
@@ -4797,11 +4803,8 @@ class DoclingDocument(BaseModel):
         :param use_legacy_annotations: bool: Whether to use legacy annotation serialization.
             (Default value = False).
         :type use_legacy_annotations: bool = False
-        :param include_meta: bool: Whether to include meta in the export.
-            (Default value = True).
-        :type include_meta: bool = True
         :param mark_meta: bool: Whether to mark meta in the export; only
-            relevant if include_meta is True. (Default value = False).
+            relevant if use_legacy_annotations is False. (Default value = False).
         :type mark_meta: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
@@ -4833,7 +4836,8 @@ class DoclingDocument(BaseModel):
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
                 page_break_placeholder=page_break_placeholder,
-                include_meta=include_meta and not use_legacy_annotations,
+                # allowed_meta_names=set() if use_legacy_annotations else allowed_meta_names,
+                # blocked_meta_names=blocked_meta_names or set(),
                 mark_meta=mark_meta,
                 include_annotations=include_annotations and use_legacy_annotations,
                 mark_annotations=mark_annotations,

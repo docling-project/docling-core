@@ -1,3 +1,5 @@
+Bar chart
+
 bar chart
 
 <!-- image -->
@@ -10,5 +12,3 @@ bar chart
 |                     4 |               0.14 |              0.26 |
 |                     5 |               0.16 |              0.25 |
 |                     6 |               0.24 |              0.24 |
-
-Bar chart

@@ -6,6 +6,8 @@ Duck
 
 Figure 1: This is a cute duckling
 
+<!-- image -->
+
 ## Let's swim!
 
 To get started with swimming, first lay down in a water and try not to drown:

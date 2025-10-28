@@ -85,7 +85,7 @@ def _iterate_items(
     my_visited: set[str] = visited if visited is not None else set()
     prev_page_nr: Optional[int] = None
     page_break_i = 0
-    for item, _ in doc.iterate_items(
+    for item, lvl in doc.iterate_items(
         root=node,
         with_groups=True,
         included_content_layers=layers,
@@ -98,7 +98,7 @@ def _iterate_items(
             ):
                 # if group starts with new page, yield page break before group node
                 my_visited.add(item.self_ref)
-                for it in _iterate_items(
+                for it, _ in _iterate_items(
                     doc=doc,
                     layers=layers,
                     node=item,
@@ -113,7 +113,7 @@ def _iterate_items(
                                 self_ref=f"#/pb/{page_break_i}",
                                 prev_page=prev_page_nr,
                                 next_page=page_no,
-                            )
+                            ), lvl
                         break
             elif isinstance(item, DocItem) and item.prov:
                 page_no = item.prov[0].page_no
@@ -123,10 +123,10 @@ def _iterate_items(
                             self_ref=f"#/pb/{page_break_i}",
                             prev_page=prev_page_nr,
                             next_page=page_no,
-                        )
+                        ), lvl
                         page_break_i += 1
                     prev_page_nr = page_no
-        yield item
+        yield item, lvl
 
 
 def _get_annotation_text(
@@ -193,9 +193,20 @@ class CommonParams(BaseModel):
     start_idx: NonNegativeInt = 0
     stop_idx: NonNegativeInt = sys.maxsize
 
+    include_non_meta: bool = True
+
     include_formatting: bool = True
     include_hyperlinks: bool = True
     caption_delim: str = " "
+
+    # allowed_meta_names: Optional[set[str]] = Field(
+    #     default=None,
+    #     description="Names of meta fields to include; if None, all fields will be included.",
+    # )
+    # blocked_meta_names: set[str] = Field(
+    #     default_factory=set,
+    #     description="Names of meta fields to block; takes precedence over allowed_meta_names.",
+    # )
 
     def merge_with_patch(self, patch: dict[str, Any]) -> Self:
         """Create an instance by merging the provided patch dict on top of self."""
@@ -422,7 +433,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         my_visited: set[str] = visited if visited is not None else set()
         params = self.params.merge_with_patch(patch=kwargs)
 
-        for node in _iterate_items(
+        for node, lvl in _iterate_items(
             node=item,
             doc=self.doc,
             layers=params.layers,
@@ -432,22 +443,26 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 continue
             else:
                 my_visited.add(node.self_ref)
-            part = self.serialize(
+
+            part = self.serialize_meta(
                 item=node,
-                list_level=list_level,
-                is_inline_scope=is_inline_scope,
-                visited=my_visited,
+                level=lvl,
                 **kwargs,
             )
             if part.text:
                 parts.append(part)
 
-            part = self.serialize_meta(
-                item=node,
-                **kwargs,
-            )
-            if part.text:
-                parts.append(part)
+            if params.include_non_meta:
+                part = self.serialize(
+                    item=node,
+                    list_level=list_level,
+                    is_inline_scope=is_inline_scope,
+                    visited=my_visited,
+                    **kwargs,
+                )
+                if part.text:
+                    parts.append(part)
+
         return parts
 
     @override
