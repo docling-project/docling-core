@@ -213,23 +213,23 @@ def test_ser_custom_meta_serializer():
             else:
                 return None
 
-    class SummaryMarkdownDocSerializer(MarkdownDocSerializer):
-        # just for overriding the delimiter to single newline:
-        @override
-        def serialize_doc(
-            self,
-            *,
-            parts: list[SerializationResult],
-            **kwargs: Any,
-        ) -> SerializationResult:
-            """Serialize a document out of its parts."""
-            text_res = "\n".join([p.text for p in parts if p.text])
-            if self.requires_page_break():
-                page_sep = self.params.page_break_placeholder or ""
-                for full_match, _, _ in self._get_page_breaks(text=text_res):
-                    text_res = text_res.replace(full_match, page_sep)
+    # class SummaryMarkdownDocSerializer(MarkdownDocSerializer):
+    #     # just for overriding the delimiter to single newline:
+    #     @override
+    #     def serialize_doc(
+    #         self,
+    #         *,
+    #         parts: list[SerializationResult],
+    #         **kwargs: Any,
+    #     ) -> SerializationResult:
+    #         """Serialize a document out of its parts."""
+    #         text_res = "\n".join([p.text for p in parts if p.text])
+    #         if self.requires_page_break():
+    #             page_sep = self.params.page_break_placeholder or ""
+    #             for full_match, _, _ in self._get_page_breaks(text=text_res):
+    #                 text_res = text_res.replace(full_match, page_sep)
 
-            return create_ser_result(text=text_res, span_source=parts)
+    #         return create_ser_result(text=text_res, span_source=parts)
 
     doc = _create_doc_with_group_with_metadata()
 
@@ -238,7 +238,7 @@ def test_ser_custom_meta_serializer():
         include_annotations=False,
         include_non_meta=False,
     )
-    ser = SummaryMarkdownDocSerializer(
+    ser = MarkdownDocSerializer(
         doc=doc, params=params, meta_serializer=SummaryMarkdownMetaSerializer()
     )
     ser_res = ser.serialize()
