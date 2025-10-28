@@ -46,6 +46,7 @@ from docling_core.types.doc.document import (
     FloatingItem,
     Formatting,
     FormItem,
+    GroupItem,
     InlineGroup,
     KeyValueItem,
     ListGroup,
@@ -454,17 +455,20 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             else:
                 my_visited.add(node.self_ref)
 
+            meta_part = create_ser_result()
+            node_is_group = isinstance(node, GroupItem)
             if (
                 not params.use_legacy_annotations
                 and node.self_ref not in self.get_excluded_refs(**kwargs)
             ):
-                part = self.serialize_meta(
+                meta_part = self.serialize_meta(
                     item=node,
                     level=lvl,
                     **kwargs,
                 )
-                if part.text:
-                    parts.append(part)
+                if meta_part.text and node_is_group:
+                    # for GroupItems add meta prior to content
+                    parts.append(meta_part)
 
             if params.include_non_meta:
                 part = self.serialize(
@@ -476,6 +480,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 )
                 if part.text:
                     parts.append(part)
+
+            if meta_part.text and not node_is_group:
+                # for DocItems add meta after content
+                parts.append(meta_part)
 
         return parts
 
