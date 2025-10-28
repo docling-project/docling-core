@@ -805,3 +805,22 @@ class MarkdownDocSerializer(DocSerializer):
     def requires_page_break(self) -> bool:
         """Whether to add page breaks."""
         return self.params.page_break_placeholder is not None
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: Optional[NodeItem] = None,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a given node."""
+        return super().serialize(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=is_inline_scope,
+            visited=visited,
+            **(dict(delim="\n\n") | kwargs),
+        )

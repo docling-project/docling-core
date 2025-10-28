@@ -209,15 +209,6 @@ class CommonParams(BaseModel):
         default=False, description="Use legacy annotation serialization."
     )
 
-    # allowed_meta_names: Optional[set[str]] = Field(
-    #     default=None,
-    #     description="Names of meta fields to include; if None, all fields will be included.",
-    # )
-    # blocked_meta_names: set[str] = Field(
-    #     default_factory=set,
-    #     description="Names of meta fields to block; takes precedence over allowed_meta_names.",
-    # )
-
     def merge_with_patch(self, patch: dict[str, Any]) -> Self:
         """Create an instance by merging the provided patch dict on top of self."""
         res = self.model_copy(update=patch)
@@ -328,103 +319,130 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> SerializationResult:
         """Serialize a given node."""
         my_visited: set[str] = visited if visited is not None else set()
+        parts: list[SerializationResult] = []
+        delim: str = kwargs.get("delim", "\n")
+        my_params = self.params.model_copy(update=kwargs)
         my_kwargs = {**self.params.model_dump(), **kwargs}
         empty_res = create_ser_result()
-        if item is None or item == self.doc.body:
-            if self.doc.body.self_ref not in my_visited:
-                my_visited.add(self.doc.body.self_ref)
-                return self._serialize_body(**my_kwargs)
-            else:
-                return empty_res
 
-        my_visited.add(item.self_ref)
+        my_item = item or self.doc.body
 
-        ########
-        # groups
-        ########
-        if isinstance(item, ListGroup):
-            part = self.list_serializer.serialize(
-                item=item,
-                doc_serializer=self,
-                doc=self.doc,
-                list_level=list_level,
-                is_inline_scope=is_inline_scope,
-                visited=my_visited,
-                **my_kwargs,
-            )
-        elif isinstance(item, InlineGroup):
-            part = self.inline_serializer.serialize(
-                item=item,
-                doc_serializer=self,
-                doc=self.doc,
-                list_level=list_level,
-                visited=my_visited,
-                **my_kwargs,
-            )
-        ###########
-        # doc items
-        ###########
-        elif isinstance(item, TextItem):
-            if item.self_ref in self._captions_of_some_item:
-                # those captions will be handled by the floating item holding them
-                return empty_res
-            else:
-                part = (
-                    self.text_serializer.serialize(
-                        item=item,
-                        doc_serializer=self,
-                        doc=self.doc,
-                        is_inline_scope=is_inline_scope,
-                        visited=my_visited,
-                        **my_kwargs,
-                    )
-                    if item.self_ref not in self.get_excluded_refs(**kwargs)
-                    else empty_res
+        if my_item == self.doc.body:
+            if my_item.meta and not my_params.use_legacy_annotations:
+                meta_part = self.serialize_meta(item=my_item, **my_kwargs)
+                if meta_part.text:
+                    parts.append(meta_part)
+
+            if my_item.self_ref not in my_visited:
+                my_visited.add(my_item.self_ref)
+                part = self._serialize_body(**my_kwargs)
+                if part.text:
+                    parts.append(part)
+                return create_ser_result(
+                    text=delim.join([p.text for p in parts if p.text]),
+                    span_source=parts,
                 )
-        elif isinstance(item, TableItem):
-            part = self.table_serializer.serialize(
-                item=item,
-                doc_serializer=self,
-                doc=self.doc,
-                visited=my_visited,
-                **my_kwargs,
-            )
-        elif isinstance(item, PictureItem):
-            part = self.picture_serializer.serialize(
-                item=item,
-                doc_serializer=self,
-                doc=self.doc,
-                visited=my_visited,
-                **my_kwargs,
-            )
-        elif isinstance(item, KeyValueItem):
-            part = self.key_value_serializer.serialize(
-                item=item,
-                doc_serializer=self,
-                doc=self.doc,
-                **my_kwargs,
-            )
-        elif isinstance(item, FormItem):
-            part = self.form_serializer.serialize(
-                item=item,
-                doc_serializer=self,
-                doc=self.doc,
-                **my_kwargs,
-            )
-        elif isinstance(item, _PageBreakNode):
-            part = _PageBreakSerResult(
-                text=self._create_page_break(node=item),
-                node=item,
-            )
-        else:
-            part = self.fallback_serializer.serialize(
-                item=item,
-                doc_serializer=self,
-                doc=self.doc,
-                visited=my_visited,
-                **my_kwargs,
-            )
-        return part
+            else:
+                return empty_res
+
+        my_visited.add(my_item.self_ref)
+
+        if my_item.meta and not my_params.use_legacy_annotations:
+            meta_part = self.serialize_meta(item=my_item, **my_kwargs)
+            if meta_part.text:
+                parts.append(meta_part)
+
+        if my_params.include_non_meta:
+            ########
+            # groups
+            ########
+            if isinstance(my_item, ListGroup):
+                part = self.list_serializer.serialize(
+                    item=my_item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    list_level=list_level,
+                    is_inline_scope=is_inline_scope,
+                    visited=my_visited,
+                    **my_kwargs,
+                )
+            elif isinstance(my_item, InlineGroup):
+                part = self.inline_serializer.serialize(
+                    item=my_item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    list_level=list_level,
+                    visited=my_visited,
+                    **my_kwargs,
+                )
+            ###########
+            # doc items
+            ###########
+            elif isinstance(my_item, TextItem):
+                if my_item.self_ref in self._captions_of_some_item:
+                    # those captions will be handled by the floating item holding them
+                    return empty_res
+                else:
+                    part = (
+                        self.text_serializer.serialize(
+                            item=my_item,
+                            doc_serializer=self,
+                            doc=self.doc,
+                            is_inline_scope=is_inline_scope,
+                            visited=my_visited,
+                            **my_kwargs,
+                        )
+                        if my_item.self_ref not in self.get_excluded_refs(**kwargs)
+                        else empty_res
+                    )
+            elif isinstance(my_item, TableItem):
+                part = self.table_serializer.serialize(
+                    item=my_item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    visited=my_visited,
+                    **my_kwargs,
+                )
+            elif isinstance(my_item, PictureItem):
+                part = self.picture_serializer.serialize(
+                    item=my_item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    visited=my_visited,
+                    **my_kwargs,
+                )
+            elif isinstance(my_item, KeyValueItem):
+                part = self.key_value_serializer.serialize(
+                    item=my_item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    **my_kwargs,
+                )
+            elif isinstance(my_item, FormItem):
+                part = self.form_serializer.serialize(
+                    item=my_item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    **my_kwargs,
+                )
+            elif isinstance(my_item, _PageBreakNode):
+                part = _PageBreakSerResult(
+                    text=self._create_page_break(node=my_item),
+                    node=my_item,
+                )
+            else:
+                part = self.fallback_serializer.serialize(
+                    item=my_item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    visited=my_visited,
+                    **my_kwargs,
+                )
+            parts.append(part)
+
+        return create_ser_result(
+            text=delim.join([p.text for p in parts if p.text]), span_source=parts
+        )
 
     # making some assumptions about the kwargs it can pass
     @override
@@ -454,28 +472,15 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             else:
                 my_visited.add(node.self_ref)
 
-            if (
-                not params.use_legacy_annotations
-                and node.self_ref not in self.get_excluded_refs(**kwargs)
-            ):
-                part = self.serialize_meta(
-                    item=node,
-                    level=lvl,
-                    **kwargs,
-                )
-                if part.text:
-                    parts.append(part)
-
-            if params.include_non_meta:
-                part = self.serialize(
-                    item=node,
-                    list_level=list_level,
-                    is_inline_scope=is_inline_scope,
-                    visited=my_visited,
-                    **kwargs,
-                )
-                if part.text:
-                    parts.append(part)
+            part = self.serialize(
+                item=node,
+                list_level=list_level,
+                is_inline_scope=is_inline_scope,
+                visited=my_visited,
+                **(dict(level=lvl) | kwargs),
+            )
+            if part.text:
+                parts.append(part)
 
         return parts
 
@@ -578,20 +583,21 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> SerializationResult:
         """Serialize the item's meta."""
         if self.meta_serializer:
-            return self.meta_serializer.serialize(
-                item=item,
-                doc=self.doc,
-                **kwargs,
-            )
+            if item.self_ref not in self.get_excluded_refs(**kwargs):
+                return self.meta_serializer.serialize(
+                    item=item,
+                    doc=self.doc,
+                    **kwargs,
+                )
+            else:
+                return create_ser_result(
+                    text="", span_source=item if isinstance(item, DocItem) else []
+                )
         else:
             _logger.warning("No meta serializer found.")
             return create_ser_result(
                 text="", span_source=item if isinstance(item, DocItem) else []
             )
-        # return create_ser_result(
-        #     text=item.meta.model_dump_json() if item.meta else "",
-        #     span_source=item,
-        # )
 
     # TODO deprecate
     @override
