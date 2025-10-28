@@ -454,8 +454,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             else:
                 my_visited.add(node.self_ref)
 
-            if not params.use_legacy_annotations and (
-                not item or item.self_ref not in self.get_excluded_refs(**kwargs)
+            if (
+                not params.use_legacy_annotations
+                and node.self_ref not in self.get_excluded_refs(**kwargs)
             ):
                 part = self.serialize_meta(
                     item=node,
