@@ -263,7 +263,7 @@ def test_md_list_item_markers():
             )
 
 
-def test_md_include_annotations_false():
+def test_md_legacy_include_annotations_false():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
@@ -271,6 +271,7 @@ def test_md_include_annotations_false():
         doc=doc,
         table_serializer=CustomAnnotationTableSerializer(),
         params=MarkdownParams(
+            use_legacy_annotations=True,
             include_annotations=False,
             pages={1, 5},
         ),
@@ -282,7 +283,7 @@ def test_md_include_annotations_false():
     )
 
 
-def test_md_mark_annotations_false():
+def test_md_legacy_mark_annotations_false():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
@@ -290,6 +291,7 @@ def test_md_mark_annotations_false():
         doc=doc,
         table_serializer=CustomAnnotationTableSerializer(),
         params=MarkdownParams(
+            use_legacy_annotations=True,
             include_annotations=True,
             mark_annotations=False,
             pages={1, 5},
@@ -310,7 +312,6 @@ def test_md_mark_meta_true():
         doc=doc,
         table_serializer=CustomAnnotationTableSerializer(),
         params=MarkdownParams(
-            include_annotations=True,
             mark_meta=True,
             pages={1, 5},
         ),
@@ -322,7 +323,7 @@ def test_md_mark_meta_true():
     )
 
 
-def test_md_use_legacy_annotations_true_mark_annotations_true():
+def test_md_legacy_mark_annotations_true():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 

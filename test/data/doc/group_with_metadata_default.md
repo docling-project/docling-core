@@ -8,9 +8,9 @@ This is some introductory text.
 
 This section talks about foo.
 
-Regarding foo...
-
 This paragraph provides more details about foo.
+
+Regarding foo...
 
 Here some foo specifics are listed.
 
