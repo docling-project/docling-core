@@ -11,7 +11,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, PositiveInt
+from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import tabulate
 from typing_extensions import override
 
@@ -23,6 +23,7 @@ from docling_core.transforms.serializer.base import (
     BaseInlineSerializer,
     BaseKeyValueSerializer,
     BaseListSerializer,
+    BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
     BaseTextSerializer,
@@ -36,6 +37,7 @@ from docling_core.transforms.serializer.common import (
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    BaseMeta,
     CodeItem,
     ContentLayer,
     DescriptionAnnotation,
@@ -52,14 +54,18 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     ListGroup,
     ListItem,
+    MoleculeMetaField,
     NodeItem,
     PictureClassificationData,
+    PictureClassificationMetaField,
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
     RichTableCell,
     SectionHeaderItem,
+    SummaryMetaField,
     TableItem,
+    TabularChartMetaField,
     TextItem,
     TitleItem,
 )
@@ -102,8 +108,18 @@ class MarkdownParams(CommonParams):
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
-    include_annotations: bool = True
-    mark_annotations: bool = False
+    include_meta: bool = Field(default=True, description="Include item meta.")
+    mark_meta: bool = Field(default=False, description="Mark meta sections.")
+    include_annotations: bool = Field(
+        default=True,
+        description="Include item annotations.",
+        deprecated="Use include_meta instead.",
+    )
+    mark_annotations: bool = Field(
+        default=False,
+        description="Mark annotation sections.",
+        deprecated="Use mark_meta instead.",
+    )
     orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
 
@@ -245,9 +261,67 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         return create_ser_result(text=text, span_source=res_parts)
 
 
+class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
+    """Markdown-specific meta serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: NodeItem,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's meta."""
+        params = MarkdownParams(**kwargs)
+        return create_ser_result(
+            text="\n\n".join(
+                [
+                    tmp
+                    for key in list(item.meta.__class__.model_fields)
+                    + list(item.meta.get_custom_part())
+                    if (
+                        tmp := self._serialize_meta_field(
+                            item.meta, key, params.mark_meta
+                        )
+                    )
+                    is not None
+                ]
+                if params.include_meta and item.meta
+                else []
+            ),
+            span_source=item if isinstance(item, DocItem) else [],
+        )
+
+    def _serialize_meta_field(
+        self, meta: BaseMeta, name: str, mark_meta: bool
+    ) -> Optional[str]:
+        if (field_val := getattr(meta, name)) is not None:
+            # NOTE: currently only considering field type, not field name
+            if isinstance(field_val, SummaryMetaField):
+                txt = field_val.text
+            elif isinstance(field_val, PictureClassificationMetaField):
+                txt = self._humanize_text(field_val.get_main_prediction().class_name)
+            elif isinstance(field_val, MoleculeMetaField):
+                txt = field_val.smi
+            elif isinstance(field_val, TabularChartMetaField):
+                # suppressing tabular chart serialization
+                return None
+            elif tmp := str(field_val or ""):
+                txt = tmp
+            else:
+                return None
+            return (
+                f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt
+            )
+        else:
+            return None
+
+
 class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
     """Markdown-specific annotation serializer."""
 
+    @override
     def serialize(
         self,
         *,
@@ -629,6 +703,7 @@ class MarkdownDocSerializer(DocSerializer):
     list_serializer: BaseListSerializer = MarkdownListSerializer()
     inline_serializer: BaseInlineSerializer = MarkdownInlineSerializer()
 
+    meta_serializer: BaseMetaSerializer = MarkdownMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
 
     params: MarkdownParams = MarkdownParams()

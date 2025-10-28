@@ -4685,6 +4685,10 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
         page_break_placeholder: Optional[str] = None,
         include_annotations: bool = True,
+        *,
+        include_meta: bool = True,
+        mark_meta: bool = False,
+        use_legacy_annotations: bool = False,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -4714,6 +4718,9 @@ class DoclingDocument(BaseModel):
             included_content_layers=included_content_layers,
             page_break_placeholder=page_break_placeholder,
             include_annotations=include_annotations,
+            use_legacy_annotations=use_legacy_annotations,
+            include_meta=include_meta,
+            mark_meta=mark_meta,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -4738,6 +4745,10 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,  # e.g. "<!-- page break -->",
         include_annotations: bool = True,
         mark_annotations: bool = False,
+        *,
+        include_meta: bool = True,
+        mark_meta: bool = False,
+        use_legacy_annotations: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4783,6 +4794,15 @@ class DoclingDocument(BaseModel):
         :param mark_annotations: bool: Whether to mark annotations in the export; only
             relevant if include_annotations is True. (Default value = False).
         :type mark_annotations: bool = False
+        :param use_legacy_annotations: bool: Whether to use legacy annotation serialization.
+            (Default value = False).
+        :type use_legacy_annotations: bool = False
+        :param include_meta: bool: Whether to include meta in the export.
+            (Default value = True).
+        :type include_meta: bool = True
+        :param mark_meta: bool: Whether to mark meta in the export; only
+            relevant if include_meta is True. (Default value = False).
+        :type mark_meta: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
         """
@@ -4813,7 +4833,9 @@ class DoclingDocument(BaseModel):
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
                 page_break_placeholder=page_break_placeholder,
-                include_annotations=include_annotations,
+                include_meta=include_meta and not use_legacy_annotations,
+                mark_meta=mark_meta,
+                include_annotations=include_annotations and use_legacy_annotations,
                 mark_annotations=mark_annotations,
             ),
         )

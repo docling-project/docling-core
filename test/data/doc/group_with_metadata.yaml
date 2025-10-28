@@ -1,0 +1,53 @@
+body:
+  children:
+  - $ref: '#/groups/0'
+  - $ref: '#/texts/0'
+  - $ref: '#/texts/1'
+  content_layer: body
+  label: unspecified
+  name: _root_
+  self_ref: '#/body'
+form_items: []
+furniture:
+  children: []
+  content_layer: furniture
+  label: unspecified
+  name: _root_
+  self_ref: '#/furniture'
+groups:
+- children: []
+  content_layer: body
+  label: unspecified
+  meta:
+    summary:
+      text: This part talks about foo and bar.
+  name: group
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/0'
+key_value_items: []
+name: ''
+pages: {}
+pictures: []
+schema_name: DoclingDocument
+tables: []
+texts:
+- children: []
+  content_layer: body
+  label: text
+  orig: Foo
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/0'
+  text: Foo
+- children: []
+  content_layer: body
+  label: text
+  orig: Bar
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/1'
+  text: Bar
+version: 1.7.0

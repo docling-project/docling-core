@@ -3,16 +3,24 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-from docling_core.types.doc.document import DoclingDocument, NodeItem, RefItem
+from docling_core.types.doc.document import (
+    BaseMeta,
+    DoclingDocument,
+    NodeItem,
+    RefItem,
+    SummaryMetaField,
+)
+from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
 
-def test_metadata_usage():
-    class CustomCoordinates(BaseModel):
-        longitude: float
-        latitude: float
+class CustomCoordinates(BaseModel):
+    longitude: float
+    latitude: float
 
+
+def test_metadata_usage():
     src = Path("test/data/doc/dummy_doc_with_meta.yaml")
     doc = DoclingDocument.load_from_yaml(filename=src)
     example_item: NodeItem = RefItem(cref="#/texts/2").resolve(doc=doc)
@@ -52,3 +60,62 @@ def test_namespace_absence_raises():
 
     with pytest.raises(ValueError):
         example_item.meta.my_corp_programmaticaly_added_field = True
+
+
+def _create_doc_with_group_with_metadata() -> DoclingDocument:
+    doc = DoclingDocument(name="")
+    grp = doc.add_group()
+    grp.meta = BaseMeta(
+        summary=SummaryMetaField(text="This part talks about foo and bar.")
+    )
+    doc.add_text(text="Foo", label=DocItemLabel.TEXT)
+    doc.add_text(text="Bar", label=DocItemLabel.TEXT)
+    return doc
+
+
+def test_group_with_metadata():
+    doc = _create_doc_with_group_with_metadata()
+
+    # test dumping to and loading from YAML
+    exp_file = Path("test/data/doc/group_with_metadata.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(filename=exp_file)
+    else:
+        expected = DoclingDocument.load_from_yaml(filename=exp_file)
+        assert doc == expected
+
+    # test exporting to Markdown
+    exp_file = exp_file.with_suffix(".md")
+    if GEN_TEST_DATA:
+        doc.save_as_markdown(filename=exp_file)
+    else:
+        actual = doc.export_to_markdown()
+        with open(exp_file, "r", encoding="utf-8") as f:
+            expected = f.read()
+        assert actual == expected
+
+
+def test_legacy_annotations():
+    inp = Path("test/data/doc/dummy_doc.yaml")
+    doc = DoclingDocument.load_from_yaml(filename=inp)
+    exp_file = inp.parent / f"{inp.stem}_legacy_annotations.md"
+    if GEN_TEST_DATA:
+        doc.save_as_markdown(filename=exp_file, use_legacy_annotations=True)
+    else:
+        actual = doc.export_to_markdown(use_legacy_annotations=True)
+        with open(exp_file, "r", encoding="utf-8") as f:
+            expected = f.read()
+        assert actual == expected
+
+
+def test_mark_meta():
+    inp = Path("test/data/doc/dummy_doc.yaml")
+    doc = DoclingDocument.load_from_yaml(filename=inp)
+    exp_file = inp.parent / f"{inp.stem}_mark_meta.md"
+    if GEN_TEST_DATA:
+        doc.save_as_markdown(filename=exp_file, mark_meta=True)
+    else:
+        actual = doc.export_to_markdown(mark_meta=True)
+        with open(exp_file, "r", encoding="utf-8") as f:
+            expected = f.read()
+        assert actual == expected

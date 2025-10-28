@@ -4,6 +4,7 @@
 #
 
 """Define base classes for serialization."""
+import logging
 import re
 import sys
 from abc import abstractmethod
@@ -22,6 +23,7 @@ from docling_core.transforms.serializer.base import (
     BaseInlineSerializer,
     BaseKeyValueSerializer,
     BaseListSerializer,
+    BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
     BaseTextSerializer,
@@ -54,6 +56,9 @@ from docling_core.types.doc.labels import DocItemLabel
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 _DEFAULT_LAYERS = {cl for cl in ContentLayer}
+
+
+_logger = logging.getLogger(__name__)
 
 
 class _PageBreakNode(NodeItem):
@@ -215,6 +220,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     list_serializer: BaseListSerializer
     inline_serializer: BaseInlineSerializer
 
+    meta_serializer: Optional[BaseMetaSerializer] = None
     annotation_serializer: BaseAnnotationSerializer
 
     params: CommonParams = CommonParams()
@@ -435,6 +441,13 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             )
             if part.text:
                 parts.append(part)
+
+            part = self.serialize_meta(
+                item=node,
+                **kwargs,
+            )
+            if part.text:
+                parts.append(part)
         return parts
 
     @override
@@ -528,6 +541,30 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
 
+    @override
+    def serialize_meta(
+        self,
+        item: NodeItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's meta."""
+        if self.meta_serializer:
+            return self.meta_serializer.serialize(
+                item=item,
+                doc=self.doc,
+                **kwargs,
+            )
+        else:
+            _logger.warning("No meta serializer found.")
+            return create_ser_result(
+                text="", span_source=item if isinstance(item, DocItem) else []
+            )
+        # return create_ser_result(
+        #     text=item.meta.model_dump_json() if item.meta else "",
+        #     span_source=item,
+        # )
+
+    # TODO deprecate
     @override
     def serialize_annotations(
         self,

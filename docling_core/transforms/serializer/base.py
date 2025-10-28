@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel
+from typing_extensions import deprecated
 
 from docling_core.types.doc.document import (
     DocItem,
@@ -258,6 +259,7 @@ class BaseDocSerializer(ABC):
         """Serialize the item's captions."""
         ...
 
+    @deprecated("Use serialize_meta() instead.")
     @abstractmethod
     def serialize_annotations(
         self,
@@ -265,6 +267,15 @@ class BaseDocSerializer(ABC):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's annotations."""
+        ...
+
+    @abstractmethod
+    def serialize_meta(
+        self,
+        item: NodeItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's meta."""
         ...
 
     @abstractmethod
@@ -287,6 +298,26 @@ class BaseSerializerProvider(ABC):
         ...
 
 
+class BaseMetaSerializer(ABC):
+    """Base class for meta serializers."""
+
+    @abstractmethod
+    def serialize(
+        self,
+        *,
+        item: NodeItem,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the meta of the passed item."""
+        ...
+
+    def _humanize_text(self, text: str, title: bool = False) -> str:
+        tmp = text.replace("__", "_").replace("_", " ")
+        return tmp.title() if title else tmp.capitalize()
+
+
+@deprecated("Use BaseMetaSerializer() instead.")
 class BaseAnnotationSerializer(ABC):
     """Base class for annotation serializers."""
 
