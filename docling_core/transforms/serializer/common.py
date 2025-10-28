@@ -12,7 +12,14 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable, Optional, Tuple, Union
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, NonNegativeInt, computed_field
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    NonNegativeInt,
+    computed_field,
+)
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
@@ -198,6 +205,9 @@ class CommonParams(BaseModel):
     include_formatting: bool = True
     include_hyperlinks: bool = True
     caption_delim: str = " "
+    use_legacy_annotations: bool = Field(
+        default=False, description="Use legacy annotation serialization."
+    )
 
     # allowed_meta_names: Optional[set[str]] = Field(
     #     default=None,
@@ -444,13 +454,16 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             else:
                 my_visited.add(node.self_ref)
 
-            part = self.serialize_meta(
-                item=node,
-                level=lvl,
-                **kwargs,
-            )
-            if part.text:
-                parts.append(part)
+            if not params.use_legacy_annotations and (
+                not item or item.self_ref not in self.get_excluded_refs(**kwargs)
+            ):
+                part = self.serialize_meta(
+                    item=node,
+                    level=lvl,
+                    **kwargs,
+                )
+                if part.text:
+                    parts.append(part)
 
             if params.include_non_meta:
                 part = self.serialize(

@@ -1,7 +1,5 @@
 Bar chart
 
-bar chart
-
 <!-- image -->
 
 |   Number of impellers |   single-frequency |   multi-frequency |

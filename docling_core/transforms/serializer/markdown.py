@@ -390,7 +390,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
 
-            if params.include_annotations:
+            if params.use_legacy_annotations and params.include_annotations:
 
                 ann_res = doc_serializer.serialize_annotations(
                     item=item,
@@ -459,7 +459,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            if params.include_annotations:
+            if params.use_legacy_annotations and params.include_annotations:
                 ann_res = doc_serializer.serialize_annotations(
                     item=item,
                     **kwargs,
