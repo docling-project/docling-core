@@ -92,9 +92,6 @@ class LaTeXParams(CommonParams):
         r"\usepackage{hyperref}       % hyperlinks",
         r"\usepackage{url}            % simple URL typesetting",
         r"\usepackage{booktabs}       % professional-quality tables",
-        r"\usepackage{array}          % extended column defs",
-        r"\usepackage{multirow}       % multirow cells",
-        r"\usepackage{makecell}       % line breaks in cells",
         r"\usepackage{amsfonts}       % blackboard math symbols",
         r"\usepackage{nicefrac}       % compact symbols for 1/2, etc.",
         r"\usepackage{microtype}      % microtypography",
@@ -294,152 +291,57 @@ class LaTeXTableSerializer(BaseTableSerializer):
         params = LaTeXParams(**kwargs)
         res_parts: list[SerializationResult] = []
 
-        def _wrap_plain_cell_text(text: str) -> str:
-            # For plain strings: escape, support explicit newlines using makecell
-            if not text:
-                return ""
-            t = _escape_latex(text) if params.escape_latex else text
-            if "\n" in t:
-                lines = [ln.strip() for ln in t.splitlines()]
-                return r"\makecell[l]{" + r"\\".join(lines) + "}"
-            return t
-
-        def _wrap_rich_cell_content(content: str) -> str:
-            # If content contains block environments, wrap in a minipage for safety
-            block_markers = [
-                r"\begin{itemize}",
-                r"\begin{enumerate}",
-                r"\begin{verbatim}",
-                r"\begin{figure}",
-                r"\section{",
-                r"\subsection{",
-                r"\subsubsection{",
-                r"\begin{tabular}",
-            ]
-            if any(m in content for m in block_markers) or "\n\n" in content:
-                return (
-                    r"\begin{minipage}[t]{\linewidth}"
-                    + "\n"
-                    + content
-                    + "\n"
-                    + r"\end{minipage}"
-                )
-            # single-line or inline-safe rich content
-            return content
-
-        # Build table body with span-aware rendering
-        table_text = ""
+        # Build table body
+        body_rows: list[list[str]] = []
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             if params.include_annotations:
                 ann_res = doc_serializer.serialize_annotations(item=item, **kwargs)
                 if ann_res.text:
                     res_parts.append(ann_res)
-
-            grid = item.data.grid
-            if grid:
-                nrows = len(grid)
-                ncols = max(len(r) for r in grid)
-
-                # booktabs-friendly, no vertical rules
-                colspec = "".join(["l" for _ in range(ncols)])
-                lines: list[str] = [f"\\begin{{tabular}}{{{colspec}}}", r"\toprule"]
-
-                # Detect header row to add midrule (any cell with column_header)
-                header_row_idx: Optional[int] = None
-                if any(c.column_header for c in grid[0]):
-                    header_row_idx = 0
-
-                for i in range(nrows):
-                    row_tokens: list[str] = []
-                    j = 0
-                    while j < ncols:
-                        cell = grid[i][j]
-                        # Skip over grid gaps
-                        if cell is None:
-                            j += 1
-                            continue
-
-                        start_row = cell.start_row_offset_idx
-                        start_col = cell.start_col_offset_idx
-                        rowspan = getattr(
-                            cell,
-                            "row_span",
-                            max(1, cell.end_row_offset_idx - cell.start_row_offset_idx),
-                        )
-                        colspan = getattr(
-                            cell,
-                            "col_span",
-                            max(1, cell.end_col_offset_idx - cell.start_col_offset_idx),
-                        )
-
-                        is_start = (start_row == i) and (start_col == j)
-
-                        if is_start:
-                            # Render content
-                            if isinstance(cell, RichTableCell):
-                                content = doc_serializer.serialize(
-                                    item=cell.ref.resolve(doc=doc), **kwargs
-                                ).text
-                                content = _wrap_rich_cell_content(content)
-                            else:
-                                content = _wrap_plain_cell_text(cell.text)
-
-                            token = content
-                            if rowspan > 1 and colspan > 1:
-                                token = rf"\multicolumn{{{colspan}}}{{l}}{{\multirow{{{rowspan}}}{{*}}{{{content}}}}}"
-                            elif colspan > 1:
-                                token = rf"\multicolumn{{{colspan}}}{{l}}{{{content}}}"
-                            elif rowspan > 1:
-                                token = rf"\multirow{{{rowspan}}}{{*}}{{{content}}}"
-
-                            row_tokens.append(token)
-                            j += max(1, colspan)
-                        else:
-                            # Covered by a span from above or left
-                            # Only emit placeholders for continuation of multirow blocks starting at this column
-                            # so that column count remains correct.
-                            origin_row = start_row
-                            origin_col = start_col
-                            # Continuation of multirow coming from above at same column
-                            if (origin_col == j) and (origin_row < i) and (rowspan > 1):
-                                if colspan > 1:
-                                    row_tokens.append(
-                                        rf"\multicolumn{{{colspan}}}{{l}}{{}}"
-                                    )
-                                    j += colspan
-                                else:
-                                    row_tokens.append("")
-                                    j += 1
-                            else:
-                                # Covered by multicolumn from left in same row, skip silently
-                                j += 1
-
-                    line = " & ".join(row_tokens) + r" \\"  # end of row
-                    # Add header midrule after header row if applicable
-                    if header_row_idx is not None and i == header_row_idx:
-                        lines.append(line)
-                        lines.append(r"\midrule")
+            for row in item.data.grid:
+                body_row: list[str] = []
+                for cell in row:
+                    if isinstance(cell, RichTableCell):
+                        cell_text = doc_serializer.serialize(
+                            item=cell.ref.resolve(doc=doc), **kwargs
+                        ).text
                     else:
-                        lines.append(line)
+                        cell_text = (
+                            _escape_latex(cell.text)
+                            if params.escape_latex
+                            else cell.text
+                        )
+                    body_row.append(cell_text.replace("\n", " "))
+                body_rows.append(body_row)
 
-                lines.append(r"\bottomrule")
-                lines.append("\\end{tabular}")
-                table_text = "\n".join(lines)
+        # Convert to LaTeX tabular (without span support for now)
+        table_text = ""
+        if body_rows:
+            ncols = max(len(r) for r in body_rows)
+            colspec = "|" + "|".join(["l"] * ncols) + "|"
+            lines = [f"\\begin{{tabular}}{{{colspec}}}", "\\hline"]
+            # Use a distinct variable name to avoid shadowing the earlier
+            # 'row' (which iterates over TableCell lists) and confusing type inference
+            for str_row in body_rows:
+                line = " & ".join(str_row) + r" \\ \hline"
+                lines.append(line)
+            lines.append("\\end{tabular}")
+            table_text = "\n".join(lines)
 
         cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
         cap_text = cap_res.text
 
         # Wrap in table environment when we have either content or caption
         if table_text or cap_text:
-            env_lines: list[str] = []
-            env_lines.append("\\begin{table}[h]")
+            content = []
+            content.append("\\begin{table}[h]")
             if cap_text:
-                env_lines.append(f"\\caption{{{cap_text}}}")
+                content.append(f"\\caption{{{cap_text}}}")
             if table_text:
-                env_lines.append(table_text)
-            env_lines.append("\\end{table}")
+                content.append(table_text)
+            content.append("\\end{table}")
             res_parts.append(
-                create_ser_result(text="\n".join(env_lines), span_source=item)
+                create_ser_result(text="\n".join(content), span_source=item)
             )
 
         return create_ser_result(

@@ -2267,7 +2267,7 @@ class DoclingDocument(BaseModel):
             if not success:
                 del to_be_deleted_items[stack_]
             else:
-                _logger.info(f"deleted item in tree at stack: {stack_} => {ref_}")
+                _logger.debug(f"deleted item in tree at stack: {stack_} => {ref_}")
 
         # Create a new lookup of the orphans:
         # dict of item_label (`texts`, `tables`, ...) to a
@@ -4354,7 +4354,7 @@ class DoclingDocument(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         with open(filename, encoding="utf-8") as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
+            data = yaml.load(f, Loader=yaml.SafeLoader)
         return DoclingDocument.model_validate(data)
 
     def export_to_dict(

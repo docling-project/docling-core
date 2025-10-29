@@ -5,9 +5,6 @@
 \usepackage{hyperref}       % hyperlinks
 \usepackage{url}            % simple URL typesetting
 \usepackage{booktabs}       % professional-quality tables
-\usepackage{array}          % extended column defs
-\usepackage{multirow}       % multirow cells
-\usepackage{makecell}       % line breaks in cells
 \usepackage{amsfonts}       % blackboard math symbols
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
@@ -50,12 +47,11 @@ This paper introduces the biggest invention ever made. ...
 
 \begin{table}[h]
 \caption{This is the caption of table 1.}
-\begin{tabular}{lll}
-\toprule
-\multirow{2}{*}{Product} & \multicolumn{2}{l}{Years} \\
- & 2016 & 2017 \\
-Apple & 49823 & 695944 \\
-\bottomrule
+\begin{tabular}{|l|l|l|}
+\hline
+Product & Years & Years \\ \hline
+Product & 2016 & 2017 \\ \hline
+Apple & 49823 & 695944 \\ \hline
 \end{tabular}
 \end{table}
 

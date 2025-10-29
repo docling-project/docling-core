@@ -1,3 +1,15 @@
+## [v2.48.4](https://github.com/docling-project/docling-core/releases/tag/v2.48.4) - 2025-10-01
+
+### Fix
+
+* Switch to safe YAML loader ([#396](https://github.com/docling-project/docling-core/issues/396)) ([`3e8d628`](https://github.com/docling-project/docling-core/commit/3e8d628eeeae50f0f8f239c8c7fea773d065d80c))
+
+## [v2.48.3](https://github.com/docling-project/docling-core/releases/tag/v2.48.3) - 2025-09-29
+
+### Fix
+
+* Pin larger range of typer ([#394](https://github.com/docling-project/docling-core/issues/394)) ([`26d21e3`](https://github.com/docling-project/docling-core/commit/26d21e3b522998b2bb30519265764aac5d8d0515))
+
 ## [v2.48.2](https://github.com/docling-project/docling-core/releases/tag/v2.48.2) - 2025-09-22
 
 ### Fix
