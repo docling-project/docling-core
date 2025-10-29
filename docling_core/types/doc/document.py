@@ -1021,11 +1021,11 @@ class SummaryMetaField(BasePrediction):
 class MetaFieldName(str, Enum):
     """Standard meta field names."""
 
-    SUMMARY = "summary"
-    DESCRIPTION = "description"
-    CLASSIFICATION = "classification"
-    MOLECULE = "molecule"
-    TABULAR_CHART = "tabular_chart"
+    SUMMARY = "summary"  # a summary of the tree under this node
+    DESCRIPTION = "description"  # a description of the node (e.g. for images)
+    CLASSIFICATION = "classification"  # a classification of the node content
+    MOLECULE = "molecule"  # molecule data
+    TABULAR_CHART = "tabular_chart"  # tabular chart data
 
 
 class BaseMeta(_ExtraAllowingModel):
@@ -1069,7 +1069,7 @@ class PictureClassificationMetaField(_ExtraAllowingModel):
 class MoleculeMetaField(BasePrediction):
     """Molecule metadata field."""
 
-    smi: str = Field(description="The SMILES representation of the molecule.")
+    smiles: str = Field(description="The SMILES representation of the molecule.")
 
 
 class TabularChartMetaField(BasePrediction):
@@ -1635,7 +1635,7 @@ class PictureItem(FloatingItem):
                     data["meta"].setdefault(
                         MetaFieldName.MOLECULE.value,
                         MoleculeMetaField(
-                            smi=ann.smi,
+                            smiles=ann.smi,
                             confidence=ann.confidence,
                             created_by=ann.provenance,
                             **{
