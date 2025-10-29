@@ -125,4 +125,4 @@ texts:
   prov: []
   self_ref: '#/texts/4'
   text: Regarding bar...
-version: 1.7.0
+version: 1.8.0
