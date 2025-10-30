@@ -959,7 +959,7 @@ class _ExtraAllowingModel(BaseModel):
         )
 
     def _check_custom_field_format(self, key: str) -> None:
-        parts = key.split(_META_FIELD_NAMESPACE_DELIMITER, maxsplit=1)
+        parts = key.split(MetaUtils._META_FIELD_NAMESPACE_DELIMITER, maxsplit=1)
         if len(parts) != 2 or (not parts[0]) or (not parts[1]):
             raise ValueError(
                 f"Custom meta field name must be in format 'namespace__field_name' (e.g. 'my_corp__max_size'): {key}"
@@ -971,7 +971,7 @@ class _ExtraAllowingModel(BaseModel):
         for key in self.model_dump():
             if key in extra_dict:
                 self._check_custom_field_format(key=key)
-            elif _META_FIELD_NAMESPACE_DELIMITER in key:
+            elif MetaUtils._META_FIELD_NAMESPACE_DELIMITER in key:
                 raise ValueError(
                     f"Standard meta field name must not contain '__': {key}"
                 )
@@ -985,7 +985,7 @@ class _ExtraAllowingModel(BaseModel):
 
     def set_custom_field(self, namespace: str, name: str, value: Any) -> str:
         """Set a custom field and return the key."""
-        key = create_meta_field_name(namespace=namespace, name=name)
+        key = MetaUtils.create_meta_field_name(namespace=namespace, name=name)
         setattr(self, key, value)
         return key
 
@@ -1075,7 +1075,7 @@ class MoleculeMetaField(BasePrediction):
 class TabularChartMetaField(BasePrediction):
     """Tabular chart metadata field."""
 
-    title: str
+    title: Optional[str] = None
     chart_data: TableData
 
 
@@ -1555,23 +1555,31 @@ class FormulaItem(TextItem):
     )
 
 
-_META_FIELD_NAMESPACE_DELIMITER = "__"
+class MetaUtils:
+    """Metadata-related utilities."""
 
+    _META_FIELD_NAMESPACE_DELIMITER: Final = "__"
+    _META_FIELD_LEGACY_NAMESPACE: Final = "docling_legacy"
 
-def create_meta_field_name(
-    *,
-    namespace: str,
-    name: str,
-) -> str:
-    """Create a meta field name."""
-    return f"{namespace}{_META_FIELD_NAMESPACE_DELIMITER}{name}"
+    @classmethod
+    def create_meta_field_name(
+        cls,
+        *,
+        namespace: str,
+        name: str,
+    ) -> str:
+        """Create a meta field name."""
+        return f"{namespace}{cls._META_FIELD_NAMESPACE_DELIMITER}{name}"
 
-
-def _create_migrated_meta_field_name(
-    *,
-    name: str,
-) -> str:
-    return create_meta_field_name(namespace="docling_legacy", name=name)
+    @classmethod
+    def _create_migrated_meta_field_name(
+        cls,
+        *,
+        name: str,
+    ) -> str:
+        return cls.create_meta_field_name(
+            namespace=cls._META_FIELD_LEGACY_NAMESPACE, name=name
+        )
 
 
 class PictureItem(FloatingItem):
@@ -1639,10 +1647,10 @@ class PictureItem(FloatingItem):
                             confidence=ann.confidence,
                             created_by=ann.provenance,
                             **{
-                                _create_migrated_meta_field_name(
+                                MetaUtils._create_migrated_meta_field_name(
                                     name="segmentation"
                                 ): ann.segmentation,
-                                _create_migrated_meta_field_name(
+                                MetaUtils._create_migrated_meta_field_name(
                                     name="class_name"
                                 ): ann.class_name,
                             },
@@ -1658,13 +1666,13 @@ class PictureItem(FloatingItem):
                     )
                 elif isinstance(ann, MiscAnnotation):
                     data["meta"].setdefault(
-                        _create_migrated_meta_field_name(name=ann.kind),
+                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
                         ann.content,
                     )
                 else:
                     # fall back to reusing original annotation type name (in namespaced format)
                     data["meta"].setdefault(
-                        _create_migrated_meta_field_name(name=ann.kind),
+                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
                         ann.model_dump(mode="json"),
                     )
 
@@ -1853,13 +1861,13 @@ class TableItem(FloatingItem):
                     )
                 elif isinstance(ann, MiscAnnotation):
                     data["meta"].setdefault(
-                        _create_migrated_meta_field_name(name=ann.kind),
+                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
                         ann.content,
                     )
                 else:
                     # fall back to reusing original annotation type name (in namespaced format)
                     data["meta"].setdefault(
-                        _create_migrated_meta_field_name(name=ann.kind),
+                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
                         ann.model_dump(mode="json"),
                     )
 

@@ -2642,15 +2642,22 @@
           "title": "Created By"
         },
         "title": {
-          "title": "Title",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
         },
         "chart_data": {
           "$ref": "#/$defs/TableData"
         }
       },
       "required": [
-        "title",
         "chart_data"
       ],
       "title": "TabularChartMetaField",

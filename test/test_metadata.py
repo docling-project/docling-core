@@ -12,17 +12,18 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownMetaSerializer,
     MarkdownParams,
 )
-from docling_core.types.doc.document import (
+from docling_core.types.doc import (
     BaseMeta,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
+    GroupLabel,
     MetaFieldName,
+    MetaUtils,
     NodeItem,
     RefItem,
     SummaryMetaField,
-    create_meta_field_name,
 )
-from docling_core.types.doc.labels import DocItemLabel, GroupLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -171,7 +172,7 @@ def test_md_ser_allowed_meta_names():
     doc = _create_doc_with_group_with_metadata()
     params = MarkdownParams(
         allowed_meta_names={
-            create_meta_field_name(namespace="my_corp", name="test_1"),
+            MetaUtils.create_meta_field_name(namespace="my_corp", name="test_1"),
         },
         mark_meta=True,
     )
@@ -192,7 +193,7 @@ def test_md_ser_blocked_meta_names():
     doc = _create_doc_with_group_with_metadata()
     params = MarkdownParams(
         blocked_meta_names={
-            create_meta_field_name(namespace="my_corp", name="test_1"),
+            MetaUtils.create_meta_field_name(namespace="my_corp", name="test_1"),
             MetaFieldName.SUMMARY.value,
         },
         mark_meta=True,
