@@ -1,3 +1,11 @@
+## [v2.50.0](https://github.com/docling-project/docling-core/releases/tag/v2.50.0) - 2025-10-30
+
+### Feature
+
+* Add metadata model hierarchy ([#408](https://github.com/docling-project/docling-core/issues/408)) ([`2ee3cac`](https://github.com/docling-project/docling-core/commit/2ee3cacdd640414a3e9a8b861a15c4baba6f1d06))
+* Add split view & YAML support to CLI viewer ([#407](https://github.com/docling-project/docling-core/issues/407)) ([`a3feae0`](https://github.com/docling-project/docling-core/commit/a3feae0a1e4b8adfe05009f7a12e648e8aedd149))
+* New picture classes for doctags ([#404](https://github.com/docling-project/docling-core/issues/404)) ([`ada4068`](https://github.com/docling-project/docling-core/commit/ada4068e7a1b3b32e6dcda93658fae8b98ddfb4d))
+
 ## [v2.49.0](https://github.com/docling-project/docling-core/releases/tag/v2.49.0) - 2025-10-16
 
 ### Feature
