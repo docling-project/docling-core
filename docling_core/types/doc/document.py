@@ -3157,23 +3157,6 @@ class DoclingDocument(BaseModel):
         if not orig:
             orig = text
 
-        if code_language is None:
-            try:
-                from docling_core.transforms.chunker.code_chunking_strategy import (
-                    LanguageDetector,
-                )
-
-                detected_language = LanguageDetector.detect_language(
-                    text,
-                    getattr(self.origin, "filename", None) if self.origin else None,
-                )
-                if detected_language:
-                    code_language = detected_language.to_code_language_label()
-                else:
-                    code_language = CodeLanguageLabel.UNKNOWN
-            except ImportError:
-                code_language = CodeLanguageLabel.UNKNOWN
-
         text_index = len(self.texts)
         cref = f"#/texts/{text_index}"
         code_item = CodeItem(
@@ -3184,7 +3167,8 @@ class DoclingDocument(BaseModel):
             formatting=formatting,
             hyperlink=hyperlink,
         )
-        code_item.code_language = code_language
+        if code_language:
+            code_item.code_language = code_language
         if content_layer:
             code_item.content_layer = content_layer
         if prov:

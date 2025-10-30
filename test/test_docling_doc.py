@@ -44,6 +44,7 @@ from docling_core.types.doc.document import (  # BoundingBox,
     TitleItem,
 )
 from docling_core.types.doc.labels import (
+    CodeLanguageLabel,
     DocItemLabel,
     GraphCellLabel,
     GraphLinkLabel,
@@ -952,7 +953,11 @@ def _construct_doc() -> DoclingDocument:
         text="Here a code snippet:",
         parent=inline1,
     )
-    doc.add_code(text='print("Hello world")', parent=inline1)
+    doc.add_code(
+        text='print("Hello world")',
+        parent=inline1,
+        code_language=CodeLanguageLabel.PYTHON,
+    )
     doc.add_text(
         label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1
     )
@@ -970,7 +975,9 @@ def _construct_doc() -> DoclingDocument:
     )
 
     doc.add_text(label=DocItemLabel.TEXT, text="Here a code block:", parent=None)
-    doc.add_code(text='print("Hello world")', parent=None)
+    doc.add_code(
+        text='print("Hello world")', parent=None, code_language=CodeLanguageLabel.PYTHON
+    )
 
     doc.add_text(label=DocItemLabel.TEXT, text="Here a formula block:", parent=None)
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=None)

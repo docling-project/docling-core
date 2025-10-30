@@ -54,7 +54,7 @@ class Language(str, Enum):
         else:
             return None
 
-    def to_code_language_label(self):
+    def to_code_language_label(self) -> CodeLanguageLabel:
         """Convert this language to a CodeLanguageLabel."""
         mapping = {
             Language.PYTHON: CodeLanguageLabel.PYTHON,
@@ -64,6 +64,18 @@ class Language(str, Enum):
             Language.JAVASCRIPT: CodeLanguageLabel.JAVASCRIPT,
         }
         return mapping.get(self, CodeLanguageLabel.UNKNOWN)
+
+    @classmethod
+    def from_code_language_label(cls, label: CodeLanguageLabel) -> Optional["Language"]:
+        """Convert a CodeLanguageLabel to a CodeLanguage."""
+        mapping = {
+            CodeLanguageLabel.PYTHON: Language.PYTHON,
+            CodeLanguageLabel.JAVA: Language.JAVA,
+            CodeLanguageLabel.C: Language.C,
+            CodeLanguageLabel.TYPESCRIPT: Language.TYPESCRIPT,
+            CodeLanguageLabel.JAVASCRIPT: Language.JAVASCRIPT,
+        }
+        return mapping.get(label, None)
 
     def get_import_query(self) -> Optional[str]:
         """Get the tree-sitter query string for finding imports in this language."""

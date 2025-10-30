@@ -7,7 +7,6 @@ from docling_core.transforms.chunker import (
     HierarchicalChunker,
     HybridChunker,
     Language,
-    LanguageDetector,
     NoOpCodeChunkingStrategy,
 )
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
@@ -20,74 +19,6 @@ from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
 def test_data_dir():
     """Path to test data directory."""
     return Path(__file__).parent / "data" / "repo_chunking"
-
-
-def test_language_detection_from_filename():
-    """Test language detection from file extensions."""
-    test_cases = [
-        ("test.py", Language.PYTHON),
-        ("test.js", Language.JAVASCRIPT),
-        ("test.ts", Language.TYPESCRIPT),
-        ("test.java", Language.JAVA),
-        ("test.c", Language.C),
-        ("test.go", None),
-        ("test.md", None),
-    ]
-
-    for filename, expected in test_cases:
-        detected = LanguageDetector.detect_from_extension(filename)
-        assert (
-            detected == expected
-        ), f"Failed for {filename}: expected {expected}, got {detected}"
-
-
-def test_language_detection_from_content():
-    """Test language detection from code content."""
-    test_cases = [
-        ("def hello(): pass\nimport os", Language.PYTHON),
-        ("function test() { return 1; }\nconst x = 5;", Language.JAVASCRIPT),
-        ("interface User { name: string; }", Language.TYPESCRIPT),
-        ('public class Test { }\nSystem.out.println("Hello");', Language.JAVA),
-        ('#include <stdio.h>\nint main() { printf("hello"); }', Language.C),
-        ("package main\nfunc main() { }", None),
-    ]
-
-    for code, expected in test_cases:
-        detected = LanguageDetector.detect_from_content(code)
-        assert (
-            detected == expected
-        ), f"Failed for code: expected {expected}, got {detected}"
-
-
-def test_language_detection_integration(test_data_dir):
-    """Test language detection with real files."""
-    test_files = {
-        "sample.py": CodeLanguageLabel.PYTHON,
-        "sample.js": CodeLanguageLabel.JAVASCRIPT,
-        "sample.ts": CodeLanguageLabel.TYPESCRIPT,
-        "sample.java": CodeLanguageLabel.JAVA,
-        "sample.c": CodeLanguageLabel.C,
-        "sample.go": CodeLanguageLabel.UNKNOWN,
-        "sample.md": CodeLanguageLabel.UNKNOWN,
-    }
-
-    for filename, expected_language in test_files.items():
-        file_path = test_data_dir / filename
-        if not file_path.exists():
-            pytest.skip(f"Test file {filename} not found")
-
-        doc = DoclingDocument(name=filename)
-        doc.origin = DocumentOrigin(
-            filename=filename, mimetype="text/plain", binary_hash=12345
-        )
-
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        doc.add_code(text=content)
-
-        assert len(doc.texts) == 1
-        assert doc.texts[0].code_language == expected_language
-        assert doc.texts[0].text == content
 
 
 def test_code_chunking_strategies():

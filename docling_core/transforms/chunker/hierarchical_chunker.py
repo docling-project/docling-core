@@ -19,7 +19,6 @@ from typing import (
     Literal,
     Optional,
     Protocol,
-    cast,
 )
 
 from pydantic import ConfigDict, Field, StringConstraints, field_validator
@@ -27,6 +26,7 @@ from typing_extensions import Annotated, override
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, BaseMeta
+from docling_core.transforms.chunker.code_chunk_utils.utils import Language
 from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseSerializerProvider,
@@ -41,6 +41,7 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.types import DoclingDocument as DLDocument
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    CodeItem,
     DocItem,
     DoclingDocument,
     DocumentOrigin,
@@ -51,7 +52,6 @@ from docling_core.types.doc.document import (
     TableItem,
     TitleItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
 
 _VERSION: Final = "1.0.0"
 
@@ -165,7 +165,7 @@ class CodeChunkingStrategy(Protocol):
     """Protocol for code chunking strategies that can be plugged into HierarchicalChunker."""
 
     def chunk_code_item(
-        self, code_text: str, language: Any, **kwargs: Any
+        self, code_text: str, language: Language, **kwargs: Any
     ) -> Iterator[CodeChunk]:
         """Chunk a single code item."""
         ...
@@ -308,43 +308,28 @@ class HierarchicalChunker(BaseChunker):
                 and item.self_ref not in visited
             ):
                 if (
-                    isinstance(item, DocItem)
-                    and hasattr(item, "label")
-                    and item.label == DocItemLabel.CODE
+                    isinstance(item, CodeItem)
                     and self.code_chunking_strategy is not None
+                    and (
+                        language := Language.from_code_language_label(
+                            label=item.code_language
+                        )
+                    )
+                    is not None
                 ):
-
-                    from docling_core.transforms.chunker.code_chunking_strategy import (
-                        LanguageDetector,
-                    )
-
-                    text_item = cast(Any, item)
-                    language = LanguageDetector.detect_language(
-                        text_item.text,
-                        (
-                            getattr(dl_doc.origin, "filename", None)
-                            if dl_doc.origin
-                            else None
-                        ),
-                    )
-
-                    if language:
-                        ser_res = my_doc_ser.serialize(item=item, visited=visited)
-                        if ser_res.text:
-                            code_text = self._strip_markdown_code_formatting(
-                                ser_res.text
-                            )
-                            for (
-                                code_chunk
-                            ) in self.code_chunking_strategy.chunk_code_item(
-                                code_text,
-                                language,
-                                original_doc=dl_doc,
-                                original_item=item,
-                                **kwargs,
-                            ):
-                                yield code_chunk
-                        continue
+                    ser_res = my_doc_ser.serialize(item=item, visited=visited)
+                    if ser_res.text:
+                        code_text = self._strip_markdown_code_formatting(ser_res.text)
+                        for code_chunk in self.code_chunking_strategy.chunk_code_item(
+                            code_text=code_text,
+                            language=language,
+                            original_doc=dl_doc,
+                            original_item=item,
+                            **kwargs,
+                        ):
+                            code_chunk.meta.doc_items = [item]
+                            yield code_chunk
+                    continue
 
                 ser_res = my_doc_ser.serialize(item=item, visited=visited)
             else:

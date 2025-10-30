@@ -5,6 +5,18 @@
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
                 "origin": {
                     "mimetype": "text/plain",
                     "binary_hash": 4721786809665574388,
@@ -25,6 +37,18 @@
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
                 "origin": {
                     "mimetype": "text/plain",
                     "binary_hash": 16652446628586613798,
@@ -45,6 +69,18 @@
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
                 "origin": {
                     "mimetype": "text/plain",
                     "binary_hash": 13929779701984022643,
@@ -65,6 +101,18 @@
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
                 "origin": {
                     "mimetype": "text/plain",
                     "binary_hash": 13929779701984022643,
@@ -85,6 +133,18 @@
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
                 "origin": {
                     "mimetype": "text/plain",
                     "binary_hash": 13929779701984022643,

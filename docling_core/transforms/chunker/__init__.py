@@ -16,7 +16,6 @@ from docling_core.transforms.chunker.code_chunk_utils.utils import Language
 from docling_core.transforms.chunker.code_chunking_strategy import (
     CodeChunkingStrategyFactory,
     DefaultCodeChunkingStrategy,
-    LanguageDetector,
     NoOpCodeChunkingStrategy,
 )
 from docling_core.transforms.chunker.hierarchical_chunker import (

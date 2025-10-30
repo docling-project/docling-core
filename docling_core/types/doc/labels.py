@@ -266,7 +266,7 @@ class CodeLanguageLabel(str, Enum):
         return str(self.value)
 
     def to_language(self):
-        """Convert CodeLanguageLabel to Language enum."""
+        """Convert CodeLanguageLabel to CodeLanguage enum."""
         from docling_core.transforms.chunker.code_chunk_utils.utils import Language
 
         mapping = {
