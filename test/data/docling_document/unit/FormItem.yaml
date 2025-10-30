@@ -25,6 +25,7 @@ graph:
     target_cell_id: 0
 image: null
 label: form
+meta: null
 parent: null
 prov: []
 references: []

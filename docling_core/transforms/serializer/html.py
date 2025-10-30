@@ -17,7 +17,7 @@ from xml.sax.saxutils import unescape
 
 import latex2mathml.converter
 from PIL.Image import Image
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl, BaseModel, Field
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -28,6 +28,7 @@ from docling_core.transforms.serializer.base import (
     BaseInlineSerializer,
     BaseKeyValueSerializer,
     BaseListSerializer,
+    BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
     BaseTextSerializer,
@@ -46,9 +47,11 @@ from docling_core.transforms.serializer.html_styles import (
 from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    BaseMeta,
     CodeItem,
     ContentLayer,
     DescriptionAnnotation,
+    DescriptionMetaField,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -61,14 +64,18 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     ListGroup,
     ListItem,
+    MoleculeMetaField,
     NodeItem,
     PictureClassificationData,
+    PictureClassificationMetaField,
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
     RichTableCell,
     SectionHeaderItem,
+    SummaryMetaField,
     TableItem,
+    TabularChartMetaField,
     TextItem,
     TitleItem,
 )
@@ -115,7 +122,11 @@ class HTMLParams(CommonParams):
     # Enable charts to be printed into HTML as tables
     enable_chart_tables: bool = True
 
-    include_annotations: bool = True
+    include_annotations: bool = Field(
+        default=True,
+        description="Include item annotations.",
+        deprecated="Use include_meta instead.",
+    )
 
     show_original_list_item_marker: bool = True
 
@@ -808,6 +819,65 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
             )
 
 
+class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
+    """HTML-specific meta serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: NodeItem,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's meta."""
+        params = HTMLParams(**kwargs)
+        return create_ser_result(
+            text="\n".join(
+                [
+                    tmp
+                    for key in (
+                        list(item.meta.__class__.model_fields)
+                        + list(item.meta.get_custom_part())
+                    )
+                    if (
+                        (
+                            params.allowed_meta_names is None
+                            or key in params.allowed_meta_names
+                        )
+                        and (key not in params.blocked_meta_names)
+                        and (tmp := self._serialize_meta_field(item.meta, key))
+                    )
+                ]
+                if item.meta
+                else []
+            ),
+            span_source=item if isinstance(item, DocItem) else [],
+            # NOTE for now using an empty span source for GroupItems
+        )
+
+    def _serialize_meta_field(self, meta: BaseMeta, name: str) -> Optional[str]:
+        if (field_val := getattr(meta, name)) is not None:
+            if isinstance(field_val, SummaryMetaField):
+                txt = field_val.text
+            elif isinstance(field_val, DescriptionMetaField):
+                txt = field_val.text
+            elif isinstance(field_val, PictureClassificationMetaField):
+                txt = self._humanize_text(field_val.get_main_prediction().class_name)
+            elif isinstance(field_val, MoleculeMetaField):
+                txt = field_val.smi
+            elif isinstance(field_val, TabularChartMetaField):
+                # suppressing tabular chart serialization
+                return None
+            elif tmp := str(field_val or ""):
+                txt = tmp
+            else:
+                return None
+            return f"<div data-meta-{name}>{txt}</div>"
+        else:
+            return None
+
+
 class HTMLAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
     """HTML-specific annotation serializer."""
 
@@ -858,6 +928,7 @@ class HTMLDocSerializer(DocSerializer):
     list_serializer: BaseListSerializer = HTMLListSerializer()
     inline_serializer: BaseInlineSerializer = HTMLInlineSerializer()
 
+    meta_serializer: BaseMetaSerializer = HTMLMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = HTMLAnnotationSerializer()
 
     params: HTMLParams = HTMLParams()
@@ -1047,7 +1118,11 @@ class HTMLDocSerializer(DocSerializer):
                     )
                     results.append(cap_ser_res)
 
-        if params.include_annotations and item.self_ref not in excluded_refs:
+        if (
+            params.use_legacy_annotations
+            and params.include_annotations
+            and item.self_ref not in excluded_refs
+        ):
             if isinstance(item, (PictureItem, TableItem)):
                 ann_res = self.serialize_annotations(
                     item=item,

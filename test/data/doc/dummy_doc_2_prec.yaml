@@ -80,6 +80,34 @@ pictures:
       width: 231.0
     uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
   label: picture
+  meta:
+    classification:
+      predictions:
+      - class_name: bar_chart
+        confidence: 0.8
+        created_by: model1
+    description:
+      created_by: model2
+      text: '...'
+    docling_legacy__misc:
+      myanalysis:
+        prediction: abc
+      something_else:
+        text: aaa
+    molecule:
+      confidence: 1.0
+      created_by: model3-1.0.0
+      docling_legacy__class_name: chemistry_molecular_structure
+      docling_legacy__segmentation:
+      - - 0.0
+        - 0.0
+      - - 1.0
+        - 0.0
+      - - 0.0
+        - 1.0
+      - - 1.0
+        - 1.0
+      smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
   parent:
     $ref: '#/body'
   prov:
@@ -139,6 +167,12 @@ tables:
       width: 231.12
     uri: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=
   label: table
+  meta:
+    description:
+      created_by: model3
+      text: A description annotation for this table.
+    docling_legacy__misc:
+      foo: bar
   parent:
     $ref: '#/body'
   prov:
@@ -237,4 +271,4 @@ texts:
   self_ref: '#/texts/3'
   text: 'Figure 1: Four examples of complex page layouts across different document
     categories'
-version: 1.7.0
+version: 1.8.0

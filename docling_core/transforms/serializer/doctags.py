@@ -44,6 +44,7 @@ from docling_core.types.doc.document import (
     PictureTabularChartData,
     ProvenanceItem,
     SectionHeaderItem,
+    TableData,
     TableItem,
     TextItem,
 )
@@ -233,13 +234,22 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                     ysize=params.ysize,
                 )
 
-            classifications = [
-                ann
-                for ann in item.annotations
-                if isinstance(ann, PictureClassificationData)
-            ]
-            if len(classifications) > 0:
+            # handle classification data
+            predicted_class: Optional[str] = None
+            if item.meta and item.meta.classification:
+                predicted_class = (
+                    item.meta.classification.get_main_prediction().class_name
+                )
+            elif (
+                classifications := [
+                    ann
+                    for ann in item.annotations
+                    if isinstance(ann, PictureClassificationData)
+                ]
+            ) and classifications[0].predicted_classes:
                 predicted_class = classifications[0].predicted_classes[0].class_name
+            if predicted_class:
+                body += DocumentToken.get_picture_classification_token(predicted_class)
                 if predicted_class in [
                     PictureClassificationLabel.PIE_CHART,
                     PictureClassificationLabel.BAR_CHART,
@@ -250,26 +260,31 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                     PictureClassificationLabel.HEATMAP,
                 ]:
                     is_chart = True
-                body += DocumentToken.get_picture_classification_token(predicted_class)
 
-            smiles_annotations = [
+            # handle molecule data
+            smi: Optional[str] = None
+            if item.meta and item.meta.molecule:
+                smi = item.meta.molecule.smi
+            elif smiles_annotations := [
                 ann for ann in item.annotations if isinstance(ann, PictureMoleculeData)
-            ]
-            if len(smiles_annotations) > 0:
-                body += _wrap(
-                    text=smiles_annotations[0].smi, wrap_tag=DocumentToken.SMILES.value
-                )
+            ]:
+                smi = smiles_annotations[0].smi
+            if smi:
+                body += _wrap(text=smi, wrap_tag=DocumentToken.SMILES.value)
 
-            tabular_chart_annotations = [
+            # handle tabular chart data
+            chart_data: Optional[TableData] = None
+            if item.meta and item.meta.tabular_chart:
+                chart_data = item.meta.tabular_chart.chart_data
+            elif tabular_chart_annotations := [
                 ann
                 for ann in item.annotations
                 if isinstance(ann, PictureTabularChartData)
-            ]
-            if len(tabular_chart_annotations) > 0:
+            ]:
+                chart_data = tabular_chart_annotations[0].chart_data
+            if chart_data and chart_data.table_cells:
                 temp_doc = DoclingDocument(name="temp")
-                temp_table = temp_doc.add_table(
-                    data=tabular_chart_annotations[0].chart_data
-                )
+                temp_table = temp_doc.add_table(data=chart_data)
                 otsl_content = temp_table.export_to_otsl(
                     temp_doc, add_cell_location=False
                 )
