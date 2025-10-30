@@ -313,7 +313,7 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
             elif isinstance(field_val, PictureClassificationMetaField):
                 txt = self._humanize_text(field_val.get_main_prediction().class_name)
             elif isinstance(field_val, MoleculeMetaField):
-                txt = field_val.smiles
+                txt = field_val.smi
             elif isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
                 return None

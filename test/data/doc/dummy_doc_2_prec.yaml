@@ -107,7 +107,7 @@ pictures:
         - 1.0
       - - 1.0
         - 1.0
-      smiles: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
+      smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
   parent:
     $ref: '#/body'
   prov:

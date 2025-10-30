@@ -1017,7 +1017,7 @@ class SummaryMetaField(BasePrediction):
     text: str
 
 
-# NOTE: should be manually kept in sync with top-level BaseMeta hierarchy fields
+# NOTE: must be manually kept in sync with top-level BaseMeta hierarchy fields
 class MetaFieldName(str, Enum):
     """Standard meta field names."""
 
@@ -1069,7 +1069,7 @@ class PictureClassificationMetaField(_ExtraAllowingModel):
 class MoleculeMetaField(BasePrediction):
     """Molecule metadata field."""
 
-    smiles: str = Field(description="The SMILES representation of the molecule.")
+    smi: str = Field(description="The SMILES representation of the molecule.")
 
 
 class TabularChartMetaField(BasePrediction):
@@ -1643,7 +1643,7 @@ class PictureItem(FloatingItem):
                     data["meta"].setdefault(
                         MetaFieldName.MOLECULE.value,
                         MoleculeMetaField(
-                            smiles=ann.smi,
+                            smi=ann.smi,
                             confidence=ann.confidence,
                             created_by=ann.provenance,
                             **{

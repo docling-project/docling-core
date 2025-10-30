@@ -1421,14 +1421,14 @@
           ],
           "title": "Created By"
         },
-        "smiles": {
+        "smi": {
           "description": "The SMILES representation of the molecule.",
-          "title": "Smiles",
+          "title": "Smi",
           "type": "string"
         }
       },
       "required": [
-        "smiles"
+        "smi"
       ],
       "title": "MoleculeMetaField",
       "type": "object"
