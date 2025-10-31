@@ -267,12 +267,14 @@ class DocumentToken(str, Enum):
         return _CodeLanguageToken(f"<_{code_language}_>").value
 
     @staticmethod
-    def get_location_token(val: float, rnorm: int = 500):  # TODO review
+    def get_location_token(
+        val: float, rnorm: int = 500, self_closing: bool = False
+    ):  # TODO review
         """Function to get location tokens."""
         val_ = round(rnorm * val)
         val_ = max(val_, 0)
         val_ = min(val_, rnorm - 1)
-        return f"<{_LOC_PREFIX}{val_}>"
+        return f"<{_LOC_PREFIX}{val_}{'/' if self_closing else ''}>"
 
     @staticmethod
     def get_location(
@@ -281,6 +283,7 @@ class DocumentToken(str, Enum):
         page_h: float,
         xsize: int = 500,  # TODO review
         ysize: int = 500,  # TODO review
+        self_closing: bool = False,
     ):
         """Get the location string give bbox and page-dim."""
         assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"
@@ -291,10 +294,18 @@ class DocumentToken(str, Enum):
         x1 = bbox[2] / page_w
         y1 = bbox[3] / page_h
 
-        x0_tok = DocumentToken.get_location_token(val=min(x0, x1), rnorm=xsize)
-        y0_tok = DocumentToken.get_location_token(val=min(y0, y1), rnorm=ysize)
-        x1_tok = DocumentToken.get_location_token(val=max(x0, x1), rnorm=xsize)
-        y1_tok = DocumentToken.get_location_token(val=max(y0, y1), rnorm=ysize)
+        x0_tok = DocumentToken.get_location_token(
+            val=min(x0, x1), rnorm=xsize, self_closing=self_closing
+        )
+        y0_tok = DocumentToken.get_location_token(
+            val=min(y0, y1), rnorm=ysize, self_closing=self_closing
+        )
+        x1_tok = DocumentToken.get_location_token(
+            val=max(x0, x1), rnorm=xsize, self_closing=self_closing
+        )
+        y1_tok = DocumentToken.get_location_token(
+            val=max(y0, y1), rnorm=ysize, self_closing=self_closing
+        )
 
         loc_str = f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
 

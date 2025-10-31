@@ -640,15 +640,24 @@ def test_doctags_inline_and_formatting():
     verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
 
 
+def test_doctags_meta():
+    src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
+
+
 # ===============================
 # IDocTags tests
 # ===============================
 
 
-def test_idoctags_basic():
-    src = Path("./test/data/doc/dummy_doc.yaml")
+def test_idoctags_meta():
+    src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
     ser = IDocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".igt.dt"), actual=actual)
+    verify(exp_file=src.with_suffix(".gt.idt.xml"), actual=actual)
