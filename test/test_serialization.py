@@ -5,6 +5,7 @@ from typing import Any
 
 from typing_extensions import override
 
+from docling_core.experimental.idoctags import IDocTagsDocSerializer
 from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     SerializationResult,
@@ -637,3 +638,17 @@ def test_doctags_inline_and_formatting():
     ser = DocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
+
+
+# ===============================
+# IDocTags tests
+# ===============================
+
+
+def test_idoctags_basic():
+    src = Path("./test/data/doc/dummy_doc.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = IDocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".igt.dt"), actual=actual)
