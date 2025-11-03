@@ -116,7 +116,7 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
                 return None
             # elif tmp := str(field_val or ""):
             #     txt = tmp
-            elif name not in MetaFieldName:
+            elif name not in {v.value for v in MetaFieldName}:
                 txt = _wrap(text=str(field_val or ""), wrap_tag=name)
             return txt
         return None
