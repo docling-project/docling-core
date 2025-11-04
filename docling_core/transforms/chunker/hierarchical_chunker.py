@@ -9,17 +9,9 @@ from __future__ import annotations
 
 import logging
 import re
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Final,
-    Iterator,
-    Literal,
-    Optional,
-    Protocol,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator, Literal, Optional
 
 from pydantic import ConfigDict, Field, StringConstraints, field_validator
 from typing_extensions import Annotated, override
@@ -161,9 +153,10 @@ class CodeChunkType(str, Enum):
     CODE_BLOCK = "code_block"
 
 
-class CodeChunkingStrategy(Protocol):
+class CodeChunkingStrategy(ABC):
     """Protocol for code chunking strategies that can be plugged into HierarchicalChunker."""
 
+    @abstractmethod
     def chunk_code_item(
         self, code_text: str, language: Language, **kwargs: Any
     ) -> Iterator[CodeChunk]:
@@ -317,11 +310,13 @@ class HierarchicalChunker(BaseChunker):
                     )
                     is not None
                 ):
-                    ser_res = my_doc_ser.serialize(item=item, visited=visited)
+                    # Serialize without markdown formatting for code items that will be parsed by tree-sitter
+                    ser_res = my_doc_ser.serialize(
+                        item=item, visited=visited, format_code_blocks=False, **kwargs
+                    )
                     if ser_res.text:
-                        code_text = self._strip_markdown_code_formatting(ser_res.text)
                         for code_chunk in self.code_chunking_strategy.chunk_code_item(
-                            code_text=code_text,
+                            code_text=ser_res.text,
                             language=language,
                             original_doc=dl_doc,
                             original_item=item,
@@ -348,14 +343,3 @@ class HierarchicalChunker(BaseChunker):
                     ),
                 )
                 yield c
-
-    def _strip_markdown_code_formatting(self, text: str) -> str:
-        """Strip markdown code block formatting from text."""
-        if not text.startswith("```") or not text.endswith("```"):
-            return text
-
-        lines = text.split("\n")
-        if len(lines) >= 3 and lines[0].startswith("```") and lines[-1] == "```":
-            return "\n".join(lines[1:-1])
-
-        return text
