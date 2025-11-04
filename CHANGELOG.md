@@ -1,3 +1,9 @@
+## [v2.50.1](https://github.com/docling-project/docling-core/releases/tag/v2.50.1) - 2025-11-04
+
+### Fix
+
+* Add JSON to CodeLanguageLabel ([#413](https://github.com/docling-project/docling-core/issues/413)) ([`09ef91c`](https://github.com/docling-project/docling-core/commit/09ef91c27285f3bdd4f41c935fd49685ff26524b))
+
 ## [v2.50.0](https://github.com/docling-project/docling-core/releases/tag/v2.50.0) - 2025-10-30
 
 ### Feature
