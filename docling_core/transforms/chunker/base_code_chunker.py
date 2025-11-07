@@ -11,20 +11,22 @@ from docling_core.transforms.chunker.code_chunk_utils.chunk_utils import (
     RangeTracker,
 )
 from docling_core.transforms.chunker.code_chunk_utils.utils import (
-    Language,
     get_children,
+    get_function_name,
+    get_tree_sitter_language,
+    is_collectable_function,
     to_str,
 )
 from docling_core.transforms.chunker.hierarchical_chunker import CodeChunk
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.types import DoclingDocument as DLDocument
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
 
 
 class _CodeChunker(BaseChunker):
     """Data model for code chunker."""
 
-    language: Language
+    language: CodeLanguageLabel
     ts_language: Any
     parser: Any
     function_body: str
@@ -56,7 +58,7 @@ class _CodeChunker(BaseChunker):
     def __init__(self, **data):
         super().__init__(**data)
         if self.ts_language is None:
-            self.ts_language = self.language.get_tree_sitter_language()
+            self.ts_language = get_tree_sitter_language(self.language)
         if self.parser is None:
             self.parser = Parser(self.ts_language)
 
@@ -147,7 +149,7 @@ class _CodeChunker(BaseChunker):
         function_line_start, _ = node.start_point
         function_line_end, _ = node.end_point
         signature_line_end, _ = self._get_function_signature_end(node)
-        function_name = self.language.get_function_name(node) or "unknown_function"
+        function_name = get_function_name(self.language, node) or "unknown_function"
         prefix, prefix_range = self._file_prefix(root_node)
 
         used_ranges = []
@@ -219,7 +221,7 @@ class _CodeChunker(BaseChunker):
         imports = self._build_imports(import_nodes, node, function_content)
         function_line_start, _ = node.start_point
         function_line_end, _ = node.end_point
-        class_name = self.language.get_function_name(node) or "unknown_class"
+        class_name = get_function_name(self.language, node) or "unknown_class"
 
         root_node = node
         while root_node.parent:
@@ -279,7 +281,7 @@ class _CodeChunker(BaseChunker):
         nodes = []
 
         if node.type in self.function_definition_types:
-            if self.language.is_collectable_function(node, self.constructor_name):
+            if is_collectable_function(self.language, node, self.constructor_name):
                 nodes.append(node)
             elif self._is_constructor(node):
                 if self._is_only_function_in_class(node):

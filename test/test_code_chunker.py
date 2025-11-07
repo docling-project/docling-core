@@ -8,13 +8,16 @@ import git
 import pytest
 
 from docling_core.transforms.chunker.base_code_chunker import CodeChunk
-from docling_core.transforms.chunker.code_chunk_utils.utils import Language
+from docling_core.transforms.chunker.code_chunk_utils.utils import (
+    SUPPORTED_LANGUAGES,
+    get_file_extensions,
+)
 from docling_core.transforms.chunker.code_chunking_strategy import (
     DefaultCodeChunkingStrategy,
 )
 from docling_core.transforms.chunker.hierarchical_chunker import HierarchicalChunker
 from docling_core.types.doc import DoclingDocument, DocumentOrigin
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
 from docling_core.utils.legacy import _create_hash
 
 # from .test_data_gen_flag import GEN_TEST_DATA
@@ -33,7 +36,7 @@ def get_latest_commit_id(file_dir: str) -> str:
 def create_documents_from_repository(
     file_dir: str,
     repo_url: str,
-    language: Language,
+    language: CodeLanguageLabel,
     commit_id: Optional[str] = None,
 ) -> List[DoclingDocument]:
     """Build DoclingDocument objects from a local checkout, one per code file."""
@@ -43,8 +46,8 @@ def create_documents_from_repository(
         commit_id = get_latest_commit_id(file_dir)
 
     all_extensions = set()
-    for lang in Language:
-        all_extensions.update(lang.file_extensions())
+    for lang in SUPPORTED_LANGUAGES:
+        all_extensions.update(get_file_extensions(lang))
 
     all_files = []
     for extension in all_extensions:
@@ -77,7 +80,7 @@ def create_documents_from_repository(
         )
 
         doc = DoclingDocument(name=file_relative, origin=origin)
-        doc.add_code(text=file_content, code_language=language.to_code_language_label())
+        doc.add_code(text=file_content, code_language=language)
         documents.append(doc)
 
     return documents
@@ -154,7 +157,7 @@ def test_function_chunkers_repo(name, local_path, repo_url, chunker_factory):
     docs = create_documents_from_repository(
         local_path_full,
         repo_url,
-        language=Language(name.lower()),
+        language=CodeLanguageLabel(name),
         commit_id="abc123def456",
     )
     docs = [
@@ -182,7 +185,3 @@ def test_function_chunkers_repo(name, local_path, repo_url, chunker_factory):
     act_data = {"root": [c.export_json_dict() for c in all_chunks]}
     out_path = DATA / name / "repo_out_chunks.json"
     _dump_or_assert(act_data, out_path)
-
-
-# if __name__ == "__main__":
-#     test_function_chunkers_repo(name="Python", local_path="/test/data/chunker_repo/repos/docling", repo_url="https://github.com/docling-project/docling", chunker_factory=lambda: HierarchicalChunker(code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)))

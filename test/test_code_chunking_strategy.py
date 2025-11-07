@@ -3,16 +3,21 @@ from pathlib import Path
 import pytest
 
 from docling_core.transforms.chunker import (
+    CodeLanguageLabel,
     DefaultCodeChunkingStrategy,
     HierarchicalChunker,
     HybridChunker,
-    Language,
     NoOpCodeChunkingStrategy,
+)
+from docling_core.transforms.chunker.code_chunk_utils.utils import (
+    get_file_extensions,
+    get_tree_sitter_language,
+    is_language_supported,
 )
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from docling_core.types.doc.base import Size
 from docling_core.types.doc.document import DoclingDocument, DocumentOrigin
-from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel
 
 
 @pytest.fixture
@@ -38,7 +43,7 @@ def factorial(n):
 '''
 
     strategy = DefaultCodeChunkingStrategy(min_chunk_size=10, max_tokens=100)
-    language = Language.PYTHON
+    language = CodeLanguageLabel.PYTHON
     chunks = list(strategy.chunk_code_item(python_code, language))
 
     assert len(chunks) > 0
@@ -207,21 +212,31 @@ def test_repository_processing(test_data_dir):
 
 
 def test_language_enum_mappings():
-    """Test language enum values and mappings."""
-    assert Language.PYTHON.value == "python"
-    assert Language.JAVASCRIPT.value == "javascript"
-    assert Language.TYPESCRIPT.value == "typescript"
-    assert Language.JAVA.value == "java"
-    assert Language.C.value == "c"
+    """Test language enum values and code chunking utility functions."""
+    assert CodeLanguageLabel.PYTHON.value == "Python"
+    assert CodeLanguageLabel.JAVASCRIPT.value == "JavaScript"
+    assert CodeLanguageLabel.TYPESCRIPT.value == "TypeScript"
+    assert CodeLanguageLabel.JAVA.value == "Java"
+    assert CodeLanguageLabel.C.value == "C"
 
-    assert Language.PYTHON.to_code_language_label() == CodeLanguageLabel.PYTHON
-    assert Language.JAVASCRIPT.to_code_language_label() == CodeLanguageLabel.JAVASCRIPT
-    assert Language.TYPESCRIPT.to_code_language_label() == CodeLanguageLabel.TYPESCRIPT
-    assert Language.JAVA.to_code_language_label() == CodeLanguageLabel.JAVA
-    assert Language.C.to_code_language_label() == CodeLanguageLabel.C
+    # Test is_language_supported utility function
+    assert is_language_supported(CodeLanguageLabel.PYTHON)
+    assert is_language_supported(CodeLanguageLabel.JAVASCRIPT)
+    assert is_language_supported(CodeLanguageLabel.TYPESCRIPT)
+    assert is_language_supported(CodeLanguageLabel.JAVA)
+    assert is_language_supported(CodeLanguageLabel.C)
+    assert not is_language_supported(CodeLanguageLabel.RUBY)
 
-    assert CodeLanguageLabel.PYTHON.to_language() == Language.PYTHON
-    assert CodeLanguageLabel.JAVASCRIPT.to_language() == Language.JAVASCRIPT
-    assert CodeLanguageLabel.TYPESCRIPT.to_language() == Language.TYPESCRIPT
-    assert CodeLanguageLabel.JAVA.to_language() == Language.JAVA
-    assert CodeLanguageLabel.C.to_language() == Language.C
+    # Test get_file_extensions utility function
+    assert ".py" in get_file_extensions(CodeLanguageLabel.PYTHON)
+    assert ".js" in get_file_extensions(CodeLanguageLabel.JAVASCRIPT)
+    assert ".ts" in get_file_extensions(CodeLanguageLabel.TYPESCRIPT)
+    assert ".java" in get_file_extensions(CodeLanguageLabel.JAVA)
+    assert ".c" in get_file_extensions(CodeLanguageLabel.C)
+
+    # Test get_tree_sitter_language utility function
+    assert get_tree_sitter_language(CodeLanguageLabel.PYTHON) is not None
+    assert get_tree_sitter_language(CodeLanguageLabel.JAVASCRIPT) is not None
+    assert get_tree_sitter_language(CodeLanguageLabel.TYPESCRIPT) is not None
+    assert get_tree_sitter_language(CodeLanguageLabel.JAVA) is not None
+    assert get_tree_sitter_language(CodeLanguageLabel.C) is not None

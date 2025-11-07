@@ -18,7 +18,7 @@ from typing_extensions import Annotated, override
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, BaseMeta
-from docling_core.transforms.chunker.code_chunk_utils.utils import Language
+from docling_core.transforms.chunker.code_chunk_utils.utils import is_language_supported
 from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseSerializerProvider,
@@ -44,6 +44,7 @@ from docling_core.types.doc.document import (
     TableItem,
     TitleItem,
 )
+from docling_core.types.doc.labels import CodeLanguageLabel
 
 _VERSION: Final = "1.0.0"
 
@@ -158,7 +159,7 @@ class CodeChunkingStrategy(ABC):
 
     @abstractmethod
     def chunk_code_item(
-        self, code_text: str, language: Language, **kwargs: Any
+        self, code_text: str, language: CodeLanguageLabel, **kwargs: Any
     ) -> Iterator[CodeChunk]:
         """Chunk a single code item."""
         ...
@@ -303,12 +304,8 @@ class HierarchicalChunker(BaseChunker):
                 if (
                     isinstance(item, CodeItem)
                     and self.code_chunking_strategy is not None
-                    and (
-                        language := Language.from_code_language_label(
-                            label=item.code_language
-                        )
-                    )
-                    is not None
+                    and item.code_language is not None
+                    and is_language_supported(item.code_language)
                 ):
                     # Serialize without markdown formatting for code items that will be parsed by tree-sitter
                     ser_res = my_doc_ser.serialize(
@@ -317,7 +314,7 @@ class HierarchicalChunker(BaseChunker):
                     if ser_res.text:
                         for code_chunk in self.code_chunking_strategy.chunk_code_item(
                             code_text=ser_res.text,
-                            language=language,
+                            language=item.code_language,
                             original_doc=dl_doc,
                             original_item=item,
                             **kwargs,

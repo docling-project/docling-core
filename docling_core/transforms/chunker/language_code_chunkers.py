@@ -8,19 +8,20 @@ from typing_extensions import override
 
 from docling_core.transforms.chunker.base_code_chunker import _CodeChunker
 from docling_core.transforms.chunker.code_chunk_utils.utils import (
-    Language,
     _get_default_tokenizer,
     get_children,
+    get_import_query,
     has_child,
     query_tree,
     to_str,
 )
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
+from docling_core.types.doc.labels import CodeLanguageLabel
 
 
 class _PythonFunctionChunker(_CodeChunker):
 
-    language: Language = Language.PYTHON
+    language: CodeLanguageLabel = CodeLanguageLabel.PYTHON
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
     function_definition_types: List[str] = ["function_definition"]
@@ -60,7 +61,7 @@ class _PythonFunctionChunker(_CodeChunker):
     @override
     def _get_imports(self, tree: Tree) -> Dict[str, Node]:
         """Get imports for Python."""
-        import_query = self.language.get_import_query()
+        import_query = get_import_query(self.language)
         if not import_query:
             return {}
         import_query_results = query_tree(self.ts_language, tree, import_query)
@@ -155,7 +156,7 @@ class _PythonFunctionChunker(_CodeChunker):
 
 
 class _TypeScriptFunctionChunker(_CodeChunker):
-    language: Language = Language.TYPESCRIPT
+    language: CodeLanguageLabel = CodeLanguageLabel.TYPESCRIPT
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
     function_definition_types: List[str] = [
@@ -193,7 +194,7 @@ class _TypeScriptFunctionChunker(_CodeChunker):
 
     @override
     def _get_imports(self, tree: Tree) -> Dict[str, Node]:
-        import_query = self.language.get_import_query()
+        import_query = get_import_query(self.language)
         if not import_query:
             return {}
         import_query_results = query_tree(self.ts_language, tree, import_query)
@@ -237,11 +238,11 @@ class _TypeScriptFunctionChunker(_CodeChunker):
 
 class _JavaScriptFunctionChunker(_TypeScriptFunctionChunker):
     def __init__(self, **data):
-        super().__init__(language=Language.JAVASCRIPT)
+        super().__init__(language=CodeLanguageLabel.JAVASCRIPT)
 
 
 class _CFunctionChunker(_CodeChunker):
-    language: Language = Language.C
+    language: CodeLanguageLabel = CodeLanguageLabel.C
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
     function_definition_types: List[str] = ["function_definition"]
@@ -395,7 +396,7 @@ class _CFunctionChunker(_CodeChunker):
 
 class _JavaFunctionChunker(_CodeChunker):
 
-    language: Language = Language.JAVA
+    language: CodeLanguageLabel = CodeLanguageLabel.JAVA
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
     method_declaration: str = "method_declaration"

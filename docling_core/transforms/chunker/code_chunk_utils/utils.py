@@ -1,7 +1,6 @@
 """Utility functions and classes for code language detection and processing."""
 
-from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Set
 
 import tree_sitter_c as ts_c
 import tree_sitter_java as ts_java
@@ -14,136 +13,115 @@ from tree_sitter import Node, Tree
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.types.doc.labels import CodeLanguageLabel
 
+SUPPORTED_LANGUAGES: Set[CodeLanguageLabel] = {
+    CodeLanguageLabel.PYTHON,
+    CodeLanguageLabel.JAVA,
+    CodeLanguageLabel.C,
+    CodeLanguageLabel.TYPESCRIPT,
+    CodeLanguageLabel.JAVASCRIPT,
+}
 
-class Language(str, Enum):
-    """Supported programming languages for code chunking."""
 
-    PYTHON = "python"
-    JAVASCRIPT = "javascript"
-    TYPESCRIPT = "typescript"
-    JAVA = "java"
-    C = "c"
+def is_language_supported(language: CodeLanguageLabel) -> bool:
+    """Check if a language is supported for code chunking."""
+    return language in SUPPORTED_LANGUAGES
 
-    def file_extensions(self) -> List[str]:
-        """Get the file extensions associated with this language."""
-        if self == Language.PYTHON:
-            return [".py"]
-        elif self == Language.TYPESCRIPT:
-            return [".ts", ".tsx", ".cts", ".mts", ".d.ts"]
-        elif self == Language.JAVA:
-            return [".java"]
-        elif self == Language.JAVASCRIPT:
-            return [".js", ".jsx", ".cjs", ".mjs"]
-        elif self == Language.C:
-            return [".c"]
-        else:
-            return []
 
-    def get_tree_sitter_language(self):
-        """Get the tree-sitter language object for this language."""
-        if self == Language.PYTHON:
-            return Lang(ts_python.language())
-        elif self == Language.TYPESCRIPT:
-            return Lang(ts_ts.language_typescript())
-        elif self == Language.JAVA:
-            return Lang(ts_java.language())
-        elif self == Language.JAVASCRIPT:
-            return Lang(ts_js.language())
-        elif self == Language.C:
-            return Lang(ts_c.language())
-        else:
-            return None
+def get_file_extensions(language: CodeLanguageLabel) -> List[str]:
+    """Get the file extensions associated with a language."""
+    extensions_map = {
+        CodeLanguageLabel.PYTHON: [".py"],
+        CodeLanguageLabel.TYPESCRIPT: [".ts", ".tsx", ".cts", ".mts", ".d.ts"],
+        CodeLanguageLabel.JAVA: [".java"],
+        CodeLanguageLabel.JAVASCRIPT: [".js", ".jsx", ".cjs", ".mjs"],
+        CodeLanguageLabel.C: [".c"],
+    }
+    return extensions_map.get(language, [])
 
-    def to_code_language_label(self) -> CodeLanguageLabel:
-        """Convert this language to a CodeLanguageLabel."""
-        mapping = {
-            Language.PYTHON: CodeLanguageLabel.PYTHON,
-            Language.JAVA: CodeLanguageLabel.JAVA,
-            Language.C: CodeLanguageLabel.C,
-            Language.TYPESCRIPT: CodeLanguageLabel.TYPESCRIPT,
-            Language.JAVASCRIPT: CodeLanguageLabel.JAVASCRIPT,
-        }
-        return mapping.get(self, CodeLanguageLabel.UNKNOWN)
 
-    @classmethod
-    def from_code_language_label(cls, label: CodeLanguageLabel) -> Optional["Language"]:
-        """Convert a CodeLanguageLabel to a CodeLanguage."""
-        mapping = {
-            CodeLanguageLabel.PYTHON: Language.PYTHON,
-            CodeLanguageLabel.JAVA: Language.JAVA,
-            CodeLanguageLabel.C: Language.C,
-            CodeLanguageLabel.TYPESCRIPT: Language.TYPESCRIPT,
-            CodeLanguageLabel.JAVASCRIPT: Language.JAVASCRIPT,
-        }
-        return mapping.get(label, None)
+def get_tree_sitter_language(language: CodeLanguageLabel):
+    """Get the tree-sitter language object for a language."""
+    language_map = {
+        CodeLanguageLabel.PYTHON: lambda: Lang(ts_python.language()),
+        CodeLanguageLabel.TYPESCRIPT: lambda: Lang(ts_ts.language_typescript()),
+        CodeLanguageLabel.JAVA: lambda: Lang(ts_java.language()),
+        CodeLanguageLabel.JAVASCRIPT: lambda: Lang(ts_js.language()),
+        CodeLanguageLabel.C: lambda: Lang(ts_c.language()),
+    }
+    factory = language_map.get(language)
+    return factory() if factory else None
 
-    def get_import_query(self) -> Optional[str]:
-        """Get the tree-sitter query string for finding imports in this language."""
-        if self == Language.PYTHON:
-            return """
-                (import_statement) @import
-                (import_from_statement) @import
-                (future_import_statement) @import
-                """
-        elif self in (Language.TYPESCRIPT, Language.JAVASCRIPT):
-            return """
-                (import_statement) @import_full
 
-                (lexical_declaration
-                (variable_declarator
-                    name: (identifier)
-                    value: (call_expression
-                    function: (identifier) @require_function
+def get_import_query(language: CodeLanguageLabel) -> Optional[str]:
+    """Get the tree-sitter query string for finding imports in this language."""
+    if language == CodeLanguageLabel.PYTHON:
+        return """
+            (import_statement) @import
+            (import_from_statement) @import
+            (future_import_statement) @import
+            """
+    elif language in (CodeLanguageLabel.TYPESCRIPT, CodeLanguageLabel.JAVASCRIPT):
+        return """
+            (import_statement) @import_full
+
+            (lexical_declaration
+            (variable_declarator
+                name: (identifier)
+                value: (call_expression
+                function: (identifier) @require_function
+                arguments: (arguments
+                    (string (string_fragment))
+                )
+                (#eq? @require_function "require")
+                )
+            )
+            ) @import_full
+
+            (lexical_declaration
+            (variable_declarator
+                name: (identifier)
+                value: (await_expression
+                (call_expression
+                    function: (import)
                     arguments: (arguments
-                        (string (string_fragment))
-                    )
-                    (#eq? @require_function "require")
+                    (string (string_fragment))
                     )
                 )
-                ) @import_full
-
-                (lexical_declaration
-                (variable_declarator
-                    name: (identifier)
-                    value: (await_expression
-                    (call_expression
-                        function: (import)
-                        arguments: (arguments
-                        (string (string_fragment))
-                        )
-                    )
-                    )
                 )
-                ) @import_full
-                """
-        else:
-            return None
+            )
+            ) @import_full
+            """
+    else:
+        return None
 
-    def get_function_name(self, node: Node) -> Optional[str]:
-        """Extract the function name from a function node."""
-        if self == Language.C:
-            declarator = node.child_by_field_name("declarator")
-            if declarator:
-                inner_declarator = declarator.child_by_field_name("declarator")
-                if inner_declarator and inner_declarator.text:
-                    return inner_declarator.text.decode("utf8")
-            return None
-        else:
-            name_node = node.child_by_field_name("name")
-            if name_node and name_node.text:
-                return name_node.text.decode("utf8")
-            return None
 
-    def is_collectable_function(self, node: Node, constructor_name: str) -> bool:
-        """Check if a function should be collected for chunking."""
-        if self == Language.C:
-            return True
-        else:
-            name = self.get_function_name(node)
-            if not name:
-                return False
+def get_function_name(language: CodeLanguageLabel, node: Node) -> Optional[str]:
+    """Extract the function name from a function node."""
+    if language == CodeLanguageLabel.C:
+        declarator = node.child_by_field_name("declarator")
+        if declarator:
+            inner_declarator = declarator.child_by_field_name("declarator")
+            if inner_declarator and inner_declarator.text:
+                return inner_declarator.text.decode("utf8")
+        return None
+    else:
+        name_node = node.child_by_field_name("name")
+        if name_node and name_node.text:
+            return name_node.text.decode("utf8")
+        return None
 
-            return name != constructor_name
+
+def is_collectable_function(
+    language: CodeLanguageLabel, node: Node, constructor_name: str
+) -> bool:
+    """Check if a function should be collected for chunking."""
+    if language == CodeLanguageLabel.C:
+        return True
+    else:
+        name = get_function_name(language, node)
+        if not name:
+            return False
+        return name != constructor_name
 
 
 def _get_default_tokenizer() -> "BaseTokenizer":

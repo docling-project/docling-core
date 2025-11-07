@@ -3,7 +3,6 @@
 from typing import Any, Dict, Iterator
 
 from docling_core.transforms.chunker.base_code_chunker import _CodeChunker
-from docling_core.transforms.chunker.code_chunk_utils.utils import Language
 from docling_core.transforms.chunker.hierarchical_chunker import (
     CodeChunk,
     CodeChunkType,
@@ -23,6 +22,7 @@ from docling_core.types.doc.document import (
     DocumentOrigin,
     PageItem,
 )
+from docling_core.types.doc.labels import CodeLanguageLabel
 from docling_core.utils.legacy import _create_hash
 
 
@@ -30,14 +30,14 @@ class CodeChunkingStrategyFactory:
     """Factory for creating language-specific code chunking strategies."""
 
     @staticmethod
-    def create_chunker(language: Language, **kwargs: Any) -> _CodeChunker:
+    def create_chunker(language: CodeLanguageLabel, **kwargs: Any) -> _CodeChunker:
         """Create a language-specific code chunker."""
         chunker_map = {
-            Language.PYTHON: _PythonFunctionChunker,
-            Language.TYPESCRIPT: _TypeScriptFunctionChunker,
-            Language.JAVASCRIPT: _JavaScriptFunctionChunker,
-            Language.C: _CFunctionChunker,
-            Language.JAVA: _JavaFunctionChunker,
+            CodeLanguageLabel.PYTHON: _PythonFunctionChunker,
+            CodeLanguageLabel.TYPESCRIPT: _TypeScriptFunctionChunker,
+            CodeLanguageLabel.JAVASCRIPT: _JavaScriptFunctionChunker,
+            CodeLanguageLabel.C: _CFunctionChunker,
+            CodeLanguageLabel.JAVA: _JavaFunctionChunker,
         }
 
         chunker_class = chunker_map.get(language)
@@ -53,9 +53,9 @@ class DefaultCodeChunkingStrategy:
     def __init__(self, **chunker_kwargs: Any):
         """Initialize the strategy with optional chunker parameters."""
         self.chunker_kwargs = chunker_kwargs
-        self._chunker_cache: Dict[Language, _CodeChunker] = {}
+        self._chunker_cache: Dict[CodeLanguageLabel, _CodeChunker] = {}
 
-    def _get_chunker(self, language: Language) -> _CodeChunker:
+    def _get_chunker(self, language: CodeLanguageLabel) -> _CodeChunker:
         """Get or create a chunker for the given language."""
         if language not in self._chunker_cache:
             self._chunker_cache[language] = CodeChunkingStrategyFactory.create_chunker(
@@ -66,7 +66,7 @@ class DefaultCodeChunkingStrategy:
     def chunk_code_item(
         self,
         code_text: str,
-        language: Language,
+        language: CodeLanguageLabel,
         original_doc=None,
         original_item=None,
         **kwargs: Any,
@@ -113,7 +113,7 @@ class NoOpCodeChunkingStrategy:
     def chunk_code_item(
         self,
         code_text: str,
-        language: Language,
+        language: CodeLanguageLabel,
         original_doc=None,
         original_item=None,
         **kwargs: Any,
