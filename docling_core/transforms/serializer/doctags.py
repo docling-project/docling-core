@@ -23,6 +23,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _should_use_legacy_annotations,
     create_ser_result,
 )
 from docling_core.types.doc.base import BoundingBox
@@ -236,18 +237,25 @@ class DocTagsPictureSerializer(BasePictureSerializer):
 
             # handle classification data
             predicted_class: Optional[str] = None
-            if item.meta and item.meta.classification:
-                predicted_class = (
-                    item.meta.classification.get_main_prediction().class_name
-                )
-            elif (
-                classifications := [
+            if item.meta:
+                if item.meta.classification:
+                    predicted_class = (
+                        item.meta.classification.get_main_prediction().class_name
+                    )
+            elif _should_use_legacy_annotations(
+                params=params,
+                item=item,
+                kind=PictureClassificationData.model_fields["kind"].default,
+            ):
+                if classifications := [
                     ann
                     for ann in item.annotations
                     if isinstance(ann, PictureClassificationData)
-                ]
-            ) and classifications[0].predicted_classes:
-                predicted_class = classifications[0].predicted_classes[0].class_name
+                ]:
+                    if classifications[0].predicted_classes:
+                        predicted_class = (
+                            classifications[0].predicted_classes[0].class_name
+                        )
             if predicted_class:
                 body += DocumentToken.get_picture_classification_token(predicted_class)
                 if predicted_class in [
@@ -263,25 +271,39 @@ class DocTagsPictureSerializer(BasePictureSerializer):
 
             # handle molecule data
             smi: Optional[str] = None
-            if item.meta and item.meta.molecule:
-                smi = item.meta.molecule.smi
-            elif smiles_annotations := [
-                ann for ann in item.annotations if isinstance(ann, PictureMoleculeData)
-            ]:
-                smi = smiles_annotations[0].smi
+            if item.meta:
+                if item.meta.molecule:
+                    smi = item.meta.molecule.smi
+            elif _should_use_legacy_annotations(
+                params=params,
+                item=item,
+                kind=PictureMoleculeData.model_fields["kind"].default,
+            ):
+                if smiles_annotations := [
+                    ann
+                    for ann in item.annotations
+                    if isinstance(ann, PictureMoleculeData)
+                ]:
+                    smi = smiles_annotations[0].smi
             if smi:
                 body += _wrap(text=smi, wrap_tag=DocumentToken.SMILES.value)
 
             # handle tabular chart data
             chart_data: Optional[TableData] = None
-            if item.meta and item.meta.tabular_chart:
-                chart_data = item.meta.tabular_chart.chart_data
-            elif tabular_chart_annotations := [
-                ann
-                for ann in item.annotations
-                if isinstance(ann, PictureTabularChartData)
-            ]:
-                chart_data = tabular_chart_annotations[0].chart_data
+            if item.meta:
+                if item.meta.tabular_chart:
+                    chart_data = item.meta.tabular_chart.chart_data
+            elif _should_use_legacy_annotations(
+                params=params,
+                item=item,
+                kind=PictureTabularChartData.model_fields["kind"].default,
+            ):
+                if tabular_chart_annotations := [
+                    ann
+                    for ann in item.annotations
+                    if isinstance(ann, PictureTabularChartData)
+                ]:
+                    chart_data = tabular_chart_annotations[0].chart_data
             if chart_data and chart_data.table_cells:
                 temp_doc = DoclingDocument(name="temp")
                 temp_table = temp_doc.add_table(data=chart_data)
