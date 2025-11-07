@@ -5668,6 +5668,7 @@ class DoclingDocument(BaseModel):
     ):
         """Export the document to indented text to expose hierarchy."""
         result = []
+        item_counter = 0
 
         def get_text(text: str, max_text_len: int):
 
@@ -5687,59 +5688,72 @@ class DoclingDocument(BaseModel):
             if isinstance(item, GroupItem):
                 result.append(
                     indent * level
-                    + f"item-{i} at level {level}: {item.label}: group {item.name}"
+                    + f"item-{item_counter} at level {level}: {item.label}: group {item.name}"
                 )
+                item_counter += 1
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
                 result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                    indent * level
+                    + f"item-{item_counter} at level {level}: {item.label}: {text}"
                 )
+                item_counter += 1
 
             elif isinstance(item, SectionHeaderItem):
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
                 result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                    indent * level
+                    + f"item-{item_counter} at level {level}: {item.label}: {text}"
                 )
+                item_counter += 1
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.CODE]:
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
                 result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                    indent * level
+                    + f"item-{item_counter} at level {level}: {item.label}: {text}"
                 )
+                item_counter += 1
 
             elif isinstance(item, ListItem) and item.label in [DocItemLabel.LIST_ITEM]:
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
                 result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                    indent * level
+                    + f"item-{item_counter} at level {level}: {item.label}: {text}"
                 )
+                item_counter += 1
 
             elif isinstance(item, TextItem):
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
                 result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
+                    indent * level
+                    + f"item-{item_counter} at level {level}: {item.label}: {text}"
                 )
+                item_counter += 1
 
             elif isinstance(item, TableItem):
 
                 result.append(
                     indent * level
-                    + f"item-{i} at level {level}: {item.label} with "
+                    + f"item-{item_counter} at level {level}: {item.label} with "
                     + f"[{item.data.num_rows}x{item.data.num_cols}]"
                 )
+                item_counter += 1
 
                 for _ in item.captions:
                     caption = _.resolve(self)
                     result.append(
                         indent * (level + 1)
-                        + f"item-{i} at level {level + 1}: {caption.label}: "
+                        + f"item-{item_counter} at level {level + 1}: {caption.label}: "
                         + f"{caption.text}"
                     )
+                    item_counter += 1
 
                 if explicit_tables:
                     grid: list[list[str]] = []
@@ -5757,22 +5771,26 @@ class DoclingDocument(BaseModel):
             elif isinstance(item, PictureItem):
 
                 result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}"
+                    indent * level
+                    + f"item-{item_counter} at level {level}: {item.label}"
                 )
+                item_counter += 1
 
                 for _ in item.captions:
                     caption = _.resolve(self)
                     result.append(
                         indent * (level + 1)
-                        + f"item-{i} at level {level + 1}: {caption.label}: "
+                        + f"item-{item_counter} at level {level + 1}: {caption.label}: "
                         + f"{caption.text}"
                     )
+                    item_counter += 1
 
             elif isinstance(item, DocItem):
                 result.append(
                     indent * (level + 1)
-                    + f"item-{i} at level {level}: {item.label}: ignored"
+                    + f"item-{item_counter} at level {level}: {item.label}: ignored"
                 )
+                item_counter += 1
 
         return "\n".join(result)
 

@@ -2349,3 +2349,78 @@ def test_filter_pages():
         with open(exp_html_file, "r", encoding="utf-8") as f:
             exp_html_data = f.read()
         assert html_data == exp_html_data
+
+
+def test_item_counter_numbering_with_captions():
+    """Test that captions have unique item numbers in export_to_indented_text."""
+    doc = DoclingDocument(name="Test Caption Numbering")
+
+    doc.add_text(label=DocItemLabel.TEXT, text="First paragraph")
+
+    table_caption = doc.add_text(
+        label=DocItemLabel.CAPTION, text="Table 1: Sample table"
+    )
+    table_cells = [
+        TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="Cell 1",
+        ),
+        TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            text="Cell 2",
+        ),
+    ]
+    table_data = TableData(num_rows=1, num_cols=2, table_cells=table_cells)
+    doc.add_table(data=table_data, caption=table_caption)
+
+    doc.add_text(label=DocItemLabel.TEXT, text="Second paragraph")
+
+    pic_caption = doc.add_text(
+        label=DocItemLabel.CAPTION, text="Figure 1: Sample image"
+    )
+    doc.add_picture(caption=pic_caption)
+
+    doc.add_text(label=DocItemLabel.TEXT, text="Third paragraph")
+
+    indented_text = doc._export_to_indented_text()
+
+    import re
+
+    item_pattern = re.compile(r"item-(\d+) at level")
+    item_numbers = []
+
+    lines = indented_text.split("\n")
+    for line in lines:
+        match = item_pattern.search(line)
+        if match:
+            item_numbers.append(int(match.group(1)))
+
+    assert len(item_numbers) > 0, "No items found in indented text output"
+
+    caption_indices = [
+        i
+        for i, line in enumerate(lines)
+        if "CAPTION" in line or "caption" in line.lower()
+    ]
+    assert len(caption_indices) >= 2, "Expected at least 2 captions in output"
+
+    for i in range(len(item_numbers) - 1):
+        current_num = item_numbers[i]
+        next_num = item_numbers[i + 1]
+
+        assert next_num > current_num, (
+            f"Item numbers should be strictly increasing: "
+            f"item-{current_num} followed by item-{next_num}"
+        )
+
+    unique_item_numbers = set(item_numbers)
+    assert len(unique_item_numbers) == len(item_numbers), (
+        f"All item numbers should be unique. "
+        f"Found {len(item_numbers)} items but only {len(unique_item_numbers)} unique numbers"
+    )
