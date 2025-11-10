@@ -10,6 +10,7 @@ from typing import Any, Optional
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
+    BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
     BaseInlineSerializer,
@@ -31,27 +32,72 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.types.doc import (
     BaseMeta,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
     FormItem,
+    GroupItem,
     InlineGroup,
     KeyValueItem,
     ListGroup,
+    ListItem,
     MetaFieldName,
     NodeItem,
     PictureItem,
-    SummaryMetaField,
     SectionHeaderItem,
+    SummaryMetaField,
     TableItem,
     TextItem,
     TitleItem,
 )
 
+
+def _default_prepend(item: NodeItem) -> str:
+    if isinstance(item, DocItem) or isinstance(item, GroupItem):
+        return f"{item.label.value} "
+    else:
+        raise ValueError("item is nor DocItem nor GroupItem")
+    # return f"[{item.self_ref}] [{item.__class__.__name__}:{item.label.value}]"
+    # return f"[reference={item.self_ref}]"
+
+
 def _default_outline_node(item: NodeItem) -> str:
     # return f"[{item.self_ref}] [{item.__class__.__name__}:{item.label.value}]"
     return f"[reference={item.self_ref}]"
 
-def _default_summary(summary:str) -> str:
+
+def _default_summary(summary: str) -> str:
     return f"(summary={summary})"
+
+
+def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
+    if isinstance(item, ListItem):
+        return ""
+
+    prepend = _default_prepend(item)
+    if isinstance(item, TitleItem) or isinstance(item, SectionHeaderItem):
+        # MarkdownDocSerializer requires a doc instance; pass through current doc
+        _md_serializer = MarkdownDocSerializer(doc=doc)
+        _serializer = MarkdownTextSerializer()
+
+        res = _serializer.serialize(
+            item=item, doc_serializer=_md_serializer, doc=doc, **kwargs
+        )
+        prepend = res.text
+
+    summary = ""
+    if (
+        item.meta
+        and (field_val := getattr(item.meta, MetaFieldName.SUMMARY)) is not None
+        and isinstance(field_val, SummaryMetaField)
+    ):
+        summary = _default_summary(field_val.text)
+
+    reference = _default_outline_node(item)
+
+    text = " ".join([prepend, reference, summary])
+
+    return text.strip()
+
 
 class OutlineMode(str, Enum):
     """Display mode for document summary output."""
@@ -68,7 +114,13 @@ class OutlineParams(MarkdownParams):
 
     mode: OutlineMode = OutlineMode.OUTLINE
 
-    
+    def model_post_init(self, __context: Any) -> None:  # type: ignore[override]
+        """Adjust allowed labels based on the selected mode."""
+        # Adjust allowed labels based on mode
+        if self.mode == OutlineMode.TABLE_OF_CONTENTS:
+            self.labels = {DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER}
+
+
 class _OutlineTextSerializer(BaseTextSerializer):
     """_Outline class for text item serializers."""
 
@@ -76,50 +128,16 @@ class _OutlineTextSerializer(BaseTextSerializer):
         self,
         *,
         item: TextItem,
-        doc_serializer: "_OutlineDocSerializer",
+        doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        prepend = ""
-        if isinstance(item, TitleItem) or isinstance(item, SectionHeaderItem):
-            # MarkdownDocSerializer requires a doc instance; pass through current doc
-            _md_serializer = MarkdownDocSerializer(doc=doc)
-            _serializer = MarkdownTextSerializer()
+        # print(kwargs)
 
-            res = _serializer.serialize(item=item, doc_serializer=_md_serializer, doc=doc)
-            prepend = res.text
-            
-        summary = ""
-        if item.meta and \
-           (field_val := getattr(item.meta, MetaFieldName.SUMMARY)) is not None and \
-           isinstance(field_val, SummaryMetaField):
-            summary = _default_summary(field_val.text)
-            
-        reference = _default_outline_node(item)
-        
-        text = " ".join([prepend, reference, summary])
-        
-        return create_ser_result(
-            text=text
-        )
+        text = _default_text(item=item, doc=doc, **kwargs)
+        return create_ser_result(text=text)
 
-    """
-    def _serialize_meta_field(
-        self, meta: BaseMeta, name: str, mark_meta: bool
-    ) -> Optional[str]:
-        if (field_val := getattr(meta, name)) is not None and isinstance(
-            field_val, SummaryMetaField
-        ):
-            txt = field_val.text
-            return (
-                f"[{self._humanize_text(name, title=True)}] {txt}"
-                if mark_meta
-                else txt
-            )
-        else:
-            return None
-    """
 
 class _OutlineTableSerializer(BaseTableSerializer):
     """_Outline class for table item serializers."""
@@ -128,14 +146,17 @@ class _OutlineTableSerializer(BaseTableSerializer):
         self,
         *,
         item: TableItem,
-        doc_serializer: "_OutlineDocSerializer",
+        doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        return create_ser_result(
-            text=_default_outline_node(item)
-        )
+        params = OutlineParams(**kwargs)
+        if DocItemLabel.TABLE not in params.labels:
+            return create_ser_result(text="")
+
+        text = _default_text(item=item, doc=doc)
+        return create_ser_result(text=text)
 
 
 class _OutlinePictureSerializer(BasePictureSerializer):
@@ -145,14 +166,17 @@ class _OutlinePictureSerializer(BasePictureSerializer):
         self,
         *,
         item: PictureItem,
-        doc_serializer: "_OutlineDocSerializer",
+        doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        return create_ser_result(
-            text=_default_outline_node(item)
-        )
+        params = OutlineParams(**kwargs)
+        if DocItemLabel.PICTURE not in params.labels:
+            return create_ser_result(text="")
+
+        text = _default_text(item=item, doc=doc)
+        return create_ser_result(text=text)
 
 
 class _OutlineKeyValueSerializer(BaseKeyValueSerializer):
@@ -162,14 +186,19 @@ class _OutlineKeyValueSerializer(BaseKeyValueSerializer):
         self,
         *,
         item: KeyValueItem,
-        doc_serializer: "_OutlineDocSerializer",
+        doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        return create_ser_result(
-            text=_default_outline_node(item)
-        )
+        params = OutlineParams(**kwargs)
+        if DocItemLabel.KEY_VALUE_REGION not in params.labels:
+            return create_ser_result(text="")
+
+        print("label: ", item.label)
+
+        text = _default_text(item=item, doc=doc)
+        return create_ser_result(text=text)
 
 
 class _OutlineFormSerializer(BaseFormSerializer):
@@ -179,14 +208,17 @@ class _OutlineFormSerializer(BaseFormSerializer):
         self,
         *,
         item: FormItem,
-        doc_serializer: "_OutlineDocSerializer",
+        doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        return create_ser_result(
-            text=_default_outline_node(item)
-        )
+        params = OutlineParams(**kwargs)
+        if DocItemLabel.FORM not in params.labels:
+            return create_ser_result(text="")
+
+        text = _default_text(item=item, doc=doc)
+        return create_ser_result(text=text)
 
 
 class _OutlineListSerializer(BaseListSerializer):
@@ -196,14 +228,13 @@ class _OutlineListSerializer(BaseListSerializer):
         self,
         *,
         item: ListGroup,
-        doc_serializer: "_OutlineDocSerializer",
+        doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        return create_ser_result(
-            text=_default_outline_node(item)
-        )
+        # Intentionally skip list containers in outlines
+        return create_ser_result(text="")
 
 
 class _OutlineInlineSerializer(BaseInlineSerializer):
@@ -213,7 +244,7 @@ class _OutlineInlineSerializer(BaseInlineSerializer):
         self,
         *,
         item: InlineGroup,
-        doc_serializer: "_OutlineDocSerializer",
+        doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
@@ -228,15 +259,14 @@ class _OutlineFallbackSerializer(BaseFallbackSerializer):
         self,
         *,
         item: NodeItem,
-        doc_serializer: "_OutlineDocSerializer",
+        doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serializes the passed item."""
-        return create_ser_result(text="")
+        text = _default_text(item=item, doc=doc)
+        return create_ser_result(text=text)
 
 
-    
 class _OutlineMetaSerializer(MarkdownMetaSerializer):
 
     @override
@@ -249,26 +279,7 @@ class _OutlineMetaSerializer(MarkdownMetaSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's meta."""
-        params = MarkdownParams(**kwargs)
-        return create_ser_result(
-            text="\n\n".join(
-                [
-                    f"{'  ' * (level or 0)}[{item.self_ref}] [{item.__class__.__name__}:{item.label.value}] {tmp}"  # type:ignore[attr-defined]
-                    for key in (
-                        list(item.meta.__class__.model_fields)
-                        + list(item.meta.get_custom_part())
-                    )
-                    if (
-                        tmp := self._serialize_meta_field(
-                            item.meta, key, params.mark_meta
-                        )
-                    )
-                ]
-                if item.meta
-                else []
-            ),
-            span_source=item if isinstance(item, DocItem) else [],
-        )
+        return create_ser_result(text="")
 
     def _serialize_meta_field(
         self, meta: BaseMeta, name: str, mark_meta: bool
@@ -278,14 +289,14 @@ class _OutlineMetaSerializer(MarkdownMetaSerializer):
         ):
             txt = field_val.text
             return (
-                f"[{self._humanize_text(name, title=True)}] {txt}"
-                if mark_meta
-                else txt
+                f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt
             )
         else:
             return None
 
+
 class OutlineDocSerializer(MarkdownDocSerializer):
+    """Markdown-based serializer for outlines and tables of contents."""
 
     text_serializer: BaseTextSerializer = _OutlineTextSerializer()
     table_serializer: BaseTableSerializer = _OutlineTableSerializer()
@@ -296,7 +307,7 @@ class OutlineDocSerializer(MarkdownDocSerializer):
 
     list_serializer: BaseListSerializer = _OutlineListSerializer()
     inline_serializer: BaseInlineSerializer = _OutlineInlineSerializer()
-    
+
     meta_serializer: BaseMetaSerializer = _OutlineMetaSerializer()
 
-    params: OutlineParams = OutlineParams()    
+    params: OutlineParams = OutlineParams()
