@@ -11,7 +11,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, PositiveInt
+from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import tabulate
 from typing_extensions import override
 
@@ -23,6 +23,7 @@ from docling_core.transforms.serializer.base import (
     BaseInlineSerializer,
     BaseKeyValueSerializer,
     BaseListSerializer,
+    BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
     BaseTextSerializer,
@@ -36,9 +37,11 @@ from docling_core.transforms.serializer.common import (
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    BaseMeta,
     CodeItem,
     ContentLayer,
     DescriptionAnnotation,
+    DescriptionMetaField,
     DocItem,
     DocItemLabel,
     DoclingDocument,
@@ -52,14 +55,18 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     ListGroup,
     ListItem,
+    MoleculeMetaField,
     NodeItem,
     PictureClassificationData,
+    PictureClassificationMetaField,
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
     RichTableCell,
     SectionHeaderItem,
+    SummaryMetaField,
     TableItem,
+    TabularChartMetaField,
     TextItem,
     TitleItem,
 )
@@ -102,8 +109,17 @@ class MarkdownParams(CommonParams):
     page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
-    include_annotations: bool = True
-    mark_annotations: bool = False
+    mark_meta: bool = Field(default=False, description="Mark meta sections.")
+    include_annotations: bool = Field(
+        default=True,
+        description="Include item annotations.",
+        deprecated="Use include_meta instead.",
+    )
+    mark_annotations: bool = Field(
+        default=False,
+        description="Mark annotation sections.",
+        deprecated="Use mark_meta instead.",
+    )
     orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
 
@@ -245,9 +261,77 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         return create_ser_result(text=text, span_source=res_parts)
 
 
+class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
+    """Markdown-specific meta serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: NodeItem,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's meta."""
+        params = MarkdownParams(**kwargs)
+        return create_ser_result(
+            text="\n\n".join(
+                [
+                    tmp
+                    for key in (
+                        list(item.meta.__class__.model_fields)
+                        + list(item.meta.get_custom_part())
+                    )
+                    if (
+                        (
+                            params.allowed_meta_names is None
+                            or key in params.allowed_meta_names
+                        )
+                        and (key not in params.blocked_meta_names)
+                        and (
+                            tmp := self._serialize_meta_field(
+                                item.meta, key, params.mark_meta
+                            )
+                        )
+                    )
+                ]
+                if item.meta
+                else []
+            ),
+            span_source=item if isinstance(item, DocItem) else [],
+            # NOTE for now using an empty span source for GroupItems
+        )
+
+    def _serialize_meta_field(
+        self, meta: BaseMeta, name: str, mark_meta: bool
+    ) -> Optional[str]:
+        if (field_val := getattr(meta, name)) is not None:
+            if isinstance(field_val, SummaryMetaField):
+                txt = field_val.text
+            elif isinstance(field_val, DescriptionMetaField):
+                txt = field_val.text
+            elif isinstance(field_val, PictureClassificationMetaField):
+                txt = self._humanize_text(field_val.get_main_prediction().class_name)
+            elif isinstance(field_val, MoleculeMetaField):
+                txt = field_val.smi
+            elif isinstance(field_val, TabularChartMetaField):
+                # suppressing tabular chart serialization
+                return None
+            elif tmp := str(field_val or ""):
+                txt = tmp
+            else:
+                return None
+            return (
+                f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt
+            )
+        else:
+            return None
+
+
 class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
     """Markdown-specific annotation serializer."""
 
+    @override
     def serialize(
         self,
         *,
@@ -313,7 +397,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
 
-            if params.include_annotations:
+            if params.use_legacy_annotations and params.include_annotations:
 
                 ann_res = doc_serializer.serialize_annotations(
                     item=item,
@@ -382,7 +466,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            if params.include_annotations:
+            if params.use_legacy_annotations and params.include_annotations:
                 ann_res = doc_serializer.serialize_annotations(
                     item=item,
                     **kwargs,
@@ -629,6 +713,7 @@ class MarkdownDocSerializer(DocSerializer):
     list_serializer: BaseListSerializer = MarkdownListSerializer()
     inline_serializer: BaseInlineSerializer = MarkdownInlineSerializer()
 
+    meta_serializer: BaseMetaSerializer = MarkdownMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
 
     params: MarkdownParams = MarkdownParams()
@@ -727,3 +812,22 @@ class MarkdownDocSerializer(DocSerializer):
     def requires_page_break(self) -> bool:
         """Whether to add page breaks."""
         return self.params.page_break_placeholder is not None
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: Optional[NodeItem] = None,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a given node."""
+        return super().serialize(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=is_inline_scope,
+            visited=visited,
+            **(dict(delim="\n\n") | kwargs),
+        )

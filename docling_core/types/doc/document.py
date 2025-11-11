@@ -27,6 +27,8 @@ from pydantic import (
     Field,
     FieldSerializationInfo,
     StringConstraints,
+    TypeAdapter,
+    ValidationError,
     computed_field,
     field_serializer,
     field_validator,
@@ -60,7 +62,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.7.0"
+CURRENT_VERSION: Final = "1.8.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -941,6 +943,156 @@ class ContentLayer(str, Enum):
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
 
 
+class _ExtraAllowingModel(BaseModel):
+    """Base model allowing extra fields."""
+
+    model_config = ConfigDict(extra="allow")
+
+    def get_custom_part(self) -> dict[str, Any]:
+        """Get the extra fields as a dictionary."""
+        return self.__pydantic_extra__ or {}
+
+    def _copy_without_extra(self) -> Self:
+        """Create a copy without the extra fields."""
+        return self.model_validate(
+            self.model_dump(exclude={ex for ex in self.get_custom_part()})
+        )
+
+    def _check_custom_field_format(self, key: str) -> None:
+        parts = key.split(MetaUtils._META_FIELD_NAMESPACE_DELIMITER, maxsplit=1)
+        if len(parts) != 2 or (not parts[0]) or (not parts[1]):
+            raise ValueError(
+                f"Custom meta field name must be in format 'namespace__field_name' (e.g. 'my_corp__max_size'): {key}"
+            )
+
+    @model_validator(mode="after")
+    def _validate_field_names(self) -> Self:
+        extra_dict = self.get_custom_part()
+        for key in self.model_dump():
+            if key in extra_dict:
+                self._check_custom_field_format(key=key)
+            elif MetaUtils._META_FIELD_NAMESPACE_DELIMITER in key:
+                raise ValueError(
+                    f"Standard meta field name must not contain '__': {key}"
+                )
+
+        return self
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if name in self.get_custom_part():
+            self._check_custom_field_format(key=name)
+
+    def set_custom_field(self, namespace: str, name: str, value: Any) -> str:
+        """Set a custom field and return the key."""
+        key = MetaUtils.create_meta_field_name(namespace=namespace, name=name)
+        setattr(self, key, value)
+        return key
+
+
+class BasePrediction(_ExtraAllowingModel):
+    """Prediction field."""
+
+    confidence: Optional[float] = Field(
+        default=None,
+        ge=0,
+        le=1,
+        description="The confidence of the prediction.",
+        examples=[0.9, 0.42],
+    )
+    created_by: Optional[str] = Field(
+        default=None,
+        description="The origin of the prediction.",
+        examples=["ibm-granite/granite-docling-258M"],
+    )
+
+    @field_serializer("confidence")
+    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)
+
+
+class SummaryMetaField(BasePrediction):
+    """Summary data."""
+
+    text: str
+
+
+# NOTE: must be manually kept in sync with top-level BaseMeta hierarchy fields
+class MetaFieldName(str, Enum):
+    """Standard meta field names."""
+
+    SUMMARY = "summary"  # a summary of the tree under this node
+    DESCRIPTION = "description"  # a description of the node (e.g. for images)
+    CLASSIFICATION = "classification"  # a classification of the node content
+    MOLECULE = "molecule"  # molecule data
+    TABULAR_CHART = "tabular_chart"  # tabular chart data
+
+
+class BaseMeta(_ExtraAllowingModel):
+    """Base class for metadata."""
+
+    summary: Optional[SummaryMetaField] = None
+
+
+class DescriptionMetaField(BasePrediction):
+    """Description metadata field."""
+
+    text: str
+
+
+class PictureClassificationPrediction(BasePrediction):
+    """Picture classification instance."""
+
+    class_name: str
+
+
+class PictureClassificationMetaField(_ExtraAllowingModel):
+    """Picture classification metadata field."""
+
+    predictions: list[PictureClassificationPrediction] = Field(
+        default_factory=list, min_length=1
+    )
+
+    def get_main_prediction(self) -> PictureClassificationPrediction:
+        """Get prediction with highest confidence (if confidence not available, first is used by convention)."""
+        max_conf_pos: Optional[int] = None
+        max_conf: Optional[float] = None
+        for i, pred in enumerate(self.predictions):
+            if pred.confidence is not None and (
+                max_conf is None or pred.confidence > max_conf
+            ):
+                max_conf_pos = i
+                max_conf = pred.confidence
+        return self.predictions[max_conf_pos if max_conf_pos is not None else 0]
+
+
+class MoleculeMetaField(BasePrediction):
+    """Molecule metadata field."""
+
+    smi: str = Field(description="The SMILES representation of the molecule.")
+
+
+class TabularChartMetaField(BasePrediction):
+    """Tabular chart metadata field."""
+
+    title: Optional[str] = None
+    chart_data: TableData
+
+
+class FloatingMeta(BaseMeta):
+    """Metadata model for floating."""
+
+    description: Optional[DescriptionMetaField] = None
+
+
+class PictureMeta(FloatingMeta):
+    """Metadata model for pictures."""
+
+    classification: Optional[PictureClassificationMetaField] = None
+    molecule: Optional[MoleculeMetaField] = None
+    tabular_chart: Optional[TabularChartMetaField] = None
+
+
 class NodeItem(BaseModel):
     """NodeItem."""
 
@@ -951,6 +1103,8 @@ class NodeItem(BaseModel):
     content_layer: ContentLayer = ContentLayer.BODY
 
     model_config = ConfigDict(extra="forbid")
+
+    meta: Optional[BaseMeta] = None
 
     def get_ref(self) -> RefItem:
         """get_ref."""
@@ -1312,6 +1466,8 @@ class ListItem(TextItem):
 class FloatingItem(DocItem):
     """FloatingItem."""
 
+    meta: Optional[FloatingMeta] = None
+
     captions: List[RefItem] = []
     references: List[RefItem] = []
     footnotes: List[RefItem] = []
@@ -1399,6 +1555,33 @@ class FormulaItem(TextItem):
     )
 
 
+class MetaUtils:
+    """Metadata-related utilities."""
+
+    _META_FIELD_NAMESPACE_DELIMITER: Final = "__"
+    _META_FIELD_LEGACY_NAMESPACE: Final = "docling_legacy"
+
+    @classmethod
+    def create_meta_field_name(
+        cls,
+        *,
+        namespace: str,
+        name: str,
+    ) -> str:
+        """Create a meta field name."""
+        return f"{namespace}{cls._META_FIELD_NAMESPACE_DELIMITER}{name}"
+
+    @classmethod
+    def _create_migrated_meta_field_name(
+        cls,
+        *,
+        name: str,
+    ) -> str:
+        return cls.create_meta_field_name(
+            namespace=cls._META_FIELD_LEGACY_NAMESPACE, name=name
+        )
+
+
 class PictureItem(FloatingItem):
     """PictureItem."""
 
@@ -1406,7 +1589,94 @@ class PictureItem(FloatingItem):
         DocItemLabel.PICTURE
     )
 
-    annotations: List[PictureDataType] = []
+    meta: Optional[PictureMeta] = None
+    annotations: Annotated[
+        List[PictureDataType],
+        deprecated("Field `annotations` is deprecated; use `meta` instead."),
+    ] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_annotations_to_meta(cls, data: Any) -> Any:
+        """Migrate the `annotations` field to `meta`."""
+        if isinstance(data, dict) and (annotations := data.get("annotations")):
+            _logger.warning(
+                "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
+                "Note that only the first available instance of each annotation type will be migrated."
+            )
+            for raw_ann in annotations:
+                # migrate annotations to meta
+
+                try:
+                    ann: PictureDataType = TypeAdapter(PictureDataType).validate_python(
+                        raw_ann
+                    )
+                except ValidationError as e:
+                    raise e
+
+                # ensure meta field is present
+                data.setdefault("meta", {})
+
+                if isinstance(ann, PictureClassificationData):
+                    data["meta"].setdefault(
+                        MetaFieldName.CLASSIFICATION.value,
+                        PictureClassificationMetaField(
+                            predictions=[
+                                PictureClassificationPrediction(
+                                    class_name=pred.class_name,
+                                    confidence=pred.confidence,
+                                    created_by=ann.provenance,
+                                )
+                                for pred in ann.predicted_classes
+                            ],
+                        ).model_dump(mode="json"),
+                    )
+                elif isinstance(ann, DescriptionAnnotation):
+                    data["meta"].setdefault(
+                        MetaFieldName.DESCRIPTION.value,
+                        DescriptionMetaField(
+                            text=ann.text,
+                            created_by=ann.provenance,
+                        ).model_dump(mode="json"),
+                    )
+                elif isinstance(ann, PictureMoleculeData):
+                    data["meta"].setdefault(
+                        MetaFieldName.MOLECULE.value,
+                        MoleculeMetaField(
+                            smi=ann.smi,
+                            confidence=ann.confidence,
+                            created_by=ann.provenance,
+                            **{
+                                MetaUtils._create_migrated_meta_field_name(
+                                    name="segmentation"
+                                ): ann.segmentation,
+                                MetaUtils._create_migrated_meta_field_name(
+                                    name="class_name"
+                                ): ann.class_name,
+                            },
+                        ).model_dump(mode="json"),
+                    )
+                elif isinstance(ann, PictureTabularChartData):
+                    data["meta"].setdefault(
+                        MetaFieldName.TABULAR_CHART.value,
+                        TabularChartMetaField(
+                            title=ann.title,
+                            chart_data=ann.chart_data,
+                        ).model_dump(mode="json"),
+                    )
+                elif isinstance(ann, MiscAnnotation):
+                    data["meta"].setdefault(
+                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
+                        ann.content,
+                    )
+                else:
+                    # fall back to reusing original annotation type name (in namespaced format)
+                    data["meta"].setdefault(
+                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
+                        ann.model_dump(mode="json"),
+                    )
+
+        return data
 
     # Convert the image to Base64
     def _image_to_base64(self, pil_image, format="PNG"):
@@ -1554,7 +1824,54 @@ class TableItem(FloatingItem):
         DocItemLabel.TABLE,
     ] = DocItemLabel.TABLE
 
-    annotations: List[TableAnnotationType] = []
+    annotations: Annotated[
+        List[TableAnnotationType],
+        deprecated("Field `annotations` is deprecated; use `meta` instead."),
+    ] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_annotations_to_meta(cls, data: Any) -> Any:
+        """Migrate the `annotations` field to `meta`."""
+        if isinstance(data, dict) and (annotations := data.get("annotations")):
+            _logger.warning(
+                "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
+                "Note that only the first available instance of each annotation type will be migrated."
+            )
+            for raw_ann in annotations:
+                # migrate annotations to meta
+
+                try:
+                    ann: TableAnnotationType = TypeAdapter(
+                        TableAnnotationType
+                    ).validate_python(raw_ann)
+                except ValidationError as e:
+                    raise e
+
+                # ensure meta field is present
+                data.setdefault("meta", {})
+
+                if isinstance(ann, DescriptionAnnotation):
+                    data["meta"].setdefault(
+                        MetaFieldName.DESCRIPTION.value,
+                        DescriptionMetaField(
+                            text=ann.text,
+                            created_by=ann.provenance,
+                        ).model_dump(mode="json"),
+                    )
+                elif isinstance(ann, MiscAnnotation):
+                    data["meta"].setdefault(
+                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
+                        ann.content,
+                    )
+                else:
+                    # fall back to reusing original annotation type name (in namespaced format)
+                    data["meta"].setdefault(
+                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
+                        ann.model_dump(mode="json"),
+                    )
+
+        return data
 
     def export_to_dataframe(
         self, doc: Optional["DoclingDocument"] = None
@@ -2267,7 +2584,7 @@ class DoclingDocument(BaseModel):
             if not success:
                 del to_be_deleted_items[stack_]
             else:
-                _logger.info(f"deleted item in tree at stack: {stack_} => {ref_}")
+                _logger.debug(f"deleted item in tree at stack: {stack_} => {ref_}")
 
         # Create a new lookup of the orphans:
         # dict of item_label (`texts`, `tables`, ...) to a
@@ -4396,6 +4713,9 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
         page_break_placeholder: Optional[str] = None,
         include_annotations: bool = True,
+        *,
+        mark_meta: bool = False,
+        use_legacy_annotations: bool = False,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -4425,6 +4745,8 @@ class DoclingDocument(BaseModel):
             included_content_layers=included_content_layers,
             page_break_placeholder=page_break_placeholder,
             include_annotations=include_annotations,
+            use_legacy_annotations=use_legacy_annotations,
+            mark_meta=mark_meta,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -4449,6 +4771,11 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,  # e.g. "<!-- page break -->",
         include_annotations: bool = True,
         mark_annotations: bool = False,
+        *,
+        use_legacy_annotations: bool = False,
+        allowed_meta_names: Optional[set[str]] = None,
+        blocked_meta_names: Optional[set[str]] = None,
+        mark_meta: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4494,8 +4821,18 @@ class DoclingDocument(BaseModel):
         :param mark_annotations: bool: Whether to mark annotations in the export; only
             relevant if include_annotations is True. (Default value = False).
         :type mark_annotations: bool = False
+        :param use_legacy_annotations: bool: Whether to use legacy annotation serialization.
+            (Default value = False).
+        :type use_legacy_annotations: bool = False
+        :param mark_meta: bool: Whether to mark meta in the export; only
+            relevant if use_legacy_annotations is False. (Default value = False).
+        :type mark_meta: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
+        :param allowed_meta_names: Optional[set[str]]: Meta names to allow; None means all meta names are allowed.
+        :type allowed_meta_names: Optional[set[str]] = None
+        :param blocked_meta_names: Optional[set[str]]: Meta names to block; takes precedence over allowed_meta_names.
+        :type blocked_meta_names: Optional[set[str]] = None
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -4524,7 +4861,11 @@ class DoclingDocument(BaseModel):
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
                 page_break_placeholder=page_break_placeholder,
+                mark_meta=mark_meta,
                 include_annotations=include_annotations,
+                use_legacy_annotations=use_legacy_annotations,
+                allowed_meta_names=allowed_meta_names,
+                blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
             ),
         )
@@ -5530,16 +5871,17 @@ class DoclingDocument(BaseModel):
             return CURRENT_VERSION
 
     @model_validator(mode="after")  # type: ignore
-    @classmethod
-    def validate_document(cls, d: "DoclingDocument"):
+    def validate_document(self) -> Self:
         """validate_document."""
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
+            if not self.validate_tree(self.body) or not self.validate_tree(
+                self.furniture
+            ):
                 raise ValueError("Document hierachy is inconsistent.")
 
-        return d
+        return self
 
     @model_validator(mode="after")
     def validate_misplaced_list_items(self):
@@ -5768,6 +6110,13 @@ class DoclingDocument(BaseModel):
         return res_doc
 
     def _validate_rules(self):
+
+        def validate_furniture(doc: DoclingDocument):
+            if doc.furniture.children:
+                raise ValueError(
+                    f"Deprecated furniture node {doc.furniture.self_ref} has children"
+                )
+
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
             for ref in item.children:
                 child = ref.resolve(doc)
@@ -5789,6 +6138,8 @@ class DoclingDocument(BaseModel):
                 item.parent and not item.children
             ):  # tolerate empty body, but not other groups
                 raise ValueError(f"Group {item.self_ref} has no children")
+
+        validate_furniture(self)
 
         for item, _ in self.iterate_items(
             with_groups=True,

@@ -232,6 +232,7 @@ class CodeLanguageLabel(str, Enum):
     HAXE = "Haxe"
     JAVA = "Java"
     JAVASCRIPT = "JavaScript"
+    JSON = "JSON"
     JULIA = "Julia"
     KOTLIN = "Kotlin"
     LISP = "Lisp"

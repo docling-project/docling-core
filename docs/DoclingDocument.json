@@ -1,5 +1,24 @@
 {
   "$defs": {
+    "BaseMeta": {
+      "additionalProperties": true,
+      "description": "Base class for metadata.",
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SummaryMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "BaseMeta",
+      "type": "object"
+    },
     "BoundingBox": {
       "description": "BoundingBox.",
       "properties": {
@@ -194,6 +213,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FloatingMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "const": "code",
           "default": "code",
@@ -325,6 +355,7 @@
         "Haxe",
         "Java",
         "JavaScript",
+        "JSON",
         "Julia",
         "Kotlin",
         "Lisp",
@@ -403,6 +434,56 @@
       "title": "DescriptionAnnotation",
       "type": "object"
     },
+    "DescriptionMetaField": {
+      "additionalProperties": true,
+      "description": "Description metadata field.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "DescriptionMetaField",
+      "type": "object"
+    },
     "DocumentOrigin": {
       "description": "FileSource.",
       "properties": {
@@ -443,6 +524,36 @@
       "title": "DocumentOrigin",
       "type": "object"
     },
+    "FloatingMeta": {
+      "additionalProperties": true,
+      "description": "Metadata model for floating.",
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SummaryMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DescriptionMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "FloatingMeta",
+      "type": "object"
+    },
     "FormItem": {
       "additionalProperties": false,
       "description": "FormItem.",
@@ -474,6 +585,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FloatingMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "const": "form",
@@ -597,6 +719,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "const": "formula",
@@ -807,6 +940,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -912,6 +1056,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -961,6 +1116,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FloatingMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "const": "key_value_region",
@@ -1054,6 +1220,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -1103,6 +1280,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "const": "list_item",
@@ -1193,6 +1381,57 @@
         "content"
       ],
       "title": "MiscAnnotation",
+      "type": "object"
+    },
+    "MoleculeMetaField": {
+      "additionalProperties": true,
+      "description": "Molecule metadata field.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "smi": {
+          "description": "The SMILES representation of the molecule.",
+          "title": "Smi",
+          "type": "string"
+        }
+      },
+      "required": [
+        "smi"
+      ],
+      "title": "MoleculeMetaField",
       "type": "object"
     },
     "PageItem": {
@@ -1309,6 +1548,72 @@
       "title": "PictureClassificationData",
       "type": "object"
     },
+    "PictureClassificationMetaField": {
+      "additionalProperties": true,
+      "description": "Picture classification metadata field.",
+      "properties": {
+        "predictions": {
+          "items": {
+            "$ref": "#/$defs/PictureClassificationPrediction"
+          },
+          "minItems": 1,
+          "title": "Predictions",
+          "type": "array"
+        }
+      },
+      "title": "PictureClassificationMetaField",
+      "type": "object"
+    },
+    "PictureClassificationPrediction": {
+      "additionalProperties": true,
+      "description": "Picture classification instance.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "class_name": {
+          "title": "Class Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "class_name"
+      ],
+      "title": "PictureClassificationPrediction",
+      "type": "object"
+    },
     "PictureItem": {
       "additionalProperties": false,
       "description": "PictureItem.",
@@ -1340,6 +1645,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "default": "picture",
@@ -1395,6 +1711,7 @@
         },
         "annotations": {
           "default": [],
+          "deprecated": true,
           "items": {
             "discriminator": {
               "mapping": {
@@ -1490,6 +1807,69 @@
         "lines"
       ],
       "title": "PictureLineChartData",
+      "type": "object"
+    },
+    "PictureMeta": {
+      "additionalProperties": true,
+      "description": "Metadata model for pictures.",
+      "properties": {
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SummaryMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DescriptionMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "classification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PictureClassificationMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "molecule": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MoleculeMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tabular_chart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TabularChartMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "PictureMeta",
       "type": "object"
     },
     "PictureMoleculeData": {
@@ -1842,6 +2222,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "const": "section_header",
           "default": "section_header",
@@ -1924,6 +2315,56 @@
         }
       },
       "title": "Size",
+      "type": "object"
+    },
+    "SummaryMetaField": {
+      "additionalProperties": true,
+      "description": "Summary data.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "SummaryMetaField",
       "type": "object"
     },
     "TableCell": {
@@ -2065,6 +2506,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FloatingMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "default": "table",
           "enum": [
@@ -2122,6 +2574,7 @@
         },
         "annotations": {
           "default": [],
+          "deprecated": true,
           "items": {
             "discriminator": {
               "mapping": {
@@ -2148,6 +2601,67 @@
         "data"
       ],
       "title": "TableItem",
+      "type": "object"
+    },
+    "TabularChartMetaField": {
+      "additionalProperties": true,
+      "description": "Tabular chart metadata field.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "chart_data": {
+          "$ref": "#/$defs/TableData"
+        }
+      },
+      "required": [
+        "chart_data"
+      ],
+      "title": "TabularChartMetaField",
       "type": "object"
     },
     "TextItem": {
@@ -2181,6 +2695,17 @@
         "content_layer": {
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "label": {
           "enum": [
@@ -2285,6 +2810,17 @@
           "$ref": "#/$defs/ContentLayer",
           "default": "body"
         },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "label": {
           "const": "title",
           "default": "title",
@@ -2355,7 +2891,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.7.0",
+      "default": "1.8.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"
@@ -2382,6 +2918,7 @@
         "parent": null,
         "children": [],
         "content_layer": "furniture",
+        "meta": null,
         "name": "_root_",
         "label": "unspecified"
       },
@@ -2394,6 +2931,7 @@
         "parent": null,
         "children": [],
         "content_layer": "body",
+        "meta": null,
         "name": "_root_",
         "label": "unspecified"
       }

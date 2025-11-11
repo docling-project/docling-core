@@ -39,9 +39,17 @@ def view(
         typer.Argument(
             ...,
             metavar="source",
-            help="Docling JSON file to view.",
+            help="Docling JSON or YAML file to view.",
         ),
     ],
+    split_view: Annotated[
+        bool,
+        typer.Option(
+            "--split-view",
+            "-s",
+            help="Split view of the document.",
+        ),
+    ] = False,
     version: Annotated[
         Optional[bool],
         typer.Option(
@@ -52,11 +60,19 @@ def view(
         ),
     ] = None,
 ):
-    """Display a Docling JSON file on the default browser."""
+    """Display a DoclingDocument file on the default browser."""
     path = resolve_source_to_path(source=source)
-    doc = DoclingDocument.load_from_json(filename=path)
-    target_path = Path(tempfile.mkdtemp()) / "out.html"
-    html_output = doc.export_to_html(image_mode=ImageRefMode.EMBEDDED)
+    if path.suffix == ".json":
+        doc = DoclingDocument.load_from_json(filename=path)
+    elif path.suffix in [".yaml", ".yml"]:
+        doc = DoclingDocument.load_from_yaml(filename=path)
+    else:
+        raise ValueError(f"Unsupported file type: {path.suffix}")
+    target_path = Path(tempfile.mkdtemp()) / f"{path.stem}.html"
+    html_output = doc.export_to_html(
+        image_mode=ImageRefMode.EMBEDDED,
+        split_page_view=split_view,
+    )
     with open(target_path, "w", encoding="utf-8") as f:
         f.write(html_output)
     webbrowser.open(url=f"file://{target_path.absolute().resolve()}")
