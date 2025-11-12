@@ -1,3 +1,14 @@
+## [v2.51.0](https://github.com/docling-project/docling-core/releases/tag/v2.51.0) - 2025-11-12
+
+### Feature
+
+* Add code chunking functionality ([#398](https://github.com/docling-project/docling-core/issues/398)) ([`3097645`](https://github.com/docling-project/docling-core/commit/3097645198915a1258cfe6e1d5df3b5f1c79395a))
+
+### Fix
+
+* Improve meta migration and warning handling ([#417](https://github.com/docling-project/docling-core/issues/417)) ([`3d13b02`](https://github.com/docling-project/docling-core/commit/3d13b02756f1c0d1f1ccab5cfbd76f1f888a0dd9))
+* Fix import handling of extra dependencies for chunking ([#418](https://github.com/docling-project/docling-core/issues/418)) ([`567d3ad`](https://github.com/docling-project/docling-core/commit/567d3ada57e19b2a738991ae6e49d55dd3301b17))
+
 ## [v2.50.1](https://github.com/docling-project/docling-core/releases/tag/v2.50.1) - 2025-11-04
 
 ### Fix
