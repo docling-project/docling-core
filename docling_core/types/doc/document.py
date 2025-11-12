@@ -4715,7 +4715,7 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         *,
         mark_meta: bool = False,
-        use_legacy_annotations: bool = False,
+        use_legacy_annotations: Optional[bool] = None,  # deprecated
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -4772,7 +4772,7 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         mark_annotations: bool = False,
         *,
-        use_legacy_annotations: bool = False,
+        use_legacy_annotations: Optional[bool] = None,  # deprecated
         allowed_meta_names: Optional[set[str]] = None,
         blocked_meta_names: Optional[set[str]] = None,
         mark_meta: bool = False,
@@ -4815,17 +4815,15 @@ class DoclingDocument(BaseModel):
         :param page_break_placeholder: The placeholder to include for marking page
             breaks. None means no page break placeholder will be used.
         :type page_break_placeholder: Optional[str] = None
-        :param include_annotations: bool: Whether to include annotations in the export.
-            (Default value = True).
+        :param include_annotations: bool: Whether to include annotations in the export; only considered if item does not
+            have meta. (Default value = True).
         :type include_annotations: bool = True
-        :param mark_annotations: bool: Whether to mark annotations in the export; only
-            relevant if include_annotations is True. (Default value = False).
+        :param mark_annotations: bool: Whether to mark annotations in the export; only considered if item does not have
+            meta. (Default value = False).
         :type mark_annotations: bool = False
-        :param use_legacy_annotations: bool: Whether to use legacy annotation serialization.
-            (Default value = False).
-        :type use_legacy_annotations: bool = False
-        :param mark_meta: bool: Whether to mark meta in the export; only
-            relevant if use_legacy_annotations is False. (Default value = False).
+        :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
+        :type use_legacy_annotations: Optional[bool] = None
+        :param mark_meta: bool: Whether to mark meta in the export
         :type mark_meta: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
@@ -4845,6 +4843,13 @@ class DoclingDocument(BaseModel):
             if included_content_layers is not None
             else DEFAULT_CONTENT_LAYERS
         )
+
+        if use_legacy_annotations is not None:
+            warnings.warn(
+                "Parameter `use_legacy_annotations` has been deprecated and will be ignored.",
+                DeprecationWarning,
+            )
+
         serializer = MarkdownDocSerializer(
             doc=self,
             params=MarkdownParams(
@@ -4863,7 +4868,6 @@ class DoclingDocument(BaseModel):
                 page_break_placeholder=page_break_placeholder,
                 mark_meta=mark_meta,
                 include_annotations=include_annotations,
-                use_legacy_annotations=use_legacy_annotations,
                 allowed_meta_names=allowed_meta_names,
                 blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
@@ -5420,26 +5424,36 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
+
                             pic_title = "picture"
+                            pic_classification = None
                             if chart_type is not None:
-                                pic.annotations.append(
-                                    PictureClassificationData(
-                                        provenance="load_from_doctags",
-                                        predicted_classes=[
-                                            # chart_type
-                                            PictureClassificationClass(
-                                                class_name=chart_type, confidence=1.0
-                                            )
-                                        ],
-                                    )
+                                pic_classification = PictureClassificationMetaField(
+                                    predictions=[
+                                        PictureClassificationPrediction(
+                                            class_name=chart_type,
+                                            confidence=1.0,
+                                            created_by="load_from_doctags",
+                                        )
+                                    ]
                                 )
                                 pic_title = chart_type
+
+                            pic_tabular_chart = None
                             if table_data is not None:
-                                # Add chart data as PictureTabularChartData
-                                pd = PictureTabularChartData(
-                                    chart_data=table_data, title=pic_title
+                                pic_tabular_chart = TabularChartMetaField(
+                                    title=pic_title,
+                                    chart_data=table_data,
                                 )
-                                pic.annotations.append(pd)
+
+                            if (
+                                pic_classification is not None
+                                or pic_tabular_chart is not None
+                            ):
+                                pic.meta = PictureMeta(
+                                    classification=pic_classification,
+                                    tabular_chart=pic_tabular_chart,
+                                )
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
@@ -6090,7 +6104,10 @@ class DoclingDocument(BaseModel):
     def _validate_rules(self):
 
         def validate_furniture(doc: DoclingDocument):
-            if doc.furniture.children:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                has_furniture_children = len(doc.furniture.children) > 0
+            if has_furniture_children:
                 raise ValueError(
                     f"Deprecated furniture node {doc.furniture.self_ref} has children"
                 )
