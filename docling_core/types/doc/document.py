@@ -3144,7 +3144,7 @@ class DoclingDocument(BaseModel):
         """add_code.
 
         :param text: str:
-        :param code_language: Optional[str]: (Default value = None)
+        :param code_language: Optional[CodeLanguageLabel]: (Default value = None)
         :param orig: Optional[str]:  (Default value = None)
         :param caption: Optional[Union[TextItem:
         :param RefItem]]:  (Default value = None)

@@ -50,6 +50,12 @@ dependencies = [
     'typing-extensions (>=4.12.2,<5.0.0)',
     'typer (>=0.12.5,<0.20.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
+    "tree-sitter (>=0.23.2,<0.24.0)",
+    "tree-sitter-python (>=0.23.6,<0.24.0)",
+    "tree-sitter-c (>=0.23.4,<0.24.0)",
+    "tree-sitter-java (>=0.23.5,<0.24.0)",
+    "tree-sitter-javascript (>=0.23.1,<0.24.0)",
+    "tree-sitter-typescript (>=0.23.2,<0.24.0)",
 ]
 
 [project.urls]
@@ -130,6 +136,7 @@ namespace_packages = true
 show_error_codes = true
 python_version = "3.9"
 plugins = ["pydantic.mypy"]
+exclude = "(^|/)test/data/.*"
 
 [[tool.mypy.overrides]]
 module = [

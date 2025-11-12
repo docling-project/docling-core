@@ -1,0 +1,1179 @@
+{
+    "root": [
+        {
+            "text": "\nstatic void string_replace_all_occurrences_with_char(char *s, const char *occur, char repl_char)\n{\n\tsize_t slen = strlen(s);\n\tsize_t skip = strlen(occur) - 1; /* length of the occurrence, minus the char we're replacing */\n\tchar *p = s;\n\twhile ((p = strstr(p, occur)))\n\t{\n\t\t*p = repl_char;\n\t\tp++;\n\t\tslen -= skip;\n\t\tmemmove(p, (p + skip), slen - (p - s) + 1); /* includes null char too */\n\t}\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "string_replace_all_occurrences_with_char",
+                "docstring": "/**\n * JavaScript Object Notation (JSON) Pointer\n *   RFC 6901 - https://tools.ietf.org/html/rfc6901\n */",
+                "sha256": 1117482735928585729815737415012422172962871245598,
+                "start_line": 31,
+                "end_line": 43,
+                "end_line_signature": 32,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "/* Avoid ctype.h and locale overhead */\n#define is_plain_digit(c) ((c) >= '0' && (c) <= '9')\nstatic int is_valid_index(const char *path, size_t *idx)\n{\n\tsize_t i, len = strlen(path);\n\t/* this code-path optimizes a bit, for when we reference the 0-9 index range\n\t * in a JSON array and because leading zeros not allowed\n\t */\n\tif (len == 1)\n\t{\n\t\tif (is_plain_digit(path[0]))\n\t\t{\n\t\t\t*idx = (path[0] - '0');\n\t\t\treturn 1;\n\t\t}\n\t\terrno = EINVAL;\n\t\treturn 0;\n\t}\n\t/* leading zeros not allowed per RFC */\n\tif (path[0] == '0')\n\t{\n\t\terrno = EINVAL;\n\t\treturn 0;\n\t}\n\t/* RFC states base-10 decimals */\n\tfor (i = 0; i < len; i++)\n\t{\n\t\tif (!is_plain_digit(path[i]))\n\t\t{\n\t\t\terrno = EINVAL;\n\t\t\treturn 0;\n\t\t}\n\t}\n\n\t// We know it's all digits, so the only error case here is overflow,\n\t// but ULLONG_MAX will be longer than any array length so that's ok.\n\t*idx = strtoull(path, NULL, 10);\n\n\treturn 1;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "is_valid_index",
+                "docstring": "",
+                "sha256": 234354095953395323597807168380238510580195482334,
+                "start_line": 45,
+                "end_line": 82,
+                "end_line_signature": 46,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nstatic int json_pointer_get_single_path(struct json_object *obj, char *path,\n                                        struct json_object **value, size_t *idx)\n{\n\tif (json_object_is_type(obj, json_type_array))\n\t{\n\t\tif (!is_valid_index(path, idx))\n\t\t\treturn -1;\n\t\tif (*idx >= json_object_array_length(obj))\n\t\t{\n\t\t\terrno = ENOENT;\n\t\t\treturn -1;\n\t\t}\n\n\t\tobj = json_object_array_get_idx(obj, *idx);\n\t\tif (obj)\n\t\t{\n\t\t\tif (value)\n\t\t\t\t*value = obj;\n\t\t\treturn 0;\n\t\t}\n\t\t/* Entry not found */\n\t\terrno = ENOENT;\n\t\treturn -1;\n\t}\n\n\t/* RFC states that we first must eval all ~1 then all ~0 */\n\tstring_replace_all_occurrences_with_char(path, \"~1\", '/');\n\tstring_replace_all_occurrences_with_char(path, \"~0\", '~');\n\n\tif (!json_object_object_get_ex(obj, path, value))\n\t{\n\t\terrno = ENOENT;\n\t\treturn -1;\n\t}\n\n\treturn 0;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_get_single_path",
+                "docstring": "",
+                "sha256": 85913314315132048628912722197929586436214235955,
+                "start_line": 84,
+                "end_line": 120,
+                "end_line_signature": 86,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nstatic int json_object_array_put_idx_cb(struct json_object *parent, size_t idx,\n\t\t\t\t\tstruct json_object *value, void *priv)\n{\n\treturn json_object_array_put_idx(parent, idx, value);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_object_array_put_idx_cb",
+                "docstring": "",
+                "sha256": 515670096298758350505203262066130806756892931374,
+                "start_line": 122,
+                "end_line": 126,
+                "end_line_signature": 124,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nstatic int json_pointer_set_single_path(struct json_object *parent, const char *path,\n                                        struct json_object *value,\n\t\t\t\t\tjson_pointer_array_set_cb array_set_cb, void *priv)\n{\n\tif (json_object_is_type(parent, json_type_array))\n\t{\n\t\tsize_t idx;\n\t\t/* RFC (Chapter 4) states that '-' may be used to add new elements to an array */\n\t\tif (path[0] == '-' && path[1] == '\\0')\n\t\t\treturn json_object_array_add(parent, value);\n\t\tif (!is_valid_index(path, &idx))\n\t\t\treturn -1;\n\t\treturn array_set_cb(parent, idx, value, priv);\n\t}\n\n\t/* path replacements should have been done in json_pointer_get_single_path(),\n\t * and we should still be good here\n\t */\n\tif (json_object_is_type(parent, json_type_object))\n\t\treturn json_object_object_add(parent, path, value);\n\n\t/* Getting here means that we tried to \"dereference\" a primitive JSON type\n\t * (like string, int, bool).i.e. add a sub-object to it\n\t */\n\terrno = ENOENT;\n\treturn -1;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_set_single_path",
+                "docstring": "",
+                "sha256": 744226804185536688172092186408538018610881378934,
+                "start_line": 128,
+                "end_line": 154,
+                "end_line_signature": 131,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nstatic int json_pointer_result_get_recursive(struct json_object *obj, char *path,\n                                             struct json_pointer_get_result *res)\n{\n\tstruct json_object *parent_obj = obj;\n\tsize_t idx = 0;\n\tchar *endp;\n\tint rc;\n\n\t/* All paths (on each recursion level must have a leading '/' */\n\tif (path[0] != '/')\n\t{\n\t\terrno = EINVAL;\n\t\treturn -1;\n\t}\n\tpath++;\n\n\tendp = strchr(path, '/');\n\tif (endp)\n\t\t*endp = '\\0';\n\n\t/* If we err-ed here, return here */\n\tif ((rc = json_pointer_get_single_path(obj, path, &obj, &idx)))\n\t\treturn rc;\n\n\tif (endp)\n\t{\n\t\t/* Put the slash back, so that the sanity check passes on next recursion level */\n\t\t*endp = '/';\n\t\treturn json_pointer_result_get_recursive(obj, endp, res);\n\t}\n\n\t/* We should be at the end of the recursion here */\n\tif (res) {\n\t\tres->parent = parent_obj;\n\t\tres->obj = obj;\n\t\tif (json_object_is_type(res->parent, json_type_array))\n\t\t\tres->index_in_parent = idx;\n\t\telse\n\t\t\tres->key_in_parent = path;\n\t}\n\n\treturn 0;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_result_get_recursive",
+                "docstring": "",
+                "sha256": 518298991245464116417798779750096461462494486587,
+                "start_line": 156,
+                "end_line": 198,
+                "end_line_signature": 158,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nstatic int json_pointer_object_get_recursive(struct json_object *obj, char *path,\n                                             struct json_object **value)\n{\n\tstruct json_pointer_get_result res;\n\tint rc;\n\n\trc = json_pointer_result_get_recursive(obj, path, &res);\n\tif (rc)\n\t\treturn rc;\n\n\tif (value)\n\t\t*value = res.obj;\n\n\treturn 0;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_object_get_recursive",
+                "docstring": "",
+                "sha256": 1217293748232453207346015288718037001737705783321,
+                "start_line": 200,
+                "end_line": 214,
+                "end_line_signature": 202,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nint json_pointer_get_internal(struct json_object *obj, const char *path,\n                              struct json_pointer_get_result *res)\n{\n\tchar *path_copy = NULL;\n\tint rc;\n\n\tif (!obj || !path)\n\t{\n\t\terrno = EINVAL;\n\t\treturn -1;\n\t}\n\n\tif (path[0] == '\\0')\n\t{\n\t\tres->parent = NULL;\n\t\tres->obj = obj;\n\t\tres->key_in_parent = NULL;\n\t\tres->index_in_parent = UINT32_MAX;\n\t\treturn 0;\n\t}\n\n\t/* pass a working copy to the recursive call */\n\tif (!(path_copy = strdup(path)))\n\t{\n\t\terrno = ENOMEM;\n\t\treturn -1;\n\t}\n\trc = json_pointer_result_get_recursive(obj, path_copy, res);\n\t/* re-map the path string to the const-path string */\n\tif (rc == 0 && json_object_is_type(res->parent, json_type_object) && res->key_in_parent)\n\t\tres->key_in_parent = path + (res->key_in_parent - path_copy);\n\tfree(path_copy);\n\n\treturn rc;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_get_internal",
+                "docstring": "",
+                "sha256": 196996869167588750666460162571361715333822997162,
+                "start_line": 216,
+                "end_line": 250,
+                "end_line_signature": 218,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nint json_pointer_get(struct json_object *obj, const char *path, struct json_object **res)\n{\n\tstruct json_pointer_get_result jpres;\n\tint rc;\n\n\trc = json_pointer_get_internal(obj, path, &jpres);\n\tif (rc)\n\t\treturn rc;\n\n\tif (res)\n\t\t*res = jpres.obj;\n\n\treturn 0;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_get",
+                "docstring": "",
+                "sha256": 463273473259540096316239720380761023977777440343,
+                "start_line": 252,
+                "end_line": 265,
+                "end_line_signature": 253,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nint json_pointer_getf(struct json_object *obj, struct json_object **res, const char *path_fmt, ...)\n{\n\tchar *path_copy = NULL;\n\tint rc = 0;\n\tva_list args;\n\n\tif (!obj || !path_fmt)\n\t{\n\t\terrno = EINVAL;\n\t\treturn -1;\n\t}\n\n\tva_start(args, path_fmt);\n\trc = vasprintf(&path_copy, path_fmt, args);\n\tva_end(args);\n\n\tif (rc < 0)\n\t\treturn rc;\n\n\tif (path_copy[0] == '\\0')\n\t{\n\t\tif (res)\n\t\t\t*res = obj;\n\t\tgoto out;\n\t}\n\n\trc = json_pointer_object_get_recursive(obj, path_copy, res);\nout:\n\tfree(path_copy);\n\n\treturn rc;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_getf",
+                "docstring": "",
+                "sha256": 924347282411192461265505339007126264782988122151,
+                "start_line": 267,
+                "end_line": 298,
+                "end_line_signature": 268,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nint json_pointer_set_with_array_cb(struct json_object **obj, const char *path,\n\t\t\t\t   struct json_object *value,\n\t\t\t\t   json_pointer_array_set_cb array_set_cb, void *priv)\n{\n\tconst char *endp;\n\tchar *path_copy = NULL;\n\tstruct json_object *set = NULL;\n\tint rc;\n\n\tif (!obj || !path)\n\t{\n\t\terrno = EINVAL;\n\t\treturn -1;\n\t}\n\n\tif (path[0] == '\\0')\n\t{\n\t\tjson_object_put(*obj);\n\t\t*obj = value;\n\t\treturn 0;\n\t}\n\n\tif (path[0] != '/')\n\t{\n\t\terrno = EINVAL;\n\t\treturn -1;\n\t}\n\n\t/* If there's only 1 level to set, stop here */\n\tif ((endp = strrchr(path, '/')) == path)\n\t{\n\t\tpath++;\n\t\treturn json_pointer_set_single_path(*obj, path, value, array_set_cb, priv);\n\t}\n\n\t/* pass a working copy to the recursive call */\n\tif (!(path_copy = strdup(path)))\n\t{\n\t\terrno = ENOMEM;\n\t\treturn -1;\n\t}\n\tpath_copy[endp - path] = '\\0';\n\trc = json_pointer_object_get_recursive(*obj, path_copy, &set);\n\tfree(path_copy);\n\n\tif (rc)\n\t\treturn rc;\n\n\tendp++;\n\treturn json_pointer_set_single_path(set, endp, value, array_set_cb, priv);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_set_with_array_cb",
+                "docstring": "",
+                "sha256": 262882567182967450570864701845081576454846403316,
+                "start_line": 300,
+                "end_line": 350,
+                "end_line_signature": 303,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nint json_pointer_set(struct json_object **obj, const char *path, struct json_object *value)\n{\n\treturn json_pointer_set_with_array_cb(obj, path, value, json_object_array_put_idx_cb, NULL);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_set",
+                "docstring": "",
+                "sha256": 23353041941238655187424843169018755147284430949,
+                "start_line": 352,
+                "end_line": 355,
+                "end_line_signature": 353,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "\nint json_pointer_setf(struct json_object **obj, struct json_object *value, const char *path_fmt,\n                      ...)\n{\n\tchar *endp;\n\tchar *path_copy = NULL;\n\tstruct json_object *set = NULL;\n\tva_list args;\n\tint rc = 0;\n\n\tif (!obj || !path_fmt)\n\t{\n\t\terrno = EINVAL;\n\t\treturn -1;\n\t}\n\n\t/* pass a working copy to the recursive call */\n\tva_start(args, path_fmt);\n\trc = vasprintf(&path_copy, path_fmt, args);\n\tva_end(args);\n\n\tif (rc < 0)\n\t\treturn rc;\n\n\tif (path_copy[0] == '\\0')\n\t{\n\t\tjson_object_put(*obj);\n\t\t*obj = value;\n\t\tgoto out;\n\t}\n\n\tif (path_copy[0] != '/')\n\t{\n\t\terrno = EINVAL;\n\t\trc = -1;\n\t\tgoto out;\n\t}\n\n\t/* If there's only 1 level to set, stop here */\n\tif ((endp = strrchr(path_copy, '/')) == path_copy)\n\t{\n\t\tset = *obj;\n\t\tgoto set_single_path;\n\t}\n\n\t*endp = '\\0';\n\trc = json_pointer_object_get_recursive(*obj, path_copy, &set);\n\n\tif (rc)\n\t\tgoto out;\n\nset_single_path:\n\tendp++;\n\trc = json_pointer_set_single_path(set, endp, value,\n\t\t\t\t\t  json_object_array_put_idx_cb, NULL);\nout:\n\tfree(path_copy);\n\treturn rc;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "part_name": "json_pointer_setf",
+                "docstring": "",
+                "sha256": 278409402010463874805413705333555052224985193220,
+                "start_line": 357,
+                "end_line": 414,
+                "end_line_signature": 359,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "#include \"config.h\"\n\n#include \"strerror_override.h\"\n\n#include <stdarg.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n#include \"json_object_private.h\"\n#include \"json_pointer.h\"\n#include \"json_pointer_private.h\"\n#include \"strdup_compat.h\"\n#include \"vasprintf_compat.h\"\n\n/**\n * JavaScript Object Notation (JSON) Pointer\n *   RFC 6901 - https://tools.ietf.org/html/rfc6901\n */",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 3389072908273760774,
+                    "filename": "json_pointer.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/json_pointer.c"
+                },
+                "sha256": 1217234116973748366829093199878078246801755936207,
+                "start_line": 7,
+                "end_line": 31,
+                "chunk_type": "preamble"
+            }
+        },
+        {
+            "text": "/* hash functions */\nstatic unsigned long lh_char_hash(const void *k);\nstatic lh_hash_fn *char_hash_fn = lh_char_hash;\nstatic unsigned long lh_perllike_str_hash(const void *k);\nint json_global_set_string_hash(const int h)\n{\n\tswitch (h)\n\t{\n\tcase JSON_C_STR_HASH_DFLT: char_hash_fn = lh_char_hash; break;\n\tcase JSON_C_STR_HASH_PERLLIKE: char_hash_fn = lh_perllike_str_hash; break;\n\tdefault: return -1;\n\t}\n\treturn 0;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "json_global_set_string_hash",
+                "docstring": "",
+                "sha256": 998221257334549775068212743280296040491437343457,
+                "start_line": 45,
+                "end_line": 54,
+                "end_line_signature": 46,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nstatic unsigned long lh_ptr_hash(const void *k)\n{\n\t/* CAW: refactored to be 64bit nice */\n\treturn (unsigned long)((((ptrdiff_t)k * LH_PRIME) >> 4) & ULONG_MAX);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_ptr_hash",
+                "docstring": "",
+                "sha256": 1293894620828796812611104590645246395957873389975,
+                "start_line": 56,
+                "end_line": 60,
+                "end_line_signature": 57,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "int lh_ptr_equal(const void *k1, const void *k2);\nstatic lh_hash_fn *char_hash_fn = lh_char_hash;\nint lh_ptr_equal(const void *k1, const void *k2)\n{\n\treturn (k1 == k2);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_ptr_equal",
+                "docstring": "",
+                "sha256": 561855950266729137986207467028016863357001140681,
+                "start_line": 62,
+                "end_line": 65,
+                "end_line_signature": 63,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "#define HASH_LITTLE_ENDIAN 0\n/*\n-------------------------------------------------------------------------------\nmix -- mix 3 32-bit values reversibly.\n\nThis is reversible, so any information in (a,b,c) before mix() is\nstill in (a,b,c) after mix().\n\nIf four pairs of (a,b,c) inputs are run through mix(), or through\nmix() in reverse, there are at least 32 bits of the output that\nare sometimes the same for one pair and different for another pair.\nThis was tested for:\n* pairs that differed by one bit, by two bits, in any combination\n  of top bits of (a,b,c), or in any combination of bottom bits of\n  (a,b,c).\n* \"differ\" is defined as +, -, ^, or ~^.  For + and -, I transformed\n  the output delta to a Gray code (a^(a>>1)) so a string of 1's (as\n  is commonly produced by subtraction) look like a single 1-bit\n  difference.\n* the base values were pseudorandom, all zero but one bit set, or\n  all zero plus a counter that starts at zero.\n\nSome k values for my \"a-=c; a^=rot(c,k); c+=b;\" arrangement that\nsatisfy this are\n    4  6  8 16 19  4\n    9 15  3 18 27 15\n   14  9  3  7 17  3\nWell, \"9 15 3 18 27 15\" didn't quite get 32 bits diffing\nfor \"differ\" defined as + with a one-bit base and a two-bit delta.  I\nused https://burtleburtle.net/bob/hash/avalanche.html to choose\nthe operations, constants, and arrangements of the variables.\n\nThis does not achieve avalanche.  There are input bits of (a,b,c)\nthat fail to affect some output bits of (a,b,c), especially of a.  The\nmost thoroughly mixed value is c, but it doesn't really even achieve\navalanche in c.\n\nThis allows some parallelism.  Read-after-writes are good at doubling\nthe number of bits affected, so the goal of mixing pulls in the opposite\ndirection as the goal of parallelism.  I did what I could.  Rotates\nseem to cost as much as shifts on every machine I could lay my hands\non, and rotates are much kinder to the top and bottom bits, so I used\nrotates.\n-------------------------------------------------------------------------------\n*//* clang-format off */\n#define mix(a,b,c) \\\n{ \\\n\ta -= c;  a ^= rot(c, 4);  c += b; \\\n\tb -= a;  b ^= rot(a, 6);  a += c; \\\n\tc -= b;  c ^= rot(b, 8);  b += a; \\\n\ta -= c;  a ^= rot(c,16);  c += b; \\\n\tb -= a;  b ^= rot(a,19);  a += c; \\\n\tc -= b;  c ^= rot(b, 4);  b += a; \\\n}\n/* clang-format on *//*\n-------------------------------------------------------------------------------\nfinal -- final mixing of 3 32-bit values (a,b,c) into c\n\nPairs of (a,b,c) values differing in only a few bits will usually\nproduce values of c that look totally different.  This was tested for\n* pairs that differed by one bit, by two bits, in any combination\n  of top bits of (a,b,c), or in any combination of bottom bits of\n  (a,b,c).\n* \"differ\" is defined as +, -, ^, or ~^.  For + and -, I transformed\n  the output delta to a Gray code (a^(a>>1)) so a string of 1's (as\n  is commonly produced by subtraction) look like a single 1-bit\n  difference.\n* the base values were pseudorandom, all zero but one bit set, or\n  all zero plus a counter that starts at zero.\n\nThese constants passed:\n 14 11 25 16 4 14 24\n 12 14 25 16 4 14 24\nand these came close:\n  4  8 15 26 3 22 24\n 10  8 15 26 3 22 24\n 11  8 15 26 3 22 24\n-------------------------------------------------------------------------------\n*//* clang-format off */\n#define final(a,b,c) \\\n{ \\\n\tc ^= b; c -= rot(b,14); \\\n\ta ^= c; a -= rot(c,11); \\\n\tb ^= a; b -= rot(a,25); \\\n\tc ^= b; c -= rot(b,16); \\\n\ta ^= c; a -= rot(c,4);  \\\n\tb ^= a; b -= rot(a,14); \\\n\tc ^= b; c -= rot(b,24); \\\n}\nstatic lh_hash_fn *char_hash_fn = lh_char_hash;\nstatic uint32_t hashlittle(const void *key, size_t length, uint32_t initval)\n{\n\tuint32_t a,b,c; /* internal state */\n\tunion\n\t{\n\t\tconst void *ptr;\n\t\tsize_t i;\n\t} u; /* needed for Mac Powerbook G4 */\n\n\t/* Set up the internal state */\n\ta = b = c = 0xdeadbeef + ((uint32_t)length) + initval;\n\n\tu.ptr = key;\n\tif (HASH_LITTLE_ENDIAN && ((u.i & 0x3) == 0)) {\n\t\tconst uint32_t *k = (const uint32_t *)key; /* read 32-bit chunks */\n\n\t\t/*------ all but last block: aligned reads and affect 32 bits of (a,b,c) */\n\t\twhile (length > 12)\n\t\t{\n\t\t\ta += k[0];\n\t\t\tb += k[1];\n\t\t\tc += k[2];\n\t\t\tmix(a,b,c);\n\t\t\tlength -= 12;\n\t\t\tk += 3;\n\t\t}\n\n\t\t/*----------------------------- handle the last (probably partial) block */\n\t\t/*\n\t\t * \"k[2]&0xffffff\" actually reads beyond the end of the string, but\n\t\t * then masks off the part it's not allowed to read.  Because the\n\t\t * string is aligned, the masked-off tail is in the same word as the\n\t\t * rest of the string.  Every machine with memory protection I've seen\n\t\t * does it on word boundaries, so is OK with this.  But VALGRIND will\n\t\t * still catch it and complain.  The masking trick does make the hash\n\t\t * noticeably faster for short strings (like English words).\n\t\t * AddressSanitizer is similarly picky about overrunning\n\t\t * the buffer. (https://clang.llvm.org/docs/AddressSanitizer.html)\n\t\t */\n#ifdef VALGRIND\n#define PRECISE_MEMORY_ACCESS 1\n#elif defined(__SANITIZE_ADDRESS__) /* GCC's ASAN */\n#define PRECISE_MEMORY_ACCESS 1\n#elif defined(__has_feature)\n#if __has_feature(address_sanitizer) /* Clang's ASAN */\n#define PRECISE_MEMORY_ACCESS 1\n#endif\n#endif\n#ifndef PRECISE_MEMORY_ACCESS\n\n\t\tswitch(length)\n\t\t{\n\t\tcase 12: c+=k[2]; b+=k[1]; a+=k[0]; break;\n\t\tcase 11: c+=k[2]&0xffffff; b+=k[1]; a+=k[0]; break;\n\t\tcase 10: c+=k[2]&0xffff; b+=k[1]; a+=k[0]; break;\n\t\tcase 9 : c+=k[2]&0xff; b+=k[1]; a+=k[0]; break;\n\t\tcase 8 : b+=k[1]; a+=k[0]; break;\n\t\tcase 7 : b+=k[1]&0xffffff; a+=k[0]; break;\n\t\tcase 6 : b+=k[1]&0xffff; a+=k[0]; break;\n\t\tcase 5 : b+=k[1]&0xff; a+=k[0]; break;\n\t\tcase 4 : a+=k[0]; break;\n\t\tcase 3 : a+=k[0]&0xffffff; break;\n\t\tcase 2 : a+=k[0]&0xffff; break;\n\t\tcase 1 : a+=k[0]&0xff; break;\n\t\tcase 0 : return c; /* zero length strings require no mixing */\n\t\t}\n\n#else /* make valgrind happy */\n\n\t\tconst uint8_t  *k8 = (const uint8_t *)k;\n\t\tswitch(length)\n\t\t{\n\t\tcase 12: c+=k[2]; b+=k[1]; a+=k[0]; break;\n\t\tcase 11: c+=((uint32_t)k8[10])<<16;  /* fall through */\n\t\tcase 10: c+=((uint32_t)k8[9])<<8;    /* fall through */\n\t\tcase 9 : c+=k8[8];                   /* fall through */\n\t\tcase 8 : b+=k[1]; a+=k[0]; break;\n\t\tcase 7 : b+=((uint32_t)k8[6])<<16;   /* fall through */\n\t\tcase 6 : b+=((uint32_t)k8[5])<<8;    /* fall through */\n\t\tcase 5 : b+=k8[4];                   /* fall through */\n\t\tcase 4 : a+=k[0]; break;\n\t\tcase 3 : a+=((uint32_t)k8[2])<<16;   /* fall through */\n\t\tcase 2 : a+=((uint32_t)k8[1])<<8;    /* fall through */\n\t\tcase 1 : a+=k8[0]; break;\n\t\tcase 0 : return c;\n\t\t}\n\n#endif /* !valgrind */\n\n\t}\n\telse if (HASH_LITTLE_ENDIAN && ((u.i & 0x1) == 0))\n\t{\n\t\tconst uint16_t *k = (const uint16_t *)key; /* read 16-bit chunks */\n\t\tconst uint8_t  *k8;\n\n\t\t/*--------------- all but last block: aligned reads and different mixing */\n\t\twhile (length > 12)\n\t\t{\n\t\t\ta += k[0] + (((uint32_t)k[1])<<16);\n\t\t\tb += k[2] + (((uint32_t)k[3])<<16);\n\t\t\tc += k[4] + (((uint32_t)k[5])<<16);\n\t\t\tmix(a,b,c);\n\t\t\tlength -= 12;\n\t\t\tk += 6;\n\t\t}\n\n\t\t/*----------------------------- handle the last (probably partial) block */\n\t\tk8 = (const uint8_t *)k;\n\t\tswitch(length)\n\t\t{\n\t\tcase 12: c+=k[4]+(((uint32_t)k[5])<<16);\n\t\t\t b+=k[2]+(((uint32_t)k[3])<<16);\n\t\t\t a+=k[0]+(((uint32_t)k[1])<<16);\n\t\t\t break;\n\t\tcase 11: c+=((uint32_t)k8[10])<<16;     /* fall through */\n\t\tcase 10: c+=k[4];\n\t\t\t b+=k[2]+(((uint32_t)k[3])<<16);\n\t\t\t a+=k[0]+(((uint32_t)k[1])<<16);\n\t\t\t break;\n\t\tcase 9 : c+=k8[8];                      /* fall through */\n\t\tcase 8 : b+=k[2]+(((uint32_t)k[3])<<16);\n\t\t\t a+=k[0]+(((uint32_t)k[1])<<16);\n\t\t\t break;\n\t\tcase 7 : b+=((uint32_t)k8[6])<<16;      /* fall through */\n\t\tcase 6 : b+=k[2];\n\t\t\t a+=k[0]+(((uint32_t)k[1])<<16);\n\t\t\t break;\n\t\tcase 5 : b+=k8[4];                      /* fall through */\n\t\tcase 4 : a+=k[0]+(((uint32_t)k[1])<<16);\n\t\t\t break;\n\t\tcase 3 : a+=((uint32_t)k8[2])<<16;      /* fall through */\n\t\tcase 2 : a+=k[0];\n\t\t\t break;\n\t\tcase 1 : a+=k8[0];\n\t\t\t break;\n\t\tcase 0 : return c;                     /* zero length requires no mixing */\n\t\t}\n\n\t}\n\telse\n\t{\n\t\t/* need to read the key one byte at a time */\n\t\tconst uint8_t *k = (const uint8_t *)key;\n\n\t\t/*--------------- all but the last block: affect some 32 bits of (a,b,c) */\n\t\twhile (length > 12)\n\t\t{\n\t\t\ta += k[0];\n\t\t\ta += ((uint32_t)k[1])<<8;\n\t\t\ta += ((uint32_t)k[2])<<16;\n\t\t\ta += ((uint32_t)k[3])<<24;\n\t\t\tb += k[4];\n\t\t\tb += ((uint32_t)k[5])<<8;\n\t\t\tb += ((uint32_t)k[6])<<16;\n\t\t\tb += ((uint32_t)k[7])<<24;\n\t\t\tc += k[8];\n\t\t\tc += ((uint32_t)k[9])<<8;\n\t\t\tc += ((uint32_t)k[10])<<16;\n\t\t\tc += ((uint32_t)k[11])<<24;\n\t\t\tmix(a,b,c);\n\t\t\tlength -= 12;\n\t\t\tk += 12;\n\t\t}\n\n\t\t/*-------------------------------- last block: affect all 32 bits of (c) */\n\t\tswitch(length) /* all the case statements fall through */\n\t\t{\n\t\tcase 12: c+=((uint32_t)k[11])<<24; /* FALLTHRU */\n\t\tcase 11: c+=((uint32_t)k[10])<<16; /* FALLTHRU */\n\t\tcase 10: c+=((uint32_t)k[9])<<8; /* FALLTHRU */\n\t\tcase 9 : c+=k[8]; /* FALLTHRU */\n\t\tcase 8 : b+=((uint32_t)k[7])<<24; /* FALLTHRU */\n\t\tcase 7 : b+=((uint32_t)k[6])<<16; /* FALLTHRU */\n\t\tcase 6 : b+=((uint32_t)k[5])<<8; /* FALLTHRU */\n\t\tcase 5 : b+=k[4]; /* FALLTHRU */\n\t\tcase 4 : a+=((uint32_t)k[3])<<24; /* FALLTHRU */\n\t\tcase 3 : a+=((uint32_t)k[2])<<16; /* FALLTHRU */\n\t\tcase 2 : a+=((uint32_t)k[1])<<8; /* FALLTHRU */\n\t\tcase 1 : a+=k[0];\n\t\t\t break;\n\t\tcase 0 : return c;\n\t\t}\n\t}\n\n\tfinal(a,b,c);\n\treturn c;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "hashlittle",
+                "docstring": "/* clang-format off *//*\n-------------------------------------------------------------------------------\nhashlittle() -- hash a variable-length key into a 32-bit value\n  k       : the key (the unaligned variable-length array of bytes)\n  length  : the length of the key, counting by bytes\n  initval : can be any 4-byte value\nReturns a 32-bit value.  Every bit of the key affects every bit of\nthe return value.  Two keys differing by one or two bits will have\ntotally different hash values.\n\nThe best hash table sizes are powers of 2.  There is no need to do\nmod a prime (mod is sooo slow!).  If you need less than 32 bits,\nuse a bitmask.  For example, if you need only 10 bits, do\n  h = (h & hashmask(10));\nIn which case, the hash table should have hashsize(10) elements.\n\nIf you are hashing n strings (uint8_t **)k, do it like this:\n  for (i=0, h=0; i<n; ++i) h = hashlittle( k[i], len[i], h);\n\nBy Bob Jenkins, 2006.  bob_jenkins@burtleburtle.net.  You may use this\ncode any way you wish, private, educational, or commercial.  It's free.\n\nUse for hash table lookup, or anything where one collision in 2^^32 is\nacceptable.  Do NOT use for cryptographic purposes.\n-------------------------------------------------------------------------------\n*//* clang-format on */",
+                "sha256": 1368000431859053612337865672470420443194659537242,
+                "start_line": 254,
+                "end_line": 440,
+                "end_line_signature": 255,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nstatic unsigned long lh_perllike_str_hash(const void *k);\nstatic unsigned long lh_perllike_str_hash(const void *k)\n{\n\tconst char *rkey = (const char *)k;\n\tunsigned hashval = 1;\n\n\twhile (*rkey)\n\t\thashval = hashval * 33 + *rkey++;\n\n\treturn hashval;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_perllike_str_hash",
+                "docstring": "/* a simple hash function similar to what perl does for strings.\n * for good results, the string should not be excessively large.\n *//* clang-format on */",
+                "sha256": 1386040992924408950359895923339917902739988216057,
+                "start_line": 446,
+                "end_line": 455,
+                "end_line_signature": 447,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "/* hash functions */\nstatic unsigned long lh_char_hash(const void *k);\nstatic lh_hash_fn *char_hash_fn = lh_char_hash;\nstatic unsigned long lh_char_hash(const void *k)\n{\n#if defined _MSC_VER || defined __MINGW32__\n#define RANDOM_SEED_TYPE LONG\n#else\n#define RANDOM_SEED_TYPE int\n#endif\n\tstatic volatile RANDOM_SEED_TYPE random_seed = -1;\n\n\tif (random_seed == -1)\n\t{\n\t\tRANDOM_SEED_TYPE seed;\n\t\t/* we can't use -1 as it is the uninitialized sentinel */\n\t\twhile ((seed = json_c_get_random_seed()) == -1) {}\n#if SIZEOF_INT == 8 && defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_8\n#define USE_SYNC_COMPARE_AND_SWAP 1\n#endif\n#if SIZEOF_INT == 4 && defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4\n#define USE_SYNC_COMPARE_AND_SWAP 1\n#endif\n#if SIZEOF_INT == 2 && defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_2\n#define USE_SYNC_COMPARE_AND_SWAP 1\n#endif\n#if defined USE_SYNC_COMPARE_AND_SWAP\n\t\t(void)__sync_val_compare_and_swap(&random_seed, -1, seed);\n#elif defined _MSC_VER || defined __MINGW32__\n\t\tInterlockedCompareExchange(&random_seed, seed, -1);\n#else\n\t\t//#warning \"racy random seed initialization if used by multiple threads\"\n\t\trandom_seed = seed; /* potentially racy */\n#endif\n\t}\n\n\treturn hashlittle((const char *)k, strlen((const char *)k), (uint32_t)random_seed);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_char_hash",
+                "docstring": "",
+                "sha256": 1096423447925090174536191692238278463078696651451,
+                "start_line": 457,
+                "end_line": 491,
+                "end_line_signature": 458,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "/* comparison functions */\nint lh_char_equal(const void *k1, const void *k2);\nstatic lh_hash_fn *char_hash_fn = lh_char_hash;\nint lh_char_equal(const void *k1, const void *k2)\n{\n\treturn (strcmp((const char *)k1, (const char *)k2) == 0);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_char_equal",
+                "docstring": "",
+                "sha256": 264297306674118254490728409059493361685249814741,
+                "start_line": 493,
+                "end_line": 496,
+                "end_line_signature": 494,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nstruct lh_table *lh_table_new(int size, lh_entry_free_fn *free_fn, lh_hash_fn *hash_fn,\n                              lh_equal_fn *equal_fn)\n{\n\tint i;\n\tstruct lh_table *t;\n\n\t/* Allocate space for elements to avoid divisions by zero. */\n\tassert(size > 0);\n\tt = (struct lh_table *)calloc(1, sizeof(struct lh_table));\n\tif (!t)\n\t\treturn NULL;\n\n\tt->count = 0;\n\tt->size = size;\n\tt->table = (struct lh_entry *)calloc(size, sizeof(struct lh_entry));\n\tif (!t->table)\n\t{\n\t\tfree(t);\n\t\treturn NULL;\n\t}\n\tt->free_fn = free_fn;\n\tt->hash_fn = hash_fn;\n\tt->equal_fn = equal_fn;\n\tfor (i = 0; i < size; i++)\n\t\tt->table[i].k = LH_EMPTY;\n\treturn t;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_new(int size, lh_entry_free_fn *free_fn, lh_hash_fn *hash_fn,\n                              lh_equal_fn *equal_fn)",
+                "docstring": "",
+                "sha256": 1353978832949898607839900715285314979449043361401,
+                "start_line": 498,
+                "end_line": 524,
+                "end_line_signature": 500,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "/* comparison functions */\nint lh_char_equal(const void *k1, const void *k2);\nstatic lh_hash_fn *char_hash_fn = lh_char_hash;\nstruct lh_table *lh_kchar_table_new(int size, lh_entry_free_fn *free_fn)\n{\n\treturn lh_table_new(size, free_fn, char_hash_fn, lh_char_equal);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_kchar_table_new(int size, lh_entry_free_fn *free_fn)",
+                "docstring": "",
+                "sha256": 1143372083340073080177483187079554398021595080815,
+                "start_line": 526,
+                "end_line": 529,
+                "end_line_signature": 527,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "int lh_ptr_equal(const void *k1, const void *k2);\nstatic lh_hash_fn *char_hash_fn = lh_char_hash;\nstruct lh_table *lh_kptr_table_new(int size, lh_entry_free_fn *free_fn)\n{\n\treturn lh_table_new(size, free_fn, lh_ptr_hash, lh_ptr_equal);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_kptr_table_new(int size, lh_entry_free_fn *free_fn)",
+                "docstring": "",
+                "sha256": 5889006246199618862907451444252129237803738713,
+                "start_line": 531,
+                "end_line": 534,
+                "end_line_signature": 532,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nint lh_table_resize(struct lh_table *t, int new_size)\n{\n\tstruct lh_table *new_t;\n\tstruct lh_entry *ent;\n\n\tnew_t = lh_table_new(new_size, NULL, t->hash_fn, t->equal_fn);\n\tif (new_t == NULL)\n\t\treturn -1;\n\n\tfor (ent = t->head; ent != NULL; ent = ent->next)\n\t{\n\t\tunsigned long h = lh_get_hash(new_t, ent->k);\n\t\tunsigned int opts = 0;\n\t\tif (ent->k_is_constant)\n\t\t\topts = JSON_C_OBJECT_ADD_CONSTANT_KEY;\n\t\tif (lh_table_insert_w_hash(new_t, ent->k, ent->v, h, opts) != 0)\n\t\t{\n\t\t\tlh_table_free(new_t);\n\t\t\treturn -1;\n\t\t}\n\t}\n\tfree(t->table);\n\tt->table = new_t->table;\n\tt->size = new_size;\n\tt->head = new_t->head;\n\tt->tail = new_t->tail;\n\tfree(new_t);\n\n\treturn 0;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_resize",
+                "docstring": "",
+                "sha256": 513675985135766203593761374923281677204896804938,
+                "start_line": 536,
+                "end_line": 565,
+                "end_line_signature": 537,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nvoid lh_table_free(struct lh_table *t)\n{\n\tstruct lh_entry *c;\n\tif (t->free_fn)\n\t{\n\t\tfor (c = t->head; c != NULL; c = c->next)\n\t\t\tt->free_fn(c);\n\t}\n\tfree(t->table);\n\tfree(t);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_free",
+                "docstring": "",
+                "sha256": 1461287464285525024180362726694195219608876587842,
+                "start_line": 567,
+                "end_line": 577,
+                "end_line_signature": 568,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nint lh_table_insert_w_hash(struct lh_table *t, const void *k, const void *v, const unsigned long h,\n                           const unsigned opts)\n{\n\tunsigned long n;\n\n\tif (t->count >= t->size * LH_LOAD_FACTOR)\n\t{\n\t\t/* Avoid signed integer overflow with large tables. */\n\t\tint new_size = (t->size > INT_MAX / 2) ? INT_MAX : (t->size * 2);\n\t\tif (t->size == INT_MAX || lh_table_resize(t, new_size) != 0)\n\t\t\treturn -1;\n\t}\n\n\tn = h % t->size;\n\n\twhile (1)\n\t{\n\t\tif (t->table[n].k == LH_EMPTY || t->table[n].k == LH_FREED)\n\t\t\tbreak;\n\t\tif ((int)++n == t->size)\n\t\t\tn = 0;\n\t}\n\n\tt->table[n].k = k;\n\tt->table[n].k_is_constant = (opts & JSON_C_OBJECT_ADD_CONSTANT_KEY);\n\tt->table[n].v = v;\n\tt->count++;\n\n\tif (t->head == NULL)\n\t{\n\t\tt->head = t->tail = &t->table[n];\n\t\tt->table[n].next = t->table[n].prev = NULL;\n\t}\n\telse\n\t{\n\t\tt->tail->next = &t->table[n];\n\t\tt->table[n].prev = t->tail;\n\t\tt->table[n].next = NULL;\n\t\tt->tail = &t->table[n];\n\t}\n\n\treturn 0;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_insert_w_hash",
+                "docstring": "",
+                "sha256": 1457272684322346273275672024449638738347377045483,
+                "start_line": 579,
+                "end_line": 621,
+                "end_line_signature": 581,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nint lh_table_insert(struct lh_table *t, const void *k, const void *v)\n{\n\treturn lh_table_insert_w_hash(t, k, v, lh_get_hash(t, k), 0);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_insert",
+                "docstring": "",
+                "sha256": 914976466412251973023999660063657611060463868578,
+                "start_line": 622,
+                "end_line": 625,
+                "end_line_signature": 623,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nstruct lh_entry *lh_table_lookup_entry_w_hash(struct lh_table *t, const void *k,\n                                              const unsigned long h)\n{\n\tunsigned long n = h % t->size;\n\tint count = 0;\n\n\twhile (count < t->size)\n\t{\n\t\tif (t->table[n].k == LH_EMPTY)\n\t\t\treturn NULL;\n\t\tif (t->table[n].k != LH_FREED && t->equal_fn(t->table[n].k, k))\n\t\t\treturn &t->table[n];\n\t\tif ((int)++n == t->size)\n\t\t\tn = 0;\n\t\tcount++;\n\t}\n\treturn NULL;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_lookup_entry_w_hash(struct lh_table *t, const void *k,\n                                              const unsigned long h)",
+                "docstring": "",
+                "sha256": 1235017991348899387013216690716133251889003151179,
+                "start_line": 627,
+                "end_line": 644,
+                "end_line_signature": 629,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nstruct lh_entry *lh_table_lookup_entry(struct lh_table *t, const void *k)\n{\n\treturn lh_table_lookup_entry_w_hash(t, k, lh_get_hash(t, k));\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_lookup_entry(struct lh_table *t, const void *k)",
+                "docstring": "",
+                "sha256": 1030652463340488651179217356281066519111633079656,
+                "start_line": 646,
+                "end_line": 649,
+                "end_line_signature": 647,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\njson_bool lh_table_lookup_ex(struct lh_table *t, const void *k, void **v)\n{\n\tstruct lh_entry *e = lh_table_lookup_entry(t, k);\n\tif (e != NULL)\n\t{\n\t\tif (v != NULL)\n\t\t\t*v = lh_entry_v(e);\n\t\treturn 1; /* key found */\n\t}\n\tif (v != NULL)\n\t\t*v = NULL;\n\treturn 0; /* key not found */\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_lookup_ex",
+                "docstring": "",
+                "sha256": 634848787249761171541292303028190495411132430955,
+                "start_line": 651,
+                "end_line": 663,
+                "end_line_signature": 652,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nint lh_table_delete_entry(struct lh_table *t, struct lh_entry *e)\n{\n\t/* CAW: fixed to be 64bit nice, still need the crazy negative case... */\n\tptrdiff_t n = (ptrdiff_t)(e - t->table);\n\n\t/* CAW: this is bad, really bad, maybe stack goes other direction on this machine... */\n\tif (n < 0)\n\t{\n\t\treturn -2;\n\t}\n\n\tif (t->table[n].k == LH_EMPTY || t->table[n].k == LH_FREED)\n\t\treturn -1;\n\tt->count--;\n\tif (t->free_fn)\n\t\tt->free_fn(e);\n\tt->table[n].v = NULL;\n\tt->table[n].k = LH_FREED;\n\tif (t->tail == &t->table[n] && t->head == &t->table[n])\n\t{\n\t\tt->head = t->tail = NULL;\n\t}\n\telse if (t->head == &t->table[n])\n\t{\n\t\tt->head->next->prev = NULL;\n\t\tt->head = t->head->next;\n\t}\n\telse if (t->tail == &t->table[n])\n\t{\n\t\tt->tail->prev->next = NULL;\n\t\tt->tail = t->tail->prev;\n\t}\n\telse\n\t{\n\t\tt->table[n].prev->next = t->table[n].next;\n\t\tt->table[n].next->prev = t->table[n].prev;\n\t}\n\tt->table[n].next = t->table[n].prev = NULL;\n\treturn 0;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_delete_entry",
+                "docstring": "",
+                "sha256": 951281510321322595326628350604221188298138063502,
+                "start_line": 665,
+                "end_line": 704,
+                "end_line_signature": 666,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nint lh_table_delete(struct lh_table *t, const void *k)\n{\n\tstruct lh_entry *e = lh_table_lookup_entry(t, k);\n\tif (!e)\n\t\treturn -1;\n\treturn lh_table_delete_entry(t, e);\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_delete",
+                "docstring": "",
+                "sha256": 44220499716621050420359222788414516841562449761,
+                "start_line": 706,
+                "end_line": 712,
+                "end_line_signature": 707,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "static lh_hash_fn *char_hash_fn = lh_char_hash;\nint lh_table_length(struct lh_table *t)\n{\n\treturn t->count;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "part_name": "lh_table_length",
+                "docstring": "",
+                "sha256": 719864955613574534766865380227650980669430095114,
+                "start_line": 714,
+                "end_line": 717,
+                "end_line_signature": 715,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "#include \"config.h\"\n\n#include <assert.h>\n#include <limits.h>\n#include <stdarg.h>\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n#ifdef HAVE_ENDIAN_H\n#include <endian.h> /* attempt to define endianness */\n#endif\n\n#if defined(_MSC_VER) || defined(__MINGW32__)\n#ifndef WIN32_LEAN_AND_MEAN\n#define WIN32_LEAN_AND_MEAN\n#endif\n#include <windows.h> /* Get InterlockedCompareExchange */\n#endif\n\n#include \"linkhash.h\"\n#include \"random_seed.h\"\n\n/*\n * hashlittle from lookup3.c, by Bob Jenkins, May 2006, Public Domain.\n * https://burtleburtle.net/bob/c/lookup3.c\n * minor modifications to make functions static so no symbols are exported\n * minor modifications to compile with -Werror\n */\n\n/*\n-------------------------------------------------------------------------------\nlookup3.c, by Bob Jenkins, May 2006, Public Domain.\n\nThese are functions for producing 32-bit hashes for hash table lookup.\nhashword(), hashlittle(), hashlittle2(), hashbig(), mix(), and final()\nare externally useful functions.  Routines to test the hash are included\nif SELF_TEST is defined.  You can use this free for any purpose.  It's in\nthe public domain.  It has no warranty.\n\nYou probably want to use hashlittle().  hashlittle() and hashbig()\nhash byte arrays.  hashlittle() is faster than hashbig() on\nlittle-endian machines.  Intel and AMD are little-endian machines.\nOn second thought, you probably want hashlittle2(), which is identical to\nhashlittle() except it returns two 32-bit hashes for the price of one.\nYou could implement hashbig2() if you wanted but I haven't bothered here.\n\nIf you want to find a hash of, say, exactly 7 integers, do\n  a = i1;  b = i2;  c = i3;\n  mix(a,b,c);\n  a += i4; b += i5; c += i6;\n  mix(a,b,c);\n  a += i7;\n  final(a,b,c);\nthen use c as the hash value.  If you have a variable length array of\n4-byte integers to hash, use hashword().  If you have a byte array (like\na character string), use hashlittle().  If you have several byte arrays, or\na mix of things, see the comments above hashlittle().\n\nWhy is this so big?  I read 12 bytes at a time into 3 4-byte integers,\nthen mix those integers.  This is fast (you can do a lot more thorough\nmixing with 12*3 instructions on 3 integers than you can with 3 instructions\non 1 byte), but shoehorning those bytes into integers efficiently is messy.\n-------------------------------------------------------------------------------\n*/\n\n/*\n * My best guess at if you are big-endian or little-endian.  This may\n * need adjustment.\n */\n#if (defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && __BYTE_ORDER == __LITTLE_ENDIAN) || \\\n    (defined(i386) || defined(__i386__) || defined(__i486__) || defined(__i586__) ||          \\\n     defined(__i686__) || defined(vax) || defined(MIPSEL))\n#define HASH_LITTLE_ENDIAN 1\n#define HASH_BIG_ENDIAN 0\n#elif (defined(__BYTE_ORDER) && defined(__BIG_ENDIAN) && __BYTE_ORDER == __BIG_ENDIAN) || \\\n    (defined(sparc) || defined(POWERPC) || defined(mc68000) || defined(sel))\n#define HASH_LITTLE_ENDIAN 0\n#define HASH_BIG_ENDIAN 1\n#else\n\n#define HASH_BIG_ENDIAN 0\n#endif\n\n#define hashsize(n) ((uint32_t)1 << (n))\n#define hashmask(n) (hashsize(n) - 1)\n#define rot(x, k) (((x) << (k)) | ((x) >> (32 - (k))))\n\n/* clang-format on */\n\n/*\n-------------------------------------------------------------------------------\nhashlittle() -- hash a variable-length key into a 32-bit value\n  k       : the key (the unaligned variable-length array of bytes)\n  length  : the length of the key, counting by bytes\n  initval : can be any 4-byte value\nReturns a 32-bit value.  Every bit of the key affects every bit of\nthe return value.  Two keys differing by one or two bits will have\ntotally different hash values.\n\nThe best hash table sizes are powers of 2.  There is no need to do\nmod a prime (mod is sooo slow!).  If you need less than 32 bits,\nuse a bitmask.  For example, if you need only 10 bits, do\n  h = (h & hashmask(10));\nIn which case, the hash table should have hashsize(10) elements.\n\nIf you are hashing n strings (uint8_t **)k, do it like this:\n  for (i=0, h=0; i<n; ++i) h = hashlittle( k[i], len[i], h);\n\nBy Bob Jenkins, 2006.  bob_jenkins@burtleburtle.net.  You may use this\ncode any way you wish, private, educational, or commercial.  It's free.\n\nUse for hash table lookup, or anything where one collision in 2^^32 is\nacceptable.  Do NOT use for cryptographic purposes.\n-------------------------------------------------------------------------------\n*/\n\n/* clang-format off */\n\n/* clang-format on */\n\n/* a simple hash function similar to what perl does for strings.\n * for good results, the string should not be excessively large.\n */",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 12737018040358436176,
+                    "filename": "linkhash.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/linkhash.c"
+                },
+                "sha256": 782913612521650330284712622027993874594217462209,
+                "start_line": 11,
+                "end_line": 446,
+                "chunk_type": "preamble"
+            }
+        },
+        {
+            "text": "                                       // Avoid including stdlib.h\n#define PREFIX \"ERRNO=\"\n/*\n * Override strerror() to get consistent output across platforms.\n */\nstatic struct\n{\n\tint errno_value;\n\tconst char *errno_str;\n} errno_list[] = {\n/* clang-format off */\n#define STRINGIFY(x) #x\n#define ENTRY(x) {x, &STRINGIFY(undef_ ## x)[6]}\n\tENTRY(EPERM),\n\tENTRY(ENOENT),\n\tENTRY(ESRCH),\n\tENTRY(EINTR),\n\tENTRY(EIO),\n\tENTRY(ENXIO),\n\tENTRY(E2BIG),\n#ifdef ENOEXEC\n\tENTRY(ENOEXEC),\n#endif\n\tENTRY(EBADF),\n\tENTRY(ECHILD),\n\tENTRY(EDEADLK),\n\tENTRY(ENOMEM),\n\tENTRY(EACCES),\n\tENTRY(EFAULT),\n#ifdef ENOTBLK\n\tENTRY(ENOTBLK),\n#endif\n\tENTRY(EBUSY),\n\tENTRY(EEXIST),\n\tENTRY(EXDEV),\n\tENTRY(ENODEV),\n\tENTRY(ENOTDIR),\n\tENTRY(EISDIR),\n\tENTRY(EINVAL),\n\tENTRY(ENFILE),\n\tENTRY(EMFILE),\n\tENTRY(ENOTTY),\n#ifdef ETXTBSY\n\tENTRY(ETXTBSY),\n#endif\n\tENTRY(EFBIG),\n\tENTRY(ENOSPC),\n\tENTRY(ESPIPE),\n\tENTRY(EROFS),\n\tENTRY(EMLINK),\n\tENTRY(EPIPE),\n\tENTRY(EDOM),\n\tENTRY(ERANGE),\n\tENTRY(EAGAIN),\n\t{ 0, (char *)0 }\n};\n/* clang-format on */// Enabled during tests\nstatic int _json_c_strerror_enable = 0;\nextern char *getenv(const char *name);\nstatic char errno_buf[128] = PREFIX;\n#define PREFIX \"ERRNO=\"\nchar *_json_c_strerror(int errno_in)\n{\n\tint start_idx;\n\tchar digbuf[20];\n\tint ii, jj;\n\n\tif (!_json_c_strerror_enable)\n\t\t_json_c_strerror_enable = (getenv(\"_JSON_C_STRERROR_ENABLE\") == NULL) ? -1 : 1;\n\tif (_json_c_strerror_enable == -1)\n\t\treturn strerror(errno_in);\n\n\t// Avoid standard functions, so we don't need to include any\n\t// headers, or guess at signatures.\n\n\tfor (ii = 0; errno_list[ii].errno_str != (char *)0; ii++)\n\t{\n\t\tconst char *errno_str = errno_list[ii].errno_str;\n\t\tif (errno_list[ii].errno_value != errno_in)\n\t\t\tcontinue;\n\n\t\tfor (start_idx = sizeof(PREFIX) - 1, jj = 0; errno_str[jj] != '\\0';\n\t\t     jj++, start_idx++)\n\t\t{\n\t\t\terrno_buf[start_idx] = errno_str[jj];\n\t\t}\n\t\terrno_buf[start_idx] = '\\0';\n\t\treturn errno_buf;\n\t}\n\n\t// It's not one of the known errno values, return the numeric value.\n\tfor (ii = 0; errno_in >= 10; errno_in /= 10, ii++)\n\t{\n\t\tdigbuf[ii] = \"0123456789\"[(errno_in % 10)];\n\t}\n\tdigbuf[ii] = \"0123456789\"[(errno_in % 10)];\n\n\t// Reverse the digits\n\tfor (start_idx = sizeof(PREFIX) - 1; ii >= 0; ii--, start_idx++)\n\t{\n\t\terrno_buf[start_idx] = digbuf[ii];\n\t}\n\terrno_buf[start_idx] = '\\0';\n\treturn errno_buf;\n}",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 14386364040007058020,
+                    "filename": "strerror_override.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/strerror_override.c"
+                },
+                "part_name": "_json_c_strerror(int errno_in)",
+                "docstring": "",
+                "sha256": 70696874837601163637337209327435673270874963588,
+                "start_line": 66,
+                "end_line": 109,
+                "end_line_signature": 67,
+                "chunk_type": "function"
+            }
+        },
+        {
+            "text": "#define STRERROR_OVERRIDE_IMPL 1\n#include \"strerror_override.h\"",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "code",
+                        "prov": []
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/plain",
+                    "binary_hash": 14386364040007058020,
+                    "filename": "strerror_override.c",
+                    "uri": "https://github.com/json-c/json-c/blob/abc123def456/strerror_override.c"
+                },
+                "sha256": 1284269608364859541196511107996937073581407786389,
+                "start_line": 1,
+                "end_line": 3,
+                "chunk_type": "preamble"
+            }
+        }
+    ]
+}

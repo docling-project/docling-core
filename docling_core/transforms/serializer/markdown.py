@@ -122,6 +122,10 @@ class MarkdownParams(CommonParams):
     )
     orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
+    format_code_blocks: bool = Field(
+        default=True,
+        description="Whether to wrap code items in markdown code block formatting (```). ",
+    )
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -222,7 +226,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
                 text_part = f"{num_hashes * '#'} {text}"
         elif isinstance(item, CodeItem):
-            text_part = f"`{text}`" if is_inline_scope else f"```\n{text}\n```"
+            if params.format_code_blocks:
+                text_part = f"`{text}`" if is_inline_scope else f"```\n{text}\n```"
+            else:
+                text_part = text
             escape_html = False
             escape_underscores = False
         elif isinstance(item, FormulaItem):
