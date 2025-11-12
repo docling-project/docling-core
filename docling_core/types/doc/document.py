@@ -5424,21 +5424,10 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
-                            pic_title = "picture"
 
+                            pic_title = "picture"
                             pic_classification = None
                             if chart_type is not None:
-                                # pic.annotations.append(
-                                #     PictureClassificationData(
-                                #         provenance="load_from_doctags",
-                                #         predicted_classes=[
-                                #             # chart_type
-                                #             PictureClassificationClass(
-                                #                 class_name=chart_type, confidence=1.0
-                                #             )
-                                #         ],
-                                #     )
-                                # )
                                 pic_classification = PictureClassificationMetaField(
                                     predictions=[
                                         PictureClassificationPrediction(
@@ -5452,11 +5441,6 @@ class DoclingDocument(BaseModel):
 
                             pic_tabular_chart = None
                             if table_data is not None:
-                                # # Add chart data as PictureTabularChartData
-                                # pd = PictureTabularChartData(
-                                #     chart_data=table_data, title=pic_title
-                                # )
-                                # pic.annotations.append(pd)
                                 pic_tabular_chart = TabularChartMetaField(
                                     title=pic_title,
                                     chart_data=table_data,
