@@ -1,6 +1,6 @@
 """Utility functions and classes for code language detection and processing."""
 
-from typing import List, Optional, Set
+from typing import List, Optional
 
 import tree_sitter_c as ts_c
 import tree_sitter_java as ts_java
@@ -13,21 +13,8 @@ from tree_sitter import Node, Tree
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.types.doc.labels import CodeLanguageLabel
 
-SUPPORTED_LANGUAGES: Set[CodeLanguageLabel] = {
-    CodeLanguageLabel.PYTHON,
-    CodeLanguageLabel.JAVA,
-    CodeLanguageLabel.C,
-    CodeLanguageLabel.TYPESCRIPT,
-    CodeLanguageLabel.JAVASCRIPT,
-}
 
-
-def is_language_supported(language: CodeLanguageLabel) -> bool:
-    """Check if a language is supported for code chunking."""
-    return language in SUPPORTED_LANGUAGES
-
-
-def get_file_extensions(language: CodeLanguageLabel) -> List[str]:
+def _get_file_extensions(language: CodeLanguageLabel) -> List[str]:
     """Get the file extensions associated with a language."""
     extensions_map = {
         CodeLanguageLabel.PYTHON: [".py"],
@@ -39,7 +26,7 @@ def get_file_extensions(language: CodeLanguageLabel) -> List[str]:
     return extensions_map.get(language, [])
 
 
-def get_tree_sitter_language(language: CodeLanguageLabel):
+def _get_tree_sitter_language(language: CodeLanguageLabel):
     """Get the tree-sitter language object for a language."""
     language_map = {
         CodeLanguageLabel.PYTHON: lambda: Lang(ts_python.language()),
@@ -52,7 +39,7 @@ def get_tree_sitter_language(language: CodeLanguageLabel):
     return factory() if factory else None
 
 
-def get_import_query(language: CodeLanguageLabel) -> Optional[str]:
+def _get_import_query(language: CodeLanguageLabel) -> Optional[str]:
     """Get the tree-sitter query string for finding imports in this language."""
     if language == CodeLanguageLabel.PYTHON:
         return """
@@ -95,7 +82,7 @@ def get_import_query(language: CodeLanguageLabel) -> Optional[str]:
         return None
 
 
-def get_function_name(language: CodeLanguageLabel, node: Node) -> Optional[str]:
+def _get_function_name(language: CodeLanguageLabel, node: Node) -> Optional[str]:
     """Extract the function name from a function node."""
     if language == CodeLanguageLabel.C:
         declarator = node.child_by_field_name("declarator")
@@ -111,14 +98,14 @@ def get_function_name(language: CodeLanguageLabel, node: Node) -> Optional[str]:
         return None
 
 
-def is_collectable_function(
+def _is_collectable_function(
     language: CodeLanguageLabel, node: Node, constructor_name: str
 ) -> bool:
     """Check if a function should be collected for chunking."""
     if language == CodeLanguageLabel.C:
         return True
     else:
-        name = get_function_name(language, node)
+        name = _get_function_name(language, node)
         if not name:
             return False
         return name != constructor_name
@@ -135,12 +122,12 @@ def _get_default_tokenizer() -> "BaseTokenizer":
     )
 
 
-def has_child(node: Node, child_name: str) -> bool:
+def _has_child(node: Node, child_name: str) -> bool:
     """Check if a node has a child with the specified name."""
     return bool(node and node.child_by_field_name(child_name))
 
 
-def get_children(node: Node, child_types: List[str]) -> List[Node]:
+def _get_children(node: Node, child_types: List[str]) -> List[Node]:
     """Get all children of a node that match the specified types."""
     if not node.children:
         return []
@@ -148,7 +135,7 @@ def get_children(node: Node, child_types: List[str]) -> List[Node]:
     return [child for child in node.children if child.type in child_types]
 
 
-def to_str(node: Node) -> str:
+def _to_str(node: Node) -> str:
     """Convert a tree-sitter node to a string."""
     if not node or not node.text:
         return ""
@@ -157,7 +144,7 @@ def to_str(node: Node) -> str:
     return f"{' ' * indent}{text}".rstrip()
 
 
-def query_tree(language, tree: Tree, query: str):
+def _query_tree(language, tree: Tree, query: str):
     """Query a tree-sitter tree with the given query string."""
     if not language:
         return []

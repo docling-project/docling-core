@@ -8,17 +8,16 @@
 from __future__ import annotations
 
 import logging
-import re
-from abc import ABC, abstractmethod
-from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator, Literal, Optional
+from typing import Any, Iterator, Optional
 
-from pydantic import ConfigDict, Field, StringConstraints, field_validator
+from pydantic import ConfigDict, Field
 from typing_extensions import Annotated, override
 
-from docling_core.search.package import VERSION_PATTERN
-from docling_core.transforms.chunker import BaseChunk, BaseChunker, BaseMeta
-from docling_core.transforms.chunker.code_chunk_utils.utils import is_language_supported
+from docling_core.transforms.chunker import BaseChunk, BaseChunker
+from docling_core.transforms.chunker.code_chunking.base_code_chunking_strategy import (
+    BaseCodeChunkingStrategy,
+)
+from docling_core.transforms.chunker.doc_chunk import DocChunk, DocMeta
 from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseSerializerProvider,
@@ -36,7 +35,6 @@ from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
     DoclingDocument,
-    DocumentOrigin,
     InlineGroup,
     LevelNumber,
     ListGroup,
@@ -44,137 +42,8 @@ from docling_core.types.doc.document import (
     TableItem,
     TitleItem,
 )
-from docling_core.types.doc.labels import CodeLanguageLabel
-
-_VERSION: Final = "1.0.0"
-
-_KEY_SCHEMA_NAME = "schema_name"
-_KEY_VERSION = "version"
-_KEY_DOC_ITEMS = "doc_items"
-_KEY_HEADINGS = "headings"
-_KEY_CAPTIONS = "captions"
-_KEY_ORIGIN = "origin"
 
 _logger = logging.getLogger(__name__)
-
-
-class DocMeta(BaseMeta):
-    """Data model for Hierarchical Chunker chunk metadata."""
-
-    schema_name: Literal["docling_core.transforms.chunker.DocMeta"] = Field(
-        default="docling_core.transforms.chunker.DocMeta",
-        alias=_KEY_SCHEMA_NAME,
-    )
-    version: Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)] = (
-        Field(
-            default=_VERSION,
-            alias=_KEY_VERSION,
-        )
-    )
-    doc_items: list[DocItem] = Field(
-        alias=_KEY_DOC_ITEMS,
-        min_length=1,
-    )
-    headings: Optional[list[str]] = Field(
-        default=None,
-        alias=_KEY_HEADINGS,
-        min_length=1,
-    )
-    captions: Optional[list[str]] = Field(  # deprecated
-        deprecated=True,
-        default=None,
-        alias=_KEY_CAPTIONS,
-        min_length=1,
-    )
-    origin: Optional[DocumentOrigin] = Field(
-        default=None,
-        alias=_KEY_ORIGIN,
-    )
-
-    excluded_embed: ClassVar[list[str]] = [
-        _KEY_SCHEMA_NAME,
-        _KEY_VERSION,
-        _KEY_DOC_ITEMS,
-        _KEY_ORIGIN,
-    ]
-    excluded_llm: ClassVar[list[str]] = [
-        _KEY_SCHEMA_NAME,
-        _KEY_VERSION,
-        _KEY_DOC_ITEMS,
-        _KEY_ORIGIN,
-    ]
-
-    @field_validator(_KEY_VERSION)
-    @classmethod
-    def check_version_is_compatible(cls, v: str) -> str:
-        """Check if this meta item version is compatible with current version."""
-        current_match = re.match(VERSION_PATTERN, _VERSION)
-        doc_match = re.match(VERSION_PATTERN, v)
-        if (
-            doc_match is None
-            or current_match is None
-            or doc_match["major"] != current_match["major"]
-            or doc_match["minor"] > current_match["minor"]
-        ):
-            raise ValueError(f"incompatible version {v} with schema version {_VERSION}")
-        else:
-            return _VERSION
-
-
-class CodeDocMeta(DocMeta):
-    """Data model for code chunk metadata."""
-
-    schema_name: Literal["docling_core.transforms.chunker.CodeDocMeta"] = Field(  # type: ignore[assignment]
-        default="docling_core.transforms.chunker.CodeDocMeta",
-        alias=_KEY_SCHEMA_NAME,
-    )
-    doc_items: Optional[list[DocItem]] = Field(default=None, alias=_KEY_DOC_ITEMS)  # type: ignore[assignment]
-    part_name: Optional[str] = Field(default=None)
-    docstring: Optional[str] = Field(default=None)
-    sha256: Optional[int] = Field(default=None)
-    start_line: Optional[int] = Field(default=None)
-    end_line: Optional[int] = Field(default=None)
-    end_line_signature: Optional[int] = Field(default=None)
-    chunk_type: Optional[str] = Field(default=None)
-
-
-class CodeChunk(BaseChunk):
-    """Data model for code chunks."""
-
-    meta: CodeDocMeta
-
-
-class CodeChunkType(str, Enum):
-    """Chunk type."""
-
-    FUNCTION = "function"
-    METHOD = "method"
-    PREAMBLE = "preamble"
-    CLASS = "class"
-    CODE_BLOCK = "code_block"
-
-
-class CodeChunkingStrategy(ABC):
-    """Protocol for code chunking strategies that can be plugged into HierarchicalChunker."""
-
-    @abstractmethod
-    def chunk_code_item(
-        self, code_text: str, language: CodeLanguageLabel, **kwargs: Any
-    ) -> Iterator[CodeChunk]:
-        """Chunk a single code item."""
-        ...
-
-
-if TYPE_CHECKING:
-    CodeChunkingStrategyType = CodeChunkingStrategy
-else:
-    CodeChunkingStrategyType = Any
-
-
-class DocChunk(BaseChunk):
-    """Data model for document chunks."""
-
-    meta: DocMeta
 
 
 class TripletTableSerializer(BaseTableSerializer):
@@ -262,7 +131,7 @@ class HierarchicalChunker(BaseChunker):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
-    code_chunking_strategy: Optional[CodeChunkingStrategyType] = Field(default=None)
+    code_chunking_strategy: Optional[BaseCodeChunkingStrategy] = Field(default=None)
 
     # deprecated:
     merge_list_items: Annotated[bool, Field(deprecated=True)] = True
@@ -301,26 +170,16 @@ class HierarchicalChunker(BaseChunker):
                 isinstance(item, (ListGroup, InlineGroup, DocItem))
                 and item.self_ref not in visited
             ):
-                if (
-                    isinstance(item, CodeItem)
-                    and self.code_chunking_strategy is not None
-                    and item.code_language is not None
-                    and is_language_supported(item.code_language)
+                if self.code_chunking_strategy is not None and isinstance(
+                    item, CodeItem
                 ):
-                    # Serialize without markdown formatting for code items that will be parsed by tree-sitter
-                    ser_res = my_doc_ser.serialize(
-                        item=item, visited=visited, format_code_blocks=False, **kwargs
+                    yield from self.code_chunking_strategy.chunk_code_item(
+                        item=item,
+                        doc=dl_doc,
+                        doc_serializer=my_doc_ser,
+                        visited=visited,
+                        **kwargs,
                     )
-                    if ser_res.text:
-                        for code_chunk in self.code_chunking_strategy.chunk_code_item(
-                            code_text=ser_res.text,
-                            language=item.code_language,
-                            original_doc=dl_doc,
-                            original_item=item,
-                            **kwargs,
-                        ):
-                            code_chunk.meta.doc_items = [item]
-                            yield code_chunk
                     continue
 
                 ser_res = my_doc_ser.serialize(item=item, visited=visited)

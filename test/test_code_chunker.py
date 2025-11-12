@@ -7,21 +7,17 @@ from typing import List, Optional
 import git
 import pytest
 
-from docling_core.transforms.chunker.base_code_chunker import CodeChunk
-from docling_core.transforms.chunker.code_chunk_utils.utils import (
-    SUPPORTED_LANGUAGES,
-    get_file_extensions,
-)
-from docling_core.transforms.chunker.code_chunking_strategy import (
-    DefaultCodeChunkingStrategy,
+from docling_core.transforms.chunker.code_chunking._utils import _get_file_extensions
+from docling_core.transforms.chunker.code_chunking.code_chunk import CodeChunk
+from docling_core.transforms.chunker.code_chunking.standard_code_chunking_strategy import (
+    StandardCodeChunkingStrategy,
 )
 from docling_core.transforms.chunker.hierarchical_chunker import HierarchicalChunker
 from docling_core.types.doc import DoclingDocument, DocumentOrigin
 from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
 from docling_core.utils.legacy import _create_hash
 
-# from .test_data_gen_flag import GEN_TEST_DATA
-GEN_TEST_DATA = True
+from .test_data_gen_flag import GEN_TEST_DATA
 
 
 def get_latest_commit_id(file_dir: str) -> str:
@@ -46,8 +42,14 @@ def create_documents_from_repository(
         commit_id = get_latest_commit_id(file_dir)
 
     all_extensions = set()
-    for lang in SUPPORTED_LANGUAGES:
-        all_extensions.update(get_file_extensions(lang))
+    for lang in [
+        CodeLanguageLabel.PYTHON,
+        CodeLanguageLabel.TYPESCRIPT,
+        CodeLanguageLabel.JAVASCRIPT,
+        CodeLanguageLabel.C,
+        CodeLanguageLabel.JAVA,
+    ]:
+        all_extensions.update(_get_file_extensions(lang))
 
     all_files = []
     for extension in all_extensions:
@@ -96,7 +98,7 @@ REPO_SPECS = [
         "/test/data/chunker_repo/repos/acmeair",
         "https://github.com/acmeair/acmeair",
         lambda: HierarchicalChunker(
-            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
         ),
     ),
     (
@@ -104,7 +106,7 @@ REPO_SPECS = [
         "/test/data/chunker_repo/repos/outline",
         "https://github.com/outline/outline",
         lambda: HierarchicalChunker(
-            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
         ),
     ),
     (
@@ -112,7 +114,7 @@ REPO_SPECS = [
         "/test/data/chunker_repo/repos/jquery",
         "https://github.com/jquery/jquery",
         lambda: HierarchicalChunker(
-            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
         ),
     ),
     (
@@ -120,7 +122,7 @@ REPO_SPECS = [
         "/test/data/chunker_repo/repos/docling",
         "https://github.com/docling-project/docling",
         lambda: HierarchicalChunker(
-            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
         ),
     ),
     (
@@ -128,7 +130,7 @@ REPO_SPECS = [
         "/test/data/chunker_repo/repos/json-c",
         "https://github.com/json-c/json-c",
         lambda: HierarchicalChunker(
-            code_chunking_strategy=DefaultCodeChunkingStrategy(max_tokens=5000)
+            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
         ),
     ),
 ]

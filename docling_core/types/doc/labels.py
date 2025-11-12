@@ -264,24 +264,3 @@ class CodeLanguageLabel(str, Enum):
     def __str__(self):
         """Get string value."""
         return str(self.value)
-
-    def to_language(self):
-        """Convert CodeLanguageLabel to Language enum for code chunking."""
-        from docling_core.transforms.chunker.code_chunk_utils.utils import Language
-
-        return Language.from_code_language_label(self)
-
-    @classmethod
-    def get_supported_languages(cls):
-        """Get the set of CodeLanguageLabels that are supported for code chunking."""
-        return {
-            cls.PYTHON,
-            cls.JAVA,
-            cls.C,
-            cls.TYPESCRIPT,
-            cls.JAVASCRIPT,
-        }
-
-    def is_supported_for_chunking(self) -> bool:
-        """Check if this language is supported for code chunking."""
-        return self in self.get_supported_languages()

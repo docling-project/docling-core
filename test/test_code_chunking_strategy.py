@@ -4,17 +4,15 @@ import pytest
 
 from docling_core.transforms.chunker import (
     CodeLanguageLabel,
-    DefaultCodeChunkingStrategy,
     HierarchicalChunker,
     HybridChunker,
-    NoOpCodeChunkingStrategy,
-)
-from docling_core.transforms.chunker.code_chunk_utils.utils import (
-    get_file_extensions,
-    get_tree_sitter_language,
-    is_language_supported,
+    StandardCodeChunkingStrategy,
 )
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
+from docling_core.transforms.serializer.markdown import (
+    MarkdownDocSerializer,
+    MarkdownParams,
+)
 from docling_core.types.doc.base import Size
 from docling_core.types.doc.document import DoclingDocument, DocumentOrigin
 from docling_core.types.doc.labels import DocItemLabel
@@ -42,23 +40,24 @@ def factorial(n):
     return n * factorial(n-1)
 '''
 
-    strategy = DefaultCodeChunkingStrategy(min_chunk_size=10, max_tokens=100)
-    language = CodeLanguageLabel.PYTHON
-    chunks = list(strategy.chunk_code_item(python_code, language))
+    doc = DoclingDocument(name="test")
+    code_item = doc.add_code(text=python_code, code_language=CodeLanguageLabel.PYTHON)
+    strategy = StandardCodeChunkingStrategy(min_chunk_size=10, max_tokens=100)
+    doc_ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            format_code_blocks=False,
+        ),
+    )
+    chunks = list(
+        strategy.chunk_code_item(item=code_item, doc=doc, doc_serializer=doc_ser)
+    )
 
     assert len(chunks) > 0
     for chunk in chunks:
         assert hasattr(chunk, "text")
         assert hasattr(chunk, "meta")
         assert hasattr(chunk.meta, "chunk_type")
-
-    noop_strategy = NoOpCodeChunkingStrategy()
-    chunks = list(noop_strategy.chunk_code_item(python_code, language))
-
-    assert len(chunks) == 1
-    chunk = chunks[0]
-    assert chunk.text == python_code
-    assert chunk.meta.chunk_type == "code_block"
 
 
 def test_hierarchical_chunker_integration():
@@ -85,7 +84,7 @@ def fibonacci(n):
         filename="test.py", mimetype="text/x-python", binary_hash=12345
     )
 
-    strategy = DefaultCodeChunkingStrategy(min_chunk_size=50, max_tokens=1000)
+    strategy = StandardCodeChunkingStrategy(min_chunk_size=50, max_tokens=1000)
     chunker_with_strategy = HierarchicalChunker(code_chunking_strategy=strategy)
     chunks_with_strategy = list(chunker_with_strategy.chunk(doc))
 
@@ -209,34 +208,3 @@ def test_repository_processing(test_data_dir):
         assert hasattr(chunk, "text")
         assert hasattr(chunk, "meta")
         assert len(chunk.text) > 0
-
-
-def test_language_enum_mappings():
-    """Test language enum values and code chunking utility functions."""
-    assert CodeLanguageLabel.PYTHON.value == "Python"
-    assert CodeLanguageLabel.JAVASCRIPT.value == "JavaScript"
-    assert CodeLanguageLabel.TYPESCRIPT.value == "TypeScript"
-    assert CodeLanguageLabel.JAVA.value == "Java"
-    assert CodeLanguageLabel.C.value == "C"
-
-    # Test is_language_supported utility function
-    assert is_language_supported(CodeLanguageLabel.PYTHON)
-    assert is_language_supported(CodeLanguageLabel.JAVASCRIPT)
-    assert is_language_supported(CodeLanguageLabel.TYPESCRIPT)
-    assert is_language_supported(CodeLanguageLabel.JAVA)
-    assert is_language_supported(CodeLanguageLabel.C)
-    assert not is_language_supported(CodeLanguageLabel.RUBY)
-
-    # Test get_file_extensions utility function
-    assert ".py" in get_file_extensions(CodeLanguageLabel.PYTHON)
-    assert ".js" in get_file_extensions(CodeLanguageLabel.JAVASCRIPT)
-    assert ".ts" in get_file_extensions(CodeLanguageLabel.TYPESCRIPT)
-    assert ".java" in get_file_extensions(CodeLanguageLabel.JAVA)
-    assert ".c" in get_file_extensions(CodeLanguageLabel.C)
-
-    # Test get_tree_sitter_language utility function
-    assert get_tree_sitter_language(CodeLanguageLabel.PYTHON) is not None
-    assert get_tree_sitter_language(CodeLanguageLabel.JAVASCRIPT) is not None
-    assert get_tree_sitter_language(CodeLanguageLabel.TYPESCRIPT) is not None
-    assert get_tree_sitter_language(CodeLanguageLabel.JAVA) is not None
-    assert get_tree_sitter_language(CodeLanguageLabel.C) is not None
