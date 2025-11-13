@@ -2308,12 +2308,12 @@ class DoclingDocument(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def transform_to_content_layer(cls, data: dict) -> dict:
+    def transform_to_content_layer(cls, data: Any) -> Any:
         """transform_to_content_layer."""
         # Since version 1.1.0, all NodeItems carry content_layer property.
         # We must assign previous page_header and page_footer instances to furniture.
         # Note: model_validators which check on the version must use "before".
-        if "version" in data and data["version"] == "1.0.0":
+        if isinstance(data, dict) and data.get("version", "") == "1.0.0":
             for item in data.get("texts", []):
                 if "label" in item and item["label"] in [
                     DocItemLabel.PAGE_HEADER.value,

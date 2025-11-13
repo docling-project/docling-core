@@ -9,7 +9,7 @@ import pytest
 import yaml
 from PIL import Image as PILImage
 from PIL import ImageDraw
-from pydantic import AnyUrl, ValidationError
+from pydantic import AnyUrl, BaseModel, ValidationError
 
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (  # BoundingBox,
@@ -1155,6 +1155,14 @@ def test_upgrade_content_layer_from_1_0_0():
 
     assert doc.version == CURRENT_VERSION
     assert doc.texts[0].content_layer == ContentLayer.FURNITURE
+
+    # test that transform_to_content_layer model validator can handle any data type
+    class ContentOutput(BaseModel):
+        content: Union[str, DoclingDocument]
+
+    co = ContentOutput.model_validate_json('{"content": "Random string with version"}')
+    assert co
+    assert isinstance(co.content, str)
 
 
 def test_version_doc():
