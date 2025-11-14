@@ -1,3 +1,10 @@
+## [v2.51.1](https://github.com/docling-project/docling-core/releases/tag/v2.51.1) - 2025-11-14
+
+### Fix
+
+* Improve meta migration ([#422](https://github.com/docling-project/docling-core/issues/422)) ([`bc0e96b`](https://github.com/docling-project/docling-core/commit/bc0e96b9dc298d2e96ab2b4ce9faa4165d661b94))
+* DoclingDocument model validator should deal with any raw input ([#419](https://github.com/docling-project/docling-core/issues/419)) ([`56b3c42`](https://github.com/docling-project/docling-core/commit/56b3c42c61dbca7e9aa4a44fae18ecaadb482f81))
+
 ## [v2.51.0](https://github.com/docling-project/docling-core/releases/tag/v2.51.0) - 2025-11-12
 
 ### Feature
