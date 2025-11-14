@@ -98,10 +98,23 @@ class _WebVTTCueTextSpan(BaseModel):
     text: str
     span_type: Literal["text"] = "text"
 
+    _valid_entities: ClassVar[set] = {"amp", "lt", "gt", "lrm", "rlm", "nbsp"}
+    _entity_pattern: ClassVar[re.Pattern] = re.compile(r"&([a-zA-Z0-9]+);")
+
     @field_validator("text", mode="after")
     @classmethod
     def validate_text(cls, value: str) -> str:
-        if any(ch in value for ch in {"\n", "\r", "&", "<"}):
+        for match in cls._entity_pattern.finditer(value):
+            entity = match.group(1)
+            if entity not in cls._valid_entities:
+                raise ValueError(
+                    f"Cue text span contains an invalid HTML entity: &{entity};"
+                )
+        if "&" in re.sub(cls._entity_pattern, "", value):
+            raise ValueError(
+                "Found '&' not part of a valid entity in the cue text span"
+            )
+        if any(ch in value for ch in {"\n", "\r", "<"}):
             raise ValueError("Cue text span contains invalid characters")
         if len(value) == 0:
             raise ValueError("Cue text span cannot be empty")

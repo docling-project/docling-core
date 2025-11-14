@@ -96,6 +96,12 @@ def test_vtt_cue_commponents():
     invalid_text = "This cue text span contains &."
     with pytest.raises(ValidationError):
         _WebVTTCueTextSpan(text=invalid_text)
+    invalid_text = "An invalid &foo; entity"
+    with pytest.raises(ValidationError):
+        _WebVTTCueTextSpan(text=invalid_text)
+    valid_text = "My favorite book is Pride &amp; Prejudice"
+    span = _WebVTTCueTextSpan(text=valid_text)
+    assert span.text == valid_text
 
     """Test with text containing less-than sign."""
     invalid_text = "This cue text span contains <."
