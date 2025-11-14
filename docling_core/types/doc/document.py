@@ -27,8 +27,6 @@ from pydantic import (
     Field,
     FieldSerializationInfo,
     StringConstraints,
-    TypeAdapter,
-    ValidationError,
     computed_field,
     field_serializer,
     field_validator,
@@ -1595,88 +1593,68 @@ class PictureItem(FloatingItem):
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
-    @model_validator(mode="before")
-    @classmethod
-    def _migrate_annotations_to_meta(cls, data: Any) -> Any:
+    @model_validator(mode="after")
+    def _migrate_annotations_to_meta(self) -> Self:
         """Migrate the `annotations` field to `meta`."""
-        if isinstance(data, dict) and (annotations := data.get("annotations")):
+        if self.annotations:
             _logger.warning(
                 "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
                 "Note that only the first available instance of each annotation type will be migrated."
             )
-            for raw_ann in annotations:
+            for ann in self.annotations:
                 # migrate annotations to meta
 
-                try:
-                    ann: PictureDataType = TypeAdapter(PictureDataType).validate_python(
-                        raw_ann
-                    )
-                except ValidationError as e:
-                    raise e
-
                 # ensure meta field is present
-                data.setdefault("meta", {})
+                if self.meta is None:
+                    self.meta = PictureMeta()
 
                 if isinstance(ann, PictureClassificationData):
-                    data["meta"].setdefault(
-                        MetaFieldName.CLASSIFICATION.value,
-                        PictureClassificationMetaField(
-                            predictions=[
-                                PictureClassificationPrediction(
-                                    class_name=pred.class_name,
-                                    confidence=pred.confidence,
-                                    created_by=ann.provenance,
-                                )
-                                for pred in ann.predicted_classes
-                            ],
-                        ).model_dump(mode="json"),
+                    self.meta.classification = PictureClassificationMetaField(
+                        predictions=[
+                            PictureClassificationPrediction(
+                                class_name=pred.class_name,
+                                confidence=pred.confidence,
+                                created_by=ann.provenance,
+                            )
+                            for pred in ann.predicted_classes
+                        ],
                     )
                 elif isinstance(ann, DescriptionAnnotation):
-                    data["meta"].setdefault(
-                        MetaFieldName.DESCRIPTION.value,
-                        DescriptionMetaField(
-                            text=ann.text,
-                            created_by=ann.provenance,
-                        ).model_dump(mode="json"),
+                    self.meta.description = DescriptionMetaField(
+                        text=ann.text,
+                        created_by=ann.provenance,
                     )
                 elif isinstance(ann, PictureMoleculeData):
-                    data["meta"].setdefault(
-                        MetaFieldName.MOLECULE.value,
-                        MoleculeMetaField(
-                            smi=ann.smi,
-                            confidence=ann.confidence,
-                            created_by=ann.provenance,
-                            **{
-                                MetaUtils._create_migrated_meta_field_name(
-                                    name="segmentation"
-                                ): ann.segmentation,
-                                MetaUtils._create_migrated_meta_field_name(
-                                    name="class_name"
-                                ): ann.class_name,
-                            },
-                        ).model_dump(mode="json"),
+                    self.meta.molecule = MoleculeMetaField(
+                        smi=ann.smi,
+                        confidence=ann.confidence,
+                        created_by=ann.provenance,
+                        **{
+                            MetaUtils._create_migrated_meta_field_name(
+                                name="segmentation"
+                            ): ann.segmentation,
+                            MetaUtils._create_migrated_meta_field_name(
+                                name="class_name"
+                            ): ann.class_name,
+                        },
                     )
                 elif isinstance(ann, PictureTabularChartData):
-                    data["meta"].setdefault(
-                        MetaFieldName.TABULAR_CHART.value,
-                        TabularChartMetaField(
-                            title=ann.title,
-                            chart_data=ann.chart_data,
-                        ).model_dump(mode="json"),
-                    )
-                elif isinstance(ann, MiscAnnotation):
-                    data["meta"].setdefault(
-                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
-                        ann.content,
+                    self.meta.tabular_chart = TabularChartMetaField(
+                        title=ann.title,
+                        chart_data=ann.chart_data,
                     )
                 else:
-                    # fall back to reusing original annotation type name (in namespaced format)
-                    data["meta"].setdefault(
-                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
-                        ann.model_dump(mode="json"),
+                    self.meta.set_custom_field(
+                        namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
+                        name=ann.kind,
+                        value=(
+                            ann.content
+                            if isinstance(ann, MiscAnnotation)
+                            else ann.model_dump(mode="json")
+                        ),
                     )
 
-        return data
+        return self
 
     # Convert the image to Base64
     def _image_to_base64(self, pil_image, format="PNG"):
@@ -1829,49 +1807,37 @@ class TableItem(FloatingItem):
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
-    @model_validator(mode="before")
-    @classmethod
-    def migrate_annotations_to_meta(cls, data: Any) -> Any:
+    @model_validator(mode="after")
+    def _migrate_annotations_to_meta(self) -> Self:
         """Migrate the `annotations` field to `meta`."""
-        if isinstance(data, dict) and (annotations := data.get("annotations")):
+        if self.annotations:
             _logger.warning(
                 "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
                 "Note that only the first available instance of each annotation type will be migrated."
             )
-            for raw_ann in annotations:
-                # migrate annotations to meta
-
-                try:
-                    ann: TableAnnotationType = TypeAdapter(
-                        TableAnnotationType
-                    ).validate_python(raw_ann)
-                except ValidationError as e:
-                    raise e
+            for ann in self.annotations:
 
                 # ensure meta field is present
-                data.setdefault("meta", {})
+                if self.meta is None:
+                    self.meta = FloatingMeta()
 
                 if isinstance(ann, DescriptionAnnotation):
-                    data["meta"].setdefault(
-                        MetaFieldName.DESCRIPTION.value,
-                        DescriptionMetaField(
-                            text=ann.text,
-                            created_by=ann.provenance,
-                        ).model_dump(mode="json"),
-                    )
-                elif isinstance(ann, MiscAnnotation):
-                    data["meta"].setdefault(
-                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
-                        ann.content,
+                    self.meta.description = DescriptionMetaField(
+                        text=ann.text,
+                        created_by=ann.provenance,
                     )
                 else:
-                    # fall back to reusing original annotation type name (in namespaced format)
-                    data["meta"].setdefault(
-                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
-                        ann.model_dump(mode="json"),
+                    self.meta.set_custom_field(
+                        namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
+                        name=ann.kind,
+                        value=(
+                            ann.content
+                            if isinstance(ann, MiscAnnotation)
+                            else ann.model_dump(mode="json")
+                        ),
                     )
 
-        return data
+        return self
 
     def export_to_dataframe(
         self, doc: Optional["DoclingDocument"] = None
