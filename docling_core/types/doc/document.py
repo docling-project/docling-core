@@ -2172,7 +2172,11 @@ class TableItem(FloatingItem):
 
             return self
 
-    def export_to_dataframe(self, doc: Optional["DoclingDocument"] = None) -> pd.DataFrame:
+    def export_to_dataframe(
+        self,
+        doc: Optional["DoclingDocument"] = None,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
         if doc is None:
             _logger.warning("Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated.")
@@ -2203,13 +2207,13 @@ class TableItem(FloatingItem):
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(self.data.grid[i]):
-                    col_name = cell._get_text(doc=doc)
+                    col_name = cell._get_text(doc=doc, **kwargs)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
         # Create table data
-        table_data = [[cell._get_text(doc=doc) for cell in row] for row in self.data.grid[num_headers:]]
+        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in self.data.grid[num_headers:]]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)

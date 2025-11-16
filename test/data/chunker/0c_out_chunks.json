@@ -1,0 +1,39 @@
+{
+    "root": [
+        {
+            "text": "cell 0,0, 1 = cell 0,1. cell 1,0, 1 = <em><p>text in italic</p></em>. <ul>\n<li>list item 1</li>\n<li>list item 2</li>\n</ul>, 1 = cell 2,1. cell 3,0, 1 = inner cell 0,0, 1 = inner cell 0,1. inner cell 0,0, 2 = inner cell 0,2. inner cell 1,0, 1 = inner cell 1,1. inner cell 1,0, 2 = inner cell 1,2. <p>Some text in a generic group.</p>\n<p>More text in the group.</p>, 1 = cell 4,1",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/tables/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/1"
+                            },
+                            {
+                                "$ref": "#/groups/0"
+                            },
+                            {
+                                "$ref": "#/tables/1"
+                            },
+                            {
+                                "$ref": "#/groups/1"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "table",
+                        "prov": []
+                    }
+                ],
+                "headings": [
+                    "Rich tables"
+                ]
+            }
+        }
+    ]
+}
