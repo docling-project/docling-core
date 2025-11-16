@@ -10,12 +10,17 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
     DocChunk,
+    TripletTableSerializer,
 )
-from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
+from docling_core.transforms.serializer.html import HTMLDocSerializer
+from docling_core.transforms.serializer.markdown import (
+    MarkdownTableSerializer,
+)
 from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.document import DoclingDocument
 
 from .test_data_gen_flag import GEN_TEST_DATA
+from .test_docling_doc import _construct_rich_table_doc
 
 
 def _process(act_data, exp_path_str):
@@ -70,4 +75,30 @@ def test_chunk_custom_serializer():
     _process(
         act_data=act_data,
         exp_path_str="test/data/chunker/0b_out_chunks.json",
+    )
+
+
+def test_chunk_rich_table_custom_serializer():
+    doc = _construct_rich_table_doc()
+
+    class MySerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            return HTMLDocSerializer(
+                doc=doc,
+                table_serializer=TripletTableSerializer(),
+            )
+
+    chunker = HierarchicalChunker(
+        merge_list_items=True,
+        serializer_provider=MySerializerProvider(),
+    )
+
+    chunks = chunker.chunk(dl_doc=doc)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+    )
+
+    _process(
+        act_data=act_data,
+        exp_path_str="test/data/chunker/0c_out_chunks.json",
     )
