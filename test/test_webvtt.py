@@ -1,11 +1,20 @@
-# Assisted by watsonx Code Assistant
+"""Test the data model for WebVTT files.
 
+Assisted by watsonx Code Assistant.
+Examples extracted from https://www.w3.org/TR/webvtt1/
+Copyright © 2019 World Wide Web Consortium.
+"""
 
 import pytest
 from pydantic import ValidationError
 
 from docling_core.types.doc.webvtt import (
+    _WebVTTCueBlock,
+    _WebVTTCueComponentWithTerminator,
+    _WebVTTCueInternalText,
     _WebVTTCueItalicSpan,
+    _WebVTTCueLanguageSpan,
+    _WebVTTCueSpanStartTagAnnotated,
     _WebVTTCueTextSpan,
     _WebVTTCueTimings,
     _WebVTTCueVoiceSpan,
@@ -18,7 +27,7 @@ from .test_data_gen_flag import GEN_TEST_DATA
 GENERATE = GEN_TEST_DATA
 
 
-def test_vtt_cue_commponents():
+def test_vtt_cue_commponents() -> None:
     """Test WebVTT components."""
     valid_timestamps = [
         "00:01:02.345",
@@ -72,13 +81,13 @@ def test_vtt_cue_commponents():
     """Test invalid cue timings with missing end."""
     start = _WebVTTTimestamp(raw="00:10.500")
     with pytest.raises(ValidationError) as excinfo:
-        _WebVTTCueTimings(start=start)
+        _WebVTTCueTimings(start=start)  # type: ignore[call-arg]
     assert "Field required" in str(excinfo.value)
 
     """Test invalid cue timings with missing start."""
     end = _WebVTTTimestamp(raw="00:10.500")
     with pytest.raises(ValidationError) as excinfo:
-        _WebVTTCueTimings(end=end)
+        _WebVTTCueTimings(end=end)  # type: ignore[call-arg]
     assert "Field required" in str(excinfo.value)
 
     """Test with valid text."""
@@ -116,44 +125,105 @@ def test_vtt_cue_commponents():
     valid_annotation = "valid-annotation"
     invalid_annotation = "invalid\nannotation"
     with pytest.raises(ValidationError):
-        _WebVTTCueVoiceSpan(annotation=invalid_annotation)
-    assert _WebVTTCueVoiceSpan(annotation=valid_annotation)
+        _WebVTTCueSpanStartTagAnnotated(name="v", annotation=invalid_annotation)
+    assert _WebVTTCueSpanStartTagAnnotated(name="v", annotation=valid_annotation)
 
     """Test that classes validation works correctly."""
     annotation = "speaker name"
     valid_classes = ["class1", "class2"]
     invalid_classes = ["class\nwith\nnewlines", ""]
     with pytest.raises(ValidationError):
-        _WebVTTCueVoiceSpan(annotation=annotation, classes=invalid_classes)
-    assert _WebVTTCueVoiceSpan(annotation=annotation, classes=valid_classes)
+        _WebVTTCueSpanStartTagAnnotated(
+            name="v", annotation=annotation, classes=invalid_classes
+        )
+    assert _WebVTTCueSpanStartTagAnnotated(
+        name="v", annotation=annotation, classes=valid_classes
+    )
 
     """Test that components validation works correctly."""
     annotation = "speaker name"
-    valid_components = [_WebVTTCueTextSpan(text="random text")]
+    valid_components = [
+        _WebVTTCueComponentWithTerminator(
+            component=_WebVTTCueTextSpan(text="random text")
+        )
+    ]
     invalid_components = [123, "not a component"]
     with pytest.raises(ValidationError):
-        _WebVTTCueVoiceSpan(annotation=annotation, components=invalid_components)
-    assert _WebVTTCueVoiceSpan(annotation=annotation, components=valid_components)
+        _WebVTTCueInternalText(components=invalid_components)
+    assert _WebVTTCueInternalText(components=valid_components)
 
     """Test valid cue voice spans."""
     cue_span = _WebVTTCueVoiceSpan(
-        annotation="speaker",
-        classes=["loud", "clear"],
-        components=[_WebVTTCueTextSpan(text="random text")],
+        start_tag=_WebVTTCueSpanStartTagAnnotated(
+            name="v", annotation="speaker", classes=["loud", "clear"]
+        ),
+        internal_text=_WebVTTCueInternalText(
+            components=[
+                _WebVTTCueComponentWithTerminator(
+                    component=_WebVTTCueTextSpan(text="random text")
+                )
+            ]
+        ),
     )
-
     expected_str = "<v.loud.clear speaker>random text</v>"
     assert str(cue_span) == expected_str
 
     cue_span = _WebVTTCueVoiceSpan(
-        annotation="speaker",
-        components=[_WebVTTCueTextSpan(text="random text")],
+        start_tag=_WebVTTCueSpanStartTagAnnotated(name="v", annotation="speaker"),
+        internal_text=_WebVTTCueInternalText(
+            components=[
+                _WebVTTCueComponentWithTerminator(
+                    component=_WebVTTCueTextSpan(text="random text")
+                )
+            ]
+        ),
     )
     expected_str = "<v speaker>random text</v>"
     assert str(cue_span) == expected_str
 
 
-def test_webvtt_file():
+def test_webvttcueblock_parse() -> None:
+    """Test the method parse of _WebVTTCueBlock class."""
+    raw: str = (
+        "04:02.500 --> 04:05.000\n" "J’ai commencé le basket à l'âge de 13, 14 ans\n"
+    )
+    block: _WebVTTCueBlock = _WebVTTCueBlock.parse(raw)
+    assert str(block.timings) == "04:02.500 --> 04:05.000"
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0], _WebVTTCueComponentWithTerminator)
+    assert isinstance(block.payload[0].component, _WebVTTCueTextSpan)
+    assert (
+        block.payload[0].component.text
+        == "J’ai commencé le basket à l'âge de 13, 14 ans"
+    )
+    assert raw == str(block)
+
+    raw = (
+        "04:05.001 --> 04:07.800\n"
+        "Sur les <i.foreignphrase><lang en>playground</lang></i>, ici à Montpellier\n"
+    )
+    block = _WebVTTCueBlock.parse(raw)
+    assert str(block.timings) == "04:05.001 --> 04:07.800"
+    assert len(block.payload) == 3
+    assert isinstance(block.payload[0], _WebVTTCueComponentWithTerminator)
+    assert isinstance(block.payload[0].component, _WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "Sur les "
+    assert isinstance(block.payload[1], _WebVTTCueComponentWithTerminator)
+    assert isinstance(block.payload[1].component, _WebVTTCueItalicSpan)
+    assert len(block.payload[1].component.internal_text.components) == 1
+    lang_span = block.payload[1].component.internal_text.components[0].component
+    assert isinstance(lang_span, _WebVTTCueLanguageSpan)
+    assert isinstance(
+        lang_span.internal_text.components[0].component, _WebVTTCueTextSpan
+    )
+    assert lang_span.internal_text.components[0].component.text == "playground"
+    assert isinstance(block.payload[2], _WebVTTCueComponentWithTerminator)
+    assert isinstance(block.payload[2].component, _WebVTTCueTextSpan)
+    assert block.payload[2].component.text == ", ici à Montpellier"
+    assert raw == str(block)
+
+
+def test_webvtt_file() -> None:
     """Test WebVTT files."""
     with open("./test/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
         content = f.read()
@@ -163,16 +233,16 @@ def test_webvtt_file():
     assert str(block.timings) == "00:32.500 --> 00:33.500"
     assert len(block.payload) == 1
     cue_span = block.payload[0]
-    assert isinstance(cue_span, _WebVTTCueVoiceSpan)
-    assert cue_span.annotation == "Neil deGrasse Tyson"
-    assert not cue_span.classes
-    assert len(cue_span.components) == 1
-    comp = cue_span.components[0]
-    assert isinstance(comp, _WebVTTCueItalicSpan)
-    assert len(comp.components) == 1
-    comp2 = comp.components[0]
-    assert isinstance(comp2, _WebVTTCueTextSpan)
-    assert comp2.text == "Laughs"
+    assert isinstance(cue_span.component, _WebVTTCueVoiceSpan)
+    assert cue_span.component.start_tag.annotation == "Neil deGrasse Tyson"
+    assert not cue_span.component.start_tag.classes
+    assert len(cue_span.component.internal_text.components) == 1
+    comp = cue_span.component.internal_text.components[0]
+    assert isinstance(comp.component, _WebVTTCueItalicSpan)
+    assert len(comp.component.internal_text.components) == 1
+    comp2 = comp.component.internal_text.components[0]
+    assert isinstance(comp2.component, _WebVTTCueTextSpan)
+    assert comp2.component.text == "Laughs"
 
     with open("./test/data/webvtt/webvtt_example_02.vtt", encoding="utf-8") as f:
         content = f.read()
@@ -182,8 +252,8 @@ def test_webvtt_file():
         "WEBVTT\n\nNOTE Copyright © 2019 World Wide Web Consortium. "
         "https://www.w3.org/TR/webvtt1/\n\n"
     )
-    reverse += "\n\n".join([str(block) for block in vtt.cue_blocks])
-    assert content == reverse
+    reverse += "\n".join([str(block) for block in vtt.cue_blocks])
+    assert content == reverse.rstrip()
 
     with open("./test/data/webvtt/webvtt_example_03.vtt", encoding="utf-8") as f:
         content = f.read()
@@ -195,11 +265,10 @@ def test_webvtt_file():
     assert block.identifier == "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/15-0"
     assert str(block.timings) == "00:00:04.963 --> 00:00:08.571"
     assert len(block.payload) == 1
-    assert isinstance(block.payload[0], _WebVTTCueVoiceSpan)
+    assert isinstance(block.payload[0].component, _WebVTTCueVoiceSpan)
     block = vtt.cue_blocks[2]
-    assert isinstance(cue_span, _WebVTTCueVoiceSpan)
     assert block.identifier == "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/16-0"
     assert str(block.timings) == "00:00:10.683 --> 00:00:11.563"
     assert len(block.payload) == 1
-    assert isinstance(block.payload[0], _WebVTTCueTextSpan)
-    assert block.payload[0].text == "Good."
+    assert isinstance(block.payload[0].component, _WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "Good."
