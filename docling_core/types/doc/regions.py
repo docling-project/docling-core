@@ -2,7 +2,7 @@
 
 from typing import List, Optional, Sequence, Set, Tuple
 
-from docling_core.types.doc.base import BoundingBox, CoordOrigin
+from docling_core.types.doc.base import BoundingBox
 from docling_core.types.doc.document import TableCell, TableData
 
 
@@ -43,30 +43,6 @@ def _process_table_headers(
     return c_column_header, c_row_header, c_row_section
 
 
-def _bbox_intersection(a: BoundingBox, b: BoundingBox) -> Optional[BoundingBox]:
-    """Return the intersection of two bounding boxes or ``None`` when disjoint."""
-    if a.coord_origin != b.coord_origin:
-        raise ValueError("BoundingBoxes have different CoordOrigin")
-
-    left = max(a.l, b.l)
-    right = min(a.r, b.r)
-
-    if a.coord_origin == CoordOrigin.TOPLEFT:
-        top = max(a.t, b.t)
-        bottom = min(a.b, b.b)
-        if right <= left or bottom <= top:
-            return None
-        return BoundingBox(
-            l=left, t=top, r=right, b=bottom, coord_origin=a.coord_origin
-        )
-
-    top = min(a.t, b.t)
-    bottom = max(a.b, b.b)
-    if right <= left or top <= bottom:
-        return None
-    return BoundingBox(l=left, t=top, r=right, b=bottom, coord_origin=a.coord_origin)
-
-
 def _compute_cells(
     rows: List[BoundingBox],
     columns: List[BoundingBox],
@@ -95,7 +71,7 @@ def _compute_cells(
         idxs = []
         best_i, best_len = None, 0.0
         for i, elem in enumerate(lines):
-            inter = _bbox_intersection(m, elem)
+            inter = m.get_intersection_bbox(elem)
             if not inter:
                 continue
             if axis == "row":
@@ -176,7 +152,7 @@ def _compute_cells(
         for ci, col in enumerate(columns):
             if (ri, ci) in covered:
                 continue
-            inter = _bbox_intersection(row, col)
+            inter = row.get_intersection_bbox(col)
             if not inter:
                 # In degenerate cases (big gaps), there might be no intersection; skip.
                 continue
