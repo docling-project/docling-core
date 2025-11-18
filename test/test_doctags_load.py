@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image as PILImage
 
 from docling_core.types.doc import DoclingDocument
-from docling_core.types.doc.document import DocTagsDocument, PictureTabularChartData
+from docling_core.types.doc.document import DocTagsDocument
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -118,11 +118,11 @@ def test_doctags_chart():
         [Path("test/data/doc/barchart.png")],
     )
     doc = DoclingDocument.load_from_doctags(doctags_doc)
-    for pic in doc.pictures:
-        tabular_chart_annotations = [
-            ann for ann in pic.annotations if isinstance(ann, PictureTabularChartData)
-        ]
-        assert len(tabular_chart_annotations) > 0
+    exp = "test/data/doc/barchart.dt.out.json"
+    verify(
+        exp_file=exp,
+        actual=doc.export_to_dict(),
+    )
 
 
 def test_doctags_table_provenances_and_captions():

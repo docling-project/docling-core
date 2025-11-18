@@ -27,8 +27,6 @@ from pydantic import (
     Field,
     FieldSerializationInfo,
     StringConstraints,
-    TypeAdapter,
-    ValidationError,
     computed_field,
     field_serializer,
     field_validator,
@@ -1595,88 +1593,68 @@ class PictureItem(FloatingItem):
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
-    @model_validator(mode="before")
-    @classmethod
-    def _migrate_annotations_to_meta(cls, data: Any) -> Any:
+    @model_validator(mode="after")
+    def _migrate_annotations_to_meta(self) -> Self:
         """Migrate the `annotations` field to `meta`."""
-        if isinstance(data, dict) and (annotations := data.get("annotations")):
+        if self.annotations:
             _logger.warning(
                 "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
                 "Note that only the first available instance of each annotation type will be migrated."
             )
-            for raw_ann in annotations:
+            for ann in self.annotations:
                 # migrate annotations to meta
 
-                try:
-                    ann: PictureDataType = TypeAdapter(PictureDataType).validate_python(
-                        raw_ann
-                    )
-                except ValidationError as e:
-                    raise e
-
                 # ensure meta field is present
-                data.setdefault("meta", {})
+                if self.meta is None:
+                    self.meta = PictureMeta()
 
                 if isinstance(ann, PictureClassificationData):
-                    data["meta"].setdefault(
-                        MetaFieldName.CLASSIFICATION.value,
-                        PictureClassificationMetaField(
-                            predictions=[
-                                PictureClassificationPrediction(
-                                    class_name=pred.class_name,
-                                    confidence=pred.confidence,
-                                    created_by=ann.provenance,
-                                )
-                                for pred in ann.predicted_classes
-                            ],
-                        ).model_dump(mode="json"),
+                    self.meta.classification = PictureClassificationMetaField(
+                        predictions=[
+                            PictureClassificationPrediction(
+                                class_name=pred.class_name,
+                                confidence=pred.confidence,
+                                created_by=ann.provenance,
+                            )
+                            for pred in ann.predicted_classes
+                        ],
                     )
                 elif isinstance(ann, DescriptionAnnotation):
-                    data["meta"].setdefault(
-                        MetaFieldName.DESCRIPTION.value,
-                        DescriptionMetaField(
-                            text=ann.text,
-                            created_by=ann.provenance,
-                        ).model_dump(mode="json"),
+                    self.meta.description = DescriptionMetaField(
+                        text=ann.text,
+                        created_by=ann.provenance,
                     )
                 elif isinstance(ann, PictureMoleculeData):
-                    data["meta"].setdefault(
-                        MetaFieldName.MOLECULE.value,
-                        MoleculeMetaField(
-                            smi=ann.smi,
-                            confidence=ann.confidence,
-                            created_by=ann.provenance,
-                            **{
-                                MetaUtils._create_migrated_meta_field_name(
-                                    name="segmentation"
-                                ): ann.segmentation,
-                                MetaUtils._create_migrated_meta_field_name(
-                                    name="class_name"
-                                ): ann.class_name,
-                            },
-                        ).model_dump(mode="json"),
+                    self.meta.molecule = MoleculeMetaField(
+                        smi=ann.smi,
+                        confidence=ann.confidence,
+                        created_by=ann.provenance,
+                        **{
+                            MetaUtils._create_migrated_meta_field_name(
+                                name="segmentation"
+                            ): ann.segmentation,
+                            MetaUtils._create_migrated_meta_field_name(
+                                name="class_name"
+                            ): ann.class_name,
+                        },
                     )
                 elif isinstance(ann, PictureTabularChartData):
-                    data["meta"].setdefault(
-                        MetaFieldName.TABULAR_CHART.value,
-                        TabularChartMetaField(
-                            title=ann.title,
-                            chart_data=ann.chart_data,
-                        ).model_dump(mode="json"),
-                    )
-                elif isinstance(ann, MiscAnnotation):
-                    data["meta"].setdefault(
-                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
-                        ann.content,
+                    self.meta.tabular_chart = TabularChartMetaField(
+                        title=ann.title,
+                        chart_data=ann.chart_data,
                     )
                 else:
-                    # fall back to reusing original annotation type name (in namespaced format)
-                    data["meta"].setdefault(
-                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
-                        ann.model_dump(mode="json"),
+                    self.meta.set_custom_field(
+                        namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
+                        name=ann.kind,
+                        value=(
+                            ann.content
+                            if isinstance(ann, MiscAnnotation)
+                            else ann.model_dump(mode="json")
+                        ),
                     )
 
-        return data
+        return self
 
     # Convert the image to Base64
     def _image_to_base64(self, pil_image, format="PNG"):
@@ -1829,49 +1807,37 @@ class TableItem(FloatingItem):
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
-    @model_validator(mode="before")
-    @classmethod
-    def migrate_annotations_to_meta(cls, data: Any) -> Any:
+    @model_validator(mode="after")
+    def _migrate_annotations_to_meta(self) -> Self:
         """Migrate the `annotations` field to `meta`."""
-        if isinstance(data, dict) and (annotations := data.get("annotations")):
+        if self.annotations:
             _logger.warning(
                 "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
                 "Note that only the first available instance of each annotation type will be migrated."
             )
-            for raw_ann in annotations:
-                # migrate annotations to meta
-
-                try:
-                    ann: TableAnnotationType = TypeAdapter(
-                        TableAnnotationType
-                    ).validate_python(raw_ann)
-                except ValidationError as e:
-                    raise e
+            for ann in self.annotations:
 
                 # ensure meta field is present
-                data.setdefault("meta", {})
+                if self.meta is None:
+                    self.meta = FloatingMeta()
 
                 if isinstance(ann, DescriptionAnnotation):
-                    data["meta"].setdefault(
-                        MetaFieldName.DESCRIPTION.value,
-                        DescriptionMetaField(
-                            text=ann.text,
-                            created_by=ann.provenance,
-                        ).model_dump(mode="json"),
-                    )
-                elif isinstance(ann, MiscAnnotation):
-                    data["meta"].setdefault(
-                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
-                        ann.content,
+                    self.meta.description = DescriptionMetaField(
+                        text=ann.text,
+                        created_by=ann.provenance,
                     )
                 else:
-                    # fall back to reusing original annotation type name (in namespaced format)
-                    data["meta"].setdefault(
-                        MetaUtils._create_migrated_meta_field_name(name=ann.kind),
-                        ann.model_dump(mode="json"),
+                    self.meta.set_custom_field(
+                        namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
+                        name=ann.kind,
+                        value=(
+                            ann.content
+                            if isinstance(ann, MiscAnnotation)
+                            else ann.model_dump(mode="json")
+                        ),
                     )
 
-        return data
+        return self
 
     def export_to_dataframe(
         self, doc: Optional["DoclingDocument"] = None
@@ -2308,12 +2274,12 @@ class DoclingDocument(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def transform_to_content_layer(cls, data: dict) -> dict:
+    def transform_to_content_layer(cls, data: Any) -> Any:
         """transform_to_content_layer."""
         # Since version 1.1.0, all NodeItems carry content_layer property.
         # We must assign previous page_header and page_footer instances to furniture.
         # Note: model_validators which check on the version must use "before".
-        if "version" in data and data["version"] == "1.0.0":
+        if isinstance(data, dict) and data.get("version", "") == "1.0.0":
             for item in data.get("texts", []):
                 if "label" in item and item["label"] in [
                     DocItemLabel.PAGE_HEADER.value,
@@ -3144,7 +3110,7 @@ class DoclingDocument(BaseModel):
         """add_code.
 
         :param text: str:
-        :param code_language: Optional[str]: (Default value = None)
+        :param code_language: Optional[CodeLanguageLabel]: (Default value = None)
         :param orig: Optional[str]:  (Default value = None)
         :param caption: Optional[Union[TextItem:
         :param RefItem]]:  (Default value = None)
@@ -4715,7 +4681,7 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         *,
         mark_meta: bool = False,
-        use_legacy_annotations: bool = False,
+        use_legacy_annotations: Optional[bool] = None,  # deprecated
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -4772,7 +4738,7 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         mark_annotations: bool = False,
         *,
-        use_legacy_annotations: bool = False,
+        use_legacy_annotations: Optional[bool] = None,  # deprecated
         allowed_meta_names: Optional[set[str]] = None,
         blocked_meta_names: Optional[set[str]] = None,
         mark_meta: bool = False,
@@ -4815,17 +4781,15 @@ class DoclingDocument(BaseModel):
         :param page_break_placeholder: The placeholder to include for marking page
             breaks. None means no page break placeholder will be used.
         :type page_break_placeholder: Optional[str] = None
-        :param include_annotations: bool: Whether to include annotations in the export.
-            (Default value = True).
+        :param include_annotations: bool: Whether to include annotations in the export; only considered if item does not
+            have meta. (Default value = True).
         :type include_annotations: bool = True
-        :param mark_annotations: bool: Whether to mark annotations in the export; only
-            relevant if include_annotations is True. (Default value = False).
+        :param mark_annotations: bool: Whether to mark annotations in the export; only considered if item does not have
+            meta. (Default value = False).
         :type mark_annotations: bool = False
-        :param use_legacy_annotations: bool: Whether to use legacy annotation serialization.
-            (Default value = False).
-        :type use_legacy_annotations: bool = False
-        :param mark_meta: bool: Whether to mark meta in the export; only
-            relevant if use_legacy_annotations is False. (Default value = False).
+        :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
+        :type use_legacy_annotations: Optional[bool] = None
+        :param mark_meta: bool: Whether to mark meta in the export
         :type mark_meta: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
@@ -4845,6 +4809,13 @@ class DoclingDocument(BaseModel):
             if included_content_layers is not None
             else DEFAULT_CONTENT_LAYERS
         )
+
+        if use_legacy_annotations is not None:
+            warnings.warn(
+                "Parameter `use_legacy_annotations` has been deprecated and will be ignored.",
+                DeprecationWarning,
+            )
+
         serializer = MarkdownDocSerializer(
             doc=self,
             params=MarkdownParams(
@@ -4863,7 +4834,6 @@ class DoclingDocument(BaseModel):
                 page_break_placeholder=page_break_placeholder,
                 mark_meta=mark_meta,
                 include_annotations=include_annotations,
-                use_legacy_annotations=use_legacy_annotations,
                 allowed_meta_names=allowed_meta_names,
                 blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
@@ -5420,26 +5390,36 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
+
                             pic_title = "picture"
+                            pic_classification = None
                             if chart_type is not None:
-                                pic.annotations.append(
-                                    PictureClassificationData(
-                                        provenance="load_from_doctags",
-                                        predicted_classes=[
-                                            # chart_type
-                                            PictureClassificationClass(
-                                                class_name=chart_type, confidence=1.0
-                                            )
-                                        ],
-                                    )
+                                pic_classification = PictureClassificationMetaField(
+                                    predictions=[
+                                        PictureClassificationPrediction(
+                                            class_name=chart_type,
+                                            confidence=1.0,
+                                            created_by="load_from_doctags",
+                                        )
+                                    ]
                                 )
                                 pic_title = chart_type
+
+                            pic_tabular_chart = None
                             if table_data is not None:
-                                # Add chart data as PictureTabularChartData
-                                pd = PictureTabularChartData(
-                                    chart_data=table_data, title=pic_title
+                                pic_tabular_chart = TabularChartMetaField(
+                                    title=pic_title,
+                                    chart_data=table_data,
                                 )
-                                pic.annotations.append(pd)
+
+                            if (
+                                pic_classification is not None
+                                or pic_tabular_chart is not None
+                            ):
+                                pic.meta = PictureMeta(
+                                    classification=pic_classification,
+                                    tabular_chart=pic_tabular_chart,
+                                )
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
@@ -6090,7 +6070,10 @@ class DoclingDocument(BaseModel):
     def _validate_rules(self):
 
         def validate_furniture(doc: DoclingDocument):
-            if doc.furniture.children:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                has_furniture_children = len(doc.furniture.children) > 0
+            if has_furniture_children:
                 raise ValueError(
                     f"Deprecated furniture node {doc.furniture.self_ref} has children"
                 )

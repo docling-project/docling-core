@@ -317,7 +317,7 @@ class BaseMetaSerializer(ABC):
         return tmp.title() if title else tmp.capitalize()
 
 
-@deprecated("Use BaseMetaSerializer() instead.")
+# deprecated: use BaseMetaSerializer instead
 class BaseAnnotationSerializer(ABC):
     """Base class for annotation serializers."""
 
