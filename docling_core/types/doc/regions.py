@@ -1,8 +1,3 @@
-#
-# Copyright IBM Corp. 2025 - 2025
-# SPDX-License-Identifier: MIT
-#
-
 """Utils to work with region-defined tables."""
 
 from typing import List, Optional, Sequence, Set, Tuple
@@ -88,8 +83,6 @@ def _compute_cells(
     """
     rows.sort(key=lambda r: (r.t + r.b) / 2.0)
     columns.sort(key=lambda c: (c.l + c.r) / 2.0)
-
-    # n_rows, n_cols = len(rows), len(columns)
 
     def span_from_merge(
         m: BoundingBox, lines: List[BoundingBox], axis: str, frac_threshold: float
@@ -216,7 +209,7 @@ def regions_to_table(
     row_headers: List[BoundingBox] = [],
     col_headers: List[BoundingBox] = [],
     row_sections: List[BoundingBox] = [],
-) -> Optional[TableData]:
+) -> TableData:
     """Converts regions: rows, columns, merged cells into table_data structure.
 
     Adds semantics for regions of row_headers, col_headers, row_section
