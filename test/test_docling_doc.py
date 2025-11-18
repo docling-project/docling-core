@@ -1831,7 +1831,7 @@ def test_document_manipulation():
     doc.insert_key_values(sibling=node, graph=graph, after=False)
     doc.insert_form(sibling=node, graph=graph, after=True)
 
-    filename = Path("test/data/doc/constructed_doc.inserted_items_with_insert_*.json")
+    filename = Path("test/data/doc/constructed_doc.inserted_items.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
     # Test the handling of list items in insert_* methods, both with and without parent groups
@@ -1857,9 +1857,7 @@ def test_document_manipulation():
             after=True,
         )
 
-    filename = Path(
-        "test/data/doc/constructed_doc.inserted_list_items_with_insert_*.json"
-    )
+    filename = Path("test/data/doc/constructed_doc.inserted_list_items.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
     # Test the bulk addition of node items
