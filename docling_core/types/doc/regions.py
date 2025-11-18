@@ -5,42 +5,13 @@
 
 """Utils to work with region-defined tables."""
 
-from typing import List, Optional, Protocol, Sequence, Set, Tuple
+from typing import List, Optional, Sequence, Set, Tuple
 
 from docling_core.types.doc.base import BoundingBox, CoordOrigin
 from docling_core.types.doc.document import TableCell, TableData
 
 
-def bbox_fraction_inside(
-    inner: BoundingBox, outer: BoundingBox, *, eps: float = 1.0e-9
-) -> float:
-    """Return the fraction of ``inner`` area that lies inside ``outer``."""
-    area = inner.area()
-    if area <= eps:
-        return 0.0
-    intersection = inner.intersection_area_with(outer)
-    return intersection / max(area, eps)
-
-
-def bbox_contains(
-    inner: BoundingBox, outer: BoundingBox, *, threshold: float, eps: float = 1.0e-9
-) -> bool:
-    """Return ``True`` when ``inner`` is contained in ``outer`` above ``threshold``."""
-    return bbox_fraction_inside(inner, outer, eps=eps) >= threshold
-
-
-def bbox_iou(a: BoundingBox, b: BoundingBox, *, eps: float = 1.0e-6) -> float:
-    """Return the intersection over union between two bounding boxes."""
-    return a.intersection_over_union(b, eps=eps)
-
-
-class HasBoundingBox(Protocol):
-    """Protocol for objects exposing a bounding box."""
-
-    bbox: BoundingBox
-
-
-def dedupe_bboxes(
+def _dedupe_bboxes(
     elements: Sequence[BoundingBox],
     *,
     iou_threshold: float = 0.9,
@@ -48,16 +19,11 @@ def dedupe_bboxes(
     """Return elements whose bounding boxes are unique within ``iou_threshold``."""
     deduped: list[BoundingBox] = []
     for element in elements:
-        if all(bbox_iou(element, kept) < iou_threshold for kept in deduped):
+        if all(
+            element.intersection_over_union(kept) < iou_threshold for kept in deduped
+        ):
             deduped.append(element)
     return deduped
-
-
-def is_bbox_within(
-    bbox_a: BoundingBox, bbox_b: BoundingBox, threshold: float = 0.5
-) -> bool:
-    """Return ``True`` when ``bbox_b`` lies within ``bbox_a`` above ``threshold``."""
-    return bbox_contains(bbox_b, bbox_a, threshold=threshold)
 
 
 def _process_table_headers(
@@ -71,18 +37,18 @@ def _process_table_headers(
     c_row_section = False
 
     for col_header in col_headers:
-        if is_bbox_within(col_header, bbox):
+        if bbox.intersection_over_self(col_header) >= 0.5:
             c_column_header = True
     for row_header in row_headers:
-        if is_bbox_within(row_header, bbox):
+        if bbox.intersection_over_self(row_header) >= 0.5:
             c_row_header = True
     for row_section in row_sections:
-        if is_bbox_within(row_section, bbox):
+        if bbox.intersection_over_self(row_section) >= 0.5:
             c_row_section = True
     return c_column_header, c_row_header, c_row_section
 
 
-def bbox_intersection(a: BoundingBox, b: BoundingBox) -> Optional[BoundingBox]:
+def _bbox_intersection(a: BoundingBox, b: BoundingBox) -> Optional[BoundingBox]:
     """Return the intersection of two bounding boxes or ``None`` when disjoint."""
     if a.coord_origin != b.coord_origin:
         raise ValueError("BoundingBoxes have different CoordOrigin")
@@ -106,7 +72,7 @@ def bbox_intersection(a: BoundingBox, b: BoundingBox) -> Optional[BoundingBox]:
     return BoundingBox(l=left, t=top, r=right, b=bottom, coord_origin=a.coord_origin)
 
 
-def compute_cells(
+def _compute_cells(
     rows: List[BoundingBox],
     columns: List[BoundingBox],
     merges: List[BoundingBox],
@@ -136,7 +102,7 @@ def compute_cells(
         idxs = []
         best_i, best_len = None, 0.0
         for i, elem in enumerate(lines):
-            inter = bbox_intersection(m, elem)
+            inter = _bbox_intersection(m, elem)
             if not inter:
                 continue
             if axis == "row":
@@ -217,7 +183,7 @@ def compute_cells(
         for ci, col in enumerate(columns):
             if (ri, ci) in covered:
                 continue
-            inter = bbox_intersection(row, col)
+            inter = _bbox_intersection(row, col)
             if not inter:
                 # In degenerate cases (big gaps), there might be no intersection; skip.
                 continue
@@ -255,54 +221,54 @@ def regions_to_table(
 
     Adds semantics for regions of row_headers, col_headers, row_section
     """
-    default_containment_thresh = 0.50
+    default_containment_thresh = 0.5
     rows.extend(row_sections)  # use row sections to compensate for missing rows
-    rows = dedupe_bboxes(
+    rows = _dedupe_bboxes(
         [
             e
             for e in rows
-            if bbox_contains(e, table_bbox, threshold=default_containment_thresh)
+            if e.intersection_over_self(table_bbox) >= default_containment_thresh
         ]
     )
-    cols = dedupe_bboxes(
+    cols = _dedupe_bboxes(
         [
             e
             for e in cols
-            if bbox_contains(e, table_bbox, threshold=default_containment_thresh)
+            if e.intersection_over_self(table_bbox) >= default_containment_thresh
         ]
     )
-    merges = dedupe_bboxes(
+    merges = _dedupe_bboxes(
         [
             e
             for e in merges
-            if bbox_contains(e, table_bbox, threshold=default_containment_thresh)
+            if e.intersection_over_self(table_bbox) >= default_containment_thresh
         ]
     )
 
-    col_headers = dedupe_bboxes(
+    col_headers = _dedupe_bboxes(
         [
             e
             for e in col_headers
-            if bbox_contains(e, table_bbox, threshold=default_containment_thresh)
+            if e.intersection_over_self(table_bbox) >= default_containment_thresh
         ]
     )
-    row_headers = dedupe_bboxes(
+    row_headers = _dedupe_bboxes(
         [
             e
             for e in row_headers
-            if bbox_contains(e, table_bbox, threshold=default_containment_thresh)
+            if e.intersection_over_self(table_bbox) >= default_containment_thresh
         ]
     )
-    row_sections = dedupe_bboxes(
+    row_sections = _dedupe_bboxes(
         [
             e
             for e in row_sections
-            if bbox_contains(e, table_bbox, threshold=default_containment_thresh)
+            if e.intersection_over_self(table_bbox) >= default_containment_thresh
         ]
     )
 
     # Compute table cells from CVAT elements: rows, cols, merges
-    computed_table_cells = compute_cells(
+    computed_table_cells = _compute_cells(
         rows,
         cols,
         merges,
