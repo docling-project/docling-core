@@ -1,15 +1,10 @@
 """Test serialization."""
 
 from pathlib import Path
-from typing import Any
 
-from typing_extensions import override
+import pytest
 
-from docling_core.transforms.serializer.base import (
-    BaseDocSerializer,
-    SerializationResult,
-)
-from docling_core.transforms.serializer.common import _DEFAULT_LABELS, create_ser_result
+from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -19,65 +14,20 @@ from docling_core.transforms.serializer.html import (
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
-    MarkdownTableSerializer,
     OrigListItemMarkerMode,
-    _get_annotation_ser_result,
 )
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    DescriptionAnnotation,
     DoclingDocument,
-    MiscAnnotation,
     TableCell,
     TableData,
-    TableItem,
 )
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 from .test_docling_doc import _construct_doc, _construct_rich_table_doc
-
-
-class CustomAnnotationTableSerializer(MarkdownTableSerializer):
-    @override
-    def serialize(
-        self,
-        *,
-        item: TableItem,
-        doc_serializer: BaseDocSerializer,
-        doc: DoclingDocument,
-        **kwargs: Any,
-    ) -> SerializationResult:
-        params = MarkdownParams(**kwargs)
-
-        res_parts: list[SerializationResult] = []
-
-        if params.include_annotations:
-            for ann in item.annotations:
-                if isinstance(ann, MiscAnnotation):
-
-                    # custom serialization logic:
-                    ann_txt = "\n".join([f"{k}: {ann.content[k]}" for k in ann.content])
-
-                    ann_ser_res = _get_annotation_ser_result(
-                        ann_kind=ann.kind,
-                        ann_text=ann_txt,
-                        mark_annotation=params.mark_annotations,
-                        doc_item=item,
-                    )
-                    res_parts.append(ann_ser_res)
-
-        # reusing the existing result (excluding the annotations):
-        parent_res = super().serialize(
-            item=item,
-            doc_serializer=doc_serializer,
-            doc=doc,
-            **{**kwargs, **{"include_annotations": False}},
-        )
-        res_parts.append(parent_res)
-
-        text_res = "\n\n".join([part.text for part in res_parts])
-        return create_ser_result(text=text_res, span_source=res_parts)
 
 
 def verify(exp_file: Path, actual: str):
@@ -263,54 +213,12 @@ def test_md_list_item_markers():
             )
 
 
-def test_md_legacy_include_annotations_false():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = MarkdownDocSerializer(
-        doc=doc,
-        table_serializer=CustomAnnotationTableSerializer(),
-        params=MarkdownParams(
-            use_legacy_annotations=True,
-            include_annotations=False,
-            pages={1, 5},
-        ),
-    )
-    actual = ser.serialize().text
-    verify(
-        exp_file=src.parent / f"{src.stem}_p1_include_annotations_false.gt.md",
-        actual=actual,
-    )
-
-
-def test_md_legacy_mark_annotations_false():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = MarkdownDocSerializer(
-        doc=doc,
-        table_serializer=CustomAnnotationTableSerializer(),
-        params=MarkdownParams(
-            use_legacy_annotations=True,
-            include_annotations=True,
-            mark_annotations=False,
-            pages={1, 5},
-        ),
-    )
-    actual = ser.serialize().text
-    verify(
-        exp_file=src.parent / f"{src.stem}_p1_mark_annotations_false.gt.md",
-        actual=actual,
-    )
-
-
 def test_md_mark_meta_true():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
         doc=doc,
-        table_serializer=CustomAnnotationTableSerializer(),
         params=MarkdownParams(
             mark_meta=True,
             pages={1, 5},
@@ -323,24 +231,64 @@ def test_md_mark_meta_true():
     )
 
 
-def test_md_legacy_mark_annotations_true():
+def test_md_mark_meta_false():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
         doc=doc,
-        table_serializer=CustomAnnotationTableSerializer(),
         params=MarkdownParams(
-            use_legacy_annotations=True,
-            include_annotations=True,
-            mark_annotations=True,
+            mark_meta=False,
             pages={1, 5},
         ),
     )
     actual = ser.serialize().text
     verify(
-        exp_file=src.parent
-        / f"{src.stem}_p1_use_legacy_annotations_true_mark_annotations_true.gt.md",
+        exp_file=src.parent / f"{src.stem}_p1_mark_meta_false.gt.md",
+        actual=actual,
+    )
+
+
+def test_md_legacy_annotations_mark_true():
+    exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_true.gt.md")
+    doc = _construct_doc()
+    with pytest.warns(DeprecationWarning):
+        doc.tables[0].annotations.append(
+            DescriptionAnnotation(
+                text="This is a description of table 1.", provenance="foo"
+            )
+        )
+        ser = MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                mark_annotations=True,
+            ),
+        )
+        actual = ser.serialize().text
+    verify(
+        exp_file=exp_file,
+        actual=actual,
+    )
+
+
+def test_md_legacy_annotations_mark_false():
+    exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_false.gt.md")
+    doc = _construct_doc()
+    with pytest.warns(DeprecationWarning):
+        doc.tables[0].annotations.append(
+            DescriptionAnnotation(
+                text="This is a description of table 1.", provenance="foo"
+            )
+        )
+        ser = MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                mark_annotations=False,
+            ),
+        )
+        actual = ser.serialize().text
+    verify(
+        exp_file=exp_file,
         actual=actual,
     )
 

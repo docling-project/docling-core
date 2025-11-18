@@ -38,6 +38,7 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _get_annotation_text,
+    _should_use_legacy_annotations,
     create_ser_result,
 )
 from docling_core.transforms.serializer.html_styles import (
@@ -496,7 +497,11 @@ class HTMLPictureSerializer(BasePictureSerializer):
         if img_text:
             res_parts.append(create_ser_result(text=img_text, span_source=item))
 
-        if params.enable_chart_tables:
+        if params.enable_chart_tables and _should_use_legacy_annotations(
+            params=params,
+            item=item,
+            kind=PictureTabularChartData.model_fields["kind"].default,
+        ):
             # Check if picture has attached PictureTabularChartData
             tabular_chart_annotations = [
                 ann
@@ -867,8 +872,13 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
             elif isinstance(field_val, MoleculeMetaField):
                 txt = field_val.smi
             elif isinstance(field_val, TabularChartMetaField):
-                # suppressing tabular chart serialization
-                return None
+                temp_doc = DoclingDocument(name="temp")
+                temp_table = temp_doc.add_table(data=field_val.chart_data)
+                table_content = temp_table.export_to_html(temp_doc).strip()
+                if table_content:
+                    txt = table_content
+                else:
+                    return None
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:
@@ -1119,17 +1129,16 @@ class HTMLDocSerializer(DocSerializer):
                     results.append(cap_ser_res)
 
         if (
-            params.use_legacy_annotations
-            and params.include_annotations
-            and item.self_ref not in excluded_refs
+            item.self_ref not in excluded_refs
+            and isinstance(item, (PictureItem, TableItem))
+            and _should_use_legacy_annotations(params=params, item=item)
         ):
-            if isinstance(item, (PictureItem, TableItem)):
-                ann_res = self.serialize_annotations(
-                    item=item,
-                    **kwargs,
-                )
-                if ann_res.text:
-                    results.append(ann_res)
+            ann_res = self.serialize_annotations(
+                item=item,
+                **kwargs,
+            )
+            if ann_res.text:
+                results.append(ann_res)
 
         text_res = params.caption_delim.join([r.text for r in results])
         if text_res:

@@ -33,6 +33,7 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _get_annotation_text,
+    _should_use_legacy_annotations,
     create_ser_result,
 )
 from docling_core.types.doc.base import ImageRefMode
@@ -72,23 +73,6 @@ from docling_core.types.doc.document import (
 )
 
 
-def _get_annotation_ser_result(
-    ann_kind: str, ann_text: str, mark_annotation: bool, doc_item: DocItem
-):
-    return create_ser_result(
-        text=(
-            (
-                f'<!--<annotation kind="{ann_kind}">-->'
-                f"{ann_text}"
-                f"<!--<annotation/>-->"
-            )
-            if mark_annotation
-            else ann_text
-        ),
-        span_source=doc_item,
-    )
-
-
 class OrigListItemMarkerMode(str, Enum):
     """Display mode for original list item marker."""
 
@@ -122,6 +106,10 @@ class MarkdownParams(CommonParams):
     )
     orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
+    format_code_blocks: bool = Field(
+        default=True,
+        description="Whether to wrap code items in markdown code block formatting (```). ",
+    )
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -222,7 +210,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
                 text_part = f"{num_hashes * '#'} {text}"
         elif isinstance(item, CodeItem):
-            text_part = f"`{text}`" if is_inline_scope else f"```\n{text}\n```"
+            if params.format_code_blocks:
+                text_part = f"`{text}`" if is_inline_scope else f"```\n{text}\n```"
+            else:
+                text_part = text
             escape_html = False
             escape_underscores = False
         elif isinstance(item, FormulaItem):
@@ -315,8 +306,13 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
             elif isinstance(field_val, MoleculeMetaField):
                 txt = field_val.smi
             elif isinstance(field_val, TabularChartMetaField):
-                # suppressing tabular chart serialization
-                return None
+                temp_doc = DoclingDocument(name="temp")
+                temp_table = temp_doc.add_table(data=field_val.chart_data)
+                table_content = temp_table.export_to_markdown(temp_doc).strip()
+                if table_content:
+                    txt = table_content
+                else:
+                    return None
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:
@@ -397,7 +393,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
 
-            if params.use_legacy_annotations and params.include_annotations:
+            if _should_use_legacy_annotations(params=params, item=item):
 
                 ann_res = doc_serializer.serialize_annotations(
                     item=item,
@@ -466,7 +462,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            if params.use_legacy_annotations and params.include_annotations:
+            if _should_use_legacy_annotations(params=params, item=item):
                 ann_res = doc_serializer.serialize_annotations(
                     item=item,
                     **kwargs,
@@ -483,7 +479,11 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             if img_res.text:
                 res_parts.append(img_res)
 
-        if params.enable_chart_tables:
+        if params.enable_chart_tables and _should_use_legacy_annotations(
+            params=params,
+            item=item,
+            kind=PictureTabularChartData.model_fields["kind"].default,
+        ):
             # Check if picture has attached PictureTabularChartData
             tabular_chart_annotations = [
                 ann

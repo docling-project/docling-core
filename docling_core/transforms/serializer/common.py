@@ -7,6 +7,7 @@
 import logging
 import re
 import sys
+import warnings
 from abc import abstractmethod
 from functools import cached_property
 from pathlib import Path
@@ -206,7 +207,9 @@ class CommonParams(BaseModel):
     include_hyperlinks: bool = True
     caption_delim: str = " "
     use_legacy_annotations: bool = Field(
-        default=False, description="Use legacy annotation serialization."
+        default=False,
+        description="Use legacy annotation serialization.",
+        deprecated="Legacy annotations considered only when meta not present.",
     )
     allowed_meta_names: Optional[set[str]] = Field(
         default=None,
@@ -336,7 +339,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         my_item = item or self.doc.body
 
         if my_item == self.doc.body:
-            if my_item.meta and not my_params.use_legacy_annotations:
+            if my_item.meta:
                 meta_part = self.serialize_meta(item=my_item, **my_kwargs)
                 if meta_part.text:
                     parts.append(meta_part)
@@ -355,7 +358,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         my_visited.add(my_item.self_ref)
 
-        if my_item.meta and not my_params.use_legacy_annotations:
+        if my_item.meta:
             meta_part = self.serialize_meta(item=my_item, **my_kwargs)
             if meta_part.text:
                 parts.append(meta_part)
@@ -655,3 +658,30 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             prev_page_nr = int(match.group(1))
             next_page_nr = int(match.group(2))
             yield (full_match, prev_page_nr, next_page_nr)
+
+
+def _should_use_legacy_annotations(
+    *,
+    params: CommonParams,
+    item: Union[PictureItem, TableItem],
+    kind: Optional[str] = None,
+) -> bool:
+    if item.meta:
+        return False
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("ignore", DeprecationWarning)
+        if (
+            incl_attr := getattr(params, "include_annotations", None)
+        ) is not None and not incl_attr:
+            return False
+        use_legacy = bool(
+            [
+                ann
+                for ann in item.annotations
+                if ((ann.kind == kind) if kind is not None else True)
+            ]
+        )
+        if use_legacy:
+            for w in caught_warnings:
+                warnings.warn(w.message, w.category)
+        return use_legacy

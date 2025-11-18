@@ -9,7 +9,7 @@ import pytest
 import yaml
 from PIL import Image as PILImage
 from PIL import ImageDraw
-from pydantic import AnyUrl, ValidationError
+from pydantic import AnyUrl, BaseModel, ValidationError
 
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (  # BoundingBox,
@@ -44,6 +44,7 @@ from docling_core.types.doc.document import (  # BoundingBox,
     TitleItem,
 )
 from docling_core.types.doc.labels import (
+    CodeLanguageLabel,
     DocItemLabel,
     GraphCellLabel,
     GraphLinkLabel,
@@ -952,7 +953,11 @@ def _construct_doc() -> DoclingDocument:
         text="Here a code snippet:",
         parent=inline1,
     )
-    doc.add_code(text='print("Hello world")', parent=inline1)
+    doc.add_code(
+        text='print("Hello world")',
+        parent=inline1,
+        code_language=CodeLanguageLabel.PYTHON,
+    )
     doc.add_text(
         label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1
     )
@@ -970,7 +975,9 @@ def _construct_doc() -> DoclingDocument:
     )
 
     doc.add_text(label=DocItemLabel.TEXT, text="Here a code block:", parent=None)
-    doc.add_code(text='print("Hello world")', parent=None)
+    doc.add_code(
+        text='print("Hello world")', parent=None, code_language=CodeLanguageLabel.PYTHON
+    )
 
     doc.add_text(label=DocItemLabel.TEXT, text="Here a formula block:", parent=None)
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=None)
@@ -1148,6 +1155,14 @@ def test_upgrade_content_layer_from_1_0_0():
 
     assert doc.version == CURRENT_VERSION
     assert doc.texts[0].content_layer == ContentLayer.FURNITURE
+
+    # test that transform_to_content_layer model validator can handle any data type
+    class ContentOutput(BaseModel):
+        content: Union[str, DoclingDocument]
+
+    co = ContentOutput.model_validate_json('{"content": "Random string with version"}')
+    assert co
+    assert isinstance(co.content, str)
 
 
 def test_version_doc():
@@ -1816,7 +1831,7 @@ def test_document_manipulation():
     doc.insert_key_values(sibling=node, graph=graph, after=False)
     doc.insert_form(sibling=node, graph=graph, after=True)
 
-    filename = Path("test/data/doc/constructed_doc.inserted_items_with_insert_*.json")
+    filename = Path("test/data/doc/constructed_doc.inserted_items.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
     # Test the handling of list items in insert_* methods, both with and without parent groups
@@ -1842,9 +1857,7 @@ def test_document_manipulation():
             after=True,
         )
 
-    filename = Path(
-        "test/data/doc/constructed_doc.inserted_list_items_with_insert_*.json"
-    )
+    filename = Path("test/data/doc/constructed_doc.inserted_list_items.json")
     _verify(filename=filename, document=doc, generate=GEN_TEST_DATA)
 
     # Test the bulk addition of node items
