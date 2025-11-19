@@ -1,5 +1,5 @@
 from docling_core.types.doc.base import BoundingBox
-from docling_core.types.doc.regions import regions_to_table
+from docling_core.types.doc.document import TableData
 
 # Table bbox - defines region of a table, everything outside will be ignored
 table_bbox: BoundingBox = BoundingBox(l=0, t=0, r=100, b=175)
@@ -48,7 +48,7 @@ def test_regions_to_table_convert():
     # Converts regions: rows, columns, merged cells
     # into table_data structure,
     # Adds semantics for regions of row_headers, col_headers, row_section
-    table_data = regions_to_table(
+    table_data = TableData.from_regions(
         table_bbox=table_bbox,
         rows=rows,
         cols=cols,
