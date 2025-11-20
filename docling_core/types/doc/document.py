@@ -1541,6 +1541,7 @@ class DocItem(
         new_line: str = "",  # deprecated
         xsize: int = 500,
         ysize: int = 500,
+        self_closing: bool = False,
     ) -> str:
         """Get the location string for the BaseCell."""
         if not len(self.prov):
@@ -1556,6 +1557,7 @@ class DocItem(
                 page_h=page_h,
                 xsize=xsize,
                 ysize=ysize,
+                self_closing=self_closing,
             )
             location += loc_str
 
@@ -2245,6 +2247,7 @@ class TableItem(FloatingItem):
         add_cell_text: bool = True,
         xsize: int = 500,
         ysize: int = 500,
+        self_closing: bool = False,
         **kwargs: Any,
     ) -> str:
         """Export the table as OTSL."""
@@ -2300,6 +2303,7 @@ class TableItem(FloatingItem):
                         page_h=page_h,
                         xsize=xsize,
                         ysize=ysize,
+                        self_closing=self_closing,
                     )
 
                 if rowstart == i and colstart == j:

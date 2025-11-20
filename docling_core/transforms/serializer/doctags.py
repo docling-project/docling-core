@@ -77,6 +77,8 @@ class DocTagsParams(CommonParams):
 
     mode: Mode = Mode.HUMAN_FRIENDLY
 
+    do_self_closing: bool = False
+
 
 def _get_delim(params: DocTagsParams) -> str:
     if params.mode == DocTagsParams.Mode.HUMAN_FRIENDLY:
@@ -110,11 +112,17 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         )
         parts: list[str] = []
 
+        if item.meta:
+            meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+            if meta_res.text:
+                parts.append(meta_res.text)
+
         if params.add_location:
             location = item.get_location_tokens(
                 doc=doc,
                 xsize=params.xsize,
                 ysize=params.ysize,
+                self_closing=params.do_self_closing,
             )
             if location:
                 parts.append(location)
@@ -184,6 +192,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
                     doc=doc,
                     xsize=params.xsize,
                     ysize=params.ysize,
+                    self_closing=params.do_self_closing,
                 )
                 res_parts.append(create_ser_result(text=loc_text, span_source=item))
 
@@ -233,6 +242,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                     doc=doc,
                     xsize=params.xsize,
                     ysize=params.ysize,
+                    self_closing=params.do_self_closing,
                 )
 
             # handle classification data
@@ -353,6 +363,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
                 doc=doc,
                 xsize=params.xsize,
                 ysize=params.ysize,
+                self_closing=params.do_self_closing,
             )
 
         # mapping from source_cell_id to a list of target_cell_ids
@@ -493,6 +504,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
             page_h=page_h,
             xsize=params.xsize,
             ysize=params.ysize,
+            self_closing=params.do_self_closing,
         )
 
         return SerializationResult(
@@ -628,6 +640,7 @@ class DocTagsDocSerializer(DocSerializer):
                                     doc=self.doc,
                                     xsize=params.xsize,
                                     ysize=params.ysize,
+                                    self_closing=params.do_self_closing,
                                 )
                                 results.append(create_ser_result(text=loc_txt))
                 results.append(cap_res)
