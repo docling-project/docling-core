@@ -263,7 +263,7 @@ def test_collection_record_info():
         RecordDescription(**desc_dict)
 
 
-def test_strict_date_time():
+def test_strict_date_time() -> None:
     """Validate data with StrictDateTime model."""
 
     class Model(BaseModel):

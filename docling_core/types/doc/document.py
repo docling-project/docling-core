@@ -6138,7 +6138,7 @@ class DoclingDocument(BaseModel):
         else:
             return CURRENT_VERSION
 
-    @model_validator(mode="after")  # type: ignore
+    @model_validator(mode="after")
     def validate_document(self) -> Self:
         """validate_document."""
         with warnings.catch_warnings():
@@ -6152,7 +6152,7 @@ class DoclingDocument(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def validate_misplaced_list_items(self):
+    def validate_misplaced_list_items(self) -> Self:
         """validate_misplaced_list_items."""
         # find list items without list parent, putting succesive ones together
         misplaced_list_items: list[list[ListItem]] = []
@@ -6184,7 +6184,7 @@ class DoclingDocument(BaseModel):
             )
 
             # delete list items from document (should not be affected by group addition)
-            self.delete_items(node_items=curr_list_items)
+            self.delete_items(node_items=list(curr_list_items))
 
             # add list items to new group
             for li in curr_list_items:

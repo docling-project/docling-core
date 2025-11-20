@@ -38,7 +38,7 @@ def _new_hash(code: str) -> int:
 class _RangeTracker:
     """Handles tracking and management of used byte ranges in code."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the range tracker with an empty list of used ranges."""
         self.used_ranges: List[Tuple[int, int]] = []
 

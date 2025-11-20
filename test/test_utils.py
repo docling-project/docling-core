@@ -13,7 +13,7 @@ from docling_core.utils.alias import AliasModel
 from docling_core.utils.file import resolve_source_to_path, resolve_source_to_stream
 
 
-def test_alias_model():
+def test_alias_model() -> None:
     """Test the functionality of AliasModel."""
 
     class AliasModelChild(AliasModel):
@@ -30,7 +30,7 @@ def test_alias_model():
     AliasModelChild.model_validate_json(json.dumps(data_alias))
     AliasModelChild.model_validate_json(json.dumps(data))
 
-    AliasModelChild(boo="lorem ipsum")
+    AliasModelChild(boo="lorem ipsum")  # type: ignore[call-arg]
     AliasModelChild(foo="lorem ipsum")
 
     # children classes will also inherite the populate_by_name
@@ -38,7 +38,7 @@ def test_alias_model():
     class AliasModelGrandChild(AliasModelChild):
         var: int
 
-    AliasModelGrandChild(boo="lorem ipsum", var=3)
+    AliasModelGrandChild(boo="lorem ipsum", var=3)  # type: ignore[call-arg]
     AliasModelGrandChild(foo="lorem ipsum", var=3)
 
     # serialized data will always use aliases
