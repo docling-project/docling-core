@@ -1,3 +1,10 @@
+## [v2.52.0](https://github.com/docling-project/docling-core/releases/tag/v2.52.0) - 2025-11-20
+
+### Feature
+
+* **experimental:** Add new DocTags serializer ([#412](https://github.com/docling-project/docling-core/issues/412)) ([`c9e5fb4`](https://github.com/docling-project/docling-core/commit/c9e5fb4a1ceb1ec0cae8ebae5f3eb844c0a2198a))
+* Convert regions into TableData ([#430](https://github.com/docling-project/docling-core/issues/430)) ([`c80b583`](https://github.com/docling-project/docling-core/commit/c80b58369c5bbb1be779a241fee146aa1b3a3685))
+
 ## [v2.51.1](https://github.com/docling-project/docling-core/releases/tag/v2.51.1) - 2025-11-14
 
 ### Fix
