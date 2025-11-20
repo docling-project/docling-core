@@ -43,5 +43,9 @@
 <formula>E=mc^2</formula>
 <text>& ampersand</text>
 </inline></section_header_level_1>
+<inline><text>A hyperlink on</text>
+<code><_unknown_>code in a line</code>
+</inline>
+<code><_unknown_>A hyperlink on code as paragraph</code>
 <text>The end.</text>
 </doctag>
