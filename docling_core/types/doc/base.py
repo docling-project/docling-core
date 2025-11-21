@@ -12,6 +12,7 @@ class ImageRefMode(str, Enum):
     PLACEHOLDER = "placeholder"  # just a place-holder
     EMBEDDED = "embedded"  # embed the image as a base64
     REFERENCED = "referenced"  # reference the image via uri
+    INLINE = "inline"  # inline the image OCR content directly in the document
 
 
 class CoordOrigin(str, Enum):
