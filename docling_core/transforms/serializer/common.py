@@ -209,7 +209,7 @@ class CommonParams(BaseModel):
     use_legacy_annotations: bool = Field(
         default=False,
         description="Use legacy annotation serialization.",
-        deprecated="Legacy annotations considered only when meta not present.",
+        deprecated="Ignored field; legacy annotations considered only when meta not present.",
     )
     allowed_meta_names: Optional[set[str]] = Field(
         default=None,
@@ -318,6 +318,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         res = self.serialize_doc(parts=subparts, **kwargs)
         return res
 
+    def _meta_is_wrapped(self) -> bool:
+        return False
+
     @override
     def serialize(
         self,
@@ -339,7 +342,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         my_item = item or self.doc.body
 
         if my_item == self.doc.body:
-            if my_item.meta:
+            if my_item.meta and not self._meta_is_wrapped():
                 meta_part = self.serialize_meta(item=my_item, **my_kwargs)
                 if meta_part.text:
                     parts.append(meta_part)
@@ -358,7 +361,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         my_visited.add(my_item.self_ref)
 
-        if my_item.meta:
+        if my_item.meta and not self._meta_is_wrapped():
             meta_part = self.serialize_meta(item=my_item, **my_kwargs)
             if meta_part.text:
                 parts.append(meta_part)
@@ -605,7 +608,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     text="", span_source=item if isinstance(item, DocItem) else []
                 )
         else:
-            _logger.warning("No meta serializer found.")
             return create_ser_result(
                 text="", span_source=item if isinstance(item, DocItem) else []
             )
