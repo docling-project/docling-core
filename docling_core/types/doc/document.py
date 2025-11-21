@@ -5644,6 +5644,7 @@ class DoclingDocument(BaseModel):
                     if tag_name == DocumentToken.CHART.value:
                         table_data = parse_otsl_table_content(full_chunk)
                         chart_type = extract_chart_type(full_chunk)
+                    pic_title = chart_type if chart_type is not None else "other"
                     if image:
                         if bbox:
                             im_width, im_height = image.size
@@ -5679,7 +5680,6 @@ class DoclingDocument(BaseModel):
                                 )
                                 pic.captions.append(caption.get_ref())
 
-                            pic_title = "picture"
                             pic_classification = None
                             if chart_type is not None:
                                 pic_classification = PictureClassificationMetaField(
@@ -5691,8 +5691,6 @@ class DoclingDocument(BaseModel):
                                         )
                                     ]
                                 )
-                                pic_title = chart_type
-
                             pic_tabular_chart = None
                             if table_data is not None:
                                 pic_tabular_chart = TabularChartMetaField(
