@@ -211,7 +211,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 text_part = f"{num_hashes * '#'} {text}"
         elif isinstance(item, CodeItem):
             if params.format_code_blocks:
-                text_part = f"`{text}`" if is_inline_scope else f"```\n{text}\n```"
+                # inline items and all hyperlinks: use single backticks
+                bt = is_inline_scope or (params.include_hyperlinks and item.hyperlink)
+                text_part = f"`{text}`" if bt else f"```\n{text}\n```"
             else:
                 text_part = text
             escape_html = False
