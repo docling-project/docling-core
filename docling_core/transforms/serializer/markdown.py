@@ -1,8 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2025
-# SPDX-License-Identifier: MIT
-#
-
 """Define classes for Markdown serialization."""
 import html
 import re
