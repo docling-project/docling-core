@@ -5776,7 +5776,7 @@ class DoclingDocument(BaseModel):
                             enum_marker = str(enum_value) + "."
 
                         li_full_chunk = li_match.group(0)
-                        li_bbox = extract_bounding_box(li_full_chunk) if image else None
+                        li_bbox = extract_bounding_box(li_full_chunk)
                         text_content = extract_inner_text(li_full_chunk)
                         # Add list item
                         doc.add_list_item(
