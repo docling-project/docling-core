@@ -2267,6 +2267,8 @@ class TableItem(FloatingItem):
 
         from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 
+        table_token = kwargs.get("table_token", TableToken)
+
         doc_serializer = DocTagsDocSerializer(doc=doc)
         body = []
         nrows = self.data.num_rows
@@ -2309,34 +2311,34 @@ class TableItem(FloatingItem):
                 if rowstart == i and colstart == j:
                     if len(content) > 0:
                         if cell.column_header:
-                            body.append(str(TableToken.OTSL_CHED.value))
+                            body.append(str(table_token.OTSL_CHED.value))
                         elif cell.row_header:
-                            body.append(str(TableToken.OTSL_RHED.value))
+                            body.append(str(table_token.OTSL_RHED.value))
                         elif cell.row_section:
-                            body.append(str(TableToken.OTSL_SROW.value))
+                            body.append(str(table_token.OTSL_SROW.value))
                         else:
-                            body.append(str(TableToken.OTSL_FCEL.value))
+                            body.append(str(table_token.OTSL_FCEL.value))
                         if add_cell_location:
                             body.append(str(cell_loc))
                         if add_cell_text:
                             body.append(str(content))
                     else:
-                        body.append(str(TableToken.OTSL_ECEL.value))
+                        body.append(str(table_token.OTSL_ECEL.value))
                 else:
                     add_cross_cell = False
                     if rowstart != i:
                         if colspan == 1:
-                            body.append(str(TableToken.OTSL_UCEL.value))
+                            body.append(str(table_token.OTSL_UCEL.value))
                         else:
                             add_cross_cell = True
                     if colstart != j:
                         if rowspan == 1:
-                            body.append(str(TableToken.OTSL_LCEL.value))
+                            body.append(str(table_token.OTSL_LCEL.value))
                         else:
                             add_cross_cell = True
                     if add_cross_cell:
-                        body.append(str(TableToken.OTSL_XCEL.value))
-            body.append(str(TableToken.OTSL_NL.value))
+                        body.append(str(table_token.OTSL_XCEL.value))
+            body.append(str(table_token.OTSL_NL.value))
         body_str = "".join(body)
         return body_str
 

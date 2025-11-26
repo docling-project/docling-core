@@ -50,7 +50,7 @@ from docling_core.types.doc.document import (
     TextItem,
 )
 from docling_core.types.doc.labels import DocItemLabel, PictureClassificationLabel
-from docling_core.types.doc.tokens import DocumentToken
+from docling_core.types.doc.tokens import DocumentToken, TableToken
 
 
 def _wrap(text: str, wrap_tag: str) -> str:
@@ -147,6 +147,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
             if isinstance(item, CodeItem):
                 language_token = DocumentToken.get_code_language_token(
                     code_language=item.code_language,
+                    self_closing=params.do_self_closing,
                 )
                 text_part = f"{language_token}{text_part}"
             else:
@@ -170,6 +171,9 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
 
 class DocTagsTableSerializer(BaseTableSerializer):
     """DocTags-specific table item serializer."""
+
+    def _get_table_token(self) -> Any:
+        return TableToken
 
     @override
     def serialize(
@@ -203,6 +207,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
                 xsize=params.xsize,
                 ysize=params.ysize,
                 visited=visited,
+                table_token=self._get_table_token(),
             )
             res_parts.append(create_ser_result(text=otsl_text, span_source=item))
 

@@ -262,9 +262,12 @@ class DocumentToken(str, Enum):
         return _PictureClassificationToken(f"<{classification}>").value
 
     @staticmethod
-    def get_code_language_token(code_language: str) -> str:
+    def get_code_language_token(code_language: str, self_closing: bool = False) -> str:
         """Function to get the token for a given code language."""
-        return _CodeLanguageToken(f"<_{code_language}_>").value
+        if self_closing:
+            return f"<{code_language}/>"
+        else:
+            return _CodeLanguageToken(f"<_{code_language}_>").value
 
     @staticmethod
     def get_location_token(
