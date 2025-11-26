@@ -1,4 +1,5 @@
 import os
+import re
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
@@ -46,7 +47,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import CURRENT_VERSION
+from docling_core.types.doc.document import CURRENT_VERSION, PageItem
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -1904,3 +1905,64 @@ def test_filter_pages():
         with open(exp_html_file, "r", encoding="utf-8") as f:
             exp_html_data = f.read()
         assert html_data == exp_html_data
+
+
+def _create_doc_for_filtering():
+    doc = DoclingDocument(
+        name="",
+        pages={
+            i: PageItem(page_no=i, size=Size(width=100, height=100), image=None)
+            for i in range(1, 3)
+        },
+    )
+    p1_text = doc.add_text(
+        text="Text 1",
+        parent=doc.body,
+        label=DocItemLabel.TEXT,
+        prov=ProvenanceItem(
+            page_no=1, bbox=BoundingBox(l=0, t=0, r=100, b=100), charspan=(0, 1)
+        ),
+    )
+    doc.add_group(parent=p1_text)
+    doc.add_text(
+        text="Text 2",
+        parent=doc.body,
+        label=DocItemLabel.TEXT,
+        prov=ProvenanceItem(
+            page_no=2, bbox=BoundingBox(l=0, t=0, r=100, b=100), charspan=(0, 1)
+        ),
+    )
+    return doc
+
+
+def test_filter_pages_filtered_out_parent():
+    doc = _create_doc_for_filtering()
+
+    with pytest.warns(
+        UserWarning,
+        match="Parent #/texts/0 not found in indexed nodes, using ancestor #/body instead",
+    ):
+        doc.filter(page_nrs={2})
+
+
+def test_filter_invalid_pages():
+    doc = _create_doc_for_filtering()
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "The following page numbers are not present in the document: {3}"
+        ),
+    ):
+        doc.filter(page_nrs={3})
+
+
+def test_validate_rules():
+    doc = _create_doc_for_filtering()
+
+    message = "Group #/groups/0 has no children"
+
+    with pytest.raises(ValueError, match=message):
+        doc._validate_rules()
+
+    with pytest.warns(UserWarning, match=message):
+        doc._validate_rules(raise_on_error=False)
