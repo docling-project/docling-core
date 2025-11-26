@@ -4293,12 +4293,15 @@ class DoclingDocument(BaseModel):
                 "Start NodeItem must come before or be the same as the end NodeItem in the document structure."
             )
 
-        new_doc = DoclingDocument(name=f"{self.name}- Extracted Range")
-
         ref_items = start_parent.children[start_index:end_index]
         node_items = [ref.resolve(self) for ref in ref_items]
 
-        new_doc.add_node_items(node_items=node_items, doc=self)
+        doc_index = DoclingDocument._DocIndex()
+        for node_item in node_items:
+            doc_index.index(doc=self, root=node_item)
+
+        new_doc = DoclingDocument(name="")
+        new_doc._update_from_index(doc_index)
 
         if delete:
             self.delete_items_range(
