@@ -1954,3 +1954,15 @@ def test_filter_invalid_pages():
         ),
     ):
         doc.filter(page_nrs={3})
+
+
+def test_validate_rules():
+    doc = _create_doc_for_filtering()
+
+    message = "Group #/groups/0 has no children"
+
+    with pytest.raises(ValueError, match=message):
+        doc._validate_rules()
+
+    with pytest.warns(UserWarning, match=message):
+        doc._validate_rules(raise_on_error=False)
