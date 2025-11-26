@@ -6224,6 +6224,13 @@ class DoclingDocument(BaseModel):
             self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None
         ) -> None:
 
+            if page_nrs is not None and (
+                unavailable_page_nrs := page_nrs - set(doc.pages.keys())
+            ):
+                raise ValueError(
+                    f"The following page numbers are not present in the document: {unavailable_page_nrs}"
+                )
+
             orig_ref_to_new_ref: dict[str, str] = {}
             page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
 
@@ -6265,7 +6272,29 @@ class DoclingDocument(BaseModel):
 
                     if item.parent:
                         # set item's parent
-                        new_parent_cref = orig_ref_to_new_ref[item.parent.cref]
+                        new_parent_cref = orig_ref_to_new_ref.get(item.parent.cref)
+                        if new_parent_cref is None:
+
+                            parent_ref = item.parent
+                            while new_parent_cref is None and parent_ref is not None:
+                                parent_ref = RefItem(
+                                    cref=parent_ref.resolve(doc).parent.cref
+                                )
+                                new_parent_cref = orig_ref_to_new_ref.get(
+                                    parent_ref.cref
+                                )
+
+                            if new_parent_cref is not None:
+                                warnings.warn(
+                                    f"Parent {item.parent.cref} not found in indexed nodes, "
+                                    f"using ancestor {new_parent_cref} instead"
+                                )
+                            else:
+                                warnings.warn(
+                                    "No ancestor found in indexed nodes, using body as parent"
+                                )
+                                new_parent_cref = "#/body"
+
                         new_item.parent = RefItem(cref=new_parent_cref)
 
                         # add item to parent's children
@@ -6355,38 +6384,54 @@ class DoclingDocument(BaseModel):
         res_doc._update_from_index(doc_index)
         return res_doc
 
-    def _validate_rules(self):
+    def _validate_rules(self, raise_on_error: bool = True):
+
+        def _handle(error: Exception):
+            if raise_on_error:
+                raise error
+            else:
+                warnings.warn(str(error))
 
         def validate_furniture(doc: DoclingDocument):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
                 has_furniture_children = len(doc.furniture.children) > 0
             if has_furniture_children:
-                raise ValueError(
-                    f"Deprecated furniture node {doc.furniture.self_ref} has children"
+                _handle(
+                    ValueError(
+                        f"Deprecated furniture node {doc.furniture.self_ref} has children"
+                    ),
                 )
 
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
             for ref in item.children:
                 child = ref.resolve(doc)
                 if not isinstance(child, ListItem):
-                    raise ValueError(
-                        f"ListGroup {item.self_ref} contains non-ListItem {child.self_ref} ({child.label=})"
+                    _handle(
+                        ValueError(
+                            f"ListGroup {item.self_ref} contains non-ListItem {child.self_ref} ({child.label=})"
+                        ),
                     )
 
         def validate_list_item(doc: DoclingDocument, item: ListItem):
             if item.parent is None:
-                raise ValueError(f"ListItem {item.self_ref} has no parent")
-            if not isinstance(item.parent.resolve(doc), ListGroup):
-                raise ValueError(
-                    f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"
+                _handle(
+                    ValueError(f"ListItem {item.self_ref} has no parent"),
+                )
+            elif not isinstance(item.parent.resolve(doc), ListGroup):
+                _handle(
+                    ValueError(
+                        f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"
+                    ),
                 )
 
         def validate_group(doc: DoclingDocument, item: GroupItem):
             if (
                 item.parent and not item.children
             ):  # tolerate empty body, but not other groups
-                raise ValueError(f"Group {item.self_ref} has no children")
+                _handle(
+                    ValueError(f"Group {item.self_ref} has no children"),
+                )
 
         validate_furniture(self)
 
