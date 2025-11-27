@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from docling_core.transforms.serializer.azure import AzureDocSerializer
+from docling_core.transforms.serializer.azure import AzureDocSerializer, AzureParams
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, Size
 from docling_core.types.doc.document import (
     DocItemLabel,
@@ -70,7 +70,7 @@ def _verify_json(exp_file: Path, actual_json: str) -> None:
 
     Compares parsed JSON structures and tolerates tiny float differences.
     """
-    if GEN_TEST_DATA or not exp_file.exists():
+    if GEN_TEST_DATA:
         # Keep writing the canonical serialized string for determinism
         exp_file.write_text(actual_json + "\n", encoding="utf-8")
     else:
@@ -85,7 +85,7 @@ def test_azure_serialize_activities_doc():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
-    ser = AzureDocSerializer(doc=doc)
+    ser = AzureDocSerializer(doc=doc, params=AzureParams(indent=2))
     actual_json = ser.serialize().text
 
     # Sanity-check the JSON structure
@@ -142,7 +142,7 @@ def test_azure_serialize_construct_doc_minimal_prov():
     if doc.pictures:
         _ensure_prov(doc.pictures[0], l=320.0, t=80.0, r=500.0, b=220.0)
 
-    ser = AzureDocSerializer(doc=doc)
+    ser = AzureDocSerializer(doc=doc, params=AzureParams(indent=2))
     actual_json = ser.serialize().text
 
     # Basic structure check
@@ -153,5 +153,5 @@ def test_azure_serialize_construct_doc_minimal_prov():
     )
     assert "paragraphs" in data and isinstance(data["paragraphs"], list)
 
-    exp_file = Path("./test/data/doc/constructed_doc.gt.azure.json")
+    exp_file = Path("./test/data/doc/constructed.gt.azure.json")
     _verify_json(exp_file=exp_file, actual_json=actual_json)
