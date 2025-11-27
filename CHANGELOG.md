@@ -1,3 +1,16 @@
+## [v2.53.0](https://github.com/docling-project/docling-core/releases/tag/v2.53.0) - 2025-11-27
+
+### Feature
+
+* **experimental:** Extend IDocTags tokens ([#439](https://github.com/docling-project/docling-core/issues/439)) ([`aa5c668`](https://github.com/docling-project/docling-core/commit/aa5c668050b93ae4623a7e7be34396e6062aca66))
+* Added the Azure Document Intelligence ([#395](https://github.com/docling-project/docling-core/issues/395)) ([`92d60b0`](https://github.com/docling-project/docling-core/commit/92d60b0948972dbe395a85a367755dc1436323df))
+
+### Fix
+
+* Chart title ([#428](https://github.com/docling-project/docling-core/issues/428)) ([`3b253c1`](https://github.com/docling-project/docling-core/commit/3b253c17f00f1c84ab362b4e60101e312427015f))
+* Robustify page filtering ([#437](https://github.com/docling-project/docling-core/issues/437)) ([`8bdeaa7`](https://github.com/docling-project/docling-core/commit/8bdeaa7238cab7b9c3d9f533bd110cae55e7611e))
+* Markdown serialization of hyperlink with code ([#434](https://github.com/docling-project/docling-core/issues/434)) ([`8feb09f`](https://github.com/docling-project/docling-core/commit/8feb09f1cf6658aadb028f3abedd23a62163deb9))
+
 ## [v2.52.0](https://github.com/docling-project/docling-core/releases/tag/v2.52.0) - 2025-11-20
 
 ### Feature
