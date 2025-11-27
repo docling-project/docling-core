@@ -20,7 +20,7 @@ Notes:
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
@@ -105,13 +105,69 @@ class AzureParams(CommonParams):
     include_words: bool = False
 
 
+class AzureBoundingRegion(BaseModel):
+    """Bounding region on a page with polygon coordinates.
+
+    Matches Azure's schema; field names use camelCase by design.
+    """
+
+    pageNumber: int  # noqa: N815
+    polygon: list[float]
+
+
+class AzureParagraph(BaseModel):
+    """Paragraph content with optional role and regions."""
+
+    content: str
+    boundingRegions: list["AzureBoundingRegion"]  # noqa: N815
+    role: Optional[str] = None
+
+
+class AzureTableCell(BaseModel):
+    """Single table cell with position, span, and optional region."""
+
+    content: str
+    rowIndex: int  # noqa: N815
+    columnIndex: int  # noqa: N815
+    rowSpan: int = 1  # noqa: N815
+    colSpan: int = 1  # noqa: N815
+    kind: Optional[str] = None
+    boundingRegions: Optional[list[AzureBoundingRegion]] = None  # noqa: N815
+
+
+class AzureTable(BaseModel):
+    """Table with dimensions, regions, and cells."""
+
+    rowCount: int  # noqa: N815
+    columnCount: int  # noqa: N815
+    boundingRegions: list[AzureBoundingRegion]  # noqa: N815
+    cells: list[AzureTableCell]
+
+
+class AzureImage(BaseModel):
+    """Image/figure with bounding region and optional footnotes."""
+
+    boundingRegions: list[AzureBoundingRegion]  # noqa: N815
+    footnotes: Optional[list[AzureParagraph]] = None
+
+
+class AzurePage(BaseModel):
+    """Page metadata used in the Azure-like output."""
+
+    pageNumber: int  # noqa: N815
+    width: float
+    height: float
+    # Words are not currently emitted; keep as untyped list
+    words: list[Any] = Field(default_factory=list)
+
+
 class AzureOutput(BaseModel):
     """Pydantic model for the Azure-like accumulated output."""
 
-    pages: list[dict[str, Any]] = Field(default_factory=list)
-    tables: list[dict[str, Any]] = Field(default_factory=list)
-    figures: list[dict[str, Any]] = Field(default_factory=list)
-    paragraphs: list[dict[str, Any]] = Field(default_factory=list)
+    pages: list[AzurePage] = Field(default_factory=list)
+    tables: list[AzureTable] = Field(default_factory=list)
+    figures: list[AzureImage] = Field(default_factory=list)
+    paragraphs: list[AzureParagraph] = Field(default_factory=list)
 
 
 class _AzureTextSerializer(BaseModel, BaseTextSerializer):
@@ -155,17 +211,13 @@ class _AzureTextSerializer(BaseModel, BaseTextSerializer):
         content = item.text
 
         if content != "" and polygon is not None:
-            para: Dict[str, Any] = {
-                "content": content,
-                "boundingRegions": [
-                    {
-                        "pageNumber": page_no,
-                        "polygon": polygon,
-                    }
+            para = AzureParagraph(
+                content=content,
+                boundingRegions=[
+                    AzureBoundingRegion(pageNumber=page_no, polygon=polygon)
                 ],
-            }
-            if role is not None:
-                para["role"] = role
+                role=role,
+            )
 
             doc_serializer._azure.paragraphs.append(para)
 
@@ -196,17 +248,12 @@ class _AzureTableSerializer(BaseTableSerializer):
         if poly is None:
             return create_ser_result()
 
-        table_obj: Dict[str, Any] = {
-            "rowCount": item.data.num_rows,
-            "columnCount": item.data.num_cols,
-            "boundingRegions": [
-                {
-                    "pageNumber": page_no,
-                    "polygon": poly,
-                }
-            ],
-            "cells": [],
-        }
+        table_obj = AzureTable(
+            rowCount=item.data.num_rows,
+            columnCount=item.data.num_cols,
+            boundingRegions=[AzureBoundingRegion(pageNumber=page_no, polygon=poly)],
+            cells=[],
+        )
 
         # Serialize cells from the computed grid
         for i, row in enumerate(item.data.grid):
@@ -235,27 +282,25 @@ class _AzureTableSerializer(BaseTableSerializer):
                         l=bbox.l, t=bbox.t, r=bbox.r, b=bbox.b
                     )
 
-                cell_obj: Dict[str, Any] = {
-                    "content": content_text.strip(),
-                    "rowIndex": cell.start_row_offset_idx,
-                    "columnIndex": cell.start_col_offset_idx,
-                    "rowSpan": max(cell.row_span, 1),
-                    "colSpan": max(cell.col_span, 1),
-                }
-                if cell.column_header:
-                    cell_obj["kind"] = "columnHeader"
-                elif cell.row_header:
-                    cell_obj["kind"] = "rowHeader"
+                cell_obj = AzureTableCell(
+                    content=content_text.strip(),
+                    rowIndex=cell.start_row_offset_idx,
+                    columnIndex=cell.start_col_offset_idx,
+                    rowSpan=max(cell.row_span, 1),
+                    colSpan=max(cell.col_span, 1),
+                    kind=(
+                        "columnHeader"
+                        if cell.column_header
+                        else ("rowHeader" if cell.row_header else None)
+                    ),
+                    boundingRegions=(
+                        [AzureBoundingRegion(pageNumber=page_no, polygon=cell_poly)]
+                        if cell_poly is not None
+                        else None
+                    ),
+                )
 
-                if cell_poly is not None:
-                    cell_obj["boundingRegions"] = [
-                        {
-                            "pageNumber": page_no,
-                            "polygon": cell_poly,
-                        }
-                    ]
-
-                table_obj["cells"].append(cell_obj)
+                table_obj.cells.append(cell_obj)
 
         doc_serializer._azure.tables.append(table_obj)
         return create_ser_result()
@@ -284,14 +329,9 @@ class _AzurePictureSerializer(BasePictureSerializer):
         if poly is None:
             return create_ser_result()
 
-        fig_obj: Dict[str, Any] = {
-            "boundingRegions": [
-                {
-                    "pageNumber": page_no,
-                    "polygon": poly,
-                }
-            ]
-        }
+        fig_obj = AzureImage(
+            boundingRegions=[AzureBoundingRegion(pageNumber=page_no, polygon=poly)]
+        )
 
         # Include picture footnotes if present
         foots = []
@@ -302,19 +342,18 @@ class _AzurePictureSerializer(BasePictureSerializer):
                     f_poly = _bbox_to_polygon_for_item(doc, tgt)
                     if f_poly is not None:
                         foots.append(
-                            {
-                                "content": tgt.text,
-                                "boundingRegions": [
-                                    {
-                                        "pageNumber": tgt.prov[0].page_no,
-                                        "polygon": f_poly,
-                                    }
+                            AzureParagraph(
+                                content=tgt.text,
+                                boundingRegions=[
+                                    AzureBoundingRegion(
+                                        pageNumber=tgt.prov[0].page_no, polygon=f_poly
+                                    )
                                 ],
-                            }
+                            )
                         )
 
         if foots:
-            fig_obj["footnotes"] = foots
+            fig_obj.footnotes = foots
 
         doc_serializer._azure.figures.append(fig_obj)
         return create_ser_result()
@@ -463,20 +502,20 @@ class AzureDocSerializer(DocSerializer):
             page = self.doc.pages[page_no]
             if page.size is not None:
                 self._azure.pages.append(
-                    {
-                        "pageNumber": page_no,
-                        "width": page.size.width,
-                        "height": page.size.height,
-                        "words": [],
-                    }
+                    AzurePage(
+                        pageNumber=page_no,
+                        width=page.size.width,
+                        height=page.size.height,
+                        words=[],
+                    )
                 )
 
         # Convert accumulated structure to compact JSON string
         # Produce a compact JSON string from the Pydantic model
         data = (
-            self._azure.model_dump()  # pydantic v2
+            self._azure.model_dump(exclude_none=True)  # pydantic v2
             if hasattr(self._azure, "model_dump")
-            else self._azure.dict()
+            else self._azure.dict(exclude_none=True)
         )
         json_text = json.dumps(data, ensure_ascii=False)
         return create_ser_result(text=json_text, span_source=parts)
