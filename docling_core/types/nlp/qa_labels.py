@@ -1,7 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
 
 """Define models for labeling Q&A pairs."""
 from typing import Literal, Optional

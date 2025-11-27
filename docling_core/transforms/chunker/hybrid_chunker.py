@@ -1,7 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
 
 """Hybrid chunker implementation leveraging both doc structure & token awareness."""
 import warnings

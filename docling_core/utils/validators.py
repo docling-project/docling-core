@@ -1,7 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
 
 """Module for custom type validators."""
 import json

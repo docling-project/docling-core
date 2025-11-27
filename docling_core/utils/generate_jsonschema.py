@@ -1,7 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
 
 """Generate the JSON Schema of pydantic models and export them to files.
 

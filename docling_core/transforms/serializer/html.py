@@ -1,7 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2025
-# SPDX-License-Identifier: MIT
-#
 
 """Define classes for HTML serialization."""
 import base64

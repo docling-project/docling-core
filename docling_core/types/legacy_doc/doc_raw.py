@@ -1,7 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
 
 """Models for CCS objects in raw format."""
 from typing import Any, List, Optional
