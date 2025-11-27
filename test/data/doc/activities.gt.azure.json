@@ -1,0 +1,427 @@
+{
+  "pages": [
+    {
+      "pageNumber": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "words": []
+    },
+    {
+      "pageNumber": 2,
+      "width": 612.0,
+      "height": 792.0,
+      "words": []
+    },
+    {
+      "pageNumber": 3,
+      "width": 612.0,
+      "height": 792.0,
+      "words": []
+    }
+  ],
+  "tables": [],
+  "figures": [
+    {
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            73.33196258544922,
+            209.88706970214844,
+            189.4921417236328,
+            209.88706970214844,
+            189.4921417236328,
+            329.7289123535156,
+            73.33196258544922,
+            329.7289123535156
+          ]
+        }
+      ]
+    }
+  ],
+  "paragraphs": [
+    {
+      "content": "Summer activities",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            66.96,
+            67.59500000000003,
+            186.957,
+            67.59500000000003,
+            186.957,
+            80.82100000000014,
+            66.96,
+            80.82100000000014
+          ]
+        }
+      ],
+      "role": "sectionHeading"
+    },
+    {
+      "content": "Swimming in the lake",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            66.96,
+            104.29100000000005,
+            320.511,
+            104.29100000000005,
+            320.511,
+            127.38599999999997,
+            66.96,
+            127.38599999999997
+          ]
+        }
+      ],
+      "role": "sectionHeading"
+    },
+    {
+      "content": "Duck",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            66.96,
+            144.216,
+            95.952,
+            144.216,
+            95.952,
+            154.086,
+            66.96,
+            154.086
+          ]
+        }
+      ]
+    },
+    {
+      "content": "Let's swim!",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            66.96,
+            387.779,
+            173.138,
+            387.779,
+            173.138,
+            405.14899999999994,
+            66.96,
+            405.14899999999994
+          ]
+        }
+      ],
+      "role": "sectionHeading"
+    },
+    {
+      "content": "To get started with swimming, first lay down in a water and try not to drown:",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            66.96,
+            421.416,
+            441.228,
+            421.416,
+            441.228,
+            431.286,
+            66.96,
+            431.286
+          ]
+        }
+      ]
+    },
+    {
+      "content": "∞ You can relax and look around",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            102.96,
+            452.052,
+            272.243,
+            452.052,
+            272.243,
+            462.006,
+            102.96,
+            462.006
+          ]
+        }
+      ]
+    },
+    {
+      "content": "∞ Paddle about",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            102.96,
+            482.772,
+            186.28,
+            482.772,
+            186.28,
+            492.726,
+            102.96,
+            492.726
+          ]
+        }
+      ]
+    },
+    {
+      "content": "∞ Enjoy summer warmth",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            102.96,
+            513.732,
+            233.94,
+            513.732,
+            233.94,
+            523.6859999999999,
+            102.96,
+            523.6859999999999
+          ]
+        }
+      ]
+    },
+    {
+      "content": "Also, don't forget:",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            66.96,
+            543.816,
+            158.946,
+            543.816,
+            158.946,
+            553.686,
+            66.96,
+            553.686
+          ]
+        }
+      ]
+    },
+    {
+      "content": "1. Wear sunglasses",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            102.96,
+            573.816,
+            203.601,
+            573.816,
+            203.601,
+            583.686,
+            102.96,
+            583.686
+          ]
+        }
+      ]
+    },
+    {
+      "content": "2. Don't forget to drink water",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            102.96,
+            603.576,
+            253.921,
+            603.576,
+            253.921,
+            613.446,
+            102.96,
+            613.446
+          ]
+        }
+      ]
+    },
+    {
+      "content": "3. Use sun cream",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            102.96,
+            633.576,
+            194.601,
+            633.576,
+            194.601,
+            643.446,
+            102.96,
+            643.446
+          ]
+        }
+      ]
+    },
+    {
+      "content": "Hmm, what else…",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            66.96,
+            663.576,
+            160.276,
+            663.576,
+            160.276,
+            673.446,
+            66.96,
+            673.446
+          ]
+        }
+      ]
+    },
+    {
+      "content": "-Another activity item",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            84.96,
+            693.576,
+            208.599,
+            693.576,
+            208.599,
+            703.446,
+            84.96,
+            703.446
+          ]
+        }
+      ]
+    },
+    {
+      "content": "-Yet another one",
+      "boundingRegions": [
+        {
+          "pageNumber": 2,
+          "polygon": [
+            84.96,
+            66.69600000000014,
+            182.595,
+            66.69600000000014,
+            182.595,
+            76.56600000000003,
+            84.96,
+            76.56600000000003
+          ]
+        }
+      ]
+    },
+    {
+      "content": "-Stopping it here",
+      "boundingRegions": [
+        {
+          "pageNumber": 2,
+          "polygon": [
+            84.96,
+            96.69600000000014,
+            182.618,
+            96.69600000000014,
+            182.618,
+            106.56600000000003,
+            84.96,
+            106.56600000000003
+          ]
+        }
+      ]
+    },
+    {
+      "content": "Some text.",
+      "boundingRegions": [
+        {
+          "pageNumber": 2,
+          "polygon": [
+            66.96,
+            126.45600000000002,
+            121.288,
+            126.45600000000002,
+            121.288,
+            136.32600000000002,
+            66.96,
+            136.32600000000002
+          ]
+        }
+      ]
+    },
+    {
+      "content": "2",
+      "boundingRegions": [
+        {
+          "pageNumber": 2,
+          "polygon": [
+            66.96,
+            745.4159999999999,
+            75.96,
+            745.4159999999999,
+            75.96,
+            755.2860000000001,
+            66.96,
+            755.2860000000001
+          ]
+        }
+      ],
+      "role": "pageFooter"
+    },
+    {
+      "content": "-Starting the next page with a list item.",
+      "boundingRegions": [
+        {
+          "pageNumber": 3,
+          "polygon": [
+            66.96,
+            66.69600000000014,
+            270.591,
+            66.69600000000014,
+            270.591,
+            76.56600000000003,
+            66.96,
+            76.56600000000003
+          ]
+        }
+      ]
+    },
+    {
+      "content": "-Second item.",
+      "boundingRegions": [
+        {
+          "pageNumber": 3,
+          "polygon": [
+            66.96,
+            96.69600000000014,
+            150.614,
+            96.69600000000014,
+            150.614,
+            106.56600000000003,
+            66.96,
+            106.56600000000003
+          ]
+        }
+      ]
+    },
+    {
+      "content": "3",
+      "boundingRegions": [
+        {
+          "pageNumber": 3,
+          "polygon": [
+            66.96,
+            745.4159999999999,
+            75.96,
+            745.4159999999999,
+            75.96,
+            755.2860000000001,
+            66.96,
+            755.2860000000001
+          ]
+        }
+      ],
+      "role": "pageFooter"
+    }
+  ]
+}
