@@ -1,8 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 import json
 
 from docling_core.transforms.chunker import HierarchicalChunker

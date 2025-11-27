@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Test the pydantic models in package utils."""
+
 import json
 
 from pydantic import Field

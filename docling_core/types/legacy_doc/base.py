@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Define common models across CCS objects."""
+
 from typing import Annotated, List, Literal, Optional, Union
 
 import pandas as pd

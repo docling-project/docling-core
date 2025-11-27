@@ -1,13 +1,9 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Generate documentation of Docling types as JSON schema.
 
 Example:
     python docling_core/utils/generate_docs.py /tmp/docling_core_files
 """
+
 import argparse
 import json
 import os

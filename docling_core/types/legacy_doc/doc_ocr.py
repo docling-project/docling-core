@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Models for CCS objects with OCR."""
+
 from typing import Any, Dict, List, Literal
 
 from pydantic import BaseModel, Field
