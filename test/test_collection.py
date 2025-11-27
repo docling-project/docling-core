@@ -1,5 +1,5 @@
-
 """Test the pydantic models in module types."""
+
 import glob
 
 import pytest

@@ -1,5 +1,5 @@
-
 """Define the base models for the Record type."""
+
 from typing import Generic, List, Optional
 
 from pydantic import Field, StrictInt, StrictStr

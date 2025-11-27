@@ -1,5 +1,5 @@
-
 """Define the model Predicate."""
+
 from datetime import datetime
 from typing import Annotated, Generic, Optional
 

@@ -1,5 +1,5 @@
-
 """Test the pydantic models in module data_types.ccs."""
+
 import glob
 import json
 from typing import Optional

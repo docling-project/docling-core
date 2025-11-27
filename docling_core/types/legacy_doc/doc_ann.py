@@ -1,5 +1,5 @@
-
 """Models for annotations and predictions in CCS."""
+
 from typing import Any
 
 from pydantic import BaseModel

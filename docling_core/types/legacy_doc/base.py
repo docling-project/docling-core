@@ -1,5 +1,5 @@
-
 """Define common models across CCS objects."""
+
 from typing import Annotated, List, Literal, Optional, Union
 
 import pandas as pd

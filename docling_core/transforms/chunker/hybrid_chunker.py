@@ -1,5 +1,5 @@
-
 """Hybrid chunker implementation leveraging both doc structure & token awareness."""
+
 import warnings
 from functools import cached_property
 from typing import Any, Iterable, Iterator, Optional, Union

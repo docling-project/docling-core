@@ -1,5 +1,5 @@
-
 """Define utility models and types related to field aliases."""
+
 from pydantic import BaseModel, ConfigDict
 
 

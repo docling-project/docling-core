@@ -1,5 +1,5 @@
-
 """Define classes for HTML serialization."""
+
 import base64
 import html
 import logging

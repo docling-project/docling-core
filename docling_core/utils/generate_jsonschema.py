@@ -1,10 +1,10 @@
-
 """Generate the JSON Schema of pydantic models and export them to files.
 
 Example:
     python docling_core/utils/generate_jsonschema.py doc.document.TableCell
 
 """
+
 import argparse
 import json
 from typing import Any, Union

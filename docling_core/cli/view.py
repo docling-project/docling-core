@@ -1,5 +1,5 @@
-
 """CLI for docling viewer."""
+
 import importlib
 import tempfile
 import webbrowser

@@ -1,5 +1,5 @@
-
 """Test the methods in module search.json_schema_to_search_mapper."""
+
 import json
 import os
 

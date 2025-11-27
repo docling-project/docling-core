@@ -1,5 +1,5 @@
-
 """Define the model Attribute."""
+
 from typing import Generic, Optional
 
 from pydantic import Field

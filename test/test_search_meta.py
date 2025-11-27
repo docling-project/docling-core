@@ -1,5 +1,5 @@
-
 """Test the pydantic models in module search.metadata.py."""
+
 import glob
 import os
 from typing import Literal

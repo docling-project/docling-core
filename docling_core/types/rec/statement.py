@@ -1,5 +1,5 @@
-
 """Define the model Statement."""
+
 from enum import Enum
 from typing import Generic
 

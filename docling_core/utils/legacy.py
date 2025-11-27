@@ -1,4 +1,3 @@
-
 """Utilities for converting between legacy and new document format."""
 
 import hashlib

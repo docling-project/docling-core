@@ -1,4 +1,3 @@
-
 """Utils for document types."""
 
 import html

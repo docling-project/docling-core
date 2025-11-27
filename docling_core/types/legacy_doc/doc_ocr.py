@@ -1,5 +1,5 @@
-
 """Models for CCS objects with OCR."""
+
 from typing import Any, Dict, List, Literal
 
 from pydantic import BaseModel, Field

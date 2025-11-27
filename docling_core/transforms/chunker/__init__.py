@@ -1,4 +1,3 @@
-
 """Define the chunker types."""
 
 from docling_core.transforms.chunker.base import BaseChunk, BaseChunker, BaseMeta

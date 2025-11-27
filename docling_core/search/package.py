@@ -1,4 +1,3 @@
-
 """Models and methods to define a package model."""
 
 import importlib.metadata

@@ -1,4 +1,3 @@
-
 """Tokens used in the docling document model."""
 
 from enum import Enum

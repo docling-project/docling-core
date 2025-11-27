@@ -1,5 +1,5 @@
-
 """Define base classes for serialization."""
+
 import logging
 import re
 import sys

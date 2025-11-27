@@ -1,5 +1,5 @@
-
 """Define classes for Markdown serialization."""
+
 import html
 import re
 import textwrap

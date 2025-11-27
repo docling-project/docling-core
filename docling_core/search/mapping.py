@@ -1,5 +1,5 @@
-
 """Methods to define fields in an index mapping of a search database."""
+
 from typing import Any, Optional
 
 

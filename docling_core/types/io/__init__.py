@@ -1,4 +1,3 @@
-
 """Models for io."""
 
 from io import BytesIO

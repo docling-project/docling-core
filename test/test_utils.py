@@ -1,5 +1,5 @@
-
 """Test the pydantic models in package utils."""
+
 import json
 
 from pydantic import Field

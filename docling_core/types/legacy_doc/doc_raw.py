@@ -1,5 +1,5 @@
-
 """Models for CCS objects in raw format."""
+
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field

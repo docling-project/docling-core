@@ -1,4 +1,3 @@
-
 """Chunker implementation leveraging the document structure."""
 
 from __future__ import annotations

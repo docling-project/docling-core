@@ -1,5 +1,5 @@
-
 """Test the pydantic models in module data_types.base.py."""
+
 import json
 from datetime import datetime, timezone
 from typing import Literal

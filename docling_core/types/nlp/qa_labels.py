@@ -1,5 +1,5 @@
-
 """Define models for labeling Q&A pairs."""
+
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field

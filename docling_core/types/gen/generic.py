@@ -1,4 +1,3 @@
-
 """Define a generic Docling type."""
 
 from typing import Optional

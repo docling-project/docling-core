@@ -1,4 +1,3 @@
-
 import json
 
 from docling_core.transforms.chunker import HierarchicalChunker

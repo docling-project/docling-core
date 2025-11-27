@@ -1,4 +1,3 @@
-
 """Models for the Docling Document data type."""
 
 from datetime import datetime

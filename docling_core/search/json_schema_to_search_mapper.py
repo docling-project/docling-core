@@ -1,5 +1,5 @@
-
 """Methods to convert a JSON Schema into a search database schema."""
+
 import re
 from copy import deepcopy
 from typing import Any, Optional, Pattern, Tuple, TypedDict
