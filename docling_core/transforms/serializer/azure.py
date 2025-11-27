@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
+    BaseAnnotationSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -397,6 +398,15 @@ class _AzureFallbackSerializer(BaseFallbackSerializer):
         return create_ser_result()
 
 
+class _AzureAnnotationSerializer(BaseAnnotationSerializer):
+    """No-op for annotations in Azure output."""
+
+    @override
+    def serialize(self, *, item: DocItem, **kwargs: Any) -> SerializationResult:
+        _ = (item, kwargs)
+        return create_ser_result()
+
+
 class AzureDocSerializer(DocSerializer):
     """Azure-specific document serializer.
 
@@ -413,6 +423,7 @@ class AzureDocSerializer(DocSerializer):
 
     list_serializer: BaseListSerializer = _AzureListSerializer()
     inline_serializer: BaseInlineSerializer = _AzureInlineSerializer()
+    annotation_serializer: BaseAnnotationSerializer = _AzureAnnotationSerializer()
 
     params: AzureParams = AzureParams()
 
@@ -432,9 +443,10 @@ class AzureDocSerializer(DocSerializer):
         metadata (number and size) in input order, and returns a
         SerializationResult whose `text` contains the compact JSON.
         """
-        # Initialize accumulator if not present
-        if not self.azure:
-            self.azure = {"pages": [], "tables": [], "figures": [], "paragraphs": []}
+        # Ensure accumulator has expected top-level keys even if partially filled
+        # during traversal by item serializers (which may set paragraphs/tables/figures).
+        for key in ("pages", "tables", "figures", "paragraphs"):
+            self.azure.setdefault(key, [])
 
         # Pages: export number/size; words omitted by default
         # Keep original order by page number
@@ -489,3 +501,8 @@ class AzureDocSerializer(DocSerializer):
     def serialize_hyperlink(self, text: str, hyperlink, **kwargs: Any) -> str:
         """Return the input text unchanged; hyperlinks are not encoded in JSON."""
         return text
+
+    @override
+    def requires_page_break(self) -> bool:
+        """Azure JSON output does not include page break markers."""
+        return False
