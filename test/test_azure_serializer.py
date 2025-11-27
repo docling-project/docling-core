@@ -13,7 +13,6 @@ from docling_core.types.doc.document import (
 )
 
 from .test_data_gen_flag import GEN_TEST_DATA
-from .test_docling_doc import _construct_doc
 
 
 def _assert_json_like_equal(a: Any, b: Any, eps: float = 1e-3, path: str = "$") -> None:
@@ -99,25 +98,24 @@ def test_azure_serialize_activities_doc():
     _verify_json(exp_file=src.with_suffix(".gt.azure.json"), actual_json=actual_json)
 
 
-def test_azure_serialize_construct_doc_minimal_prov():
+def test_azure_serialize_construct_doc_minimal_prov(sample_doc: DoclingDocument):
     """Serialize a constructed document with minimal provenance to Azure JSON.
 
-    The _construct_doc() builder does not attach provenance or pages; here we add a
+    The sample_doc fixture does not attach provenance or pages; here we add a
     single page and minimal bounding boxes to a subset of items to allow Azure JSON
     output to include paragraphs/tables/pictures with boundingRegions.
     """
-    doc = _construct_doc()
 
     # Ensure at least one page is present
-    if not doc.pages:
-        doc.add_page(page_no=1, size=Size(width=600.0, height=800.0), image=None)
+    if not sample_doc.pages:
+        sample_doc.add_page(page_no=1, size=Size(width=600.0, height=800.0), image=None)
 
     # Helper to add a simple TOPLEFT bbox provenance if missing
     def _ensure_prov(item, l=10.0, t=10.0, r=200.0, b=40.0):
         if not item.prov:
             item.prov = [
                 ProvenanceItem(
-                    page_no=min(doc.pages.keys()),
+                    page_no=min(sample_doc.pages.keys()),
                     bbox=BoundingBox(
                         l=l, t=t, r=r, b=b, coord_origin=CoordOrigin.TOPLEFT
                     ),
@@ -126,7 +124,7 @@ def test_azure_serialize_construct_doc_minimal_prov():
             ]
 
     # Add provenance for the title and a couple of paragraphs if present
-    for it in doc.texts[:3]:
+    for it in sample_doc.texts[:3]:
         if it.label in {
             DocItemLabel.TITLE,
             DocItemLabel.TEXT,
@@ -135,14 +133,14 @@ def test_azure_serialize_construct_doc_minimal_prov():
             _ensure_prov(it)
 
     # Add provenance for the first table if present
-    if doc.tables:
-        _ensure_prov(doc.tables[0], l=20.0, t=80.0, r=300.0, b=200.0)
+    if sample_doc.tables:
+        _ensure_prov(sample_doc.tables[0], l=20.0, t=80.0, r=300.0, b=200.0)
 
     # Add provenance for the first picture if present
-    if doc.pictures:
-        _ensure_prov(doc.pictures[0], l=320.0, t=80.0, r=500.0, b=220.0)
+    if sample_doc.pictures:
+        _ensure_prov(sample_doc.pictures[0], l=320.0, t=80.0, r=500.0, b=220.0)
 
-    ser = AzureDocSerializer(doc=doc, params=AzureParams(indent=2))
+    ser = AzureDocSerializer(doc=sample_doc, params=AzureParams(indent=2))
     actual_json = ser.serialize().text
 
     # Basic structure check
