@@ -10,10 +10,16 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
-from docling_core.types.doc import DocItemLabel
-from docling_core.types.doc.base import CoordOrigin
-from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocument
-from docling_core.types.doc.page import BoundingRectangle, TextCell
+from docling_core.types.doc import (
+    BoundingRectangle,
+    ContentLayer,
+    CoordOrigin,
+    DocItem,
+    DocItemLabel,
+    DoclingDocument,
+    ProvenanceItem,
+    TextCell,
+)
 
 
 class _TLBoundingRectangle(BoundingRectangle):
@@ -173,7 +179,7 @@ class LayoutVisualizer(BaseVisualizer):
             if len(elem.prov) == 0:
                 continue  # Skip elements without provenances
 
-            for prov in elem.prov:
+            for prov in (item for item in elem.prov if isinstance(item, ProvenanceItem)):
                 page_nr = prov.page_no
 
                 if page_nr in my_images:

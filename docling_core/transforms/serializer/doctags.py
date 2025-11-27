@@ -26,11 +26,13 @@ from docling_core.transforms.serializer.common import (
     _should_use_legacy_annotations,
     create_ser_result,
 )
-from docling_core.types.doc.base import BoundingBox
 from docling_core.types.doc.document import (
+    BoundingBox,
     CodeItem,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
+    DocumentToken,
     FloatingItem,
     FormItem,
     GroupItem,
@@ -40,6 +42,7 @@ from docling_core.types.doc.document import (
     ListItem,
     NodeItem,
     PictureClassificationData,
+    PictureClassificationLabel,
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
@@ -47,10 +50,9 @@ from docling_core.types.doc.document import (
     SectionHeaderItem,
     TableData,
     TableItem,
+    TableToken,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel, PictureClassificationLabel
-from docling_core.types.doc.tokens import DocumentToken, TableToken
 
 
 def _wrap(text: str, wrap_tag: str) -> str:
@@ -343,7 +345,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
         results: list[SerializationResult] = []
 
         page_no = 1
-        if len(item.prov) > 0:
+        if len(item.prov) > 0 and isinstance(item.prov[0], ProvenanceItem):
             page_no = item.prov[0].page_no
 
         if params.add_location:
@@ -361,7 +363,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
 
         for cell in item.graph.cells:
             cell_txt = ""
-            if cell.prov is not None:
+            if cell.prov is not None and isinstance(cell.prov, ProvenanceItem):
                 if len(doc.pages.keys()):
                     page_w, page_h = doc.pages[page_no].size.as_tuple()
                     cell_txt += DocumentToken.get_location(
@@ -469,7 +471,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         doc_items: list[DocItem] = []
         for it, _ in doc.iterate_items(root=item):
             if isinstance(it, DocItem):
-                for prov in it.prov:
+                for prov in (im for im in it.prov if isinstance(im, ProvenanceItem)):
                     boxes.append(prov.bbox)
                     doc_items.append(it)
         if prov is None:

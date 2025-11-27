@@ -61,6 +61,7 @@ from .document import (
     Script,
     SectionHeaderItem,
     SummaryMetaField,
+    TableAnnotationType,
     TableCell,
     TableData,
     TableItem,

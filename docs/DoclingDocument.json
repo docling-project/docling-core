@@ -233,7 +233,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -651,7 +658,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -793,7 +807,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -873,13 +894,21 @@
         "prov": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ProvenanceItem"
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/ProvenanceItem"
+                },
+                {
+                  "$ref": "#/$defs/ProvenanceTrack"
+                }
+              ]
             },
             {
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "title": "Prov"
         },
         "item_ref": {
           "anyOf": [
@@ -1198,7 +1227,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -1370,7 +1406,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -1746,7 +1789,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -2139,16 +2189,19 @@
       "type": "object"
     },
     "ProvenanceItem": {
-      "description": "ProvenanceItem.",
+      "description": "Provenance information for elements extracted from a textual document.\n\nA `ProvenanceItem` object acts as a lightweight pointer back into the original\ndocument for an extracted element. It applies to documents with an explicity\nor implicit layout, such as PDF, HTML, docx, or pptx.",
       "properties": {
         "page_no": {
+          "description": "Page number",
           "title": "Page No",
           "type": "integer"
         },
         "bbox": {
-          "$ref": "#/$defs/BoundingBox"
+          "$ref": "#/$defs/BoundingBox",
+          "description": "Bounding box"
         },
         "charspan": {
+          "description": "Character span (0-indexed)",
           "maxItems": 2,
           "minItems": 2,
           "prefixItems": [
@@ -2169,6 +2222,111 @@
         "charspan"
       ],
       "title": "ProvenanceItem",
+      "type": "object"
+    },
+    "ProvenanceTrack": {
+      "description": "Provenance information for elements extracted from media assets.\n\nA `ProvenanceTrack` instance describes a cue in a text track associated with a\nmedia element (audio, video, subtitles, screen recordings, ...).",
+      "properties": {
+        "start_time": {
+          "$ref": "#/$defs/_WebVTTTimestamp",
+          "description": "Start time offset of the track cue",
+          "examples": [
+            "00.11.000",
+            "00:00:06.500",
+            "01:28:34.300"
+          ]
+        },
+        "end_time": {
+          "$ref": "#/$defs/_WebVTTTimestamp",
+          "description": "End time offset of the track cue",
+          "examples": [
+            "00.12.000",
+            "00:00:08.200",
+            "01:29:30.100"
+          ]
+        },
+        "identifier": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An identifier of the cue",
+          "examples": [
+            "test",
+            "123",
+            "b72d946"
+          ],
+          "title": "Identifier"
+        },
+        "voice": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The cue voice (speaker)",
+          "examples": [
+            "Mary",
+            "Fred",
+            "Name Surname"
+          ],
+          "title": "Voice"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Language of the cue in BCP 47 language tag format",
+          "examples": [
+            "en",
+            "en-GB",
+            "fr-CA"
+          ],
+          "title": "Language"
+        },
+        "classes": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Classes for describing the cue significance",
+          "examples": [
+            "first",
+            "loud",
+            "yellow"
+          ],
+          "title": "Classes"
+        }
+      },
+      "required": [
+        "start_time",
+        "end_time"
+      ],
+      "title": "ProvenanceTrack",
       "type": "object"
     },
     "RefItem": {
@@ -2327,7 +2485,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -2622,7 +2787,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -2827,7 +2999,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -2939,7 +3118,14 @@
         "prov": {
           "default": [],
           "items": {
-            "$ref": "#/$defs/ProvenanceItem"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProvenanceItem"
+              },
+              {
+                "$ref": "#/$defs/ProvenanceTrack"
+              }
+            ]
           },
           "title": "Prov",
           "type": "array"
@@ -2996,6 +3182,21 @@
         "text"
       ],
       "title": "TitleItem",
+      "type": "object"
+    },
+    "_WebVTTTimestamp": {
+      "description": "WebVTT timestamp.\n\nA WebVTT timestamp is always interpreted relative to the current playback position\nof the media data that the WebVTT file is to be synchronized with.",
+      "properties": {
+        "raw": {
+          "description": "A representation of the WebVTT Timestamp as a single string",
+          "title": "Raw",
+          "type": "string"
+        }
+      },
+      "required": [
+        "raw"
+      ],
+      "title": "_WebVTTTimestamp",
       "type": "object"
     }
   },

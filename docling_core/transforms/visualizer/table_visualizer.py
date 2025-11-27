@@ -10,7 +10,12 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
-from docling_core.types.doc.document import ContentLayer, DoclingDocument, TableItem
+from docling_core.types.doc import (
+    ContentLayer,
+    DoclingDocument,
+    ProvenanceItem,
+    TableItem,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -190,10 +195,10 @@ class TableVisualizer(BaseVisualizer):
                 image = pil_img.copy()
                 my_images[page_nr] = image
 
-        for idx, (elem, _) in enumerate(doc.iterate_items(included_content_layers=included_content_layers)):
+        for _, (elem, _) in enumerate(doc.iterate_items(included_content_layers=included_content_layers)):
             if not isinstance(elem, TableItem):
                 continue
-            if len(elem.prov) == 0:
+            if len(elem.prov) == 0 or not isinstance(elem.prov[0], ProvenanceItem):
                 continue  # Skip elements without provenances
 
             if len(elem.prov) == 1:

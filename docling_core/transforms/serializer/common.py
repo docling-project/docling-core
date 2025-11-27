@@ -35,11 +35,11 @@ from docling_core.transforms.serializer.base import (
     SerializationResult,
     Span,
 )
-from docling_core.types.doc.document import (
-    DOCUMENT_TOKENS_EXPORT_LABELS,
+from docling_core.types.doc import (
     ContentLayer,
     DescriptionAnnotation,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
     FloatingItem,
     Formatting,
@@ -52,12 +52,13 @@ from docling_core.types.doc.document import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    ProvenanceItem,
     Script,
     TableAnnotationType,
     TableItem,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.document import DOCUMENT_TOKENS_EXPORT_LABELS
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 _DEFAULT_LAYERS = set(ContentLayer)
@@ -108,7 +109,7 @@ def _iterate_items(
                     add_page_breaks=add_page_breaks,
                     visited=my_visited,
                 ):
-                    if isinstance(it, DocItem) and it.prov:
+                    if isinstance(it, DocItem) and it.prov and isinstance(it.prov[0], ProvenanceItem):
                         page_no = it.prov[0].page_no
                         if prev_page_nr is not None and page_no > prev_page_nr:
                             yield (
@@ -120,7 +121,7 @@ def _iterate_items(
                                 lvl,
                             )
                         break
-            elif isinstance(item, DocItem) and item.prov:
+            elif isinstance(item, DocItem) and item.prov and isinstance(item.prov[0], ProvenanceItem):
                 page_no = item.prov[0].page_no
                 if prev_page_nr is None or page_no > prev_page_nr:
                     if prev_page_nr is not None:  # close previous range
@@ -301,7 +302,13 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                             or item.content_layer not in params.layers
                             or (
                                 params.pages is not None
-                                and ((not item.prov) or item.prov[0].page_no not in params.pages)
+                                and (
+                                    (not item.prov)
+                                    or (
+                                        isinstance(item.prov[0], ProvenanceItem)
+                                        and item.prov[0].page_no not in params.pages
+                                    )
+                                )
                             )
                         )
                     )
@@ -671,6 +678,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             if (
                 isinstance(item, DocItem)
                 and item.prov
+                and isinstance(item.prov[0], ProvenanceItem)
                 and (self.params.pages is None or item.prov[0].page_no in self.params.pages)
                 and ix >= self.params.start_idx
                 and ix < self.params.stop_idx

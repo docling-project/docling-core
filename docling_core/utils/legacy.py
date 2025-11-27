@@ -7,20 +7,23 @@ from typing import Optional, Union
 
 from docling_core.types.doc import (
     BoundingBox,
+    ContentLayer,
     CoordOrigin,
     DocItem,
     DocItemLabel,
     DoclingDocument,
     DocumentOrigin,
+    GroupItem,
+    ListItem,
     PictureItem,
     ProvenanceItem,
     SectionHeaderItem,
     Size,
     TableCell,
+    TableData,
     TableItem,
     TextItem,
 )
-from docling_core.types.doc.document import ContentLayer, GroupItem, ListItem, TableData
 from docling_core.types.legacy_doc.base import (
     BaseCell,
     BaseText,
@@ -162,6 +165,7 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
                         span=[0, len(item.text)],
                     )
                     for p in item.prov
+                    if isinstance(p, ProvenanceItem)
                 ]
                 main_text.append(
                     BaseText(
@@ -283,6 +287,7 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
                                 span=[0, 0],
                             )
                             for p in item.prov
+                            if isinstance(p, ProvenanceItem)
                         ],
                     )
                 )
@@ -310,6 +315,7 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
                                 span=[0, len(caption)],
                             )
                             for p in item.prov
+                            if isinstance(p, ProvenanceItem)
                         ],
                         obj_type=doc_item_label_to_legacy_type(item.label),
                         text=caption,

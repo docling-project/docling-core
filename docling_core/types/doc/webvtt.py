@@ -23,9 +23,7 @@ class _WebVTTLineTerminator(str, Enum):
     CR = "\r"
 
 
-_WebVTTCueIdentifier = Annotated[
-    str, StringConstraints(strict=True, pattern=r"^(?!.*-->)[^\n\r]+$")
-]
+_WebVTTCueIdentifier = Annotated[str, StringConstraints(strict=True, pattern=r"^(?!.*-->)[^\n\r]+$")]
 
 
 class _WebVTTTimestamp(BaseModel):
@@ -39,14 +37,10 @@ class _WebVTTTimestamp(BaseModel):
 
     raw: Annotated[
         str,
-        Field(
-            description="A representation of the WebVTT Timestamp as a single string"
-        ),
+        Field(description="A representation of the WebVTT Timestamp as a single string"),
     ]
 
-    _pattern: ClassVar[re.Pattern] = re.compile(
-        r"^(?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3})$"
-    )
+    _pattern: ClassVar[re.Pattern] = re.compile(r"^(?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3})$")
     _hours: int
     _minutes: int
     _seconds: int
@@ -72,12 +66,7 @@ class _WebVTTTimestamp(BaseModel):
     @property
     def seconds(self) -> float:
         """A representation of the WebVTT Timestamp in seconds."""
-        return (
-            self._hours * 3600
-            + self._minutes * 60
-            + self._seconds
-            + self._millis / 1000.0
-        )
+        return self._hours * 3600 + self._minutes * 60 + self._seconds + self._millis / 1000.0
 
     @override
     def __str__(self) -> str:
@@ -87,9 +76,7 @@ class _WebVTTTimestamp(BaseModel):
 class _WebVTTCueTimings(BaseModel):
     """WebVTT cue timings."""
 
-    start: Annotated[
-        _WebVTTTimestamp, Field(description="Start time offset of the cue")
-    ]
+    start: Annotated[_WebVTTTimestamp, Field(description="Start time offset of the cue")]
     end: Annotated[_WebVTTTimestamp, Field(description="End time offset of the cue")]
 
     @model_validator(mode="after")
@@ -116,9 +103,7 @@ class _WebVTTCueTextSpan(BaseModel):
         for match in _ENTITY_PATTERN.finditer(value):
             entity = match.group(1)
             if entity not in _VALID_ENTITIES:
-                raise ValueError(
-                    f"Cue text contains an invalid HTML entity: &{entity};"
-                )
+                raise ValueError(f"Cue text contains an invalid HTML entity: &{entity};")
         if "&" in re.sub(_ENTITY_PATTERN, "", value):
             raise ValueError("Found '&' not part of a valid entity in the cue text")
         if any(ch in value for ch in {"\n", "\r", "<"}):
@@ -150,20 +135,12 @@ class _WebVTTCueInternalText(BaseModel):
     terminator: Optional[_WebVTTLineTerminator] = None
     components: Annotated[
         list[_WebVTTCueComponentWithTerminator],
-        Field(
-            description=(
-                "WebVTT caption or subtitle cue components representing the "
-                "cue internal text"
-            )
-        ),
+        Field(description=("WebVTT caption or subtitle cue components representing the cue internal text")),
     ] = []
 
     @override
     def __str__(self):
-        cue_str = (
-            f"{self.terminator.value if self.terminator else ''}"
-            f"{''.join(str(span) for span in self.components)}"
-        )
+        cue_str = f"{self.terminator.value if self.terminator else ''}{''.join(str(span) for span in self.components)}"
         return cue_str
 
 
@@ -181,9 +158,7 @@ class _WebVTTCueSpanStartTag(BaseModel):
     def validate_classes(cls, value: list[str]) -> list[str]:
         for item in value:
             if any(ch in item for ch in {"\t", "\n", "\r", " ", "&", "<", ">", "."}):
-                raise ValueError(
-                    "A cue span start tag class contains invalid characters"
-                )
+                raise ValueError("A cue span start tag class contains invalid characters")
             if not item:
                 raise ValueError("Cue span start tag classes cannot be empty")
         return value
@@ -207,9 +182,7 @@ class _WebVTTCueSpanStartTagAnnotated(_WebVTTCueSpanStartTag):
         for match in _ENTITY_PATTERN.finditer(value):
             entity = match.group(1)
             if entity not in _VALID_ENTITIES:
-                raise ValueError(
-                    f"Annotation contains an invalid HTML entity: &{entity};"
-                )
+                raise ValueError(f"Annotation contains an invalid HTML entity: &{entity};")
         if "&" in re.sub(_ENTITY_PATTERN, "", value):
             raise ValueError("Found '&' not part of a valid entity in annotation")
         if any(ch in value for ch in {"\n", "\r", ">"}):
@@ -324,9 +297,7 @@ class _WebVTTCueBlock(BaseModel):
 
     model_config = ConfigDict(regex_engine="python-re")
 
-    identifier: Optional[_WebVTTCueIdentifier] = Field(
-        None, description="The WebVTT cue identifier"
-    )
+    identifier: Optional[_WebVTTCueIdentifier] = Field(None, description="The WebVTT cue identifier")
     timings: Annotated[_WebVTTCueTimings, Field(description="The WebVTT cue timings")]
     payload: Annotated[
         list[_WebVTTCueComponentWithTerminator],
@@ -368,9 +339,7 @@ class _WebVTTCueBlock(BaseModel):
 
         start, end = [t.strip() for t in timing_line.split("-->")]
         end = re.split(" |\t", end)[0]  # ignore the cue settings list
-        timings: _WebVTTCueTimings = _WebVTTCueTimings(
-            start=_WebVTTTimestamp(raw=start), end=_WebVTTTimestamp(raw=end)
-        )
+        timings: _WebVTTCueTimings = _WebVTTCueTimings(start=_WebVTTTimestamp(raw=start), end=_WebVTTTimestamp(raw=end))
         cue_text = " ".join(cue_lines).strip()
         # adding close tag for cue spans without end tag
         for omm in {"v"}:
@@ -388,9 +357,7 @@ class _WebVTTCueBlock(BaseModel):
             match = matches[i]
             if match.start() > pos:
                 stack[-1].append(
-                    _WebVTTCueComponentWithTerminator(
-                        component=_WebVTTCueTextSpan(text=cue_text[pos : match.start()])
-                    )
+                    _WebVTTCueComponentWithTerminator(component=_WebVTTCueTextSpan(text=cue_text[pos : match.start()]))
                 )
             gps = {k: (v if v else None) for k, v in match.groupdict().items()}
 
@@ -410,9 +377,7 @@ class _WebVTTCueBlock(BaseModel):
                         if class_string:
                             classes = [c for c in class_string.split(".") if c]
                         st = (
-                            _WebVTTCueSpanStartTagAnnotated(
-                                name=ct, classes=classes, annotation=annotation.strip()
-                            )
+                            _WebVTTCueSpanStartTagAnnotated(name=ct, classes=classes, annotation=annotation.strip())
                             if annotation
                             else _WebVTTCueSpanStartTag(name=ct, classes=classes)
                         )
@@ -430,19 +395,13 @@ class _WebVTTCueBlock(BaseModel):
                             cp = _WebVTTCueLanguageSpan(start_tag=st, internal_text=it)
                         elif ct == "v":
                             cp = _WebVTTCueVoiceSpan(start_tag=st, internal_text=it)
-                        stack[-1].append(
-                            _WebVTTCueComponentWithTerminator(component=cp)
-                        )
+                        stack[-1].append(_WebVTTCueComponentWithTerminator(component=cp))
 
             pos = match.end()
             i += 1
 
         if pos < len(cue_text):
-            stack[-1].append(
-                _WebVTTCueComponentWithTerminator(
-                    component=_WebVTTCueTextSpan(text=cue_text[pos:])
-                )
-            )
+            stack[-1].append(_WebVTTCueComponentWithTerminator(component=_WebVTTCueTextSpan(text=cue_text[pos:])))
 
         return cls(
             identifier=identifier,

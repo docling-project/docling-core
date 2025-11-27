@@ -16,8 +16,13 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
-from docling_core.types.doc.document import ContentLayer, DoclingDocument
-from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
+from docling_core.types.doc import (
+    ContentLayer,
+    DoclingDocument,
+    GraphCellLabel,
+    GraphLinkLabel,
+    ProvenanceItem,
+)
 
 # ---------------------------------------------------------------------------
 # Helper functions / constants
@@ -82,7 +87,7 @@ class KeyValueVisualizer(BaseVisualizer):
             # First draw cells (rectangles + optional labels)
             # ------------------------------------------------------------------
             for cell in cell_dict.values():
-                if cell.prov is None or cell.prov.page_no != page_no:
+                if cell.prov is None or not isinstance(cell.prov, ProvenanceItem) or cell.prov.page_no != page_no:
                     continue  # skip cells not on this page or without bbox
 
                 tl_bbox = cell.prov.bbox.to_top_left_origin(page_height=doc.pages[page_no].size.height)
@@ -149,6 +154,8 @@ class KeyValueVisualizer(BaseVisualizer):
                 if (
                     src_cell.prov is None
                     or tgt_cell.prov is None
+                    or not isinstance(src_cell.prov, ProvenanceItem)
+                    or not isinstance(tgt_cell.prov, ProvenanceItem)
                     or src_cell.prov.page_no != page_no
                     or tgt_cell.prov.page_no != page_no
                 ):
