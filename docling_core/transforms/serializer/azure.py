@@ -46,13 +46,10 @@ from docling_core.types.doc.base import CoordOrigin
 from docling_core.types.doc.document import (
     DocItem,
     DoclingDocument,
-    FloatingItem,
     FormItem,
-    GroupItem,
     InlineGroup,
     KeyValueItem,
     ListGroup,
-    ListItem,
     NodeItem,
     PictureItem,
     RefItem,
@@ -75,7 +72,9 @@ def _bbox_to_polygon_coords(
     return [l, t, r, t, r, b, l, b]
 
 
-def _bbox_to_polygon_for_item(doc: DoclingDocument, item: DocItem) -> Optional[list[float]]:
+def _bbox_to_polygon_for_item(
+    doc: DoclingDocument, item: DocItem
+) -> Optional[list[float]]:
     """Compute a TOPLEFT-origin polygon for the first provenance of the item."""
     if not item.prov:
         return None
@@ -203,15 +202,14 @@ class _AzureTableSerializer(BaseTableSerializer):
         for i, row in enumerate(item.data.grid):
             for j, cell in enumerate(row):
                 # Only materialize each spanning cell once at its anchor position
-                if (
-                    i != cell.start_row_offset_idx
-                    or j != cell.start_col_offset_idx
-                ):
+                if i != cell.start_row_offset_idx or j != cell.start_col_offset_idx:
                     continue
 
                 # For RichTableCell, get textual content via helper
                 if isinstance(cell, RichTableCell):
-                    content_text = cell._get_text(doc=doc, doc_serializer=doc_serializer)
+                    content_text = cell._get_text(
+                        doc=doc, doc_serializer=doc_serializer
+                    )
                 else:
                     content_text = cell.text
 
@@ -428,6 +426,12 @@ class AzureDocSerializer(DocSerializer):
         parts: list[SerializationResult],  # not used; traversal already filled state
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize the collected state to an Azure-compatible JSON string.
+
+        Initializes the internal accumulator when empty, exports page
+        metadata (number and size) in input order, and returns a
+        SerializationResult whose `text` contains the compact JSON.
+        """
         # Initialize accumulator if not present
         if not self.azure:
             self.azure = {"pages": [], "tables": [], "figures": [], "paragraphs": []}
@@ -453,28 +457,35 @@ class AzureDocSerializer(DocSerializer):
     # Formatting/hyperlink hooks are no-ops for JSON output
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:
+        """Return the input text unchanged; bold is not encoded in JSON."""
         return text
 
     @override
     def serialize_italic(self, text: str, **kwargs: Any) -> str:
+        """Return the input text unchanged; italic is not encoded in JSON."""
         return text
 
     @override
     def serialize_underline(self, text: str, **kwargs: Any) -> str:
+        """Return the input text unchanged; underline is not encoded in JSON."""
         return text
 
     @override
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
+        """Return the input text unchanged; strikethrough is not encoded in JSON."""
         return text
 
     @override
     def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Return the input text unchanged; subscript is not encoded in JSON."""
         return text
 
     @override
     def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Return the input text unchanged; superscript is not encoded in JSON."""
         return text
 
     @override
     def serialize_hyperlink(self, text: str, hyperlink, **kwargs: Any) -> str:
+        """Return the input text unchanged; hyperlinks are not encoded in JSON."""
         return text

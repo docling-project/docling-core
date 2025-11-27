@@ -1,12 +1,15 @@
 """Tests for AzureDocSerializer."""
 
 import json
-import os
 from pathlib import Path
 
 from docling_core.transforms.serializer.azure import AzureDocSerializer
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, Size
-from docling_core.types.doc.document import DocItemLabel, DoclingDocument, ProvenanceItem
+from docling_core.types.doc.document import (
+    DocItemLabel,
+    DoclingDocument,
+    ProvenanceItem,
+)
 
 from .test_data_gen_flag import GEN_TEST_DATA
 from .test_docling_doc import _construct_doc
@@ -59,14 +62,20 @@ def test_azure_serialize_construct_doc_minimal_prov():
             item.prov = [
                 ProvenanceItem(
                     page_no=min(doc.pages.keys()),
-                    bbox=BoundingBox(l=l, t=t, r=r, b=b, coord_origin=CoordOrigin.TOPLEFT),
+                    bbox=BoundingBox(
+                        l=l, t=t, r=r, b=b, coord_origin=CoordOrigin.TOPLEFT
+                    ),
                     charspan=(0, 0),
                 )
             ]
 
     # Add provenance for the title and a couple of paragraphs if present
     for it in doc.texts[:3]:
-        if it.label in {DocItemLabel.TITLE, DocItemLabel.TEXT, DocItemLabel.SECTION_HEADER}:
+        if it.label in {
+            DocItemLabel.TITLE,
+            DocItemLabel.TEXT,
+            DocItemLabel.SECTION_HEADER,
+        }:
             _ensure_prov(it)
 
     # Add provenance for the first table if present
@@ -83,9 +92,10 @@ def test_azure_serialize_construct_doc_minimal_prov():
     # Basic structure check
     data = json.loads(actual_json)
     assert isinstance(data, dict)
-    assert "pages" in data and isinstance(data["pages"], list) and len(data["pages"]) >= 1
+    assert (
+        "pages" in data and isinstance(data["pages"], list) and len(data["pages"]) >= 1
+    )
     assert "paragraphs" in data and isinstance(data["paragraphs"], list)
 
     exp_file = Path("./test/data/doc/constructed_doc.gt.azure.json")
     _verify_json(exp_file=exp_file, actual_json=actual_json)
-
