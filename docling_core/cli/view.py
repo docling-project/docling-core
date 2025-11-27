@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """CLI for docling viewer."""
+
 import importlib
 import tempfile
 import webbrowser

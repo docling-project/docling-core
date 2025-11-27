@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Define base classes for chunking."""
+
 import json
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Iterator

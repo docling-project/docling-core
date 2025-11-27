@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2025
-# SPDX-License-Identifier: MIT
-#
-
 """Define base classes for serialization."""
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -317,7 +313,7 @@ class BaseMetaSerializer(ABC):
         return tmp.title() if title else tmp.capitalize()
 
 
-@deprecated("Use BaseMetaSerializer() instead.")
+# deprecated: use BaseMetaSerializer instead
 class BaseAnnotationSerializer(ABC):
     """Base class for annotation serializers."""
 

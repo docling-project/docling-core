@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Models and methods to define the metadata fields in database index mappings."""
+
 from pathlib import Path
 from typing import Generic, Optional, TypeVar
 

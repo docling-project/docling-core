@@ -1,3 +1,28 @@
+## [v2.52.0](https://github.com/docling-project/docling-core/releases/tag/v2.52.0) - 2025-11-20
+
+### Feature
+
+* **experimental:** Add new DocTags serializer ([#412](https://github.com/docling-project/docling-core/issues/412)) ([`c9e5fb4`](https://github.com/docling-project/docling-core/commit/c9e5fb4a1ceb1ec0cae8ebae5f3eb844c0a2198a))
+* Convert regions into TableData ([#430](https://github.com/docling-project/docling-core/issues/430)) ([`c80b583`](https://github.com/docling-project/docling-core/commit/c80b58369c5bbb1be779a241fee146aa1b3a3685))
+
+## [v2.51.1](https://github.com/docling-project/docling-core/releases/tag/v2.51.1) - 2025-11-14
+
+### Fix
+
+* Improve meta migration ([#422](https://github.com/docling-project/docling-core/issues/422)) ([`bc0e96b`](https://github.com/docling-project/docling-core/commit/bc0e96b9dc298d2e96ab2b4ce9faa4165d661b94))
+* DoclingDocument model validator should deal with any raw input ([#419](https://github.com/docling-project/docling-core/issues/419)) ([`56b3c42`](https://github.com/docling-project/docling-core/commit/56b3c42c61dbca7e9aa4a44fae18ecaadb482f81))
+
+## [v2.51.0](https://github.com/docling-project/docling-core/releases/tag/v2.51.0) - 2025-11-12
+
+### Feature
+
+* Add code chunking functionality ([#398](https://github.com/docling-project/docling-core/issues/398)) ([`3097645`](https://github.com/docling-project/docling-core/commit/3097645198915a1258cfe6e1d5df3b5f1c79395a))
+
+### Fix
+
+* Improve meta migration and warning handling ([#417](https://github.com/docling-project/docling-core/issues/417)) ([`3d13b02`](https://github.com/docling-project/docling-core/commit/3d13b02756f1c0d1f1ccab5cfbd76f1f888a0dd9))
+* Fix import handling of extra dependencies for chunking ([#418](https://github.com/docling-project/docling-core/issues/418)) ([`567d3ad`](https://github.com/docling-project/docling-core/commit/567d3ada57e19b2a738991ae6e49d55dd3301b17))
+
 ## [v2.50.1](https://github.com/docling-project/docling-core/releases/tag/v2.50.1) - 2025-11-04
 
 ### Fix
