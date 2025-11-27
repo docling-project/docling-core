@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -105,6 +105,15 @@ class AzureParams(CommonParams):
     include_words: bool = False
 
 
+class AzureOutput(BaseModel):
+    """Pydantic model for the Azure-like accumulated output."""
+
+    pages: list[dict[str, Any]] = Field(default_factory=list)
+    tables: list[dict[str, Any]] = Field(default_factory=list)
+    figures: list[dict[str, Any]] = Field(default_factory=list)
+    paragraphs: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class _AzureTextSerializer(BaseModel, BaseTextSerializer):
     """Serializer that collects paragraphs with optional roles."""
 
@@ -158,7 +167,7 @@ class _AzureTextSerializer(BaseModel, BaseTextSerializer):
             if role is not None:
                 para["role"] = role
 
-            doc_serializer.azure.setdefault("paragraphs", []).append(para)
+            doc_serializer._azure.paragraphs.append(para)
 
         # Nothing to emit as text; we just filled the accumulator
         return create_ser_result()
@@ -248,7 +257,7 @@ class _AzureTableSerializer(BaseTableSerializer):
 
                 table_obj["cells"].append(cell_obj)
 
-        doc_serializer.azure.setdefault("tables", []).append(table_obj)
+        doc_serializer._azure.tables.append(table_obj)
         return create_ser_result()
 
 
@@ -307,7 +316,7 @@ class _AzurePictureSerializer(BasePictureSerializer):
         if foots:
             fig_obj["footnotes"] = foots
 
-        doc_serializer.azure.setdefault("figures", []).append(fig_obj)
+        doc_serializer._azure.figures.append(fig_obj)
         return create_ser_result()
 
 
@@ -427,8 +436,8 @@ class AzureDocSerializer(DocSerializer):
 
     params: AzureParams = AzureParams()
 
-    # Accumulator for the Azure-like output
-    azure: Dict[str, Any] = Field(default_factory=dict)
+    # Accumulator for the Azure-like output (private)
+    _azure: AzureOutput = PrivateAttr(default_factory=AzureOutput)
 
     @override
     def serialize_doc(
@@ -445,15 +454,15 @@ class AzureDocSerializer(DocSerializer):
         """
         # Ensure accumulator has expected top-level keys even if partially filled
         # during traversal by item serializers (which may set paragraphs/tables/figures).
-        for key in ("pages", "tables", "figures", "paragraphs"):
-            self.azure.setdefault(key, [])
+        # Ensure accumulator exists (lists are initialized by default_factory)
+        _ = self._azure
 
         # Pages: export number/size; words omitted by default
         # Keep original order by page number
         for page_no in sorted(self.doc.pages.keys()):
             page = self.doc.pages[page_no]
             if page.size is not None:
-                self.azure["pages"].append(
+                self._azure.pages.append(
                     {
                         "pageNumber": page_no,
                         "width": page.size.width,
@@ -463,7 +472,13 @@ class AzureDocSerializer(DocSerializer):
                 )
 
         # Convert accumulated structure to compact JSON string
-        json_text = json.dumps(self.azure, ensure_ascii=False)
+        # Produce a compact JSON string from the Pydantic model
+        data = (
+            self._azure.model_dump()  # pydantic v2
+            if hasattr(self._azure, "model_dump")
+            else self._azure.dict()
+        )
+        json_text = json.dumps(data, ensure_ascii=False)
         return create_ser_result(text=json_text, span_source=parts)
 
     # Formatting/hyperlink hooks are no-ops for JSON output

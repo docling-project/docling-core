@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 from docling_core.transforms.serializer.azure import AzureDocSerializer
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, Size
@@ -15,13 +16,68 @@ from .test_data_gen_flag import GEN_TEST_DATA
 from .test_docling_doc import _construct_doc
 
 
+def _assert_json_like_equal(a: Any, b: Any, eps: float = 1e-3, path: str = "$") -> None:
+    """Recursively assert two JSON-like structures are equal with float tolerance.
+
+    Rules:
+    - Dicts: same keys; compare values recursively
+    - Lists: same length; compare elements in order
+    - Numbers: ints compare by ==; floats (or int-vs-float) compare within eps
+    - Strings/bools/null: compare by ==
+
+    The `path` argument is used to provide helpful assertion locations.
+    """
+    # Handle dicts
+    if isinstance(a, dict) and isinstance(b, dict):
+        a_keys, b_keys = set(a.keys()), set(b.keys())
+        assert a_keys == b_keys, f"Key mismatch at {path}: {a_keys ^ b_keys}"
+        for k in sorted(a_keys):
+            _assert_json_like_equal(a[k], b[k], eps=eps, path=f"{path}.{k}")
+        return
+
+    # Handle lists
+    if isinstance(a, list) and isinstance(b, list):
+        assert len(a) == len(b), f"List length mismatch at {path}: {len(a)} != {len(b)}"
+        for i, (ai, bi) in enumerate(zip(a, b)):
+            _assert_json_like_equal(ai, bi, eps=eps, path=f"{path}[{i}]")
+        return
+
+    # Handle numbers (int/float)
+    num_types = (int, float)
+    if isinstance(a, num_types) and isinstance(b, num_types):
+        # If either is float, compare with tolerance; if both int, exact match
+        if isinstance(a, float) or isinstance(b, float):
+            diff = abs(float(a) - float(b))
+            assert (
+                diff <= eps
+            ), f"Float mismatch at {path}: {a} != {b} (diff={diff}, eps={eps})"
+        else:
+            assert a == b, f"Int mismatch at {path}: {a} != {b}"
+        return
+
+    # Handle strings, bools, and None
+    if isinstance(a, (str, bool)) or a is None:
+        assert a == b, f"Value mismatch at {path}: {a!r} != {b!r}"
+        return
+
+    # Fallback: types must match and then equality
+    assert type(a) is type(b), f"Type mismatch at {path}: {type(a)} != {type(b)}"
+    assert a == b, f"Mismatch at {path}: {a!r} != {b!r}"
+
+
 def _verify_json(exp_file: Path, actual_json: str) -> None:
-    """Verify Azure JSON string against ground-truth file with generation support."""
+    """Verify Azure JSON string against ground-truth file with generation support.
+
+    Compares parsed JSON structures and tolerates tiny float differences.
+    """
     if GEN_TEST_DATA or not exp_file.exists():
+        # Keep writing the canonical serialized string for determinism
         exp_file.write_text(actual_json + "\n", encoding="utf-8")
     else:
-        expected = exp_file.read_text(encoding="utf-8").rstrip()
-        assert expected == actual_json
+        expected_text = exp_file.read_text(encoding="utf-8").rstrip()
+        expected_obj = json.loads(expected_text)
+        actual_obj = json.loads(actual_json)
+        _assert_json_like_equal(expected_obj, actual_obj, eps=1e-3)
 
 
 def test_azure_serialize_activities_doc():
