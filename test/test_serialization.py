@@ -28,7 +28,6 @@ from docling_core.types.doc.document import (
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
-from .test_docling_doc import _construct_doc, _construct_rich_table_doc
 
 
 def verify(exp_file: Path, actual: str):
@@ -193,14 +192,13 @@ def test_md_pb_placeholder_and_page_filter():
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
-def test_md_list_item_markers():
-    doc = _construct_doc()
+def test_md_list_item_markers(sample_doc):
     root_dir = Path("./test/data/doc")
     for mode in OrigListItemMarkerMode:
         for valid in [False, True]:
 
             ser = MarkdownDocSerializer(
-                doc=doc,
+                doc=sample_doc,
                 params=MarkdownParams(
                     orig_list_item_marker_mode=mode,
                     ensure_valid_list_item_marker=valid,
@@ -250,17 +248,16 @@ def test_md_mark_meta_false():
     )
 
 
-def test_md_legacy_annotations_mark_true():
+def test_md_legacy_annotations_mark_true(sample_doc):
     exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_true.gt.md")
-    doc = _construct_doc()
     with pytest.warns(DeprecationWarning):
-        doc.tables[0].annotations.append(
+        sample_doc.tables[0].annotations.append(
             DescriptionAnnotation(
                 text="This is a description of table 1.", provenance="foo"
             )
         )
         ser = MarkdownDocSerializer(
-            doc=doc,
+            doc=sample_doc,
             params=MarkdownParams(
                 mark_annotations=True,
             ),
@@ -272,17 +269,16 @@ def test_md_legacy_annotations_mark_true():
     )
 
 
-def test_md_legacy_annotations_mark_false():
+def test_md_legacy_annotations_mark_false(sample_doc):
     exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_false.gt.md")
-    doc = _construct_doc()
     with pytest.warns(DeprecationWarning):
-        doc.tables[0].annotations.append(
+        sample_doc.tables[0].annotations.append(
             DescriptionAnnotation(
                 text="This is a description of table 1.", provenance="foo"
             )
         )
         ser = MarkdownDocSerializer(
-            doc=doc,
+            doc=sample_doc,
             params=MarkdownParams(
                 mark_annotations=False,
             ),
@@ -303,11 +299,10 @@ def test_md_nested_lists():
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
-def test_md_rich_table():
+def test_md_rich_table(rich_table_doc):
     exp_file = Path("./test/data/doc/rich_table.gt.md")
-    doc = _construct_rich_table_doc()
 
-    ser = MarkdownDocSerializer(doc=doc)
+    ser = MarkdownDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
 
@@ -510,13 +505,12 @@ def test_html_include_annotations_true():
     )
 
 
-def test_html_list_item_markers():
-    doc = _construct_doc()
+def test_html_list_item_markers(sample_doc):
     root_dir = Path("./test/data/doc")
     for orig in [False, True]:
 
         ser = HTMLDocSerializer(
-            doc=doc,
+            doc=sample_doc,
             params=HTMLParams(
                 show_original_list_item_marker=orig,
             ),
@@ -537,11 +531,10 @@ def test_html_nested_lists():
     verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
 
 
-def test_html_rich_table():
+def test_html_rich_table(rich_table_doc):
     exp_file = Path("./test/data/doc/rich_table.gt.html")
-    doc = _construct_rich_table_doc()
 
-    ser = HTMLDocSerializer(doc=doc)
+    ser = HTMLDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
 
@@ -569,12 +562,10 @@ def test_doctags_inline_loc_tags():
     verify(exp_file=src.with_suffix(".out.dt"), actual=actual)
 
 
-def test_doctags_rich_table():
-
+def test_doctags_rich_table(rich_table_doc):
     exp_file = Path("./test/data/doc/rich_table.out.dt")
-    doc = _construct_rich_table_doc()
 
-    ser = DocTagsDocSerializer(doc=doc)
+    ser = DocTagsDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
 

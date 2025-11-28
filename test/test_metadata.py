@@ -33,7 +33,7 @@ class CustomCoordinates(BaseModel):
     latitude: float
 
 
-def test_metadata_usage():
+def test_metadata_usage() -> None:
     src = Path("test/data/doc/dummy_doc_with_meta.yaml")
     doc = DoclingDocument.load_from_yaml(filename=src)
     example_item: NodeItem = RefItem(cref="#/texts/2").resolve(doc=doc)

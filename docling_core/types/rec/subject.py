@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Define the model Subject."""
+
 from typing import Generic, Optional
 
 from pydantic import Field, StrictStr

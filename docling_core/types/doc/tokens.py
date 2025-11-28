@@ -1,8 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Tokens used in the docling document model."""
 
 from enum import Enum
@@ -262,9 +257,12 @@ class DocumentToken(str, Enum):
         return _PictureClassificationToken(f"<{classification}>").value
 
     @staticmethod
-    def get_code_language_token(code_language: str) -> str:
+    def get_code_language_token(code_language: str, self_closing: bool = False) -> str:
         """Function to get the token for a given code language."""
-        return _CodeLanguageToken(f"<_{code_language}_>").value
+        if self_closing:
+            return f"<{code_language}/>"
+        else:
+            return _CodeLanguageToken(f"<_{code_language}_>").value
 
     @staticmethod
     def get_location_token(

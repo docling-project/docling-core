@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2025
-# SPDX-License-Identifier: MIT
-#
-
 """Define base classes for serialization."""
+
 import logging
 import re
 import sys

@@ -20,4 +20,8 @@ Some *`formatted_code`*
 
 ## *Partially formatted* heading to\_escape `not_to_escape` [$E=mc^2$](https://en.wikipedia.org/wiki/Albert_Einstein) &amp; ampersand
 
+A hyperlink on [`code in a line`](#link)
+
+[`A hyperlink on code as paragraph`](#test)
+
 The end.

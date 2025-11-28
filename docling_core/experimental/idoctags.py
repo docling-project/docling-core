@@ -1,5 +1,6 @@
 """Define classes for DocTags serialization."""
 
+from enum import Enum
 from typing import Any, Final, Optional
 from xml.dom.minidom import parseString
 
@@ -10,6 +11,7 @@ from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseMetaSerializer,
     BasePictureSerializer,
+    BaseTableSerializer,
     SerializationResult,
 )
 from docling_core.transforms.serializer.common import create_ser_result
@@ -17,6 +19,7 @@ from docling_core.transforms.serializer.doctags import (
     DocTagsDocSerializer,
     DocTagsParams,
     DocTagsPictureSerializer,
+    DocTagsTableSerializer,
     _get_delim,
     _wrap,
 )
@@ -38,6 +41,25 @@ from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.tokens import DocumentToken
 
 DOCTAGS_VERSION: Final = "1.0.0"
+
+
+class IDocTagsTableToken(str, Enum):
+    """Class to represent an LLM friendly representation of a Table."""
+
+    CELL_LABEL_COLUMN_HEADER = "<column_header/>"
+    CELL_LABEL_ROW_HEADER = "<row_header/>"
+    CELL_LABEL_SECTION_HEADER = "<shed/>"
+    CELL_LABEL_DATA = "<data/>"
+
+    OTSL_ECEL = "<ecel/>"  # empty cell
+    OTSL_FCEL = "<fcel/>"  # cell with content
+    OTSL_LCEL = "<lcel/>"  # left looking cell,
+    OTSL_UCEL = "<ucel/>"  # up looking cell,
+    OTSL_XCEL = "<xcel/>"  # 2d extension cell (cross cell),
+    OTSL_NL = "<nl/>"  # new line,
+    OTSL_CHED = "<ched/>"  # - column header cell,
+    OTSL_RHED = "<rhed/>"  # - row header cell,
+    OTSL_SROW = "<srow/>"  # - section row cell
 
 
 class IDocTagsParams(DocTagsParams):
@@ -166,6 +188,7 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
                     temp_doc,
                     add_cell_location=False,
                     self_closing=params.do_self_closing,
+                    table_token=IDocTagsTableToken,
                 )
                 body += otsl_content
             res_parts.append(create_ser_result(text=body, span_source=item))
@@ -184,11 +207,19 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
+class IDocTagsTableSerializer(DocTagsTableSerializer):
+    """DocTags-specific table item serializer."""
+
+    def _get_table_token(self) -> Any:
+        return IDocTagsTableToken
+
+
 class IDocTagsDocSerializer(DocTagsDocSerializer):
     """DocTags document serializer."""
 
     picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
     meta_serializer: BaseMetaSerializer = IDocTagsMetaSerializer()
+    table_serializer: BaseTableSerializer = IDocTagsTableSerializer()
     params: IDocTagsParams = IDocTagsParams()
 
     @override
@@ -207,7 +238,7 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
-            page_sep = f"<{DocumentToken.PAGE_BREAK.value}>"
+            page_sep = f"<{DocumentToken.PAGE_BREAK.value}{'/' if self.params.do_self_closing else ''}>"
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 

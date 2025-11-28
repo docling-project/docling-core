@@ -2268,6 +2268,8 @@ class TableItem(FloatingItem):
 
         from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 
+        table_token = kwargs.get("table_token", TableToken)
+
         doc_serializer = DocTagsDocSerializer(doc=doc)
         body = []
         nrows = self.data.num_rows
@@ -2310,34 +2312,34 @@ class TableItem(FloatingItem):
                 if rowstart == i and colstart == j:
                     if len(content) > 0:
                         if cell.column_header:
-                            body.append(str(TableToken.OTSL_CHED.value))
+                            body.append(str(table_token.OTSL_CHED.value))
                         elif cell.row_header:
-                            body.append(str(TableToken.OTSL_RHED.value))
+                            body.append(str(table_token.OTSL_RHED.value))
                         elif cell.row_section:
-                            body.append(str(TableToken.OTSL_SROW.value))
+                            body.append(str(table_token.OTSL_SROW.value))
                         else:
-                            body.append(str(TableToken.OTSL_FCEL.value))
+                            body.append(str(table_token.OTSL_FCEL.value))
                         if add_cell_location:
                             body.append(str(cell_loc))
                         if add_cell_text:
                             body.append(str(content))
                     else:
-                        body.append(str(TableToken.OTSL_ECEL.value))
+                        body.append(str(table_token.OTSL_ECEL.value))
                 else:
                     add_cross_cell = False
                     if rowstart != i:
                         if colspan == 1:
-                            body.append(str(TableToken.OTSL_UCEL.value))
+                            body.append(str(table_token.OTSL_UCEL.value))
                         else:
                             add_cross_cell = True
                     if colstart != j:
                         if rowspan == 1:
-                            body.append(str(TableToken.OTSL_LCEL.value))
+                            body.append(str(table_token.OTSL_LCEL.value))
                         else:
                             add_cross_cell = True
                     if add_cross_cell:
-                        body.append(str(TableToken.OTSL_XCEL.value))
-            body.append(str(TableToken.OTSL_NL.value))
+                        body.append(str(table_token.OTSL_XCEL.value))
+            body.append(str(table_token.OTSL_NL.value))
         body_str = "".join(body)
         return body_str
 
@@ -5645,6 +5647,7 @@ class DoclingDocument(BaseModel):
                     if tag_name == DocumentToken.CHART.value:
                         table_data = parse_otsl_table_content(full_chunk)
                         chart_type = extract_chart_type(full_chunk)
+                    pic_title = chart_type if chart_type is not None else "other"
                     if image:
                         if bbox:
                             im_width, im_height = image.size
@@ -5680,7 +5683,6 @@ class DoclingDocument(BaseModel):
                                 )
                                 pic.captions.append(caption.get_ref())
 
-                            pic_title = "picture"
                             pic_classification = None
                             if chart_type is not None:
                                 pic_classification = PictureClassificationMetaField(
@@ -5692,8 +5694,6 @@ class DoclingDocument(BaseModel):
                                         )
                                     ]
                                 )
-                                pic_title = chart_type
-
                             pic_tabular_chart = None
                             if table_data is not None:
                                 pic_tabular_chart = TabularChartMetaField(
@@ -6139,7 +6139,7 @@ class DoclingDocument(BaseModel):
         else:
             return CURRENT_VERSION
 
-    @model_validator(mode="after")  # type: ignore
+    @model_validator(mode="after")
     def validate_document(self) -> Self:
         """validate_document."""
         with warnings.catch_warnings():
@@ -6153,7 +6153,7 @@ class DoclingDocument(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def validate_misplaced_list_items(self):
+    def validate_misplaced_list_items(self) -> Self:
         """validate_misplaced_list_items."""
         # find list items without list parent, putting succesive ones together
         misplaced_list_items: list[list[ListItem]] = []
@@ -6185,7 +6185,7 @@ class DoclingDocument(BaseModel):
             )
 
             # delete list items from document (should not be affected by group addition)
-            self.delete_items(node_items=curr_list_items)
+            self.delete_items(node_items=list(curr_list_items))
 
             # add list items to new group
             for li in curr_list_items:
@@ -6224,6 +6224,13 @@ class DoclingDocument(BaseModel):
         def index(
             self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None
         ) -> None:
+
+            if page_nrs is not None and (
+                unavailable_page_nrs := page_nrs - set(doc.pages.keys())
+            ):
+                raise ValueError(
+                    f"The following page numbers are not present in the document: {unavailable_page_nrs}"
+                )
 
             orig_ref_to_new_ref: dict[str, str] = {}
             page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
@@ -6378,38 +6385,54 @@ class DoclingDocument(BaseModel):
         res_doc._update_from_index(doc_index)
         return res_doc
 
-    def _validate_rules(self):
+    def _validate_rules(self, raise_on_error: bool = True):
+
+        def _handle(error: Exception):
+            if raise_on_error:
+                raise error
+            else:
+                warnings.warn(str(error))
 
         def validate_furniture(doc: DoclingDocument):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
                 has_furniture_children = len(doc.furniture.children) > 0
             if has_furniture_children:
-                raise ValueError(
-                    f"Deprecated furniture node {doc.furniture.self_ref} has children"
+                _handle(
+                    ValueError(
+                        f"Deprecated furniture node {doc.furniture.self_ref} has children"
+                    ),
                 )
 
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
             for ref in item.children:
                 child = ref.resolve(doc)
                 if not isinstance(child, ListItem):
-                    raise ValueError(
-                        f"ListGroup {item.self_ref} contains non-ListItem {child.self_ref} ({child.label=})"
+                    _handle(
+                        ValueError(
+                            f"ListGroup {item.self_ref} contains non-ListItem {child.self_ref} ({child.label=})"
+                        ),
                     )
 
         def validate_list_item(doc: DoclingDocument, item: ListItem):
             if item.parent is None:
-                raise ValueError(f"ListItem {item.self_ref} has no parent")
-            if not isinstance(item.parent.resolve(doc), ListGroup):
-                raise ValueError(
-                    f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"
+                _handle(
+                    ValueError(f"ListItem {item.self_ref} has no parent"),
+                )
+            elif not isinstance(item.parent.resolve(doc), ListGroup):
+                _handle(
+                    ValueError(
+                        f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"
+                    ),
                 )
 
         def validate_group(doc: DoclingDocument, item: GroupItem):
             if (
                 item.parent and not item.children
             ):  # tolerate empty body, but not other groups
-                raise ValueError(f"Group {item.self_ref} has no children")
+                _handle(
+                    ValueError(f"Group {item.self_ref} has no children"),
+                )
 
         validate_furniture(self)
 

@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Define the model Predicate."""
+
 from datetime import datetime
 from typing import Annotated, Generic, Optional
 

@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Define common models across types."""
+
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Final, Generic, Hashable, List, Literal, Optional, TypeVar
