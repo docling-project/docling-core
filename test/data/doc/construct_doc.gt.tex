@@ -1,0 +1,127 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{graphicx}       % graphics
+\title{Title of the Document}
+
+\begin{document}
+
+\maketitle
+
+\begin{itemize}
+\item item of leading list
+\end{itemize}
+
+Author 1
+Affiliation 1
+
+Author 2
+Affiliation 2
+
+\section{1. Introduction}
+
+This paper introduces the biggest invention ever made. ...
+
+\begin{itemize}
+\item list item 1
+\item list item 2
+\item list item 3
+  \begin{enumerate}
+\item list item 3.a
+\item list item 3.b
+\item list item 3.c
+    \begin{enumerate}
+\item list item 3.c.i
+    \end{enumerate}
+  \end{enumerate}
+\item list item 4
+\end{itemize}
+
+\begin{table}[h]
+\caption{This is the caption of table 1.}
+\begin{tabular}{|l|l|l|}
+\hline
+Product & Years & Years \\ \hline
+Product & 2016 & 2017 \\ \hline
+Apple & 49823 & 695944 \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+% image
+\caption{This is the caption of figure 1.}
+\end{figure}
+
+\begin{figure}[h]
+% image
+\caption{This is the caption of figure 2.}
+\end{figure}
+
+\begin{itemize}
+\item item 1 of list
+\end{itemize}
+
+\begin{itemize}
+\item item 1 of list after empty list
+\item item 2 of list after empty list
+\end{itemize}
+
+\begin{itemize}
+\item item 1 of neighboring list
+\item item 2 of neighboring list
+  \begin{itemize}
+\item item 1 of sub list
+\item Here a code snippet: \texttt{print("Hello world")} (to be displayed inline)
+Here a code snippet: \texttt{print("Hello world")} (to be displayed inline)
+\item Here a formula: $E=mc^2$ (to be displayed inline)
+Here a formula: $E=mc^2$ (to be displayed inline)
+  \end{itemize}
+\end{itemize}
+
+Here a code block:
+
+\begin{verbatim}
+print("Hello world")
+\end{verbatim}
+
+Here a formula block:
+
+$$E=mc^2$$
+
+% missing-key-value-item
+
+% missing-form-item
+
+Some formatting chops: \textbf{bold} \textit{italic} \underline{underline} \sout{strikethrough} $_{subscript}$ $^{superscript}$ \href{.}{hyperlink} \& \href{https://github.com/DS4SD/docling}{\sout{\underline{\textit{\textbf{everything at the same time.}}}}}
+
+\begin{enumerate}
+\item Item 1 in A
+\item Item 2 in A
+\item Item 3 in A
+  \begin{enumerate}
+\item Item 1 in B
+\item Item 2 in B
+    \begin{enumerate}
+\item Item 1 in C
+\item Item 2 in C
+    \end{enumerate}
+\item Item 3 in B
+  \end{enumerate}
+\item Item 4 in A
+\end{enumerate}
+
+\begin{itemize}
+\item List item without parent list group
+\end{itemize}
+
+The end.
+
+\end{document}
