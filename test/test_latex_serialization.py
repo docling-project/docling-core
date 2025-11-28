@@ -13,8 +13,9 @@ from docling_core.transforms.serializer.latex import LaTeXDocSerializer, LaTeXPa
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import DoclingDocument
 
+from .conftest import _construct_doc
+from .conftest import _rich_table_doc as _construct_rich_table_doc
 from .test_data_gen_flag import GEN_TEST_DATA
-from .test_docling_doc import _construct_doc, _construct_rich_table_doc
 
 
 def verify_or_update(exp_file: Path, actual: str):
