@@ -601,8 +601,7 @@ class SegmentedPdfPage(SegmentedPage):
         if isinstance(filename, str):
             filename = Path(filename)
         out = self.export_to_dict()
-        with open(filename, "w", encoding="utf-8") as fw:
-            json.dump(out, fw, indent=indent)
+        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "SegmentedPdfPage":
@@ -616,8 +615,7 @@ class SegmentedPdfPage(SegmentedPage):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
-            return cls.model_validate_json(f.read())
+        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
 
     def crop_text(
         self, cell_unit: TextCellUnit, bbox: BoundingBox, eps: float = 1.0
@@ -1218,8 +1216,7 @@ class PdfTableOfContents(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         out = self.export_to_dict()
-        with open(filename, "w", encoding="utf-8") as fw:
-            json.dump(out, fw, indent=indent)
+        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "PdfTableOfContents":
@@ -1233,8 +1230,7 @@ class PdfTableOfContents(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
-            return cls.model_validate_json(f.read())
+        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
 
 
 class ParsedPdfDocument(BaseModel):
@@ -1280,8 +1276,7 @@ class ParsedPdfDocument(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         out = self.export_to_dict()
-        with open(filename, "w", encoding="utf-8") as fw:
-            json.dump(out, fw, indent=indent)
+        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "ParsedPdfDocument":
@@ -1295,5 +1290,4 @@ class ParsedPdfDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
-            return cls.model_validate_json(f.read())
+        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
