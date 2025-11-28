@@ -6822,4 +6822,4 @@ texts:
   text: '23. Zhong, X., Tang, J., Yepes, A.J.: Publaynet: largest dataset ever for
     document layout analysis. In: 2019 International Conference on Document Analysis
     and Recognition (ICDAR). pp. 1015-1022. IEEE (2019)'
-version: 1.7.0
+version: 1.8.0

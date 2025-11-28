@@ -1,6 +1,4 @@
-bar chart
-
-<!-- image -->
+Bar chart
 
 |   Number of impellers |   single-frequency |   multi-frequency |
 |-----------------------|--------------------|-------------------|
@@ -10,3 +8,5 @@ bar chart
 |                     4 |               0.14 |              0.26 |
 |                     5 |               0.16 |              0.25 |
 |                     6 |               0.24 |              0.24 |
+
+<!-- image -->

@@ -1,14 +1,11 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Package for models defined by the Document type."""
 
 from .base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from .document import (
     AnyTableCell,
     BaseAnnotation,
+    BaseMeta,
+    BasePrediction,
     ChartBar,
     ChartLine,
     ChartPoint,
@@ -17,12 +14,14 @@ from .document import (
     CodeItem,
     ContentLayer,
     DescriptionAnnotation,
+    DescriptionMetaField,
     DocItem,
     DoclingDocument,
     DocTagsDocument,
     DocTagsPage,
     DocumentOrigin,
     FloatingItem,
+    FloatingMeta,
     Formatting,
     FormItem,
     FormulaItem,
@@ -35,7 +34,10 @@ from .document import (
     KeyValueItem,
     ListGroup,
     ListItem,
+    MetaFieldName,
+    MetaUtils,
     MiscAnnotation,
+    MoleculeMetaField,
     NodeItem,
     OrderedList,
     PageItem,
@@ -43,9 +45,11 @@ from .document import (
     PictureChartData,
     PictureClassificationClass,
     PictureClassificationData,
+    PictureClassificationMetaField,
     PictureDataType,
     PictureItem,
     PictureLineChartData,
+    PictureMeta,
     PictureMoleculeData,
     PicturePieChartData,
     PictureScatterChartData,
@@ -56,9 +60,11 @@ from .document import (
     RichTableCell,
     Script,
     SectionHeaderItem,
+    SummaryMetaField,
     TableCell,
     TableData,
     TableItem,
+    TabularChartMetaField,
     TextItem,
     TitleItem,
     UnorderedList,

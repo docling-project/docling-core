@@ -759,7 +759,7 @@ texts:
   text: 'Here a code snippet:'
 - captions: []
   children: []
-  code_language: unknown
+  code_language: Python
   content_layer: body
   footnotes: []
   label: code
@@ -829,7 +829,7 @@ texts:
   text: 'Here a code block:'
 - captions: []
   children: []
-  code_language: unknown
+  code_language: Python
   content_layer: body
   footnotes: []
   label: code
@@ -1113,4 +1113,4 @@ texts:
   prov: []
   self_ref: '#/texts/55'
   text: The end.
-version: 1.7.0
+version: 1.8.0

@@ -14,7 +14,18 @@ import warnings
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, Final, List, Literal, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Final,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 from urllib.parse import unquote
 
 import pandas as pd
@@ -60,7 +71,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.7.0"
+CURRENT_VERSION: Final = "1.8.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -679,6 +690,279 @@ class TableData(BaseModel):  # TBD
 
         return col_bboxes
 
+    @classmethod
+    def _dedupe_bboxes(
+        cls,
+        elements: Sequence[BoundingBox],
+        *,
+        iou_threshold: float = 0.9,
+    ) -> list[BoundingBox]:
+        """Return elements whose bounding boxes are unique within ``iou_threshold``."""
+        deduped: list[BoundingBox] = []
+        for element in elements:
+            if all(
+                element.intersection_over_union(kept) < iou_threshold
+                for kept in deduped
+            ):
+                deduped.append(element)
+        return deduped
+
+    @classmethod
+    def _process_table_headers(
+        cls,
+        bbox: BoundingBox,
+        row_headers: List[BoundingBox] = [],
+        col_headers: List[BoundingBox] = [],
+        row_sections: List[BoundingBox] = [],
+    ) -> Tuple[bool, bool, bool]:
+        c_column_header = False
+        c_row_header = False
+        c_row_section = False
+
+        for col_header in col_headers:
+            if bbox.intersection_over_self(col_header) >= 0.5:
+                c_column_header = True
+        for row_header in row_headers:
+            if bbox.intersection_over_self(row_header) >= 0.5:
+                c_row_header = True
+        for row_section in row_sections:
+            if bbox.intersection_over_self(row_section) >= 0.5:
+                c_row_section = True
+        return c_column_header, c_row_header, c_row_section
+
+    @classmethod
+    def _compute_cells(
+        cls,
+        rows: List[BoundingBox],
+        columns: List[BoundingBox],
+        merges: List[BoundingBox],
+        row_headers: List[BoundingBox] = [],
+        col_headers: List[BoundingBox] = [],
+        row_sections: List[BoundingBox] = [],
+        row_overlap_threshold: float = 0.5,  # how much of a row a merge must cover vertically
+        col_overlap_threshold: float = 0.5,  # how much of a column a merge must cover horizontally
+    ) -> List[TableCell]:
+        """Returns TableCell. Merged cells are aligned to grid boundaries.
+
+        rows, columns, merges are lists of BoundingBox(l,t,r,b).
+        """
+        rows.sort(key=lambda r: (r.t + r.b) / 2.0)
+        columns.sort(key=lambda c: (c.l + c.r) / 2.0)
+
+        def span_from_merge(
+            m: BoundingBox, lines: List[BoundingBox], axis: str, frac_threshold: float
+        ) -> Optional[Tuple[int, int]]:
+            """Map a merge bbox to an inclusive index span over rows or columns.
+
+            axis='row' uses vertical overlap vs row height; axis='col' uses horizontal overlap vs col width.
+            If nothing meets threshold, pick the single best-overlapping line if overlap>0; else return None.
+            """
+            idxs = []
+            best_i, best_len = None, 0.0
+            for i, elem in enumerate(lines):
+                inter = m.get_intersection_bbox(elem)
+                if not inter:
+                    continue
+                if axis == "row":
+                    overlap_len = inter.height
+                    base = max(1e-9, elem.height)
+                else:
+                    overlap_len = inter.width
+                    base = max(1e-9, elem.width)
+
+                frac = overlap_len / base
+                if frac >= frac_threshold:
+                    idxs.append(i)
+
+                if overlap_len > best_len:
+                    best_len, best_i = overlap_len, i
+
+            if idxs:
+                return min(idxs), max(idxs)
+            if best_i is not None and best_len > 0.0:
+                return best_i, best_i
+            return None
+
+        cells: List[TableCell] = []
+        covered: Set[Tuple[int, int]] = set()
+        seen_merge_rects: Set[Tuple[int, int, int, int]] = set()
+
+        # 1) Add merged cells first (and mark their covered simple cells)
+        for m in merges:
+            rspan = span_from_merge(
+                m, rows, axis="row", frac_threshold=row_overlap_threshold
+            )
+            cspan = span_from_merge(
+                m, columns, axis="col", frac_threshold=col_overlap_threshold
+            )
+            if rspan is None or cspan is None:
+                # Can't confidently map this merge to grid -> skip it
+                continue
+
+            sr, er = rspan
+            sc, ec = cspan
+            rect_key = (sr, er, sc, ec)
+            if rect_key in seen_merge_rects:
+                continue
+            seen_merge_rects.add(rect_key)
+
+            # Grid-aligned bbox for the merged cell
+            grid_bbox = BoundingBox(
+                l=columns[sc].l,
+                t=rows[sr].t,
+                r=columns[ec].r,
+                b=rows[er].b,
+            )
+            c_column_header, c_row_header, c_row_section = cls._process_table_headers(
+                grid_bbox, col_headers, row_headers, row_sections
+            )
+
+            cells.append(
+                TableCell(
+                    text="",
+                    row_span=er - sr + 1,
+                    col_span=ec - sc + 1,
+                    start_row_offset_idx=sr,
+                    end_row_offset_idx=er + 1,
+                    start_col_offset_idx=sc,
+                    end_col_offset_idx=ec + 1,
+                    bbox=grid_bbox,
+                    column_header=c_column_header,
+                    row_header=c_row_header,
+                    row_section=c_row_section,
+                )
+            )
+            for ri in range(sr, er + 1):
+                for ci in range(sc, ec + 1):
+                    covered.add((ri, ci))
+
+        # 2) Add simple (1x1) cells where not covered by merges
+        for ri, row in enumerate(rows):
+            for ci, col in enumerate(columns):
+                if (ri, ci) in covered:
+                    continue
+                inter = row.get_intersection_bbox(col)
+                if not inter:
+                    # In degenerate cases (big gaps), there might be no intersection; skip.
+                    continue
+                c_column_header, c_row_header, c_row_section = (
+                    cls._process_table_headers(
+                        inter, col_headers, row_headers, row_sections
+                    )
+                )
+                cells.append(
+                    TableCell(
+                        text="",
+                        row_span=1,
+                        col_span=1,
+                        start_row_offset_idx=ri,
+                        end_row_offset_idx=ri + 1,
+                        start_col_offset_idx=ci,
+                        end_col_offset_idx=ci + 1,
+                        bbox=inter,
+                        column_header=c_column_header,
+                        row_header=c_row_header,
+                        row_section=c_row_section,
+                    )
+                )
+        return cells
+
+    @classmethod
+    def from_regions(
+        cls,
+        table_bbox: BoundingBox,
+        rows: List[BoundingBox],
+        cols: List[BoundingBox],
+        merges: List[BoundingBox],
+        row_headers: List[BoundingBox] = [],
+        col_headers: List[BoundingBox] = [],
+        row_sections: List[BoundingBox] = [],
+    ) -> Self:
+        """Converts regions: rows, columns, merged cells into table_data structure.
+
+        Adds semantics for regions of row_headers, col_headers, row_section
+        """
+        default_containment_thresh = 0.5
+        rows.extend(row_sections)  # use row sections to compensate for missing rows
+        rows = cls._dedupe_bboxes(
+            [
+                e
+                for e in rows
+                if e.intersection_over_self(table_bbox) >= default_containment_thresh
+            ]
+        )
+        cols = cls._dedupe_bboxes(
+            [
+                e
+                for e in cols
+                if e.intersection_over_self(table_bbox) >= default_containment_thresh
+            ]
+        )
+        merges = cls._dedupe_bboxes(
+            [
+                e
+                for e in merges
+                if e.intersection_over_self(table_bbox) >= default_containment_thresh
+            ]
+        )
+
+        col_headers = cls._dedupe_bboxes(
+            [
+                e
+                for e in col_headers
+                if e.intersection_over_self(table_bbox) >= default_containment_thresh
+            ]
+        )
+        row_headers = cls._dedupe_bboxes(
+            [
+                e
+                for e in row_headers
+                if e.intersection_over_self(table_bbox) >= default_containment_thresh
+            ]
+        )
+        row_sections = cls._dedupe_bboxes(
+            [
+                e
+                for e in row_sections
+                if e.intersection_over_self(table_bbox) >= default_containment_thresh
+            ]
+        )
+
+        # Compute table cells from CVAT elements: rows, cols, merges
+        computed_table_cells = cls._compute_cells(
+            rows,
+            cols,
+            merges,
+            col_headers,
+            row_headers,
+            row_sections,
+        )
+
+        # If no table structure found, create single fake cell for content
+        if not rows or not cols:
+            computed_table_cells = [
+                TableCell(
+                    text="",
+                    row_span=1,
+                    col_span=1,
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    bbox=table_bbox,
+                    column_header=False,
+                    row_header=False,
+                    row_section=False,
+                )
+            ]
+            table_data = cls(num_rows=1, num_cols=1)
+        else:
+            table_data = cls(num_rows=len(rows), num_cols=len(cols))
+
+        table_data.table_cells = computed_table_cells
+
+        return table_data
+
 
 class PictureTabularChartData(PictureChartData):
     """Base class for picture chart data.
@@ -941,6 +1225,156 @@ class ContentLayer(str, Enum):
 DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
 
 
+class _ExtraAllowingModel(BaseModel):
+    """Base model allowing extra fields."""
+
+    model_config = ConfigDict(extra="allow")
+
+    def get_custom_part(self) -> dict[str, Any]:
+        """Get the extra fields as a dictionary."""
+        return self.__pydantic_extra__ or {}
+
+    def _copy_without_extra(self) -> Self:
+        """Create a copy without the extra fields."""
+        return self.model_validate(
+            self.model_dump(exclude={ex for ex in self.get_custom_part()})
+        )
+
+    def _check_custom_field_format(self, key: str) -> None:
+        parts = key.split(MetaUtils._META_FIELD_NAMESPACE_DELIMITER, maxsplit=1)
+        if len(parts) != 2 or (not parts[0]) or (not parts[1]):
+            raise ValueError(
+                f"Custom meta field name must be in format 'namespace__field_name' (e.g. 'my_corp__max_size'): {key}"
+            )
+
+    @model_validator(mode="after")
+    def _validate_field_names(self) -> Self:
+        extra_dict = self.get_custom_part()
+        for key in self.model_dump():
+            if key in extra_dict:
+                self._check_custom_field_format(key=key)
+            elif MetaUtils._META_FIELD_NAMESPACE_DELIMITER in key:
+                raise ValueError(
+                    f"Standard meta field name must not contain '__': {key}"
+                )
+
+        return self
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if name in self.get_custom_part():
+            self._check_custom_field_format(key=name)
+
+    def set_custom_field(self, namespace: str, name: str, value: Any) -> str:
+        """Set a custom field and return the key."""
+        key = MetaUtils.create_meta_field_name(namespace=namespace, name=name)
+        setattr(self, key, value)
+        return key
+
+
+class BasePrediction(_ExtraAllowingModel):
+    """Prediction field."""
+
+    confidence: Optional[float] = Field(
+        default=None,
+        ge=0,
+        le=1,
+        description="The confidence of the prediction.",
+        examples=[0.9, 0.42],
+    )
+    created_by: Optional[str] = Field(
+        default=None,
+        description="The origin of the prediction.",
+        examples=["ibm-granite/granite-docling-258M"],
+    )
+
+    @field_serializer("confidence")
+    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
+        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)
+
+
+class SummaryMetaField(BasePrediction):
+    """Summary data."""
+
+    text: str
+
+
+# NOTE: must be manually kept in sync with top-level BaseMeta hierarchy fields
+class MetaFieldName(str, Enum):
+    """Standard meta field names."""
+
+    SUMMARY = "summary"  # a summary of the tree under this node
+    DESCRIPTION = "description"  # a description of the node (e.g. for images)
+    CLASSIFICATION = "classification"  # a classification of the node content
+    MOLECULE = "molecule"  # molecule data
+    TABULAR_CHART = "tabular_chart"  # tabular chart data
+
+
+class BaseMeta(_ExtraAllowingModel):
+    """Base class for metadata."""
+
+    summary: Optional[SummaryMetaField] = None
+
+
+class DescriptionMetaField(BasePrediction):
+    """Description metadata field."""
+
+    text: str
+
+
+class PictureClassificationPrediction(BasePrediction):
+    """Picture classification instance."""
+
+    class_name: str
+
+
+class PictureClassificationMetaField(_ExtraAllowingModel):
+    """Picture classification metadata field."""
+
+    predictions: list[PictureClassificationPrediction] = Field(
+        default_factory=list, min_length=1
+    )
+
+    def get_main_prediction(self) -> PictureClassificationPrediction:
+        """Get prediction with highest confidence (if confidence not available, first is used by convention)."""
+        max_conf_pos: Optional[int] = None
+        max_conf: Optional[float] = None
+        for i, pred in enumerate(self.predictions):
+            if pred.confidence is not None and (
+                max_conf is None or pred.confidence > max_conf
+            ):
+                max_conf_pos = i
+                max_conf = pred.confidence
+        return self.predictions[max_conf_pos if max_conf_pos is not None else 0]
+
+
+class MoleculeMetaField(BasePrediction):
+    """Molecule metadata field."""
+
+    smi: str = Field(description="The SMILES representation of the molecule.")
+
+
+class TabularChartMetaField(BasePrediction):
+    """Tabular chart metadata field."""
+
+    title: Optional[str] = None
+    chart_data: TableData
+
+
+class FloatingMeta(BaseMeta):
+    """Metadata model for floating."""
+
+    description: Optional[DescriptionMetaField] = None
+
+
+class PictureMeta(FloatingMeta):
+    """Metadata model for pictures."""
+
+    classification: Optional[PictureClassificationMetaField] = None
+    molecule: Optional[MoleculeMetaField] = None
+    tabular_chart: Optional[TabularChartMetaField] = None
+
+
 class NodeItem(BaseModel):
     """NodeItem."""
 
@@ -951,6 +1385,8 @@ class NodeItem(BaseModel):
     content_layer: ContentLayer = ContentLayer.BODY
 
     model_config = ConfigDict(extra="forbid")
+
+    meta: Optional[BaseMeta] = None
 
     def get_ref(self) -> RefItem:
         """get_ref."""
@@ -1105,6 +1541,7 @@ class DocItem(
         new_line: str = "",  # deprecated
         xsize: int = 500,
         ysize: int = 500,
+        self_closing: bool = False,
     ) -> str:
         """Get the location string for the BaseCell."""
         if not len(self.prov):
@@ -1120,6 +1557,7 @@ class DocItem(
                 page_h=page_h,
                 xsize=xsize,
                 ysize=ysize,
+                self_closing=self_closing,
             )
             location += loc_str
 
@@ -1312,6 +1750,8 @@ class ListItem(TextItem):
 class FloatingItem(DocItem):
     """FloatingItem."""
 
+    meta: Optional[FloatingMeta] = None
+
     captions: List[RefItem] = []
     references: List[RefItem] = []
     footnotes: List[RefItem] = []
@@ -1399,6 +1839,33 @@ class FormulaItem(TextItem):
     )
 
 
+class MetaUtils:
+    """Metadata-related utilities."""
+
+    _META_FIELD_NAMESPACE_DELIMITER: Final = "__"
+    _META_FIELD_LEGACY_NAMESPACE: Final = "docling_legacy"
+
+    @classmethod
+    def create_meta_field_name(
+        cls,
+        *,
+        namespace: str,
+        name: str,
+    ) -> str:
+        """Create a meta field name."""
+        return f"{namespace}{cls._META_FIELD_NAMESPACE_DELIMITER}{name}"
+
+    @classmethod
+    def _create_migrated_meta_field_name(
+        cls,
+        *,
+        name: str,
+    ) -> str:
+        return cls.create_meta_field_name(
+            namespace=cls._META_FIELD_LEGACY_NAMESPACE, name=name
+        )
+
+
 class PictureItem(FloatingItem):
     """PictureItem."""
 
@@ -1406,7 +1873,74 @@ class PictureItem(FloatingItem):
         DocItemLabel.PICTURE
     )
 
-    annotations: List[PictureDataType] = []
+    meta: Optional[PictureMeta] = None
+    annotations: Annotated[
+        List[PictureDataType],
+        deprecated("Field `annotations` is deprecated; use `meta` instead."),
+    ] = []
+
+    @model_validator(mode="after")
+    def _migrate_annotations_to_meta(self) -> Self:
+        """Migrate the `annotations` field to `meta`."""
+        if self.annotations:
+            _logger.warning(
+                "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
+                "Note that only the first available instance of each annotation type will be migrated."
+            )
+            for ann in self.annotations:
+                # migrate annotations to meta
+
+                # ensure meta field is present
+                if self.meta is None:
+                    self.meta = PictureMeta()
+
+                if isinstance(ann, PictureClassificationData):
+                    self.meta.classification = PictureClassificationMetaField(
+                        predictions=[
+                            PictureClassificationPrediction(
+                                class_name=pred.class_name,
+                                confidence=pred.confidence,
+                                created_by=ann.provenance,
+                            )
+                            for pred in ann.predicted_classes
+                        ],
+                    )
+                elif isinstance(ann, DescriptionAnnotation):
+                    self.meta.description = DescriptionMetaField(
+                        text=ann.text,
+                        created_by=ann.provenance,
+                    )
+                elif isinstance(ann, PictureMoleculeData):
+                    self.meta.molecule = MoleculeMetaField(
+                        smi=ann.smi,
+                        confidence=ann.confidence,
+                        created_by=ann.provenance,
+                        **{
+                            MetaUtils._create_migrated_meta_field_name(
+                                name="segmentation"
+                            ): ann.segmentation,
+                            MetaUtils._create_migrated_meta_field_name(
+                                name="class_name"
+                            ): ann.class_name,
+                        },
+                    )
+                elif isinstance(ann, PictureTabularChartData):
+                    self.meta.tabular_chart = TabularChartMetaField(
+                        title=ann.title,
+                        chart_data=ann.chart_data,
+                    )
+                else:
+                    self.meta.set_custom_field(
+                        namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
+                        name=ann.kind,
+                        value=(
+                            ann.content
+                            if isinstance(ann, MiscAnnotation)
+                            else ann.model_dump(mode="json")
+                        ),
+                    )
+
+        return self
 
     # Convert the image to Base64
     def _image_to_base64(self, pil_image, format="PNG"):
@@ -1554,7 +2088,42 @@ class TableItem(FloatingItem):
         DocItemLabel.TABLE,
     ] = DocItemLabel.TABLE
 
-    annotations: List[TableAnnotationType] = []
+    annotations: Annotated[
+        List[TableAnnotationType],
+        deprecated("Field `annotations` is deprecated; use `meta` instead."),
+    ] = []
+
+    @model_validator(mode="after")
+    def _migrate_annotations_to_meta(self) -> Self:
+        """Migrate the `annotations` field to `meta`."""
+        if self.annotations:
+            _logger.warning(
+                "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
+                "Note that only the first available instance of each annotation type will be migrated."
+            )
+            for ann in self.annotations:
+
+                # ensure meta field is present
+                if self.meta is None:
+                    self.meta = FloatingMeta()
+
+                if isinstance(ann, DescriptionAnnotation):
+                    self.meta.description = DescriptionMetaField(
+                        text=ann.text,
+                        created_by=ann.provenance,
+                    )
+                else:
+                    self.meta.set_custom_field(
+                        namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
+                        name=ann.kind,
+                        value=(
+                            ann.content
+                            if isinstance(ann, MiscAnnotation)
+                            else ann.model_dump(mode="json")
+                        ),
+                    )
+
+        return self
 
     def export_to_dataframe(
         self, doc: Optional["DoclingDocument"] = None
@@ -1678,6 +2247,7 @@ class TableItem(FloatingItem):
         add_cell_text: bool = True,
         xsize: int = 500,
         ysize: int = 500,
+        self_closing: bool = False,
         **kwargs: Any,
     ) -> str:
         """Export the table as OTSL."""
@@ -1696,6 +2266,8 @@ class TableItem(FloatingItem):
         # "ched", "rhed", "srow"
 
         from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
+
+        table_token = kwargs.get("table_token", TableToken)
 
         doc_serializer = DocTagsDocSerializer(doc=doc)
         body = []
@@ -1733,39 +2305,40 @@ class TableItem(FloatingItem):
                         page_h=page_h,
                         xsize=xsize,
                         ysize=ysize,
+                        self_closing=self_closing,
                     )
 
                 if rowstart == i and colstart == j:
                     if len(content) > 0:
                         if cell.column_header:
-                            body.append(str(TableToken.OTSL_CHED.value))
+                            body.append(str(table_token.OTSL_CHED.value))
                         elif cell.row_header:
-                            body.append(str(TableToken.OTSL_RHED.value))
+                            body.append(str(table_token.OTSL_RHED.value))
                         elif cell.row_section:
-                            body.append(str(TableToken.OTSL_SROW.value))
+                            body.append(str(table_token.OTSL_SROW.value))
                         else:
-                            body.append(str(TableToken.OTSL_FCEL.value))
+                            body.append(str(table_token.OTSL_FCEL.value))
                         if add_cell_location:
                             body.append(str(cell_loc))
                         if add_cell_text:
                             body.append(str(content))
                     else:
-                        body.append(str(TableToken.OTSL_ECEL.value))
+                        body.append(str(table_token.OTSL_ECEL.value))
                 else:
                     add_cross_cell = False
                     if rowstart != i:
                         if colspan == 1:
-                            body.append(str(TableToken.OTSL_UCEL.value))
+                            body.append(str(table_token.OTSL_UCEL.value))
                         else:
                             add_cross_cell = True
                     if colstart != j:
                         if rowspan == 1:
-                            body.append(str(TableToken.OTSL_LCEL.value))
+                            body.append(str(table_token.OTSL_LCEL.value))
                         else:
                             add_cross_cell = True
                     if add_cross_cell:
-                        body.append(str(TableToken.OTSL_XCEL.value))
-            body.append(str(TableToken.OTSL_NL.value))
+                        body.append(str(table_token.OTSL_XCEL.value))
+            body.append(str(table_token.OTSL_NL.value))
         body_str = "".join(body)
         return body_str
 
@@ -1991,12 +2564,12 @@ class DoclingDocument(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def transform_to_content_layer(cls, data: dict) -> dict:
+    def transform_to_content_layer(cls, data: Any) -> Any:
         """transform_to_content_layer."""
         # Since version 1.1.0, all NodeItems carry content_layer property.
         # We must assign previous page_header and page_footer instances to furniture.
         # Note: model_validators which check on the version must use "before".
-        if "version" in data and data["version"] == "1.0.0":
+        if isinstance(data, dict) and data.get("version", "") == "1.0.0":
             for item in data.get("texts", []):
                 if "label" in item and item["label"] in [
                     DocItemLabel.PAGE_HEADER.value,
@@ -2827,7 +3400,7 @@ class DoclingDocument(BaseModel):
         """add_code.
 
         :param text: str:
-        :param code_language: Optional[str]: (Default value = None)
+        :param code_language: Optional[CodeLanguageLabel]: (Default value = None)
         :param orig: Optional[str]:  (Default value = None)
         :param caption: Optional[Union[TextItem:
         :param RefItem]]:  (Default value = None)
@@ -4396,6 +4969,9 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
         page_break_placeholder: Optional[str] = None,
         include_annotations: bool = True,
+        *,
+        mark_meta: bool = False,
+        use_legacy_annotations: Optional[bool] = None,  # deprecated
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -4425,6 +5001,8 @@ class DoclingDocument(BaseModel):
             included_content_layers=included_content_layers,
             page_break_placeholder=page_break_placeholder,
             include_annotations=include_annotations,
+            use_legacy_annotations=use_legacy_annotations,
+            mark_meta=mark_meta,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -4449,6 +5027,11 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,  # e.g. "<!-- page break -->",
         include_annotations: bool = True,
         mark_annotations: bool = False,
+        *,
+        use_legacy_annotations: Optional[bool] = None,  # deprecated
+        allowed_meta_names: Optional[set[str]] = None,
+        blocked_meta_names: Optional[set[str]] = None,
+        mark_meta: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4488,14 +5071,22 @@ class DoclingDocument(BaseModel):
         :param page_break_placeholder: The placeholder to include for marking page
             breaks. None means no page break placeholder will be used.
         :type page_break_placeholder: Optional[str] = None
-        :param include_annotations: bool: Whether to include annotations in the export.
-            (Default value = True).
+        :param include_annotations: bool: Whether to include annotations in the export; only considered if item does not
+            have meta. (Default value = True).
         :type include_annotations: bool = True
-        :param mark_annotations: bool: Whether to mark annotations in the export; only
-            relevant if include_annotations is True. (Default value = False).
+        :param mark_annotations: bool: Whether to mark annotations in the export; only considered if item does not have
+            meta. (Default value = False).
         :type mark_annotations: bool = False
+        :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
+        :type use_legacy_annotations: Optional[bool] = None
+        :param mark_meta: bool: Whether to mark meta in the export
+        :type mark_meta: bool = False
         :returns: The exported Markdown representation.
         :rtype: str
+        :param allowed_meta_names: Optional[set[str]]: Meta names to allow; None means all meta names are allowed.
+        :type allowed_meta_names: Optional[set[str]] = None
+        :param blocked_meta_names: Optional[set[str]]: Meta names to block; takes precedence over allowed_meta_names.
+        :type blocked_meta_names: Optional[set[str]] = None
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -4508,6 +5099,13 @@ class DoclingDocument(BaseModel):
             if included_content_layers is not None
             else DEFAULT_CONTENT_LAYERS
         )
+
+        if use_legacy_annotations is not None:
+            warnings.warn(
+                "Parameter `use_legacy_annotations` has been deprecated and will be ignored.",
+                DeprecationWarning,
+            )
+
         serializer = MarkdownDocSerializer(
             doc=self,
             params=MarkdownParams(
@@ -4524,7 +5122,10 @@ class DoclingDocument(BaseModel):
                 indent=indent,
                 wrap_width=text_width if text_width > 0 else None,
                 page_break_placeholder=page_break_placeholder,
+                mark_meta=mark_meta,
                 include_annotations=include_annotations,
+                allowed_meta_names=allowed_meta_names,
+                blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
             ),
         )
@@ -5136,6 +5737,7 @@ class DoclingDocument(BaseModel):
                     if tag_name == DocumentToken.CHART.value:
                         table_data = parse_otsl_table_content(full_chunk)
                         chart_type = extract_chart_type(full_chunk)
+                    pic_title = chart_type if chart_type is not None else "other"
                     if image:
                         if bbox:
                             im_width, im_height = image.size
@@ -5170,26 +5772,33 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
-                            pic_title = "picture"
+
+                            pic_classification = None
                             if chart_type is not None:
-                                pic.annotations.append(
-                                    PictureClassificationData(
-                                        provenance="load_from_doctags",
-                                        predicted_classes=[
-                                            # chart_type
-                                            PictureClassificationClass(
-                                                class_name=chart_type, confidence=1.0
-                                            )
-                                        ],
-                                    )
+                                pic_classification = PictureClassificationMetaField(
+                                    predictions=[
+                                        PictureClassificationPrediction(
+                                            class_name=chart_type,
+                                            confidence=1.0,
+                                            created_by="load_from_doctags",
+                                        )
+                                    ]
                                 )
-                                pic_title = chart_type
+                            pic_tabular_chart = None
                             if table_data is not None:
-                                # Add chart data as PictureTabularChartData
-                                pd = PictureTabularChartData(
-                                    chart_data=table_data, title=pic_title
+                                pic_tabular_chart = TabularChartMetaField(
+                                    title=pic_title,
+                                    chart_data=table_data,
                                 )
-                                pic.annotations.append(pd)
+
+                            if (
+                                pic_classification is not None
+                                or pic_tabular_chart is not None
+                            ):
+                                pic.meta = PictureMeta(
+                                    classification=pic_classification,
+                                    tabular_chart=pic_tabular_chart,
+                                )
                     else:
                         if bbox:
                             # In case we don't have access to an binary of an image
@@ -5620,20 +6229,21 @@ class DoclingDocument(BaseModel):
         else:
             return CURRENT_VERSION
 
-    @model_validator(mode="after")  # type: ignore
-    @classmethod
-    def validate_document(cls, d: "DoclingDocument"):
+    @model_validator(mode="after")
+    def validate_document(self) -> Self:
         """validate_document."""
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            if not d.validate_tree(d.body) or not d.validate_tree(d.furniture):
+            if not self.validate_tree(self.body) or not self.validate_tree(
+                self.furniture
+            ):
                 raise ValueError("Document hierachy is inconsistent.")
 
-        return d
+        return self
 
     @model_validator(mode="after")
-    def validate_misplaced_list_items(self):
+    def validate_misplaced_list_items(self) -> Self:
         """validate_misplaced_list_items."""
         # find list items without list parent, putting succesive ones together
         misplaced_list_items: list[list[ListItem]] = []
@@ -5665,7 +6275,7 @@ class DoclingDocument(BaseModel):
             )
 
             # delete list items from document (should not be affected by group addition)
-            self.delete_items(node_items=curr_list_items)
+            self.delete_items(node_items=list(curr_list_items))
 
             # add list items to new group
             for li in curr_list_items:
@@ -5704,6 +6314,13 @@ class DoclingDocument(BaseModel):
         def index(
             self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None
         ) -> None:
+
+            if page_nrs is not None and (
+                unavailable_page_nrs := page_nrs - set(doc.pages.keys())
+            ):
+                raise ValueError(
+                    f"The following page numbers are not present in the document: {unavailable_page_nrs}"
+                )
 
             orig_ref_to_new_ref: dict[str, str] = {}
             page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
@@ -5746,7 +6363,29 @@ class DoclingDocument(BaseModel):
 
                     if item.parent:
                         # set item's parent
-                        new_parent_cref = orig_ref_to_new_ref[item.parent.cref]
+                        new_parent_cref = orig_ref_to_new_ref.get(item.parent.cref)
+                        if new_parent_cref is None:
+
+                            parent_ref = item.parent
+                            while new_parent_cref is None and parent_ref is not None:
+                                parent_ref = RefItem(
+                                    cref=parent_ref.resolve(doc).parent.cref
+                                )
+                                new_parent_cref = orig_ref_to_new_ref.get(
+                                    parent_ref.cref
+                                )
+
+                            if new_parent_cref is not None:
+                                warnings.warn(
+                                    f"Parent {item.parent.cref} not found in indexed nodes, "
+                                    f"using ancestor {new_parent_cref} instead"
+                                )
+                            else:
+                                warnings.warn(
+                                    "No ancestor found in indexed nodes, using body as parent"
+                                )
+                                new_parent_cref = "#/body"
+
                         new_item.parent = RefItem(cref=new_parent_cref)
 
                         # add item to parent's children
@@ -5836,28 +6475,56 @@ class DoclingDocument(BaseModel):
         res_doc._update_from_index(doc_index)
         return res_doc
 
-    def _validate_rules(self):
+    def _validate_rules(self, raise_on_error: bool = True):
+
+        def _handle(error: Exception):
+            if raise_on_error:
+                raise error
+            else:
+                warnings.warn(str(error))
+
+        def validate_furniture(doc: DoclingDocument):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                has_furniture_children = len(doc.furniture.children) > 0
+            if has_furniture_children:
+                _handle(
+                    ValueError(
+                        f"Deprecated furniture node {doc.furniture.self_ref} has children"
+                    ),
+                )
+
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
             for ref in item.children:
                 child = ref.resolve(doc)
                 if not isinstance(child, ListItem):
-                    raise ValueError(
-                        f"ListGroup {item.self_ref} contains non-ListItem {child.self_ref} ({child.label=})"
+                    _handle(
+                        ValueError(
+                            f"ListGroup {item.self_ref} contains non-ListItem {child.self_ref} ({child.label=})"
+                        ),
                     )
 
         def validate_list_item(doc: DoclingDocument, item: ListItem):
             if item.parent is None:
-                raise ValueError(f"ListItem {item.self_ref} has no parent")
-            if not isinstance(item.parent.resolve(doc), ListGroup):
-                raise ValueError(
-                    f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"
+                _handle(
+                    ValueError(f"ListItem {item.self_ref} has no parent"),
+                )
+            elif not isinstance(item.parent.resolve(doc), ListGroup):
+                _handle(
+                    ValueError(
+                        f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"
+                    ),
                 )
 
         def validate_group(doc: DoclingDocument, item: GroupItem):
             if (
                 item.parent and not item.children
             ):  # tolerate empty body, but not other groups
-                raise ValueError(f"Group {item.self_ref} has no children")
+                _handle(
+                    ValueError(f"Group {item.self_ref} has no children"),
+                )
+
+        validate_furniture(self)
 
         for item, _ in self.iterate_items(
             with_groups=True,

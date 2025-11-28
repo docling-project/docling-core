@@ -1,3 +1,62 @@
+## [v2.53.0](https://github.com/docling-project/docling-core/releases/tag/v2.53.0) - 2025-11-27
+
+### Feature
+
+* **experimental:** Extend IDocTags tokens ([#439](https://github.com/docling-project/docling-core/issues/439)) ([`aa5c668`](https://github.com/docling-project/docling-core/commit/aa5c668050b93ae4623a7e7be34396e6062aca66))
+* Added the Azure Document Intelligence ([#395](https://github.com/docling-project/docling-core/issues/395)) ([`92d60b0`](https://github.com/docling-project/docling-core/commit/92d60b0948972dbe395a85a367755dc1436323df))
+
+### Fix
+
+* Chart title ([#428](https://github.com/docling-project/docling-core/issues/428)) ([`3b253c1`](https://github.com/docling-project/docling-core/commit/3b253c17f00f1c84ab362b4e60101e312427015f))
+* Robustify page filtering ([#437](https://github.com/docling-project/docling-core/issues/437)) ([`8bdeaa7`](https://github.com/docling-project/docling-core/commit/8bdeaa7238cab7b9c3d9f533bd110cae55e7611e))
+* Markdown serialization of hyperlink with code ([#434](https://github.com/docling-project/docling-core/issues/434)) ([`8feb09f`](https://github.com/docling-project/docling-core/commit/8feb09f1cf6658aadb028f3abedd23a62163deb9))
+
+## [v2.52.0](https://github.com/docling-project/docling-core/releases/tag/v2.52.0) - 2025-11-20
+
+### Feature
+
+* **experimental:** Add new DocTags serializer ([#412](https://github.com/docling-project/docling-core/issues/412)) ([`c9e5fb4`](https://github.com/docling-project/docling-core/commit/c9e5fb4a1ceb1ec0cae8ebae5f3eb844c0a2198a))
+* Convert regions into TableData ([#430](https://github.com/docling-project/docling-core/issues/430)) ([`c80b583`](https://github.com/docling-project/docling-core/commit/c80b58369c5bbb1be779a241fee146aa1b3a3685))
+
+## [v2.51.1](https://github.com/docling-project/docling-core/releases/tag/v2.51.1) - 2025-11-14
+
+### Fix
+
+* Improve meta migration ([#422](https://github.com/docling-project/docling-core/issues/422)) ([`bc0e96b`](https://github.com/docling-project/docling-core/commit/bc0e96b9dc298d2e96ab2b4ce9faa4165d661b94))
+* DoclingDocument model validator should deal with any raw input ([#419](https://github.com/docling-project/docling-core/issues/419)) ([`56b3c42`](https://github.com/docling-project/docling-core/commit/56b3c42c61dbca7e9aa4a44fae18ecaadb482f81))
+
+## [v2.51.0](https://github.com/docling-project/docling-core/releases/tag/v2.51.0) - 2025-11-12
+
+### Feature
+
+* Add code chunking functionality ([#398](https://github.com/docling-project/docling-core/issues/398)) ([`3097645`](https://github.com/docling-project/docling-core/commit/3097645198915a1258cfe6e1d5df3b5f1c79395a))
+
+### Fix
+
+* Improve meta migration and warning handling ([#417](https://github.com/docling-project/docling-core/issues/417)) ([`3d13b02`](https://github.com/docling-project/docling-core/commit/3d13b02756f1c0d1f1ccab5cfbd76f1f888a0dd9))
+* Fix import handling of extra dependencies for chunking ([#418](https://github.com/docling-project/docling-core/issues/418)) ([`567d3ad`](https://github.com/docling-project/docling-core/commit/567d3ada57e19b2a738991ae6e49d55dd3301b17))
+
+## [v2.50.1](https://github.com/docling-project/docling-core/releases/tag/v2.50.1) - 2025-11-04
+
+### Fix
+
+* Add JSON to CodeLanguageLabel ([#413](https://github.com/docling-project/docling-core/issues/413)) ([`09ef91c`](https://github.com/docling-project/docling-core/commit/09ef91c27285f3bdd4f41c935fd49685ff26524b))
+
+## [v2.50.0](https://github.com/docling-project/docling-core/releases/tag/v2.50.0) - 2025-10-30
+
+### Feature
+
+* Add metadata model hierarchy ([#408](https://github.com/docling-project/docling-core/issues/408)) ([`2ee3cac`](https://github.com/docling-project/docling-core/commit/2ee3cacdd640414a3e9a8b861a15c4baba6f1d06))
+* Add split view & YAML support to CLI viewer ([#407](https://github.com/docling-project/docling-core/issues/407)) ([`a3feae0`](https://github.com/docling-project/docling-core/commit/a3feae0a1e4b8adfe05009f7a12e648e8aedd149))
+* New picture classes for doctags ([#404](https://github.com/docling-project/docling-core/issues/404)) ([`ada4068`](https://github.com/docling-project/docling-core/commit/ada4068e7a1b3b32e6dcda93658fae8b98ddfb4d))
+
+## [v2.49.0](https://github.com/docling-project/docling-core/releases/tag/v2.49.0) - 2025-10-16
+
+### Feature
+
+* Python 3.14 compatibility ([#403](https://github.com/docling-project/docling-core/issues/403)) ([`47b70d3`](https://github.com/docling-project/docling-core/commit/47b70d3c246f7aa8fe4967cbad07660c15d0b505))
+* Rendering of checkboxes in markdown ([#381](https://github.com/docling-project/docling-core/issues/381)) ([`abfa81f`](https://github.com/docling-project/docling-core/commit/abfa81f0651e70c1b3bc479f5621f706d66f0cbd))
+
 ## [v2.48.4](https://github.com/docling-project/docling-core/releases/tag/v2.48.4) - 2025-10-01
 
 ### Fix

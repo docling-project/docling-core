@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Validation of Document-related files against their data schemas."""
+
 import argparse
 import json
 import logging

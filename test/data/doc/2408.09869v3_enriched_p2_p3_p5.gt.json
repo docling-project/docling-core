@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "name": "2408.09869v3",
   "furniture": {
     "self_ref": "#/furniture",
@@ -610,7 +610,7 @@
       "captions": [],
       "references": [],
       "footnotes": [],
-      "code_language": "unknown"
+      "code_language": "Python"
     },
     {
       "self_ref": "#/texts/13",
@@ -641,7 +641,7 @@
       "captions": [],
       "references": [],
       "footnotes": [],
-      "code_language": "unknown"
+      "code_language": "Python"
     },
     {
       "self_ref": "#/texts/14",
@@ -1901,6 +1901,12 @@
         }
       ],
       "content_layer": "body",
+      "meta": {
+        "description": {
+          "created_by": "HuggingFaceTB/SmolVLM-256M-Instruct",
+          "text": "In this image, we can see some text and images."
+        }
+      },
       "label": "picture",
       "prov": [
         {
@@ -1955,6 +1961,12 @@
         }
       ],
       "content_layer": "body",
+      "meta": {
+        "docling_legacy__misc": {
+          "summary": "Typical Docling setup runtime characterization.",
+          "type": "performance data"
+        }
+      },
       "label": "table",
       "prov": [
         {

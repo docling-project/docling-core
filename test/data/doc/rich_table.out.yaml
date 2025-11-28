@@ -91,7 +91,7 @@ tables:
         row_span: 1
         start_col_offset_idx: 1
         start_row_offset_idx: 1
-        text: ''
+        text: cell 1,1
     - - col_span: 1
         column_header: false
         end_col_offset_idx: 1
@@ -102,7 +102,7 @@ tables:
         row_span: 1
         start_col_offset_idx: 0
         start_row_offset_idx: 2
-        text: ''
+        text: cell 2,0
       - col_span: 1
         column_header: false
         end_col_offset_idx: 2
@@ -135,7 +135,7 @@ tables:
         row_span: 1
         start_col_offset_idx: 1
         start_row_offset_idx: 3
-        text: ''
+        text: cell 3,1
     - - col_span: 1
         column_header: false
         end_col_offset_idx: 1
@@ -146,7 +146,7 @@ tables:
         row_span: 1
         start_col_offset_idx: 0
         start_row_offset_idx: 4
-        text: ''
+        text: cell 4,0
       - col_span: 1
         column_header: false
         end_col_offset_idx: 2
@@ -206,7 +206,7 @@ tables:
       row_span: 1
       start_col_offset_idx: 1
       start_row_offset_idx: 1
-      text: ''
+      text: cell 1,1
     - col_span: 1
       column_header: false
       end_col_offset_idx: 1
@@ -219,7 +219,7 @@ tables:
       row_span: 1
       start_col_offset_idx: 0
       start_row_offset_idx: 2
-      text: ''
+      text: cell 2,0
     - col_span: 1
       column_header: false
       end_col_offset_idx: 2
@@ -254,7 +254,7 @@ tables:
       row_span: 1
       start_col_offset_idx: 1
       start_row_offset_idx: 3
-      text: ''
+      text: cell 3,1
     - col_span: 1
       column_header: false
       end_col_offset_idx: 1
@@ -267,7 +267,7 @@ tables:
       row_span: 1
       start_col_offset_idx: 0
       start_row_offset_idx: 4
-      text: ''
+      text: cell 4,0
     - col_span: 1
       column_header: false
       end_col_offset_idx: 2
@@ -499,4 +499,4 @@ texts:
   prov: []
   self_ref: '#/texts/5'
   text: More text in the group.
-version: 1.7.0
+version: 1.8.0

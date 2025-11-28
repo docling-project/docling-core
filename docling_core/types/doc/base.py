@@ -1,7 +1,7 @@
 """Models for the base data types."""
 
 from enum import Enum
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 from pydantic import BaseModel, FieldSerializationInfo, field_serializer
 
@@ -230,6 +230,31 @@ class BoundingBox(BaseModel):
                 b=page_height - self.b,
                 coord_origin=CoordOrigin.BOTTOMLEFT,
             )
+
+    def get_intersection_bbox(self, other: "BoundingBox") -> Optional["BoundingBox"]:
+        """Return the intersection bounding box with another bounding box or ``None`` when disjoint."""
+        if self.coord_origin != other.coord_origin:
+            raise ValueError("BoundingBoxes have different CoordOrigin")
+
+        left = max(self.l, other.l)
+        right = min(self.r, other.r)
+
+        if self.coord_origin == CoordOrigin.TOPLEFT:
+            top = max(self.t, other.t)
+            bottom = min(self.b, other.b)
+            if right <= left or bottom <= top:
+                return None
+            return BoundingBox(
+                l=left, t=top, r=right, b=bottom, coord_origin=self.coord_origin
+            )
+
+        top = min(self.t, other.t)
+        bottom = max(self.b, other.b)
+        if right <= left or top <= bottom:
+            return None
+        return BoundingBox(
+            l=left, t=top, r=right, b=bottom, coord_origin=self.coord_origin
+        )
 
     def to_top_left_origin(self, page_height: float) -> "BoundingBox":
         """to_top_left_origin.

@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Test the pydantic models in module data_types.base.py."""
+
 import json
 from datetime import datetime, timezone
 from typing import Literal
@@ -263,7 +259,7 @@ def test_collection_record_info():
         RecordDescription(**desc_dict)
 
 
-def test_strict_date_time():
+def test_strict_date_time() -> None:
     """Validate data with StrictDateTime model."""
 
     class Model(BaseModel):

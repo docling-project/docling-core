@@ -13,6 +13,7 @@
                         },
                         "children": [],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -852,36 +853,11 @@
             }
         },
         {
-            "text": "Figure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.\n\nIn this image, we can see some text and images.",
+            "text": "In this image, we can see some text and images.\n\nFigure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
                 "doc_items": [
-                    {
-                        "self_ref": "#/texts/31",
-                        "parent": {
-                            "$ref": "#/pictures/1"
-                        },
-                        "children": [],
-                        "content_layer": "body",
-                        "label": "caption",
-                        "prov": [
-                            {
-                                "page_no": 3,
-                                "bbox": {
-                                    "l": 108.0,
-                                    "t": 570.003,
-                                    "r": 504.00300000000004,
-                                    "b": 550.542,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    134
-                                ]
-                            }
-                        ]
-                    },
                     {
                         "self_ref": "#/pictures/1",
                         "parent": {
@@ -938,6 +914,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -952,6 +929,31 @@
                                 "charspan": [
                                     0,
                                     0
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "self_ref": "#/texts/31",
+                        "parent": {
+                            "$ref": "#/pictures/1"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "caption",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 108.0,
+                                    "t": 570.003,
+                                    "r": 504.00300000000004,
+                                    "b": 550.542,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    134
                                 ]
                             }
                         ]
@@ -3791,6 +3793,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -4108,6 +4111,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -4376,6 +4380,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -4606,6 +4611,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -5079,6 +5085,7 @@
                         },
                         "children": [],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -5208,6 +5215,7 @@
                         },
                         "children": [],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -5771,6 +5779,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -6292,6 +6301,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -6382,6 +6392,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -7193,6 +7204,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {
@@ -7879,6 +7891,7 @@
                             }
                         ],
                         "content_layer": "body",
+                        "meta": {},
                         "label": "picture",
                         "prov": [
                             {

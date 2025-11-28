@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Methods to convert a JSON Schema into a search database schema."""
+
 import re
 from copy import deepcopy
 from typing import Any, Optional, Pattern, Tuple, TypedDict
