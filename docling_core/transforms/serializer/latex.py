@@ -92,6 +92,7 @@ class LaTeXParams(CommonParams):
         r"\usepackage{microtype}      % microtypography",
         r"\usepackage{xcolor}         % colors",
         r"\usepackage{graphicx}       % graphics",
+        r"\usepackage[normalem]{ulem} % strikethrough",
     ]
 
 
@@ -196,7 +197,10 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
         elif isinstance(item, CodeItem):
             # Inline vs block code
             if is_inline_scope:
-                text_part = f"\\texttt{{{text}}}"
+                # Escape only macro parameter char in inline code to avoid TeX errors
+                # Keep other characters (e.g., underscores) as-is to preserve expected output
+                safe_text = text.replace("#", r"\\#")
+                text_part = f"\\texttt{{{safe_text}}}"
             else:
                 text_part = f"\\begin{{verbatim}}\n{text}\n\\end{{verbatim}}"
             post_process = False
@@ -258,9 +262,18 @@ class LaTeXAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
                 ),
             ):
                 if ann_text := _get_annotation_text(ann):
+                    # Ensure each line of the annotation is prefixed with '%'
+                    lines = ann_text.splitlines() or [ann_text]
+                    if len(lines) <= 1:
+                        comment_text = f"% annotation[{ann.kind}]: {ann_text}"
+                    else:
+                        prefixed_lines = [f"% annotation[{ann.kind}]: {lines[0]}"] + [
+                            f"% {ln}" for ln in lines[1:]
+                        ]
+                        comment_text = "\n".join(prefixed_lines)
                     res_parts.append(
                         create_ser_result(
-                            text=f"% annotation[{ann.kind}]: {ann_text}",
+                            text=comment_text,
                             span_source=item,
                         )
                     )
@@ -621,7 +634,9 @@ class LaTeXDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> str:
         """Return LaTeX hyperlink command (requires ``hyperref`` package)."""
-        return f"\\href{{{str(hyperlink)}}}{{{text}}}"
+        # Escape special characters in URL argument to avoid raw `#`, `%`, `_`, etc.
+        url_arg = _escape_latex(str(hyperlink))
+        return f"\\href{{{url_arg}}}{{{text}}}"
 
     @override
     def serialize_doc(
