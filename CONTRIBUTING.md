@@ -20,7 +20,7 @@ You can use the `uv sync` to create a project virtual environment (if it does no
 the project's dependencies with the environment.
 
 ```bash
-uv sync
+uv sync --all-extras
 ```
 
 #### Use a specific Python version (optional)
@@ -30,7 +30,7 @@ and run the sync command:
 
 ```bash
 uv venv --python 3.12
-uv sync
+uv sync --all-extras
 ```
 
 More detailed options are described on the [Using Python environments](https://docs.astral.sh/uv/pip/environments/) documentation.
