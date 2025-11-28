@@ -13,8 +13,6 @@ from docling_core.transforms.serializer.latex import LaTeXDocSerializer, LaTeXPa
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import DoclingDocument
 
-from .conftest import _construct_doc
-from .conftest import _rich_table_doc as _construct_rich_table_doc
 from .test_data_gen_flag import GEN_TEST_DATA
 
 
@@ -81,8 +79,8 @@ def test_dummy_doc():
     verify_or_update(exp_file=src.with_suffix(".gt.tex"), actual=actual)
 
 
-def test_constructed_doc():
-    doc = _construct_doc()
+def test_constructed_doc(sample_doc: DoclingDocument):
+    doc = sample_doc
 
     ser = LaTeXDocSerializer(
         doc=doc,
@@ -96,8 +94,8 @@ def test_constructed_doc():
     verify_or_update(exp_file=src.with_suffix(".gt.tex"), actual=actual)
 
 
-def test_constructed_rich_table_doc():
-    doc = _construct_rich_table_doc()
+def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
+    doc = rich_table_doc
 
     ser = LaTeXDocSerializer(
         doc=doc,

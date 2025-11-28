@@ -656,7 +656,9 @@ class LaTeXDocSerializer(DocSerializer):
         # Build optional preamble
         preamble_lines: list[str] = []
         if params.document_class:
-            preamble_lines.append(params.document_class + "\n")
+            # Add document class and a blank line after it
+            preamble_lines.append(params.document_class)
+            preamble_lines.append("")
         for pkg in params.packages:
             line = pkg.strip()
             if not line:
@@ -671,7 +673,7 @@ class LaTeXDocSerializer(DocSerializer):
             preamble_lines.append(title_cmd)
 
         header = (
-            "\n".join(preamble_lines + ["\n\\begin{document}"])
+            "\n".join(preamble_lines + ["", "\\begin{document}"])
             if preamble_lines
             else "\\begin{document}"
         )
