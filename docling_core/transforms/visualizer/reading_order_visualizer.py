@@ -10,7 +10,12 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
-from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocument
+from docling_core.types.doc.document import (
+    ContentLayer,
+    DocItem,
+    DoclingDocument,
+    PictureItem,
+)
 
 
 class _NumberDrawingData(BaseModel):
@@ -32,6 +37,20 @@ class ReadingOrderVisualizer(BaseVisualizer):
 
     base_visualizer: Optional[BaseVisualizer] = None
     params: Params = Params()
+
+    def _get_picture_context(
+        self, elem: DocItem, doc: DoclingDocument
+    ) -> Optional[str]:
+        """Get the picture self_ref if element is nested inside a PictureItem, None otherwise."""
+        current = elem
+        while current.parent is not None:
+            parent = current.parent.resolve(doc)
+            if isinstance(parent, PictureItem):
+                return parent.self_ref
+            if not isinstance(parent, DocItem):
+                break
+            current = parent
+        return None
 
     def _draw_arrow(
         self,
@@ -55,10 +74,10 @@ class ReadingOrderVisualizer(BaseVisualizer):
         # Calculate the arrowhead points
         dx = end_point[0] - start_point[0]
         dy = end_point[1] - start_point[1]
-        angle = (dx**2 + dy**2) ** 0.5 + 0.01  # Length of the arrow shaft
+        distance = (dx**2 + dy**2) ** 0.5 + 0.01  # Length of the arrow shaft
 
         # Normalized direction vector for the arrow shaft
-        ux, uy = dx / angle, dy / angle
+        ux, uy = dx / distance, dy / distance
 
         # Base of the arrowhead
         base_x = end_point[0] - ux * arrowhead_length
@@ -89,16 +108,34 @@ class ReadingOrderVisualizer(BaseVisualizer):
         except OSError:
             # Fallback to default font if arial is not available
             font = ImageFont.load_default()
-        x0, y0 = None, None
-        number_data_to_draw: dict[Optional[int], list[_NumberDrawingData]] = {}
-        my_images: dict[Optional[int], Image] = images or {}
-        prev_page = None
-        i = 0
+
+        # Separate reading order paths for outside vs inside pictures
+        # Key: (page_no, picture_ref_or_None) -> (x0, y0, element_index)
+        # picture_ref is None for elements outside any picture, otherwise the picture's self_ref
+        reading_order_state: dict[
+            tuple[int, Optional[str]], tuple[float, float, int]
+        ] = {}
+        number_data_to_draw: dict[int, list[_NumberDrawingData]] = {}
+        # Only int keys are used (from prov.page_no), even if input images has Optional[int] keys
+        my_images: dict[int, Image] = {
+            k: v for k, v in (images or {}).items() if k is not None
+        }
+        prev_page: Optional[int] = None
+        element_index = 0
+
         for elem, _ in doc.iterate_items(
             included_content_layers=self.params.content_layers,
+            traverse_pictures=True,
         ):
             if not isinstance(elem, DocItem):
                 continue
+
+            picture_ref = self._get_picture_context(elem, doc)
+            # Include all elements in reading order:
+            # - Top-level PictureItems are part of the outer reading order (picture_ref is None)
+            # - Nested PictureItems are part of their parent picture's reading order (picture_ref is not None)
+            # - Other elements follow the same pattern
+
             if len(elem.prov) == 0:
                 continue  # Skip elements without provenances
 
@@ -110,9 +147,9 @@ class ReadingOrderVisualizer(BaseVisualizer):
                     number_data_to_draw[page_no] = []
 
                 if image is None or prev_page is None or page_no != prev_page:
-                    # new page begins
+                    # new page begins - reset all reading order paths
                     prev_page = page_no
-                    x0 = y0 = None
+                    reading_order_state.clear()
 
                     if image is None:
                         page_image = doc.pages[page_no].image
@@ -140,35 +177,34 @@ class ReadingOrderVisualizer(BaseVisualizer):
                 if ro_bbox.b > ro_bbox.t:
                     ro_bbox.b, ro_bbox.t = ro_bbox.t, ro_bbox.b
 
-                if x0 is None and y0 is None:
-                    # is_root= True
-                    x0 = (ro_bbox.l + ro_bbox.r) / 2.0
-                    y0 = (ro_bbox.b + ro_bbox.t) / 2.0
+                path_key = (page_no, picture_ref)
+                state = reading_order_state.get(path_key)
 
+                x1 = (ro_bbox.l + ro_bbox.r) / 2.0
+                y1 = (ro_bbox.b + ro_bbox.t) / 2.0
+
+                if state is None:
+                    # Start of a new reading order path (outside or inside picture)
+                    reading_order_state[path_key] = (x1, y1, element_index)
                     number_data_to_draw[page_no].append(
                         _NumberDrawingData(
-                            xy=(x0, y0),
-                            text=f"{i}",
+                            xy=(x1, y1),
+                            text=f"{element_index}",
                         )
                     )
-                    i += 1
-
+                    element_index += 1
                 else:
-                    # is_root = False
-                    assert x0 is not None
-                    assert y0 is not None
-
-                    x1 = (ro_bbox.l + ro_bbox.r) / 2.0
-                    y1 = (ro_bbox.b + ro_bbox.t) / 2.0
-
+                    # Continue existing reading order path
+                    x0, y0, _ = state
+                    # Use different color for picture-internal paths
+                    arrow_color = "blue" if picture_ref is not None else "red"
                     draw = self._draw_arrow(
                         draw=draw,
                         arrow_coords=(x0, y0, x1, y1),
                         line_width=2,
-                        color="red",
+                        color=arrow_color,
                     )
-
-                    x0, y0 = x1, y1
+                    reading_order_state[path_key] = (x1, y1, state[2])
 
         if self.params.show_branch_numbering:
             # post-drawing the numbers to ensure they are rendered on top-layer
