@@ -116,6 +116,7 @@ dev = [
     "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
     "opencv-python-headless>=4.6.0.66,<5.0.0.0",
     "doclang>=0.6,<0.7",
+    "universal-pathlib>=0.3.10",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
