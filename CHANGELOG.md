@@ -1,3 +1,10 @@
+## [v2.54.0](https://github.com/docling-project/docling-core/releases/tag/v2.54.0) - 2025-11-29
+
+### Feature
+
+* Visualize reading-order inside pictures ([#446](https://github.com/docling-project/docling-core/issues/446)) ([`a5e2d2d`](https://github.com/docling-project/docling-core/commit/a5e2d2dcc08aae1a99e62690b72f5ce783fd2b73))
+* Add latex serializer ([#445](https://github.com/docling-project/docling-core/issues/445)) ([`76e14fd`](https://github.com/docling-project/docling-core/commit/76e14fdb9728e4b9890166fad4c52edc3ef2cd12))
+
 ## [v2.53.0](https://github.com/docling-project/docling-core/releases/tag/v2.53.0) - 2025-11-27
 
 ### Feature
