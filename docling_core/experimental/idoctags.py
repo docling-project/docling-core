@@ -145,7 +145,7 @@ class IDocTagsToken(str, Enum):
         if include_location_tokens:
             # Adding dynamically generated location-tokens
             for i in range(0, max(page_dimension[0], page_dimension[1])):
-                special_tokens.append(f"<{IDocTagsToken._LOC_PREFIX.value}{i}>")
+                special_tokens.append(f"<{IDocTagsToken._LOC_PREFIX.value}{i}/>")
 
         return special_tokens
 
