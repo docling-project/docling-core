@@ -605,6 +605,8 @@ def test_idoctags():
         actual = ser.serialize().text
         print(actual)
 
+        assert actual.startswith("<doctag>")
+
     if True:
         params = IDocTagsParams()
         params.pretty_indentation = ""
