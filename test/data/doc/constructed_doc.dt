@@ -10,12 +10,12 @@ Affiliation 2</text>
 <unordered_list><list_item>list item 1</list_item>
 <list_item>list item 2</list_item>
 <list_item>list item 3</list_item>
-<list_item><ordered_list><list_item>list item 3.a</list_item>
+<ordered_list><list_item>list item 3.a</list_item>
 <list_item>list item 3.b</list_item>
 <list_item>list item 3.c</list_item>
-<list_item><ordered_list><list_item>list item 3.c.i</list_item>
-</ordered_list></list_item>
-</ordered_list></list_item>
+<ordered_list><list_item>list item 3.c.i</list_item>
+</ordered_list>
+</ordered_list>
 <list_item>list item 4</list_item>
 </unordered_list>
 <otsl><fcel>Product<fcel>Years<lcel><nl><ucel><fcel>2016<fcel>2017<nl><fcel>Apple<fcel>49823<fcel>695944<nl><caption>This is the caption of table 1.</caption></otsl>
@@ -28,7 +28,7 @@ Affiliation 2</text>
 </unordered_list>
 <unordered_list><list_item>item 1 of neighboring list</list_item>
 <list_item>item 2 of neighboring list</list_item>
-<list_item><unordered_list><list_item>item 1 of sub list</list_item>
+<unordered_list><list_item>item 1 of sub list</list_item>
 <list_item><inline><text>Here a code snippet:</text>
 <code><_Python_>print("Hello world")</code>
 <text>(to be displayed inline)</text>
@@ -37,7 +37,7 @@ Affiliation 2</text>
 <formula>E=mc^2</formula>
 <text>(to be displayed inline)</text>
 </inline></list_item>
-</unordered_list></list_item>
+</unordered_list>
 </unordered_list>
 <text>Here a code block:</text>
 <code><_Python_>print("Hello world")</code>
@@ -58,13 +58,13 @@ Affiliation 2</text>
 <ordered_list><list_item>Item 1 in A</list_item>
 <list_item>Item 2 in A</list_item>
 <list_item>Item 3 in A</list_item>
-<list_item><ordered_list><list_item>Item 1 in B</list_item>
+<ordered_list><list_item>Item 1 in B</list_item>
 <list_item>Item 2 in B</list_item>
-<list_item><ordered_list><list_item>Item 1 in C</list_item>
+<ordered_list><list_item>Item 1 in C</list_item>
 <list_item>Item 2 in C</list_item>
-</ordered_list></list_item>
+</ordered_list>
 <list_item>Item 3 in B</list_item>
-</ordered_list></list_item>
+</ordered_list>
 <list_item>Item 4 in A</list_item>
 </ordered_list>
 <unordered_list><list_item>List item without parent list group</list_item>
