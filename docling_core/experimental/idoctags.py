@@ -1,7 +1,7 @@
 """Define classes for DocTags serialization."""
 
 from enum import Enum
-from typing import Any, Final, Optional
+from typing import Any, Final, Optional, Tuple
 from xml.dom.minidom import parseString
 
 from pydantic import BaseModel
@@ -38,6 +38,10 @@ from docling_core.types.doc import (
     TabularChartMetaField,
 )
 from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.tokens import (
+    _CodeLanguageToken,
+    _PictureClassificationToken,
+)
 
 DOCTAGS_VERSION: Final = "1.0.0"
 
@@ -60,31 +64,36 @@ class IDocTagsTableToken(str, Enum):
     OTSL_RHED = "<rhed/>"  # - row header cell,
     OTSL_SROW = "<srow/>"  # - section row cell
 
-    @classmethod    
+    @classmethod
     def get_special_tokens(
         cls,
-        ):
+    ):
+        """Return all table-related special tokens.
+
+        Includes the opening/closing OTSL tags and each enum token value.
+        """
         special_tokens: list[str] = ["<otsl>", "</otsl>"]
         for token in cls:
             special_tokens.append(f"{token.value}")
 
         return special_tokens
 
+
 class IDocTagsToken(str, Enum):
     """IDocTagsToken."""
 
     _LOC_PREFIX = "loc_"
     _SECTION_HEADER_PREFIX = "section_header_level_"
-    
+
     DOCUMENT = "doctag"
     VERSION = "version"
-    
+
     OTSL = "otsl"
     ORDERED_LIST = "ordered_list"
     UNORDERED_LIST = "unordered_list"
-    
+
     PAGE_BREAK = "page_break"
-    
+
     CAPTION = "caption"
     FOOTNOTE = "footnote"
     FORMULA = "formula"
@@ -102,7 +111,7 @@ class IDocTagsToken(str, Enum):
     CHECKBOX_UNSELECTED = "checkbox_unselected"
     FORM = "form"
     EMPTY_VALUE = "empty_value"  # used for empty value fields in fillable forms
-    
+
     @classmethod
     def get_special_tokens(
         cls,
@@ -121,12 +130,12 @@ class IDocTagsToken(str, Enum):
 
         for i in range(6):
             special_tokens += [
-                f"<{IDocTagsToken._SECTION_HEADER_PREFIX.value}{i}>",
-                f"</{IDocTagsToken._SECTION_HEADER_PREFIX.value}{i}>",
+                f"<{IDocTagsToken._SECTION_HEADER_PREFIX}{i}>",
+                f"</{IDocTagsToken._SECTION_HEADER_PREFIX}{i}>",
             ]
 
         special_tokens.extend(IDocTagsTableToken.get_special_tokens())
-            
+
         if include_picture_class:
             special_tokens.extend([t.value for t in _PictureClassificationToken])
 
@@ -136,7 +145,7 @@ class IDocTagsToken(str, Enum):
         if include_location_tokens:
             # Adding dynamically generated location-tokens
             for i in range(0, max(page_dimension[0], page_dimension[1])):
-                special_tokens.append(f"<{IDocTagsToken._LOC_PREFIX.value}{i}>")
+                special_tokens.append(f"<{IDocTagsToken._LOC_PREFIX}{i}>")
 
         return special_tokens
 
@@ -159,23 +168,24 @@ class IDocTagsToken(str, Enum):
             DocItemLabel.CHECKBOX_SELECTED: IDocTagsToken.CHECKBOX_SELECTED,
             DocItemLabel.CHECKBOX_UNSELECTED: IDocTagsToken.CHECKBOX_UNSELECTED,
             DocItemLabel.FORM: IDocTagsToken.FORM,
-            DocItemLabel.KEY_VALUE_REGION: IDocTagsToken.KEY_VALUE_REGION,
-            DocItemLabel.PARAGRAPH: IDocTagsToken.PARAGRAPH,
-            DocItemLabel.REFERENCE: IDocTagsToken.REFERENCE,
-            DocItemLabel.CHART: IDocTagsToken.CHART,
+            # Fallback mappings for labels without dedicated tokens in IDocTagsToken
+            DocItemLabel.KEY_VALUE_REGION: IDocTagsToken.TEXT,
+            DocItemLabel.PARAGRAPH: IDocTagsToken.TEXT,
+            DocItemLabel.REFERENCE: IDocTagsToken.TEXT,
+            DocItemLabel.CHART: IDocTagsToken.PICTURE,
         }
 
         res: str
         if label == DocItemLabel.SECTION_HEADER:
-            res = f"{_SECTION_HEADER_PREFIX}{level}"
+            res = f"{IDocTagsToken._SECTION_HEADER_PREFIX}{level}"
         else:
             try:
                 res = doc_token_by_item_label[DocItemLabel(label)].value
             except KeyError as e:
                 raise RuntimeError(f"Unexpected DocItemLabel: {label}") from e
         return res
-    
-    
+
+
 class IDocTagsParams(DocTagsParams):
     """DocTags-specific serialization parameters."""
 
@@ -356,18 +366,25 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
-        text_res = f"<{IDocTagsToken.DOCUMENT.value}>"
-        text_res += f"<{IDocTagsToken.VERSION.value}>{DOCTAGS_VERSION}</{IDocTagsToken.VERSION.value}>"
-        text_res += f"{text_res}{delim}"
-        text_res += f"</{IDocTagsToken.DOCUMENT.value}>"
+        # print(f"text-res-v1: {text_res}")
+
+        tmp = f"<{IDocTagsToken.DOCUMENT.value}>"
+        tmp += f"<{IDocTagsToken.VERSION.value}>{DOCTAGS_VERSION}</{IDocTagsToken.VERSION.value}>"
+        # text_res += f"{text_res}{delim}"
+        tmp += f"{text_res}"
+        tmp += f"</{IDocTagsToken.DOCUMENT.value}>"
+
+        # print(f"text-res-v2: {tmp}")
+        text_res = tmp
 
         if self.params.pretty_indentation and (
             my_root := parseString(text_res).documentElement
         ):
             text_res = my_root.toprettyxml(indent=self.params.pretty_indentation)
-            """
             text_res = "\n".join(
                 [line for line in text_res.split("\n") if line.strip()]
             )
-            """
+
+        print(f"text-res-v3:\n{text_res}")
+
         return create_ser_result(text=text_res, span_source=parts)
