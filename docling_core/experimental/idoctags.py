@@ -130,8 +130,8 @@ class IDocTagsToken(str, Enum):
 
         for i in range(6):
             special_tokens += [
-                f"<{IDocTagsToken._SECTION_HEADER_PREFIX}{i}>",
-                f"</{IDocTagsToken._SECTION_HEADER_PREFIX}{i}>",
+                f"<{IDocTagsToken._SECTION_HEADER_PREFIX.value}{i}>",
+                f"</{IDocTagsToken._SECTION_HEADER_PREFIX.value}{i}>",
             ]
 
         special_tokens.extend(IDocTagsTableToken.get_special_tokens())
@@ -145,7 +145,7 @@ class IDocTagsToken(str, Enum):
         if include_location_tokens:
             # Adding dynamically generated location-tokens
             for i in range(0, max(page_dimension[0], page_dimension[1])):
-                special_tokens.append(f"<{IDocTagsToken._LOC_PREFIX}{i}>")
+                special_tokens.append(f"<{IDocTagsToken._LOC_PREFIX.value}{i}>")
 
         return special_tokens
 
