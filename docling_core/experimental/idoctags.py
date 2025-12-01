@@ -311,6 +311,8 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
                 otsl_content = temp_table.export_to_otsl(
                     temp_doc,
                     add_cell_location=False,
+                    # Suppress chart cell text if global content is off
+                    add_cell_text=params.add_content,
                     self_closing=params.do_self_closing,
                     table_token=IDocTagsTableToken,
                 )

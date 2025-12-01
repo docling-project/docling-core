@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from docling_core.experimental.idoctags import IDocTagsDocSerializer
+from docling_core.experimental.idoctags import IDocTagsDocSerializer, IDocTagsParams
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 from docling_core.transforms.serializer.html import (
@@ -591,6 +591,30 @@ def test_doctags_meta():
 # ===============================
 # IDocTags tests
 # ===============================
+
+
+def test_idoctags():
+    src = Path("./test/data/doc/ddoc_0.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    if True:
+        params = IDocTagsParams()
+        params.add_content = False
+
+        ser = IDocTagsDocSerializer(doc=doc, params=params)
+        actual = ser.serialize().text
+        print(actual)
+
+    if True:
+        params = IDocTagsParams()
+        params.pretty_indentation = ""
+        params.add_content = False
+
+        ser = IDocTagsDocSerializer(doc=doc, params=params)
+        actual = ser.serialize().text
+        print(actual)
+
+        assert actual.startswith("<doctag>")
 
 
 def test_idoctags_meta():
