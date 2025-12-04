@@ -56,6 +56,7 @@ from .document import (
     PictureStackedBarChartData,
     PictureTabularChartData,
     ProvenanceItem,
+    ProvenanceTrack,
     RefItem,
     RichTableCell,
     Script,

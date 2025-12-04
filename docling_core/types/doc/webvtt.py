@@ -26,8 +26,17 @@ class _WebVTTLineTerminator(str, Enum):
 _WebVTTCueIdentifier = Annotated[str, StringConstraints(strict=True, pattern=r"^(?!.*-->)[^\n\r]+$")]
 
 
-class _WebVTTTimestamp(BaseModel):
+class WebVTTTimestamp(BaseModel):
     """WebVTT timestamp.
+
+    The timestamp is a string consisting of the following components in the given order:
+
+    - hours (optional, required if non-zero): two or more digits
+    - minutes: two digits between 0 and 59
+    - a colon character (:)
+    - seconds: two digits between 0 and 59
+    - a full stop character (.)
+    - thousandths of a second: three digits
 
     A WebVTT timestamp is always interpreted relative to the current playback position
     of the media data that the WebVTT file is to be synchronized with.
@@ -48,6 +57,7 @@ class _WebVTTTimestamp(BaseModel):
 
     @model_validator(mode="after")
     def validate_raw(self) -> Self:
+        """Validate the WebVTT timestamp as a string."""
         m = self._pattern.match(self.raw)
         if not m:
             raise ValueError(f"Invalid WebVTT timestamp format: {self.raw}")
@@ -70,14 +80,15 @@ class _WebVTTTimestamp(BaseModel):
 
     @override
     def __str__(self) -> str:
+        """Return a string representation of a WebVTT timestamp."""
         return self.raw
 
 
 class _WebVTTCueTimings(BaseModel):
     """WebVTT cue timings."""
 
-    start: Annotated[_WebVTTTimestamp, Field(description="Start time offset of the cue")]
-    end: Annotated[_WebVTTTimestamp, Field(description="End time offset of the cue")]
+    start: Annotated[WebVTTTimestamp, Field(description="Start time offset of the cue")]
+    end: Annotated[WebVTTTimestamp, Field(description="End time offset of the cue")]
 
     @model_validator(mode="after")
     def check_order(self) -> Self:
@@ -197,6 +208,21 @@ class _WebVTTCueSpanStartTagAnnotated(_WebVTTCueSpanStartTag):
         return f"<{self._get_name_with_classes()} {self.annotation}>"
 
 
+class _WebVTTCueLanguageSpanStartTag(_WebVTTCueSpanStartTagAnnotated):
+    _pattern: ClassVar[re.Pattern] = re.compile(r"^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$", re.IGNORECASE)
+
+    name: Literal["lang"] = Field("lang", description="The tag name")
+
+    @field_validator("annotation", mode="after")
+    @classmethod
+    @override
+    def is_valid_annotation(cls, value: str) -> str:
+        if cls._pattern.match(value):
+            return value
+        else:
+            raise ValueError("Annotation should be in BCP 47 language tag format")
+
+
 class _WebVTTCueComponentBase(BaseModel):
     """WebVTT caption or subtitle cue component.
 
@@ -267,7 +293,7 @@ class _WebVTTCueLanguageSpan(_WebVTTCueComponentBase):
     """
 
     kind: Literal["lang"] = "lang"
-    start_tag: _WebVTTCueSpanStartTagAnnotated
+    start_tag: _WebVTTCueLanguageSpanStartTag
 
 
 _WebVTTCueComponent = Annotated[
@@ -339,7 +365,7 @@ class _WebVTTCueBlock(BaseModel):
 
         start, end = [t.strip() for t in timing_line.split("-->")]
         end = re.split(" |\t", end)[0]  # ignore the cue settings list
-        timings: _WebVTTCueTimings = _WebVTTCueTimings(start=_WebVTTTimestamp(raw=start), end=_WebVTTTimestamp(raw=end))
+        timings: _WebVTTCueTimings = _WebVTTCueTimings(start=WebVTTTimestamp(raw=start), end=WebVTTTimestamp(raw=end))
         cue_text = " ".join(cue_lines).strip()
         # adding close tag for cue spans without end tag
         for omm in {"v"}:
@@ -376,11 +402,15 @@ class _WebVTTCueBlock(BaseModel):
                         classes: list[str] = []
                         if class_string:
                             classes = [c for c in class_string.split(".") if c]
-                        st = (
-                            _WebVTTCueSpanStartTagAnnotated(name=ct, classes=classes, annotation=annotation.strip())
-                            if annotation
-                            else _WebVTTCueSpanStartTag(name=ct, classes=classes)
-                        )
+                        st: _WebVTTCueSpanStartTag
+                        if annotation and ct == "lang":
+                            st = _WebVTTCueLanguageSpanStartTag(name=ct, classes=classes, annotation=annotation.strip())
+                        elif annotation:
+                            st = _WebVTTCueSpanStartTagAnnotated(
+                                name=ct, classes=classes, annotation=annotation.strip()
+                            )
+                        else:
+                            st = _WebVTTCueSpanStartTag(name=ct, classes=classes)
                         it = _WebVTTCueInternalText(components=children)
                         cp: _WebVTTCueComponent
                         if ct == "c":

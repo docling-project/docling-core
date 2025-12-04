@@ -67,7 +67,7 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
-from docling_core.types.doc.webvtt import _WebVTTTimestamp
+from docling_core.types.doc.webvtt import WebVTTTimestamp
 
 _logger = logging.getLogger(__name__)
 
@@ -1208,14 +1208,14 @@ class ProvenanceTrack(BaseModel):
     """
 
     start_time: Annotated[
-        _WebVTTTimestamp,
+        WebVTTTimestamp,
         Field(
             examples=["00.11.000", "00:00:06.500", "01:28:34.300"],
             description="Start time offset of the track cue",
         ),
     ]
     end_time: Annotated[
-        _WebVTTTimestamp,
+        WebVTTTimestamp,
         Field(
             examples=["00.12.000", "00:00:08.200", "01:29:30.100"],
             description="End time offset of the track cue",
