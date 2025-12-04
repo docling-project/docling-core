@@ -9,17 +9,18 @@ import pytest
 from pydantic import ValidationError
 
 from docling_core.types.doc.webvtt import (
+    WebVTTTimestamp,
     _WebVTTCueBlock,
     _WebVTTCueComponentWithTerminator,
     _WebVTTCueInternalText,
     _WebVTTCueItalicSpan,
     _WebVTTCueLanguageSpan,
+    _WebVTTCueLanguageSpanStartTag,
     _WebVTTCueSpanStartTagAnnotated,
     _WebVTTCueTextSpan,
     _WebVTTCueTimings,
     _WebVTTCueVoiceSpan,
     _WebVTTFile,
-    _WebVTTTimestamp,
 )
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -42,7 +43,7 @@ def test_vtt_cue_commponents() -> None:
         0.0,
     ]
     for idx, ts in enumerate(valid_timestamps):
-        model = _WebVTTTimestamp(raw=ts)
+        model = WebVTTTimestamp(raw=ts)
         assert model.seconds == valid_total_seconds[idx]
 
     """Test invalid WebVTT timestamps."""
@@ -57,35 +58,35 @@ def test_vtt_cue_commponents() -> None:
     ]
     for ts in invalid_timestamps:
         with pytest.raises(ValidationError):
-            _WebVTTTimestamp(raw=ts)
+            WebVTTTimestamp(raw=ts)
 
     """Test the timestamp __str__ method."""
-    model = _WebVTTTimestamp(raw="00:01:02.345")
+    model = WebVTTTimestamp(raw="00:01:02.345")
     assert str(model) == "00:01:02.345"
 
     """Test valid cue timings."""
-    start = _WebVTTTimestamp(raw="00:10.005")
-    end = _WebVTTTimestamp(raw="00:14.007")
+    start = WebVTTTimestamp(raw="00:10.005")
+    end = WebVTTTimestamp(raw="00:14.007")
     cue_timings = _WebVTTCueTimings(start=start, end=end)
     assert cue_timings.start == start
     assert cue_timings.end == end
     assert str(cue_timings) == "00:10.005 --> 00:14.007"
 
     """Test invalid cue timings with end timestamp before start."""
-    start = _WebVTTTimestamp(raw="00:10.700")
-    end = _WebVTTTimestamp(raw="00:10.500")
+    start = WebVTTTimestamp(raw="00:10.700")
+    end = WebVTTTimestamp(raw="00:10.500")
     with pytest.raises(ValidationError) as excinfo:
         _WebVTTCueTimings(start=start, end=end)
     assert "End timestamp must be greater than start timestamp" in str(excinfo.value)
 
     """Test invalid cue timings with missing end."""
-    start = _WebVTTTimestamp(raw="00:10.500")
+    start = WebVTTTimestamp(raw="00:10.500")
     with pytest.raises(ValidationError) as excinfo:
         _WebVTTCueTimings(start=start)  # type: ignore[call-arg]
     assert "Field required" in str(excinfo.value)
 
     """Test invalid cue timings with missing start."""
-    end = _WebVTTTimestamp(raw="00:10.500")
+    end = WebVTTTimestamp(raw="00:10.500")
     with pytest.raises(ValidationError) as excinfo:
         _WebVTTCueTimings(end=end)  # type: ignore[call-arg]
     assert "Field required" in str(excinfo.value)
@@ -272,3 +273,13 @@ def test_webvtt_file() -> None:
     assert len(block.payload) == 1
     assert isinstance(block.payload[0].component, _WebVTTCueTextSpan)
     assert block.payload[0].component.text == "Good."
+
+
+def test_webvtt_cue_language_span_start_tag():
+    _WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en"}')
+    _WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en-US"}')
+    _WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "zh-Hant"}')
+    with pytest.raises(ValidationError, match="BCP 47"):
+        _WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en_US"}')
+    with pytest.raises(ValidationError, match="BCP 47"):
+        _WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "123-de"}')
