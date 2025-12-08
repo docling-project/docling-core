@@ -1,3 +1,13 @@
+## [v2.54.1](https://github.com/docling-project/docling-core/releases/tag/v2.54.1) - 2025-12-08
+
+### Fix
+
+* Switch meta migration logging to info ([#452](https://github.com/docling-project/docling-core/issues/452)) ([`f8e09ec`](https://github.com/docling-project/docling-core/commit/f8e09ecf69fc161ff6995f782afb7405619a4a2b))
+
+### Documentation
+
+* Minor update to add extras to reflect main readme. ([#448](https://github.com/docling-project/docling-core/issues/448)) ([`b522061`](https://github.com/docling-project/docling-core/commit/b5220616c8207140859f1887a624a305247d0116))
+
 ## [v2.54.0](https://github.com/docling-project/docling-core/releases/tag/v2.54.0) - 2025-11-29
 
 ### Feature
