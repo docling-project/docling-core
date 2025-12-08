@@ -368,15 +368,11 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
-        # print(f"text-res-v1: {text_res}")
-
         tmp = f"<{IDocTagsToken.DOCUMENT.value}>"
         tmp += f"<{IDocTagsToken.VERSION.value}>{DOCTAGS_VERSION}</{IDocTagsToken.VERSION.value}>"
-        # text_res += f"{text_res}{delim}"
         tmp += f"{text_res}"
         tmp += f"</{IDocTagsToken.DOCUMENT.value}>"
 
-        # print(f"text-res-v2: {tmp}")
         text_res = tmp
 
         if self.params.pretty_indentation and (
@@ -386,7 +382,5 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
             text_res = "\n".join(
                 [line for line in text_res.split("\n") if line.strip()]
             )
-
-        print(f"text-res-v3:\n{text_res}")
 
         return create_ser_result(text=text_res, span_source=parts)
