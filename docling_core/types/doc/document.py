@@ -1884,7 +1884,7 @@ class PictureItem(FloatingItem):
     def _migrate_annotations_to_meta(self) -> Self:
         """Migrate the `annotations` field to `meta`."""
         if self.annotations:
-            _logger.warning(
+            _logger.info(
                 "Migrating deprecated `annotations` to `meta`; this will be removed in the future. "
                 "Note that only the first available instance of each annotation type will be migrated."
             )
