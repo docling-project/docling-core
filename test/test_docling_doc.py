@@ -1,5 +1,6 @@
 import os
 import re
+import warnings
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
@@ -1966,3 +1967,16 @@ def test_validate_rules():
 
     with pytest.warns(UserWarning, match=message):
         doc._validate_rules(raise_on_error=False)
+
+
+def test_meta_migration_warnings():
+    # the following should not raise any warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        doc = DoclingDocument.load_from_yaml("test/data/doc/dummy_doc_2.yaml")
+
+    # the following should raise a deprecation warning
+    with pytest.warns(DeprecationWarning):
+        _ = doc.pictures[0].annotations
+    with pytest.warns(DeprecationWarning):
+        _ = doc.tables[0].annotations
