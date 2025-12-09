@@ -41,6 +41,16 @@ def verify(exp_file: Path, actual: str):
         with open(exp_file, "r", encoding="utf-8") as f:
             expected = f.read().rstrip()
 
+        # Normalize platform-dependent quote escaping for DocTags outputs
+        name = exp_file.name
+        if name.endswith(".dt") or name.endswith(".idt.xml"):
+
+            def _normalize_quotes(s: str) -> str:
+                return s.replace("&quot;", '"').replace("&#34;", '"')
+
+            expected = _normalize_quotes(expected)
+            actual = _normalize_quotes(actual)
+
         assert expected == actual
 
 
