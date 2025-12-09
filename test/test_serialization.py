@@ -6,6 +6,7 @@ import pytest
 
 from docling_core.experimental.idoctags import IDocTagsDocSerializer, IDocTagsParams
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.doctags import DocTagsParams
 from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -598,27 +599,35 @@ def test_idoctags():
     doc = DoclingDocument.load_from_json(src)
 
     if True:
+        # Human readable, indented and with content
+        params = IDocTagsParams()
+        params.add_content = True
+
+        ser = IDocTagsDocSerializer(doc=doc, params=params)
+        actual = ser.serialize().text
+
+        verify(exp_file=src.with_suffix(".v0.gt.dt"), actual=actual)
+    
+    if True:
+        # Human readable, indented but without content
         params = IDocTagsParams()
         params.add_content = False
 
         ser = IDocTagsDocSerializer(doc=doc, params=params)
         actual = ser.serialize().text
-        print(actual)
-
-        assert actual.startswith("<doctag>")
 
         verify(exp_file=src.with_suffix(".v1.gt.dt"), actual=actual)
 
     if True:
+        # Machine readable, not indented and without content
         params = IDocTagsParams()
         params.pretty_indentation = ""
         params.add_content = False
+        params.mode = DocTagsParams.Mode.MINIFIED
 
         ser = IDocTagsDocSerializer(doc=doc, params=params)
         actual = ser.serialize().text
-        print(actual)
 
-        assert actual.startswith("<doctag>")
         verify(exp_file=src.with_suffix(".v2.gt.dt"), actual=actual)
 
 
