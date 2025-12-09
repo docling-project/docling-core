@@ -607,6 +607,8 @@ def test_idoctags():
 
         assert actual.startswith("<doctag>")
 
+        verify(exp_file=src.with_suffix(".v1.gt.dt"), actual=actual)
+
     if True:
         params = IDocTagsParams()
         params.pretty_indentation = ""
@@ -617,6 +619,7 @@ def test_idoctags():
         print(actual)
 
         assert actual.startswith("<doctag>")
+        verify(exp_file=src.with_suffix(".v2.gt.dt"), actual=actual)
 
 
 def test_idoctags_meta():
