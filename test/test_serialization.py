@@ -6,8 +6,10 @@ import pytest
 
 from docling_core.experimental.idoctags import IDocTagsDocSerializer, IDocTagsParams
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
-from docling_core.transforms.serializer.doctags import DocTagsParams
-from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
+from docling_core.transforms.serializer.doctags import (
+    DocTagsDocSerializer,
+    DocTagsParams,
+)
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLOutputStyle,
@@ -607,7 +609,7 @@ def test_idoctags():
         actual = ser.serialize().text
 
         verify(exp_file=src.with_suffix(".v0.gt.dt"), actual=actual)
-    
+
     if True:
         # Human readable, indented but without content
         params = IDocTagsParams()
