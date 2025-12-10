@@ -1,21 +1,16 @@
 fail_fast: true
 repos:
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.5
     hooks:
-      - id: black
-        name: Black
-        entry: uv run --no-sync black docling_core test
-        pass_filenames: false
-        language: system
-        files: '\.py$'
-  - repo: local
-    hooks:
-      - id: isort
-        name: isort
-        entry: uv run --no-sync isort docling_core test
-        pass_filenames: false
-        language: system
-        files: '\.py$'
+      - id: ruff-format
+        name: "Ruff formatter"
+        args: [--config=pyproject.toml]
+        files: '^(docling_core|tests|docs/examples).*\.(py|ipynb)$'
+      - id: ruff
+        name: "Ruff linter"
+        args: [--exit-non-zero-on-fix, --fix, --config=pyproject.toml]
+        files: '^(docling_core|tests|docs/examples).*\.(py|ipynb)$'
   - repo: local
     hooks:
       - id: autoflake
