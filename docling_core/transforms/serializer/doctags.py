@@ -457,7 +457,33 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
-
+        parts = doc_serializer.get_parts(
+            item=item,
+            list_level=list_level + 1,
+            is_inline_scope=is_inline_scope,
+            visited=my_visited,
+            **kwargs,
+        )
+        delim = _get_delim(params=params)
+        if parts:
+            text_res = delim.join(
+                [
+                    t
+                    for p in parts
+                    if (t := _wrap(text=p.text, wrap_tag=DocumentToken.LIST_ITEM.value))
+                ]
+            text_res = f"{text_res}{delim}"
+            wrap_tag = (
+                DocumentToken.ORDERED_LIST.value
+                if item.first_item_is_enumerated(doc)
+                else DocumentToken.UNORDERED_LIST.value
+            )
+            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+        else:
+            text_res = ""
+        return create_ser_result(text=text_res, span_source=parts)
+        
+        """
         # Build list children explicitly. Requirements:
         # 1) <ordered_list>/<unordered_list> can be children of lists.
         # 2) Do NOT wrap nested lists into <list_item>, even if they are
@@ -549,7 +575,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             text_res = ""
 
         return create_ser_result(text=text_res, span_source=item_results)
-
+        """
 
 class DocTagsInlineSerializer(BaseInlineSerializer):
     """DocTags-specific inline group serializer."""
