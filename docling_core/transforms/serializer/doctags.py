@@ -466,10 +466,6 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         )
         delim = _get_delim(params=params)
 
-        print(f"#-parts: {len(parts)}")
-        for part in parts:
-            print(part)
-
         if parts:
             text_res = delim.join(
                 [
