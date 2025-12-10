@@ -106,10 +106,16 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
-        wrap_tag: Optional[str] = DocumentToken.create_token_name_from_doc_item_label(
-            label=item.label,
-            **({"level": item.level} if isinstance(item, SectionHeaderItem) else {}),
+        # Decide wrapping up-front so ListItem never gets wrapped here
+        wrap_tag_token: Optional[str] = (
+            DocumentToken.create_token_name_from_doc_item_label(
+                label=item.label,
+                **(
+                    {"level": item.level} if isinstance(item, SectionHeaderItem) else {}
+                ),
+            )
         )
+        wrap_tag: Optional[str] = None if isinstance(item, ListItem) else wrap_tag_token
         parts: list[str] = []
 
         if item.meta:
@@ -152,8 +158,6 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 text_part = f"{language_token}{text_part}"
             else:
                 text_part = text_part.strip()
-                if isinstance(item, ListItem):
-                    wrap_tag = None  # deferring list item tags to list handling
 
             if text_part:
                 parts.append(text_part)
@@ -203,7 +207,8 @@ class DocTagsTableSerializer(BaseTableSerializer):
             otsl_text = item.export_to_otsl(
                 doc=doc,
                 add_cell_location=params.add_table_cell_location,
-                add_cell_text=params.add_table_cell_text,
+                # Suppress cell text when global content is disabled
+                add_cell_text=(params.add_table_cell_text and params.add_content),
                 xsize=params.xsize,
                 ysize=params.ysize,
                 visited=visited,
@@ -460,6 +465,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
         delim = _get_delim(params=params)
+
         if parts:
             text_res = delim.join(
                 [
@@ -636,18 +642,19 @@ class DocTagsDocSerializer(DocSerializer):
         results: list[SerializationResult] = []
         if item.captions:
             cap_res = super().serialize_captions(item, **kwargs)
-            if cap_res.text:
-                if params.add_location:
-                    for caption in item.captions:
-                        if caption.cref not in self.get_excluded_refs(**kwargs):
-                            if isinstance(cap := caption.resolve(self.doc), DocItem):
-                                loc_txt = cap.get_location_tokens(
-                                    doc=self.doc,
-                                    xsize=params.xsize,
-                                    ysize=params.ysize,
-                                    self_closing=params.do_self_closing,
-                                )
-                                results.append(create_ser_result(text=loc_txt))
+            if cap_res.text and params.add_location:
+                for caption in item.captions:
+                    if caption.cref not in self.get_excluded_refs(**kwargs):
+                        if isinstance(cap := caption.resolve(self.doc), DocItem):
+                            loc_txt = cap.get_location_tokens(
+                                doc=self.doc,
+                                xsize=params.xsize,
+                                ysize=params.ysize,
+                                self_closing=params.do_self_closing,
+                            )
+                            results.append(create_ser_result(text=loc_txt))
+            # Only include caption textual content when add_content is True
+            if cap_res.text and params.add_content:
                 results.append(cap_res)
         text_res = "".join([r.text for r in results])
         if text_res:

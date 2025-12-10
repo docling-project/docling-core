@@ -56,7 +56,7 @@ def test_json_schema_to_search_mapper_0():
 def test_json_schema_to_search_mapper_1():
     """Test the class JsonSchemaToSearchMapper."""
     s = Record.model_json_schema()
-    print(json.dumps(s, indent=2))
+    # print(json.dumps(s, indent=2))
 
     _meta = {
         "aliases": [".production", "ccc"],

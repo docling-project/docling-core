@@ -4,9 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from docling_core.experimental.idoctags import IDocTagsDocSerializer
+from docling_core.experimental.idoctags import IDocTagsDocSerializer, IDocTagsParams
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
-from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
+from docling_core.transforms.serializer.doctags import (
+    DocTagsDocSerializer,
+    DocTagsParams,
+)
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLOutputStyle,
@@ -37,6 +40,16 @@ def verify(exp_file: Path, actual: str):
     else:
         with open(exp_file, "r", encoding="utf-8") as f:
             expected = f.read().rstrip()
+
+        # Normalize platform-dependent quote escaping for DocTags outputs
+        name = exp_file.name
+        if name.endswith(".dt") or name.endswith(".idt.xml"):
+
+            def _normalize_quotes(s: str) -> str:
+                return s.replace("&quot;", '"').replace("&#34;", '"')
+
+            expected = _normalize_quotes(expected)
+            actual = _normalize_quotes(actual)
 
         assert expected == actual
 
@@ -591,6 +604,43 @@ def test_doctags_meta():
 # ===============================
 # IDocTags tests
 # ===============================
+
+
+def test_idoctags():
+    src = Path("./test/data/doc/ddoc_0.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    if True:
+        # Human readable, indented and with content
+        params = IDocTagsParams()
+        params.add_content = True
+
+        ser = IDocTagsDocSerializer(doc=doc, params=params)
+        actual = ser.serialize().text
+
+        verify(exp_file=src.with_suffix(".v0.gt.dt"), actual=actual)
+
+    if True:
+        # Human readable, indented but without content
+        params = IDocTagsParams()
+        params.add_content = False
+
+        ser = IDocTagsDocSerializer(doc=doc, params=params)
+        actual = ser.serialize().text
+
+        verify(exp_file=src.with_suffix(".v1.gt.dt"), actual=actual)
+
+    if True:
+        # Machine readable, not indented and without content
+        params = IDocTagsParams()
+        params.pretty_indentation = ""
+        params.add_content = False
+        params.mode = DocTagsParams.Mode.MINIFIED
+
+        ser = IDocTagsDocSerializer(doc=doc, params=params)
+        actual = ser.serialize().text
+
+        verify(exp_file=src.with_suffix(".v2.gt.dt"), actual=actual)
 
 
 def test_idoctags_meta():

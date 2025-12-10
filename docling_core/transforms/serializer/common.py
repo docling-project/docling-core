@@ -470,6 +470,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         parts: list[SerializationResult] = []
         my_visited: set[str] = visited if visited is not None else set()
         params = self.params.merge_with_patch(patch=kwargs)
+        add_content = True
+
+        if hasattr(params, "add_content"):
+            add_content = getattr(params, "add_content")
 
         for node, lvl in _iterate_items(
             node=item,
@@ -489,7 +493,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 visited=my_visited,
                 **(dict(level=lvl) | kwargs),
             )
-            if part.text:
+            if len(part.text.strip()) > 0 or (not add_content):
                 parts.append(part)
 
         return parts
