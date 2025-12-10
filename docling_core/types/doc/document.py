@@ -5299,6 +5299,10 @@ class DoclingDocument(BaseModel):
                 coords = coords[:4]
             if len(coords) == 4:
                 l, t, r, b = map(float, coords)
+                eps = 1e-3
+                # Ignore bounding boxes with width or height of <1e-3, including cases where l>r or t>b.
+                if r - l < eps or b - t < eps:
+                    return None
                 return BoundingBox(l=l / 500, t=t / 500, r=r / 500, b=b / 500)
             return None
 
