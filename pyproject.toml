@@ -134,6 +134,9 @@ namespaces = true
 target-version = "py39"
 line-length = 88
 respect-gitignore = true
+exclude = [
+    "test/data/**"
+]
 
 [tool.ruff.format]
 skip-magic-trailing-comma = false
