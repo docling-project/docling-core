@@ -161,13 +161,19 @@ select = [
 ignore = [
   "C403",   # Unnecessary `list()` call (rewrite as a literal)
   "C408",   # Unnecessary `dict()` call (rewrite as a literal)
+  "C413",   # Unnecessary `reversed()` call around `sorted()`
   "C416",   # Unnecessary set comprehension (rewrite using `set()`)
   "E501",   # Line too long, handled by ruff formatter
+  "E741",   # Ambiguous variable name: `l`
   "D107",   # "Missing docstring in __init__",
   "F401",   # imported but unused; consider using `importlib.util.find_spec` to test for "
   "F811",   # "redefinition of the same function"
   "PL",     # Pylint
+  "RUF002", # Docstring contains ambiguous `‑` (NON-BREAKING HYPHEN).
+  "RUF003", # Comment contains ambiguous `‑` (NON-BREAKING HYPHEN).
+  "RUF005", # Consider ... instead of concatenation
   "RUF012", # Mutable Class Attributes
+  "RUF034", # Useless `if`-`else` condition
   "UP006",  # List vs list, etc
   "UP007",  # Option and Union
   "UP015",  # Unnecessary mode argument
