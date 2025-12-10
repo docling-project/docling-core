@@ -8,7 +8,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional, Union
 from urllib.parse import quote
-from xml.etree.cElementTree import SubElement, tostring
+from xml.etree.ElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
 import latex2mathml.converter
@@ -621,7 +621,7 @@ class _HTMLGraphDataSerializer:
             cell_text = f"<strong>{cell_text}</strong>: {', '.join(value_texts)}"
 
         # If this cell has children, create a nested list
-        if cell_id in child_links and child_links[cell_id]:
+        if child_links.get(cell_id):
             children_html = []
             children_html.append(f"<li>{cell_text}</li>")
             children_html.append("<ul>")
@@ -974,7 +974,7 @@ class HTMLDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> str:
         """Apply HTML-specific hyperlink serialization."""
-        return f'<a href="{str(hyperlink)}">{text}</a>'
+        return f'<a href="{hyperlink!s}">{text}</a>'
 
     @override
     def serialize_doc(

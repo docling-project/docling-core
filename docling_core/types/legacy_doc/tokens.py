@@ -99,10 +99,10 @@ class DocumentToken(Enum):
         special_tokens = [token.value for token in cls]
 
         # Adding dynamically generated row and col tokens
-        for i in range(0, max_rows + 1):
+        for i in range(max_rows + 1):
             special_tokens += [f"<row_{i}>", f"</row_{i}>"]
 
-        for i in range(0, max_cols + 1):
+        for i in range(max_cols + 1):
             special_tokens += [f"<col_{i}>", f"</col_{i}>"]
 
         for i in range(6):
@@ -113,12 +113,12 @@ class DocumentToken(Enum):
             special_tokens += [f"<subtitle-level-{i}>", f"</subtitle-level-{i}>"]
 
         # Adding dynamically generated page-tokens
-        for i in range(0, max_pages + 1):
+        for i in range(max_pages + 1):
             special_tokens.append(f"<page_{i}>")
             special_tokens.append(f"</page_{i}>")
 
         # Adding dynamically generated location-tokens
-        for i in range(0, max(page_dimension[0] + 1, page_dimension[1] + 1)):
+        for i in range(max(page_dimension[0] + 1, page_dimension[1] + 1)):
             special_tokens.append(f"<loc_{i}>")
 
         return special_tokens

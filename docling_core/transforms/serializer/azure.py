@@ -113,7 +113,7 @@ class _AzureBoundingRegion(BaseModel):
     Matches Azure's schema; field names use camelCase by design.
     """
 
-    pageNumber: int  # noqa: N815
+    pageNumber: int
     polygon: list[float]
 
 
@@ -121,7 +121,7 @@ class _AzureParagraph(BaseModel):
     """Paragraph content with optional role and regions."""
 
     content: str
-    boundingRegions: list["_AzureBoundingRegion"]  # noqa: N815
+    boundingRegions: list["_AzureBoundingRegion"]
     role: Optional[str] = None
 
 
@@ -129,34 +129,34 @@ class _AzureTableCell(BaseModel):
     """Single table cell with position, span, and optional region."""
 
     content: str
-    rowIndex: int  # noqa: N815
-    columnIndex: int  # noqa: N815
-    rowSpan: int = 1  # noqa: N815
-    colSpan: int = 1  # noqa: N815
+    rowIndex: int
+    columnIndex: int
+    rowSpan: int = 1
+    colSpan: int = 1
     kind: Optional[str] = None
-    boundingRegions: Optional[list[_AzureBoundingRegion]] = None  # noqa: N815
+    boundingRegions: Optional[list[_AzureBoundingRegion]] = None
 
 
 class _AzureTable(BaseModel):
     """Table with dimensions, regions, and cells."""
 
-    rowCount: int  # noqa: N815
-    columnCount: int  # noqa: N815
-    boundingRegions: list[_AzureBoundingRegion]  # noqa: N815
+    rowCount: int
+    columnCount: int
+    boundingRegions: list[_AzureBoundingRegion]
     cells: list[_AzureTableCell]
 
 
 class _AzureImage(BaseModel):
     """Image/figure with bounding region and optional footnotes."""
 
-    boundingRegions: list[_AzureBoundingRegion]  # noqa: N815
+    boundingRegions: list[_AzureBoundingRegion]
     footnotes: Optional[list[_AzureParagraph]] = None
 
 
 class _AzurePage(BaseModel):
     """Page metadata used in the Azure-like output."""
 
-    pageNumber: int  # noqa: N815
+    pageNumber: int
     width: float
     height: float
     # Words are not currently emitted; keep as untyped list

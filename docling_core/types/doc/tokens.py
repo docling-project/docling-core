@@ -206,7 +206,7 @@ class DocumentToken(str, Enum):
         special_tokens.extend(TableToken.get_special_tokens())
 
         # Adding dynamically generated location-tokens
-        for i in range(0, max(page_dimension[0], page_dimension[1])):
+        for i in range(max(page_dimension[0], page_dimension[1])):
             special_tokens.append(f"<{_LOC_PREFIX}{i}>")
 
         return special_tokens

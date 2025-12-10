@@ -169,7 +169,7 @@ class ReadingOrderVisualizer(BaseVisualizer):
                     page_height=doc.pages[prov.page_no].size.height
                 )
                 ro_bbox = tlo_bbox.normalized(doc.pages[prov.page_no].size)
-                ro_bbox.l = round(ro_bbox.l * image.width)  # noqa: E741
+                ro_bbox.l = round(ro_bbox.l * image.width)
                 ro_bbox.r = round(ro_bbox.r * image.width)
                 ro_bbox.t = round(ro_bbox.t * image.height)
                 ro_bbox.b = round(ro_bbox.b * image.height)

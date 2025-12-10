@@ -5102,7 +5102,7 @@ class DoclingDocument(BaseModel):
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(md_out)
 
-    def export_to_markdown(  # noqa: C901
+    def export_to_markdown(
         self,
         delim: str = "\n\n",
         from_element: int = 0,
@@ -5236,7 +5236,7 @@ class DoclingDocument(BaseModel):
 
         return ser_res.text
 
-    def export_to_text(  # noqa: C901
+    def export_to_text(
         self,
         delim: str = "\n\n",
         from_element: int = 0,
@@ -5339,7 +5339,7 @@ class DoclingDocument(BaseModel):
             raise ValueError("Unsupported ImageRefMode")
         return new_doc
 
-    def export_to_html(  # noqa: C901
+    def export_to_html(
         self,
         from_element: int = 0,
         to_element: int = sys.maxsize,
@@ -5533,8 +5533,8 @@ class DoclingDocument(BaseModel):
                 re.DOTALL,
             )
 
-            cells: List["GraphCell"] = []
-            links: List["GraphLink"] = []
+            cells: List[GraphCell] = []
+            links: List[GraphLink] = []
             raw_link_predictions = []
 
             for cell_match in cell_pattern.finditer(tokens):
@@ -5952,7 +5952,7 @@ class DoclingDocument(BaseModel):
         r"""Export to DocTags format."""
         return self.export_to_doctags(*args, **kwargs)
 
-    def export_to_doctags(  # noqa: C901
+    def export_to_doctags(
         self,
         delim: str = "",  # deprecated
         from_element: int = 0,

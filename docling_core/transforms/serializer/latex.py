@@ -450,7 +450,7 @@ class LaTeXPictureSerializer(BasePictureSerializer):
                 return create_ser_result(text=image_placeholder, span_source=item)
             else:
                 return create_ser_result(
-                    text=f"\\includegraphics[width=\\linewidth]{{{str(item.image.uri)}}}",
+                    text=f"\\includegraphics[width=\\linewidth]{{{item.image.uri!s}}}",
                     span_source=item,
                 )
         else:  # EMBEDDED not supported natively

@@ -20,7 +20,7 @@ def test_ccs_document_update():
             doc = CCSDocument.model_validate(raw_doc)
 
             if doc.description.abstract:
-                assert False, f"Abstract should not be present"
+                assert False, "Abstract should not be present"
 
     except ValidationError as e:
         print(f"Validation error in file {filename}:\n{e.json()}")
