@@ -214,7 +214,7 @@ def test_collection_document_info():
     CCSDocumentDescription(**desc_dict)
 
     desc_dict["collection"]["type"] = "Record"
-    with pytest.raises(ValidationError, match="collection.type"):
+    with pytest.raises(ValidationError, match="collection\\.type"):
         CCSDocumentDescription(**desc_dict)
 
 
@@ -251,11 +251,11 @@ def test_collection_record_info():
     RecordDescription(**desc_dict)
 
     desc_dict["collection"]["type"] = "Document"
-    with pytest.raises(ValidationError, match="collection.type"):
+    with pytest.raises(ValidationError, match="collection\\.type"):
         RecordDescription(**desc_dict)
 
     desc_dict["collection"]["type"] = "record"
-    with pytest.raises(ValidationError, match="collection.type"):
+    with pytest.raises(ValidationError, match="collection\\.type"):
         RecordDescription(**desc_dict)
 
 

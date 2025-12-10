@@ -63,7 +63,7 @@ def create_documents_from_repository(
             ]
         )
 
-    all_files = sorted(list(set(all_files)))
+    all_files = sorted(set(all_files))
 
     for file_path in all_files:
         with open(file_path, "r", encoding="utf-8") as f:

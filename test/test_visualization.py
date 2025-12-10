@@ -12,7 +12,7 @@ VIZ_TEST_DATA_PATH = Path("./test/data/viz")
 
 def verify(exp_file: Path, actual: PIL.Image.Image):
     if GEN_TEST_DATA:
-        with open(exp_file, "w", encoding="utf-8") as f:
+        with open(exp_file, "w", encoding="utf-8"):
             actual.save(exp_file)
     else:
         with PIL.Image.open(exp_file) as expected:

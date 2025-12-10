@@ -1253,8 +1253,7 @@ class ParsedPdfDocument(BaseModel):
         Returns:
             Iterator of (page number, page) tuples
         """
-        for page_no, page in self.pages.items():
-            yield (page_no, page)
+        yield from self.pages.items()
 
     def export_to_dict(
         self,
