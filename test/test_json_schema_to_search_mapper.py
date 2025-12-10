@@ -48,9 +48,9 @@ def test_json_schema_to_search_mapper_0():
 
     diff = jsondiff.diff(index_ref, index_def)
     # print(json.dumps(index_def, indent=2))
-    assert (
-        index_def == index_ref
-    ), f"Error in search mappings of ExportedCCSDocument. Difference:\n{json.dumps(diff, indent=2)}"
+    assert index_def == index_ref, (
+        f"Error in search mappings of ExportedCCSDocument. Difference:\n{json.dumps(diff, indent=2)}"
+    )
 
 
 def test_json_schema_to_search_mapper_1():
@@ -97,6 +97,6 @@ def test_json_schema_to_search_mapper_1():
 
     diff = jsondiff.diff(index_ref, index_def)
     # print(json.dumps(index_def, indent=2))
-    assert (
-        index_def == index_ref
-    ), f"Error in search mappings of Record. Difference:\n{json.dumps(diff, indent=2)}"
+    assert index_def == index_ref, (
+        f"Error in search mappings of Record. Difference:\n{json.dumps(diff, indent=2)}"
+    )

@@ -56,7 +56,6 @@ def test_table_export_to_tokens():
         doc = Document.model_validate_json(file_json)
 
         if doc.tables is not None and doc.page_dimensions is not None:
-
             pagedims = doc.get_map_to_page_dimensions()
 
             if doc.tables is not None:
@@ -81,7 +80,6 @@ def test_table_export_to_tokens():
                     break
 
         elif doc.tables is not None and doc.page_dimensions is None:
-
             if doc.tables is not None:
                 for i, table in enumerate(doc.tables):
                     page = table.prov[0].page

@@ -139,7 +139,6 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
 
     embedded_captions = set()
     for ix, (item, level) in enumerate(doc.iterate_items(doc.body)):
-
         if isinstance(item, (TableItem, PictureItem)) and len(item.captions) > 0:
             caption = item.caption_text(doc)
             if caption:
@@ -150,7 +149,6 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
             item_type = item.label
 
             if isinstance(item, (TextItem, ListItem, SectionHeaderItem)):
-
                 if isinstance(item, ListItem) and item.marker:
                     text = f"{item.marker} {item.text}"
                 else:
@@ -530,13 +528,11 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
                     doc.add_text(label=label, text=text, prov=prov)
 
             elif isinstance(item, DsSchemaTable):
-
                 table_data = TableData(num_cols=item.num_cols, num_rows=item.num_rows)
                 if item.data is not None:
                     seen_spans = set()
                     for row_ix, row in enumerate(item.data):
                         for col_ix, orig_cell_data in enumerate(row):
-
                             cell_bbox: Optional[BoundingBox] = (
                                 BoundingBox.from_tuple(
                                     tuple(orig_cell_data.bbox),

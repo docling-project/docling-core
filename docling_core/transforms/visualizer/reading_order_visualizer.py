@@ -214,7 +214,6 @@ class ReadingOrderVisualizer(BaseVisualizer):
                 draw = ImageDraw.Draw(image, "RGBA")
 
                 for num_item in number_data_to_draw[page]:
-
                     text_bbox = draw.textbbox(num_item.xy, num_item.text, font)
                     text_bg_padding = 5
                     draw.ellipse(

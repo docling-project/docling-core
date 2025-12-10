@@ -44,9 +44,9 @@ def test_ccs_document():
     except ValidationError as e:
         for error in e.errors():
             # print(type(error))
-            assert all(
-                item in error["loc"] for item in ("description", "logs")
-            ), f"Data in file {filename} should fail in logs"
+            assert all(item in error["loc"] for item in ("description", "logs")), (
+                f"Data in file {filename} should fail in logs"
+            )
 
     # check doc-error-2 is invalid for missing page-hashes
     with (

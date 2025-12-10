@@ -336,8 +336,7 @@ class TableCell(BaseModel):
                 # "bbox" not in data
                 # or data["bbox"] is None
                 # or isinstance(data["bbox"], BoundingBox)
-                "text"
-                in data
+                "text" in data
             ):
                 return data
             text = data.get("bbox", {}).get("token", "")
@@ -606,12 +605,10 @@ class TableData(BaseModel):  # TBD
 
             # Collect all cells in this row that have bounding boxes
             for cell in self.table_cells:
-
                 if (
                     cell.bbox is not None
                     and cell.start_row_offset_idx <= row_idx < cell.end_row_offset_idx
                 ):
-
                     row_span = cell.end_row_offset_idx - cell.start_row_offset_idx
                     if row_span in row_cells_with_bbox:
                         row_cells_with_bbox[row_span].append(cell.bbox)
@@ -660,12 +657,10 @@ class TableData(BaseModel):  # TBD
 
             # Collect all cells in this row that have bounding boxes
             for cell in self.table_cells:
-
                 if (
                     cell.bbox is not None
                     and cell.start_col_offset_idx <= col_idx < cell.end_col_offset_idx
                 ):
-
                     col_span = cell.end_col_offset_idx - cell.start_col_offset_idx
                     if col_span in col_cells_with_bbox:
                         col_cells_with_bbox[col_span].append(cell.bbox)
@@ -1455,7 +1450,6 @@ class NodeItem(BaseModel):
     ) -> bool:
         """Append child to node identified by stack."""
         if len(stack) == 0:
-
             # ensure the parent is correct
             new_item = new_ref.resolve(doc=doc)
             new_item.parent = self.get_ref()
@@ -1534,9 +1528,7 @@ class ListGroup(GroupItem):
 class OrderedList(GroupItem):
     """OrderedList."""
 
-    label: typing.Literal[GroupLabel.ORDERED_LIST] = (
-        GroupLabel.ORDERED_LIST  # type: ignore[assignment]
-    )
+    label: typing.Literal[GroupLabel.ORDERED_LIST] = GroupLabel.ORDERED_LIST  # type: ignore[assignment]
 
 
 class InlineGroup(GroupItem):
@@ -1718,17 +1710,13 @@ class TextItem(DocItem):
 class TitleItem(TextItem):
     """TitleItem."""
 
-    label: typing.Literal[DocItemLabel.TITLE] = (
-        DocItemLabel.TITLE  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.TITLE] = DocItemLabel.TITLE  # type: ignore[assignment]
 
 
 class SectionHeaderItem(TextItem):
     """SectionItem."""
 
-    label: typing.Literal[DocItemLabel.SECTION_HEADER] = (
-        DocItemLabel.SECTION_HEADER  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.SECTION_HEADER] = DocItemLabel.SECTION_HEADER  # type: ignore[assignment]
     level: LevelNumber = 1
 
     @deprecated("Use export_to_doctags() instead.")
@@ -1776,9 +1764,7 @@ class SectionHeaderItem(TextItem):
 class ListItem(TextItem):
     """SectionItem."""
 
-    label: typing.Literal[DocItemLabel.LIST_ITEM] = (
-        DocItemLabel.LIST_ITEM  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.LIST_ITEM] = DocItemLabel.LIST_ITEM  # type: ignore[assignment]
     enumerated: bool = False
     marker: str = "-"  # The bullet or number symbol that prefixes this list item
 
@@ -1820,9 +1806,7 @@ class FloatingItem(DocItem):
 class CodeItem(FloatingItem, TextItem):
     """CodeItem."""
 
-    label: typing.Literal[DocItemLabel.CODE] = (
-        DocItemLabel.CODE  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.CODE] = DocItemLabel.CODE  # type: ignore[assignment]
     code_language: CodeLanguageLabel = CodeLanguageLabel.UNKNOWN
 
     @deprecated("Use export_to_doctags() instead.")
@@ -1870,9 +1854,7 @@ class CodeItem(FloatingItem, TextItem):
 class FormulaItem(TextItem):
     """FormulaItem."""
 
-    label: typing.Literal[DocItemLabel.FORMULA] = (
-        DocItemLabel.FORMULA  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.FORMULA] = DocItemLabel.FORMULA  # type: ignore[assignment]
 
 
 class MetaUtils:
@@ -2170,7 +2152,6 @@ class TableItem(FloatingItem):
                     "Note that only the first available instance of each annotation type will be migrated."
                 )
                 for ann in self.annotations:
-
                     # ensure meta field is present
                     if self.meta is None:
                         self.meta = FloatingMeta()
@@ -2275,7 +2256,6 @@ class TableItem(FloatingItem):
             for row in self.data.grid:
                 tmp = []
                 for col in row:
-
                     # make sure that md tables are not broken
                     # due to newline chars in the text
                     text = col._get_text(doc=doc)
@@ -2927,7 +2907,6 @@ class DoclingDocument(BaseModel):
         for stack_, ref_ in to_be_deleted_items.items():
             path = ref_.split("/")
             if len(path) == 3:
-
                 item_label = path[1]
                 item_index = int(path[2])
 
@@ -2973,7 +2952,6 @@ class DoclingDocument(BaseModel):
         """Update refitems with lookup."""
         new_refitems = []
         for ref_item in ref_items:
-
             if (
                 ref_item not in refs_to_be_deleted
             ):  # if ref_item is in ref, then delete/skip them
@@ -3312,7 +3290,6 @@ class DoclingDocument(BaseModel):
             )
 
         else:
-
             if not parent:
                 parent = self.body
 
@@ -4849,7 +4826,6 @@ class DoclingDocument(BaseModel):
 
         for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
             if isinstance(item, PictureItem):
-
                 if item.image is not None:
                     if (
                         isinstance(item.image.uri, AnyUrl)
@@ -4886,7 +4862,6 @@ class DoclingDocument(BaseModel):
                 if isinstance(item, PictureItem):
                     img = item.get_image(doc=self)
                     if img is not None:
-
                         hexhash = PictureItem._image_to_hexhash(img)
 
                         # loc_path = image_dir / f"image_{img_count:06}.png"
@@ -4933,7 +4908,7 @@ class DoclingDocument(BaseModel):
             elif isinstance(item, TextItem):
                 print(
                     " " * level,
-                    f"{ix}: {item.label.value}: {item.text[:min(len(item.text), 100)]}",
+                    f"{ix}: {item.label.value}: {item.text[: min(len(item.text), 100)]}",
                 )
 
             elif isinstance(item, DocItem):
@@ -4956,7 +4931,7 @@ class DoclingDocument(BaseModel):
             elif isinstance(item, TextItem):
                 texts.append(
                     " " * level
-                    + f"{ix}: {item.label.value}: {item.text[:min(len(item.text), 100)]}"
+                    + f"{ix}: {item.label.value}: {item.text[: min(len(item.text), 100)]}"
                 )
             elif isinstance(item, DocItem):
                 texts.append(" " * level + f"{ix}: {item.label.value}")
@@ -6057,7 +6032,6 @@ class DoclingDocument(BaseModel):
         result = []
 
         def get_text(text: str, max_text_len: int):
-
             middle = " ... "
 
             if max_text_len == -1:
@@ -6113,7 +6087,6 @@ class DoclingDocument(BaseModel):
                 )
 
             elif isinstance(item, TableItem):
-
                 result.append(
                     indent * level
                     + f"item-{i} at level {level}: {item.label} with "
@@ -6142,7 +6115,6 @@ class DoclingDocument(BaseModel):
                     result.append("\n" + tabulate(grid) + "\n")
 
             elif isinstance(item, PictureItem):
-
                 result.append(
                     indent * level + f"item-{i} at level {level}: {item.label}"
                 )
@@ -6294,7 +6266,6 @@ class DoclingDocument(BaseModel):
             prev = item
 
         for curr_list_items in reversed(misplaced_list_items):
-
             # add group
             new_group = ListGroup(self_ref="#")
             self.insert_item_before_sibling(
@@ -6342,7 +6313,6 @@ class DoclingDocument(BaseModel):
         def index(
             self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None
         ) -> None:
-
             if page_nrs is not None and (
                 unavailable_page_nrs := page_nrs - set(doc.pages.keys())
             ):
@@ -6393,7 +6363,6 @@ class DoclingDocument(BaseModel):
                         # set item's parent
                         new_parent_cref = orig_ref_to_new_ref.get(item.parent.cref)
                         if new_parent_cref is None:
-
                             parent_ref = item.parent
                             while new_parent_cref is None and parent_ref is not None:
                                 parent_ref = RefItem(
@@ -6504,7 +6473,6 @@ class DoclingDocument(BaseModel):
         return res_doc
 
     def _validate_rules(self, raise_on_error: bool = True):
-
         def _handle(error: Exception):
             if raise_on_error:
                 raise error

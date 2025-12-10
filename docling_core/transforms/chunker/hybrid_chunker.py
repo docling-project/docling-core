@@ -75,8 +75,7 @@ class HybridChunker(BaseChunker):
             max_tokens = data.get("max_tokens")
             if not isinstance(tokenizer, BaseTokenizer) and (
                 # some legacy param passed:
-                tokenizer is not None
-                or max_tokens is not None
+                tokenizer is not None or max_tokens is not None
             ):
                 from docling_core.transforms.chunker.tokenizer.huggingface import (
                     HuggingFaceTokenizer,

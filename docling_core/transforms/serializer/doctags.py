@@ -492,7 +492,6 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
     def _get_inline_location_tags(
         self, doc: DoclingDocument, item: InlineGroup, params: DocTagsParams
     ) -> SerializationResult:
-
         prov: Optional[ProvenanceItem] = None
         boxes: list[BoundingBox] = []
         doc_items: list[DocItem] = []

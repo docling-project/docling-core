@@ -92,6 +92,6 @@ def test_cross_page_lists_with_branch_nums():
 
     for i in range(2):
         verify(
-            exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_p{i+1}.png",
+            exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_p{i + 1}.png",
             actual=viz_pages[i + 1],
         )

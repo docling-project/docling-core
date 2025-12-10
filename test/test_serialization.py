@@ -204,7 +204,6 @@ def test_md_list_item_markers(sample_doc):
     root_dir = Path("./test/data/doc")
     for mode in OrigListItemMarkerMode:
         for valid in [False, True]:
-
             ser = MarkdownDocSerializer(
                 doc=sample_doc,
                 params=MarkdownParams(
@@ -516,7 +515,6 @@ def test_html_include_annotations_true():
 def test_html_list_item_markers(sample_doc):
     root_dir = Path("./test/data/doc")
     for orig in [False, True]:
-
         ser = HTMLDocSerializer(
             doc=sample_doc,
             params=HTMLParams(

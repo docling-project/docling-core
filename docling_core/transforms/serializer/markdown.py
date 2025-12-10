@@ -390,9 +390,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-
             if _should_use_legacy_annotations(params=params, item=item):
-
                 ann_res = doc_serializer.serialize_annotations(
                     item=item,
                     **kwargs,

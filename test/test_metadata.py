@@ -250,9 +250,7 @@ def test_md_ser_without_non_meta():
 
 
 def test_ser_custom_meta_serializer():
-
     class SummaryMarkdownMetaSerializer(MarkdownMetaSerializer):
-
         @override
         def serialize(
             self,

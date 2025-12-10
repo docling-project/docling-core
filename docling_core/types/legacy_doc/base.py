@@ -153,7 +153,6 @@ class BaseCell(AliasModel):
 
         location = ""
         for prov in self.prov:
-
             page_i = -1
             if add_page_index:
                 page_i = prov.page
@@ -318,7 +317,6 @@ class Table(BaseCell):
             for i, row in enumerate(self.data):
                 body += f"<row_{i}>"
                 for j, col in enumerate(row):
-
                     text = ""
                     if add_cell_text:
                         text = col.text.strip()
@@ -438,9 +436,9 @@ class BaseText(BaseCell):
         """Export text element to document tokens format."""
         body = f"<{self.obj_type}>"
 
-        assert DocumentToken.is_known_token(
-            body
-        ), f"failed DocumentToken.is_known_token({body})"
+        assert DocumentToken.is_known_token(body), (
+            f"failed DocumentToken.is_known_token({body})"
+        )
 
         if add_location:
             body += self.get_location_tokens(
