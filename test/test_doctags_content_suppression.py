@@ -52,8 +52,11 @@ def test_list_items_not_double_wrapped_when_no_content():
     doc.add_list_item("Item A", parent=lst)
     doc.add_list_item("Item B", parent=lst)
 
+    txt = serialize_doctags(doc, add_content=True)
+    print(f"txt with content:\n{txt}")
+
     txt = serialize_doctags(doc, add_content=False)
-    print(f"txt: {txt}")
+    print(f"txt without content:\n{txt}")
 
     # No nested <list_item><list_item>
     assert "<list_item><list_item>" not in txt
