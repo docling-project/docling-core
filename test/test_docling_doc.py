@@ -724,7 +724,7 @@ def _test_export_methods(
         second_page = first_page + 1
         if second_page in doc.pages:  # Only test if document has at least 2 pages
             dt_pages_pred = doc.export_to_doctags(pages={first_page, second_page})
-            print(dt_pages_pred)
+            # print(dt_pages_pred)
             _verify_regression_test(dt_pages_pred, filename=filename, ext="pages.dt")
 
     # Test Tables export ...

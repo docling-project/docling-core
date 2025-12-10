@@ -9,6 +9,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
+    BaseListSerializer,
     BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
@@ -28,6 +29,8 @@ from docling_core.types.doc import (
     DescriptionMetaField,
     DocItem,
     DoclingDocument,
+    ListGroup,
+    ListItem,
     MetaFieldName,
     MoleculeMetaField,
     NodeItem,
@@ -210,8 +213,27 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
         visited: Optional[set[str]] = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize a ``ListGroup`` into IDocTags markup.
+
+        This emits list containers (``<ordered_list>``/``<unordered_list>``) and
+        serializes children explicitly. Nested ``ListGroup`` items are emitted as
+        siblings without an enclosing ``<list_item>`` wrapper, while structural
+        wrappers are still preserved even when content is suppressed.
+
+        Args:
+            item: The list group to serialize.
+            doc_serializer: The document-level serializer to delegate nested items.
+            doc: The document that provides item resolution.
+            list_level: Current nesting depth (0-based).
+            is_inline_scope: Whether serialization happens in an inline context.
+            visited: Set of already visited item refs to avoid cycles.
+            **kwargs: Additional serializer parameters forwarded to ``IDocTagsParams``.
+
+        Returns:
+            A ``SerializationResult`` containing serialized text and metadata.
+        """
         my_visited = visited if visited is not None else set()
-        params = IDocTagsParams(**kwargs)        
+        params = IDocTagsParams(**kwargs)
 
         # Build list children explicitly. Requirements:
         # 1) <ordered_list>/<unordered_list> can be children of lists.
@@ -264,7 +286,7 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
             # Wrap the content into <list_item>, without any nested list content.
             child_text_wrapped = _wrap(
                 text=f"{child_res.text}",
-                wrap_tag=DocumentToken.LIST_ITEM.value,
+                wrap_tag=IDocTagsToken.LIST_ITEM.value,
             )
             child_results_wrapped.append(child_text_wrapped)
 
@@ -294,16 +316,16 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
             text_res = delim.join(child_results_wrapped)
             text_res = f"{text_res}{delim}"
             wrap_tag = (
-                DocumentToken.ORDERED_LIST.value
+                IDocTagsToken.ORDERED_LIST.value
                 if item.first_item_is_enumerated(doc)
-                else DocumentToken.UNORDERED_LIST.value
+                else IDocTagsToken.UNORDERED_LIST.value
             )
             text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=item_results)
 
-        
+
 class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
     """DocTags-specific meta serializer."""
 
