@@ -54,7 +54,7 @@ def run():
     if result[0]:
         logger.info("Done!")
     else:
-        logger.error("invalid schema: {}".format(result[1]))
+        logger.error(f"invalid schema: {result[1]}")
 
 
 def main():

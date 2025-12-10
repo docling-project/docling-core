@@ -433,7 +433,7 @@ class ExportedCCSDocument(
         """export_to_dict."""
         return self.model_dump(mode="json", by_alias=True, exclude_none=True)
 
-    def export_to_markdown(  # noqa: C901
+    def export_to_markdown(
         self,
         delim: str = "\n\n",
         main_text_start: int = 0,

@@ -395,7 +395,7 @@ class PdfLine(ColorMixin, OrderedElement):
         self,
     ) -> Iterator[Tuple[Coord2D, Coord2D]]:
         """Iterate through line segments defined by consecutive point pairs."""
-        for k in range(0, len(self.points) - 1):
+        for k in range(len(self.points) - 1):
             yield (self.points[k], self.points[k + 1])
 
     def to_bottom_left_origin(self, page_height: float):

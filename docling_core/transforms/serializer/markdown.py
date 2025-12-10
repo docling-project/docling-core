@@ -541,7 +541,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             ):
                 text_res = image_placeholder
             else:
-                text_res = f"![Image]({str(item.image.uri)})"
+                text_res = f"![Image]({item.image.uri!s})"
         else:
             text_res = image_placeholder
 
@@ -737,7 +737,7 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ):
         """Apply Markdown-specific hyperlink serialization."""
-        return f"[{text}]({str(hyperlink)})"
+        return f"[{text}]({hyperlink!s})"
 
     @classmethod
     def _escape_underscores(cls, text: str):

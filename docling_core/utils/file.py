@@ -11,7 +11,7 @@ import requests
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 from typing_extensions import deprecated
 
-from docling_core.types.doc.utils import relative_path  # noqa
+from docling_core.types.doc.utils import relative_path
 from docling_core.types.io import DocumentStream
 
 
