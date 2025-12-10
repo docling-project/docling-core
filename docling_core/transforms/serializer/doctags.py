@@ -472,6 +472,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
                     for p in parts
                     if (t := _wrap(text=p.text, wrap_tag=DocumentToken.LIST_ITEM.value))
                 ]
+            )
             text_res = f"{text_res}{delim}"
             wrap_tag = (
                 DocumentToken.ORDERED_LIST.value
@@ -573,7 +574,6 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
             text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
         else:
             text_res = ""
-
         return create_ser_result(text=text_res, span_source=item_results)
         """
 
