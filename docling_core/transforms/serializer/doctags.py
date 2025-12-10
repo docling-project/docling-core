@@ -533,7 +533,6 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
                 **kwargs,
             )
             item_results.append(child_res)
-
             # Wrap the content into <list_item>, without any nested list content.
             child_text_wrapped = _wrap(
                 text=f"{child_res.text}",
