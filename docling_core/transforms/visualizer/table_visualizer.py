@@ -57,7 +57,6 @@ class TableVisualizer(BaseVisualizer):
 
         for cell in table.data.table_cells:
             if cell.bbox is not None:
-
                 tl_bbox = cell.bbox.to_top_left_origin(page_height=page_height)
 
                 cell_color = self.params.cell_color  # Transparent black for cells
@@ -102,7 +101,6 @@ class TableVisualizer(BaseVisualizer):
         rows = table.data.get_row_bounding_boxes()
 
         for rid, bbox in rows.items():
-
             tl_bbox = bbox.to_top_left_origin(page_height=page_height)
 
             cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
@@ -131,7 +129,6 @@ class TableVisualizer(BaseVisualizer):
         cols = table.data.get_column_bounding_boxes()
 
         for cid, bbox in cols.items():
-
             tl_bbox = bbox.to_top_left_origin(page_height=page_height)
 
             cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
@@ -180,7 +177,6 @@ class TableVisualizer(BaseVisualizer):
                 continue  # Skip elements without provenances
 
             if len(elem.prov) == 1:
-
                 page_nr = elem.prov[0].page_no
 
                 if page_nr in my_images:

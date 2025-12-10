@@ -2,7 +2,6 @@ from docling_core.types.doc.document import DoclingDocument, TableCell, TableDat
 
 
 def test_table_export_to_otsl():
-
     data_table_cells = []
     num_cols = 6
     num_rows = 5

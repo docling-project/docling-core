@@ -405,9 +405,10 @@ class _ChunkSizeProcessor:
             if current_size + line_tokens > self.max_tokens and current_chunk_lines:
                 chunk_text = "\n".join(current_chunk_lines)
                 if self.tokenizer.count_tokens(chunk_text) >= self.min_chunk_size:
-                    yield self._create_split_chunk(
-                        chunk, chunk_text, chunk_number
-                    ), ranges
+                    yield (
+                        self._create_split_chunk(chunk, chunk_text, chunk_number),
+                        ranges,
+                    )
                     chunk_number += 1
 
                 current_chunk_lines = [line]
@@ -549,7 +550,6 @@ class _CodeChunker(BaseChunker):
         chunk_builder: _ChunkBuilder,
         module_variables: Optional[Dict[str, Node]] = None,
     ) -> Iterator[Tuple[CodeChunk, List[Tuple[int, int]]]]:
-
         docstring = self._get_docstring(node)
         additional_context, additional_context_no_docstring = (
             self._build_additional_context(node, root_node)
@@ -614,14 +614,17 @@ class _CodeChunker(BaseChunker):
             f"{additional_context_no_docstring}{function_no_docstring}"
         )
 
-        yield chunk_builder.build_function_chunk(
-            base_content,
-            function_name,
-            docstring,
-            function_line_start,
-            function_line_end,
-            signature_line_end,
-        ), used_ranges
+        yield (
+            chunk_builder.build_function_chunk(
+                base_content,
+                function_name,
+                docstring,
+                function_line_start,
+                function_line_end,
+                signature_line_end,
+            ),
+            used_ranges,
+        )
 
     def _yield_class_chunk_with_ranges(
         self, node: Node, import_nodes: Dict[str, Node], chunk_builder: _ChunkBuilder
@@ -661,13 +664,16 @@ class _CodeChunker(BaseChunker):
         content_no_docstring = f"{prefix}{imports}{function_no_docstring}"
 
         if chunk_builder:
-            yield chunk_builder.build_class_chunk(
-                content_no_docstring,
-                class_name,
-                docstring,
-                function_line_start,
-                function_line_end,
-            ), used_ranges
+            yield (
+                chunk_builder.build_class_chunk(
+                    content_no_docstring,
+                    class_name,
+                    docstring,
+                    function_line_start,
+                    function_line_end,
+                ),
+                used_ranges,
+            )
 
     def _file_prefix(self, root_node: Node) -> Tuple[str, List]:
         return "", []
@@ -1057,7 +1063,6 @@ class _CodeChunker(BaseChunker):
 
 
 class _PythonFunctionChunker(_CodeChunker):
-
     language: CodeLanguageLabel = CodeLanguageLabel.PYTHON
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
@@ -1432,7 +1437,6 @@ class _CFunctionChunker(_CodeChunker):
 
 
 class _JavaFunctionChunker(_CodeChunker):
-
     language: CodeLanguageLabel = CodeLanguageLabel.JAVA
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)

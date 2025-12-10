@@ -113,21 +113,27 @@ def _iterate_items(
                     if isinstance(it, DocItem) and it.prov:
                         page_no = it.prov[0].page_no
                         if prev_page_nr is not None and page_no > prev_page_nr:
-                            yield _PageBreakNode(
-                                self_ref=f"#/pb/{page_break_i}",
-                                prev_page=prev_page_nr,
-                                next_page=page_no,
-                            ), lvl
+                            yield (
+                                _PageBreakNode(
+                                    self_ref=f"#/pb/{page_break_i}",
+                                    prev_page=prev_page_nr,
+                                    next_page=page_no,
+                                ),
+                                lvl,
+                            )
                         break
             elif isinstance(item, DocItem) and item.prov:
                 page_no = item.prov[0].page_no
                 if prev_page_nr is None or page_no > prev_page_nr:
                     if prev_page_nr is not None:  # close previous range
-                        yield _PageBreakNode(
-                            self_ref=f"#/pb/{page_break_i}",
-                            prev_page=prev_page_nr,
-                            next_page=page_no,
-                        ), lvl
+                        yield (
+                            _PageBreakNode(
+                                self_ref=f"#/pb/{page_break_i}",
+                                prev_page=prev_page_nr,
+                                next_page=page_no,
+                            ),
+                            lvl,
+                        )
                         page_break_i += 1
                     prev_page_nr = page_no
         yield item, lvl

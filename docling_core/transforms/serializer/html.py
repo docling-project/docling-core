@@ -333,7 +333,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         item_image = item.get_image(doc=doc)
         if item_image is not None:
             img_ref = ImageRef.from_pil(item_image, dpi=72)
-            return "<figure>" f'<img src="{img_ref.uri}" alt="{orig}" />' "</figure>"
+            return f'<figure><img src="{img_ref.uri}" alt="{orig}" /></figure>'
         return None
 
 
@@ -362,7 +362,6 @@ class HTMLTableSerializer(BaseTableSerializer):
             for i, row in enumerate(item.data.grid):
                 body += "<tr>"
                 for j, cell in enumerate(row):
-
                     rowspan, rowstart = (
                         cell.row_span,
                         cell.start_row_offset_idx,
@@ -448,7 +447,6 @@ class HTMLPictureSerializer(BasePictureSerializer):
 
         img_text = ""
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-
             if params.image_mode == ImageRefMode.EMBEDDED:
                 # short-cut: we already have the image in base64
                 if (
@@ -458,7 +456,6 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 ):
                     img_text = f'<img src="{item.image.uri}">'
                 elif len(item.prov) > 1:  # more than 1 provenance
-
                     img_text = (
                         '<table style="border-collapse: collapse; width: 100%;">\n'
                     )
@@ -537,9 +534,9 @@ class _HTMLGraphDataSerializer:
         cell_map = {cell.cell_id: cell for cell in graph_data.cells}
 
         # Build relationship maps
-        child_links: dict[int, list[int]] = (
-            {}
-        )  # source_id -> list of child_ids (to_child)
+        child_links: dict[
+            int, list[int]
+        ] = {}  # source_id -> list of child_ids (to_child)
         value_links: dict[int, list[int]] = {}  # key_id -> list of value_ids (to_value)
         parents: set[int] = (
             set()
@@ -1033,7 +1030,6 @@ class HTMLDocSerializer(DocSerializer):
                 vized_pages_dict = visualizer.get_visualization(doc=self.doc)
 
             for page_no, page in pages.items():
-
                 if isinstance(page_no, int):
                     if applicable_pages is not None and page_no not in applicable_pages:
                         continue

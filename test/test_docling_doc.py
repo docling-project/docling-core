@@ -85,7 +85,6 @@ def test_overlaps_horizontally():
 
 
 def test_overlaps_vertically():
-
     page_height = 300
 
     # Same CoordOrigin (TOPLEFT)
@@ -307,7 +306,6 @@ def test_x_union_with():
 
 
 def test_y_union_with():
-
     bbox1_tl = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
     bbox2_tl = BoundingBox(l=0, t=5, r=10, b=15, coord_origin=CoordOrigin.TOPLEFT)
     # y_union = max(10, 15) - min(0, 5) = 15 - 0 = 15
@@ -355,7 +353,6 @@ def test_y_union_with():
 
 
 def test_orientation():
-
     page_height = 300
 
     # Same CoordOrigin (TOPLEFT)
@@ -380,7 +377,6 @@ def test_orientation():
 
 
 def test_docitems():
-
     # Iterative function to find all subclasses
     def find_all_subclasses_iterative(base_class):
         subclasses = deque(
@@ -428,7 +424,6 @@ def test_docitems():
     # Iterate over the derived classes of the BaseClass
     derived_classes = find_all_subclasses_iterative(DocItem)
     for dc in derived_classes:
-
         if dc is TextItem:
             obj = dc(
                 text="whatever",
@@ -454,7 +449,6 @@ def test_docitems():
             verify(dc, obj)
 
         elif dc is KeyValueItem:
-
             graph = GraphData(
                 cells=[
                     GraphCell(
@@ -490,7 +484,6 @@ def test_docitems():
             verify(dc, obj)
 
         elif dc is FormItem:
-
             graph = GraphData(
                 cells=[
                     GraphCell(
@@ -578,7 +571,6 @@ def test_docitems():
 
 
 def test_reference_doc():
-
     filename = "test/data/doc/dummy_doc.yaml"
 
     # Read YAML file of manual reference doc
@@ -619,7 +611,6 @@ def test_reference_doc():
 
 
 def test_parse_doc():
-
     filename = "test/data/doc/2206.01062.yaml"
 
     with open(filename, "r", encoding="utf-8") as fp:
@@ -633,7 +624,6 @@ def test_parse_doc():
 
 
 def test_construct_doc(sample_doc):
-
     filename = "test/data/doc/constructed_document.yaml"
 
     assert sample_doc.validate_tree(sample_doc.body)
@@ -647,7 +637,6 @@ def test_construct_doc(sample_doc):
 
 
 def test_construct_bad_doc():
-
     filename = "test/data/doc/bad_doc.yaml"
 
     doc = _construct_bad_doc()
@@ -685,9 +674,9 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
         with open(filename + f".{ext}", "r", encoding="utf-8") as fr:
             gt_true = fr.read().rstrip()
 
-        assert (
-            gt_true == pred
-        ), f"Does not pass regression-test for {filename}.{ext}\n\n{gt_true}\n\n{pred}"
+        assert gt_true == pred, (
+            f"Does not pass regression-test for {filename}.{ext}\n\n{gt_true}\n\n{pred}"
+        )
     else:
         with open(filename + f".{ext}", "w", encoding="utf-8") as fw:
             fw.write(f"{pred}\n")
@@ -777,7 +766,6 @@ def test_pil_image():
 
 
 def test_image_ref():
-
     data_uri = {
         "dpi": 72,
         "mimetype": "image/png",
@@ -816,7 +804,6 @@ def test_upgrade_content_layer_from_1_0_0() -> None:
 
 
 def test_version_doc():
-
     # default version
     doc = DoclingDocument(name="Untitled 1")
     assert doc.version == CURRENT_VERSION
@@ -1058,7 +1045,6 @@ def test_save_pictures_with_page():
 
 
 def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
-
     for p in paths:
         instr = instr.replace(str(p), str(p.name))
 
@@ -1066,7 +1052,6 @@ def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
 
 
 def _verify_saved_output(filename: Union[str, Path], paths: List[Path]):
-
     pred = ""
     with open(filename, "r", encoding="utf-8") as fr:
         pred = fr.read()
@@ -1095,14 +1080,13 @@ def _verify_loaded_output(filename: Path, pred=None):
     pred = pred or DoclingDocument.load_from_json(Path(filename))
     assert isinstance(pred, DoclingDocument)
 
-    assert (
-        pred.export_to_dict() == gt.export_to_dict()
-    ), f"pred.export_to_dict() != gt.export_to_dict() for {filename}"
+    assert pred.export_to_dict() == gt.export_to_dict(), (
+        f"pred.export_to_dict() != gt.export_to_dict() for {filename}"
+    )
     assert pred == gt, f"pred!=gt for {filename}"
 
 
 def test_save_to_disk(sample_doc):
-
     test_dir = Path("./test/data/doc")
     image_dir = Path("constructed_images/")  # will be relative to test_dir
 
@@ -1207,7 +1191,6 @@ def test_save_to_disk(sample_doc):
 
 
 def test_document_stack_operations(sample_doc):
-
     # _print(document=doc)
 
     ref = RefItem(cref="#/texts/12")
@@ -1226,7 +1209,6 @@ def test_document_stack_operations(sample_doc):
 
 
 def test_document_manipulation(sample_doc: DoclingDocument) -> None:
-
     def _resolve(document: DoclingDocument, cref: str) -> NodeItem:
         ref = RefItem(cref=cref)
         return ref.resolve(doc=document)
@@ -1811,7 +1793,6 @@ def test_invalid_rich_table_doc():
 
 
 def test_rich_table_item_insertion_normalization():
-
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TITLE, text="Rich tables")
 

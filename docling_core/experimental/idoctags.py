@@ -419,7 +419,6 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
         is_chart = False
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-
             if item.meta:
                 meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
                 if meta_res.text:

@@ -150,7 +150,6 @@ def _dump_or_assert(act_data: dict, out_path: pathlib.Path):
 
 @pytest.mark.parametrize("name,local_path,repo_url,chunker_factory", REPO_SPECS)
 def test_function_chunkers_repo(name, local_path, repo_url, chunker_factory):
-
     local_path_full = os.getcwd() + local_path
 
     if not os.path.isdir(local_path_full):

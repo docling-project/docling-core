@@ -34,9 +34,9 @@ def verify(exp_file: Path, actual: dict):
 
         expected_stripped = strip_image_uris(expected)
         actual_stripped = strip_image_uris(actual)
-        assert (
-            expected_stripped == actual_stripped
-        ), "Dicts differ (ignoring image URIs)"
+        assert expected_stripped == actual_stripped, (
+            "Dicts differ (ignoring image URIs)"
+        )
 
         if "data:image/png;base64" in str(expected):
             # check if the image URIs are the same
@@ -44,7 +44,6 @@ def verify(exp_file: Path, actual: dict):
 
 
 def test_doctags_load_from_files():
-
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
         [Path("test/data/doc/page_with_pic.dt")],
         [Path("test/data/doc/page_with_pic.png")],
@@ -59,7 +58,6 @@ def test_doctags_load_from_files():
 
 
 def test_doctags_load_from_memory():
-
     with Path("test/data/doc/page_with_pic.dt").open() as file:
         doctags = file.read()
     image = PILImage.open(Path("test/data/doc/page_with_pic.png"))

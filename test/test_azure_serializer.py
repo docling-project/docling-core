@@ -47,9 +47,9 @@ def _assert_json_like_equal(a: Any, b: Any, eps: float = 1e-3, path: str = "$") 
         # If either is float, compare with tolerance; if both int, exact match
         if isinstance(a, float) or isinstance(b, float):
             diff = abs(float(a) - float(b))
-            assert (
-                diff <= eps
-            ), f"Float mismatch at {path}: {a} != {b} (diff={diff}, eps={eps})"
+            assert diff <= eps, (
+                f"Float mismatch at {path}: {a} != {b} (diff={diff}, eps={eps})"
+            )
         else:
             assert a == b, f"Int mismatch at {path}: {a} != {b}"
         return

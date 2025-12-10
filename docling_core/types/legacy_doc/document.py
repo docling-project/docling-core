@@ -548,7 +548,6 @@ class ExportedCCSDocument(
                     and (item.data or item.text)
                     and item_type in main_text_labels
                 ):
-
                     md_table = ""
                     table = []
                     if item.data is not None:
@@ -580,7 +579,6 @@ class ExportedCCSDocument(
                         ) + md_table
 
                 elif isinstance(item, Figure) and item_type in main_text_labels:
-
                     markdown_text = ""
                     if item.text:
                         markdown_text = item.text
@@ -636,7 +634,6 @@ class ExportedCCSDocument(
 
         if self.main_text is not None:
             for orig_item in self.main_text[main_text_start:main_text_stop]:
-
                 item = (
                     self._resolve_ref(orig_item)
                     if isinstance(orig_item, Ref)
@@ -658,7 +655,6 @@ class ExportedCCSDocument(
                     and prov is not None
                     and len(prov) > 0
                 ):
-
                     page_i = prov[0].page
                     page_dim = self.page_dimensions[page_i - 1]
 
@@ -667,7 +663,6 @@ class ExportedCCSDocument(
 
                 item_type = item.obj_type
                 if isinstance(item, BaseText) and (item_type in main_text_labels):
-
                     doctags += item.export_to_document_tokens(
                         new_line=new_line,
                         page_w=page_w,
@@ -680,7 +675,6 @@ class ExportedCCSDocument(
                     )
 
                 elif isinstance(item, Table) and (item_type in main_text_labels):
-
                     doctags += item.export_to_document_tokens(
                         new_line=new_line,
                         page_w=page_w,
@@ -697,7 +691,6 @@ class ExportedCCSDocument(
                     )
 
                 elif isinstance(item, Figure) and (item_type in main_text_labels):
-
                     doctags += item.export_to_document_tokens(
                         new_line=new_line,
                         page_w=page_w,

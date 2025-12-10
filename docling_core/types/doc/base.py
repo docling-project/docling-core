@@ -300,9 +300,7 @@ class BoundingBox(BaseModel):
             self.coord_origin == CoordOrigin.BOTTOMLEFT
             and other.coord_origin == CoordOrigin.BOTTOMLEFT
         ):
-
             if self.overlaps_vertically(other=other):
-
                 u0 = min(self.b, other.b)
                 u1 = max(self.t, other.t)
 
