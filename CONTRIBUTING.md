@@ -47,8 +47,7 @@ uv add [OPTIONS] <PACKAGES|--requirements <REQUIREMENTS>>
 
 We use the following tools to enforce code style:
 
-- isort, to sort imports
-- Black, to format code
+- Ruff, to format and lint code
 - Flake8, to lint code
 - autoflake, to remove unused variables and imports
 - [MyPy](https://mypy.readthedocs.io), as static type checker
@@ -64,9 +63,6 @@ To run the checks on-demand, type:
 ```bash
 uv run pre-commit run --all-files
 ```
-
-Note: Checks like `Black` and `isort` will _fail_ if they modify files. This is because `pre-commit` doesn't like to see files modified by their hooks. In these cases, `git add` the modified files and `git commit` again.
-
 
 ### Documentation
 
