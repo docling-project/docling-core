@@ -130,20 +130,79 @@ namespaces = true
 [tool.setuptools.package-data]
 "*" = ["*.json"]
 
-[tool.black]
-line-length = 88
+[tool.ruff]
 target-version = ["py39", "py310"]
+line-length = 88
+respect-gitignore = true
+
+[tool.ruff.format]
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+select = [
+  # "B",  # flake8-bugbear
+  "C",  # flake8-comprehensions
+  "C9", # mccabe
+  # "D",  # flake8-docstrings
+  "E",   # pycodestyle errors (default)
+  "F",   # pyflakes (default)
+  "I",   # isort
+  "PD",  # pandas-vet
+  "PIE", # pie
+  # "PTH", # pathlib
+  "Q", # flake8-quotes
+  # "RET", # return
+  "RUF", # Enable all ruff-specific checks
+  # "SIM", # simplify
+  "S307", # eval
+  # "T20",  # (disallow print statements) keep debugging statements out of the codebase
+  "W",     # pycodestyle warnings
+  "ASYNC", # async
+  "UP",    # pyupgrade
+]
+
+ignore = [
+  "C408",   # Unnecessary `dict()` call (rewrite as a literal)
+  "E501",   # Line too long, handled by ruff formatter
+  "D107",   # "Missing docstring in __init__",
+  "F401",   # imported but unused; consider using `importlib.util.find_spec` to test for "
+  "F811",   # "redefinition of the same function"
+  "PL",     # Pylint
+  "RUF012", # Mutable Class Attributes
+  "UP006",  # List vs list, etc
+  "UP007",  # Option and Union
+  "UP035",  # `typing.Set` is deprecated, use `set` instead"
+]
+
+#extend-select = []
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+  # Allow Pydantic's `@validator` decorator to trigger class method treatment.
+  "pydantic.validator",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+"tests/*.py" = ["ASYNC"]         # Disable ASYNC check for tests
+
+[tool.ruff.lint.mccabe]
+max-complexity = 30
+
+# [tool.ruff.lint.isort.sections]
+# "docling" = ["docling_core", "docling_ibm_models", "docling_parse"]
+
+[too.ruff.format.black]
 include = '\.pyi?$'
 preview = true
 
-[tool.isort]
+[tool.ruff.lint.isort]
+combine-as-imports = true
 profile = "black"
-line_length = 88
-py_version = 39
 multi_line_output = 3
 include_trailing_comma = true
 
-[tool.autoflake]
+[tool.ruff.too.autoflake]
 in-place = true
 ignore-init-module-imports = true
 remove-all-unused-imports = true
