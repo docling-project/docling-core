@@ -193,6 +193,117 @@ class IDocTagsParams(DocTagsParams):
     pretty_indentation: Optional[str] = 2 * " "
 
 
+class IDocTagsListSerializer(BaseModel, BaseListSerializer):
+    """DocTags-specific list serializer."""
+
+    indent: int = 4
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: ListGroup,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: Optional[set[str]] = None,  # refs of visited items
+        **kwargs: Any,
+    ) -> SerializationResult:
+        my_visited = visited if visited is not None else set()
+        params = IDocTagsParams(**kwargs)        
+
+        # Build list children explicitly. Requirements:
+        # 1) <ordered_list>/<unordered_list> can be children of lists.
+        # 2) Do NOT wrap nested lists into <list_item>, even if they are
+        #    children of a ListItem in the logical structure.
+        # 3) Still ensure structural wrappers are preserved even when
+        #    content is suppressed (e.g., add_content=False).
+        item_results: list[SerializationResult] = []
+        child_results_wrapped: list[str] = []
+
+        excluded = doc_serializer.get_excluded_refs(**kwargs)
+        for child_ref in item.children:
+            child = child_ref.resolve(doc)
+
+            # If a nested list group is present directly under this list group,
+            # emit it as a sibling (no <list_item> wrapper).
+            if isinstance(child, ListGroup):
+                if child.self_ref in my_visited or child.self_ref in excluded:
+                    continue
+                my_visited.add(child.self_ref)
+                sub_res = doc_serializer.serialize(
+                    item=child,
+                    list_level=list_level + 1,
+                    is_inline_scope=is_inline_scope,
+                    visited=my_visited,
+                    **kwargs,
+                )
+                if sub_res.text:
+                    child_results_wrapped.append(sub_res.text)
+                item_results.append(sub_res)
+                continue
+
+            # Normal case: ListItem under ListGroup
+            if not isinstance(child, ListItem):
+                continue
+            if child.self_ref in my_visited or child.self_ref in excluded:
+                continue
+
+            my_visited.add(child.self_ref)
+
+            # Serialize the list item content (DocTagsTextSerializer will not wrap it)
+            child_res = doc_serializer.serialize(
+                item=child,
+                list_level=list_level + 1,
+                is_inline_scope=is_inline_scope,
+                visited=my_visited,
+                **kwargs,
+            )
+            item_results.append(child_res)
+            # Wrap the content into <list_item>, without any nested list content.
+            child_text_wrapped = _wrap(
+                text=f"{child_res.text}",
+                wrap_tag=DocumentToken.LIST_ITEM.value,
+            )
+            child_results_wrapped.append(child_text_wrapped)
+
+            # After the <list_item>, append any nested lists (children of this ListItem)
+            # as siblings at the same level (not wrapped in <list_item>).
+            for subref in child.children:
+                sub = subref.resolve(doc)
+                if (
+                    isinstance(sub, ListGroup)
+                    and sub.self_ref not in my_visited
+                    and sub.self_ref not in excluded
+                ):
+                    my_visited.add(sub.self_ref)
+                    sub_res = doc_serializer.serialize(
+                        item=sub,
+                        list_level=list_level + 1,
+                        is_inline_scope=is_inline_scope,
+                        visited=my_visited,
+                        **kwargs,
+                    )
+                    if sub_res.text:
+                        child_results_wrapped.append(sub_res.text)
+                    item_results.append(sub_res)
+
+        delim = _get_delim(params=params)
+        if child_results_wrapped:
+            text_res = delim.join(child_results_wrapped)
+            text_res = f"{text_res}{delim}"
+            wrap_tag = (
+                DocumentToken.ORDERED_LIST.value
+                if item.first_item_is_enumerated(doc)
+                else DocumentToken.UNORDERED_LIST.value
+            )
+            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+        else:
+            text_res = ""
+        return create_ser_result(text=text_res, span_source=item_results)
+
+        
 class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
     """DocTags-specific meta serializer."""
 
