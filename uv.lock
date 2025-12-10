@@ -725,7 +725,7 @@ wheels = [
 
 [[package]]
 name = "docling-core"
-version = "2.54.1"
+version = "2.55.0"
 source = { editable = "." }
 dependencies = [
     { name = "jsonref" },

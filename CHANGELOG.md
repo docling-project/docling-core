@@ -1,3 +1,9 @@
+## [v2.55.0](https://github.com/docling-project/docling-core/releases/tag/v2.55.0) - 2025-12-10
+
+### Feature
+
+* Updating the idoctags serializer ([#450](https://github.com/docling-project/docling-core/issues/450)) ([`9a42a3c`](https://github.com/docling-project/docling-core/commit/9a42a3c860747064092c186fe6c33f05618b4018))
+
 ## [v2.54.1](https://github.com/docling-project/docling-core/releases/tag/v2.54.1) - 2025-12-08
 
 ### Fix
