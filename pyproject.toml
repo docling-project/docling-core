@@ -159,7 +159,9 @@ select = [
 ]
 
 ignore = [
+  "C403",   # Unnecessary `list()` call (rewrite as a literal)
   "C408",   # Unnecessary `dict()` call (rewrite as a literal)
+  "C416",   # Unnecessary set comprehension (rewrite using `set()`)
   "E501",   # Line too long, handled by ruff formatter
   "D107",   # "Missing docstring in __init__",
   "F401",   # imported but unused; consider using `importlib.util.find_spec` to test for "
@@ -168,6 +170,7 @@ ignore = [
   "RUF012", # Mutable Class Attributes
   "UP006",  # List vs list, etc
   "UP007",  # Option and Union
+  "UP015",  # Unnecessary mode argument
   "UP035",  # `typing.Set` is deprecated, use `set` instead"
 ]
 
@@ -180,12 +183,13 @@ classmethod-decorators = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
 "tests/*.py" = ["ASYNC"]         # Disable ASYNC check for tests
+"*.ipynb" = ["I"]  # Disable import sorting for notebooks
 
 [tool.ruff.lint.mccabe]
 max-complexity = 30
 
 [tool.ruff.lint.isort]
-combine-as-imports = true
+combine-as-imports = false
 
 [tool.autoflake]
 in-place = true
