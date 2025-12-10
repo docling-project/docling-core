@@ -175,9 +175,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
                 # wrap with outer marker (if applicable)
                 if params.ensure_valid_list_item_marker and not case_already_valid:
-                    assert item.parent and isinstance(
-                        (list_group := item.parent.resolve(doc)), ListGroup
-                    )
+                    assert item.parent
+                    list_group = item.parent.resolve(doc)
+                    assert isinstance(list_group, ListGroup)
                     if list_group.first_item_is_enumerated(doc) and (
                         params.orig_list_item_marker_mode != OrigListItemMarkerMode.AUTO
                         or not item.marker

@@ -246,8 +246,8 @@ class Table(BaseCell):
             for j in range(ncols):
                 cell: TableCell = self.data[i][j]
 
-                rowspan, rowstart, rowend = self._get_tablecell_span(cell, 0)
-                colspan, colstart, colend = self._get_tablecell_span(cell, 1)
+                rowspan, rowstart, _ = self._get_tablecell_span(cell, 0)
+                colspan, colstart, _ = self._get_tablecell_span(cell, 1)
 
                 if rowstart is not None and rowstart != i:
                     continue

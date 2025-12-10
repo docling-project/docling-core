@@ -37,7 +37,7 @@ class TestCxsModel(unittest.TestCase):
 
         filename = "test/data/rec/error-predicate-02.json"
         with (
-            pytest.raises(ValidationError, match="geopoint_value.conf"),
+            pytest.raises(ValidationError, match="geopoint_value\\.conf"),
             open(filename, encoding="utf-8") as file_obj,
         ):
             file_json = file_obj.read()
