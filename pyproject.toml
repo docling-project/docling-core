@@ -116,6 +116,7 @@ dev = [
     "pytest-cov>=6.1.1",
     "python-semantic-release~=7.32",
     'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
+    "ruff>=0.14.8",
 ]
 
 [tool.uv]
