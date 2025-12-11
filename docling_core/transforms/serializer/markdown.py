@@ -670,7 +670,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
             visited=my_visited,
             **kwargs,
         )
-        text_res = " ".join([p.text for p in parts if p.text])
+        text_res = "".join([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
 
 
