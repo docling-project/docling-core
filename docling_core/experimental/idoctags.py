@@ -1,7 +1,7 @@
 """Define classes for DocTags serialization."""
 
 from enum import Enum
-from typing import Any, Final, Optional
+from typing import Any, ClassVar, Final, Optional
 from xml.dom.minidom import parseString
 
 from pydantic import BaseModel
@@ -40,7 +40,6 @@ from docling_core.types.doc import (
     TableData,
     TabularChartMetaField,
 )
-from docling_core.types.doc.labels import DocItemLabel
 
 DOCTAGS_VERSION: Final = "1.0.0"
 
@@ -50,18 +49,41 @@ class IDocTagsCategory(str, Enum):
 
     DocTags defines the following categories of elements:
 
-    - **root**: Elements that establish document scope such as `doctag`
-    - **special**: Elements that establish document pagination, such `page_break`, and `time_break`.
-    - **geometric**: Elements that capture geometric position as normalized coordinates/bounding boxes (via repeated `location`) anchoring block-level content to the page.
-    - **temporal**: Elements that capture temporal positions using `<hour value={integer}/><minute value={integer}/><second value={integer}/><centisecond value={integer}/>` for a timestamp and a double timestamp for time intervals.
-    - **semantic**: Block-level elements that convey document meaning (e.g., titles, paragraphs, captions, lists, forms, tables, formulas, code, pictures), optionally preceded by location tokens.
-    - **formatting**: Inline elements that modify textual presentation within semantic content (e.g., `bold`, `italic`, `strikethrough`, `superscript`, `subscript`, `rtl`, `inline class="formula|code|picture"`, `br`).
-    - **grouping**: Elements that organize semantic blocks into logical hierarchies and composites (e.g., `section`, `list`, `group type=*`) and never carry location tokens.
-    - **structural**: Sequence tokens that define internal structure for complex constructs (primarily OTSL table layout: `otsl`, `fcel`, `ecel`, `lcel`, `ucel`, `xcel`, `nl`, `ched`, `rhed`, `corn`, `srow`; and form parts like `key`/`value`).
-    - **content**: Lightweight content helpers used inside semantic blocks for explicit payload and annotations (e.g., `marker`).
-    - **binary data**: Elements that embed or reference non-text payloads for media—either inline as `base64` or via `uri`—allowed under `picture`, `inline class="picture"`, or at page level.
-    - **metadata**: Elements that provide metadata about the document or its components, contained within `head` and `meta` respectively.
-    - **continuation** tokens: Markers that indicate content spanning pages or table boundaries (e.g., `thread`, `h_thread`, each with a required `id` attribute) to stitch split content (e.g., across columns or pages).
+    - **root**: Elements that establish document scope such as
+      `doctag`.
+    - **special**: Elements that establish document pagination, such as
+      `page_break`, and `time_break`.
+    - **geometric**: Elements that capture geometric position as normalized
+      coordinates/bounding boxes (via repeated `location`) anchoring
+      block-level content to the page.
+    - **temporal**: Elements that capture temporal positions using
+      `<hour value={integer}/><minute value={integer}/><second value={integer}/>`
+      and `<centisecond value={integer}/>` for a timestamp and a double
+      timestamp for time intervals.
+    - **semantic**: Block-level elements that convey document meaning
+      (e.g., titles, paragraphs, captions, lists, forms, tables, formulas,
+      code, pictures), optionally preceded by location tokens.
+    - **formatting**: Inline elements that modify textual presentation within
+      semantic content (e.g., `bold`, `italic`, `strikethrough`,
+      `superscript`, `subscript`, `rtl`, `inline class="formula|code|picture"`,
+      `br`).
+    - **grouping**: Elements that organize semantic blocks into logical
+      hierarchies and composites (e.g., `section`, `list`, `group type=*`)
+      and never carry location tokens.
+    - **structural**: Sequence tokens that define internal structure for
+      complex constructs (primarily OTSL table layout: `otsl`, `fcel`,
+      `ecel`, `lcel`, `ucel`, `xcel`, `nl`, `ched`, `rhed`, `corn`, `srow`;
+      and form parts like `key`/`value`).
+    - **content**: Lightweight content helpers used inside semantic blocks for
+      explicit payload and annotations (e.g., `marker`).
+    - **binary data**: Elements that embed or reference non-text payloads for
+      media—either inline as `base64` or via `uri`—allowed under `picture`,
+      `inline class="picture"`, or at page level.
+    - **metadata**: Elements that provide metadata about the document or its
+      components, contained within `head` and `meta` respectively.
+    - **continuation** tokens: Markers that indicate content spanning pages or
+      table boundaries (e.g., `thread`, `h_thread`, each with a required
+      `id` attribute) to stitch split content (e.g., across columns or pages).
     """
 
     ROOT = "root"
@@ -90,7 +112,8 @@ class IDocTagsToken(str, Enum):
     | 3 |  | `time_break` | Yes | No | — | Temporal segment delimiter. |
     | 4 | Metadata Containers | `head` | No | No | — | Document-level metadata container. |
     | 5 |  | `meta` | No | No | — | Component-level metadata container. |
-    | 6 | Geometric Tokens | `location` | Yes | Yes | `value`, `resolution?` | Geometric coordinate; `value` in [0, res]; optional `resolution`. |
+    | 6 | Geometric Tokens | `location` | Yes | Yes | `value`, `resolution?` |
+      Geometric coordinate; `value` in [0, res]; optional `resolution`. |
     | 7 | Temmporal Tokens | `hour` | Yes | Yes | `value` | Hours component; `value` in [0, 99]. |
     | 8 |  | `minute` | Yes | Yes | `value` | Minutes component; `value` in [0, 59]. |
     | 9 |  | `second` | Yes | Yes | `value` | Seconds component; `value` in [0, 59]. |
@@ -103,27 +126,41 @@ class IDocTagsToken(str, Enum):
     | 16 |  | `page_header` | No | No | — | Page header content. |
     | 17 |  | `page_footer` | No | No | — | Page footer content. |
     | 18 |  | `watermark` | No | No | — | Watermark indicator or content. |
-    | 19 |  | `picture` | No | No | — | Block image/graphic; at most one of `base64`/`uri`; may include `meta` for classification; `otsl` may encode chart data. |
+    | 19 |  | `picture` | No | No | — |
+      Block image/graphic; at most one of `base64`/`uri`; may include `meta`
+      for classification; `otsl` may encode chart data. |
     | 20 |  | `form` | No | No | — | Form structure container. |
     | 21 |  | `formula` | No | No | — | Mathematical expression block. |
     | 22 |  | `code` | No | No | — | Code block. |
     | 23 |  | `list_text` | No | No | — | List item content. |
-    | 24 |  | `checkbox` | No | Yes | `selected` | Checkbox item; optional `selected` in {`true`,`false`} defaults to `false`. |
-    | 25 |  | `form_item` | No | No | — | Form item; exactly one `key`; one or more of `value`/`checkbox`/`marker`/`hint`. |
+    | 24 |  | `checkbox` | No | Yes | `selected` |
+      Checkbox item; optional `selected` in {`true`,`false`} defaults to
+      `false`. |
+    | 25 |  | `form_item` | No | No | — |
+      Form item; exactly one `key`; one or more of
+      `value`/`checkbox`/`marker`/`hint`. |
     | 26 |  | `form_heading` | No | Yes | `level?` | Form header; optional `level` (N ≥ 1). |
     | 27 |  | `form_text` | No | No | — | Form text block. |
     | 28 |  | `hint` | No | No | — | Hint for a fillable field (format/example/description). |
     | 29 | Grouping Tokens | `section` | No | Yes | `level` | Document section; `level` (N ≥ 1). |
-    | 30 |  | `list` | No | Yes | `ordered` | List container; optional `ordered` in {`true`,`false`} defaults to `false`. |
-    | 31 |  | `group` | No | Yes | `type?` | Generic group; no `location` tokens; associates composite content (e.g., captions/footnotes). |
-    | 32 |  | `floating_group` | No | Yes | `class` in {`table`,`picture`,`form`,`code`} | Floating container that groups a floating component with its caption, footnotes, and metadata; no `location` tokens. |
+    | 30 |  | `list` | No | Yes | `ordered` |
+      List container; optional `ordered` in {`true`,`false`} defaults to
+      `false`. |
+    | 31 |  | `group` | No | Yes | `type?` |
+      Generic group; no `location` tokens; associates composite content
+      (e.g., captions/footnotes). |
+    | 32 |  | `floating_group` | No | Yes | `class` in {`table`,`picture`,`form`,`code`} |
+      Floating container that groups a floating component with its caption,
+      footnotes, and metadata; no `location` tokens. |
     | 33 | Formatting Tokens | `bold` | No | No | — | Bold text. |
     | 34 |  | `italic` | No | No | — | Italic text. |
     | 35 |  | `strikethrough` | No | No | — | Strike-through text. |
     | 36 |  | `superscript` | No | No | — | Superscript text. |
     | 37 |  | `subscript` | No | No | — | Subscript text. |
     | 38 |  | `rtl` | No | No | — | Right-to-left text direction. |
-    | 39 |  | `inline` | No | Yes | `class` in {`formula`,`code`,`picture`} | Inline content; if `class="picture"`, may include one of `base64` or `uri`. |
+    | 39 |  | `inline` | No | Yes | `class` in {`formula`,`code`,`picture`} |
+      Inline content; if `class="picture"`, may include one of `base64` or
+      `uri`. |
     | 40 |  | `br` | Yes | No | — | Line break. |
     | 41 | Structural Tokens (OTSL) | `otsl` | No | No | — | Table structure container. |
     | 42 |  | `fcel` | Yes | No | — | New cell with content. |
@@ -136,7 +173,8 @@ class IDocTagsToken(str, Enum):
     | 49 |  | `ucel` | Yes | No | — | Merge with upper neighbor (vertical span). |
     | 50 |  | `xcel` | Yes | No | — | Merge with left and upper neighbors (2D span). |
     | 51 |  | `nl` | Yes | No | — | New line (row separator). |
-    | 52 | Continuation Tokens | `thread` | Yes | Yes | `id` | Continuation marker for split content; reuse same `id` across parts. |
+    | 52 | Continuation Tokens | `thread` | Yes | Yes | `id` |
+      Continuation marker for split content; reuse same `id` across parts. |
     | 53 |  | `h_thread` | Yes | Yes | `id` | Horizontal stitching marker for split tables; reuse same `id`. |
     | 54 | Binary Data Tokens | `base64` | No | No | — | Embedded binary data (base64). |
     | 55 |  | `uri` | No | No | — | External resource reference. |
@@ -181,7 +219,7 @@ class IDocTagsToken(str, Enum):
     FORMULA = "formula"
     CODE = "code"
     LIST_TEXT = "list_text"
-    LIST_ITEM = "list_item"
+    # LIST_ITEM = "list_item"
     CHECKBOX = "checkbox"
     OTSL = "otsl"  # this will take care of the structure in the table.
 
@@ -190,8 +228,8 @@ class IDocTagsToken(str, Enum):
     LIST = "list"
     GROUP = "group"
     FLOATING_GROUP = "floating_group"
-    ORDERED_LIST = "ordered_list"
-    UNORDERED_LIST = "unordered_list"
+    # ORDERED_LIST = "ordered_list"
+    # UNORDERED_LIST = "unordered_list"
 
     # Formatting
     BOLD = "bold"
@@ -230,83 +268,165 @@ class IDocTagsToken(str, Enum):
     MARKER = "marker"
     FACETS = "facets"
 
-    # Allowed attributes per token
-    ALLOWED_ATTRIBUTES: dict["IDocTagsToken", set[str]] = {
-        LOCATION: {"value", "resolution"},
-        HOUR: {"value"},
-        MINUTE: {"value"},
-        SECOND: {"value"},
-        CENTISECOND: {"value"},
-        HEADING: {"level"},
-        FORM_HEADING: {"level"},
-        CHECKBOX: {"selected"},
-        SECTION: {"level"},
-        LIST: {"ordered"},
-        GROUP: {"type"},
-        FLOATING_GROUP: {"class"},
-        INLINE: {"class"},
-        THREAD: {"id"},
-        H_THREAD: {"id"},
+
+class IDocTagsTableToken(str, Enum):
+    """Serialized OTSL table tokens used in DocTags output."""
+
+    OTSL_ECEL = f"<{IDocTagsToken.ECEL.value}/>"  # empty cell
+    OTSL_FCEL = f"<{IDocTagsToken.FCEL.value}/>"  # cell with content
+    OTSL_LCEL = f"<{IDocTagsToken.LCEL.value}/>"  # left looking cell,
+    OTSL_UCEL = f"<{IDocTagsToken.UCEL.value}/>"  # up looking cell,
+    OTSL_XCEL = f"<{IDocTagsToken.XCEL.value}/>"  # 2d extension cell (cross cell),
+    OTSL_NL = f"<{IDocTagsToken.NL.value}/>"  # new line,
+    OTSL_CHED = f"<{IDocTagsToken.CHED.value}/>"  # - column header cell,
+    OTSL_RHED = f"<{IDocTagsToken.RHED.value}/>"  # - row header cell,
+    OTSL_SROW = f"<{IDocTagsToken.SROW.value}/>"  # - section row cell
+
+
+class IDocTagsAttributeKey(str, Enum):
+    """Attribute keys allowed on DocTags tokens."""
+
+    VERSION = "version"
+    VALUE = "value"
+    RESOLUTION = "resolution"
+    LEVEL = "level"
+    SELECTED = "selected"
+    ORDERED = "ordered"
+    TYPE = "type"
+    CLASS = "class"
+    ID = "id"
+
+
+class IDocTagsAttributeValue(str, Enum):
+    """Enumerated values for specific DocTags attributes."""
+
+    # Generic boolean-like values
+    TRUE = "true"
+    FALSE = "false"
+
+    # Inline class values
+    FORMULA = "formula"
+    CODE = "code"
+    PICTURE = "picture"
+
+    # Floating group class values
+    DOCUMENT_INDEX = "document_index"
+    TABLE = "table"
+    FORM = "form"
+
+
+class IDocTagsVocabulary(BaseModel):
+    """IDocTagsVocabulary."""
+
+    # Allowed attributes per token (defined outside the Enum to satisfy mypy)
+    ALLOWED_ATTRIBUTES: ClassVar[dict[IDocTagsToken, set["IDocTagsAttributeKey"]]] = {
+        IDocTagsToken.LOCATION: {
+            IDocTagsAttributeKey.VALUE,
+            IDocTagsAttributeKey.RESOLUTION,
+        },
+        IDocTagsToken.HOUR: {IDocTagsAttributeKey.VALUE},
+        IDocTagsToken.MINUTE: {IDocTagsAttributeKey.VALUE},
+        IDocTagsToken.SECOND: {IDocTagsAttributeKey.VALUE},
+        IDocTagsToken.CENTISECOND: {IDocTagsAttributeKey.VALUE},
+        IDocTagsToken.HEADING: {IDocTagsAttributeKey.LEVEL},
+        IDocTagsToken.FORM_HEADING: {IDocTagsAttributeKey.LEVEL},
+        IDocTagsToken.CHECKBOX: {IDocTagsAttributeKey.SELECTED},
+        IDocTagsToken.SECTION: {IDocTagsAttributeKey.LEVEL},
+        IDocTagsToken.LIST: {IDocTagsAttributeKey.ORDERED},
+        IDocTagsToken.GROUP: {IDocTagsAttributeKey.TYPE},
+        IDocTagsToken.FLOATING_GROUP: {IDocTagsAttributeKey.CLASS},
+        IDocTagsToken.INLINE: {IDocTagsAttributeKey.CLASS},
+        IDocTagsToken.THREAD: {IDocTagsAttributeKey.ID},
+        IDocTagsToken.H_THREAD: {IDocTagsAttributeKey.ID},
     }
 
     # Allowed values for specific attributes (enumerations)
     # Structure: token -> attribute name -> set of allowed string values
-    ALLOWED_ATTRIBUTE_VALUES: dict["IDocTagsToken", dict[str, set[str]]] = {
+    ALLOWED_ATTRIBUTE_VALUES: ClassVar[
+        dict[
+            IDocTagsToken,
+            dict["IDocTagsAttributeKey", set["IDocTagsAttributeValue"]],
+        ]
+    ] = {
         # Grouping and inline enumerations
-        LIST: {"ordered": {"true", "false"}},
-        CHECKBOX: {"selected": {"true", "false"}},
-        INLINE: {"class": {"formula", "code", "picture"}},
-        FLOATING_GROUP: {
-            "class": {"document_index", "table", "picture", "form", "code"}
+        IDocTagsToken.LIST: {
+            IDocTagsAttributeKey.ORDERED: {
+                IDocTagsAttributeValue.TRUE,
+                IDocTagsAttributeValue.FALSE,
+            }
+        },
+        IDocTagsToken.CHECKBOX: {
+            IDocTagsAttributeKey.SELECTED: {
+                IDocTagsAttributeValue.TRUE,
+                IDocTagsAttributeValue.FALSE,
+            }
+        },
+        IDocTagsToken.INLINE: {
+            IDocTagsAttributeKey.CLASS: {
+                IDocTagsAttributeValue.FORMULA,
+                IDocTagsAttributeValue.CODE,
+                IDocTagsAttributeValue.PICTURE,
+            }
+        },
+        IDocTagsToken.FLOATING_GROUP: {
+            IDocTagsAttributeKey.CLASS: {
+                IDocTagsAttributeValue.DOCUMENT_INDEX,
+                IDocTagsAttributeValue.TABLE,
+                IDocTagsAttributeValue.PICTURE,
+                IDocTagsAttributeValue.FORM,
+                IDocTagsAttributeValue.CODE,
+            }
         },
         # Other attributes (e.g., level, type, id) are not enumerated here
     }
 
-    ALLOWED_ATTRIBUTE_RANGE: dict["IDocTagsToken", dict[str, tuple[int, int]]] = {
+    ALLOWED_ATTRIBUTE_RANGE: ClassVar[
+        dict[IDocTagsToken, dict["IDocTagsAttributeKey", tuple[int, int]]]
+    ] = {
         # Geometric: value in [0, res]; resolution optional.
         # Keep conservative defaults aligned with existing usage.
-        LOCATION: {
-            "value": (0, 512),
-            "resolution": (512, 512),
+        IDocTagsToken.LOCATION: {
+            IDocTagsAttributeKey.VALUE: (0, 512),
+            IDocTagsAttributeKey.RESOLUTION: (512, 512),
         },
         # Temporal components
-        HOUR: {"value": (0, 99)},
-        MINUTE: {"value": (0, 59)},
-        SECOND: {"value": (0, 59)},
-        CENTISECOND: {"value": (0, 99)},
+        IDocTagsToken.HOUR: {IDocTagsAttributeKey.VALUE: (0, 99)},
+        IDocTagsToken.MINUTE: {IDocTagsAttributeKey.VALUE: (0, 59)},
+        IDocTagsToken.SECOND: {IDocTagsAttributeKey.VALUE: (0, 59)},
+        IDocTagsToken.CENTISECOND: {IDocTagsAttributeKey.VALUE: (0, 99)},
         # Levels (N ≥ 1)
-        HEADING: {"level": (1, 6)},
-        FORM_HEADING: {"level": (1, 6)},
-        SECTION: {"level": (1, 6)},
-        # Continuation markers
-        THREAD: {"id": (1, 10)},
-        H_THREAD: {"id": (1, 10)},
+        IDocTagsToken.HEADING: {IDocTagsAttributeKey.LEVEL: (1, 6)},
+        IDocTagsToken.FORM_HEADING: {IDocTagsAttributeKey.LEVEL: (1, 6)},
+        IDocTagsToken.SECTION: {IDocTagsAttributeKey.LEVEL: (1, 6)},
+        # Continuation markers (id length constraints)
+        IDocTagsToken.THREAD: {IDocTagsAttributeKey.ID: (1, 10)},
+        IDocTagsToken.H_THREAD: {IDocTagsAttributeKey.ID: (1, 10)},
     }
 
     # Self-closing tokens map
-    IS_SELFCLOSING: dict["IDocTagsToken", bool] = {
-        PAGE_BREAK: True,
-        TIME_BREAK: True,
-        LOCATION: True,
-        HOUR: True,
-        MINUTE: True,
-        SECOND: True,
-        CENTISECOND: True,
-        BR: True,
+    IS_SELFCLOSING: ClassVar[dict[IDocTagsToken, bool]] = {
+        IDocTagsToken.PAGE_BREAK: True,
+        IDocTagsToken.TIME_BREAK: True,
+        IDocTagsToken.LOCATION: True,
+        IDocTagsToken.HOUR: True,
+        IDocTagsToken.MINUTE: True,
+        IDocTagsToken.SECOND: True,
+        IDocTagsToken.CENTISECOND: True,
+        IDocTagsToken.BR: True,
         # OTSL structural tokens are emitted as self-closing markers
-        FCEL: True,
-        ECEL: True,
-        CHED: True,
-        RHED: True,
-        CORN: True,
-        SROW: True,
-        LCEL: True,
-        UCEL: True,
-        XCEL: True,
-        NL: True,
+        IDocTagsToken.FCEL: True,
+        IDocTagsToken.ECEL: True,
+        IDocTagsToken.CHED: True,
+        IDocTagsToken.RHED: True,
+        IDocTagsToken.CORN: True,
+        IDocTagsToken.SROW: True,
+        IDocTagsToken.LCEL: True,
+        IDocTagsToken.UCEL: True,
+        IDocTagsToken.XCEL: True,
+        IDocTagsToken.NL: True,
         # Continuation markers
-        THREAD: True,
-        H_THREAD: True,
+        IDocTagsToken.THREAD: True,
+        IDocTagsToken.H_THREAD: True,
     }
 
     @classmethod
@@ -317,15 +437,17 @@ class IDocTagsToken(str, Enum):
         the `horizontal` flag. Validates required attributes against the
         class schema and basic value sanity.
         """
-        token = cls.H_THREAD if horizontal else cls.THREAD
+        token = IDocTagsToken.H_THREAD if horizontal else IDocTagsToken.THREAD
         # Ensure the required attribute is declared for this token
-        assert "id" in cls.ALLOWED_ATTRIBUTES.get(token, set())
+        assert IDocTagsAttributeKey.ID in cls.ALLOWED_ATTRIBUTES.get(token, set())
 
-        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token]["id"]
-        if not (lo <= level <= hi):
-            raise ValueError(f"level must be in [{lo}, {hi}]")
+        # Validate id length if a range is specified
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token][IDocTagsAttributeKey.ID]
+        length = len(id)
+        if not (lo <= length <= hi):
+            raise ValueError(f"id length must be in [{lo}, {hi}]")
 
-        return f'<{token.value} id="{id}"/>'
+        return f'<{token.value} {IDocTagsAttributeKey.ID.value}="{id}"/>'
 
     @classmethod
     def create_heading_token(cls, *, level: int, closing: bool = False) -> str:
@@ -334,13 +456,15 @@ class IDocTagsToken(str, Enum):
         When `closing` is False, emits an opening tag with level attribute.
         When `closing` is True, emits the corresponding closing tag.
         """
-        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[cls.HEADING]["level"]
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.HEADING][
+            IDocTagsAttributeKey.LEVEL
+        ]
         if not (lo <= level <= hi):
             raise ValueError(f"level must be in [{lo}, {hi}]")
 
         if closing:
-            return f"</{cls.HEADING.value}>"
-        return f'<{cls.HEADING.value} level="{level}">'
+            return f"</{IDocTagsToken.HEADING.value}>"
+        return f'<{IDocTagsToken.HEADING.value} {IDocTagsAttributeKey.LEVEL.value}="{level}">'
 
     @classmethod
     def create_location_token(cls, *, value: int, resolution: int = 512) -> str:
@@ -350,19 +474,25 @@ class IDocTagsToken(str, Enum):
         `value` lies within [0, resolution]. Always emits the resolution
         attribute for explicitness.
         """
-        range_map = cls.ALLOWED_ATTRIBUTE_RANGE[cls.LOCATION]
+        range_map = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.LOCATION]
         # Validate resolution if a constraint exists
-        r_lo, r_hi = range_map.get("resolution", (resolution, resolution))
+        r_lo, r_hi = range_map.get(
+            IDocTagsAttributeKey.RESOLUTION, (resolution, resolution)
+        )
         if not (r_lo <= resolution <= r_hi):
             raise ValueError(f"resolution must be in [{r_lo}, {r_hi}]")
 
-        v_lo, v_hi = range_map["value"]
+        v_lo, v_hi = range_map[IDocTagsAttributeKey.VALUE]
         if not (v_lo <= value <= v_hi):
             raise ValueError(f"value must be in [{v_lo}, {v_hi}]")
         if not (0 <= value <= resolution):
             raise ValueError("value must be in [0, resolution]")
 
-        return f'<{cls.LOCATION.value} value="{value}" resolution="{resolution}"/>'
+        return (
+            f"<{IDocTagsToken.LOCATION.value} "
+            f'{IDocTagsAttributeKey.VALUE.value}="{value}" '
+            f'{IDocTagsAttributeKey.RESOLUTION.value}="{resolution}"/>'
+        )
 
     @classmethod
     def get_special_tokens(
@@ -383,11 +513,16 @@ class IDocTagsToken(str, Enum):
         """
         special_tokens: list[str] = []
 
-        temporal_tokens = {cls.HOUR, cls.MINUTE, cls.SECOND, cls.CENTISECOND}
+        temporal_tokens = {
+            IDocTagsToken.HOUR,
+            IDocTagsToken.MINUTE,
+            IDocTagsToken.SECOND,
+            IDocTagsToken.CENTISECOND,
+        }
 
-        for token in cls:
+        for token in IDocTagsToken:
             # Optional gating for location/temporal tokens
-            if not include_location_tokens and token is cls.LOCATION:
+            if not include_location_tokens and token is IDocTagsToken.LOCATION:
                 continue
             if not include_temporal_tokens and token in temporal_tokens:
                 continue
@@ -401,24 +536,31 @@ class IDocTagsToken(str, Enum):
                 # Enumerated attribute values
                 enum_map = cls.ALLOWED_ATTRIBUTE_VALUES.get(token, {})
                 for attr_name, allowed_vals in enum_map.items():
-                    for v in sorted(allowed_vals):
+                    for v in sorted(allowed_vals, key=lambda x: x.value):
                         if is_selfclosing:
-                            special_tokens.append(f'<{name} {attr_name}="{v}"/>')
+                            special_tokens.append(
+                                f'<{name} {attr_name.value}="{v.value}"/>'
+                            )
                         else:
-                            special_tokens.append(f'<{name} {attr_name}="{v}">')
+                            special_tokens.append(
+                                f'<{name} {attr_name.value}="{v.value}">'
+                            )
                             special_tokens.append(f"</{name}>")
 
                 # Ranged attribute values (emit a conservative, complete range)
                 range_map = cls.ALLOWED_ATTRIBUTE_RANGE.get(token, {})
                 for attr_name, (lo, hi) in range_map.items():
                     # Keep the list size reasonable by skipping optional resolution enumeration
-                    if token is cls.LOCATION and attr_name == "resolution":
+                    if (
+                        token is IDocTagsToken.LOCATION
+                        and attr_name is IDocTagsAttributeKey.RESOLUTION
+                    ):
                         continue
-                    for v in range(lo, hi + 1):
+                    for n in range(lo, hi + 1):
                         if is_selfclosing:
-                            special_tokens.append(f'<{name} {attr_name}="{v}"/>')
+                            special_tokens.append(f'<{name} {attr_name.value}="{n}"/>')
                         else:
-                            special_tokens.append(f'<{name} {attr_name}="{v}">')
+                            special_tokens.append(f'<{name} {attr_name.value}="{n}">')
                             special_tokens.append(f"</{name}>")
                 # Do not emit a bare tag for attribute-bearing tokens
                 continue
@@ -431,7 +573,6 @@ class IDocTagsToken(str, Enum):
                 special_tokens.append(f"</{name}>")
 
         return special_tokens
-
 
 
 class IDocTagsParams(DocTagsParams):
@@ -661,7 +802,6 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
         res_parts: list[SerializationResult] = []
-        is_chart = False
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
 
@@ -704,10 +844,8 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
-            token = IDocTagsToken.create_token_name_from_doc_item_label(
-                label=DocItemLabel.CHART if is_chart else DocItemLabel.PICTURE,
-            )
-            text_res = _wrap(text=text_res, wrap_tag=token)
+            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.PICTURE)
+
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
