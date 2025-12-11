@@ -167,10 +167,10 @@ item 2 of neighboring list
 <ul>
 <li style="list-style-type: '□ ';">item 1 of sub list</li>
 <li style="list-style-type: '□ ';">
-<span class='inline-group'>Here a code snippet: <code>print("Hello world")</code> (to be displayed inline)</span>
+<span class='inline-group'>Here a code snippet:<code>print("Hello world")</code>(to be displayed inline)</span>
 </li>
 <li style="list-style-type: '□ ';">
-<span class='inline-group'>Here a formula: <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>E</mi><mo>&#x0003D;</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="TeX">E=mc^2</annotation></math> (to be displayed inline)</span>
+<span class='inline-group'>Here a formula:<math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>E</mi><mo>&#x0003D;</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="TeX">E=mc^2</annotation></math>(to be displayed inline)</span>
 </li>
 </ul>
 </li>
@@ -191,7 +191,7 @@ item 2 of neighboring list
 
 </ul>
 </div>
-<span class='inline-group'>Some formatting chops: <strong>bold</strong> <em>italic</em> <u>underline</u> <del>strikethrough</del> <sub>subscript</sub> <sup>superscript</sup> <a href=".">hyperlink</a> &amp; <a href="https://github.com/DS4SD/docling"><del><u><em><strong>everything at the same time.</strong></em></u></del></a></span>
+<span class='inline-group'>Some formatting chops:<strong>bold</strong><em>italic</em><u>underline</u><del>strikethrough</del><sub>subscript</sub><sup>superscript</sup><a href=".">hyperlink</a>&amp;<a href="https://github.com/DS4SD/docling"><del><u><em><strong>everything at the same time.</strong></em></u></del></a></span>
 <ol>
 <li style="list-style-type: '(i) ';">Item 1 in A</li>
 <li style="list-style-type: '(ii) ';">Item 2 in A</li>
