@@ -4,6 +4,7 @@ import base64
 import copy
 import hashlib
 import json
+import orjson
 import logging
 import mimetypes
 import os
@@ -4860,7 +4861,10 @@ class DoclingDocument(BaseModel):
         coord_precision: Optional[int] = None,
         confid_precision: Optional[int] = None,
     ):
-        """Save as json."""
+        """
+        Save as json.
+        Indent can either be 2 or 0 (no indent).
+        """
         if isinstance(filename, str):
             filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
@@ -4875,8 +4879,8 @@ class DoclingDocument(BaseModel):
         out = new_doc.export_to_dict(
             coord_precision=coord_precision, confid_precision=confid_precision
         )
-        with open(filename, "w", encoding="utf-8") as fw:
-            json.dump(out, fw, indent=indent)
+        with open(filename, "wb") as fw:
+            fw.write(orjson.dumps(out, option=orjson.OPT_INDENT_2 if indent else 0))
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":
