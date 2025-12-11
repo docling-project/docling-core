@@ -25,6 +25,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DescriptionAnnotation,
     DoclingDocument,
+    Formatting,
     TableCell,
     TableData,
 )
@@ -650,3 +651,150 @@ def test_idoctags_meta():
     ser = IDocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.idt.xml"), actual=actual)
+
+
+# ===============================
+# Tests for inline group join behavior without spaces
+# ===============================
+
+
+def test_md_inline_group_no_spaces():
+    """Test that inline groups join text parts without spaces for continuous text."""
+    doc = DoclingDocument(name="test")
+
+    # Create an inline group with multiple text items that should be joined without spaces
+    # Simulating the case where "Docling" is split into "D" (bold) and "ocling" (normal)
+    group = doc.add_inline_group()
+    doc.add_text(
+        label="text",
+        parent=group,
+        text="D",
+        formatting=Formatting(bold=True, italic=False, underline=False, strikethrough=False, script="baseline")
+    )
+    doc.add_text(
+        label="text",
+        parent=group,
+        text="ocling",
+        formatting=Formatting(bold=False, italic=False, underline=False, strikethrough=False, script="baseline")
+    )
+
+    # This should serialize as "**D**ocling" without space
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "**D**ocling"
+    assert actual == expected
+
+
+def test_html_inline_group_no_spaces():
+    """Test that inline groups join text parts without spaces for continuous text."""
+    doc = DoclingDocument(name="test")
+
+    # Create an inline group with multiple text items that should be joined without spaces
+    group = doc.add_inline_group()
+    doc.add_text(
+        label="text",
+        parent=group,
+        text="Project",
+        formatting=Formatting(bold=True, italic=False, underline=False, strikethrough=False, script="baseline")
+    )
+    doc.add_text(
+        label="text",
+        parent=group,
+        text="ing",
+        formatting=Formatting(bold=False, italic=False, underline=False, strikethrough=False, script="baseline")
+    )
+
+    # This should serialize as <strong>Project</strong>ing without space
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
+    actual = ser.serialize().text
+
+    # Extract the body content between <body> and </body>
+    start = actual.find("<body>") + 6
+    end = actual.find("</body>")
+    body_content = actual[start:end].strip()
+
+    # Check that the span contains the expected content
+    assert '<strong>Project</strong>ing' in body_content
+
+
+
+
+def test_md_inline_group_mixed_formatting_mid_word():
+    """Test inline group with different formatting mid-word."""
+    doc = DoclingDocument(name="test")
+
+    # Simulate "Parsing" with "Pars" normal and "ing" italic
+    group = doc.add_inline_group()
+    doc.add_text(label="text", parent=group, text="Pars")
+    doc.add_text(
+        label="text",
+        parent=group,
+        text="ing",
+        formatting=Formatting(bold=False, italic=True, underline=False, strikethrough=False, script="baseline")
+    )
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "Pars*ing*"
+    assert actual == expected
+
+
+def test_html_inline_group_mixed_formatting_mid_word():
+    """Test inline group with different formatting mid-word."""
+    doc = DoclingDocument(name="test")
+
+    # Simulate "Parsing" with "Pars" normal and "ing" italic
+    group = doc.add_inline_group()
+    doc.add_text(label="text", parent=group, text="Pars")
+    doc.add_text(
+        label="text",
+        parent=group,
+        text="ing",
+        formatting=Formatting(bold=False, italic=True, underline=False, strikethrough=False, script="baseline")
+    )
+
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
+    actual = ser.serialize().text
+
+    # Extract the body content between <body> and </body>
+    start = actual.find("<body>") + 6
+    end = actual.find("</body>")
+    body_content = actual[start:end].strip()
+
+    # Check that both parts are present without spaces between
+    assert 'Pars<em>ing</em>' in body_content.replace('\n', ' ')
+
+
+def test_md_inline_group_single_part():
+    """Test inline group with single text part (no joining needed)."""
+    doc = DoclingDocument(name="test")
+
+    group = doc.add_inline_group()
+    doc.add_text(label="text", parent=group, text="Single")
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "Single"
+    assert actual == expected
+
+
+def test_html_inline_group_single_part():
+    """Test inline group with single text part (no joining needed)."""
+    doc = DoclingDocument(name="test")
+
+    group = doc.add_inline_group()
+    doc.add_text(label="text", parent=group, text="Single")
+
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
+    actual = ser.serialize().text
+
+    # Extract the body content between <body> and </body>
+    start = actual.find("<body>") + 6
+    end = actual.find("</body>")
+    body_content = actual[start:end].strip()
+
+    # Check that the single part content is present
+    assert 'Single' in body_content

@@ -44,8 +44,8 @@ item 2 of list after empty list
 item 1 of neighboring list
 item 2 of neighboring list
     item 1 of sub list
-    Here a code snippet: `print("Hello world")` (to be displayed inline)
-    Here a formula: $E=mc^2$ (to be displayed inline)
+    Here a code snippet:`print("Hello world")`(to be displayed inline)
+    Here a formula:$E=mc^2$(to be displayed inline)
 
 Here a code block:
 
@@ -61,7 +61,7 @@ $$E=mc^2$$
 
 <!-- missing-form-item -->
 
-Some formatting chops: **bold** *italic* underline ~~strikethrough~~ subscript superscript [hyperlink](.) &amp; [~~***everything at the same time.***~~](https://github.com/DS4SD/docling)
+Some formatting chops:**bold***italic*underline~~strikethrough~~subscriptsuperscript[hyperlink](.)&amp;[~~***everything at the same time.***~~](https://github.com/DS4SD/docling)
 
 Item 1 in A
 Item 2 in A
