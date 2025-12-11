@@ -51,11 +51,13 @@ DOCTAGS_VERSION: Final = "1.0.0"
 
 class IDocTagsRootToken(str, Enum):
     """Root-level document tag tokens."""
+
     DOCTAG = "doctag"
 
 
 class IDocTagsSpecialToken(str, Enum):
     """Special control tokens for breaks, metadata, and time."""
+
     PAGE_BREAK = "page_break"
     TIME_BREAK = "time_break"
     METADATA = "metadata"
@@ -70,6 +72,7 @@ class IDocTagsSpecialToken(str, Enum):
 
 class IDocTagsGroupToken(str, Enum):
     """Grouping tokens for sections and lists."""
+
     SECTION = "section"
     LIST = "list"
     GROUP = "group"
@@ -77,6 +80,7 @@ class IDocTagsGroupToken(str, Enum):
 
 class IDocTagsSemanticToken(str, Enum):
     """Semantic content tokens (headings, text, media, etc.)."""
+
     HEADING = "heading"
     TEXT = "text"
     CAPTION = "caption"
@@ -94,6 +98,7 @@ class IDocTagsSemanticToken(str, Enum):
 
 class IDocTagsFormattingToken(str, Enum):
     """Inline formatting tokens."""
+
     BOLD = "bold"
     ITALIC = "italic"
     STRIKETHROUGH = "strikethrough"
@@ -108,12 +113,14 @@ class IDocTagsFormattingToken(str, Enum):
 
 class IDocTagsContinuationToken(str, Enum):
     """Continuation tokens for threading."""
+
     THREAD = "thread"
     H_THREAD = "h_thread"
 
 
 class IDocTagsContentToken(str, Enum):
     """Content-related tokens and data carriers."""
+
     MARKER = "marker"
     FACETS = "facets"
     # Binary data tokens
@@ -123,6 +130,7 @@ class IDocTagsContentToken(str, Enum):
 
 class IDocTagsStructureToken(str, Enum):
     """Structural tokens for OTSL and form fields."""
+
     # OTSL Structural tokens
     OTSL = "otsl"
     FCEL = "fcel"
