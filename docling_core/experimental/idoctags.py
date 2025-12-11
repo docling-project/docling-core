@@ -49,6 +49,98 @@ from docling_core.types.doc.tokens import (
 DOCTAGS_VERSION: Final = "1.0.0"
 
 
+class IDocTagsRootToken(str, Enum):
+    """Root-level document tag tokens."""
+    DOCTAG = "doctag"
+
+
+class IDocTagsSpecialToken(str, Enum):
+    """Special control tokens for breaks, metadata, and time."""
+    PAGE_BREAK = "page_break"
+    TIME_BREAK = "time_break"
+    METADATA = "metadata"
+    # Geometric
+    LOCATION = "location"
+    # Temporal
+    HOUR = "hour"
+    MINUTE = "minute"
+    SECOND = "second"
+    CENTISECOND = "centisecond"
+
+
+class IDocTagsGroupToken(str, Enum):
+    """Grouping tokens for sections and lists."""
+    SECTION = "section"
+    LIST = "list"
+    GROUP = "group"
+
+
+class IDocTagsSemanticToken(str, Enum):
+    """Semantic content tokens (headings, text, media, etc.)."""
+    HEADING = "heading"
+    TEXT = "text"
+    CAPTION = "caption"
+    FOOTNOTE = "footnote"
+    PAGE_HEADER = "page_header"
+    PAGE_FOOTER = "page_footer"
+    WATERMARK = "watermark"
+    PICTURE = "picture"
+    FORM = "form"
+    FORMULA = "formula"
+    CODE = "code"
+    LIST_ITEM = "list_item"
+    CHECKBOX = "checkbox"
+
+
+class IDocTagsFormattingToken(str, Enum):
+    """Inline formatting tokens."""
+    BOLD = "bold"
+    ITALIC = "italic"
+    STRIKETHROUGH = "strikethrough"
+    SUPERSCRIPT = "superscript"
+    SUBSCRIPT = "subscript"
+    RTL = "rtl"
+    INLINE_FORMULA = "inline_formula"
+    INLINE_CODE = "inline_code"
+    INLINE_PICTURE = "inline_picture"
+    BR = "br"
+
+
+class IDocTagsContinuationToken(str, Enum):
+    """Continuation tokens for threading."""
+    THREAD = "thread"
+    H_THREAD = "h_thread"
+
+
+class IDocTagsContentToken(str, Enum):
+    """Content-related tokens and data carriers."""
+    MARKER = "marker"
+    FACETS = "facets"
+    # Binary data tokens
+    BASE64 = "base64"
+    URI = "uri"
+
+
+class IDocTagsStructureToken(str, Enum):
+    """Structural tokens for OTSL and form fields."""
+    # OTSL Structural tokens
+    OTSL = "otsl"
+    FCEL = "fcel"
+    ECEL = "ecel"
+    CHED = "ched"
+    RHED = "rhed"
+    CORN = "corn"
+    SROW = "srow"
+    LCEL = "lcel"
+    UCEL = "ucel"
+    XCEL = "xcel"
+    NL = "nl"
+    # Form structural tokens
+    KEY = "key"
+    IMPLICIT_KEY = "implicit_key"
+    VALUE = "value"
+
+
 class IDocTagsTableToken(str, Enum):
     """Class to represent an LLM friendly representation of a Table."""
 
