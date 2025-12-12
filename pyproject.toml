@@ -132,7 +132,7 @@ namespaces = true
 
 [tool.ruff]
 target-version = "py39"
-line-length = 88
+line-length = 120
 respect-gitignore = true
 exclude = [
     "test/data/**"
@@ -164,6 +164,7 @@ ignore = [
   "C413",   # Unnecessary `reversed()` call around `sorted()`
   "C416",   # Unnecessary set comprehension (rewrite using `set()`)
   "E501",   # Line too long, handled by ruff formatter
+  "E203",   # whitespace-before-punctuation
   "E741",   # Ambiguous variable name: `l`
   "D107",   # "Missing docstring in __init__",
   "F401",   # imported but unused; consider using `importlib.util.find_spec` to test for "
@@ -181,12 +182,15 @@ ignore = [
   "UP045",  # Use `X | None` for type annotations
 ]
 
-
 [tool.ruff.lint.pep8-naming]
 classmethod-decorators = [
-  # Allow Pydantic's `@validator` decorator to trigger class method treatment.
+  "classmethod",
+  "validator",
   "pydantic.validator",
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
@@ -194,7 +198,7 @@ classmethod-decorators = [
 "*.ipynb" = ["I"]  # Disable import sorting for notebooks
 
 [tool.ruff.lint.mccabe]
-max-complexity = 30
+max-complexity = 25
 
 [tool.ruff.lint.isort]
 combine-as-imports = false
