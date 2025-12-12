@@ -112,9 +112,7 @@ def _get_function_name(language: CodeLanguageLabel, node: Node) -> Optional[str]
         return None
 
 
-def _is_collectable_function(
-    language: CodeLanguageLabel, node: Node, constructor_name: str
-) -> bool:
+def _is_collectable_function(language: CodeLanguageLabel, node: Node, constructor_name: str) -> bool:
     """Check if a function should be collected for chunking."""
     if language == CodeLanguageLabel.C:
         return True
@@ -131,9 +129,7 @@ def _get_default_tokenizer() -> "BaseTokenizer":
         HuggingFaceTokenizer,
     )
 
-    return HuggingFaceTokenizer.from_pretrained(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
 def _has_child(node: Node, child_name: str) -> bool:

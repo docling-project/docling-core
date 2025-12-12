@@ -53,14 +53,10 @@ UniqueList = Annotated[
 StrictDateTime = Annotated[
     datetime,
     WrapValidator(validate_datetime),
-    PlainSerializer(
-        lambda x: x.astimezone(tz=timezone.utc).isoformat(), return_type=str
-    ),
+    PlainSerializer(lambda x: x.astimezone(tz=timezone.utc).isoformat(), return_type=str),
 ]
 
-ACQUISITION_TYPE = Literal[
-    "API", "FTP", "Download", "Link", "Web scraping/Crawling", "Other"
-]
+ACQUISITION_TYPE = Literal["API", "FTP", "Download", "Link", "Web scraping/Crawling", "Other"]
 
 
 class Identifier(AliasModel, Generic[IdentifierTypeT], extra="forbid"):
@@ -68,16 +64,11 @@ class Identifier(AliasModel, Generic[IdentifierTypeT], extra="forbid"):
 
     type_: IdentifierTypeT = Field(
         alias="type",
-        description=(
-            "A string representing a collection or database that contains this "
-            "data object."
-        ),
+        description=("A string representing a collection or database that contains this data object."),
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
     value: StrictStr = Field(
-        description=(
-            "The identifier value of the data object within a collection or database."
-        ),
+        description=("The identifier value of the data object within a collection or database."),
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
     name: str = Field(
@@ -103,8 +94,7 @@ class Identifier(AliasModel, Generic[IdentifierTypeT], extra="forbid"):
             and v != f"{info.data['type_'].lower()}#{info.data['value'].lower()}"
         ):
             raise ValueError(
-                "the _name field must be the concatenation of type and value in lower "
-                "case, separated by hash (#)"
+                "the _name field must be the concatenation of type and value in lower case, separated by hash (#)"
             )
         return v
 
@@ -134,9 +124,7 @@ class Log(AliasModel, extra="forbid"):
         description="A description of the task or any comments in natural language.",
     )
     date: StrictDateTime = Field(
-        description=(
-            "A string representation of the task execution datetime in ISO 8601 format."
-        )
+        description=("A string representation of the task execution datetime in ISO 8601 format.")
     )
 
 
@@ -149,18 +137,12 @@ class FileInfoObject(AliasModel):
     )
     fileprov: Optional[StrictStr] = Field(
         default=None,
-        description=(
-            "The provenance of this data object, e.g. an archive file, a URL, or any"
-            " other repository."
-        ),
+        description=("The provenance of this data object, e.g. an archive file, a URL, or any other repository."),
         alias="filename-prov",
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
     document_hash: StrictStr = Field(
-        description=(
-            "A unique identifier of this data object within a collection of a "
-            "Docling database"
-        ),
+        description=("A unique identifier of this data object within a collection of a Docling database"),
         alias="document-hash",
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
@@ -177,9 +159,7 @@ class CollectionTypeEnum(str, Enum):
 CollectionTypeT = TypeVar("CollectionTypeT", bound=CollectionTypeEnum)
 
 
-class CollectionInfo(
-    BaseModel, Generic[CollectionNameTypeT, CollectionTypeT], extra="forbid"
-):
+class CollectionInfo(BaseModel, Generic[CollectionNameTypeT, CollectionTypeT], extra="forbid"):
     """Information of a collection."""
 
     name: Optional[CollectionNameTypeT] = Field(
@@ -192,9 +172,7 @@ class CollectionInfo(
         description="The collection type.",
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
-    version: Optional[
-        Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)]
-    ] = Field(
+    version: Optional[Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)]] = Field(
         default=None,
         description="The version of this collection model.",
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
@@ -231,9 +209,7 @@ class Acquisition(BaseModel, extra="forbid"):
     )
     date: Optional[StrictDateTime] = Field(
         default=None,
-        description=(
-            "A string representation of the acquisition datetime in ISO 8601 format."
-        ),
+        description=("A string representation of the acquisition datetime in ISO 8601 format."),
     )
     link: Optional[AnyUrl] = Field(
         default=None,

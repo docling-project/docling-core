@@ -22,8 +22,8 @@ class Package(BaseModel, extra="forbid"):
     """
 
     name: StrictStr = "docling-core"
-    version: Annotated[str, StringConstraints(strict=True, pattern=VERSION_PATTERN)] = (
-        importlib.metadata.version("docling-core")
+    version: Annotated[str, StringConstraints(strict=True, pattern=VERSION_PATTERN)] = importlib.metadata.version(
+        "docling-core"
     )
 
     def __hash__(self):

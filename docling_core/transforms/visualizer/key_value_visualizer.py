@@ -81,9 +81,7 @@ class KeyValueVisualizer(BaseVisualizer):
                 if cell.prov is None or cell.prov.page_no != page_no:
                     continue  # skip cells not on this page or without bbox
 
-                tl_bbox = cell.prov.bbox.to_top_left_origin(
-                    page_height=doc.pages[page_no].size.height
-                )
+                tl_bbox = cell.prov.bbox.to_top_left_origin(page_height=doc.pages[page_no].size.height)
                 x0, y0, x1, y1 = tl_bbox.as_tuple()
                 x0 *= scale_x
                 x1 *= scale_x
@@ -133,9 +131,7 @@ class KeyValueVisualizer(BaseVisualizer):
                     continue  # only draw if both ends are on this page
 
                 def _centre(bbox):
-                    tl = bbox.to_top_left_origin(
-                        page_height=doc.pages[page_no].size.height
-                    )
+                    tl = bbox.to_top_left_origin(page_height=doc.pages[page_no].size.height)
                     l, t, r, b = tl.as_tuple()
                     return ((l + r) / 2 * scale_x, (t + b) / 2 * scale_y)
 
@@ -162,9 +158,7 @@ class KeyValueVisualizer(BaseVisualizer):
                     tgt_xy[0] - ux * arrow_len + px * arrow_len / 2,
                     tgt_xy[1] - uy * arrow_len + py * arrow_len / 2,
                 )
-                draw.polygon(
-                    [tgt_xy, head_base_left, head_base_right], fill=_LINK_COLOUR
-                )
+                draw.polygon([tgt_xy, head_base_left, head_base_right], fill=_LINK_COLOUR)
 
     # ---------------------------------------------------------------------
     # Public API – BaseVisualizer implementation
@@ -180,9 +174,7 @@ class KeyValueVisualizer(BaseVisualizer):
     ) -> dict[Optional[int], Image]:
         """Return page‑wise images with key/value overlay (incl. base layer)."""
         base_images = (
-            self.base_visualizer.get_visualization(
-                doc=doc, included_content_layers=included_content_layers, **kwargs
-            )
+            self.base_visualizer.get_visualization(doc=doc, included_content_layers=included_content_layers, **kwargs)
             if self.base_visualizer
             else None
         )

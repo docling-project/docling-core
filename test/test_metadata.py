@@ -48,9 +48,7 @@ def test_metadata_usage() -> None:
 
     # add a custom metadata object to the item
     value = CustomCoordinates(longitude=47.3769, latitude=8.5417)
-    target_name = example_item.meta.set_custom_field(
-        namespace="my_corp", name="coords", value=value
-    )
+    target_name = example_item.meta.set_custom_field(namespace="my_corp", name="coords", value=value)
     assert target_name == "my_corp__coords"
 
     # save the document
@@ -96,42 +94,24 @@ def test_namespace_absence_raises():
 
 def _create_doc_with_group_with_metadata() -> DoclingDocument:
     doc = DoclingDocument(name="")
-    doc.body.meta = BaseMeta(
-        summary=SummaryMetaField(text="This document talks about various topics.")
-    )
+    doc.body.meta = BaseMeta(summary=SummaryMetaField(text="This document talks about various topics."))
     grp1 = doc.add_group(name="1", label=GroupLabel.CHAPTER)
-    grp1.meta = BaseMeta(
-        summary=SummaryMetaField(text="This chapter discusses foo and bar.")
-    )
-    doc.add_text(
-        text="This is some introductory text.", label=DocItemLabel.TEXT, parent=grp1
-    )
+    grp1.meta = BaseMeta(summary=SummaryMetaField(text="This chapter discusses foo and bar."))
+    doc.add_text(text="This is some introductory text.", label=DocItemLabel.TEXT, parent=grp1)
 
     grp1a = doc.add_group(parent=grp1, name="1a", label=GroupLabel.SECTION)
-    grp1a.meta = BaseMeta(
-        summary=SummaryMetaField(text="This section talks about foo.")
-    )
-    grp1a.meta.set_custom_field(
-        namespace="my_corp", name="test_1", value="custom field value 1"
-    )
+    grp1a.meta = BaseMeta(summary=SummaryMetaField(text="This section talks about foo."))
+    grp1a.meta.set_custom_field(namespace="my_corp", name="test_1", value="custom field value 1")
     txt1 = doc.add_text(text="Regarding foo...", label=DocItemLabel.TEXT, parent=grp1a)
-    txt1.meta = BaseMeta(
-        summary=SummaryMetaField(text="This paragraph provides more details about foo.")
-    )
+    txt1.meta = BaseMeta(summary=SummaryMetaField(text="This paragraph provides more details about foo."))
     lst1a = doc.add_list_group(parent=grp1a)
-    lst1a.meta = BaseMeta(
-        summary=SummaryMetaField(text="Here some foo specifics are listed.")
-    )
+    lst1a.meta = BaseMeta(summary=SummaryMetaField(text="Here some foo specifics are listed."))
     doc.add_list_item(text="lorem", parent=lst1a, enumerated=True)
     doc.add_list_item(text="ipsum", parent=lst1a, enumerated=True)
 
     grp1b = doc.add_group(parent=grp1, name="1b", label=GroupLabel.SECTION)
-    grp1b.meta = BaseMeta(
-        summary=SummaryMetaField(text="This section talks about bar.")
-    )
-    grp1b.meta.set_custom_field(
-        namespace="my_corp", name="test_2", value="custom field value 2"
-    )
+    grp1b.meta = BaseMeta(summary=SummaryMetaField(text="This section talks about bar."))
+    grp1b.meta.set_custom_field(namespace="my_corp", name="test_2", value="custom field value 2")
     doc.add_text(text="Regarding bar...", label=DocItemLabel.TEXT, parent=grp1b)
 
     return doc
@@ -266,15 +246,8 @@ def test_ser_custom_meta_serializer():
                 text="\n\n".join(
                     [
                         f"{'  ' * (level or 0)}[{item.self_ref}] [{item.__class__.__name__}:{item.label.value}] {tmp}"  # type:ignore[attr-defined]
-                        for key in (
-                            list(item.meta.__class__.model_fields)
-                            + list(item.meta.get_custom_part())
-                        )
-                        if (
-                            tmp := self._serialize_meta_field(
-                                item.meta, key, params.mark_meta
-                            )
-                        )
+                        for key in (list(item.meta.__class__.model_fields) + list(item.meta.get_custom_part()))
+                        if (tmp := self._serialize_meta_field(item.meta, key, params.mark_meta))
                     ]
                     if item.meta
                     else []
@@ -282,18 +255,10 @@ def test_ser_custom_meta_serializer():
                 span_source=item if isinstance(item, DocItem) else [],
             )
 
-        def _serialize_meta_field(
-            self, meta: BaseMeta, name: str, mark_meta: bool
-        ) -> Optional[str]:
-            if (field_val := getattr(meta, name)) is not None and isinstance(
-                field_val, SummaryMetaField
-            ):
+        def _serialize_meta_field(self, meta: BaseMeta, name: str, mark_meta: bool) -> Optional[str]:
+            if (field_val := getattr(meta, name)) is not None and isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
-                return (
-                    f"[{self._humanize_text(name, title=True)}] {txt}"
-                    if mark_meta
-                    else txt
-                )
+                return f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt
             else:
                 return None
 
@@ -303,9 +268,7 @@ def test_ser_custom_meta_serializer():
     params = MarkdownParams(
         include_non_meta=False,
     )
-    ser = MarkdownDocSerializer(
-        doc=doc, params=params, meta_serializer=SummaryMarkdownMetaSerializer()
-    )
+    ser = MarkdownDocSerializer(doc=doc, params=params, meta_serializer=SummaryMarkdownMetaSerializer())
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_summaries.md")

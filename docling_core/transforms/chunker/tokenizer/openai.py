@@ -8,8 +8,7 @@ try:
     import tiktoken
 except ImportError:
     raise RuntimeError(
-        "Module requires 'chunking-openai' extra; to install, run: "
-        "`pip install 'docling-core[chunking-openai]'`"
+        "Module requires 'chunking-openai' extra; to install, run: `pip install 'docling-core[chunking-openai]'`"
     )
 
 

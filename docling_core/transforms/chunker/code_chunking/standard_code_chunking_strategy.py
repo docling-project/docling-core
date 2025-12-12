@@ -77,9 +77,7 @@ class StandardCodeChunkingStrategy(BaseCodeChunkingStrategy):
 
         if chunker := self._get_chunker(item.code_language):
             doc = DoclingDocument(name="", origin=doc.origin)
-            doc.add_code(
-                text=code_text, code_language=item.code_language, orig=code_text
-            )
+            doc.add_code(text=code_text, code_language=item.code_language, orig=code_text)
             yield from chunker.chunk(doc, **kwargs)
         else:  # if no inner chunker available for language, fall back to yielding a single code block chunk
             yield CodeChunk(

@@ -74,9 +74,7 @@ class GroupLabel(str, Enum):
     """GroupLabel."""
 
     UNSPECIFIED = "unspecified"
-    LIST = (
-        "list"  # group label for list container (not the list-items) (e.g. HTML <ul/>)
-    )
+    LIST = "list"  # group label for list container (not the list-items) (e.g. HTML <ul/>)
     ORDERED_LIST = "ordered_list"  # deprecated
     CHAPTER = "chapter"
     SECTION = "section"

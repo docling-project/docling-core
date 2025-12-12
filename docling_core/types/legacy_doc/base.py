@@ -48,18 +48,14 @@ class S3Data(AliasModel):
     pdf_images: Optional[list[S3Resource]] = Field(default=None, alias="pdf-images")
     json_document: Optional[S3Resource] = Field(default=None, alias="json-document")
     json_meta: Optional[S3Resource] = Field(default=None, alias="json-meta")
-    glm_json_document: Optional[S3Resource] = Field(
-        default=None, alias="glm-json-document"
-    )
+    glm_json_document: Optional[S3Resource] = Field(default=None, alias="glm-json-document")
     figures: Optional[list[S3Resource]] = None
 
 
 class S3Reference(AliasModel):
     """References an s3 resource."""
 
-    ref_s3_data: StrictStr = Field(
-        alias="__ref_s3_data", examples=["#/_s3_data/figures/0"]
-    )
+    ref_s3_data: StrictStr = Field(alias="__ref_s3_data", examples=["#/_s3_data/figures/0"])
 
 
 class Prov(AliasModel):
@@ -84,9 +80,7 @@ class BitmapObject(AliasModel):
     """Bitmap object."""
 
     obj_type: str = Field(alias="type")
-    bounding_box: BoundingBoxContainer = Field(
-        json_schema_extra=es_field(suppress=True)
-    )
+    bounding_box: BoundingBoxContainer = Field(json_schema_extra=es_field(suppress=True))
     prov: Prov
 
 
@@ -111,31 +105,19 @@ class GlmTableCell(TableCell):
     """Glm Table cell."""
 
     col: Optional[int] = Field(default=None, json_schema_extra=es_field(suppress=True))
-    col_header: bool = Field(
-        default=False, alias="col-header", json_schema_extra=es_field(suppress=True)
-    )
-    col_span: Optional[Span] = Field(
-        default=None, alias="col-span", json_schema_extra=es_field(suppress=True)
-    )
+    col_header: bool = Field(default=False, alias="col-header", json_schema_extra=es_field(suppress=True))
+    col_span: Optional[Span] = Field(default=None, alias="col-span", json_schema_extra=es_field(suppress=True))
     row: Optional[int] = Field(default=None, json_schema_extra=es_field(suppress=True))
-    row_header: bool = Field(
-        default=False, alias="row-header", json_schema_extra=es_field(suppress=True)
-    )
-    row_span: Optional[Span] = Field(
-        default=None, alias="row-span", json_schema_extra=es_field(suppress=True)
-    )
+    row_header: bool = Field(default=False, alias="row-header", json_schema_extra=es_field(suppress=True))
+    row_span: Optional[Span] = Field(default=None, alias="row-span", json_schema_extra=es_field(suppress=True))
 
 
 class BaseCell(AliasModel):
     """Base cell."""
 
     prov: Optional[list[Prov]] = None
-    text: Optional[str] = Field(
-        default=None, json_schema_extra=es_field(term_vector="with_positions_offsets")
-    )
-    obj_type: str = Field(
-        alias="type", json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    text: Optional[str] = Field(default=None, json_schema_extra=es_field(term_vector="with_positions_offsets"))
+    obj_type: str = Field(alias="type", json_schema_extra=es_field(type="keyword", ignore_above=8191))
     payload: Optional[dict] = None
 
     def get_location_tokens(
@@ -337,11 +319,7 @@ class Table(BaseCell):
                             ysize=ysize,
                             page_i=self.prov[0].page,
                         )
-                    elif (
-                        col.bbox is not None
-                        and add_cell_location
-                        and not add_page_index
-                    ):
+                    elif col.bbox is not None and add_cell_location and not add_page_index:
                         cell_loc = DocumentToken.get_location(
                             bbox=col.bbox,
                             page_w=page_w,
@@ -352,11 +330,7 @@ class Table(BaseCell):
                         )
 
                     cell_label = ""
-                    if (
-                        add_cell_label
-                        and col.obj_type is not None
-                        and len(col.obj_type) > 0
-                    ):
+                    if add_cell_label and col.obj_type is not None and len(col.obj_type) > 0:
                         cell_label = f"<{col.obj_type}>"
 
                     body += f"<col_{j}>{cell_loc}{cell_label}{text}</col_{j}>"
@@ -417,9 +391,7 @@ class BaseText(BaseCell):
     """Base model for text objects."""
 
     # FIXME: do we need these ???
-    name: Optional[StrictStr] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    name: Optional[StrictStr] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
     font: Optional[str] = None
 
     def export_to_document_tokens(
@@ -436,9 +408,7 @@ class BaseText(BaseCell):
         """Export text element to document tokens format."""
         body = f"<{self.obj_type}>"
 
-        assert DocumentToken.is_known_token(body), (
-            f"failed DocumentToken.is_known_token({body})"
-        )
+        assert DocumentToken.is_known_token(body), f"failed DocumentToken.is_known_token({body})"
 
         if add_location:
             body += self.get_location_tokens(

@@ -213,8 +213,7 @@ def test_md_list_item_markers(sample_doc):
             )
             actual = ser.serialize().text
             verify(
-                root_dir
-                / f"constructed_mode_{str(mode.value).lower()}_valid_{str(valid).lower()}.gt.md",
+                root_dir / f"constructed_mode_{str(mode.value).lower()}_valid_{str(valid).lower()}.gt.md",
                 actual=actual,
             )
 
@@ -259,9 +258,7 @@ def test_md_legacy_annotations_mark_true(sample_doc):
     exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_true.gt.md")
     with pytest.warns(DeprecationWarning):
         sample_doc.tables[0].annotations.append(
-            DescriptionAnnotation(
-                text="This is a description of table 1.", provenance="foo"
-            )
+            DescriptionAnnotation(text="This is a description of table 1.", provenance="foo")
         )
         ser = MarkdownDocSerializer(
             doc=sample_doc,
@@ -280,9 +277,7 @@ def test_md_legacy_annotations_mark_false(sample_doc):
     exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_false.gt.md")
     with pytest.warns(DeprecationWarning):
         sample_doc.tables[0].annotations.append(
-            DescriptionAnnotation(
-                text="This is a description of table 1.", provenance="foo"
-            )
+            DescriptionAnnotation(text="This is a description of table 1.", provenance="foo")
         )
         ser = MarkdownDocSerializer(
             doc=sample_doc,

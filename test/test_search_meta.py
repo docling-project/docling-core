@@ -12,9 +12,7 @@ from docling_core.search.meta import Meta
 def test_meta():
     """Validate data with Meta schema."""
     taxonomy = Literal["Public", "PI"]
-    domain = Literal[
-        "Science", "Technology", "History", "Art", "Literature", "Geography"
-    ]
+    domain = Literal["Science", "Technology", "History", "Art", "Literature", "Geography"]
 
     for filename in glob.glob("test/data/search/meta-*.json"):
         try:

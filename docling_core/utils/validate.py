@@ -17,13 +17,9 @@ def parse_arguments():
     """Parse the arguments from the command line."""
     argparser = argparse.ArgumentParser(description="validate example-file with schema")
 
-    argparser.add_argument(
-        "-f", "--format", required=True, help="format of the file [RAW, ANN, OCR]"
-    )
+    argparser.add_argument("-f", "--format", required=True, help="format of the file [RAW, ANN, OCR]")
 
-    argparser.add_argument(
-        "-i", "--input-file", required=True, help="JSON filename to be validated"
-    )
+    argparser.add_argument("-i", "--input-file", required=True, help="JSON filename to be validated")
 
     pargs = argparser.parse_args()
 

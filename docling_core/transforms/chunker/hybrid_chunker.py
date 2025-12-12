@@ -42,9 +42,7 @@ def _get_default_tokenizer():
         HuggingFaceTokenizer,
     )
 
-    return HuggingFaceTokenizer.from_pretrained(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
 class HybridChunker(BaseChunker):
@@ -93,12 +91,8 @@ class HybridChunker(BaseChunker):
                         model_name=tokenizer,
                         max_tokens=max_tokens,
                     )
-                elif tokenizer is None or isinstance(
-                    tokenizer, PreTrainedTokenizerBase
-                ):
-                    kwargs = {
-                        "tokenizer": tokenizer or _get_default_tokenizer().tokenizer
-                    }
+                elif tokenizer is None or isinstance(tokenizer, PreTrainedTokenizerBase):
+                    kwargs = {"tokenizer": tokenizer or _get_default_tokenizer().tokenizer}
                     if max_tokens is not None:
                         kwargs["max_tokens"] = max_tokens
                     data["tokenizer"] = HuggingFaceTokenizer(**kwargs)
@@ -174,9 +168,7 @@ class HybridChunker(BaseChunker):
         new_chunk = DocChunk(text=window_text, meta=meta)
         return new_chunk
 
-    def _split_by_doc_items(
-        self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer
-    ) -> list[DocChunk]:
+    def _split_by_doc_items(self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer) -> list[DocChunk]:
         chunks = []
         window_start = 0
         window_end = 0  # an inclusive index
@@ -230,9 +222,7 @@ class HybridChunker(BaseChunker):
             # How much room is there for text after subtracting out the headers and
             # captions:
             available_length = self.max_tokens - lengths.other_len
-            sem_chunker = semchunk.chunkerify(
-                self.tokenizer.get_tokenizer(), chunk_size=available_length
-            )
+            sem_chunker = semchunk.chunkerify(self.tokenizer.get_tokenizer(), chunk_size=available_length)
             if available_length <= 0:
                 warnings.warn(
                     "Headers and captions for this chunk are longer than the total "
@@ -273,10 +263,7 @@ class HybridChunker(BaseChunker):
                         origin=chunk.meta.origin,
                     ),
                 )
-                if (
-                    headings == current_headings
-                    and self._count_chunk_tokens(doc_chunk=candidate) <= self.max_tokens
-                ):
+                if headings == current_headings and self._count_chunk_tokens(doc_chunk=candidate) <= self.max_tokens:
                     # there is room to include the new chunk so add it to the window and
                     # continue
                     window_end += 1
@@ -317,11 +304,7 @@ class HybridChunker(BaseChunker):
             doc_serializer=my_doc_ser,
             **kwargs,
         )  # type: ignore
-        res = [
-            x
-            for c in res
-            for x in self._split_by_doc_items(c, doc_serializer=my_doc_ser)
-        ]
+        res = [x for c in res for x in self._split_by_doc_items(c, doc_serializer=my_doc_ser)]
         res = [x for c in res for x in self._split_using_plain_text(c)]
         if self.merge_peers:
             res = self._merge_chunks_with_matching_metadata(res)

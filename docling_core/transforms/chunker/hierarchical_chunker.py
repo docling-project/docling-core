@@ -165,8 +165,7 @@ class HierarchicalChunker(BaseChunker):
                 if (
                     keys_to_del
                     and self.always_emit_headings
-                    and (leaf_ref := heading_by_level[sorted_keys[-1]].self_ref)
-                    not in heading_emitted
+                    and (leaf_ref := heading_by_level[sorted_keys[-1]].self_ref) not in heading_emitted
                 ):
                     yield DocChunk(
                         text="",
@@ -185,13 +184,8 @@ class HierarchicalChunker(BaseChunker):
                 heading_by_level[level] = item
 
                 continue
-            elif (
-                isinstance(item, (ListGroup, InlineGroup, DocItem))
-                and item.self_ref not in visited
-            ):
-                if self.code_chunking_strategy is not None and isinstance(
-                    item, CodeItem
-                ):
+            elif isinstance(item, (ListGroup, InlineGroup, DocItem)) and item.self_ref not in visited:
+                if self.code_chunking_strategy is not None and isinstance(item, CodeItem):
                     yield from self.code_chunking_strategy.chunk_code_item(
                         item=item,
                         doc=dl_doc,
@@ -227,10 +221,7 @@ class HierarchicalChunker(BaseChunker):
         if (
             self.always_emit_headings
             and (sorted_keys := sorted(heading_by_level))
-            and (
-                (leaf_ref := heading_by_level[sorted_keys[-1]].self_ref)
-                not in heading_emitted
-            )
+            and ((leaf_ref := heading_by_level[sorted_keys[-1]].self_ref) not in heading_emitted)
         ):
             yield DocChunk(
                 text="",

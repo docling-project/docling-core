@@ -62,14 +62,10 @@ class TableVisualizer(BaseVisualizer):
                 cell_color = self.params.cell_color  # Transparent black for cells
                 cell_outline = self.params.cell_outline
                 if cell.column_header:
-                    cell_color = (
-                        self.params.col_header_color
-                    )  # Transparent black for cells
+                    cell_color = self.params.col_header_color  # Transparent black for cells
                     cell_outline = self.params.col_header_outline
                 if cell.row_header:
-                    cell_color = (
-                        self.params.row_header_color
-                    )  # Transparent black for cells
+                    cell_color = self.params.row_header_color  # Transparent black for cells
                     cell_outline = self.params.row_header_outline
                 if cell.row_section:
                     cell_color = self.params.row_header_color
@@ -168,9 +164,7 @@ class TableVisualizer(BaseVisualizer):
                 image = deepcopy(pil_img)
                 my_images[page_nr] = image
 
-        for idx, (elem, _) in enumerate(
-            doc.iterate_items(included_content_layers=included_content_layers)
-        ):
+        for idx, (elem, _) in enumerate(doc.iterate_items(included_content_layers=included_content_layers)):
             if not isinstance(elem, TableItem):
                 continue
             if len(elem.prov) == 0:
@@ -225,11 +219,7 @@ class TableVisualizer(BaseVisualizer):
         **kwargs,
     ) -> dict[Optional[int], Image]:
         """Get visualization of the document as images by page."""
-        base_images = (
-            self.base_visualizer.get_visualization(doc=doc, **kwargs)
-            if self.base_visualizer
-            else None
-        )
+        base_images = self.base_visualizer.get_visualization(doc=doc, **kwargs) if self.base_visualizer else None
         return self._draw_doc_tables(
             doc=doc,
             images=base_images,
