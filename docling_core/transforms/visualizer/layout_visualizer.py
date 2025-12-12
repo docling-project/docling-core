@@ -45,9 +45,7 @@ class LayoutVisualizer(BaseVisualizer):
     base_visualizer: Optional[BaseVisualizer] = None
     params: Params = Params()
 
-    def _draw_clusters(
-        self, image: Image, clusters: list[_TLCluster], scale_x: float, scale_y: float
-    ) -> None:
+    def _draw_clusters(self, image: Image, clusters: list[_TLCluster], scale_x: float, scale_y: float) -> None:
         """Draw clusters on an image."""
         draw = ImageDraw.Draw(image, "RGBA")
         # Create a smaller font for the labels
@@ -148,9 +146,7 @@ class LayoutVisualizer(BaseVisualizer):
         prev_image = None
         prev_page_nr = None
         for idx, (elem, _) in enumerate(
-            doc.iterate_items(
-                included_content_layers=included_content_layers, traverse_pictures=True
-            )
+            doc.iterate_items(included_content_layers=included_content_layers, traverse_pictures=True)
         ):
             if not isinstance(elem, DocItem):
                 continue
@@ -171,16 +167,12 @@ class LayoutVisualizer(BaseVisualizer):
                         self._draw_clusters(
                             image=prev_image,
                             clusters=clusters,
-                            scale_x=prev_image.width
-                            / doc.pages[prev_page_nr].size.width,
-                            scale_y=prev_image.height
-                            / doc.pages[prev_page_nr].size.height,
+                            scale_x=prev_image.width / doc.pages[prev_page_nr].size.width,
+                            scale_y=prev_image.height / doc.pages[prev_page_nr].size.height,
                         )
                         clusters = []
 
-                tlo_bbox = prov.bbox.to_top_left_origin(
-                    page_height=doc.pages[prov.page_no].size.height
-                )
+                tlo_bbox = prov.bbox.to_top_left_origin(page_height=doc.pages[prov.page_no].size.height)
                 cluster = _TLCluster(
                     id=idx,
                     label=elem.label,
@@ -211,11 +203,7 @@ class LayoutVisualizer(BaseVisualizer):
         **kwargs,
     ) -> dict[Optional[int], Image]:
         """Get visualization of the document as images by page."""
-        base_images = (
-            self.base_visualizer.get_visualization(doc=doc, **kwargs)
-            if self.base_visualizer
-            else None
-        )
+        base_images = self.base_visualizer.get_visualization(doc=doc, **kwargs) if self.base_visualizer else None
         return self._draw_doc_layout(
             doc=doc,
             images=base_images,

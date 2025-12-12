@@ -77,14 +77,7 @@ class BaseChunker(BaseModel, ABC):
         for k in meta:
             if k not in chunk.meta.excluded_embed:
                 if isinstance(meta[k], list):
-                    items.append(
-                        self.delim.join(
-                            [
-                                d if isinstance(d, str) else json.dumps(d)
-                                for d in meta[k]
-                            ]
-                        )
-                    )
+                    items.append(self.delim.join([d if isinstance(d, str) else json.dumps(d) for d in meta[k]]))
                 else:
                     items.append(json.dumps(meta[k]))
         items.append(chunk.text)

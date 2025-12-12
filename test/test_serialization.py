@@ -43,7 +43,7 @@ def verify(exp_file: Path, actual: str):
 
         # Normalize platform-dependent quote escaping for DocTags outputs
         name = exp_file.name
-        if name.endswith(".dt") or name.endswith(".idt.xml"):
+        if name.endswith((".dt", ".idt.xml")):
 
             def _normalize_quotes(s: str) -> str:
                 return s.replace("&quot;", '"').replace("&#34;", '"')
@@ -209,7 +209,6 @@ def test_md_list_item_markers(sample_doc):
     root_dir = Path("./test/data/doc")
     for mode in OrigListItemMarkerMode:
         for valid in [False, True]:
-
             ser = MarkdownDocSerializer(
                 doc=sample_doc,
                 params=MarkdownParams(
@@ -219,8 +218,7 @@ def test_md_list_item_markers(sample_doc):
             )
             actual = ser.serialize().text
             verify(
-                root_dir
-                / f"constructed_mode_{str(mode.value).lower()}_valid_{str(valid).lower()}.gt.md",
+                root_dir / f"constructed_mode_{str(mode.value).lower()}_valid_{str(valid).lower()}.gt.md",
                 actual=actual,
             )
 
@@ -265,9 +263,7 @@ def test_md_legacy_annotations_mark_true(sample_doc):
     exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_true.gt.md")
     with pytest.warns(DeprecationWarning):
         sample_doc.tables[0].annotations.append(
-            DescriptionAnnotation(
-                text="This is a description of table 1.", provenance="foo"
-            )
+            DescriptionAnnotation(text="This is a description of table 1.", provenance="foo")
         )
         ser = MarkdownDocSerializer(
             doc=sample_doc,
@@ -286,9 +282,7 @@ def test_md_legacy_annotations_mark_false(sample_doc):
     exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_false.gt.md")
     with pytest.warns(DeprecationWarning):
         sample_doc.tables[0].annotations.append(
-            DescriptionAnnotation(
-                text="This is a description of table 1.", provenance="foo"
-            )
+            DescriptionAnnotation(text="This is a description of table 1.", provenance="foo")
         )
         ser = MarkdownDocSerializer(
             doc=sample_doc,
@@ -521,7 +515,6 @@ def test_html_include_annotations_true():
 def test_html_list_item_markers(sample_doc):
     root_dir = Path("./test/data/doc")
     for orig in [False, True]:
-
         ser = HTMLDocSerializer(
             doc=sample_doc,
             params=HTMLParams(

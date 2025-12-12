@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterator, Optional
+from typing import Any, Iterator
 
 from pydantic import ConfigDict, Field
 from typing_extensions import Annotated, override
@@ -66,7 +66,6 @@ class TripletTableSerializer(BaseTableSerializer):
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             table_df = item.export_to_dataframe(doc)
             if table_df.shape[0] >= 1 and table_df.shape[1] >= 2:
-
                 # copy header as first row and shift all rows by one
                 table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
                 table_df.index = table_df.index + 1
@@ -126,7 +125,7 @@ class HierarchicalChunker(BaseChunker):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
-    code_chunking_strategy: Optional[BaseCodeChunkingStrategy] = Field(default=None)
+    code_chunking_strategy: BaseCodeChunkingStrategy | None = Field(default=None)
 
     # deprecated:
     merge_list_items: Annotated[bool, Field(deprecated=True)] = True
@@ -161,13 +160,8 @@ class HierarchicalChunker(BaseChunker):
                 for k in keys_to_del:
                     heading_by_level.pop(k, None)
                 continue
-            elif (
-                isinstance(item, (ListGroup, InlineGroup, DocItem))
-                and item.self_ref not in visited
-            ):
-                if self.code_chunking_strategy is not None and isinstance(
-                    item, CodeItem
-                ):
+            elif isinstance(item, (ListGroup, InlineGroup, DocItem)) and item.self_ref not in visited:
+                if self.code_chunking_strategy is not None and isinstance(item, CodeItem):
                     yield from self.code_chunking_strategy.chunk_code_item(
                         item=item,
                         doc=dl_doc,
@@ -188,8 +182,7 @@ class HierarchicalChunker(BaseChunker):
                     text=ser_res.text,
                     meta=DocMeta(
                         doc_items=doc_items,
-                        headings=[heading_by_level[k] for k in sorted(heading_by_level)]
-                        or None,
+                        headings=[heading_by_level[k] for k in sorted(heading_by_level)] or None,
                         origin=dl_doc.origin,
                     ),
                 )

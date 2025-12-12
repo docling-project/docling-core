@@ -53,9 +53,7 @@ def relative_path(src: Path, target: Path) -> Path:
     return Path(*up_segments, *down_segments)
 
 
-def get_html_tag_with_text_direction(
-    html_tag: str, text: str, attrs: Optional[dict] = None
-) -> str:
+def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: Optional[dict] = None) -> str:
     """Form the HTML element with tag, text, and optional dir attribute."""
     my_attrs = attrs or {}
     if (dir := my_attrs.get("dir")) is not None and dir != "ltr":
@@ -63,10 +61,7 @@ def get_html_tag_with_text_direction(
     pieces: list[str] = [html_tag]
     if my_attrs:
         attrs_str = " ".join(
-            [
-                f'{html.escape(k, quote=False)}="{html.escape(my_attrs[k], quote=False)}"'
-                for k in my_attrs
-            ]
+            [f'{html.escape(k, quote=False)}="{html.escape(my_attrs[k], quote=False)}"' for k in my_attrs]
         )
         pieces.append(attrs_str)
     return f"<{' '.join(pieces)}>{text}</{html_tag}>"
@@ -80,12 +75,7 @@ def get_text_direction(text: str) -> str:
     rtl_scripts = {"R", "AL"}
     rtl_chars = sum(unicodedata.bidirectional(c) in rtl_scripts for c in text)
 
-    return (
-        "rtl"
-        if unicodedata.bidirectional(text[0]) in rtl_scripts
-        or rtl_chars > len(text) / 2
-        else "ltr"
-    )
+    return "rtl" if unicodedata.bidirectional(text[0]) in rtl_scripts or rtl_chars > len(text) / 2 else "ltr"
 
 
 def otsl_extract_tokens_and_text(s: str) -> Tuple[List[str], List[str]]:
@@ -128,9 +118,7 @@ def otsl_extract_tokens_and_text(s: str) -> Tuple[List[str], List[str]]:
     return tokens, text_parts
 
 
-def otsl_parse_texts(
-    texts: List[str], tokens: List[str]
-) -> Tuple[List["TableCell"], List[List[str]]]:
+def otsl_parse_texts(texts: List[str], tokens: List[str]) -> Tuple[List["TableCell"], List[List[str]]]:
     """Parse OTSL texts and tokens into table cells."""
     from docling_core.types.doc.document import TableCell
 
@@ -151,19 +139,13 @@ def otsl_parse_texts(
         ]:
             clean_tokens.append(t)
     tokens = clean_tokens
-    split_row_tokens = [
-        list(y)
-        for x, y in itertools.groupby(tokens, lambda z: z == split_word)
-        if not x
-    ]
+    split_row_tokens = [list(y) for x, y in itertools.groupby(tokens, lambda z: z == split_word) if not x]
 
     table_cells = []
     r_idx = 0
     c_idx = 0
 
-    def count_right(
-        tokens: List[List[str]], c_idx: int, r_idx: int, which_tokens: List[str]
-    ) -> int:
+    def count_right(tokens: List[List[str]], c_idx: int, r_idx: int, which_tokens: List[str]) -> int:
         span = 0
         c_idx_iter = c_idx
         while tokens[r_idx][c_idx_iter] in which_tokens:
@@ -173,9 +155,7 @@ def otsl_parse_texts(
                 return span
         return span
 
-    def count_down(
-        tokens: List[List[str]], c_idx: int, r_idx: int, which_tokens: List[str]
-    ) -> int:
+    def count_down(tokens: List[List[str]], c_idx: int, r_idx: int, which_tokens: List[str]) -> int:
         span = 0
         r_idx_iter = r_idx
         while tokens[r_idx_iter][c_idx] in which_tokens:

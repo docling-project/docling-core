@@ -147,7 +147,7 @@ class IDocTagsToken(str, Enum):
 
         if include_location_tokens:
             # Adding dynamically generated location-tokens
-            for i in range(0, max(page_dimension[0], page_dimension[1])):
+            for i in range(max(page_dimension[0], page_dimension[1])):
                 special_tokens.append(f"<{IDocTagsToken._LOC_PREFIX.value}{i}/>")
 
         return special_tokens
@@ -294,11 +294,7 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
             # as siblings at the same level (not wrapped in <list_item>).
             for subref in child.children:
                 sub = subref.resolve(doc)
-                if (
-                    isinstance(sub, ListGroup)
-                    and sub.self_ref not in my_visited
-                    and sub.self_ref not in excluded
-                ):
+                if isinstance(sub, ListGroup) and sub.self_ref not in my_visited and sub.self_ref not in excluded:
                     my_visited.add(sub.self_ref)
                     sub_res = doc_serializer.serialize(
                         item=sub,
@@ -343,15 +339,9 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
         texts = (
             [
                 tmp
-                for key in (
-                    list(item.meta.__class__.model_fields)
-                    + list(item.meta.get_custom_part())
-                )
+                for key in (list(item.meta.__class__.model_fields) + list(item.meta.get_custom_part()))
                 if (
-                    (
-                        params.allowed_meta_names is None
-                        or key in params.allowed_meta_names
-                    )
+                    (params.allowed_meta_names is None or key in params.allowed_meta_names)
                     and (key not in params.blocked_meta_names)
                     and (tmp := self._serialize_meta_field(item.meta, key))
                 )
@@ -369,28 +359,16 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
 
     def _serialize_meta_field(self, meta: BaseMeta, name: str) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
-            if name == MetaFieldName.SUMMARY and isinstance(
-                field_val, SummaryMetaField
-            ):
+            if name == MetaFieldName.SUMMARY and isinstance(field_val, SummaryMetaField):
                 txt = f"<summary>{field_val.text}</summary>"
-            elif name == MetaFieldName.DESCRIPTION and isinstance(
-                field_val, DescriptionMetaField
-            ):
+            elif name == MetaFieldName.DESCRIPTION and isinstance(field_val, DescriptionMetaField):
                 txt = f"<description>{field_val.text}</description>"
-            elif name == MetaFieldName.CLASSIFICATION and isinstance(
-                field_val, PictureClassificationMetaField
-            ):
-                class_name = self._humanize_text(
-                    field_val.get_main_prediction().class_name
-                )
+            elif name == MetaFieldName.CLASSIFICATION and isinstance(field_val, PictureClassificationMetaField):
+                class_name = self._humanize_text(field_val.get_main_prediction().class_name)
                 txt = f"<classification>{class_name}</classification>"
-            elif name == MetaFieldName.MOLECULE and isinstance(
-                field_val, MoleculeMetaField
-            ):
+            elif name == MetaFieldName.MOLECULE and isinstance(field_val, MoleculeMetaField):
                 txt = f"<molecule>{field_val.smi}</molecule>"
-            elif name == MetaFieldName.TABULAR_CHART and isinstance(
-                field_val, TabularChartMetaField
-            ):
+            elif name == MetaFieldName.TABULAR_CHART and isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
                 return None
             # elif tmp := str(field_val or ""):
@@ -419,7 +397,6 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
         is_chart = False
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-
             if item.meta:
                 meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
                 if meta_res.text:
@@ -508,12 +485,8 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
 
         text_res = tmp
 
-        if self.params.pretty_indentation and (
-            my_root := parseString(text_res).documentElement
-        ):
+        if self.params.pretty_indentation and (my_root := parseString(text_res).documentElement):
             text_res = my_root.toprettyxml(indent=self.params.pretty_indentation)
-            text_res = "\n".join(
-                [line for line in text_res.split("\n") if line.strip()]
-            )
+            text_res = "\n".join([line for line in text_res.split("\n") if line.strip()])
 
         return create_ser_result(text=text_res, span_source=parts)
