@@ -1,0 +1,250 @@
+<doctag version="1.0.0">
+  <text>
+    <location value="172" resolution="512"/>
+    <location value="24" resolution="512"/>
+    <location value="355" resolution="512"/>
+    <location value="31" resolution="512"/>
+    ndbinfo_select_all - Select From ndbinfo Tables
+  </text>
+  <floating_group class="table">
+    <otsl>
+      <location value="93" resolution="512"/>
+      <location value="47" resolution="512"/>
+      <location value="482" resolution="512"/>
+      <location value="79" resolution="512"/>
+      <rhed/>
+      Default Value
+      <fcel/>
+      1
+      <nl/>
+      <rhed/>
+      Minimum Value
+      <fcel/>
+      0
+      <nl/>
+      <rhed/>
+      Maximum Value
+      <fcel/>
+      MAX_INT
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="94" resolution="512"/>
+    <location value="87" resolution="512"/>
+    <location value="479" resolution="512"/>
+    <location value="94" resolution="512"/>
+    This option sets the number of times to execute the select. Use  --delay  to set the time between loops.
+  </text>
+  <list ordered="false">
+    <list_text>
+      <location value="86" resolution="512"/>
+      <location value="101" resolution="512"/>
+      <location value="189" resolution="512"/>
+      <location value="108" resolution="512"/>
+      • --ndb-connectstring
+    </list_text>
+  </list>
+  <floating_group class="table">
+    <otsl>
+      <location value="93" resolution="512"/>
+      <location value="121" resolution="512"/>
+      <location value="482" resolution="512"/>
+      <location value="153" resolution="512"/>
+      <rhed/>
+      Command-Line Format
+      <fcel/>
+      --ndb-connectstring=connection-string
+      <nl/>
+      <rhed/>
+      Type
+      <fcel/>
+      String
+      <nl/>
+      <rhed/>
+      Default Value
+      <fcel/>
+      [none]
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="94" resolution="512"/>
+    <location value="161" resolution="512"/>
+    <location value="478" resolution="512"/>
+    <location value="176" resolution="512"/>
+    Set connect string for connecting to ndb_mgmd. Syntax: &quot;[nodeid=id;][host=]hostname[:port]&quot;. Overrides entries in NDB_CONNECTSTRING and my.cnf.
+  </text>
+  <list ordered="false">
+    <list_text>
+      <location value="86" resolution="512"/>
+      <location value="184" resolution="512"/>
+      <location value="169" resolution="512"/>
+      <location value="190" resolution="512"/>
+      • --ndb-mgmd-host
+    </list_text>
+  </list>
+  <floating_group class="table">
+    <otsl>
+      <location value="93" resolution="512"/>
+      <location value="203" resolution="512"/>
+      <location value="482" resolution="512"/>
+      <location value="236" resolution="512"/>
+      <rhed/>
+      Command-Line Format
+      <fcel/>
+      --ndb-mgmd-host=connection-string
+      <nl/>
+      <rhed/>
+      Type
+      <fcel/>
+      String
+      <nl/>
+      <rhed/>
+      Default Value
+      <fcel/>
+      [none]
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="94" resolution="512"/>
+    <location value="244" resolution="512"/>
+    <location value="227" resolution="512"/>
+    <location value="251" resolution="512"/>
+    Same as  --ndb-connectstring .
+  </text>
+  <list ordered="false">
+    <list_text>
+      <location value="85" resolution="512"/>
+      <location value="259" resolution="512"/>
+      <location value="154" resolution="512"/>
+      <location value="263" resolution="512"/>
+      • --ndb-nodeid
+    </list_text>
+  </list>
+  <floating_group class="table">
+    <otsl>
+      <location value="93" resolution="512"/>
+      <location value="278" resolution="512"/>
+      <location value="482" resolution="512"/>
+      <location value="310" resolution="512"/>
+      <rhed/>
+      Command-Line Format
+      <fcel/>
+      --ndb-nodeid=#
+      <nl/>
+      <rhed/>
+      Type
+      <fcel/>
+      Integer
+      <nl/>
+      <rhed/>
+      Default Value
+      <fcel/>
+      [none]
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="94" resolution="512"/>
+    <location value="319" resolution="512"/>
+    <location value="355" resolution="512"/>
+    <location value="325" resolution="512"/>
+    Set node ID for this node, overriding any ID set by --ndb-connectstring.
+  </text>
+  <list ordered="false">
+    <list_text>
+      <location value="86" resolution="512"/>
+      <location value="333" resolution="512"/>
+      <location value="245" resolution="512"/>
+      <location value="338" resolution="512"/>
+      • --ndb-optimized-node-selection
+    </list_text>
+  </list>
+  <floating_group class="table">
+    <otsl>
+      <location value="94" resolution="512"/>
+      <location value="353" resolution="512"/>
+      <location value="483" resolution="512"/>
+      <location value="363" resolution="512"/>
+      <rhed/>
+      Command-Line Format
+      <fcel/>
+      --ndb-optimized-node-selection
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="94" resolution="512"/>
+    <location value="372" resolution="512"/>
+    <location value="461" resolution="512"/>
+    <location value="386" resolution="512"/>
+    Enable optimizations for selection of nodes for transactions. Enabled by default; use  --skip-ndb- optimized-node-selection  to disable.
+  </text>
+  <list ordered="false">
+    <list_text>
+      <location value="85" resolution="512"/>
+      <location value="394" resolution="512"/>
+      <location value="158" resolution="512"/>
+      <location value="399" resolution="512"/>
+      • --no-defaults
+    </list_text>
+  </list>
+  <floating_group class="table">
+    <otsl>
+      <location value="93" resolution="512"/>
+      <location value="414" resolution="512"/>
+      <location value="482" resolution="512"/>
+      <location value="425" resolution="512"/>
+      <rhed/>
+      Command-Line Format
+      <fcel/>
+      --no-defaults
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="94" resolution="512"/>
+    <location value="433" resolution="512"/>
+    <location value="342" resolution="512"/>
+    <location value="439" resolution="512"/>
+    Do not read default options from any option file other than login file.
+  </text>
+  <list ordered="false">
+    <list_text>
+      <location value="86" resolution="512"/>
+      <location value="448" resolution="512"/>
+      <location value="173" resolution="512"/>
+      <location value="454" resolution="512"/>
+      • --print-defaults
+    </list_text>
+  </list>
+  <floating_group class="table">
+    <otsl>
+      <location value="94" resolution="512"/>
+      <location value="467" resolution="512"/>
+      <location value="482" resolution="512"/>
+      <location value="478" resolution="512"/>
+      <rhed/>
+      Command-Line Format
+      <fcel/>
+      --print-defaults
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="94" resolution="512"/>
+    <location value="486" resolution="512"/>
+    <location value="228" resolution="512"/>
+    <location value="493" resolution="512"/>
+    Print program argument list and exit.
+  </text>
+  <text>
+    <location value="463" resolution="512"/>
+    <location value="482" resolution="512"/>
+    <location value="482" resolution="512"/>
+    <location value="487" resolution="512"/>
+    4253
+  </text>
+</doctag>

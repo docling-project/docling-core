@@ -1,34 +1,43 @@
 """Define classes for DocTags serialization."""
 
+import re
 from enum import Enum
-from typing import Any, Final, Optional, Tuple
-from xml.dom.minidom import parseString
+from typing import Any, ClassVar, Final, Optional, cast
+from xml.dom.minidom import Element, parseString
 
 from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
+    BaseAnnotationSerializer,
     BaseDocSerializer,
+    BaseFallbackSerializer,
+    BaseFormSerializer,
+    BaseInlineSerializer,
+    BaseKeyValueSerializer,
     BaseListSerializer,
     BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
+    BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.transforms.serializer.common import create_ser_result
-from docling_core.transforms.serializer.doctags import (
-    DocTagsDocSerializer,
-    DocTagsParams,
-    DocTagsPictureSerializer,
-    DocTagsTableSerializer,
-    _get_delim,
-    _wrap,
+from docling_core.transforms.serializer.common import (
+    CommonParams,
+    DocSerializer,
+    create_ser_result,
 )
 from docling_core.types.doc import (
     BaseMeta,
+    BoundingBox,
+    CodeItem,
     DescriptionMetaField,
     DocItem,
     DoclingDocument,
+    FloatingItem,
+    FormItem,
+    InlineGroup,
+    KeyValueItem,
     ListGroup,
     ListItem,
     MetaFieldName,
@@ -36,164 +45,758 @@ from docling_core.types.doc import (
     NodeItem,
     PictureClassificationMetaField,
     PictureItem,
+    PictureMeta,
+    ProvenanceItem,
+    SectionHeaderItem,
+    Size,
     SummaryMetaField,
     TableData,
+    TableItem,
     TabularChartMetaField,
+    TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
-from docling_core.types.doc.tokens import (
-    _CodeLanguageToken,
-    _PictureClassificationToken,
-)
+from docling_core.types.doc.base import CoordOrigin
+from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
+from docling_core.types.doc.utils import parse_otsl_table_content
+
+# Note: Intentionally avoid importing DocumentToken here to ensure
+# IDocTags uses only its own token vocabulary.
 
 DOCTAGS_VERSION: Final = "1.0.0"
+DOCTAGS_RESOLUTION: int = 512
 
 
-class IDocTagsTableToken(str, Enum):
-    """Class to represent an LLM friendly representation of a Table."""
+def _wrap(text: str, wrap_tag: str) -> str:
+    return f"<{wrap_tag}>{text}</{wrap_tag}>"
 
-    CELL_LABEL_COLUMN_HEADER = "<column_header/>"
-    CELL_LABEL_ROW_HEADER = "<row_header/>"
-    CELL_LABEL_SECTION_HEADER = "<shed/>"
-    CELL_LABEL_DATA = "<data/>"
 
-    OTSL_ECEL = "<ecel/>"  # empty cell
-    OTSL_FCEL = "<fcel/>"  # cell with content
-    OTSL_LCEL = "<lcel/>"  # left looking cell,
-    OTSL_UCEL = "<ucel/>"  # up looking cell,
-    OTSL_XCEL = "<xcel/>"  # 2d extension cell (cross cell),
-    OTSL_NL = "<nl/>"  # new line,
-    OTSL_CHED = "<ched/>"  # - column header cell,
-    OTSL_RHED = "<rhed/>"  # - row header cell,
-    OTSL_SROW = "<srow/>"  # - section row cell
+def _wrap_token(*, text: str, open_token: str) -> str:
+    close_token = IDocTagsVocabulary.create_closing_token(token=open_token)
+    return f"{open_token}{text}{close_token}"
 
-    @classmethod
-    def get_special_tokens(
-        cls,
-    ):
-        """Return all table-related special tokens.
 
-        Includes the opening/closing OTSL tags and each enum token value.
-        """
-        special_tokens: list[str] = ["<otsl>", "</otsl>"]
-        for token in cls:
-            special_tokens.append(f"{token.value}")
+def _quantize_to_resolution(value: float, resolution: int) -> int:
+    """Quantize normalized value in [0,1] to [0,resolution]."""
+    n = int(round(resolution * value))
+    if n < 0:
+        return 0
+    if n > resolution:
+        return resolution
+    return n
 
-        return special_tokens
+
+def _create_location_tokens_for_bbox(
+    *,
+    bbox: tuple[float, float, float, float],
+    page_w: float,
+    page_h: float,
+    xres: int,
+    yres: int,
+) -> str:
+    """Create four `<location .../>` tokens for x0,y0,x1,y1 given a bbox."""
+    x0 = bbox[0] / page_w
+    y0 = bbox[1] / page_h
+    x1 = bbox[2] / page_w
+    y1 = bbox[3] / page_h
+
+    x0v = _quantize_to_resolution(min(x0, x1), xres)
+    y0v = _quantize_to_resolution(min(y0, y1), yres)
+    x1v = _quantize_to_resolution(max(x0, x1), xres)
+    y1v = _quantize_to_resolution(max(y0, y1), yres)
+
+    return (
+        IDocTagsVocabulary.create_location_token(value=x0v, resolution=xres)
+        + IDocTagsVocabulary.create_location_token(value=y0v, resolution=yres)
+        + IDocTagsVocabulary.create_location_token(value=x1v, resolution=xres)
+        + IDocTagsVocabulary.create_location_token(value=y1v, resolution=yres)
+    )
+
+
+def _create_location_tokens_for_item(
+    *, item: "DocItem", doc: "DoclingDocument", xres: int = 512, yres: int = 512
+) -> str:
+    """Create concatenated `<location .../>` tokens for an item's provenance."""
+    if not getattr(item, "prov", None):
+        return ""
+    out: list[str] = []
+    for prov in item.prov:
+        page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
+        bbox = prov.bbox.to_top_left_origin(page_h).as_tuple()
+        out.append(
+            _create_location_tokens_for_bbox(
+                bbox=bbox, page_w=page_w, page_h=page_h, xres=xres, yres=yres
+            )
+        )
+    return "".join(out)
+
+
+class IDocTagsCategory(str, Enum):
+    """IDocTagsCtegory.
+
+    DocTags defines the following categories of elements:
+
+    - **root**: Elements that establish document scope such as
+      `doctag`.
+    - **special**: Elements that establish document pagination, such as
+      `page_break`, and `time_break`.
+    - **geometric**: Elements that capture geometric position as normalized
+      coordinates/bounding boxes (via repeated `location`) anchoring
+      block-level content to the page.
+    - **temporal**: Elements that capture temporal positions using
+      `<hour value={integer}/><minute value={integer}/><second value={integer}/>`
+      and `<centisecond value={integer}/>` for a timestamp and a double
+      timestamp for time intervals.
+    - **semantic**: Block-level elements that convey document meaning
+      (e.g., titles, paragraphs, captions, lists, forms, tables, formulas,
+      code, pictures), optionally preceded by location tokens.
+    - **formatting**: Inline elements that modify textual presentation within
+      semantic content (e.g., `bold`, `italic`, `strikethrough`,
+      `superscript`, `subscript`, `rtl`, `inline class="formula|code|picture"`,
+      `br`).
+    - **grouping**: Elements that organize semantic blocks into logical
+      hierarchies and composites (e.g., `section`, `list`, `group type=*`)
+      and never carry location tokens.
+    - **structural**: Sequence tokens that define internal structure for
+      complex constructs (primarily OTSL table layout: `otsl`, `fcel`,
+      `ecel`, `lcel`, `ucel`, `xcel`, `nl`, `ched`, `rhed`, `corn`, `srow`;
+      and form parts like `key`/`value`).
+    - **content**: Lightweight content helpers used inside semantic blocks for
+      explicit payload and annotations (e.g., `marker`).
+    - **binary data**: Elements that embed or reference non-text payloads for
+      media—either inline as `base64` or via `uri`—allowed under `picture`,
+      `inline class="picture"`, or at page level.
+    - **metadata**: Elements that provide metadata about the document or its
+      components, contained within `head` and `meta` respectively.
+    - **continuation** tokens: Markers that indicate content spanning pages or
+      table boundaries (e.g., `thread`, `h_thread`, each with a required
+      `id` attribute) to stitch split content (e.g., across columns or pages).
+    """
+
+    ROOT = "root"
+    SPECIAL = "special"
+    METADATA = "metadata"
+    GEOMETRIC = "geometric"
+    TEMPORAL = "temporal"
+    SEMANTIC = "semantic"
+    FORMATTING = "formatting"
+    GROUPING = "grouping"
+    STRUCTURAL = "structural"
+    CONTENT = "content"
+    BINARY_DATA = "binary_data"
+    CONTINUATION = "continuation"
 
 
 class IDocTagsToken(str, Enum):
-    """IDocTagsToken."""
+    """IDocTagsToken.
 
-    _LOC_PREFIX = "loc_"
-    _SECTION_HEADER_PREFIX = "section_header_level_"
+    This class implements the tokens from the Token table,
 
+    | # | Category | Token | Self-Closing [Yes/No] | Parametrized [Yes/No] | Attributes | Description |
+    |---|----------|-------|-----------------------|-----------------------|------------|-------------|
+    | 1 | Root Elements | `doctag` | No | Yes | `version` | Root container; optional semantic version `version`. |
+    | 2 | Special Elements | `page_break` | Yes | No | — | Page delimiter. |
+    | 3 |  | `time_break` | Yes | No | — | Temporal segment delimiter. |
+    | 4 | Metadata Containers | `head` | No | No | — | Document-level metadata container. |
+    | 5 |  | `meta` | No | No | — | Component-level metadata container. |
+    | 6 | Geometric Tokens | `location` | Yes | Yes | `value`, `resolution?` |
+      Geometric coordinate; `value` in [0, res]; optional `resolution`. |
+    | 7 | Temmporal Tokens | `hour` | Yes | Yes | `value` | Hours component; `value` in [0, 99]. |
+    | 8 |  | `minute` | Yes | Yes | `value` | Minutes component; `value` in [0, 59]. |
+    | 9 |  | `second` | Yes | Yes | `value` | Seconds component; `value` in [0, 59]. |
+    | 10 |  | `centisecond` | Yes | Yes | `value` | Centiseconds component; `value` in [0, 99]. |
+    | 11 | Semantic Tokens | `title` | No | No | — | Document or section title (content). |
+    | 12 |  | `heading` | No | Yes | `level` | Section header; `level` (N ≥ 1). |
+    | 13 |  | `text` | No | No | — | Generic text content. |
+    | 14 |  | `caption` | No | No | — | Caption for floating/grouped elements. |
+    | 15 |  | `footnote` | No | No | — | Footnote content. |
+    | 16 |  | `page_header` | No | No | — | Page header content. |
+    | 17 |  | `page_footer` | No | No | — | Page footer content. |
+    | 18 |  | `watermark` | No | No | — | Watermark indicator or content. |
+    | 19 |  | `picture` | No | No | — |
+      Block image/graphic; at most one of `base64`/`uri`; may include `meta`
+      for classification; `otsl` may encode chart data. |
+    | 20 |  | `form` | No | No | — | Form structure container. |
+    | 21 |  | `formula` | No | No | — | Mathematical expression block. |
+    | 22 |  | `code` | No | No | — | Code block. |
+    | 23 |  | `list_text` | No | No | — | List item content. |
+    | 24 |  | `checkbox` | No | Yes | `selected` |
+      Checkbox item; optional `selected` in {`true`,`false`} defaults to
+      `false`. |
+    | 25 |  | `form_item` | No | No | — |
+      Form item; exactly one `key`; one or more of
+      `value`/`checkbox`/`marker`/`hint`. |
+    | 26 |  | `form_heading` | No | Yes | `level?` | Form header; optional `level` (N ≥ 1). |
+    | 27 |  | `form_text` | No | No | — | Form text block. |
+    | 28 |  | `hint` | No | No | — | Hint for a fillable field (format/example/description). |
+    | 29 | Grouping Tokens | `section` | No | Yes | `level` | Document section; `level` (N ≥ 1). |
+    | 30 |  | `list` | No | Yes | `ordered` |
+      List container; optional `ordered` in {`true`,`false`} defaults to
+      `false`. |
+    | 31 |  | `group` | No | Yes | `type?` |
+      Generic group; no `location` tokens; associates composite content
+      (e.g., captions/footnotes). |
+    | 32 |  | `floating_group` | No | Yes | `class` in {`table`,`picture`,`form`,`code`} |
+      Floating container that groups a floating component with its caption,
+      footnotes, and metadata; no `location` tokens. |
+    | 33 | Formatting Tokens | `bold` | No | No | — | Bold text. |
+    | 34 |  | `italic` | No | No | — | Italic text. |
+    | 35 |  | `strikethrough` | No | No | — | Strike-through text. |
+    | 36 |  | `superscript` | No | No | — | Superscript text. |
+    | 37 |  | `subscript` | No | No | — | Subscript text. |
+    | 38 |  | `rtl` | No | No | — | Right-to-left text direction. |
+    | 39 |  | `inline` | No | Yes | `class` in {`formula`,`code`,`picture`} |
+      Inline content; if `class="picture"`, may include one of `base64` or
+      `uri`. |
+    | 40 |  | `br` | Yes | No | — | Line break. |
+    | 41 | Structural Tokens (OTSL) | `otsl` | No | No | — | Table structure container. |
+    | 42 |  | `fcel` | Yes | No | — | New cell with content. |
+    | 43 |  | `ecel` | Yes | No | — | New cell without content. |
+    | 44 |  | `ched` | Yes | No | — | Column header cell. |
+    | 45 |  | `rhed` | Yes | No | — | Row header cell. |
+    | 46 |  | `corn` | Yes | No | — | Corner header cell. |
+    | 47 |  | `srow` | Yes | No | — | Section row separator cell. |
+    | 48 |  | `lcel` | Yes | No | — | Merge with left neighbor (horizontal span). |
+    | 49 |  | `ucel` | Yes | No | — | Merge with upper neighbor (vertical span). |
+    | 50 |  | `xcel` | Yes | No | — | Merge with left and upper neighbors (2D span). |
+    | 51 |  | `nl` | Yes | No | — | New line (row separator). |
+    | 52 | Continuation Tokens | `thread` | Yes | Yes | `id` |
+      Continuation marker for split content; reuse same `id` across parts. |
+    | 53 |  | `h_thread` | Yes | Yes | `id` | Horizontal stitching marker for split tables; reuse same `id`. |
+    | 54 | Binary Data Tokens | `base64` | No | No | — | Embedded binary data (base64). |
+    | 55 |  | `uri` | No | No | — | External resource reference. |
+    | 56 | Content Tokens | `marker` | No | No | — | List/form marker content. |
+    | 57 |  | `facets` | No | No | — | Container for application-specific derived properties. |
+    | 58 | Structural Tokens (Form) | `key` | No | No | — | Form item key (child of `form_item`). |
+    | 59 |  | `value` | No | No | — | Form item value (child of `form_item`). |
+    """
+
+    # Root and metadata
     DOCUMENT = "doctag"
-    VERSION = "version"
+    HEAD = "head"
+    META = "meta"
 
-    OTSL = "otsl"
-    ORDERED_LIST = "ordered_list"
-    UNORDERED_LIST = "unordered_list"
-
+    # Special
     PAGE_BREAK = "page_break"
+    TIME_BREAK = "time_break"
 
+    # Geometric and temporal
+    LOCATION = "location"
+    HOUR = "hour"
+    MINUTE = "minute"
+    SECOND = "second"
+    CENTISECOND = "centisecond"
+
+    # Semantic
+    TITLE = "title"
+    HEADING = "heading"
+    TEXT = "text"
     CAPTION = "caption"
     FOOTNOTE = "footnote"
-    FORMULA = "formula"
-    LIST_ITEM = "list_item"
-    PAGE_FOOTER = "page_footer"
     PAGE_HEADER = "page_header"
+    PAGE_FOOTER = "page_footer"
+    WATERMARK = "watermark"
     PICTURE = "picture"
-    SECTION_HEADER = "section_header"
-    TABLE = "table"
-    TEXT = "text"
-    TITLE = "title"
-    DOCUMENT_INDEX = "document_index"
-    CODE = "code"
-    CHECKBOX_SELECTED = "checkbox_selected"
-    CHECKBOX_UNSELECTED = "checkbox_unselected"
     FORM = "form"
-    EMPTY_VALUE = "empty_value"  # used for empty value fields in fillable forms
+    FORM_ITEM = "form_item"
+    FORM_HEADING = "form_heading"
+    FORM_TEXT = "form_text"
+    HINT = "hint"
+    FORMULA = "formula"
+    CODE = "code"
+    LIST_TEXT = "list_text"
+    # LIST_ITEM = "list_item"
+    CHECKBOX = "checkbox"
+    OTSL = "otsl"  # this will take care of the structure in the table.
+
+    # Grouping
+    SECTION = "section"
+    LIST = "list"
+    GROUP = "group"
+    FLOATING_GROUP = "floating_group"
+    # ORDERED_LIST = "ordered_list"
+    # UNORDERED_LIST = "unordered_list"
+
+    # Formatting
+    BOLD = "bold"
+    ITALIC = "italic"
+    STRIKETHROUGH = "strikethrough"
+    SUPERSCRIPT = "superscript"
+    SUBSCRIPT = "subscript"
+    RTL = "rtl"
+    INLINE = "inline"
+    BR = "br"
+
+    # Structural
+    # -- Tables
+    FCEL = "fcel"
+    ECEL = "ecel"
+    CHED = "ched"
+    RHED = "rhed"
+    CORN = "corn"
+    SROW = "srow"
+    LCEL = "lcel"
+    UCEL = "ucel"
+    XCEL = "xcel"
+    NL = "nl"
+    # -- Forms
+    KEY = "key"
+    IMPLICIT_KEY = "implicit_key"
+    VALUE = "value"
+
+    # Continuation
+    THREAD = "thread"
+    H_THREAD = "h_thread"
+
+    # Binary data / content helpers
+    BASE64 = "base64"
+    URI = "uri"
+    MARKER = "marker"
+    FACETS = "facets"
+
+
+class IDocTagsTableToken(str, Enum):
+    """Serialized OTSL table tokens used in DocTags output."""
+
+    OTSL_ECEL = f"<{IDocTagsToken.ECEL.value}/>"  # empty cell
+    OTSL_FCEL = f"<{IDocTagsToken.FCEL.value}/>"  # cell with content
+    OTSL_LCEL = f"<{IDocTagsToken.LCEL.value}/>"  # left looking cell,
+    OTSL_UCEL = f"<{IDocTagsToken.UCEL.value}/>"  # up looking cell,
+    OTSL_XCEL = f"<{IDocTagsToken.XCEL.value}/>"  # 2d extension cell (cross cell),
+    OTSL_NL = f"<{IDocTagsToken.NL.value}/>"  # new line,
+    OTSL_CHED = f"<{IDocTagsToken.CHED.value}/>"  # - column header cell,
+    OTSL_RHED = f"<{IDocTagsToken.RHED.value}/>"  # - row header cell,
+    OTSL_SROW = f"<{IDocTagsToken.SROW.value}/>"  # - section row cell
+
+
+class IDocTagsAttributeKey(str, Enum):
+    """Attribute keys allowed on DocTags tokens."""
+
+    VERSION = "version"
+    VALUE = "value"
+    RESOLUTION = "resolution"
+    LEVEL = "level"
+    SELECTED = "selected"
+    ORDERED = "ordered"
+    TYPE = "type"
+    CLASS = "class"
+    ID = "id"
+
+
+class IDocTagsAttributeValue(str, Enum):
+    """Enumerated values for specific DocTags attributes."""
+
+    # Generic boolean-like values
+    TRUE = "true"
+    FALSE = "false"
+
+    # Inline class values
+    FORMULA = "formula"
+    CODE = "code"
+    PICTURE = "picture"
+
+    # Floating group class values
+    DOCUMENT_INDEX = "document_index"
+    TABLE = "table"
+    FORM = "form"
+
+
+class IDocTagsVocabulary(BaseModel):
+    """IDocTagsVocabulary."""
+
+    # Allowed attributes per token (defined outside the Enum to satisfy mypy)
+    ALLOWED_ATTRIBUTES: ClassVar[dict[IDocTagsToken, set["IDocTagsAttributeKey"]]] = {
+        IDocTagsToken.DOCUMENT: {
+            IDocTagsAttributeKey.VERSION,
+        },
+        IDocTagsToken.LOCATION: {
+            IDocTagsAttributeKey.VALUE,
+            IDocTagsAttributeKey.RESOLUTION,
+        },
+        IDocTagsToken.HOUR: {IDocTagsAttributeKey.VALUE},
+        IDocTagsToken.MINUTE: {IDocTagsAttributeKey.VALUE},
+        IDocTagsToken.SECOND: {IDocTagsAttributeKey.VALUE},
+        IDocTagsToken.CENTISECOND: {IDocTagsAttributeKey.VALUE},
+        IDocTagsToken.HEADING: {IDocTagsAttributeKey.LEVEL},
+        IDocTagsToken.FORM_HEADING: {IDocTagsAttributeKey.LEVEL},
+        IDocTagsToken.CHECKBOX: {IDocTagsAttributeKey.SELECTED},
+        IDocTagsToken.SECTION: {IDocTagsAttributeKey.LEVEL},
+        IDocTagsToken.LIST: {IDocTagsAttributeKey.ORDERED},
+        IDocTagsToken.GROUP: {IDocTagsAttributeKey.TYPE},
+        IDocTagsToken.FLOATING_GROUP: {IDocTagsAttributeKey.CLASS},
+        IDocTagsToken.INLINE: {IDocTagsAttributeKey.CLASS},
+        IDocTagsToken.THREAD: {IDocTagsAttributeKey.ID},
+        IDocTagsToken.H_THREAD: {IDocTagsAttributeKey.ID},
+    }
+
+    # Allowed values for specific attributes (enumerations)
+    # Structure: token -> attribute name -> set of allowed string values
+    ALLOWED_ATTRIBUTE_VALUES: ClassVar[
+        dict[
+            IDocTagsToken,
+            dict["IDocTagsAttributeKey", set["IDocTagsAttributeValue"]],
+        ]
+    ] = {
+        # Grouping and inline enumerations
+        IDocTagsToken.LIST: {
+            IDocTagsAttributeKey.ORDERED: {
+                IDocTagsAttributeValue.TRUE,
+                IDocTagsAttributeValue.FALSE,
+            }
+        },
+        IDocTagsToken.CHECKBOX: {
+            IDocTagsAttributeKey.SELECTED: {
+                IDocTagsAttributeValue.TRUE,
+                IDocTagsAttributeValue.FALSE,
+            }
+        },
+        IDocTagsToken.INLINE: {
+            IDocTagsAttributeKey.CLASS: {
+                IDocTagsAttributeValue.FORMULA,
+                IDocTagsAttributeValue.CODE,
+                IDocTagsAttributeValue.PICTURE,
+            }
+        },
+        IDocTagsToken.FLOATING_GROUP: {
+            IDocTagsAttributeKey.CLASS: {
+                IDocTagsAttributeValue.DOCUMENT_INDEX,
+                IDocTagsAttributeValue.TABLE,
+                IDocTagsAttributeValue.PICTURE,
+                IDocTagsAttributeValue.FORM,
+                IDocTagsAttributeValue.CODE,
+            }
+        },
+        # Other attributes (e.g., level, type, id) are not enumerated here
+    }
+
+    ALLOWED_ATTRIBUTE_RANGE: ClassVar[
+        dict[IDocTagsToken, dict["IDocTagsAttributeKey", tuple[int, int]]]
+    ] = {
+        # Geometric: value in [0, res]; resolution optional.
+        # Keep conservative defaults aligned with existing usage.
+        IDocTagsToken.LOCATION: {
+            IDocTagsAttributeKey.VALUE: (0, 512),
+            IDocTagsAttributeKey.RESOLUTION: (512, 512),
+        },
+        # Temporal components
+        IDocTagsToken.HOUR: {IDocTagsAttributeKey.VALUE: (0, 99)},
+        IDocTagsToken.MINUTE: {IDocTagsAttributeKey.VALUE: (0, 59)},
+        IDocTagsToken.SECOND: {IDocTagsAttributeKey.VALUE: (0, 59)},
+        IDocTagsToken.CENTISECOND: {IDocTagsAttributeKey.VALUE: (0, 99)},
+        # Levels (N ≥ 1)
+        IDocTagsToken.HEADING: {IDocTagsAttributeKey.LEVEL: (1, 6)},
+        IDocTagsToken.FORM_HEADING: {IDocTagsAttributeKey.LEVEL: (1, 6)},
+        IDocTagsToken.SECTION: {IDocTagsAttributeKey.LEVEL: (1, 6)},
+        # Continuation markers (id length constraints)
+        IDocTagsToken.THREAD: {IDocTagsAttributeKey.ID: (1, 10)},
+        IDocTagsToken.H_THREAD: {IDocTagsAttributeKey.ID: (1, 10)},
+    }
+
+    # Self-closing tokens map
+    IS_SELFCLOSING: ClassVar[dict[IDocTagsToken, bool]] = {
+        IDocTagsToken.PAGE_BREAK: True,
+        IDocTagsToken.TIME_BREAK: True,
+        IDocTagsToken.LOCATION: True,
+        IDocTagsToken.HOUR: True,
+        IDocTagsToken.MINUTE: True,
+        IDocTagsToken.SECOND: True,
+        IDocTagsToken.CENTISECOND: True,
+        IDocTagsToken.BR: True,
+        # OTSL structural tokens are emitted as self-closing markers
+        IDocTagsToken.FCEL: True,
+        IDocTagsToken.ECEL: True,
+        IDocTagsToken.CHED: True,
+        IDocTagsToken.RHED: True,
+        IDocTagsToken.CORN: True,
+        IDocTagsToken.SROW: True,
+        IDocTagsToken.LCEL: True,
+        IDocTagsToken.UCEL: True,
+        IDocTagsToken.XCEL: True,
+        IDocTagsToken.NL: True,
+        # Continuation markers
+        IDocTagsToken.THREAD: True,
+        IDocTagsToken.H_THREAD: True,
+    }
+
+    @classmethod
+    def create_closing_token(cls, *, token: str) -> str:
+        r"""Create a closing tag from an opening tag string.
+
+        Example: "<heading level=\"2\">" -> "</heading>"
+        Validates the tag and ensures it is not self-closing.
+        If `token` is already a valid closing tag, it is returned unchanged.
+        """
+        if not isinstance(token, str) or not token.strip():
+            raise ValueError("token must be a non-empty string")
+
+        s = token.strip()
+
+        # Already a closing tag: validate and return as-is
+        if s.startswith("</"):
+            m_close = re.match(r"^</\s*([a-zA-Z_][\w\-]*)\s*>$", s)
+            if not m_close:
+                raise ValueError("invalid closing tag format")
+            name = m_close.group(1)
+            try:
+                IDocTagsToken(name)
+            except ValueError:
+                raise ValueError(f"unknown token '{name}'")
+            return s
+
+        # Extract tag name from an opening tag while dropping attributes
+        m = re.match(r"^<\s*([a-zA-Z_][\w\-]*)\b[^>]*?(/?)\s*>$", s)
+        if not m:
+            raise ValueError("invalid opening tag format")
+
+        name, trailing_slash = m.group(1), m.group(2)
+
+        # Validate the tag name against known tokens
+        try:
+            tok_enum = IDocTagsToken(name)
+        except ValueError:
+            raise ValueError(f"unknown token '{name}'")
+
+        # Disallow explicit self-closing markup or inherently self-closing tokens
+        if trailing_slash == "/":
+            raise ValueError(f"token '{name}' is self-closing; no closing tag")
+        if cls.IS_SELFCLOSING.get(tok_enum, False):
+            raise ValueError(f"token '{name}' is self-closing; no closing tag")
+
+        return f"</{name}>"
+
+    @classmethod
+    def create_doctag_root(
+        cls, *, version: str = DOCTAGS_VERSION, closing: bool = False
+    ) -> str:
+        """Create the document root tag.
+
+        - When `closing` is True, returns the closing root tag.
+        - When a `version` is provided, includes it as an attribute.
+        - Otherwise returns a bare opening root tag.
+        """
+        if closing:
+            return f"</{IDocTagsToken.DOCUMENT.value}>"
+        elif version:
+            return f'<{IDocTagsToken.DOCUMENT.value} {IDocTagsAttributeKey.VERSION.value}="{version}">'
+        else:
+            # Version attribute is optional; emit bare root tag when not provided
+            return f"<{IDocTagsToken.DOCUMENT.value}>"
+
+    @classmethod
+    def create_threading_token(cls, *, id: str, horizontal: bool = False) -> str:
+        """Create a continuation threading token.
+
+        Emits `<thread id="..."/>` or `<h_thread id="..."/>` depending on
+        the `horizontal` flag. Validates required attributes against the
+        class schema and basic value sanity.
+        """
+        token = IDocTagsToken.H_THREAD if horizontal else IDocTagsToken.THREAD
+        # Ensure the required attribute is declared for this token
+        assert IDocTagsAttributeKey.ID in cls.ALLOWED_ATTRIBUTES.get(token, set())
+
+        # Validate id length if a range is specified
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token][IDocTagsAttributeKey.ID]
+        length = len(id)
+        if not (lo <= length <= hi):
+            raise ValueError(f"id length must be in [{lo}, {hi}]")
+
+        return f'<{token.value} {IDocTagsAttributeKey.ID.value}="{id}"/>'
+
+    @classmethod
+    def create_floating_group_token(
+        cls, *, value: IDocTagsAttributeValue, closing: bool = False
+    ) -> str:
+        """Create a floating group tag.
+
+        - When `closing` is True, returns the closing tag.
+        - Otherwise returns an opening tag with a class attribute derived from `value`.
+        """
+        if closing:
+            return f"</{IDocTagsToken.FLOATING_GROUP.value}>"
+        else:
+            return f'<{IDocTagsToken.FLOATING_GROUP.value} {IDocTagsAttributeKey.CLASS.value}="{value.value}">'
+
+    @classmethod
+    def create_list_token(cls, *, ordered: bool, closing: bool = False) -> str:
+        """Create a list tag.
+
+        - When `closing` is True, returns the closing tag.
+        - Otherwise returns an opening tag with an `ordered` boolean attribute.
+        """
+        if closing:
+            return f"</{IDocTagsToken.LIST.value}>"
+        elif ordered:
+            return (
+                f"<{IDocTagsToken.LIST.value} "
+                f'{IDocTagsAttributeKey.ORDERED.value}="{IDocTagsAttributeValue.TRUE.value}">'
+            )
+        else:
+            return (
+                f"<{IDocTagsToken.LIST.value} "
+                f'{IDocTagsAttributeKey.ORDERED.value}="{IDocTagsAttributeValue.FALSE.value}">'
+            )
+
+    @classmethod
+    def create_heading_token(cls, *, level: int, closing: bool = False) -> str:
+        """Create a heading tag with validated level.
+
+        When `closing` is False, emits an opening tag with level attribute.
+        When `closing` is True, emits the corresponding closing tag.
+        """
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.HEADING][
+            IDocTagsAttributeKey.LEVEL
+        ]
+        if not (lo <= level <= hi):
+            raise ValueError(f"level must be in [{lo}, {hi}]")
+
+        if closing:
+            return f"</{IDocTagsToken.HEADING.value}>"
+        return f'<{IDocTagsToken.HEADING.value} {IDocTagsAttributeKey.LEVEL.value}="{level}">'
+
+    @classmethod
+    def create_location_token(cls, *, value: int, resolution: int = 512) -> str:
+        """Create a location token with value and resolution.
+
+        Validates both attributes using the configured ranges and ensures
+        `value` lies within [0, resolution]. Always emits the resolution
+        attribute for explicitness.
+        """
+        range_map = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.LOCATION]
+        # Validate resolution if a constraint exists
+        r_lo, r_hi = range_map.get(
+            IDocTagsAttributeKey.RESOLUTION, (resolution, resolution)
+        )
+        if not (r_lo <= resolution <= r_hi):
+            raise ValueError(f"resolution must be in [{r_lo}, {r_hi}]")
+
+        v_lo, v_hi = range_map[IDocTagsAttributeKey.VALUE]
+        if not (v_lo <= value <= v_hi):
+            raise ValueError(f"value must be in [{v_lo}, {v_hi}]")
+        if not (0 <= value <= resolution):
+            raise ValueError("value must be in [0, resolution]")
+
+        return (
+            f"<{IDocTagsToken.LOCATION.value} "
+            f'{IDocTagsAttributeKey.VALUE.value}="{value}" '
+            f'{IDocTagsAttributeKey.RESOLUTION.value}="{resolution}"/>'
+        )
 
     @classmethod
     def get_special_tokens(
         cls,
         *,
-        page_dimension: Tuple[int, int] = (500, 500),
         include_location_tokens: bool = True,
-        include_code_class: bool = False,
-        include_picture_class: bool = False,
-    ):
-        """Function to get all special document tokens."""
+        include_temporal_tokens: bool = True,
+    ) -> list[str]:
+        """Return all DocTags special tokens.
+
+        Rules:
+        - If a token has attributes, do not emit a bare opening tag without attributes.
+        - Respect `include_location_tokens` and `include_temporal_tokens` to limit
+          generation of location and time-related tokens.
+        - Emit self-closing tokens as `<name/>` when they have no attributes.
+        - Emit non-self-closing tokens as paired `<name>` and `</name>` when they
+          have no attributes.
+        """
         special_tokens: list[str] = []
-        for token in cls:
-            if not token.value.endswith("_"):
-                special_tokens.append(f"<{token.value}>")
-                special_tokens.append(f"</{token.value}>")
 
-        for i in range(6):
-            special_tokens += [
-                f"<{IDocTagsToken._SECTION_HEADER_PREFIX.value}{i}>",
-                f"</{IDocTagsToken._SECTION_HEADER_PREFIX.value}{i}>",
-            ]
+        temporal_tokens = {
+            IDocTagsToken.HOUR,
+            IDocTagsToken.MINUTE,
+            IDocTagsToken.SECOND,
+            IDocTagsToken.CENTISECOND,
+        }
 
-        special_tokens.extend(IDocTagsTableToken.get_special_tokens())
+        for token in IDocTagsToken:
+            # Optional gating for location/temporal tokens
+            if not include_location_tokens and token is IDocTagsToken.LOCATION:
+                continue
+            if not include_temporal_tokens and token in temporal_tokens:
+                continue
 
-        if include_picture_class:
-            special_tokens.extend([t.value for t in _PictureClassificationToken])
+            name = token.value
+            is_selfclosing = bool(cls.IS_SELFCLOSING.get(token, False))
 
-        if include_code_class:
-            special_tokens.extend([t.value for t in _CodeLanguageToken])
+            # Attribute-aware emission
+            attrs = cls.ALLOWED_ATTRIBUTES.get(token, set())
+            if attrs:
+                # Enumerated attribute values
+                enum_map = cls.ALLOWED_ATTRIBUTE_VALUES.get(token, {})
+                for attr_name, allowed_vals in enum_map.items():
+                    for v in sorted(allowed_vals, key=lambda x: x.value):
+                        if is_selfclosing:
+                            special_tokens.append(
+                                f'<{name} {attr_name.value}="{v.value}"/>'
+                            )
+                        else:
+                            special_tokens.append(
+                                f'<{name} {attr_name.value}="{v.value}">'
+                            )
+                            special_tokens.append(f"</{name}>")
 
-        if include_location_tokens:
-            # Adding dynamically generated location-tokens
-            for i in range(0, max(page_dimension[0], page_dimension[1])):
-                special_tokens.append(f"<{IDocTagsToken._LOC_PREFIX.value}{i}/>")
+                # Ranged attribute values (emit a conservative, complete range)
+                range_map = cls.ALLOWED_ATTRIBUTE_RANGE.get(token, {})
+                for attr_name, (lo, hi) in range_map.items():
+                    # Keep the list size reasonable by skipping optional resolution enumeration
+                    if (
+                        token is IDocTagsToken.LOCATION
+                        and attr_name is IDocTagsAttributeKey.RESOLUTION
+                    ):
+                        continue
+                    for n in range(lo, hi + 1):
+                        if is_selfclosing:
+                            special_tokens.append(f'<{name} {attr_name.value}="{n}"/>')
+                        else:
+                            special_tokens.append(f'<{name} {attr_name.value}="{n}">')
+                            special_tokens.append(f"</{name}>")
+                # Do not emit a bare tag for attribute-bearing tokens
+                continue
+
+            # Tokens without attributes
+            if is_selfclosing:
+                special_tokens.append(f"<{name}/>")
+            else:
+                special_tokens.append(f"<{name}>")
+                special_tokens.append(f"</{name}>")
 
         return special_tokens
 
-    @classmethod
-    def create_token_name_from_doc_item_label(cls, label: str, level: int = 1) -> str:
-        """Get token corresponding to passed doc item label."""
-        doc_token_by_item_label = {
-            DocItemLabel.CAPTION: IDocTagsToken.CAPTION,
-            DocItemLabel.FOOTNOTE: IDocTagsToken.FOOTNOTE,
-            DocItemLabel.FORMULA: IDocTagsToken.FORMULA,
-            DocItemLabel.LIST_ITEM: IDocTagsToken.LIST_ITEM,
-            DocItemLabel.PAGE_FOOTER: IDocTagsToken.PAGE_FOOTER,
-            DocItemLabel.PAGE_HEADER: IDocTagsToken.PAGE_HEADER,
-            DocItemLabel.PICTURE: IDocTagsToken.PICTURE,
-            DocItemLabel.TABLE: IDocTagsToken.TABLE,
-            DocItemLabel.TEXT: IDocTagsToken.TEXT,
-            DocItemLabel.TITLE: IDocTagsToken.TITLE,
-            DocItemLabel.DOCUMENT_INDEX: IDocTagsToken.DOCUMENT_INDEX,
-            DocItemLabel.CODE: IDocTagsToken.CODE,
-            DocItemLabel.CHECKBOX_SELECTED: IDocTagsToken.CHECKBOX_SELECTED,
-            DocItemLabel.CHECKBOX_UNSELECTED: IDocTagsToken.CHECKBOX_UNSELECTED,
-            DocItemLabel.FORM: IDocTagsToken.FORM,
-            # Fallback mappings for labels without dedicated tokens in IDocTagsToken
-            DocItemLabel.KEY_VALUE_REGION: IDocTagsToken.TEXT,
-            DocItemLabel.PARAGRAPH: IDocTagsToken.TEXT,
-            DocItemLabel.REFERENCE: IDocTagsToken.TEXT,
-            DocItemLabel.CHART: IDocTagsToken.PICTURE,
-        }
 
-        res: str
-        if label == DocItemLabel.SECTION_HEADER:
-            res = f"{IDocTagsToken._SECTION_HEADER_PREFIX}{level}"
-        else:
-            try:
-                res = doc_token_by_item_label[DocItemLabel(label)].value
-            except KeyError as e:
-                raise RuntimeError(f"Unexpected DocItemLabel: {label}") from e
-        return res
+class IDocTagsSerializationMode(str, Enum):
+    """Serialization mode for IDocTags output."""
+
+    HUMAN_FRIENDLY = "human_friendly"
+    LLM_FRIENDLY = "llm_friendly"
 
 
-class IDocTagsParams(DocTagsParams):
-    """DocTags-specific serialization parameters."""
+class IDocTagsParams(CommonParams):
+    """IDocTags-specific serialization parameters independent of DocTags."""
 
+    # Geometry & content controls (aligned with DocTags defaults)
+    xsize: int = 500
+    ysize: int = 500
+    add_location: bool = True
+    add_caption: bool = True
+    add_content: bool = True
+    add_table_cell_location: bool = False
+    add_table_cell_text: bool = True
+    add_page_break: bool = True
+
+    mode: IDocTagsSerializationMode = IDocTagsSerializationMode.HUMAN_FRIENDLY
+
+    # IDocTags formatting
     do_self_closing: bool = True
     pretty_indentation: Optional[str] = 2 * " "
+    # Expand self-closing forms of non-self-closing tokens after pretty-printing
+    preserve_empty_non_selfclosing: bool = True
+
+
+def _get_delim(*, params: IDocTagsParams) -> str:
+    """Return record delimiter based on IDocTagsSerializationMode."""
+    if params.mode == IDocTagsSerializationMode.HUMAN_FRIENDLY:
+        return "\n"
+    if params.mode == IDocTagsSerializationMode.LLM_FRIENDLY:
+        return ""
+    raise RuntimeError(f"Unknown IDocTags mode: {params.mode}")
 
 
 class IDocTagsListSerializer(BaseModel, BaseListSerializer):
@@ -217,8 +820,9 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
 
         This emits list containers (``<ordered_list>``/``<unordered_list>``) and
         serializes children explicitly. Nested ``ListGroup`` items are emitted as
-        siblings without an enclosing ``<list_item>`` wrapper, while structural
-        wrappers are still preserved even when content is suppressed.
+        siblings, and individual list items are not wrapped here. The text
+        serializer is responsible for wrapping list item content (as
+        ``<list_text>``), so this serializer remains agnostic of item types.
 
         Args:
             item: The list group to serialize.
@@ -236,13 +840,13 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
         params = IDocTagsParams(**kwargs)
 
         # Build list children explicitly. Requirements:
-        # 1) <ordered_list>/<unordered_list> can be children of lists.
-        # 2) Do NOT wrap nested lists into <list_item>, even if they are
+        # 1) <list ordered="true|false"></list> can be children of lists.
+        # 2) Do NOT wrap nested lists into <list_text>, even if they are
         #    children of a ListItem in the logical structure.
         # 3) Still ensure structural wrappers are preserved even when
         #    content is suppressed (e.g., add_content=False).
         item_results: list[SerializationResult] = []
-        child_results_wrapped: list[str] = []
+        child_texts: list[str] = []
 
         excluded = doc_serializer.get_excluded_refs(**kwargs)
         for child_ref in item.children:
@@ -262,7 +866,7 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
                     **kwargs,
                 )
                 if sub_res.text:
-                    child_results_wrapped.append(sub_res.text)
+                    child_texts.append(sub_res.text)
                 item_results.append(sub_res)
                 continue
 
@@ -274,7 +878,8 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
 
             my_visited.add(child.self_ref)
 
-            # Serialize the list item content (DocTagsTextSerializer will not wrap it)
+            # Serialize the list item content; wrapping is handled by the text
+            # serializer (as <list_text>), not here.
             child_res = doc_serializer.serialize(
                 item=child,
                 list_level=list_level + 1,
@@ -283,15 +888,11 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
                 **kwargs,
             )
             item_results.append(child_res)
-            # Wrap the content into <list_item>, without any nested list content.
-            child_text_wrapped = _wrap(
-                text=f"{child_res.text}",
-                wrap_tag=IDocTagsToken.LIST_ITEM.value,
-            )
-            child_results_wrapped.append(child_text_wrapped)
+            if child_res.text:
+                child_texts.append(child_res.text)
 
-            # After the <list_item>, append any nested lists (children of this ListItem)
-            # as siblings at the same level (not wrapped in <list_item>).
+            # After the <list_text>, append any nested lists (children of this ListItem)
+            # as siblings at the same level (not wrapped in <list_text>).
             for subref in child.children:
                 sub = subref.resolve(doc)
                 if (
@@ -308,22 +909,136 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
                         **kwargs,
                     )
                     if sub_res.text:
-                        child_results_wrapped.append(sub_res.text)
+                        child_texts.append(sub_res.text)
                     item_results.append(sub_res)
 
         delim = _get_delim(params=params)
-        if child_results_wrapped:
-            text_res = delim.join(child_results_wrapped)
+        if child_texts:
+            text_res = delim.join(child_texts)
             text_res = f"{text_res}{delim}"
-            wrap_tag = (
-                IDocTagsToken.ORDERED_LIST.value
+            open_token = (
+                IDocTagsVocabulary.create_list_token(ordered=True)
                 if item.first_item_is_enumerated(doc)
-                else IDocTagsToken.UNORDERED_LIST.value
+                else IDocTagsVocabulary.create_list_token(ordered=False)
             )
-            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+            text_res = _wrap_token(text=text_res, open_token=open_token)
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=item_results)
+
+
+class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
+    """IDocTags-specific text item serializer using `<location>` tokens."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: "TextItem",
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a ``TextItem`` into IDocTags markup.
+
+        Depending on parameters, emits meta blocks, location tokens, and the
+        item's textual content (prefixing code language for ``CodeItem``). For
+        floating items, captions may be appended. The result can be wrapped in a
+        tag derived from the item's label when applicable.
+
+        Args:
+            item: The text-like item to serialize.
+            doc_serializer: The document-level serializer for delegating nested items.
+            doc: The document used to resolve references and children.
+            visited: Set of already visited item refs to avoid cycles.
+            **kwargs: Additional serializer parameters forwarded to ``IDocTagsParams``.
+
+        Returns:
+            A ``SerializationResult`` with the serialized text and span source.
+        """
+        my_visited = visited if visited is not None else set()
+        params = IDocTagsParams(**kwargs)
+
+        # Determine wrapper open-token for this item using IDocTags vocabulary.
+        # - SectionHeaderItem: use <heading level="N"> ... </heading>.
+        # - Other text-like items: map the label to an IDocTagsToken; for
+        #   list items, this maps to <list_text> and keeps the text serializer
+        #   free of type-based special casing.
+        wrap_open_token: Optional[str]
+        if isinstance(item, SectionHeaderItem):
+            wrap_open_token = IDocTagsVocabulary.create_heading_token(level=item.level)
+        elif isinstance(item, ListItem):
+            tok = IDocTagsToken.LIST_TEXT
+            wrap_open_token = f"<{tok.value}>"
+        else:
+            label_value = str(item.label)
+            try:
+                tok = IDocTagsToken(label_value)
+                wrap_open_token = f"<{tok.value}>"
+            except ValueError:
+                raise ValueError(
+                    f"Unsupported IDocTags token for label '{label_value}'"
+                )
+
+        parts: list[str] = []
+
+        if item.meta:
+            meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+            if meta_res.text:
+                parts.append(meta_res.text)
+
+        if params.add_location:
+            # Use IDocTags `<location>` tokens instead of `<loc_.../>`
+            loc = _create_location_tokens_for_item(item=item, doc=doc)
+            if loc:
+                parts.append(loc)
+
+        if params.add_content:
+            if (
+                item.text == ""
+                and len(item.children) == 1
+                and isinstance(
+                    (child_group := item.children[0].resolve(doc)), InlineGroup
+                )
+            ):
+                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
+                text_part = ser_res.text
+            else:
+                text_part = doc_serializer.post_process(
+                    text=item.text,
+                    formatting=item.formatting,
+                    hyperlink=item.hyperlink,
+                )
+
+            # For code blocks, preserve language using a lightweight facets marker
+            # e.g., <facets>language=python</facets> before the code content.
+            if isinstance(item, CodeItem):
+                lang = getattr(item.code_language, "value", str(item.code_language))
+                if lang:
+                    parts.append(
+                        _wrap(
+                            text=f"language={lang.lower()}",
+                            wrap_tag=IDocTagsToken.FACETS.value,
+                        )
+                    )
+                # Keep the textual code content as-is
+                text_part = text_part
+            else:
+                text_part = text_part.strip()
+
+            if text_part:
+                parts.append(text_part)
+
+        if params.add_caption and isinstance(item, FloatingItem):
+            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+            if cap_text:
+                parts.append(cap_text)
+
+        text_res = "".join(parts)
+        if wrap_open_token is not None:
+            text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
+        return create_ser_result(text=text_res, span_source=item)
 
 
 class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
@@ -401,7 +1116,7 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
         return None
 
 
-class IDocTagsPictureSerializer(DocTagsPictureSerializer):
+class IDocTagsPictureSerializer(BasePictureSerializer):
     """DocTags-specific picture item serializer."""
 
     @override
@@ -414,25 +1129,36 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        params = DocTagsParams(**kwargs)
+        params = IDocTagsParams(**kwargs)
+
+        open_token: str = IDocTagsVocabulary.create_floating_group_token(
+            value=IDocTagsAttributeValue.PICTURE
+        )
+        close_token: str = IDocTagsVocabulary.create_floating_group_token(
+            value=IDocTagsAttributeValue.PICTURE, closing=True
+        )
+
+        # Build caption (as a sibling of the picture within the floating_group)
         res_parts: list[SerializationResult] = []
-        is_chart = False
+        caption_text = ""
+        if params.add_caption:
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                caption_text = cap_res.text
+                res_parts.append(cap_res)
 
+        # Build picture inner content (meta + body) that will go inside <picture> ... </picture>
+        picture_inner_parts: list[str] = []
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-
             if item.meta:
                 meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
                 if meta_res.text:
+                    picture_inner_parts.append(meta_res.text)
                     res_parts.append(meta_res)
 
             body = ""
             if params.add_location:
-                body += item.get_location_tokens(
-                    doc=doc,
-                    xsize=params.xsize,
-                    ysize=params.ysize,
-                    self_closing=params.do_self_closing,
-                )
+                body += _create_location_tokens_for_item(item=item, doc=doc)
 
             # handle tabular chart data
             chart_data: Optional[TableData] = None
@@ -450,40 +1176,268 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
                     table_token=IDocTagsTableToken,
                 )
                 body += otsl_content
-            res_parts.append(create_ser_result(text=body, span_source=item))
 
-        if params.add_caption:
-            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
-            if cap_res.text:
-                res_parts.append(cap_res)
+            if body:
+                picture_inner_parts.append(body)
+                res_parts.append(create_ser_result(text=body, span_source=item))
 
-        text_res = "".join([r.text for r in res_parts])
-        if text_res:
-            token = IDocTagsToken.create_token_name_from_doc_item_label(
-                label=DocItemLabel.CHART if is_chart else DocItemLabel.PICTURE,
+        picture_text = "".join(picture_inner_parts)
+        if picture_text:
+            picture_text = _wrap(
+                text=picture_text, wrap_tag=IDocTagsToken.PICTURE.value
             )
-            text_res = _wrap(text=text_res, wrap_tag=token)
+
+        # Compose final structure for picture group:
+        # <floating_group class="picture"> [<caption>] <picture>...</picture> </floating_group>
+        composed_inner = f"{caption_text}{picture_text}"
+        text_res = ""
+        if composed_inner:
+            text_res = f"{open_token}{composed_inner}{close_token}"
+
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
-class IDocTagsTableSerializer(DocTagsTableSerializer):
+class IDocTagsTableSerializer(BaseTableSerializer):
     """DocTags-specific table item serializer."""
 
     def _get_table_token(self) -> Any:
         return IDocTagsTableToken
 
+    @override
+    def serialize(
+        self,
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        params = IDocTagsParams(**kwargs)
 
-class IDocTagsDocSerializer(DocTagsDocSerializer):
-    """DocTags document serializer."""
+        # FIXME: we might need to check the label to distinguish between TABLE and DOCUMENT_INDEX label
+        open_token: str = IDocTagsVocabulary.create_floating_group_token(
+            value=IDocTagsAttributeValue.TABLE
+        )
+        close_token: str = IDocTagsVocabulary.create_floating_group_token(
+            value=IDocTagsAttributeValue.TABLE, closing=True
+        )
 
-    picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
-    meta_serializer: BaseMetaSerializer = IDocTagsMetaSerializer()
+        res_parts: list[SerializationResult] = []
+
+        # Caption as sibling of the OTSL payload within the floating group
+        caption_text = ""
+        if params.add_caption:
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                caption_text = cap_res.text
+                res_parts.append(cap_res)
+
+        # Build table payload: location (if any) + otsl content inside <otsl> ... </otsl>
+        otsl_payload = ""
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            body = ""
+            if params.add_location:
+                body += _create_location_tokens_for_item(item=item, doc=doc)
+
+            otsl_text = item.export_to_otsl(
+                doc=doc,
+                add_cell_location=params.add_table_cell_location,
+                # Suppress cell text when global content is disabled
+                add_cell_text=(params.add_table_cell_text and params.add_content),
+                xsize=params.xsize,
+                ysize=params.ysize,
+                visited=visited,
+                table_token=self._get_table_token(),
+            )
+            body += otsl_text
+            if body:
+                otsl_payload = _wrap(text=body, wrap_tag=IDocTagsToken.OTSL.value)
+                res_parts.append(create_ser_result(text=body, span_source=item))
+
+        composed_inner = f"{caption_text}{otsl_payload}"
+        text_res = ""
+        if composed_inner:
+            text_res = f"{open_token}{composed_inner}{close_token}"
+
+        return create_ser_result(text=text_res, span_source=res_parts)
+
+
+class IDocTagsInlineSerializer(BaseInlineSerializer):
+    """Inline serializer emitting IDocTags `<inline>` and `<location>` tokens."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: InlineGroup,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        list_level: int = 0,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize inline content with optional location into IDocTags text."""
+        my_visited = visited if visited is not None else set()
+        params = IDocTagsParams(**kwargs)
+        parts: list[SerializationResult] = []
+        if params.add_location:
+            # Create a single enclosing bbox over inline children
+            boxes: list[tuple[float, float, float, float]] = []
+            prov_page_w_h: Optional[tuple[float, float, int]] = None
+            for it, _ in doc.iterate_items(root=item):
+                if isinstance(it, DocItem) and it.prov:
+                    for prov in it.prov:
+                        page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
+                        boxes.append(prov.bbox.to_top_left_origin(page_h).as_tuple())
+                        prov_page_w_h = (page_w, page_h, prov.page_no)
+            if boxes and prov_page_w_h is not None:
+                x0 = min(b[0] for b in boxes)
+                y0 = min(b[1] for b in boxes)
+                x1 = max(b[2] for b in boxes)
+                y1 = max(b[3] for b in boxes)
+                page_w, page_h, _ = prov_page_w_h
+                loc_str = _create_location_tokens_for_bbox(
+                    bbox=(x0, y0, x1, y1),
+                    page_w=page_w,
+                    page_h=page_h,
+                    xres=params.xsize,
+                    yres=params.ysize,
+                )
+                parts.append(create_ser_result(text=loc_str))
+            params.add_location = False
+        parts.extend(
+            doc_serializer.get_parts(
+                item=item,
+                list_level=list_level,
+                is_inline_scope=True,
+                visited=my_visited,
+                **{**kwargs, **params.model_dump()},
+            )
+        )
+        delim = _get_delim(params=params)
+        text_res = delim.join([p.text for p in parts if p.text])
+        if text_res:
+            text_res = f"{text_res}{delim}"
+            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.INLINE.value)
+        return create_ser_result(text=text_res, span_source=parts)
+
+
+class IDocTagsFallbackSerializer(BaseFallbackSerializer):
+    """Fallback serializer concatenating text for list/inline groups."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: NodeItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize unsupported nodes by concatenating their textual parts."""
+        if isinstance(item, (ListGroup, InlineGroup)):
+            parts = doc_serializer.get_parts(item=item, **kwargs)
+            text_res = "\n".join([p.text for p in parts if p.text])
+            return create_ser_result(text=text_res, span_source=parts)
+        return create_ser_result()
+
+
+class IDocTagsKeyValueSerializer(BaseKeyValueSerializer):
+    """No-op serializer for key/value items in IDocTags."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: KeyValueItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Return an empty result for key/value items."""
+        return create_ser_result()
+
+
+class IDocTagsFormSerializer(BaseFormSerializer):
+    """No-op serializer for form items in IDocTags."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: FormItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Return an empty result for form items."""
+        return create_ser_result()
+
+
+class IDocTagsAnnotationSerializer(BaseAnnotationSerializer):
+    """No-op annotation serializer; IDocTags relies on meta instead."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: DocItem,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Return an empty result; annotations are handled via meta."""
+        return create_ser_result()
+
+
+class IDocTagsDocSerializer(DocSerializer):
+    """IDocTags document serializer."""
+
+    text_serializer: BaseTextSerializer = IDocTagsTextSerializer()
     table_serializer: BaseTableSerializer = IDocTagsTableSerializer()
+    picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
+    key_value_serializer: BaseKeyValueSerializer = IDocTagsKeyValueSerializer()
+    form_serializer: BaseFormSerializer = IDocTagsFormSerializer()
+    fallback_serializer: BaseFallbackSerializer = IDocTagsFallbackSerializer()
+
+    list_serializer: BaseListSerializer = IDocTagsListSerializer()
+    inline_serializer: BaseInlineSerializer = IDocTagsInlineSerializer()
+
+    meta_serializer: BaseMetaSerializer = IDocTagsMetaSerializer()
+    annotation_serializer: BaseAnnotationSerializer = IDocTagsAnnotationSerializer()
+
     params: IDocTagsParams = IDocTagsParams()
 
     @override
     def _meta_is_wrapped(self) -> bool:
         return True
+
+    @override
+    def serialize_captions(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's captions with IDocTags location tokens."""
+        params = IDocTagsParams(**kwargs)
+        results: list[SerializationResult] = []
+        if item.captions:
+            cap_res = super().serialize_captions(item, **kwargs)
+            if cap_res.text and params.add_location:
+                for caption in item.captions:
+                    if caption.cref not in self.get_excluded_refs(**kwargs):
+                        if isinstance(cap := caption.resolve(self.doc), DocItem):
+                            loc_txt = _create_location_tokens_for_item(
+                                item=cap, doc=self.doc
+                            )
+                            results.append(create_ser_result(text=loc_txt))
+            if cap_res.text and params.add_content:
+                results.append(cap_res)
+        text_res = "".join([r.text for r in results])
+        if text_res:
+            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.CAPTION.value)
+        return create_ser_result(text=text_res, span_source=results)
 
     @override
     def serialize_doc(
@@ -492,8 +1446,12 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
         parts: list[SerializationResult],
         **kwargs: Any,
     ) -> SerializationResult:
-        """DocTags-specific document serializer."""
+        """Doc-level serialization with IDocTags root wrapper."""
         delim = _get_delim(params=self.params)
+
+        open_token: str = IDocTagsVocabulary.create_doctag_root()
+        close_token: str = IDocTagsVocabulary.create_doctag_root(closing=True)
+
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
@@ -501,19 +1459,457 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
-        tmp = f"<{IDocTagsToken.DOCUMENT.value}>"
-        tmp += f"<{IDocTagsToken.VERSION.value}>{DOCTAGS_VERSION}</{IDocTagsToken.VERSION.value}>"
-        tmp += f"{text_res}"
-        tmp += f"</{IDocTagsToken.DOCUMENT.value}>"
-
-        text_res = tmp
+        text_res = f"{open_token}{text_res}{close_token}"
 
         if self.params.pretty_indentation and (
             my_root := parseString(text_res).documentElement
         ):
+            # Pretty-print using minidom. This may collapse empty elements
+            # into self-closing tags. We optionally expand back non-self-closing
+            # tokens to preserve the IDocTags contract.
             text_res = my_root.toprettyxml(indent=self.params.pretty_indentation)
             text_res = "\n".join(
                 [line for line in text_res.split("\n") if line.strip()]
             )
 
+            if self.params.preserve_empty_non_selfclosing:
+                # Expand self-closing forms for tokens that are not allowed
+                # to be self-closing according to the vocabulary.
+                # Example: <list_text/> -> <list_text></list_text>
+                non_selfclosing = [
+                    tok
+                    for tok in IDocTagsToken
+                    if not IDocTagsVocabulary.IS_SELFCLOSING.get(tok, False)
+                ]
+
+                def _expand_tag(text: str, name: str) -> str:
+                    # Match <name/> or <name .../>
+                    pattern = rf"<\s*{name}(\s[^>]*)?/\s*>"
+                    return re.sub(pattern, rf"<{name}\1></{name}>", text)
+
+                for tok in non_selfclosing:
+                    text_res = _expand_tag(text_res, tok.value)
+
         return create_ser_result(text=text_res, span_source=parts)
+
+    @override
+    def requires_page_break(self):
+        """Return whether page breaks should be emitted for the document."""
+        return self.params.add_page_break
+
+
+class IDocTagsDocDeserializer(BaseModel):
+    """IDocTags document deserializer."""
+
+    # Internal state used while walking the tree
+    _page_no: int = 0
+    _default_resolution: int = DOCTAGS_RESOLUTION
+
+    def deserialize(
+        self,
+        *,
+        doctags: str,
+    ) -> DoclingDocument:
+        """Deserialize DocTags XML into a DoclingDocument.
+
+        Args:
+            doctags: DocTags XML string to parse.
+
+        Returns:
+            A populated `DoclingDocument` parsed from the input.
+        """
+        root_node = parseString(doctags).documentElement
+        if root_node is None:
+            raise ValueError("Invalid DocTags XML: missing documentElement")
+        root: Element = cast(Element, root_node)
+        if root.tagName != IDocTagsToken.DOCUMENT.value:
+            candidates = root.getElementsByTagName(IDocTagsToken.DOCUMENT.value)
+            if candidates:
+                root = cast(Element, candidates[0])
+
+        doc = DoclingDocument(name="Document")
+        # Initialize with a default page so location tokens can be re‑emitted
+        self._page_no = 0
+        self._default_resolution = DOCTAGS_RESOLUTION
+        self._ensure_page_exists(
+            doc=doc, page_no=self._page_no, resolution=self._default_resolution
+        )
+        self._parse_document_root(doc=doc, root=root)
+        return doc
+
+    # ------------- Core walkers -------------
+    def _parse_document_root(self, *, doc: DoclingDocument, root) -> None:
+        for node in root.childNodes:
+            if getattr(node, "nodeType", None) == node.ELEMENT_NODE:
+                self._dispatch_element(doc=doc, el=node, parent=None)
+
+    def _dispatch_element(self, *, doc: DoclingDocument, el, parent) -> None:
+        name = el.tagName
+        if name in {
+            IDocTagsToken.TITLE.value,
+            IDocTagsToken.TEXT.value,
+            IDocTagsToken.CAPTION.value,
+            IDocTagsToken.FOOTNOTE.value,
+            IDocTagsToken.PAGE_HEADER.value,
+            IDocTagsToken.PAGE_FOOTER.value,
+            IDocTagsToken.CODE.value,
+            IDocTagsToken.FORMULA.value,
+        }:
+            self._parse_text_like(doc=doc, el=el, parent=parent)
+        elif name == IDocTagsToken.PAGE_BREAK.value:
+            # Start a new page; keep a default square page using the configured resolution
+            self._page_no += 1
+            self._ensure_page_exists(
+                doc=doc, page_no=self._page_no, resolution=self._default_resolution
+            )
+        elif name == IDocTagsToken.HEADING.value:
+            self._parse_heading(doc=doc, el=el, parent=parent)
+        elif name == IDocTagsToken.LIST.value:
+            self._parse_list(doc=doc, el=el, parent=parent)
+        elif name == IDocTagsToken.FLOATING_GROUP.value:
+            self._parse_floating_group(doc=doc, el=el, parent=parent)
+        else:
+            self._walk_children(doc=doc, el=el, parent=parent)
+
+    def _walk_children(self, *, doc: DoclingDocument, el, parent) -> None:
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) == node.ELEMENT_NODE:
+                # Ignore geometry/meta containers at this level; pass through page breaks
+                if node.tagName in {
+                    IDocTagsToken.HEAD.value,
+                    IDocTagsToken.META.value,
+                    IDocTagsToken.LOCATION.value,
+                }:
+                    continue
+                self._dispatch_element(doc=doc, el=node, parent=parent)
+
+    # ------------- Text blocks -------------
+    def _parse_text_like(self, *, doc: DoclingDocument, el, parent) -> None:
+        """Parse text-like tokens (title, text, caption, footnotes, code, formula)."""
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        text = self._get_text(el).strip()
+        if not text:
+            return
+
+        nm = el.tagName
+
+        # Handle code separately (language + content extraction)
+        if nm == IDocTagsToken.CODE.value:
+            code_text, lang_label = self._extract_code_content_and_language(el)
+            if not code_text.strip():
+                return
+            item = doc.add_code(
+                text=code_text,
+                code_language=lang_label,
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+            )
+            for p in prov_list[1:]:
+                item.prov.append(p)
+            return
+
+        # Map text-like tokens to text item labels
+        text_label_map = {
+            IDocTagsToken.TEXT.value: DocItemLabel.TEXT,
+            IDocTagsToken.CAPTION.value: DocItemLabel.CAPTION,
+            IDocTagsToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
+            IDocTagsToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
+            IDocTagsToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
+        }
+
+        if nm in text_label_map:
+            item = doc.add_text(
+                label=text_label_map[nm],
+                text=text,
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+            )
+            for p in prov_list[1:]:
+                item.prov.append(p)
+            return
+
+        if nm == IDocTagsToken.TITLE.value:
+            item = doc.add_title(
+                text=text,
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+            )
+            for p in prov_list[1:]:
+                item.prov.append(p)
+            return
+
+        if nm == IDocTagsToken.FORMULA.value:
+            item = doc.add_formula(
+                text=text,
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+            )
+            for p in prov_list[1:]:
+                item.prov.append(p)
+            return
+
+    def _extract_code_content_and_language(self, el) -> tuple[str, CodeLanguageLabel]:
+        """Extract code content and language from a <code> element."""
+        lang_label = CodeLanguageLabel.UNKNOWN
+        parts: list[str] = []
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) == node.TEXT_NODE:
+                if node.data.strip():
+                    parts.append(node.data)
+            elif getattr(node, "nodeType", None) == node.ELEMENT_NODE:
+                nm_child = node.tagName
+                if nm_child == IDocTagsToken.FACETS.value:
+                    facets_text = self._get_text(node).strip()
+                    if "=" in facets_text:
+                        key, val = facets_text.split("=", 1)
+                        if key.strip().lower() == "language":
+                            val_norm = val.strip().lower()
+                            try:
+                                lang_label = next(
+                                    lbl
+                                    for lbl in CodeLanguageLabel
+                                    if lbl.value.lower() == val_norm
+                                )
+                            except StopIteration:
+                                lang_label = CodeLanguageLabel.UNKNOWN
+                    continue
+                if nm_child == IDocTagsToken.LOCATION.value:
+                    continue
+                if nm_child == IDocTagsToken.BR.value:
+                    parts.append("\n")
+                else:
+                    parts.append(self._get_text(node))
+
+        return "".join(parts), lang_label
+
+    def _parse_heading(self, *, doc: DoclingDocument, el, parent) -> None:
+        lvl_txt = el.getAttribute(IDocTagsAttributeKey.LEVEL.value) or "1"
+        try:
+            level = int(lvl_txt)
+        except Exception:
+            level = 1
+        # Extract provenance from heading token (if any)
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        text = self._get_text(el)
+        text_stripped = text.strip()
+        if text_stripped:
+            item = doc.add_heading(
+                text=text_stripped,
+                level=level,
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+            )
+            for p in prov_list[1:]:
+                item.prov.append(p)
+
+    def _parse_list(self, *, doc: DoclingDocument, el, parent) -> None:
+        ordered = (
+            el.getAttribute(IDocTagsAttributeKey.ORDERED.value)
+            == IDocTagsAttributeValue.TRUE.value
+        )
+        group = doc.add_list_group(parent=parent)
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) != node.ELEMENT_NODE:
+                continue
+            if node.tagName == IDocTagsToken.LIST_TEXT.value:
+                # Collect provenance from the <list_text> wrapper
+                prov_list = self._extract_provenance(doc=doc, el=node)
+                text = self._get_text(node).strip()
+                if text:
+                    item = doc.add_list_item(
+                        text=text,
+                        parent=group,
+                        enumerated=ordered,
+                        prov=(prov_list[0] if prov_list else None),
+                    )
+                    for p in prov_list[1:]:
+                        item.prov.append(p)
+
+    # ------------- Floating groups -------------
+    def _parse_floating_group(self, *, doc: DoclingDocument, el, parent) -> None:
+        cls_val = el.getAttribute(IDocTagsAttributeKey.CLASS.value)
+        if cls_val == IDocTagsAttributeValue.TABLE.value:
+            self._parse_table_group(doc=doc, el=el, parent=parent)
+        elif cls_val == IDocTagsAttributeValue.PICTURE.value:
+            self._parse_picture_group(doc=doc, el=el, parent=parent)
+        else:
+            self._walk_children(doc=doc, el=el, parent=parent)
+
+    def _parse_table_group(self, *, doc: DoclingDocument, el, parent) -> None:
+        caption = self._extract_caption(doc=doc, el=el)
+        otsl_el = self._first_child(el, IDocTagsToken.OTSL.value)
+        if otsl_el is None:
+            doc.add_table(data=TableData(), caption=caption, parent=parent)
+            return
+        # Extract table provenance from <otsl> leading <location/> tokens
+        tbl_provs = self._extract_provenance(doc=doc, el=otsl_el)
+        inner = self._inner_xml(otsl_el)
+        # Remove any location tokens from the OTSL content before parsing
+        inner = re.sub(r"<\s*location\b[^>]*/\s*>", "", inner)
+        normalized = self._normalize_otsl_tokens(inner)
+        td = parse_otsl_table_content(f"<otsl>{normalized}</otsl>")
+        tbl = doc.add_table(
+            data=td,
+            caption=caption,
+            parent=parent,
+            prov=(tbl_provs[0] if tbl_provs else None),
+        )
+        for p in tbl_provs[1:]:
+            tbl.prov.append(p)
+
+    def _parse_picture_group(self, *, doc: DoclingDocument, el, parent) -> None:
+        # Extract caption from the floating group
+        caption = self._extract_caption(doc=doc, el=el)
+
+        # Extract provenance from the <picture> block (locations appear inside it)
+        prov_list: list[ProvenanceItem] = []
+        picture_el = self._first_child(el, IDocTagsToken.PICTURE.value)
+        if picture_el is not None:
+            prov_list = self._extract_provenance(doc=doc, el=picture_el)
+
+        # Create the picture item first, attach caption and provenance
+        pic = doc.add_picture(
+            caption=caption,
+            parent=parent,
+            prov=(prov_list[0] if prov_list else None),
+        )
+        for p in prov_list[1:]:
+            pic.prov.append(p)
+
+        # If there is a <picture> child and it contains an <otsl>,
+        # parse it as TabularChartMetaField and attach to picture.meta
+        if picture_el is not None:
+            otsl_el = self._first_child(picture_el, IDocTagsToken.OTSL.value)
+            if otsl_el is not None:
+                inner = self._inner_xml(otsl_el)
+                normalized = self._normalize_otsl_tokens(inner)
+                td = parse_otsl_table_content(f"<otsl>{normalized}</otsl>")
+                if pic.meta is None:
+                    pic.meta = PictureMeta()
+                pic.meta.tabular_chart = TabularChartMetaField(chart_data=td)
+
+    # ------------- Helpers -------------
+    def _extract_caption(self, *, doc: DoclingDocument, el) -> Optional[TextItem]:
+        cap_el = self._first_child(el, IDocTagsToken.CAPTION.value)
+        if cap_el is None:
+            return None
+        text = self._get_text(cap_el).strip()
+        if not text:
+            return None
+        prov_list = self._extract_provenance(doc=doc, el=cap_el)
+        item = doc.add_text(
+            label=DocItemLabel.CAPTION,
+            text=text,
+            prov=(prov_list[0] if prov_list else None),
+        )
+        for p in prov_list[1:]:
+            item.prov.append(p)
+        return item
+
+    def _first_child(self, el, tag_name: str):
+        for node in el.childNodes:
+            if (
+                getattr(node, "nodeType", None) == node.ELEMENT_NODE
+                and node.tagName == tag_name
+            ):
+                return node
+        return None
+
+    def _inner_xml(self, el) -> str:
+        parts: list[str] = []
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) == node.TEXT_NODE:
+                parts.append(node.data)
+            elif node.nodeType == node.ELEMENT_NODE:
+                parts.append(node.toxml())
+        return "".join(parts)
+
+    def _normalize_otsl_tokens(self, text: str) -> str:
+        tokens = [
+            IDocTagsToken.FCEL.value,
+            IDocTagsToken.ECEL.value,
+            IDocTagsToken.LCEL.value,
+            IDocTagsToken.UCEL.value,
+            IDocTagsToken.XCEL.value,
+            IDocTagsToken.NL.value,
+            IDocTagsToken.CHED.value,
+            IDocTagsToken.RHED.value,
+            IDocTagsToken.SROW.value,
+        ]
+        for t in tokens:
+            text = re.sub(rf"<\s*{t}\s*/>", f"<{t}>", text)
+        return text
+
+    def _get_text(self, el) -> str:
+        out: list[str] = []
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) == node.TEXT_NODE:
+                # Skip pure indentation/pretty-print whitespace
+                if node.data.strip():
+                    out.append(node.data)
+            elif node.nodeType == node.ELEMENT_NODE:
+                nm = node.tagName
+                if nm in {IDocTagsToken.LOCATION.value}:
+                    continue
+                if nm == IDocTagsToken.BR.value:
+                    out.append("\n")
+                else:
+                    out.append(self._get_text(node))
+        return "".join(out)
+
+    # --------- Location helpers ---------
+    def _ensure_page_exists(
+        self, *, doc: DoclingDocument, page_no: int, resolution: int
+    ) -> None:
+        # If the page already exists, do nothing; otherwise add with a square size based on resolution
+        if page_no not in doc.pages:
+            doc.add_page(
+                page_no=page_no, size=Size(width=resolution, height=resolution)
+            )
+
+    def _extract_provenance(self, *, doc: DoclingDocument, el) -> list[ProvenanceItem]:
+        # Collect immediate child <location value=.. resolution=.. /> tokens in groups of 4
+        values: list[int] = []
+        res_for_group: Optional[int] = None
+        provs: list[ProvenanceItem] = []
+
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) != node.ELEMENT_NODE:
+                continue
+            if node.tagName != IDocTagsToken.LOCATION.value:
+                continue
+            try:
+                v = int(node.getAttribute(IDocTagsAttributeKey.VALUE.value) or "0")
+            except Exception:
+                v = 0
+            try:
+                r = int(
+                    node.getAttribute(IDocTagsAttributeKey.RESOLUTION.value)
+                    or str(self._default_resolution)
+                )
+            except Exception:
+                r = self._default_resolution
+            values.append(v)
+            # For a group, remember the last seen resolution
+            res_for_group = r
+            if len(values) == 4:
+                # Ensure page exists (and set consistent default size for this page)
+                self._ensure_page_exists(
+                    doc=doc,
+                    page_no=self._page_no,
+                    resolution=res_for_group or self._default_resolution,
+                )
+                l = float(min(values[0], values[2]))
+                t = float(min(values[1], values[3]))
+                rgt = float(max(values[0], values[2]))
+                btm = float(max(values[1], values[3]))
+                bbox = BoundingBox.from_tuple(
+                    (l, t, rgt, btm), origin=CoordOrigin.TOPLEFT
+                )
+                provs.append(
+                    ProvenanceItem(page_no=self._page_no, bbox=bbox, charspan=(0, 0))
+                )
+                values = []
+                res_for_group = None
+
+        return provs

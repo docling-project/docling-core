@@ -4,12 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from docling_core.experimental.idoctags import IDocTagsDocSerializer, IDocTagsParams
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
-from docling_core.transforms.serializer.doctags import (
-    DocTagsDocSerializer,
-    DocTagsParams,
-)
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLOutputStyle,
@@ -43,7 +38,7 @@ def verify(exp_file: Path, actual: str):
 
         # Normalize platform-dependent quote escaping for DocTags outputs
         name = exp_file.name
-        if name.endswith(".dt") or name.endswith(".idt.xml"):
+        if name.endswith(".dt") or name.endswith(".idt") or name.endswith(".idt.xml"):
 
             def _normalize_quotes(s: str) -> str:
                 return s.replace("&quot;", '"').replace("&#34;", '"')
@@ -51,7 +46,7 @@ def verify(exp_file: Path, actual: str):
             expected = _normalize_quotes(expected)
             actual = _normalize_quotes(actual)
 
-        assert expected == actual
+        assert actual == expected
 
 
 # ===============================
@@ -559,94 +554,3 @@ def test_html_inline_and_formatting():
     ser = HTMLDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
-
-
-# ===============================
-# DocTags tests
-# ===============================
-
-
-def test_doctags_inline_loc_tags():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    ser = DocTagsDocSerializer(doc=doc)
-    actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".out.dt"), actual=actual)
-
-
-def test_doctags_rich_table(rich_table_doc):
-    exp_file = Path("./test/data/doc/rich_table.out.dt")
-
-    ser = DocTagsDocSerializer(doc=rich_table_doc)
-    actual = ser.serialize().text
-    verify(exp_file=exp_file, actual=actual)
-
-
-def test_doctags_inline_and_formatting():
-    src = Path("./test/data/doc/inline_and_formatting.yaml")
-    doc = DoclingDocument.load_from_yaml(src)
-
-    ser = DocTagsDocSerializer(doc=doc)
-    actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
-
-
-def test_doctags_meta():
-    src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
-    doc = DoclingDocument.load_from_yaml(src)
-
-    ser = DocTagsDocSerializer(doc=doc)
-    actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
-
-
-# ===============================
-# IDocTags tests
-# ===============================
-
-
-def test_idoctags():
-    src = Path("./test/data/doc/ddoc_0.json")
-    doc = DoclingDocument.load_from_json(src)
-
-    if True:
-        # Human readable, indented and with content
-        params = IDocTagsParams()
-        params.add_content = True
-
-        ser = IDocTagsDocSerializer(doc=doc, params=params)
-        actual = ser.serialize().text
-
-        verify(exp_file=src.with_suffix(".v0.gt.dt"), actual=actual)
-
-    if True:
-        # Human readable, indented but without content
-        params = IDocTagsParams()
-        params.add_content = False
-
-        ser = IDocTagsDocSerializer(doc=doc, params=params)
-        actual = ser.serialize().text
-
-        verify(exp_file=src.with_suffix(".v1.gt.dt"), actual=actual)
-
-    if True:
-        # Machine readable, not indented and without content
-        params = IDocTagsParams()
-        params.pretty_indentation = ""
-        params.add_content = False
-        params.mode = DocTagsParams.Mode.MINIFIED
-
-        ser = IDocTagsDocSerializer(doc=doc, params=params)
-        actual = ser.serialize().text
-
-        verify(exp_file=src.with_suffix(".v2.gt.dt"), actual=actual)
-
-
-def test_idoctags_meta():
-    src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
-    doc = DoclingDocument.load_from_yaml(src)
-
-    ser = IDocTagsDocSerializer(doc=doc)
-    actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".gt.idt.xml"), actual=actual)
