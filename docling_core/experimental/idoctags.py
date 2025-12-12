@@ -1,5 +1,6 @@
 """Define classes for DocTags serialization."""
 
+import re
 from enum import Enum
 from typing import Any, ClassVar, Final, Optional
 from xml.dom.minidom import parseString
@@ -16,13 +17,10 @@ from docling_core.transforms.serializer.base import (
     SerializationResult,
 )
 from docling_core.transforms.serializer.common import create_ser_result
-from docling_core.transforms.serializer.doctags import (
+from docling_core.transforms.serializer.doctags import (  # DocTagsPictureSerializer,; DocTagsTableSerializer,; _wrap,
     DocTagsDocSerializer,
     DocTagsParams,
-    DocTagsPictureSerializer,
-    DocTagsTableSerializer,
     _get_delim,
-    _wrap,
 )
 from docling_core.types.doc import (
     BaseMeta,
@@ -38,10 +36,20 @@ from docling_core.types.doc import (
     PictureItem,
     SummaryMetaField,
     TableData,
+    TableItem,
     TabularChartMetaField,
 )
 
 DOCTAGS_VERSION: Final = "1.0.0"
+
+
+def _wrap(text: str, wrap_tag: str) -> str:
+    return f"<{wrap_tag}>{text}</{wrap_tag}>"
+
+
+def _wrap_token(*, text: str, open_token: str) -> str:
+    close_token = IDocTagsVocabulary.create_closing_token(token=open_token)
+    return f"{open_token}{text}{close_token}"
 
 
 class IDocTagsCategory(str, Enum):
@@ -186,7 +194,6 @@ class IDocTagsToken(str, Enum):
 
     # Root and metadata
     DOCUMENT = "doctag"
-    VERSION = "version"
     HEAD = "head"
     META = "meta"
 
@@ -320,6 +327,9 @@ class IDocTagsVocabulary(BaseModel):
 
     # Allowed attributes per token (defined outside the Enum to satisfy mypy)
     ALLOWED_ATTRIBUTES: ClassVar[dict[IDocTagsToken, set["IDocTagsAttributeKey"]]] = {
+        IDocTagsToken.DOCUMENT: {
+            IDocTagsAttributeKey.VERSION,
+        },
         IDocTagsToken.LOCATION: {
             IDocTagsAttributeKey.VALUE,
             IDocTagsAttributeKey.RESOLUTION,
@@ -430,6 +440,70 @@ class IDocTagsVocabulary(BaseModel):
     }
 
     @classmethod
+    def create_closing_token(cls, *, token: str) -> str:
+        r"""Create a closing tag from an opening tag string.
+
+        Example: "<heading level=\"2\">" -> "</heading>"
+        Validates the tag and ensures it is not self-closing.
+        If `token` is already a valid closing tag, it is returned unchanged.
+        """
+        if not isinstance(token, str) or not token.strip():
+            raise ValueError("token must be a non-empty string")
+
+        s = token.strip()
+
+        # Already a closing tag: validate and return as-is
+        if s.startswith("</"):
+            m_close = re.match(r"^</\s*([a-zA-Z_][\w\-]*)\s*>$", s)
+            if not m_close:
+                raise ValueError("invalid closing tag format")
+            name = m_close.group(1)
+            try:
+                IDocTagsToken(name)
+            except ValueError:
+                raise ValueError(f"unknown token '{name}'")
+            return s
+
+        # Extract tag name from an opening tag while dropping attributes
+        m = re.match(r"^<\s*([a-zA-Z_][\w\-]*)\b[^>]*?(/?)\s*>$", s)
+        if not m:
+            raise ValueError("invalid opening tag format")
+
+        name, trailing_slash = m.group(1), m.group(2)
+
+        # Validate the tag name against known tokens
+        try:
+            tok_enum = IDocTagsToken(name)
+        except ValueError:
+            raise ValueError(f"unknown token '{name}'")
+
+        # Disallow explicit self-closing markup or inherently self-closing tokens
+        if trailing_slash == "/":
+            raise ValueError(f"token '{name}' is self-closing; no closing tag")
+        if cls.IS_SELFCLOSING.get(tok_enum, False):
+            raise ValueError(f"token '{name}' is self-closing; no closing tag")
+
+        return f"</{name}>"
+
+    @classmethod
+    def create_doctag_root(
+        cls, *, version: str = DOCTAGS_VERSION, closing: bool = False
+    ) -> str:
+        """Create the document root tag.
+
+        - When `closing` is True, returns the closing root tag.
+        - When a `version` is provided, includes it as an attribute.
+        - Otherwise returns a bare opening root tag.
+        """
+        if closing:
+            return f"</{IDocTagsToken.DOCUMENT.value}>"
+        elif version:
+            return f'<{IDocTagsToken.DOCUMENT.value} {IDocTagsAttributeKey.VERSION.value}="{version}">'
+        else:
+            # Version attribute is optional; emit bare root tag when not provided
+            return f"<{IDocTagsToken.DOCUMENT.value}>"
+
+    @classmethod
     def create_threading_token(cls, *, id: str, horizontal: bool = False) -> str:
         """Create a continuation threading token.
 
@@ -448,6 +522,40 @@ class IDocTagsVocabulary(BaseModel):
             raise ValueError(f"id length must be in [{lo}, {hi}]")
 
         return f'<{token.value} {IDocTagsAttributeKey.ID.value}="{id}"/>'
+
+    @classmethod
+    def create_floating_group_token(
+        cls, *, value: IDocTagsAttributeValue, closing: bool = False
+    ) -> str:
+        """Create a floating group tag.
+
+        - When `closing` is True, returns the closing tag.
+        - Otherwise returns an opening tag with a class attribute derived from `value`.
+        """
+        if closing:
+            return f"</{IDocTagsToken.FLOATING_GROUP.value}>"
+        else:
+            return f'<{IDocTagsToken.FLOATING_GROUP.value} {IDocTagsAttributeKey.CLASS.value}="{value.value}">'
+
+    @classmethod
+    def create_list_token(cls, *, ordered: bool, closing: bool = False) -> str:
+        """Create a list tag.
+
+        - When `closing` is True, returns the closing tag.
+        - Otherwise returns an opening tag with an `ordered` boolean attribute.
+        """
+        if closing:
+            return f"</{IDocTagsToken.LIST.value}>"
+        elif ordered:
+            return (
+                f"<{IDocTagsToken.LIST.value} "
+                f'{IDocTagsAttributeKey.ORDERED.value}="{IDocTagsAttributeValue.TRUE.value}">'
+            )
+        else:
+            return (
+                f"<{IDocTagsToken.LIST.value} "
+                f'{IDocTagsAttributeKey.ORDERED.value}="{IDocTagsAttributeValue.FALSE.value}">'
+            )
 
     @classmethod
     def create_heading_token(cls, *, level: int, closing: bool = False) -> str:
@@ -580,6 +688,12 @@ class IDocTagsParams(DocTagsParams):
 
     do_self_closing: bool = True
     pretty_indentation: Optional[str] = 2 * " "
+    # When True, convert any self-closing form of non-self-closing tokens
+    # (e.g., <list_text/>) into expanded pairs (<list_text></list_text>)
+    # after pretty-printing. This prevents XML pretty-printers from
+    # collapsing empty elements that must not be self-closing according
+    # to the IDocTags vocabulary.
+    preserve_empty_non_selfclosing: bool = True
 
 
 class IDocTagsListSerializer(BaseModel, BaseListSerializer):
@@ -622,8 +736,8 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
         params = IDocTagsParams(**kwargs)
 
         # Build list children explicitly. Requirements:
-        # 1) <ordered_list>/<unordered_list> can be children of lists.
-        # 2) Do NOT wrap nested lists into <list_item>, even if they are
+        # 1) <list ordered="true|false"></list> can be children of lists.
+        # 2) Do NOT wrap nested lists into <list_text>, even if they are
         #    children of a ListItem in the logical structure.
         # 3) Still ensure structural wrappers are preserved even when
         #    content is suppressed (e.g., add_content=False).
@@ -669,15 +783,15 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
                 **kwargs,
             )
             item_results.append(child_res)
-            # Wrap the content into <list_item>, without any nested list content.
+            # Wrap the content into <list_text>, without any nested list content.
             child_text_wrapped = _wrap(
                 text=f"{child_res.text}",
-                wrap_tag=IDocTagsToken.LIST_ITEM.value,
+                wrap_tag=IDocTagsToken.LIST_TEXT.value,
             )
             child_results_wrapped.append(child_text_wrapped)
 
-            # After the <list_item>, append any nested lists (children of this ListItem)
-            # as siblings at the same level (not wrapped in <list_item>).
+            # After the <list_text>, append any nested lists (children of this ListItem)
+            # as siblings at the same level (not wrapped in <list_text>).
             for subref in child.children:
                 sub = subref.resolve(doc)
                 if (
@@ -701,12 +815,12 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
         if child_results_wrapped:
             text_res = delim.join(child_results_wrapped)
             text_res = f"{text_res}{delim}"
-            wrap_tag = (
-                IDocTagsToken.ORDERED_LIST.value
+            open_token = (
+                IDocTagsVocabulary.create_list_token(ordered=True)
                 if item.first_item_is_enumerated(doc)
-                else IDocTagsToken.UNORDERED_LIST.value
+                else IDocTagsVocabulary.create_list_token(ordered=False)
             )
-            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+            text_res = _wrap_token(text=text_res, open_token=open_token)
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=item_results)
@@ -787,7 +901,7 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
         return None
 
 
-class IDocTagsPictureSerializer(DocTagsPictureSerializer):
+class IDocTagsPictureSerializer(BasePictureSerializer):
     """DocTags-specific picture item serializer."""
 
     @override
@@ -800,8 +914,21 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        params = DocTagsParams(**kwargs)
+        params = IDocTagsParams(**kwargs)
+
+        open_token: str = IDocTagsVocabulary.create_floating_group_token(
+            value=IDocTagsAttributeValue.PICTURE
+        )
+        close_token: str = IDocTagsVocabulary.create_floating_group_token(
+            value=IDocTagsAttributeValue.PICTURE, closing=True
+        )
+
         res_parts: list[SerializationResult] = []
+
+        if params.add_caption:
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
 
@@ -837,31 +964,104 @@ class IDocTagsPictureSerializer(DocTagsPictureSerializer):
                 body += otsl_content
             res_parts.append(create_ser_result(text=body, span_source=item))
 
-        if params.add_caption:
-            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
-            if cap_res.text:
-                res_parts.append(cap_res)
-
         text_res = "".join([r.text for r in res_parts])
         if text_res:
-            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.PICTURE)
+            text_res = (
+                open_token
+                + _wrap(text=text_res, wrap_tag=IDocTagsToken.PICTURE.value)
+                + close_token
+            )
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
-class IDocTagsTableSerializer(DocTagsTableSerializer):
+class IDocTagsTableSerializer(BaseTableSerializer):
     """DocTags-specific table item serializer."""
 
     def _get_table_token(self) -> Any:
         return IDocTagsTableToken
 
+    @override
+    def serialize(
+        self,
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        params = IDocTagsParams(**kwargs)
+
+        # FIXME: we might need to check the label to distinguish between TABLE and DOCUMENT_INDEX label
+        open_token: str = IDocTagsVocabulary.create_floating_group_token(
+            value=IDocTagsAttributeValue.TABLE
+        )
+        close_token: str = IDocTagsVocabulary.create_floating_group_token(
+            value=IDocTagsAttributeValue.TABLE, closing=True
+        )
+
+        res_parts: list[SerializationResult] = []
+
+        if params.add_caption:
+            cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+            if cap_res.text:
+                res_parts.append(cap_res)
+
+        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+
+            if params.add_location:
+                loc_text = item.get_location_tokens(
+                    doc=doc,
+                    xsize=params.xsize,
+                    ysize=params.ysize,
+                    self_closing=params.do_self_closing,
+                )
+                res_parts.append(create_ser_result(text=loc_text, span_source=item))
+
+            otsl_text = item.export_to_otsl(
+                doc=doc,
+                add_cell_location=params.add_table_cell_location,
+                # Suppress cell text when global content is disabled
+                add_cell_text=(params.add_table_cell_text and params.add_content),
+                xsize=params.xsize,
+                ysize=params.ysize,
+                visited=visited,
+                table_token=self._get_table_token(),
+            )
+            res_parts.append(create_ser_result(text=otsl_text, span_source=item))
+
+        text_res = "".join([r.text for r in res_parts])
+        if text_res:
+            text_res = (
+                open_token
+                + _wrap(text=text_res, wrap_tag=IDocTagsToken.OTSL.value)
+                + close_token
+            )
+
+        return create_ser_result(text=text_res, span_source=res_parts)
+
 
 class IDocTagsDocSerializer(DocTagsDocSerializer):
     """DocTags document serializer."""
 
-    picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
-    meta_serializer: BaseMetaSerializer = IDocTagsMetaSerializer()
+    # text_serializer: BaseTextSerializer = DocTagsTextSerializer()
     table_serializer: BaseTableSerializer = IDocTagsTableSerializer()
+    picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
+    # key_value_serializer: BaseKeyValueSerializer = DocTagsKeyValueSerializer()
+    # form_serializer: BaseFormSerializer = DocTagsFormSerializer()
+    # fallback_serializer: BaseFallbackSerializer = DocTagsFallbackSerializer()
+
+    list_serializer: BaseListSerializer = IDocTagsListSerializer()
+    # inline_serializer: BaseInlineSerializer = DocTagsInlineSerializer()
+
+    # annotation_serializer: BaseAnnotationSerializer = DocTagsAnnotationSerializer()
+
+    # picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
+    meta_serializer: BaseMetaSerializer = IDocTagsMetaSerializer()
+    # table_serializer: BaseTableSerializer = IDocTagsTableSerializer()
+
     params: IDocTagsParams = IDocTagsParams()
 
     @override
@@ -877,6 +1077,10 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
     ) -> SerializationResult:
         """DocTags-specific document serializer."""
         delim = _get_delim(params=self.params)
+
+        open_token: str = IDocTagsVocabulary.create_doctag_root()
+        close_token: str = IDocTagsVocabulary.create_doctag_root(closing=True)
+
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
@@ -884,19 +1088,42 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
+        """
         tmp = f"<{IDocTagsToken.DOCUMENT.value}>"
         tmp += f"<{IDocTagsToken.VERSION.value}>{DOCTAGS_VERSION}</{IDocTagsToken.VERSION.value}>"
         tmp += f"{text_res}"
         tmp += f"</{IDocTagsToken.DOCUMENT.value}>"
+        """
 
-        text_res = tmp
+        text_res = f"{open_token}{text_res}{close_token}"
 
         if self.params.pretty_indentation and (
             my_root := parseString(text_res).documentElement
         ):
+            # Pretty-print using minidom. This may collapse empty elements
+            # into self-closing tags. We optionally expand back non-self-closing
+            # tokens to preserve the IDocTags contract.
             text_res = my_root.toprettyxml(indent=self.params.pretty_indentation)
             text_res = "\n".join(
                 [line for line in text_res.split("\n") if line.strip()]
             )
+
+            if self.params.preserve_empty_non_selfclosing:
+                # Expand self-closing forms for tokens that are not allowed
+                # to be self-closing according to the vocabulary.
+                # Example: <list_text/> -> <list_text></list_text>
+                non_selfclosing = [
+                    tok
+                    for tok in IDocTagsToken
+                    if not IDocTagsVocabulary.IS_SELFCLOSING.get(tok, False)
+                ]
+
+                def _expand_tag(text: str, name: str) -> str:
+                    # Match <name/> or <name .../>
+                    pattern = rf"<\s*{name}(\s[^>]*)?/\s*>"
+                    return re.sub(pattern, rf"<{name}\1></{name}>", text)
+
+                for tok in non_selfclosing:
+                    text_res = _expand_tag(text_res, tok.value)
 
         return create_ser_result(text=text_res, span_source=parts)

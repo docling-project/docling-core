@@ -1,5 +1,4 @@
-<doctag>
-  <version>1.0.0</version>
+<doctag version="1.0.0">
   <title>
     <meta>
       <summary>This is a title.</summary>
@@ -11,29 +10,33 @@
     <loc_46/>
     DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
   </title>
-  <IDocTagsToken.PICTURE>
-    <meta>
-      <description>...</description>
-      <classification>Bar chart</classification>
-      <molecule>CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1</molecule>
-      <docling_legacy__misc>{'myanalysis': {'prediction': 'abc'}, 'something_else': {'text': 'aaa'}}</docling_legacy__misc>
-    </meta>
-    <loc_297/>
-    <loc_125/>
-    <loc_457/>
-    <loc_499/>
-    <caption>
+  <floating_group class="picture">
+    <picture>
+      <caption>
+        <loc_210/>
+        <loc_196/>
+        <loc_245/>
+        <loc_213/>
+        Figure 1: Four examples of complex page layouts across different document categories
+      </caption>
+      <meta>
+        <description>...</description>
+        <classification>Bar chart</classification>
+        <molecule>CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1</molecule>
+        <docling_legacy__misc>{'myanalysis': {'prediction': 'abc'}, 'something_else': {'text': 'aaa'}}</docling_legacy__misc>
+      </meta>
+      <loc_297/>
+      <loc_125/>
+      <loc_457/>
+      <loc_499/>
+    </picture>
+  </floating_group>
+  <floating_group class="table">
+    <otsl>
       <loc_210/>
       <loc_196/>
       <loc_245/>
       <loc_213/>
-      Figure 1: Four examples of complex page layouts across different document categories
-    </caption>
-  </IDocTagsToken.PICTURE>
-  <otsl>
-    <loc_210/>
-    <loc_196/>
-    <loc_245/>
-    <loc_213/>
-  </otsl>
+    </otsl>
+  </floating_group>
 </doctag>
