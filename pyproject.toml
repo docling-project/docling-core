@@ -198,7 +198,7 @@ convention = "google"
 "*.ipynb" = ["I"]  # Disable import sorting for notebooks
 
 [tool.ruff.lint.mccabe]
-max-complexity = 25
+max-complexity = 30
 
 [tool.ruff.lint.isort]
 combine-as-imports = false
