@@ -7,9 +7,9 @@ import pytest
 from docling_core.experimental.idoctags import (
     IDocTagsDocSerializer,
     IDocTagsParams,
+    IDocTagsSerializationMode,
     IDocTagsVocabulary,
 )
-from docling_core.transforms.serializer.doctags import DocTagsParams
 from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
 
 from .test_serialization import verify
@@ -163,7 +163,7 @@ def test_idoctags():
         params = IDocTagsParams()
         params.pretty_indentation = ""
         params.add_content = False
-        params.mode = DocTagsParams.Mode.MINIFIED
+        params.mode = IDocTagsSerializationMode.LLM_FRIENDLY
 
         ser = IDocTagsDocSerializer(doc=doc, params=params)
         actual = ser.serialize().text

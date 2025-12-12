@@ -9,7 +9,12 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
+    BaseAnnotationSerializer,
     BaseDocSerializer,
+    BaseFallbackSerializer,
+    BaseFormSerializer,
+    BaseInlineSerializer,
+    BaseKeyValueSerializer,
     BaseListSerializer,
     BaseMetaSerializer,
     BasePictureSerializer,
@@ -17,11 +22,10 @@ from docling_core.transforms.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.transforms.serializer.common import create_ser_result
-from docling_core.transforms.serializer.doctags import (
-    DocTagsDocSerializer,
-    DocTagsParams,
-    _get_delim,
+from docling_core.transforms.serializer.common import (
+    CommonParams,
+    DocSerializer,
+    create_ser_result,
 )
 from docling_core.types.doc import (
     BaseMeta,
@@ -30,7 +34,9 @@ from docling_core.types.doc import (
     DocItem,
     DoclingDocument,
     FloatingItem,
+    FormItem,
     InlineGroup,
+    KeyValueItem,
     ListGroup,
     ListItem,
     MetaFieldName,
@@ -748,17 +754,42 @@ class IDocTagsVocabulary(BaseModel):
         return special_tokens
 
 
-class IDocTagsParams(DocTagsParams):
-    """DocTags-specific serialization parameters."""
+class IDocTagsSerializationMode(str, Enum):
+    """Serialization mode for IDocTags output."""
 
+    HUMAN_FRIENDLY = "human_friendly"
+    LLM_FRIENDLY = "llm_friendly"
+
+
+class IDocTagsParams(CommonParams):
+    """IDocTags-specific serialization parameters independent of DocTags."""
+
+    # Geometry & content controls (aligned with DocTags defaults)
+    xsize: int = 500
+    ysize: int = 500
+    add_location: bool = True
+    add_caption: bool = True
+    add_content: bool = True
+    add_table_cell_location: bool = False
+    add_table_cell_text: bool = True
+    add_page_break: bool = True
+
+    mode: IDocTagsSerializationMode = IDocTagsSerializationMode.HUMAN_FRIENDLY
+
+    # IDocTags formatting
     do_self_closing: bool = True
     pretty_indentation: Optional[str] = 2 * " "
-    # When True, convert any self-closing form of non-self-closing tokens
-    # (e.g., <list_text/>) into expanded pairs (<list_text></list_text>)
-    # after pretty-printing. This prevents XML pretty-printers from
-    # collapsing empty elements that must not be self-closing according
-    # to the IDocTags vocabulary.
+    # Expand self-closing forms of non-self-closing tokens after pretty-printing
     preserve_empty_non_selfclosing: bool = True
+
+
+def _get_delim(*, params: IDocTagsParams) -> str:
+    """Return record delimiter based on IDocTagsSerializationMode."""
+    if params.mode == IDocTagsSerializationMode.HUMAN_FRIENDLY:
+        return "\n"
+    if params.mode == IDocTagsSerializationMode.LLM_FRIENDLY:
+        return ""
+    raise RuntimeError(f"Unknown IDocTags mode: {params.mode}")
 
 
 class IDocTagsListSerializer(BaseModel, BaseListSerializer):
@@ -1210,24 +1241,148 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
-class IDocTagsDocSerializer(DocTagsDocSerializer):
-    """DocTags document serializer."""
+class IDocTagsInlineSerializer(BaseInlineSerializer):
+    """Inline serializer emitting IDocTags `<inline>` and `<location>` tokens."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: InlineGroup,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        list_level: int = 0,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize inline content with optional location into IDocTags text."""
+        my_visited = visited if visited is not None else set()
+        params = IDocTagsParams(**kwargs)
+        parts: list[SerializationResult] = []
+        if params.add_location:
+            # Create a single enclosing bbox over inline children
+            boxes: list[tuple[float, float, float, float]] = []
+            prov_page_w_h: Optional[tuple[float, float, int]] = None
+            for it, _ in doc.iterate_items(root=item):
+                if isinstance(it, DocItem) and it.prov:
+                    for prov in it.prov:
+                        page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
+                        boxes.append(prov.bbox.to_top_left_origin(page_h).as_tuple())
+                        prov_page_w_h = (page_w, page_h, prov.page_no)
+            if boxes and prov_page_w_h is not None:
+                x0 = min(b[0] for b in boxes)
+                y0 = min(b[1] for b in boxes)
+                x1 = max(b[2] for b in boxes)
+                y1 = max(b[3] for b in boxes)
+                page_w, page_h, _ = prov_page_w_h
+                loc_str = _create_location_tokens_for_bbox(
+                    bbox=(x0, y0, x1, y1),
+                    page_w=page_w,
+                    page_h=page_h,
+                    xres=params.xsize,
+                    yres=params.ysize,
+                )
+                parts.append(create_ser_result(text=loc_str))
+            params.add_location = False
+        parts.extend(
+            doc_serializer.get_parts(
+                item=item,
+                list_level=list_level,
+                is_inline_scope=True,
+                visited=my_visited,
+                **{**kwargs, **params.model_dump()},
+            )
+        )
+        delim = _get_delim(params=params)
+        text_res = delim.join([p.text for p in parts if p.text])
+        if text_res:
+            text_res = f"{text_res}{delim}"
+            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.INLINE.value)
+        return create_ser_result(text=text_res, span_source=parts)
+
+
+class IDocTagsFallbackSerializer(BaseFallbackSerializer):
+    """Fallback serializer concatenating text for list/inline groups."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: NodeItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize unsupported nodes by concatenating their textual parts."""
+        if isinstance(item, (ListGroup, InlineGroup)):
+            parts = doc_serializer.get_parts(item=item, **kwargs)
+            text_res = "\n".join([p.text for p in parts if p.text])
+            return create_ser_result(text=text_res, span_source=parts)
+        return create_ser_result()
+
+
+class IDocTagsKeyValueSerializer(BaseKeyValueSerializer):
+    """No-op serializer for key/value items in IDocTags."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: KeyValueItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Return an empty result for key/value items."""
+        return create_ser_result()
+
+
+class IDocTagsFormSerializer(BaseFormSerializer):
+    """No-op serializer for form items in IDocTags."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: FormItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Return an empty result for form items."""
+        return create_ser_result()
+
+
+class IDocTagsAnnotationSerializer(BaseAnnotationSerializer):
+    """No-op annotation serializer; IDocTags relies on meta instead."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: DocItem,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Return an empty result; annotations are handled via meta."""
+        return create_ser_result()
+
+
+class IDocTagsDocSerializer(DocSerializer):
+    """IDocTags document serializer."""
 
     text_serializer: BaseTextSerializer = IDocTagsTextSerializer()
     table_serializer: BaseTableSerializer = IDocTagsTableSerializer()
     picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
-    # key_value_serializer: BaseKeyValueSerializer = DocTagsKeyValueSerializer()
-    # form_serializer: BaseFormSerializer = DocTagsFormSerializer()
-    # fallback_serializer: BaseFallbackSerializer = DocTagsFallbackSerializer()
+    key_value_serializer: BaseKeyValueSerializer = IDocTagsKeyValueSerializer()
+    form_serializer: BaseFormSerializer = IDocTagsFormSerializer()
+    fallback_serializer: BaseFallbackSerializer = IDocTagsFallbackSerializer()
 
     list_serializer: BaseListSerializer = IDocTagsListSerializer()
-    # inline_serializer: BaseInlineSerializer = DocTagsInlineSerializer()
+    inline_serializer: BaseInlineSerializer = IDocTagsInlineSerializer()
 
-    # annotation_serializer: BaseAnnotationSerializer = DocTagsAnnotationSerializer()
-
-    # picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
     meta_serializer: BaseMetaSerializer = IDocTagsMetaSerializer()
-    # table_serializer: BaseTableSerializer = IDocTagsTableSerializer()
+    annotation_serializer: BaseAnnotationSerializer = IDocTagsAnnotationSerializer()
 
     params: IDocTagsParams = IDocTagsParams()
 
@@ -1245,9 +1400,7 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
         params = IDocTagsParams(**kwargs)
         results: list[SerializationResult] = []
         if item.captions:
-            cap_res = super(DocTagsDocSerializer, self).serialize_captions(
-                item, **kwargs
-            )
+            cap_res = super().serialize_captions(item, **kwargs)
             if cap_res.text and params.add_location:
                 for caption in item.captions:
                     if caption.cref not in self.get_excluded_refs(**kwargs):
@@ -1270,7 +1423,7 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
         parts: list[SerializationResult],
         **kwargs: Any,
     ) -> SerializationResult:
-        """DocTags-specific document serializer."""
+        """Doc-level serialization with IDocTags root wrapper."""
         delim = _get_delim(params=self.params)
 
         open_token: str = IDocTagsVocabulary.create_doctag_root()
@@ -1322,3 +1475,8 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
                     text_res = _expand_tag(text_res, tok.value)
 
         return create_ser_result(text=text_res, span_source=parts)
+
+    @override
+    def requires_page_break(self):
+        """Return whether page breaks should be emitted for the document."""
+        return self.params.add_page_break
