@@ -11,14 +11,14 @@
     DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
   </title>
   <floating_group class="picture">
+    <caption>
+      <location value="215" resolution="512"/>
+      <location value="201" resolution="512"/>
+      <location value="251" resolution="512"/>
+      <location value="218" resolution="512"/>
+      Figure 1: Four examples of complex page layouts across different document categories
+    </caption>
     <picture>
-      <caption>
-        <location value="215" resolution="512"/>
-        <location value="201" resolution="512"/>
-        <location value="251" resolution="512"/>
-        <location value="218" resolution="512"/>
-        Figure 1: Four examples of complex page layouts across different document categories
-      </caption>
       <meta>
         <description>...</description>
         <classification>Bar chart</classification>

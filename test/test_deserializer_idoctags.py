@@ -1,5 +1,3 @@
-import pytest
-
 from docling_core.experimental.idoctags import (
     IDocTagsDocDeserializer,
     IDocTagsDocSerializer,
@@ -14,6 +12,8 @@ from docling_core.types.doc import (
     TableData,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel
+
+DO_PRINT: bool = False
 
 
 def _serialize(doc: DoclingDocument) -> str:
@@ -41,7 +41,8 @@ def test_roundtrip_text():
     doc = DoclingDocument(name="t")
     doc.add_text(label=DocItemLabel.TEXT, text="Hello world")
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.TEXT
@@ -52,7 +53,8 @@ def test_roundtrip_title():
     doc = DoclingDocument(name="t")
     doc.add_title(text="My Title")
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.TITLE
@@ -63,7 +65,8 @@ def test_roundtrip_heading():
     doc = DoclingDocument(name="t")
     doc.add_heading(text="Section A", level=2)
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     h = doc2.texts[0]
@@ -75,7 +78,8 @@ def test_roundtrip_caption():
     doc = DoclingDocument(name="t")
     doc.add_text(label=DocItemLabel.CAPTION, text="Cap text")
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.CAPTION
@@ -86,7 +90,8 @@ def test_roundtrip_footnote():
     doc = DoclingDocument(name="t")
     doc.add_text(label=DocItemLabel.FOOTNOTE, text="Foot note")
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.FOOTNOTE
@@ -97,7 +102,8 @@ def test_roundtrip_page_header():
     doc = DoclingDocument(name="t")
     doc.add_text(label=DocItemLabel.PAGE_HEADER, text="Header")
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.PAGE_HEADER
@@ -108,7 +114,8 @@ def test_roundtrip_page_footer():
     doc = DoclingDocument(name="t")
     doc.add_text(label=DocItemLabel.PAGE_FOOTER, text="Footer")
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.PAGE_FOOTER
@@ -119,7 +126,8 @@ def test_roundtrip_code():
     doc = DoclingDocument(name="t")
     doc.add_code(text="print('hi')", code_language=CodeLanguageLabel.PYTHON)
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.CODE
@@ -131,7 +139,8 @@ def test_roundtrip_formula():
     doc = DoclingDocument(name="t")
     doc.add_formula(text="E=mc^2")
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.FORMULA
@@ -144,7 +153,8 @@ def test_roundtrip_list_unordered():
     doc.add_list_item("A", parent=lg, enumerated=False)
     doc.add_list_item("B", parent=lg, enumerated=False)
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     # Ensure group created and items present
     assert len(doc2.groups) == 1
@@ -158,7 +168,8 @@ def test_roundtrip_list_ordered():
     doc.add_list_item("1", parent=lg, enumerated=True)
     doc.add_list_item("2", parent=lg, enumerated=True)
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.groups) == 1
     assert len(doc2.texts) == 2
@@ -170,7 +181,8 @@ def test_roundtrip_picture_with_caption():
     cap = doc.add_text(label=DocItemLabel.CAPTION, text="Fig 1")
     doc.add_picture(caption=cap)
     dt = _serialize(doc)
-    print("\n",dt)    
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.pictures) == 1
     # Caption added as a separate text item referenced by the picture
@@ -186,7 +198,8 @@ def test_roundtrip_table_simple():
     td.add_row(["C1", "C2"])  # data row
     doc.add_table(data=td)
     dt = _serialize(doc)
-    print("\n",dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.tables) == 1
     t2 = doc2.tables[0].data
@@ -205,9 +218,10 @@ def test_roundtrip_table_with_caption():
     doc.add_table(data=td, caption=cap)
 
     dt = _serialize(doc)
-    print(dt)
+    if DO_PRINT:
+        print(dt)
     doc2 = _deserialize(dt)
-    
+
     # One table reconstructed with same grid
     assert len(doc2.tables) == 1
     t2 = doc2.tables[0]
@@ -226,22 +240,25 @@ def test_roundtrip_text_prov():
     _add_default_page(doc)
     doc.add_text(label=DocItemLabel.TEXT, text="Hello world", prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
-    print("\n", dt2)
-    print(f"`{doc2.texts[0].text}`")
+    if DO_PRINT:
+        print("\n", dt2)
+        print(f"`{doc2.texts[0].text}`")
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.TEXT
     assert doc2.texts[0].text == "Hello world"
 
-    
+
 def test_roundtrip_title_prov():
     doc = DoclingDocument(name="t")
     _add_default_page(doc)
     doc.add_title(text="My Title", prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.TITLE
@@ -253,7 +270,8 @@ def test_roundtrip_heading_prov():
     _add_default_page(doc)
     doc.add_heading(text="Section A", level=2, prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     h = doc2.texts[0]
@@ -266,7 +284,8 @@ def test_roundtrip_caption_prov():
     _add_default_page(doc)
     doc.add_text(label=DocItemLabel.CAPTION, text="Cap text", prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.CAPTION
@@ -278,7 +297,8 @@ def test_roundtrip_footnote_prov():
     _add_default_page(doc)
     doc.add_text(label=DocItemLabel.FOOTNOTE, text="Foot note", prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.FOOTNOTE
@@ -290,7 +310,8 @@ def test_roundtrip_page_header_prov():
     _add_default_page(doc)
     doc.add_text(label=DocItemLabel.PAGE_HEADER, text="Header", prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.PAGE_HEADER
@@ -302,7 +323,8 @@ def test_roundtrip_page_footer_prov():
     _add_default_page(doc)
     doc.add_text(label=DocItemLabel.PAGE_FOOTER, text="Footer", prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.PAGE_FOOTER
@@ -316,7 +338,8 @@ def test_roundtrip_code_prov():
         text="print('hi')", code_language=CodeLanguageLabel.PYTHON, prov=_default_prov()
     )
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.CODE
@@ -329,7 +352,8 @@ def test_roundtrip_formula_prov():
     _add_default_page(doc)
     doc.add_formula(text="E=mc^2", prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
     assert doc2.texts[0].label == DocItemLabel.FORMULA
@@ -344,7 +368,8 @@ def test_roundtrip_list_unordered_prov():
     doc.add_list_item("A", parent=lg, enumerated=False, prov=prov)
     doc.add_list_item("B", parent=lg, enumerated=False, prov=prov)
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.groups) == 1
     assert len(doc2.texts) == 2
@@ -359,7 +384,8 @@ def test_roundtrip_list_ordered_prov():
     doc.add_list_item("1", parent=lg, enumerated=True, prov=prov)
     doc.add_list_item("2", parent=lg, enumerated=True, prov=prov)
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.groups) == 1
     assert len(doc2.texts) == 2
@@ -372,7 +398,8 @@ def test_roundtrip_picture_with_caption_prov():
     cap = doc.add_text(label=DocItemLabel.CAPTION, text="Fig 1", prov=_default_prov())
     doc.add_picture(caption=cap, prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.pictures) == 1
     assert len(doc2.texts) >= 1
@@ -388,7 +415,8 @@ def test_roundtrip_table_simple_prov():
     td.add_row(["C1", "C2"])  # data row
     doc.add_table(data=td, prov=_default_prov())
     dt = _serialize(doc)
-    print("\n", dt)
+    if DO_PRINT:
+        print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.tables) == 1
     t2 = doc2.tables[0].data
@@ -407,7 +435,8 @@ def test_roundtrip_table_with_caption_prov():
     doc.add_table(data=td, caption=cap, prov=_default_prov())
 
     dt = _serialize(doc)
-    print(dt)
+    if DO_PRINT:
+        print(dt)
     doc2 = _deserialize(dt)
 
     assert len(doc2.tables) == 1
