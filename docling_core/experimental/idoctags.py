@@ -44,6 +44,7 @@ from docling_core.types.doc import (
     NodeItem,
     PictureClassificationMetaField,
     PictureItem,
+    PictureMeta,
     SectionHeaderItem,
     SummaryMetaField,
     TableData,
@@ -1133,18 +1134,22 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
             value=IDocTagsAttributeValue.PICTURE, closing=True
         )
 
+        # Build caption (as a sibling of the picture within the floating_group)
         res_parts: list[SerializationResult] = []
-
+        caption_text = ""
         if params.add_caption:
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
+                caption_text = cap_res.text
                 res_parts.append(cap_res)
 
+        # Build picture inner content (meta + body) that will go inside <picture> ... </picture>
+        picture_inner_parts: list[str] = []
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-
             if item.meta:
                 meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
                 if meta_res.text:
+                    picture_inner_parts.append(meta_res.text)
                     res_parts.append(meta_res)
 
             body = ""
@@ -1167,15 +1172,20 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
                     table_token=IDocTagsTableToken,
                 )
                 body += otsl_content
-            res_parts.append(create_ser_result(text=body, span_source=item))
 
-        text_res = "".join([r.text for r in res_parts])
-        if text_res:
-            text_res = (
-                open_token
-                + _wrap(text=text_res, wrap_tag=IDocTagsToken.PICTURE.value)
-                + close_token
-            )
+            if body:
+                picture_inner_parts.append(body)
+                res_parts.append(create_ser_result(text=body, span_source=item))
+
+        picture_text = "".join(picture_inner_parts)
+        if picture_text:
+            picture_text = _wrap(text=picture_text, wrap_tag=IDocTagsToken.PICTURE.value)
+
+        # Compose final structure: <floating_group class="picture"> [<caption>]</n+        # <picture>...</picture> </floating_group>
+        composed_inner = f"{caption_text}{picture_text}"
+        text_res = ""
+        if composed_inner:
+            text_res = f"{open_token}{composed_inner}{close_token}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
@@ -1209,16 +1219,20 @@ class IDocTagsTableSerializer(BaseTableSerializer):
 
         res_parts: list[SerializationResult] = []
 
+        # Caption as sibling of the OTSL payload within the floating group
+        caption_text = ""
         if params.add_caption:
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
+                caption_text = cap_res.text
                 res_parts.append(cap_res)
 
+        # Build table payload: location (if any) + otsl content inside <otsl> ... </otsl>
+        otsl_payload = ""
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-
+            body = ""
             if params.add_location:
-                loc_text = _create_location_tokens_for_item(item=item, doc=doc)
-                res_parts.append(create_ser_result(text=loc_text, span_source=item))
+                body += _create_location_tokens_for_item(item=item, doc=doc)
 
             otsl_text = item.export_to_otsl(
                 doc=doc,
@@ -1230,15 +1244,15 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                 visited=visited,
                 table_token=self._get_table_token(),
             )
-            res_parts.append(create_ser_result(text=otsl_text, span_source=item))
+            body += otsl_text
+            if body:
+                otsl_payload = _wrap(text=body, wrap_tag=IDocTagsToken.OTSL.value)
+                res_parts.append(create_ser_result(text=body, span_source=item))
 
-        text_res = "".join([r.text for r in res_parts])
-        if text_res:
-            text_res = (
-                open_token
-                + _wrap(text=text_res, wrap_tag=IDocTagsToken.OTSL.value)
-                + close_token
-            )
+        composed_inner = f"{caption_text}{otsl_payload}"
+        text_res = ""
+        if composed_inner:
+            text_res = f"{open_token}{composed_inner}{close_token}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
@@ -1591,8 +1605,24 @@ class IDocTagsDocDeserializer(BaseModel):
         doc.add_table(data=td, caption=caption, parent=parent)
 
     def _parse_picture_group(self, *, doc: DoclingDocument, el, parent) -> None:
+        # Extract caption from the floating group
         caption = self._extract_caption(doc=doc, el=el)
-        doc.add_picture(caption=caption, parent=parent)
+
+        # Create the picture item first, attach caption
+        pic = doc.add_picture(caption=caption, parent=parent)
+
+        # If there is a <picture> child and it contains an <otsl>,
+        # parse it as TabularChartMetaField and attach to picture.meta
+        picture_el = self._first_child(el, IDocTagsToken.PICTURE.value)
+        if picture_el is not None:
+            otsl_el = self._first_child(picture_el, IDocTagsToken.OTSL.value)
+            if otsl_el is not None:
+                inner = self._inner_xml(otsl_el)
+                normalized = self._normalize_otsl_tokens(inner)
+                td = parse_otsl_table_content(f"<otsl>{normalized}</otsl>")
+                if pic.meta is None:
+                    pic.meta = PictureMeta()
+                pic.meta.tabular_chart = TabularChartMetaField(chart_data=td)
 
     # ------------- Helpers -------------
     def _extract_caption(self, *, doc: DoclingDocument, el) -> Optional[TextItem]:
