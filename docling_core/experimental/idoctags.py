@@ -782,8 +782,9 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
 
         This emits list containers (``<ordered_list>``/``<unordered_list>``) and
         serializes children explicitly. Nested ``ListGroup`` items are emitted as
-        siblings without an enclosing ``<list_item>`` wrapper, while structural
-        wrappers are still preserved even when content is suppressed.
+        siblings, and individual list items are not wrapped here. The text
+        serializer is responsible for wrapping list item content (as
+        ``<list_text>``), so this serializer remains agnostic of item types.
 
         Args:
             item: The list group to serialize.
@@ -807,7 +808,7 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
         # 3) Still ensure structural wrappers are preserved even when
         #    content is suppressed (e.g., add_content=False).
         item_results: list[SerializationResult] = []
-        child_results_wrapped: list[str] = []
+        child_texts: list[str] = []
 
         excluded = doc_serializer.get_excluded_refs(**kwargs)
         for child_ref in item.children:
@@ -827,7 +828,7 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
                     **kwargs,
                 )
                 if sub_res.text:
-                    child_results_wrapped.append(sub_res.text)
+                    child_texts.append(sub_res.text)
                 item_results.append(sub_res)
                 continue
 
@@ -839,7 +840,8 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
 
             my_visited.add(child.self_ref)
 
-            # Serialize the list item content (DocTagsTextSerializer will not wrap it)
+            # Serialize the list item content; wrapping is handled by the text
+            # serializer (as <list_text>), not here.
             child_res = doc_serializer.serialize(
                 item=child,
                 list_level=list_level + 1,
@@ -848,12 +850,8 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
                 **kwargs,
             )
             item_results.append(child_res)
-            # Wrap the content into <list_text>, without any nested list content.
-            child_text_wrapped = _wrap(
-                text=f"{child_res.text}",
-                wrap_tag=IDocTagsToken.LIST_TEXT.value,
-            )
-            child_results_wrapped.append(child_text_wrapped)
+            if child_res.text:
+                child_texts.append(child_res.text)
 
             # After the <list_text>, append any nested lists (children of this ListItem)
             # as siblings at the same level (not wrapped in <list_text>).
@@ -873,12 +871,12 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
                         **kwargs,
                     )
                     if sub_res.text:
-                        child_results_wrapped.append(sub_res.text)
+                        child_texts.append(sub_res.text)
                     item_results.append(sub_res)
 
         delim = _get_delim(params=params)
-        if child_results_wrapped:
-            text_res = delim.join(child_results_wrapped)
+        if child_texts:
+            text_res = delim.join(child_texts)
             text_res = f"{text_res}{delim}"
             open_token = (
                 IDocTagsVocabulary.create_list_token(ordered=True)
@@ -925,24 +923,26 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         params = IDocTagsParams(**kwargs)
 
         # Determine wrapper open-token for this item using IDocTags vocabulary.
-        # - ListItem: do not wrap here (list serializer wraps children as <list_text>).
         # - SectionHeaderItem: use <heading level="N"> ... </heading>.
-        # - Other text-like items: require a valid IDocTagsToken from the item's label.
-        #   If the label is not a known IDocTags token, raise for explicitness.
+        # - Other text-like items: map the label to an IDocTagsToken; for
+        #   list items, this maps to <list_text> and keeps the text serializer
+        #   free of type-based special casing.
         wrap_open_token: Optional[str]
-        if isinstance(item, ListItem):
-            wrap_open_token = None
-        elif isinstance(item, SectionHeaderItem):
+        if isinstance(item, SectionHeaderItem):
             wrap_open_token = IDocTagsVocabulary.create_heading_token(level=item.level)
+        elif isinstance(item, ListItem):
+            tok = IDocTagsToken.LIST_TEXT
+            wrap_open_token = f"<{tok.value}>"
         else:
             label_value = str(item.label)
             try:
                 tok = IDocTagsToken(label_value)
+                wrap_open_token = f"<{tok.value}>"
             except ValueError:
                 raise ValueError(
                     f"Unsupported IDocTags token for label '{label_value}'"
                 )
-            wrap_open_token = f"<{tok.value}>"
+
         parts: list[str] = []
 
         if item.meta:

@@ -38,7 +38,9 @@ def verify(exp_file: Path, actual: str):
 
         # Normalize platform-dependent quote escaping for DocTags outputs
         name = exp_file.name
-        if name.endswith(".dt") or name.endswith(".idt.xml"):
+        if name.endswith(".dt") or \
+           name.endswith(".idt") or \
+           name.endswith(".idt.xml"):
 
             def _normalize_quotes(s: str) -> str:
                 return s.replace("&quot;", '"').replace("&#34;", '"')
