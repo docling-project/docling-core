@@ -274,6 +274,19 @@ def test_webvtt_file() -> None:
     assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
     assert block.payload[0].component.text == "Good."
 
+    with open("./test/data/webvtt/webvtt_example_04.vtt", encoding="utf-8") as f:
+        content = f.read()
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 2
+    block = vtt.cue_blocks[1]
+    assert len(block.payload) == 5
+    assert str(block) == (
+        "00:05.000 --> 00:09.000\n"
+        "— It will perforate your stomach.\n"
+        "— You could <b.loud>die</b>.\n"
+        "<v John>This is true.</v>\n"
+    )
+
 
 def test_webvtt_cue_language_span_start_tag():
     WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en"}')
