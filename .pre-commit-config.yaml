@@ -21,14 +21,6 @@ repos:
         files: '\.py$'
   - repo: local
     hooks:
-      - id: flake8
-        name: Flake8
-        entry: uv run --no-sync flake8 docling_core
-        pass_filenames: false
-        language: system
-        files: '\.py$'
-  - repo: local
-    hooks:
       - id: pytest
         name: Pytest
         entry: uv run --no-sync pytest --cov=docling_core --cov-report=xml test
