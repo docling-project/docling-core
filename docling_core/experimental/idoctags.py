@@ -14,6 +14,7 @@ from docling_core.transforms.serializer.base import (
     BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
+    BaseTextSerializer,
     SerializationResult,
 )
 from docling_core.transforms.serializer.common import create_ser_result
@@ -24,9 +25,12 @@ from docling_core.transforms.serializer.doctags import (  # DocTagsPictureSerial
 )
 from docling_core.types.doc import (
     BaseMeta,
+    CodeItem,
     DescriptionMetaField,
     DocItem,
     DoclingDocument,
+    FloatingItem,
+    InlineGroup,
     ListGroup,
     ListItem,
     MetaFieldName,
@@ -34,11 +38,14 @@ from docling_core.types.doc import (
     NodeItem,
     PictureClassificationMetaField,
     PictureItem,
+    SectionHeaderItem,
     SummaryMetaField,
     TableData,
     TableItem,
     TabularChartMetaField,
+    TextItem,
 )
+from docling_core.types.doc.tokens import DocumentToken
 
 DOCTAGS_VERSION: Final = "1.0.0"
 
@@ -50,6 +57,61 @@ def _wrap(text: str, wrap_tag: str) -> str:
 def _wrap_token(*, text: str, open_token: str) -> str:
     close_token = IDocTagsVocabulary.create_closing_token(token=open_token)
     return f"{open_token}{text}{close_token}"
+
+
+def _quantize_to_resolution(value: float, resolution: int) -> int:
+    """Quantize normalized value in [0,1] to [0,resolution]."""
+    n = int(round(resolution * value))
+    if n < 0:
+        return 0
+    if n > resolution:
+        return resolution
+    return n
+
+
+def _create_location_tokens_for_bbox(
+    *,
+    bbox: tuple[float, float, float, float],
+    page_w: float,
+    page_h: float,
+    xres: int,
+    yres: int,
+) -> str:
+    """Create four `<location .../>` tokens for x0,y0,x1,y1 given a bbox."""
+    x0 = bbox[0] / page_w
+    y0 = bbox[1] / page_h
+    x1 = bbox[2] / page_w
+    y1 = bbox[3] / page_h
+
+    x0v = _quantize_to_resolution(min(x0, x1), xres)
+    y0v = _quantize_to_resolution(min(y0, y1), yres)
+    x1v = _quantize_to_resolution(max(x0, x1), xres)
+    y1v = _quantize_to_resolution(max(y0, y1), yres)
+
+    return (
+        IDocTagsVocabulary.create_location_token(value=x0v, resolution=xres)
+        + IDocTagsVocabulary.create_location_token(value=y0v, resolution=yres)
+        + IDocTagsVocabulary.create_location_token(value=x1v, resolution=xres)
+        + IDocTagsVocabulary.create_location_token(value=y1v, resolution=yres)
+    )
+
+
+def _create_location_tokens_for_item(
+    *, item: "DocItem", doc: "DoclingDocument", xres: int = 512, yres: int = 512
+) -> str:
+    """Create concatenated `<location .../>` tokens for an item's provenance."""
+    if not getattr(item, "prov", None):
+        return ""
+    out: list[str] = []
+    for prov in item.prov:
+        page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
+        bbox = prov.bbox.to_top_left_origin(page_h).as_tuple()
+        out.append(
+            _create_location_tokens_for_bbox(
+                bbox=bbox, page_w=page_w, page_h=page_h, xres=xres, yres=yres
+            )
+        )
+    return "".join(out)
 
 
 class IDocTagsCategory(str, Enum):
@@ -826,6 +888,101 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
         return create_ser_result(text=text_res, span_source=item_results)
 
 
+class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
+    """IDocTags-specific text item serializer using `<location>` tokens."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: "TextItem",
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a ``TextItem`` into IDocTags markup.
+
+        Depending on parameters, emits meta blocks, location tokens, and the
+        item's textual content (prefixing code language for ``CodeItem``). For
+        floating items, captions may be appended. The result can be wrapped in a
+        tag derived from the item's label when applicable.
+
+        Args:
+            item: The text-like item to serialize.
+            doc_serializer: The document-level serializer for delegating nested items.
+            doc: The document used to resolve references and children.
+            visited: Set of already visited item refs to avoid cycles.
+            **kwargs: Additional serializer parameters forwarded to ``IDocTagsParams``.
+
+        Returns:
+            A ``SerializationResult`` with the serialized text and span source.
+        """
+        my_visited = visited if visited is not None else set()
+        params = IDocTagsParams(**kwargs)
+
+        wrap_tag_token: Optional[str] = (
+            DocumentToken.create_token_name_from_doc_item_label(
+                label=item.label,
+                **(
+                    {"level": item.level} if isinstance(item, SectionHeaderItem) else {}
+                ),
+            )
+        )
+        wrap_tag: Optional[str] = None if isinstance(item, ListItem) else wrap_tag_token
+        parts: list[str] = []
+
+        if item.meta:
+            meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+            if meta_res.text:
+                parts.append(meta_res.text)
+
+        if params.add_location:
+            # Use IDocTags `<location>` tokens instead of `<loc_.../>`
+            loc = _create_location_tokens_for_item(item=item, doc=doc)
+            if loc:
+                parts.append(loc)
+
+        if params.add_content:
+            if (
+                item.text == ""
+                and len(item.children) == 1
+                and isinstance(
+                    (child_group := item.children[0].resolve(doc)), InlineGroup
+                )
+            ):
+                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
+                text_part = ser_res.text
+            else:
+                text_part = doc_serializer.post_process(
+                    text=item.text,
+                    formatting=item.formatting,
+                    hyperlink=item.hyperlink,
+                )
+
+            if isinstance(item, CodeItem):
+                language_token = DocumentToken.get_code_language_token(
+                    code_language=item.code_language,
+                    self_closing=params.do_self_closing,
+                )
+                text_part = f"{language_token}{text_part}"
+            else:
+                text_part = text_part.strip()
+
+            if text_part:
+                parts.append(text_part)
+
+        if params.add_caption and isinstance(item, FloatingItem):
+            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
+            if cap_text:
+                parts.append(cap_text)
+
+        text_res = "".join(parts)
+        if wrap_tag is not None:
+            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+        return create_ser_result(text=text_res, span_source=item)
+
+
 class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
     """DocTags-specific meta serializer."""
 
@@ -939,12 +1096,7 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
 
             body = ""
             if params.add_location:
-                body += item.get_location_tokens(
-                    doc=doc,
-                    xsize=params.xsize,
-                    ysize=params.ysize,
-                    self_closing=params.do_self_closing,
-                )
+                body += _create_location_tokens_for_item(item=item, doc=doc)
 
             # handle tabular chart data
             chart_data: Optional[TableData] = None
@@ -1012,12 +1164,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
 
             if params.add_location:
-                loc_text = item.get_location_tokens(
-                    doc=doc,
-                    xsize=params.xsize,
-                    ysize=params.ysize,
-                    self_closing=params.do_self_closing,
-                )
+                loc_text = _create_location_tokens_for_item(item=item, doc=doc)
                 res_parts.append(create_ser_result(text=loc_text, span_source=item))
 
             otsl_text = item.export_to_otsl(
@@ -1046,7 +1193,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
 class IDocTagsDocSerializer(DocTagsDocSerializer):
     """DocTags document serializer."""
 
-    # text_serializer: BaseTextSerializer = DocTagsTextSerializer()
+    text_serializer: BaseTextSerializer = IDocTagsTextSerializer()
     table_serializer: BaseTableSerializer = IDocTagsTableSerializer()
     picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
     # key_value_serializer: BaseKeyValueSerializer = DocTagsKeyValueSerializer()
@@ -1067,6 +1214,34 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
     @override
     def _meta_is_wrapped(self) -> bool:
         return True
+
+    @override
+    def serialize_captions(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's captions with IDocTags location tokens."""
+        params = IDocTagsParams(**kwargs)
+        results: list[SerializationResult] = []
+        if item.captions:
+            cap_res = super(DocTagsDocSerializer, self).serialize_captions(
+                item, **kwargs
+            )
+            if cap_res.text and params.add_location:
+                for caption in item.captions:
+                    if caption.cref not in self.get_excluded_refs(**kwargs):
+                        if isinstance(cap := caption.resolve(self.doc), DocItem):
+                            loc_txt = _create_location_tokens_for_item(
+                                item=cap, doc=self.doc
+                            )
+                            results.append(create_ser_result(text=loc_txt))
+            if cap_res.text and params.add_content:
+                results.append(cap_res)
+        text_res = "".join([r.text for r in results])
+        if text_res:
+            text_res = _wrap(text=text_res, wrap_tag=DocumentToken.CAPTION.value)
+        return create_ser_result(text=text_res, span_source=results)
 
     @override
     def serialize_doc(

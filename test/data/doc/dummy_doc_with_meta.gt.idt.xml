@@ -4,19 +4,19 @@
       <summary>This is a title.</summary>
       <my_corp__foo>More stuff here.</my_corp__foo>
     </meta>
-    <loc_42/>
-    <loc_26/>
-    <loc_406/>
-    <loc_46/>
+    <location value="43" resolution="512"/>
+    <location value="26" resolution="512"/>
+    <location value="415" resolution="512"/>
+    <location value="47" resolution="512"/>
     DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
   </title>
   <floating_group class="picture">
     <picture>
       <caption>
-        <loc_210/>
-        <loc_196/>
-        <loc_245/>
-        <loc_213/>
+        <location value="215" resolution="512"/>
+        <location value="201" resolution="512"/>
+        <location value="251" resolution="512"/>
+        <location value="218" resolution="512"/>
         Figure 1: Four examples of complex page layouts across different document categories
       </caption>
       <meta>
@@ -25,18 +25,18 @@
         <molecule>CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1</molecule>
         <docling_legacy__misc>{'myanalysis': {'prediction': 'abc'}, 'something_else': {'text': 'aaa'}}</docling_legacy__misc>
       </meta>
-      <loc_297/>
-      <loc_125/>
-      <loc_457/>
-      <loc_499/>
+      <location value="304" resolution="512"/>
+      <location value="128" resolution="512"/>
+      <location value="468" resolution="512"/>
+      <location value="512" resolution="512"/>
     </picture>
   </floating_group>
   <floating_group class="table">
     <otsl>
-      <loc_210/>
-      <loc_196/>
-      <loc_245/>
-      <loc_213/>
+      <location value="215" resolution="512"/>
+      <location value="201" resolution="512"/>
+      <location value="251" resolution="512"/>
+      <location value="218" resolution="512"/>
     </otsl>
   </floating_group>
 </doctag>
