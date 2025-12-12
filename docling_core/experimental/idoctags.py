@@ -51,6 +51,8 @@ from docling_core.types.doc import (
     TabularChartMetaField,
     TextItem,
 )
+from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.utils import parse_otsl_table_content
 
 # Note: Intentionally avoid importing DocumentToken here to ensure
 # IDocTags uses only its own token vocabulary.
@@ -1436,13 +1438,6 @@ class IDocTagsDocSerializer(DocSerializer):
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
-        """
-        tmp = f"<{IDocTagsToken.DOCUMENT.value}>"
-        tmp += f"<{IDocTagsToken.VERSION.value}>{DOCTAGS_VERSION}</{IDocTagsToken.VERSION.value}>"
-        tmp += f"{text_res}"
-        tmp += f"</{IDocTagsToken.DOCUMENT.value}>"
-        """
-
         text_res = f"{open_token}{text_res}{close_token}"
 
         if self.params.pretty_indentation and (
@@ -1480,3 +1475,175 @@ class IDocTagsDocSerializer(DocSerializer):
     def requires_page_break(self):
         """Return whether page breaks should be emitted for the document."""
         return self.params.add_page_break
+
+
+class IDocTagsDocDeserializer(BaseModel):
+    """IDocTags document deserializer."""
+
+    def deserialize(
+        self,
+        *,
+        doctags: str,
+    ) -> DoclingDocument:
+        root = parseString(doctags).documentElement
+        if root.tagName != IDocTagsToken.DOCUMENT.value:
+            candidates = root.getElementsByTagName(IDocTagsToken.DOCUMENT.value)
+            root = candidates[0] if candidates else root
+
+        doc = DoclingDocument(name="Document")
+        self._parse_document_root(doc=doc, root=root)
+        return doc
+
+    # ------------- Core walkers -------------
+    def _parse_document_root(self, *, doc: DoclingDocument, root) -> None:
+        for node in root.childNodes:
+            if getattr(node, "nodeType", None) == node.ELEMENT_NODE:
+                self._dispatch_element(doc=doc, el=node, parent=None)
+
+    def _dispatch_element(self, *, doc: DoclingDocument, el, parent) -> None:
+        name = el.tagName
+        if name in {IDocTagsToken.TITLE.value, IDocTagsToken.TEXT.value,
+                    IDocTagsToken.CAPTION.value, IDocTagsToken.FOOTNOTE.value,
+                    IDocTagsToken.PAGE_HEADER.value, IDocTagsToken.PAGE_FOOTER.value,
+                    IDocTagsToken.CODE.value, IDocTagsToken.FORMULA.value}:
+            self._parse_text_like(doc=doc, el=el, parent=parent)
+        elif name == IDocTagsToken.HEADING.value:
+            self._parse_heading(doc=doc, el=el, parent=parent)
+        elif name == IDocTagsToken.LIST.value:
+            self._parse_list(doc=doc, el=el, parent=parent)
+        elif name == IDocTagsToken.FLOATING_GROUP.value:
+            self._parse_floating_group(doc=doc, el=el, parent=parent)
+        else:
+            self._walk_children(doc=doc, el=el, parent=parent)
+
+    def _walk_children(self, *, doc: DoclingDocument, el, parent) -> None:
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) == node.ELEMENT_NODE:
+                # Ignore geometry/meta containers at this level
+                if node.tagName in {IDocTagsToken.HEAD.value, IDocTagsToken.META.value,
+                                    IDocTagsToken.LOCATION.value, IDocTagsToken.PAGE_BREAK.value}:
+                    continue
+                self._dispatch_element(doc=doc, el=node, parent=parent)
+
+    # ------------- Text blocks -------------
+    def _parse_text_like(self, *, doc: DoclingDocument, el, parent) -> None:
+        text = self._get_text(el)
+        if not text.strip():
+            return
+        nm = el.tagName
+        if nm == IDocTagsToken.TITLE.value:
+            doc.add_title(text=text, parent=parent)
+        elif nm == IDocTagsToken.TEXT.value:
+            doc.add_text(label=DocItemLabel.TEXT, text=text, parent=parent)
+        elif nm == IDocTagsToken.CAPTION.value:
+            doc.add_text(label=DocItemLabel.CAPTION, text=text, parent=parent)
+        elif nm == IDocTagsToken.FOOTNOTE.value:
+            doc.add_text(label=DocItemLabel.FOOTNOTE, text=text, parent=parent)
+        elif nm == IDocTagsToken.PAGE_HEADER.value:
+            doc.add_text(label=DocItemLabel.PAGE_HEADER, text=text, parent=parent)
+        elif nm == IDocTagsToken.PAGE_FOOTER.value:
+            doc.add_text(label=DocItemLabel.PAGE_FOOTER, text=text, parent=parent)
+        elif nm == IDocTagsToken.CODE.value:
+            doc.add_code(text=text, parent=parent)
+        elif nm == IDocTagsToken.FORMULA.value:
+            doc.add_formula(text=text, parent=parent)
+
+    def _parse_heading(self, *, doc: DoclingDocument, el, parent) -> None:
+        lvl_txt = el.getAttribute(IDocTagsAttributeKey.LEVEL.value) or "1"
+        try:
+            level = int(lvl_txt)
+        except Exception:
+            level = 1
+        text = self._get_text(el)
+        if text.strip():
+            doc.add_heading(text=text, level=level, parent=parent)
+
+    def _parse_list(self, *, doc: DoclingDocument, el, parent) -> None:
+        ordered = (el.getAttribute(IDocTagsAttributeKey.ORDERED.value) == IDocTagsAttributeValue.TRUE.value)
+        group = doc.add_list_group(parent=parent)
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) != node.ELEMENT_NODE:
+                continue
+            if node.tagName == IDocTagsToken.LIST_TEXT.value:
+                text = self._get_text(node).strip()
+                if text:
+                    doc.add_list_item(text=text, parent=group, enumerated=ordered)
+
+    # ------------- Floating groups -------------
+    def _parse_floating_group(self, *, doc: DoclingDocument, el, parent) -> None:
+        cls_val = el.getAttribute(IDocTagsAttributeKey.CLASS.value)
+        if cls_val == IDocTagsAttributeValue.TABLE.value:
+            self._parse_table_group(doc=doc, el=el, parent=parent)
+        elif cls_val == IDocTagsAttributeValue.PICTURE.value:
+            self._parse_picture_group(doc=doc, el=el, parent=parent)
+        else:
+            self._walk_children(doc=doc, el=el, parent=parent)
+
+    def _parse_table_group(self, *, doc: DoclingDocument, el, parent) -> None:
+        caption = self._extract_caption(doc=doc, el=el)
+        otsl_el = self._first_child(el, IDocTagsToken.OTSL.value)
+        if otsl_el is None:
+            doc.add_table(data=TableData(), caption=caption, parent=parent)
+            return
+        inner = self._inner_xml(otsl_el)
+        normalized = self._normalize_otsl_tokens(inner)
+        td = parse_otsl_table_content(f"<otsl>{normalized}</otsl>")
+        doc.add_table(data=td, caption=caption, parent=parent)
+
+    def _parse_picture_group(self, *, doc: DoclingDocument, el, parent) -> None:
+        caption = self._extract_caption(doc=doc, el=el)
+        doc.add_picture(caption=caption, parent=parent)
+
+    # ------------- Helpers -------------
+    def _extract_caption(self, *, doc: DoclingDocument, el) -> Optional[TextItem]:
+        cap_el = self._first_child(el, IDocTagsToken.CAPTION.value)
+        if cap_el is None:
+            return None
+        text = self._get_text(cap_el).strip()
+        return doc.add_text(label=DocItemLabel.CAPTION, text=text) if text else None
+
+    def _first_child(self, el, tag_name: str):
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) == node.ELEMENT_NODE and node.tagName == tag_name:
+                return node
+        return None
+
+    def _inner_xml(self, el) -> str:
+        parts: list[str] = []
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) == node.TEXT_NODE:
+                parts.append(node.data)
+            elif node.nodeType == node.ELEMENT_NODE:
+                parts.append(node.toxml())
+        return "".join(parts)
+
+    def _normalize_otsl_tokens(self, text: str) -> str:
+        tokens = [
+            IDocTagsToken.FCEL.value,
+            IDocTagsToken.ECEL.value,
+            IDocTagsToken.LCEL.value,
+            IDocTagsToken.UCEL.value,
+            IDocTagsToken.XCEL.value,
+            IDocTagsToken.NL.value,
+            IDocTagsToken.CHED.value,
+            IDocTagsToken.RHED.value,
+            IDocTagsToken.SROW.value,
+        ]
+        for t in tokens:
+            text = re.sub(rf"<\s*{t}\s*/>", f"<{t}>", text)
+        return text
+
+    def _get_text(self, el) -> str:
+        out: list[str] = []
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) == node.TEXT_NODE:
+                out.append(node.data)
+            elif node.nodeType == node.ELEMENT_NODE:
+                nm = node.tagName
+                if nm in {IDocTagsToken.LOCATION.value}:
+                    continue
+                if nm == IDocTagsToken.BR.value:
+                    out.append("\n")
+                else:
+                    out.append(self._get_text(node))
+        return "".join(out)
