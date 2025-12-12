@@ -2,6 +2,7 @@
 
 import logging
 import re
+from collections.abc import Iterator
 from enum import Enum
 from typing import Annotated, ClassVar, Literal, Optional, Union
 
@@ -17,13 +18,15 @@ _ENTITY_PATTERN: re.Pattern = re.compile(r"&([a-zA-Z0-9]+);")
 _START_TAG_NAMES = Literal["c", "b", "i", "u", "v", "lang"]
 
 
-class _WebVTTLineTerminator(str, Enum):
+class WebVTTLineTerminator(str, Enum):
+    """WebVTT line terminator."""
+
     CRLF = "\r\n"
     LF = "\n"
     CR = "\r"
 
 
-_WebVTTCueIdentifier = Annotated[str, StringConstraints(strict=True, pattern=r"^(?!.*-->)[^\n\r]+$")]
+WebVTTCueIdentifier = Annotated[str, StringConstraints(strict=True, pattern=r"^(?!.*-->)[^\n\r]+$")]
 
 
 class WebVTTTimestamp(BaseModel):
@@ -137,7 +140,7 @@ class WebVTTCueComponentWithTerminator(BaseModel):
     """WebVTT caption or subtitle cue component optionally with a line terminator."""
 
     component: "WebVTTCueComponent"
-    terminator: Optional[_WebVTTLineTerminator] = None
+    terminator: Optional[WebVTTLineTerminator] = None
 
     @override
     def __str__(self):
@@ -148,7 +151,7 @@ class WebVTTCueComponentWithTerminator(BaseModel):
 class WebVTTCueInternalText(BaseModel):
     """WebVTT cue internal text."""
 
-    terminator: Optional[_WebVTTLineTerminator] = None
+    terminator: Optional[WebVTTLineTerminator] = None
     components: Annotated[
         list[WebVTTCueComponentWithTerminator],
         Field(description=("WebVTT caption or subtitle cue components representing the cue internal text")),
@@ -339,7 +342,7 @@ class WebVTTCueBlock(BaseModel):
 
     model_config = ConfigDict(regex_engine="python-re")
 
-    identifier: Optional[_WebVTTCueIdentifier] = Field(None, description="The WebVTT cue identifier")
+    identifier: Optional[WebVTTCueIdentifier] = Field(None, description="The WebVTT cue identifier")
     timings: Annotated[WebVTTCueTimings, Field(description="The WebVTT cue timings")]
     payload: Annotated[
         list[WebVTTCueComponentWithTerminator],
@@ -363,6 +366,19 @@ class WebVTTCueBlock(BaseModel):
                 raise ValueError("Cue payload must not contain '-->'")
         return payload
 
+    @staticmethod
+    def _create_text_components(
+        text: str,
+    ) -> Iterator[WebVTTCueComponentWithTerminator]:
+        text_list = text.split("\n")
+        for idx, line in enumerate(text.split("\n")):
+            terminator = WebVTTLineTerminator.LF if idx < len(text_list) - 1 or text.endswith("\n") else None
+            if len(line) > 0:
+                yield WebVTTCueComponentWithTerminator(
+                    component=WebVTTCueTextSpan(text=line),
+                    terminator=terminator,
+                )
+
     @classmethod
     def parse(cls, raw: str) -> "WebVTTCueBlock":
         """Parse a WebVTT cue block from a string.
@@ -376,7 +392,7 @@ class WebVTTCueBlock(BaseModel):
         lines = raw.strip().splitlines()
         if not lines:
             raise ValueError("Cue block must have at least one line")
-        identifier: Optional[_WebVTTCueIdentifier] = None
+        identifier: Optional[WebVTTCueIdentifier] = None
         timing_line = lines[0]
         if "-->" not in timing_line and len(lines) > 1:
             identifier = timing_line
@@ -391,7 +407,7 @@ class WebVTTCueBlock(BaseModel):
         start, end = [t.strip() for t in timing_line.split("-->")]
         end = re.split(" |\t", end)[0]  # ignore the cue settings list
         timings: WebVTTCueTimings = WebVTTCueTimings(start=WebVTTTimestamp(raw=start), end=WebVTTTimestamp(raw=end))
-        cue_text = " ".join(cue_lines).strip()
+        cue_text = "\n".join(cue_lines).strip()
         # adding close tag for cue spans without end tag
         for omm in {"v"}:
             if cue_text.startswith(f"<{omm}") and f"</{omm}>" not in cue_text:
@@ -407,9 +423,8 @@ class WebVTTCueBlock(BaseModel):
         while i < len(matches):
             match = matches[i]
             if match.start() > pos:
-                stack[-1].append(
-                    WebVTTCueComponentWithTerminator(component=WebVTTCueTextSpan(text=cue_text[pos : match.start()]))
-                )
+                text = cue_text[pos : match.start()]
+                stack[-1].extend(cls._create_text_components(text))
             gps = {k: (v if v else None) for k, v in match.groupdict().items()}
 
             if gps["tag"] in {"c", "b", "i", "u", "v", "lang"}:
@@ -454,7 +469,8 @@ class WebVTTCueBlock(BaseModel):
             i += 1
 
         if pos < len(cue_text):
-            stack[-1].append(WebVTTCueComponentWithTerminator(component=WebVTTCueTextSpan(text=cue_text[pos:])))
+            text = cue_text[pos:]
+            stack[-1].extend(cls._create_text_components(text))
 
         return cls(
             identifier=identifier,
