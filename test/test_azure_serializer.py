@@ -47,9 +47,7 @@ def _assert_json_like_equal(a: Any, b: Any, eps: float = 1e-3, path: str = "$") 
         # If either is float, compare with tolerance; if both int, exact match
         if isinstance(a, float) or isinstance(b, float):
             diff = abs(float(a) - float(b))
-            assert diff <= eps, (
-                f"Float mismatch at {path}: {a} != {b} (diff={diff}, eps={eps})"
-            )
+            assert diff <= eps, f"Float mismatch at {path}: {a} != {b} (diff={diff}, eps={eps})"
         else:
             assert a == b, f"Int mismatch at {path}: {a} != {b}"
         return
@@ -116,9 +114,7 @@ def test_azure_serialize_construct_doc_minimal_prov(sample_doc: DoclingDocument)
             item.prov = [
                 ProvenanceItem(
                     page_no=min(sample_doc.pages.keys()),
-                    bbox=BoundingBox(
-                        l=l, t=t, r=r, b=b, coord_origin=CoordOrigin.TOPLEFT
-                    ),
+                    bbox=BoundingBox(l=l, t=t, r=r, b=b, coord_origin=CoordOrigin.TOPLEFT),
                     charspan=(0, 0),
                 )
             ]
@@ -146,9 +142,7 @@ def test_azure_serialize_construct_doc_minimal_prov(sample_doc: DoclingDocument)
     # Basic structure check
     data = json.loads(actual_json)
     assert isinstance(data, dict)
-    assert (
-        "pages" in data and isinstance(data["pages"], list) and len(data["pages"]) >= 1
-    )
+    assert "pages" in data and isinstance(data["pages"], list) and len(data["pages"]) >= 1
     assert "paragraphs" in data and isinstance(data["paragraphs"], list)
 
     exp_file = Path("./test/data/doc/constructed.gt.azure.json")

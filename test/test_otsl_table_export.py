@@ -270,9 +270,7 @@ def test_table_export_to_otsl():
     data = TableData(num_rows=num_rows, num_cols=num_cols, table_cells=data_table_cells)
     doc.add_table(data=data)
 
-    otsl_string = doc.tables[0].export_to_otsl(
-        add_cell_location=False, add_cell_text=False, doc=doc
-    )
+    otsl_string = doc.tables[0].export_to_otsl(add_cell_location=False, add_cell_text=False, doc=doc)
     otsl_string.split("<nl>")
     # print("OTSL out:")
 

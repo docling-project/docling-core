@@ -31,16 +31,12 @@ class ReadingOrderVisualizer(BaseVisualizer):
 
         show_label: bool = True
         show_branch_numbering: bool = False
-        content_layers: set[ContentLayer] = {
-            cl for cl in ContentLayer if cl != ContentLayer.BACKGROUND
-        }
+        content_layers: set[ContentLayer] = {cl for cl in ContentLayer if cl != ContentLayer.BACKGROUND}
 
     base_visualizer: Optional[BaseVisualizer] = None
     params: Params = Params()
 
-    def _get_picture_context(
-        self, elem: DocItem, doc: DoclingDocument
-    ) -> Optional[str]:
+    def _get_picture_context(self, elem: DocItem, doc: DoclingDocument) -> Optional[str]:
         """Get the picture self_ref if element is nested inside a PictureItem, None otherwise."""
         current = elem
         while current.parent is not None:
@@ -112,14 +108,10 @@ class ReadingOrderVisualizer(BaseVisualizer):
         # Separate reading order paths for outside vs inside pictures
         # Key: (page_no, picture_ref_or_None) -> (x0, y0, element_index)
         # picture_ref is None for elements outside any picture, otherwise the picture's self_ref
-        reading_order_state: dict[
-            tuple[int, Optional[str]], tuple[float, float, int]
-        ] = {}
+        reading_order_state: dict[tuple[int, Optional[str]], tuple[float, float, int]] = {}
         number_data_to_draw: dict[int, list[_NumberDrawingData]] = {}
         # Only int keys are used (from prov.page_no), even if input images has Optional[int] keys
-        my_images: dict[int, Image] = {
-            k: v for k, v in (images or {}).items() if k is not None
-        }
+        my_images: dict[int, Image] = {k: v for k, v in (images or {}).items() if k is not None}
         prev_page: Optional[int] = None
         element_index = 0
 
@@ -153,21 +145,14 @@ class ReadingOrderVisualizer(BaseVisualizer):
 
                     if image is None:
                         page_image = doc.pages[page_no].image
-                        if (
-                            page_image is None
-                            or (pil_img := page_image.pil_image) is None
-                        ):
-                            raise RuntimeError(
-                                "Cannot visualize document without images"
-                            )
+                        if page_image is None or (pil_img := page_image.pil_image) is None:
+                            raise RuntimeError("Cannot visualize document without images")
                         else:
                             image = deepcopy(pil_img)
                             my_images[page_no] = image
                 draw = ImageDraw.Draw(image, "RGBA")
 
-                tlo_bbox = prov.bbox.to_top_left_origin(
-                    page_height=doc.pages[prov.page_no].size.height
-                )
+                tlo_bbox = prov.bbox.to_top_left_origin(page_height=doc.pages[prov.page_no].size.height)
                 ro_bbox = tlo_bbox.normalized(doc.pages[prov.page_no].size)
                 ro_bbox.l = round(ro_bbox.l * image.width)
                 ro_bbox.r = round(ro_bbox.r * image.width)
@@ -246,11 +231,7 @@ class ReadingOrderVisualizer(BaseVisualizer):
         **kwargs,
     ) -> dict[Optional[int], Image]:
         """Get visualization of the document as images by page."""
-        base_images = (
-            self.base_visualizer.get_visualization(doc=doc, **kwargs)
-            if self.base_visualizer
-            else None
-        )
+        base_images = self.base_visualizer.get_visualization(doc=doc, **kwargs) if self.base_visualizer else None
         return self._draw_doc_reading_order(
             doc=doc,
             images=base_images,

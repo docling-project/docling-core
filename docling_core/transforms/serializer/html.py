@@ -164,12 +164,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         # Prepare the HTML based on item type
         if isinstance(item, (TitleItem, SectionHeaderItem)):
-            section_level = (
-                min(item.level + 1, 6) if isinstance(item, SectionHeaderItem) else 1
-            )
-            text = get_html_tag_with_text_direction(
-                html_tag=f"h{section_level}", text=text
-            )
+            section_level = min(item.level + 1, 6) if isinstance(item, SectionHeaderItem) else 1
+            text = get_html_tag_with_text_direction(html_tag=f"h{section_level}", text=text)
 
         elif isinstance(item, FormulaItem):
             text = self._process_formula(
@@ -183,11 +179,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             )
 
         elif isinstance(item, CodeItem):
-            text = (
-                f"<code>{text}</code>"
-                if is_inline_scope
-                else f"<pre><code>{text}</code></pre>"
-            )
+            text = f"<code>{text}</code>" if is_inline_scope else f"<pre><code>{text}</code></pre>"
 
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
@@ -271,11 +263,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             and orig != ""
             and len(item.prov) > 0
             and image_mode == ImageRefMode.EMBEDDED
-            and (
-                img_fallback := self._get_formula_image_fallback(
-                    item=item, orig=orig, doc=doc
-                )
-            )
+            and (img_fallback := self._get_formula_image_fallback(item=item, orig=orig, doc=doc))
         ):
             return img_fallback
 
@@ -284,12 +272,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             try:
                 # Set display mode based on context
                 display_mode = "inline" if is_inline_scope else "block"
-                mathml_element = latex2mathml.converter.convert_to_element(
-                    text, display=display_mode
-                )
-                annotation = SubElement(
-                    mathml_element, "annotation", dict(encoding="TeX")
-                )
+                mathml_element = latex2mathml.converter.convert_to_element(text, display=display_mode)
+                annotation = SubElement(mathml_element, "annotation", dict(encoding="TeX"))
                 annotation.text = text
                 mathml = unescape(tostring(mathml_element, encoding="unicode"))
 
@@ -300,14 +284,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                     return f"<div>{mathml}</div>"
 
             except Exception:
-                img_fallback = self._get_formula_image_fallback(
-                    item=item, orig=orig, doc=doc
-                )
-                if (
-                    image_mode == ImageRefMode.EMBEDDED
-                    and len(item.prov) > 0
-                    and img_fallback
-                ):
+                img_fallback = self._get_formula_image_fallback(item=item, orig=orig, doc=doc)
+                if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0 and img_fallback:
                     return img_fallback
                 elif text:
                     return f"<pre>{text}</pre>"
@@ -326,9 +304,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         return '<div class="formula-not-decoded">Formula not decoded</div>'
 
-    def _get_formula_image_fallback(
-        self, *, item: DocItem, orig: str, doc: DoclingDocument
-    ) -> Optional[str]:
+    def _get_formula_image_fallback(self, *, item: DocItem, orig: str, doc: DoclingDocument) -> Optional[str]:
         """Try to get an image fallback for a formula."""
         item_image = item.get_image(doc=doc)
         if item_image is not None:
@@ -377,9 +353,7 @@ class HTMLTableSerializer(BaseTableSerializer):
                         continue
 
                     if isinstance(cell, RichTableCell):
-                        ser_res = doc_serializer.serialize(
-                            item=cell.ref.resolve(doc=doc), **kwargs
-                        )
+                        ser_res = doc_serializer.serialize(item=cell.ref.resolve(doc=doc), **kwargs)
                         content = ser_res.text
                         span_source = [ser_res]
                     else:
@@ -456,9 +430,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 ):
                     img_text = f'<img src="{item.image.uri}">'
                 elif len(item.prov) > 1:  # more than 1 provenance
-                    img_text = (
-                        '<table style="border-collapse: collapse; width: 100%;">\n'
-                    )
+                    img_text = '<table style="border-collapse: collapse; width: 100%;">\n'
                     for ind, prov in enumerate(item.prov):
                         img = item.get_image(doc, prov_index=ind)
 
@@ -482,8 +454,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
 
             elif params.image_mode == ImageRefMode.REFERENCED:
                 if isinstance(item.image, ImageRef) and not (
-                    isinstance(item.image.uri, AnyUrl)
-                    and item.image.uri.scheme == "data"
+                    isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
                 ):
                     img_text = f'<img src="{quote(str(item.image.uri))}">'
 
@@ -496,21 +467,13 @@ class HTMLPictureSerializer(BasePictureSerializer):
             kind=PictureTabularChartData.model_fields["kind"].default,
         ):
             # Check if picture has attached PictureTabularChartData
-            tabular_chart_annotations = [
-                ann
-                for ann in item.annotations
-                if isinstance(ann, PictureTabularChartData)
-            ]
+            tabular_chart_annotations = [ann for ann in item.annotations if isinstance(ann, PictureTabularChartData)]
             if len(tabular_chart_annotations) > 0:
                 temp_doc = DoclingDocument(name="temp")
-                temp_table = temp_doc.add_table(
-                    data=tabular_chart_annotations[0].chart_data
-                )
+                temp_table = temp_doc.add_table(data=tabular_chart_annotations[0].chart_data)
                 html_table_content = temp_table.export_to_html(temp_doc)
                 if len(html_table_content) > 0:
-                    res_parts.append(
-                        create_ser_result(text=html_table_content, span_source=item)
-                    )
+                    res_parts.append(create_ser_result(text=html_table_content, span_source=item))
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
@@ -534,30 +497,19 @@ class _HTMLGraphDataSerializer:
         cell_map = {cell.cell_id: cell for cell in graph_data.cells}
 
         # Build relationship maps
-        child_links: dict[
-            int, list[int]
-        ] = {}  # source_id -> list of child_ids (to_child)
+        child_links: dict[int, list[int]] = {}  # source_id -> list of child_ids (to_child)
         value_links: dict[int, list[int]] = {}  # key_id -> list of value_ids (to_value)
-        parents: set[int] = (
-            set()
-        )  # Set of all IDs that are targets of to_child (to find roots)
+        parents: set[int] = set()  # Set of all IDs that are targets of to_child (to find roots)
 
         for link in graph_data.links:
-            if (
-                link.source_cell_id not in cell_map
-                or link.target_cell_id not in cell_map
-            ):
+            if link.source_cell_id not in cell_map or link.target_cell_id not in cell_map:
                 continue
 
             if link.label.value == "to_child":
-                child_links.setdefault(link.source_cell_id, []).append(
-                    link.target_cell_id
-                )
+                child_links.setdefault(link.source_cell_id, []).append(link.target_cell_id)
                 parents.add(link.target_cell_id)
             elif link.label.value == "to_value":
-                value_links.setdefault(link.source_cell_id, []).append(
-                    link.target_cell_id
-                )
+                value_links.setdefault(link.source_cell_id, []).append(link.target_cell_id)
 
         # Find root cells (cells with no parent)
         root_ids = [cell_id for cell_id in cell_map.keys() if cell_id not in parents]
@@ -834,15 +786,9 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
             text="\n".join(
                 [
                     tmp
-                    for key in (
-                        list(item.meta.__class__.model_fields)
-                        + list(item.meta.get_custom_part())
-                    )
+                    for key in (list(item.meta.__class__.model_fields) + list(item.meta.get_custom_part()))
                     if (
-                        (
-                            params.allowed_meta_names is None
-                            or key in params.allowed_meta_names
-                        )
+                        (params.allowed_meta_names is None or key in params.allowed_meta_names)
                         and (key not in params.blocked_meta_names)
                         and (tmp := self._serialize_meta_field(item.meta, key))
                     )
@@ -903,11 +849,7 @@ class HTMLAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
                     text_dir = get_text_direction(ann_text)
                     dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                     ann_ser_res = create_ser_result(
-                        text=(
-                            f'<div data-annotation-kind="{ann.kind}"{dir_str}>'
-                            f"{html.escape(ann_text)}"
-                            f"</div>"
-                        ),
+                        text=(f'<div data-annotation-kind="{ann.kind}"{dir_str}>{html.escape(ann_text)}</div>'),
                         span_source=item,
                     )
                     res_parts.append(ann_ser_res)
@@ -1065,9 +1007,7 @@ class HTMLDocSerializer(DocSerializer):
 
                     html_parts.append("</tr>")
                 else:
-                    raise ValueError(
-                        "We need page-indices to leverage `split_page_view`"
-                    )
+                    raise ValueError("We need page-indices to leverage `split_page_view`")
 
             html_parts.append("</tbody>")
             html_parts.append("</table>")
@@ -1103,19 +1043,12 @@ class HTMLDocSerializer(DocSerializer):
 
         if DocItemLabel.CAPTION in params.labels:
             for cap in item.captions:
-                if (
-                    isinstance(it := cap.resolve(self.doc), TextItem)
-                    and it.self_ref not in excluded_refs
-                ):
+                if isinstance(it := cap.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
                     text_cap = it.text
                     text_dir = get_text_direction(text_cap)
                     dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                     cap_ser_res = create_ser_result(
-                        text=(
-                            f'<div class="caption"{dir_str}>'
-                            f"{html.escape(text_cap)}"
-                            f"</div>"
-                        ),
+                        text=(f'<div class="caption"{dir_str}>{html.escape(text_cap)}</div>'),
                         span_source=it,
                     )
                     results.append(cap_ser_res)
@@ -1153,15 +1086,11 @@ class HTMLDocSerializer(DocSerializer):
             else:
                 head_parts.append("<title>Docling Document</title>")
 
-            head_parts.append(
-                '<meta name="generator" content="Docling HTML Serializer"/>'
-            )
+            head_parts.append('<meta name="generator" content="Docling HTML Serializer"/>')
 
         # Add default styles or custom CSS
         if params.css_styles:
-            if params.css_styles.startswith("<style>") and params.css_styles.endswith(
-                "</style>"
-            ):
+            if params.css_styles.startswith("<style>") and params.css_styles.endswith("</style>"):
                 head_parts.append(f"\n{params.css_styles}\n")
             else:
                 head_parts.append(f"<style>\n{params.css_styles}\n</style>")

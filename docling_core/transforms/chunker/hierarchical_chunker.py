@@ -160,13 +160,8 @@ class HierarchicalChunker(BaseChunker):
                 for k in keys_to_del:
                     heading_by_level.pop(k, None)
                 continue
-            elif (
-                isinstance(item, (ListGroup, InlineGroup, DocItem))
-                and item.self_ref not in visited
-            ):
-                if self.code_chunking_strategy is not None and isinstance(
-                    item, CodeItem
-                ):
+            elif isinstance(item, (ListGroup, InlineGroup, DocItem)) and item.self_ref not in visited:
+                if self.code_chunking_strategy is not None and isinstance(item, CodeItem):
                     yield from self.code_chunking_strategy.chunk_code_item(
                         item=item,
                         doc=dl_doc,
@@ -187,8 +182,7 @@ class HierarchicalChunker(BaseChunker):
                     text=ser_res.text,
                     meta=DocMeta(
                         doc_items=doc_items,
-                        headings=[heading_by_level[k] for k in sorted(heading_by_level)]
-                        or None,
+                        headings=[heading_by_level[k] for k in sorted(heading_by_level)] or None,
                         origin=dl_doc.origin,
                     ),
                 )

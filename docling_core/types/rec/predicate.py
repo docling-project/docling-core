@@ -29,17 +29,13 @@ class NumericalValue(BaseModel, extra="forbid"):
     max: StrictFloat = Field(..., json_schema_extra=es_field(type="float"))
     val: StrictFloat = Field(..., json_schema_extra=es_field(type="float"))
     err: StrictFloat = Field(..., json_schema_extra=es_field(type="float"))
-    unit: StrictStr = Field(
-        ..., json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    unit: StrictStr = Field(..., json_schema_extra=es_field(type="keyword", ignore_above=8191))
 
 
 class NominalValue(BaseModel, extra="forbid"):
     """Model for nominal (categorical) values."""
 
-    value: StrictStr = Field(
-        ..., json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    value: StrictStr = Field(..., json_schema_extra=es_field(type="keyword", ignore_above=8191))
 
 
 class TextValue(BaseModel, extra="forbid"):
@@ -79,9 +75,7 @@ class GeopointValue(BaseModel, extra="forbid"):
         return v
 
 
-class PredicateKey(
-    AliasModel, Generic[PredicateKeyNameT, PredicateKeyTypeT], extra="forbid"
-):
+class PredicateKey(AliasModel, Generic[PredicateKeyNameT, PredicateKeyTypeT], extra="forbid"):
     """Model for the key (unique identifier) of a predicate."""
 
     name: PredicateKeyNameT = Field(

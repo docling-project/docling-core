@@ -53,9 +53,7 @@ def test_chunk_merge_peers():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -79,9 +77,7 @@ def test_chunk_with_model_name():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -102,9 +98,7 @@ def test_chunk_deprecated_max_tokens():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -160,9 +154,7 @@ def test_chunk_no_merge_peers():
     )
 
     chunks = chunker.chunk(dl_doc=dl_doc)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -183,9 +175,7 @@ def test_chunk_deprecated_explicit_hf_obj():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -208,9 +198,7 @@ def test_ignore_deprecated_param_if_new_tokenizer_passed():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -232,9 +220,7 @@ def test_deprecated_no_max_tokens():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -300,9 +286,7 @@ def test_chunk_custom_serializer():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -325,9 +309,7 @@ def test_chunk_openai():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -345,9 +327,7 @@ def test_chunk_default():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
@@ -370,9 +350,7 @@ def test_chunk_explicit():
 
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,

@@ -27,9 +27,7 @@ def test_page_chunks():
 
     chunk_iter = chunker.chunk(dl_doc=doc)
     chunks = list(chunk_iter)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     _process(
         act_data=act_data,
         exp_path_str=src.parent / f"{src.stem}_chunks.json",

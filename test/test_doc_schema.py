@@ -90,9 +90,7 @@ def test_description_advanced_t():
     # any dictionary is valid, since it is not parametrized
     CCSDocumentDescription(**desc, advanced={"serial": "CXS12345"})
     CCSDocumentDescription(**desc, advanced={0: "CXS12345"})
-    with pytest.raises(
-        ValidationError, match="should be a valid dictionary or instance of BaseModel"
-    ):
+    with pytest.raises(ValidationError, match="should be a valid dictionary or instance of BaseModel"):
         CCSDocumentDescription(**desc, advanced=False)
 
     class MyAdvanced(BaseModel):

@@ -149,9 +149,7 @@ class _ChunkMetadataBuilder:
             chunk_type=CodeChunkType.CLASS,
         )
 
-    def build_preamble_metadata(
-        self, *, item: CodeItem, content: str, start_line: int, end_line: int
-    ) -> CodeDocMeta:
+    def build_preamble_metadata(self, *, item: CodeItem, content: str, start_line: int, end_line: int) -> CodeDocMeta:
         """Build metadata for preamble chunks."""
         return CodeDocMeta(
             doc_items=[item],
@@ -162,9 +160,7 @@ class _ChunkMetadataBuilder:
             chunk_type=CodeChunkType.PREAMBLE,
         )
 
-    def calculate_line_numbers(
-        self, code: str, start_byte: int, end_byte: int
-    ) -> Tuple[int, int]:
+    def calculate_line_numbers(self, code: str, start_byte: int, end_byte: int) -> Tuple[int, int]:
         """Calculate line numbers from byte positions."""
         start_line = code[:start_byte].count("\n") + 1
         if end_byte > 0 and end_byte <= len(code):
@@ -224,9 +220,7 @@ class _ChunkBuilder:
         )
         return CodeChunk(text=content, meta=metadata, doc_items=[self.item])
 
-    def build_preamble_chunk(
-        self, content: str, start_line: int, end_line: int
-    ) -> CodeChunk:
+    def build_preamble_chunk(self, content: str, start_line: int, end_line: int) -> CodeChunk:
         """Build a preamble chunk."""
         metadata = self.metadata_builder.build_preamble_metadata(
             item=self.item,
@@ -236,15 +230,11 @@ class _ChunkBuilder:
         )
         return CodeChunk(text=content, meta=metadata, doc_items=[self.item])
 
-    def process_orphan_chunks(
-        self, used_ranges: List[Tuple[int, int]], dl_doc
-    ) -> Iterator[CodeChunk]:
+    def process_orphan_chunks(self, used_ranges: List[Tuple[int, int]], dl_doc) -> Iterator[CodeChunk]:
         """Process orphan chunks (preamble) from unused code ranges."""
         from docling_core.types.doc.labels import DocItemLabel
 
-        code = next(
-            (t.text for t in dl_doc.texts if t.label == DocItemLabel.CODE), None
-        )
+        code = next((t.text for t in dl_doc.texts if t.label == DocItemLabel.CODE), None)
         if not code:
             return
 
@@ -263,18 +253,14 @@ class _ChunkBuilder:
             first_start_byte = orphan_pieces[0][1]
             last_end_byte = orphan_pieces[-1][2]
 
-            start_line, end_line = self.metadata_builder.calculate_line_numbers(
-                code, first_start_byte, last_end_byte
-            )
+            start_line, end_line = self.metadata_builder.calculate_line_numbers(code, first_start_byte, last_end_byte)
             yield self.build_preamble_chunk(merged_content, start_line, end_line)
 
 
 class _ChunkSizeProcessor:
     """Processes chunks to split large ones into smaller pieces."""
 
-    def __init__(
-        self, tokenizer, max_tokens: int, min_chunk_size: int = 300, chunker=None
-    ):
+    def __init__(self, tokenizer, max_tokens: int, min_chunk_size: int = 300, chunker=None):
         """Initialize the chunk size processor with tokenizer and size constraints."""
         self.tokenizer = tokenizer
         self.max_tokens = max_tokens
@@ -369,11 +355,7 @@ class _ChunkSizeProcessor:
                 continue
 
             new_meta = chunk.meta.model_copy()
-            new_meta.part_name = (
-                f"{chunk.meta.part_name}_part_{i + 1}"
-                if len(chunks) > 1
-                else chunk.meta.part_name
-            )
+            new_meta.part_name = f"{chunk.meta.part_name}_part_{i + 1}" if len(chunks) > 1 else chunk.meta.part_name
 
             sub_chunk = CodeChunk(text=chunk_text, meta=new_meta)
             yield sub_chunk, ranges
@@ -422,9 +404,7 @@ class _ChunkSizeProcessor:
             if self.tokenizer.count_tokens(chunk_text) >= self.min_chunk_size:
                 yield self._create_split_chunk(chunk, chunk_text, chunk_number), ranges
 
-    def _create_split_chunk(
-        self, original_chunk: CodeChunk, text: str, chunk_number: int
-    ) -> CodeChunk:
+    def _create_split_chunk(self, original_chunk: CodeChunk, text: str, chunk_number: int) -> CodeChunk:
         """Create a new chunk from split text."""
         new_meta = original_chunk.meta.model_copy()
         new_meta.part_name = f"{original_chunk.meta.part_name}_part_{chunk_number}"
@@ -485,9 +465,7 @@ class _CodeChunker(BaseChunker):
                 module_variables = self._get_module_variables(tree)
                 range_tracker = _RangeTracker()
                 chunk_builder = _ChunkBuilder(item=item, origin=dl_doc.origin)
-                size_processor = _ChunkSizeProcessor(
-                    self.tokenizer, self.max_tokens, self.min_chunk_size, chunker=self
-                )
+                size_processor = _ChunkSizeProcessor(self.tokenizer, self.max_tokens, self.min_chunk_size, chunker=self)
 
                 self._mark_copyright_comments(tree.root_node, range_tracker)
 
@@ -509,32 +487,24 @@ class _CodeChunker(BaseChunker):
                         all_chunks.append((chunk, chunk_used_ranges))
 
                 if module_variables:
-                    self._track_constructor_variables(
-                        tree.root_node, module_variables, range_tracker
-                    )
+                    self._track_constructor_variables(tree.root_node, module_variables, range_tracker)
 
                 empty_classes = self._get_classes_no_methods(tree.root_node, "")
                 for node in empty_classes:
                     for (
                         chunk,
                         chunk_used_ranges,
-                    ) in self._yield_class_chunk_with_ranges(
-                        node, import_nodes, chunk_builder
-                    ):
+                    ) in self._yield_class_chunk_with_ranges(node, import_nodes, chunk_builder):
                         range_tracker.extend(chunk_used_ranges)
                         all_chunks.append((chunk, chunk_used_ranges))
 
-                for chunk in chunk_builder.process_orphan_chunks(
-                    range_tracker.get_used_ranges(), dl_doc
-                ):
+                for chunk in chunk_builder.process_orphan_chunks(range_tracker.get_used_ranges(), dl_doc):
                     all_chunks.append((chunk, []))
 
                 for chunk, _ in size_processor.process_chunks(all_chunks):
                     yield chunk
 
-    def _mark_copyright_comments(
-        self, root_node: Node, range_tracker: _RangeTracker
-    ) -> None:
+    def _mark_copyright_comments(self, root_node: Node, range_tracker: _RangeTracker) -> None:
         """Mark copyright comments as used."""
         comment_nodes = _get_children(root_node, self.docs_types)
         for node in comment_nodes:
@@ -551,12 +521,8 @@ class _CodeChunker(BaseChunker):
         module_variables: Optional[Dict[str, Node]] = None,
     ) -> Iterator[Tuple[CodeChunk, List[Tuple[int, int]]]]:
         docstring = self._get_docstring(node)
-        additional_context, additional_context_no_docstring = (
-            self._build_additional_context(node, root_node)
-        )
-        imports = self._build_imports(
-            import_nodes, node, additional_context_no_docstring
-        )
+        additional_context, additional_context_no_docstring = self._build_additional_context(node, root_node)
+        imports = self._build_imports(import_nodes, node, additional_context_no_docstring)
         function_line_start, _ = node.start_point
         function_line_end, _ = node.end_point
         signature_line_end, _ = self._get_function_signature_end(node)
@@ -583,12 +549,8 @@ class _CodeChunker(BaseChunker):
             current_node = node
             while current_node.parent:
                 if current_node.parent.type in self.class_definition_types:
-                    used_ranges.append(
-                        (current_node.parent.start_byte, current_node.parent.end_byte)
-                    )
-                    used_ranges.extend(
-                        self._get_class_member_ranges(current_node.parent)
-                    )
+                    used_ranges.append((current_node.parent.start_byte, current_node.parent.end_byte))
+                    used_ranges.extend(self._get_class_member_ranges(current_node.parent))
                     break
                 current_node = current_node.parent
 
@@ -605,13 +567,10 @@ class _CodeChunker(BaseChunker):
                     module_variable_definitions += var_text + "\n"
 
         function_content = self._build_function(node)
-        function_no_docstring = (
-            function_content.replace(docstring, "") if docstring else function_content
-        )
+        function_no_docstring = function_content.replace(docstring, "") if docstring else function_content
 
         base_content = (
-            f"{prefix}{imports}{module_variable_definitions}"
-            f"{additional_context_no_docstring}{function_no_docstring}"
+            f"{prefix}{imports}{module_variable_definitions}{additional_context_no_docstring}{function_no_docstring}"
         )
 
         yield (
@@ -646,9 +605,7 @@ class _CodeChunker(BaseChunker):
         used_ranges.extend(class_ranges)
 
         if imports:
-            used_imports = self._find_used_imports_in_function(
-                import_nodes, node, function_content, None
-            )
+            used_imports = self._find_used_imports_in_function(import_nodes, node, function_content, None)
             for import_name in sorted(used_imports):
                 if import_name in import_nodes:
                     import_node = import_nodes[import_name]
@@ -658,9 +615,7 @@ class _CodeChunker(BaseChunker):
         if prefix:
             used_ranges.extend(prefix_range)
 
-        function_no_docstring = (
-            function_content.replace(docstring, "") if docstring else function_content
-        )
+        function_no_docstring = function_content.replace(docstring, "") if docstring else function_content
         content_no_docstring = f"{prefix}{imports}{function_no_docstring}"
 
         if chunk_builder:
@@ -679,9 +634,7 @@ class _CodeChunker(BaseChunker):
         return "", []
 
     def _get_function_body(self, node: Node) -> Optional[Node]:
-        return next(
-            (child for child in node.children if child.type == self.function_body), None
-        )
+        return next((child for child in node.children if child.type == self.function_body), None)
 
     def _get_docstring(self, node: Node) -> str:
         if node.prev_named_sibling and node.prev_named_sibling.type in self.docs_types:
@@ -714,10 +667,7 @@ class _CodeChunker(BaseChunker):
         def has_methods(class_node: Node) -> bool:
             return any(
                 child.type in self.function_definition_types
-                or any(
-                    grandchild.type in self.function_definition_types
-                    for grandchild in child.children
-                )
+                or any(grandchild.type in self.function_definition_types for grandchild in child.children)
                 for child in class_node.children
             )
 
@@ -787,10 +737,7 @@ class _CodeChunker(BaseChunker):
         used, set_imports = set(), set()
 
         def find_used_imports(node):
-            if (
-                node.type in self.identifiers
-                and node.text.decode(self.utf8_encoding) in imports
-            ):
+            if node.type in self.identifiers and node.text.decode(self.utf8_encoding) in imports:
                 used.add(node.text.decode(self.utf8_encoding))
             for child in node.children:
                 find_used_imports(child)
@@ -824,10 +771,7 @@ class _CodeChunker(BaseChunker):
         used = set()
 
         def find_used_imports(node):
-            if (
-                node.type in self.identifiers
-                and node.text.decode(self.utf8_encoding) in imports
-            ):
+            if node.type in self.identifiers and node.text.decode(self.utf8_encoding) in imports:
                 used.add(node.text.decode(self.utf8_encoding))
             for child in node.children:
                 find_used_imports(child)
@@ -898,27 +842,19 @@ class _CodeChunker(BaseChunker):
 
         return ranges
 
-    def _get_variable_ranges_with_comments(
-        self, var_node: Node
-    ) -> List[Tuple[int, int]]:
+    def _get_variable_ranges_with_comments(self, var_node: Node) -> List[Tuple[int, int]]:
         """Get variable ranges including any preceding comments."""
         return self._get_node_ranges_with_comments(var_node)
 
-    def _get_import_ranges_with_comments(
-        self, import_node: Node
-    ) -> List[Tuple[int, int]]:
+    def _get_import_ranges_with_comments(self, import_node: Node) -> List[Tuple[int, int]]:
         """Get import ranges including any preceding comments."""
         return self._get_node_ranges_with_comments(import_node)
 
-    def _get_class_ranges_with_comments(
-        self, class_node: Node
-    ) -> List[Tuple[int, int]]:
+    def _get_class_ranges_with_comments(self, class_node: Node) -> List[Tuple[int, int]]:
         """Get class ranges including any preceding comments and docstrings."""
         return self._get_node_ranges_with_comments(class_node)
 
-    def _build_additional_context(
-        self, function_node: Node, root_node: Node
-    ) -> Tuple[str, str]:
+    def _build_additional_context(self, function_node: Node, root_node: Node) -> Tuple[str, str]:
         context = ""
         context_no_docstring = ""
         node = function_node
@@ -944,9 +880,7 @@ class _CodeChunker(BaseChunker):
         """Get imports from the AST. Must be implemented by language-specific chunkers."""
         raise NotImplementedError
 
-    def _build_class_context(
-        self, class_node: Node, root_node: Node
-    ) -> Tuple[str, str]:
+    def _build_class_context(self, class_node: Node, root_node: Node) -> Tuple[str, str]:
         class_indent = class_node.start_point.column
         start_byte = class_node.start_byte
 
@@ -966,9 +900,7 @@ class _CodeChunker(BaseChunker):
             header_text = ""
         header = f"{' ' * class_indent}{header_text}\n"
         docstring = self._get_docstring(class_node)
-        header_with_docstring = (
-            f"{header}{' ' * (class_indent + 4)}{docstring}\n" if docstring else header
-        )
+        header_with_docstring = f"{header}{' ' * (class_indent + 4)}{docstring}\n" if docstring else header
 
         fields = [
             _to_str(child)
@@ -981,9 +913,7 @@ class _CodeChunker(BaseChunker):
             constructor_doc = self._get_docstring(constructor_node)
             constructor_text = self._build_function(constructor_node)
             constructor_text_no_doc = (
-                constructor_text.replace(constructor_doc, "")
-                if constructor_doc
-                else constructor_text
+                constructor_text.replace(constructor_doc, "") if constructor_doc else constructor_text
             )
         else:
             constructor_text = constructor_text_no_doc = ""
@@ -997,9 +927,7 @@ class _CodeChunker(BaseChunker):
         for child in body.children:
             definition_field = child.child_by_field_name(self.definition_field)
             if self._is_constructor(child) or (
-                child.type == self.decorator_type
-                and definition_field
-                and self._is_constructor(definition_field)
+                child.type == self.decorator_type and definition_field and self._is_constructor(definition_field)
             ):
                 return child
         return None
@@ -1035,10 +963,7 @@ class _CodeChunker(BaseChunker):
 
         function_count = 0
         for child in body_node.children:
-            if (
-                child.type in self.function_definition_types
-                and child != constructor_node
-            ):
+            if child.type in self.function_definition_types and child != constructor_node:
                 function_count += 1
 
         return function_count == 0
@@ -1134,15 +1059,10 @@ class _PythonFunctionChunker(_CodeChunker):
             if child.type in self.expression_types and child.named_children:
                 expr = child.named_children[0]
                 if expr.type == "assignment":
-                    if (
-                        expr.named_children
-                        and expr.named_children[0].type in self.identifiers
-                    ):
+                    if expr.named_children and expr.named_children[0].type in self.identifiers:
                         text = expr.named_children[0].text
                         var_name = text.decode(self.utf8_encoding) if text else ""
-                        extended_node = self._get_variable_with_comments(
-                            child, tree.root_node
-                        )
+                        extended_node = self._get_variable_with_comments(child, tree.root_node)
                         variables[var_name] = extended_node
         return variables
 
@@ -1188,10 +1108,7 @@ class _PythonFunctionChunker(_CodeChunker):
         current = identifier_node.parent
         while current:
             if current.type == "assignment":
-                if (
-                    current.named_children
-                    and current.named_children[0] == identifier_node
-                ):
+                if current.named_children and current.named_children[0] == identifier_node:
                     return True
             current = current.parent
         return False
@@ -1252,13 +1169,9 @@ class _TypeScriptFunctionChunker(_CodeChunker):
                         if sub_child.type == self.named_imports:
                             for spec in sub_child.children:
                                 if spec.type == self.import_specifier:
-                                    name_node = spec.child_by_field_name(
-                                        self.name_field
-                                    )
+                                    name_node = spec.child_by_field_name(self.name_field)
                                     if name_node:
-                                        identifiers.append(
-                                            name_node.text.decode("utf8")
-                                        )
+                                        identifiers.append(name_node.text.decode("utf8"))
                         elif sub_child.type in self.identifiers:
                             identifiers.append(sub_child.text.decode("utf8"))
                         elif sub_child.type == self.namespace_import:
@@ -1317,10 +1230,7 @@ class _CFunctionChunker(_CodeChunker):
     def _get_docstring(self, node: Node) -> str:
         docstring = ""
         if node.prev_named_sibling and node.prev_named_sibling.type in self.docs_types:
-            while (
-                node.prev_named_sibling
-                and node.prev_named_sibling.type in self.docs_types
-            ):
+            while node.prev_named_sibling and node.prev_named_sibling.type in self.docs_types:
                 text = node.prev_named_sibling.text
                 if text:
                     docstring += text.decode(self.utf8_encoding)
@@ -1348,12 +1258,8 @@ class _CFunctionChunker(_CodeChunker):
                 if clean_name:
                     structs[clean_name] = node
             elif node.type in [self.declaration]:
-                if _has_child(
-                    node.child_by_field_name(self.declarator), self.declarator
-                ):
-                    name = node.child_by_field_name(
-                        self.declarator
-                    ).child_by_field_name(self.declarator)
+                if _has_child(node.child_by_field_name(self.declarator), self.declarator):
+                    name = node.child_by_field_name(self.declarator).child_by_field_name(self.declarator)
                 else:
                     name = node.child_by_field_name(self.declarator)
                 if name:
@@ -1361,12 +1267,8 @@ class _CFunctionChunker(_CodeChunker):
                     if clean_name:
                         structs[clean_name] = node
             elif node.type in self.function_declaration:
-                if _has_child(
-                    node.child_by_field_name(self.type_field), self.name_field
-                ):
-                    name = node.child_by_field_name(
-                        self.type_field
-                    ).child_by_field_name(self.name_field)
+                if _has_child(node.child_by_field_name(self.type_field), self.name_field):
+                    name = node.child_by_field_name(self.type_field).child_by_field_name(self.name_field)
                 else:
                     name = node.child_by_field_name(self.type_field)
                 if name:
@@ -1518,16 +1420,12 @@ class _JavaFunctionChunker(_CodeChunker):
         return import_dict
 
     @override
-    def _build_additional_context(
-        self, function_node: Node, root_node: Node
-    ) -> Tuple[str, str]:
+    def _build_additional_context(self, function_node: Node, root_node: Node) -> Tuple[str, str]:
         context: List[str] = []
         context_no_doc: List[str] = []
         while function_node.parent is not None:
             if function_node.type in self.object_declarations:
-                with_doc, without_doc = self._build_java_object_context(
-                    function_node, root_node
-                )
+                with_doc, without_doc = self._build_java_object_context(function_node, root_node)
                 context.insert(0, with_doc)
                 context_no_doc.insert(0, without_doc)
             function_node = function_node.parent
@@ -1538,9 +1436,7 @@ class _JavaFunctionChunker(_CodeChunker):
             without_doc + ("" if without_doc else ""),
         )
 
-    def _build_java_object_context(
-        self, obj_node: Node, root_node: Node
-    ) -> Tuple[str, str]:
+    def _build_java_object_context(self, obj_node: Node, root_node: Node) -> Tuple[str, str]:
         """Build context for Java objects (classes, enums, interfaces)."""
         obj_type = obj_node.type
 
@@ -1553,9 +1449,7 @@ class _JavaFunctionChunker(_CodeChunker):
 
         return ("", "")
 
-    def _build_java_class_like_context(
-        self, node: Node, root_node: Node, context_type: str
-    ) -> Tuple[str, str]:
+    def _build_java_class_like_context(self, node: Node, root_node: Node, context_type: str) -> Tuple[str, str]:
         """Unified context building for Java classes, enums, and interfaces."""
         body = node.child_by_field_name(self.class_body_field)
         if not body:
@@ -1564,56 +1458,30 @@ class _JavaFunctionChunker(_CodeChunker):
 
         header = self._get_function_signature(node, root_node)
         doc = self._get_docstring(node)
-        header_with_doc = (
-            f"{header}{' ' * (node.start_point.column + 4)}{doc}" if doc else header
-        )
+        header_with_doc = f"{header}{' ' * (node.start_point.column + 4)}{doc}" if doc else header
 
         inner_parts = []
 
         if context_type == "enum":
-            constants = [
-                _to_str(child)
-                for child in body.children
-                if child.type == self.enum_constant
-            ]
+            constants = [_to_str(child) for child in body.children if child.type == self.enum_constant]
             const_block = (",".join(constants) + ";") if constants else ""
             inner_parts.append(const_block)
 
             decl = next(
-                (
-                    child
-                    for child in body.children
-                    if child.type == self.enum_body_declarations
-                ),
+                (child for child in body.children if child.type == self.enum_body_declarations),
                 None,
             )
             if decl:
-                decl_parts = [
-                    _to_str(child)
-                    for child in decl.children
-                    if child.type in self.enum_inner_types
-                ]
+                decl_parts = [_to_str(child) for child in decl.children if child.type in self.enum_inner_types]
                 inner_parts.append("".join(decl_parts))
 
         elif context_type == "interface":
-            constants = [
-                _to_str(child)
-                for child in body.children
-                if child.type == self.constant_declaration
-            ]
-            methods = [
-                _to_str(child)
-                for child in body.children
-                if child.type in self.function_definition_types
-            ]
+            constants = [_to_str(child) for child in body.children if child.type == self.constant_declaration]
+            methods = [_to_str(child) for child in body.children if child.type in self.function_definition_types]
             inner_parts.extend(["".join(constants), "".join(methods)])
 
         else:
-            parts = [
-                _to_str(child)
-                for child in body.children
-                if child.type in self.class_header_inner_types
-            ]
+            parts = [_to_str(child) for child in body.children if child.type in self.class_header_inner_types]
             inner_parts.extend(parts)
 
         ctor = self._find_constructor(body)
@@ -1623,9 +1491,7 @@ class _JavaFunctionChunker(_CodeChunker):
         inner = "".join(part for part in inner_parts if part.strip())
         close = (" " * node.start_point.column) + "}"
 
-        with_doc = (
-            "\n\n".join(x for x in [header_with_doc, inner] if x).rstrip() + close
-        )
+        with_doc = "\n\n".join(x for x in [header_with_doc, inner] if x).rstrip() + close
         without_doc = "\n\n".join(x for x in [header, inner] if x).rstrip() + close
 
         return with_doc, without_doc

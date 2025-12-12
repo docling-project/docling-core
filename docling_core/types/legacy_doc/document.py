@@ -61,12 +61,8 @@ class CCSFileInfoObject(FileInfoObject, extra="forbid"):
         alias="collection-name",
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
-    description: Optional[CCSFileInfoDescription] = Field(
-        default=None, json_schema_extra=es_field(suppress=True)
-    )
-    page_hashes: Optional[list[PageReference]] = Field(
-        default=None, alias="page-hashes"
-    )
+    description: Optional[CCSFileInfoDescription] = Field(default=None, json_schema_extra=es_field(suppress=True))
+    page_hashes: Optional[list[PageReference]] = Field(default=None, alias="page-hashes")
 
 
 class Affiliation(BaseModel, extra="forbid"):
@@ -85,12 +81,8 @@ class Affiliation(BaseModel, extra="forbid"):
             },
         ),
     )
-    id: Optional[str] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
-    source: Optional[str] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    id: Optional[str] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
+    source: Optional[str] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
 
 
 class Author(BaseModel, extra="forbid"):
@@ -110,12 +102,8 @@ class Author(BaseModel, extra="forbid"):
             },
         ),
     )
-    id: Optional[str] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
-    source: Optional[str] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    id: Optional[str] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
+    source: Optional[str] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
     affiliations: Optional[list[Affiliation]] = None
 
 
@@ -166,9 +154,7 @@ class Publication(BaseModel, Generic[IdentifierTypeT], extra="forbid"):
 class DescriptionLicense(BaseModel, extra="forbid"):
     """Licence in document description."""
 
-    code: Optional[StrictStr] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    code: Optional[StrictStr] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
     text: Optional[StrictStr] = None
 
 
@@ -190,13 +176,9 @@ class CCSDocumentDescription(
     affiliations: Optional[list[Affiliation]] = None
     subjects: Optional[list[str]] = Field(
         default=None,
-        json_schema_extra=es_field(
-            fields={"keyword": {"ignore_above": 8191, "type": "keyword"}}
-        ),
+        json_schema_extra=es_field(fields={"keyword": {"ignore_above": 8191, "type": "keyword"}}),
     )
-    keywords: Optional[list[str]] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    keywords: Optional[list[str]] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
     publication_date: Optional[datetime] = None
     languages: Optional[list[LanguageT]] = Field(
         default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
@@ -205,9 +187,7 @@ class CCSDocumentDescription(
     publishers: Optional[list[StrictStr]] = Field(
         default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
     )
-    url_refs: Optional[list[str]] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    url_refs: Optional[list[str]] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
     references: Optional[list[Identifier[IdentifierTypeT]]] = None
     publication: Optional[list[Publication]] = Field(
         default=None, description="List of publication journals or venues."
@@ -240,10 +220,7 @@ class CCSDocumentDescription(
     )
     acquisition: Optional[Acquisition] = Field(
         default=None,
-        description=(
-            "Information on how the document was obtained, for data governance"
-            " purposes."
-        ),
+        description=("Information on how the document was obtained, for data governance purposes."),
     )
 
 
@@ -269,9 +246,7 @@ class MinimalDocument(
         CollectionNameTypeT,
     ]
     file_info: FileInfoObject = Field(alias="file-info")
-    main_text: Optional[list[Union[Ref, BaseText]]] = Field(
-        default=None, alias="main-text"
-    )
+    main_text: Optional[list[Union[Ref, BaseText]]] = Field(default=None, alias="main-text")
     figures: Optional[list[Figure]] = None
     tables: Optional[list[Table]] = None
 
@@ -297,9 +272,7 @@ class CCSDocument(
         default=None,
         alias="main-text",
     )
-    page_dimensions: Optional[list[PageDimensions]] = Field(
-        default=None, alias="page-dimensions"
-    )
+    page_dimensions: Optional[list[PageDimensions]] = Field(default=None, alias="page-dimensions")
     page_footers: Optional[list[BaseText]] = Field(default=None, alias="page-footers")
     page_headers: Optional[list[BaseText]] = Field(default=None, alias="page-headers")
     s3_data: Optional[S3Data] = Field(default=None, alias="_s3_data")
@@ -370,12 +343,8 @@ class ExportedCCSDocument(
         CollectionNameTypeT,
     ]
     file_info: CCSFileInfoObject = Field(alias="file-info")
-    main_text: Optional[list[Union[Ref, BaseText]]] = Field(
-        default=None, alias="main-text"
-    )
-    page_dimensions: Optional[list[PageDimensions]] = Field(
-        default=None, alias="page-dimensions"
-    )
+    main_text: Optional[list[Union[Ref, BaseText]]] = Field(default=None, alias="main-text")
+    page_dimensions: Optional[list[PageDimensions]] = Field(default=None, alias="page-dimensions")
     page_footers: Optional[list[BaseText]] = Field(default=None, alias="page-footers")
     page_headers: Optional[list[BaseText]] = Field(default=None, alias="page-headers")
     s3_data: Optional[S3Data] = Field(default=None, alias="_s3_data")
@@ -480,30 +449,18 @@ class ExportedCCSDocument(
             # to avoid repeating them
             embedded_captions = set()
             for orig_item in self.main_text[main_text_start:main_text_stop]:
-                item = (
-                    self._resolve_ref(orig_item)
-                    if isinstance(orig_item, Ref)
-                    else orig_item
-                )
+                item = self._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item
                 if item is None:
                     continue
 
-                if (
-                    isinstance(item, (Table, Figure))
-                    and item.text
-                    and item.obj_type in main_text_labels
-                ):
+                if isinstance(item, (Table, Figure)) and item.text and item.obj_type in main_text_labels:
                     embedded_captions.add(item.text)
 
             # serialize document to markdown
             for orig_item in self.main_text[main_text_start:main_text_stop]:
                 markdown_text = ""
 
-                item = (
-                    self._resolve_ref(orig_item)
-                    if isinstance(orig_item, Ref)
-                    else orig_item
-                )
+                item = self._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item
                 if item is None:
                     continue
 
@@ -531,9 +488,7 @@ class ExportedCCSDocument(
                         has_title = True
 
                     # secondary titles
-                    elif item_type in {"title", "subtitle-level-1"} or (
-                        has_title and item_type == "title"
-                    ):
+                    elif item_type in {"title", "subtitle-level-1"} or (has_title and item_type == "title"):
                         if strict_text:
                             markdown_text = f"{text}"
                         else:
@@ -543,11 +498,7 @@ class ExportedCCSDocument(
                     else:
                         markdown_text = text
 
-                elif (
-                    isinstance(item, Table)
-                    and (item.data or item.text)
-                    and item_type in main_text_labels
-                ):
+                elif isinstance(item, Table) and (item.data or item.text) and item_type in main_text_labels:
                     md_table = ""
                     table = []
                     if item.data is not None:
@@ -559,9 +510,7 @@ class ExportedCCSDocument(
 
                     if len(table) > 1 and len(table[0]) > 0:
                         try:
-                            md_table = tabulate(
-                                table[1:], headers=table[0], tablefmt="github"
-                            )
+                            md_table = tabulate(table[1:], headers=table[0], tablefmt="github")
                         except ValueError:
                             md_table = tabulate(
                                 table[1:],
@@ -574,18 +523,14 @@ class ExportedCCSDocument(
                     if item.text:
                         markdown_text = item.text
                     if not strict_text:
-                        markdown_text += (
-                            "\n\n" if len(markdown_text) > 0 else ""
-                        ) + md_table
+                        markdown_text += ("\n\n" if len(markdown_text) > 0 else "") + md_table
 
                 elif isinstance(item, Figure) and item_type in main_text_labels:
                     markdown_text = ""
                     if item.text:
                         markdown_text = item.text
                     if not strict_text:
-                        markdown_text += (
-                            "\n" if len(markdown_text) > 0 else ""
-                        ) + image_placeholder
+                        markdown_text += ("\n" if len(markdown_text) > 0 else "") + image_placeholder
 
                 if markdown_text:
                     md_texts.append(markdown_text)
@@ -634,11 +579,7 @@ class ExportedCCSDocument(
 
         if self.main_text is not None:
             for orig_item in self.main_text[main_text_start:main_text_stop]:
-                item = (
-                    self._resolve_ref(orig_item)
-                    if isinstance(orig_item, Ref)
-                    else orig_item
-                )
+                item = self._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item
 
                 if item is None:
                     continue
@@ -649,12 +590,7 @@ class ExportedCCSDocument(
                 page_w = 0.0
                 page_h = 0.0
 
-                if (
-                    add_location
-                    and self.page_dimensions is not None
-                    and prov is not None
-                    and len(prov) > 0
-                ):
+                if add_location and self.page_dimensions is not None and prov is not None and len(prov) > 0:
                     page_i = prov[0].page
                     page_dim = self.page_dimensions[page_i - 1]
 

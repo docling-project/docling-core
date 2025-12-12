@@ -22,11 +22,7 @@ def verify(exp_file: Path, actual: dict):
         # as the test was flaky due to URIs
         def strip_image_uris(d):
             if isinstance(d, dict):
-                return {
-                    k: strip_image_uris(v)
-                    for k, v in d.items()
-                    if k not in {"uri", "image_uri"}
-                }
+                return {k: strip_image_uris(v) for k, v in d.items() if k not in {"uri", "image_uri"}}
             elif isinstance(d, list):
                 return [strip_image_uris(x) for x in d]
             else:
@@ -34,9 +30,7 @@ def verify(exp_file: Path, actual: dict):
 
         expected_stripped = strip_image_uris(expected)
         actual_stripped = strip_image_uris(actual)
-        assert expected_stripped == actual_stripped, (
-            "Dicts differ (ignoring image URIs)"
-        )
+        assert expected_stripped == actual_stripped, "Dicts differ (ignoring image URIs)"
 
         if "data:image/png;base64" in str(expected):
             # check if the image URIs are the same
@@ -153,11 +147,7 @@ def test_doctags_inline():
 
     doctags_doc = DocTagsDocument.from_multipage_doctags_and_images(
         doctags=doctags,
-        images=[
-            pil_img
-            for p in doc.pages
-            if (img_ref := doc.pages[p].image) and (pil_img := img_ref.pil_image)
-        ],
+        images=[pil_img for p in doc.pages if (img_ref := doc.pages[p].image) and (pil_img := img_ref.pil_image)],
     )
 
     deser_doc = DoclingDocument.load_from_doctags(doctags_doc)
