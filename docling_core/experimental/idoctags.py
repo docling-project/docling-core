@@ -18,7 +18,7 @@ from docling_core.transforms.serializer.base import (
     SerializationResult,
 )
 from docling_core.transforms.serializer.common import create_ser_result
-from docling_core.transforms.serializer.doctags import (  # DocTagsPictureSerializer,; DocTagsTableSerializer,; _wrap,
+from docling_core.transforms.serializer.doctags import (
     DocTagsDocSerializer,
     DocTagsParams,
     _get_delim,
@@ -45,9 +45,12 @@ from docling_core.types.doc import (
     TabularChartMetaField,
     TextItem,
 )
-from docling_core.types.doc.tokens import DocumentToken
+
+# Note: Intentionally avoid importing DocumentToken here to ensure
+# IDocTags uses only its own token vocabulary.
 
 DOCTAGS_VERSION: Final = "1.0.0"
+DOCTAGS_RESOLUTION: int = 512
 
 
 def _wrap(text: str, wrap_tag: str) -> str:
@@ -921,15 +924,25 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         my_visited = visited if visited is not None else set()
         params = IDocTagsParams(**kwargs)
 
-        wrap_tag_token: Optional[str] = (
-            DocumentToken.create_token_name_from_doc_item_label(
-                label=item.label,
-                **(
-                    {"level": item.level} if isinstance(item, SectionHeaderItem) else {}
-                ),
-            )
-        )
-        wrap_tag: Optional[str] = None if isinstance(item, ListItem) else wrap_tag_token
+        # Determine wrapper open-token for this item using IDocTags vocabulary.
+        # - ListItem: do not wrap here (list serializer wraps children as <list_text>).
+        # - SectionHeaderItem: use <heading level="N"> ... </heading>.
+        # - Other text-like items: require a valid IDocTagsToken from the item's label.
+        #   If the label is not a known IDocTags token, raise for explicitness.
+        wrap_open_token: Optional[str]
+        if isinstance(item, ListItem):
+            wrap_open_token = None
+        elif isinstance(item, SectionHeaderItem):
+            wrap_open_token = IDocTagsVocabulary.create_heading_token(level=item.level)
+        else:
+            label_value = str(item.label)
+            try:
+                tok = IDocTagsToken(label_value)
+            except ValueError:
+                raise ValueError(
+                    f"Unsupported IDocTags token for label '{label_value}'"
+                )
+            wrap_open_token = f"<{tok.value}>"
         parts: list[str] = []
 
         if item.meta:
@@ -960,12 +973,19 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                     hyperlink=item.hyperlink,
                 )
 
+            # For code blocks, preserve language using a lightweight facets marker
+            # e.g., <facets>language=python</facets> before the code content.
             if isinstance(item, CodeItem):
-                language_token = DocumentToken.get_code_language_token(
-                    code_language=item.code_language,
-                    self_closing=params.do_self_closing,
-                )
-                text_part = f"{language_token}{text_part}"
+                lang = getattr(item.code_language, "value", str(item.code_language))
+                if lang:
+                    parts.append(
+                        _wrap(
+                            text=f"language={lang.lower()}",
+                            wrap_tag=IDocTagsToken.FACETS.value,
+                        )
+                    )
+                # Keep the textual code content as-is
+                text_part = text_part
             else:
                 text_part = text_part.strip()
 
@@ -978,8 +998,8 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(cap_text)
 
         text_res = "".join(parts)
-        if wrap_tag is not None:
-            text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
+        if wrap_open_token is not None:
+            text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
         return create_ser_result(text=text_res, span_source=item)
 
 
@@ -1240,7 +1260,7 @@ class IDocTagsDocSerializer(DocTagsDocSerializer):
                 results.append(cap_res)
         text_res = "".join([r.text for r in results])
         if text_res:
-            text_res = _wrap(text=text_res, wrap_tag=DocumentToken.CAPTION.value)
+            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.CAPTION.value)
         return create_ser_result(text=text_res, span_source=results)
 
     @override
