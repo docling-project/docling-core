@@ -15,6 +15,7 @@ from docling_core.types.doc.document import (
     DocItem,
     DoclingDocument,
     PictureItem,
+    ProvenanceItem,
 )
 
 
@@ -139,7 +140,9 @@ class ReadingOrderVisualizer(BaseVisualizer):
             if len(elem.prov) == 0:
                 continue  # Skip elements without provenances
 
-            for prov in elem.prov:
+            for prov in (
+                item for item in elem.prov if isinstance(item, ProvenanceItem)
+            ):
                 page_no = prov.page_no
                 image = my_images.get(page_no)
 
