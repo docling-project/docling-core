@@ -170,6 +170,7 @@ ignore = [
   "F401",   # imported but unused; consider using `importlib.util.find_spec` to test for "
   "F811",   # "redefinition of the same function"
   "PL",     # Pylint
+  "PD901",  # Avoid using the generic variable name `df` for DataFrames
   "RUF002", # Docstring contains ambiguous `‑` (NON-BREAKING HYPHEN).
   "RUF003", # Comment contains ambiguous `‑` (NON-BREAKING HYPHEN).
   "RUF005", # Consider ... instead of concatenation
