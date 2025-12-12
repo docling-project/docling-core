@@ -143,16 +143,16 @@ skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
 select = [
-  "C",  # flake8-comprehensions
-  "C9", # mccabe
-  "E",   # pycodestyle errors (default)
-  "F",   # pyflakes (default)
-  "I",   # isort
-  "PD",  # pandas-vet
-  "PIE", # pie
-  "Q", # flake8-quotes
-  "RUF", # Enable all ruff-specific checks
-  "S307", # eval
+  "C",     # flake8-comprehensions
+  "C9",    # mccabe
+  "E",     # pycodestyle errors (default)
+  "F",     # pyflakes (default)
+  "I",     # isort
+  "PD",    # pandas-vet
+  "PIE",   # pie
+  "Q",     # flake8-quotes
+  "RUF",   # Enable all ruff-specific checks
+  "S307",  # eval
   "W",     # pycodestyle warnings
   "ASYNC", # async
   "UP",    # pyupgrade
@@ -198,6 +198,18 @@ max-complexity = 30
 
 [tool.ruff.lint.isort]
 combine-as-imports = false
+
+[tool.flake8]
+per-file-ignores = [
+    "__init__.py:F401",
+    "docling_core/transforms/serializer/azure.py:N815",
+]
+max-line-length = 88
+exclude = ["test/*"]
+max-complexity = 25
+docstring-convention = "google"
+ignore = ["W503", "E203", "E741"]
+classmethod-decorators = ["classmethod", "validator"]
 
 [tool.autoflake]
 in-place = true
