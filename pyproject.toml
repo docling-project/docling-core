@@ -199,19 +199,7 @@ max-complexity = 30
 [tool.ruff.lint.isort]
 combine-as-imports = false
 
-[tool.flake8]
-per-file-ignores = [
-    "__init__.py:F401",
-    "docling_core/transforms/serializer/azure.py:N815",
-]
-max-line-length = 88
-exclude = ["test/*"]
-max-complexity = 25
-docstring-convention = "google"
-ignore = ["W503", "E203", "E741"]
-classmethod-decorators = ["classmethod", "validator"]
-
-[tool.autoflake]
+[toolruff.lint.autoflake]
 in-place = true
 ignore-init-module-imports = true
 remove-all-unused-imports = true
