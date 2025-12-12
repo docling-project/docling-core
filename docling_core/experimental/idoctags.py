@@ -33,6 +33,8 @@ from docling_core.types.doc import (
     DescriptionMetaField,
     DocItem,
     DoclingDocument,
+    BoundingBox,
+    ProvenanceItem,
     FloatingItem,
     FormItem,
     InlineGroup,
@@ -51,8 +53,10 @@ from docling_core.types.doc import (
     TableItem,
     TabularChartMetaField,
     TextItem,
+    Size,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, CodeLanguageLabel
+from docling_core.types.doc.base import CoordOrigin
 from docling_core.types.doc.utils import parse_otsl_table_content
 
 # Note: Intentionally avoid importing DocumentToken here to ensure
@@ -1494,6 +1498,10 @@ class IDocTagsDocSerializer(DocSerializer):
 class IDocTagsDocDeserializer(BaseModel):
     """IDocTags document deserializer."""
 
+    # Internal state used while walking the tree
+    _page_no: int = 0
+    _default_resolution: int = DOCTAGS_RESOLUTION
+
     def deserialize(
         self,
         *,
@@ -1505,6 +1513,10 @@ class IDocTagsDocDeserializer(BaseModel):
             root = candidates[0] if candidates else root
 
         doc = DoclingDocument(name="Document")
+        # Initialize with a default page so location tokens can be re‑emitted
+        self._page_no = 0
+        self._default_resolution = DOCTAGS_RESOLUTION
+        self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
         self._parse_document_root(doc=doc, root=root)
         return doc
 
@@ -1521,6 +1533,10 @@ class IDocTagsDocDeserializer(BaseModel):
                     IDocTagsToken.PAGE_HEADER.value, IDocTagsToken.PAGE_FOOTER.value,
                     IDocTagsToken.CODE.value, IDocTagsToken.FORMULA.value}:
             self._parse_text_like(doc=doc, el=el, parent=parent)
+        elif name == IDocTagsToken.PAGE_BREAK.value:
+            # Start a new page; keep a default square page using the configured resolution
+            self._page_no += 1
+            self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
         elif name == IDocTagsToken.HEADING.value:
             self._parse_heading(doc=doc, el=el, parent=parent)
         elif name == IDocTagsToken.LIST.value:
@@ -1533,34 +1549,98 @@ class IDocTagsDocDeserializer(BaseModel):
     def _walk_children(self, *, doc: DoclingDocument, el, parent) -> None:
         for node in el.childNodes:
             if getattr(node, "nodeType", None) == node.ELEMENT_NODE:
-                # Ignore geometry/meta containers at this level
+                # Ignore geometry/meta containers at this level; pass through page breaks
                 if node.tagName in {IDocTagsToken.HEAD.value, IDocTagsToken.META.value,
-                                    IDocTagsToken.LOCATION.value, IDocTagsToken.PAGE_BREAK.value}:
+                                    IDocTagsToken.LOCATION.value}:
                     continue
                 self._dispatch_element(doc=doc, el=node, parent=parent)
 
     # ------------- Text blocks -------------
     def _parse_text_like(self, *, doc: DoclingDocument, el, parent) -> None:
+        # Extract provenance from leading <location .../> tokens within the element
+        prov_list = self._extract_provenance(doc=doc, el=el)
         text = self._get_text(el)
-        if not text.strip():
+        text_stripped = text.strip()
+        if not text_stripped:
             return
         nm = el.tagName
         if nm == IDocTagsToken.TITLE.value:
-            doc.add_title(text=text, parent=parent)
+            item = doc.add_title(text=text_stripped, parent=parent, prov=(prov_list[0] if prov_list else None))
+            for p in prov_list[1:]:
+                item.prov.append(p)
         elif nm == IDocTagsToken.TEXT.value:
-            doc.add_text(label=DocItemLabel.TEXT, text=text, parent=parent)
+            item = doc.add_text(label=DocItemLabel.TEXT, text=text_stripped, parent=parent, prov=(prov_list[0] if prov_list else None))
+            for p in prov_list[1:]:
+                item.prov.append(p)
         elif nm == IDocTagsToken.CAPTION.value:
-            doc.add_text(label=DocItemLabel.CAPTION, text=text, parent=parent)
+            item = doc.add_text(label=DocItemLabel.CAPTION, text=text_stripped, parent=parent, prov=(prov_list[0] if prov_list else None))
+            for p in prov_list[1:]:
+                item.prov.append(p)
         elif nm == IDocTagsToken.FOOTNOTE.value:
-            doc.add_text(label=DocItemLabel.FOOTNOTE, text=text, parent=parent)
+            item = doc.add_text(label=DocItemLabel.FOOTNOTE, text=text_stripped, parent=parent, prov=(prov_list[0] if prov_list else None))
+            for p in prov_list[1:]:
+                item.prov.append(p)
         elif nm == IDocTagsToken.PAGE_HEADER.value:
-            doc.add_text(label=DocItemLabel.PAGE_HEADER, text=text, parent=parent)
+            item = doc.add_text(label=DocItemLabel.PAGE_HEADER, text=text_stripped, parent=parent, prov=(prov_list[0] if prov_list else None))
+            for p in prov_list[1:]:
+                item.prov.append(p)
         elif nm == IDocTagsToken.PAGE_FOOTER.value:
-            doc.add_text(label=DocItemLabel.PAGE_FOOTER, text=text, parent=parent)
+            item = doc.add_text(label=DocItemLabel.PAGE_FOOTER, text=text_stripped, parent=parent, prov=(prov_list[0] if prov_list else None))
+            for p in prov_list[1:]:
+                item.prov.append(p)
         elif nm == IDocTagsToken.CODE.value:
-            doc.add_code(text=text, parent=parent)
+            # Extract code language from optional <facets>language=...</facets>
+            lang_label = CodeLanguageLabel.UNKNOWN
+
+            # Build code text excluding <facets> and <location> nodes
+            parts: list[str] = []
+            for node in el.childNodes:
+                if getattr(node, "nodeType", None) == node.TEXT_NODE:
+                    # Ignore whitespace-only nodes (indentation/newlines from pretty XML)
+                    if node.data.strip():
+                        parts.append(node.data)
+                elif getattr(node, "nodeType", None) == node.ELEMENT_NODE:
+                    nm_child = node.tagName
+                    if nm_child == IDocTagsToken.FACETS.value:
+                        # Parse facets content for language key
+                        facets_text = self._get_text(node).strip()
+                        # Accept forms like "language=python" (case-insensitive on value)
+                        if "=" in facets_text:
+                            key, val = facets_text.split("=", 1)
+                            if key.strip().lower() == "language":
+                                val_norm = val.strip().lower()
+                                # Map back to CodeLanguageLabel by value (case-insensitive)
+                                try:
+                                    lang_label = next(
+                                        lbl for lbl in CodeLanguageLabel if lbl.value.lower() == val_norm
+                                    )
+                                except StopIteration:
+                                    lang_label = CodeLanguageLabel.UNKNOWN
+                        # Do not include facets text in code content
+                        continue
+                    if nm_child == IDocTagsToken.LOCATION.value:
+                        # Skip geometry tokens from content
+                        continue
+                    if nm_child == IDocTagsToken.BR.value:
+                        parts.append("\n")
+                    else:
+                        parts.append(self._get_text(node))
+
+            code_text = "".join(parts)
+            if not code_text.strip():
+                return
+            item = doc.add_code(
+                text=code_text,
+                code_language=lang_label,
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+            )
+            for p in prov_list[1:]:
+                item.prov.append(p)
         elif nm == IDocTagsToken.FORMULA.value:
-            doc.add_formula(text=text, parent=parent)
+            item = doc.add_formula(text=text, parent=parent, prov=(prov_list[0] if prov_list else None))
+            for p in prov_list[1:]:
+                item.prov.append(p)
 
     def _parse_heading(self, *, doc: DoclingDocument, el, parent) -> None:
         lvl_txt = el.getAttribute(IDocTagsAttributeKey.LEVEL.value) or "1"
@@ -1568,9 +1648,14 @@ class IDocTagsDocDeserializer(BaseModel):
             level = int(lvl_txt)
         except Exception:
             level = 1
+        # Extract provenance from heading token (if any)
+        prov_list = self._extract_provenance(doc=doc, el=el)
         text = self._get_text(el)
-        if text.strip():
-            doc.add_heading(text=text, level=level, parent=parent)
+        text_stripped = text.strip()
+        if text_stripped:
+            item = doc.add_heading(text=text_stripped, level=level, parent=parent, prov=(prov_list[0] if prov_list else None))
+            for p in prov_list[1:]:
+                item.prov.append(p)
 
     def _parse_list(self, *, doc: DoclingDocument, el, parent) -> None:
         ordered = (el.getAttribute(IDocTagsAttributeKey.ORDERED.value) == IDocTagsAttributeValue.TRUE.value)
@@ -1579,9 +1664,13 @@ class IDocTagsDocDeserializer(BaseModel):
             if getattr(node, "nodeType", None) != node.ELEMENT_NODE:
                 continue
             if node.tagName == IDocTagsToken.LIST_TEXT.value:
+                # Collect provenance from the <list_text> wrapper
+                prov_list = self._extract_provenance(doc=doc, el=node)
                 text = self._get_text(node).strip()
                 if text:
-                    doc.add_list_item(text=text, parent=group, enumerated=ordered)
+                    item = doc.add_list_item(text=text, parent=group, enumerated=ordered, prov=(prov_list[0] if prov_list else None))
+                    for p in prov_list[1:]:
+                        item.prov.append(p)
 
     # ------------- Floating groups -------------
     def _parse_floating_group(self, *, doc: DoclingDocument, el, parent) -> None:
@@ -1599,21 +1688,43 @@ class IDocTagsDocDeserializer(BaseModel):
         if otsl_el is None:
             doc.add_table(data=TableData(), caption=caption, parent=parent)
             return
+        # Extract table provenance from <otsl> leading <location/> tokens
+        tbl_provs = self._extract_provenance(doc=doc, el=otsl_el)
         inner = self._inner_xml(otsl_el)
+        # Remove any location tokens from the OTSL content before parsing
+        inner = re.sub(r"<\s*location\b[^>]*/\s*>", "", inner)
         normalized = self._normalize_otsl_tokens(inner)
         td = parse_otsl_table_content(f"<otsl>{normalized}</otsl>")
-        doc.add_table(data=td, caption=caption, parent=parent)
+        tbl = doc.add_table(
+            data=td,
+            caption=caption,
+            parent=parent,
+            prov=(tbl_provs[0] if tbl_provs else None),
+        )
+        for p in tbl_provs[1:]:
+            tbl.prov.append(p)
 
     def _parse_picture_group(self, *, doc: DoclingDocument, el, parent) -> None:
         # Extract caption from the floating group
         caption = self._extract_caption(doc=doc, el=el)
 
-        # Create the picture item first, attach caption
-        pic = doc.add_picture(caption=caption, parent=parent)
+        # Extract provenance from the <picture> block (locations appear inside it)
+        prov_list: list[ProvenanceItem] = []
+        picture_el = self._first_child(el, IDocTagsToken.PICTURE.value)
+        if picture_el is not None:
+            prov_list = self._extract_provenance(doc=doc, el=picture_el)
+
+        # Create the picture item first, attach caption and provenance
+        pic = doc.add_picture(
+            caption=caption,
+            parent=parent,
+            prov=(prov_list[0] if prov_list else None),
+        )
+        for p in prov_list[1:]:
+            pic.prov.append(p)
 
         # If there is a <picture> child and it contains an <otsl>,
         # parse it as TabularChartMetaField and attach to picture.meta
-        picture_el = self._first_child(el, IDocTagsToken.PICTURE.value)
         if picture_el is not None:
             otsl_el = self._first_child(picture_el, IDocTagsToken.OTSL.value)
             if otsl_el is not None:
@@ -1630,7 +1741,17 @@ class IDocTagsDocDeserializer(BaseModel):
         if cap_el is None:
             return None
         text = self._get_text(cap_el).strip()
-        return doc.add_text(label=DocItemLabel.CAPTION, text=text) if text else None
+        if not text:
+            return None
+        prov_list = self._extract_provenance(doc=doc, el=cap_el)
+        item = doc.add_text(
+            label=DocItemLabel.CAPTION,
+            text=text,
+            prov=(prov_list[0] if prov_list else None),
+        )
+        for p in prov_list[1:]:
+            item.prov.append(p)
+        return item
 
     def _first_child(self, el, tag_name: str):
         for node in el.childNodes:
@@ -1667,7 +1788,9 @@ class IDocTagsDocDeserializer(BaseModel):
         out: list[str] = []
         for node in el.childNodes:
             if getattr(node, "nodeType", None) == node.TEXT_NODE:
-                out.append(node.data)
+                # Skip pure indentation/pretty-print whitespace
+                if node.data.strip():
+                    out.append(node.data)
             elif node.nodeType == node.ELEMENT_NODE:
                 nm = node.tagName
                 if nm in {IDocTagsToken.LOCATION.value}:
@@ -1677,3 +1800,49 @@ class IDocTagsDocDeserializer(BaseModel):
                 else:
                     out.append(self._get_text(node))
         return "".join(out)
+
+    # --------- Location helpers ---------
+    def _ensure_page_exists(self, *, doc: DoclingDocument, page_no: int, resolution: int) -> None:
+        # If the page already exists, do nothing; otherwise add with a square size based on resolution
+        if page_no not in doc.pages:
+            doc.add_page(page_no=page_no, size=Size(width=resolution, height=resolution))
+
+    def _extract_provenance(self, *, doc: DoclingDocument, el) -> list[ProvenanceItem]:
+        # Collect immediate child <location value=.. resolution=.. /> tokens in groups of 4
+        values: list[int] = []
+        res_for_group: Optional[int] = None
+        provs: list[ProvenanceItem] = []
+
+        for node in el.childNodes:
+            if getattr(node, "nodeType", None) != node.ELEMENT_NODE:
+                continue
+            if node.tagName != IDocTagsToken.LOCATION.value:
+                continue
+            try:
+                v = int(node.getAttribute(IDocTagsAttributeKey.VALUE.value) or "0")
+            except Exception:
+                v = 0
+            try:
+                r = int(node.getAttribute(IDocTagsAttributeKey.RESOLUTION.value) or str(self._default_resolution))
+            except Exception:
+                r = self._default_resolution
+            values.append(v)
+            # For a group, remember the last seen resolution
+            res_for_group = r
+            if len(values) == 4:
+                # Ensure page exists (and set consistent default size for this page)
+                self._ensure_page_exists(
+                    doc=doc, page_no=self._page_no, resolution=res_for_group or self._default_resolution
+                )
+                l = float(min(values[0], values[2]))
+                t = float(min(values[1], values[3]))
+                rgt = float(max(values[0], values[2]))
+                btm = float(max(values[1], values[3]))
+                bbox = BoundingBox.from_tuple((l, t, rgt, btm), origin=CoordOrigin.TOPLEFT)
+                provs.append(
+                    ProvenanceItem(page_no=self._page_no, bbox=bbox, charspan=(0, 0))
+                )
+                values = []
+                res_for_group = None
+
+        return provs
