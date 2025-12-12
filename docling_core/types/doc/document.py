@@ -1231,10 +1231,10 @@ class ProvenanceTrack(BaseModel):
         examples=["Mary", "Fred", "Name Surname"],
         description="The cue voice (speaker)",
     )
-    language: Optional[str] = Field(
+    languages: Optional[list[str]] = Field(
         None,
-        examples=["en", "en-GB", "fr-CA"],
-        description="Language of the cue in BCP 47 language tag format",
+        examples=[["en", "en-GB"], ["fr-CA"]],
+        description="Languages of the cue in BCP 47 language tag format",
     )
     classes: Optional[list[str]] = Field(
         None,

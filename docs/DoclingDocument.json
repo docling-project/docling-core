@@ -2281,23 +2281,30 @@
           ],
           "title": "Voice"
         },
-        "language": {
+        "languages": {
           "anyOf": [
             {
-              "type": "string"
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Language of the cue in BCP 47 language tag format",
+          "description": "Languages of the cue in BCP 47 language tag format",
           "examples": [
-            "en",
-            "en-GB",
-            "fr-CA"
+            [
+              "en",
+              "en-GB"
+            ],
+            [
+              "fr-CA"
+            ]
           ],
-          "title": "Language"
+          "title": "Languages"
         },
         "classes": {
           "anyOf": [
