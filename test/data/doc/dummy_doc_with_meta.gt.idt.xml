@@ -11,7 +11,7 @@
     <loc_46/>
     DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
   </title>
-  <picture>
+  <IDocTagsToken.PICTURE>
     <meta>
       <description>...</description>
       <classification>Bar chart</classification>
@@ -29,7 +29,7 @@
       <loc_213/>
       Figure 1: Four examples of complex page layouts across different document categories
     </caption>
-  </picture>
+  </IDocTagsToken.PICTURE>
   <otsl>
     <loc_210/>
     <loc_196/>
