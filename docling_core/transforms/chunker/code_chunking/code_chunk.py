@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import Field
 
@@ -28,12 +28,12 @@ class CodeDocMeta(DocMeta):
         default="docling_core.transforms.chunker.CodeDocMeta",
         alias=_KEY_SCHEMA_NAME,
     )
-    part_name: str | None = Field(default=None)
-    docstring: str | None = Field(default=None)
-    sha256: int | None = Field(default=None)
-    start_line: int | None = Field(default=None)
-    end_line: int | None = Field(default=None)
-    end_line_signature: int | None = Field(default=None)
+    part_name: Optional[str] = Field(default=None)
+    docstring: Optional[str] = Field(default=None)
+    sha256: Optional[int] = Field(default=None)
+    start_line: Optional[int] = Field(default=None)
+    end_line: Optional[int] = Field(default=None)
+    end_line_signature: Optional[int] = Field(default=None)
     chunk_type: CodeChunkType = Field(default=CodeChunkType.CODE_BLOCK)
 
 
