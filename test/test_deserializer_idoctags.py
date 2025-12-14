@@ -9,6 +9,7 @@ from docling_core.types.doc import (
     DoclingDocument,
     ProvenanceItem,
     Size,
+    TableCell,
     TableData,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel
@@ -16,8 +17,22 @@ from docling_core.types.doc.labels import CodeLanguageLabel
 DO_PRINT: bool = False
 
 
-def _serialize(doc: DoclingDocument) -> str:
-    ser = IDocTagsDocSerializer(doc=doc, params=IDocTagsParams())
+def _serialize(
+    doc: DoclingDocument,
+    add_location: bool = True,
+    add_content: bool = True,
+    add_table_cell_location: bool = False,
+    add_table_cell_text: bool = True,
+) -> str:
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            add_location=add_location,
+            add_content=add_content,
+            add_table_cell_location=add_table_cell_location,
+            add_table_cell_text=add_table_cell_text,
+        ),
+    )
     return ser.serialize().text
 
 
@@ -444,6 +459,78 @@ def test_roundtrip_table_with_caption_prov():
     assert t2.data.num_rows == 2 and t2.data.num_cols == 2
     grid_texts = [[cell.text for cell in row] for row in t2.data.grid]
     assert grid_texts == [["H1", "H2"], ["C1", "C2"]]
+
+    assert len(t2.captions) == 1
+    cap_item = t2.captions[0].resolve(doc2)
+    assert cap_item.label == DocItemLabel.CAPTION and cap_item.text == "Tbl 1"
+
+
+def test_roundtrip_complex_table_with_caption_prov():
+    doc = DoclingDocument(name="t")
+    _add_default_page(doc)
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="Tbl 1", prov=_default_prov())
+    td = TableData(num_rows=3, num_cols=4)
+
+    cell_0_0 = TableCell(
+        row_span=1,
+        col_span=1,
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        text="H 0-0",
+    )
+    td.table_cells.append(cell_0_0)
+
+    cell_0_1 = TableCell(
+        row_span=1,
+        col_span=3,
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=1,
+        end_col_offset_idx=4,
+        text="H 1-4",
+    )
+    td.table_cells.append(cell_0_1)
+
+    cell_1_0 = TableCell(
+        row_span=2,
+        col_span=1,
+        start_row_offset_idx=1,
+        end_row_offset_idx=3,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        text="R 1-3",
+    )
+    td.table_cells.append(cell_1_0)
+
+    cell_1_1 = TableCell(
+        row_span=2,
+        col_span=3,
+        start_row_offset_idx=1,
+        end_row_offset_idx=3,
+        start_col_offset_idx=1,
+        end_col_offset_idx=4,
+        text="R 2-2",
+    )
+    td.table_cells.append(cell_1_1)
+
+    doc.add_table(data=td, caption=cap, prov=_default_prov())
+
+    dt = _serialize(doc, add_table_cell_text=True, add_content=True)
+    if DO_PRINT:
+        print(dt)
+    doc2 = _deserialize(dt)
+
+    assert len(doc2.tables) == 1
+    t2 = doc2.tables[0]
+    assert t2.data.num_rows == 3 and t2.data.num_cols == 4
+    grid_texts = [[cell.text for cell in row] for row in t2.data.grid]
+    assert grid_texts == [
+        ["H 0-0", "H 1-4", "H 1-4", "H 1-4"],
+        ["R 1-3", "R 2-2", "R 2-2", "R 2-2"],
+        ["R 1-3", "R 2-2", "R 2-2", "R 2-2"],
+    ]
 
     assert len(t2.captions) == 1
     cap_item = t2.captions[0].resolve(doc2)

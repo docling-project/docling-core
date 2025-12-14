@@ -50,6 +50,7 @@ from docling_core.types.doc import (
     SectionHeaderItem,
     Size,
     SummaryMetaField,
+    TableCell,
     TableData,
     TableItem,
     TabularChartMetaField,
@@ -57,7 +58,6 @@ from docling_core.types.doc import (
 )
 from docling_core.types.doc.base import CoordOrigin
 from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
-from docling_core.types.doc.utils import parse_otsl_table_content
 
 # Note: Intentionally avoid importing DocumentToken here to ensure
 # IDocTags uses only its own token vocabulary.
@@ -113,7 +113,11 @@ def _create_location_tokens_for_bbox(
 
 
 def _create_location_tokens_for_item(
-    *, item: "DocItem", doc: "DoclingDocument", xres: int = 512, yres: int = 512
+    *,
+    item: "DocItem",
+    doc: "DoclingDocument",
+    xres: int = DOCTAGS_RESOLUTION,
+    yres: int = DOCTAGS_RESOLUTION,
 ) -> str:
     """Create concatenated `<location .../>` tokens for an item's provenance."""
     if not getattr(item, "prov", None):
@@ -354,20 +358,6 @@ class IDocTagsToken(str, Enum):
     FACETS = "facets"
 
 
-class IDocTagsTableToken(str, Enum):
-    """Serialized OTSL table tokens used in DocTags output."""
-
-    OTSL_ECEL = f"<{IDocTagsToken.ECEL.value}/>"  # empty cell
-    OTSL_FCEL = f"<{IDocTagsToken.FCEL.value}/>"  # cell with content
-    OTSL_LCEL = f"<{IDocTagsToken.LCEL.value}/>"  # left looking cell,
-    OTSL_UCEL = f"<{IDocTagsToken.UCEL.value}/>"  # up looking cell,
-    OTSL_XCEL = f"<{IDocTagsToken.XCEL.value}/>"  # 2d extension cell (cross cell),
-    OTSL_NL = f"<{IDocTagsToken.NL.value}/>"  # new line,
-    OTSL_CHED = f"<{IDocTagsToken.CHED.value}/>"  # - column header cell,
-    OTSL_RHED = f"<{IDocTagsToken.RHED.value}/>"  # - row header cell,
-    OTSL_SROW = f"<{IDocTagsToken.SROW.value}/>"  # - section row cell
-
-
 class IDocTagsAttributeKey(str, Enum):
     """Attribute keys allowed on DocTags tokens."""
 
@@ -474,8 +464,8 @@ class IDocTagsVocabulary(BaseModel):
         # Geometric: value in [0, res]; resolution optional.
         # Keep conservative defaults aligned with existing usage.
         IDocTagsToken.LOCATION: {
-            IDocTagsAttributeKey.VALUE: (0, 512),
-            IDocTagsAttributeKey.RESOLUTION: (512, 512),
+            IDocTagsAttributeKey.VALUE: (0, DOCTAGS_RESOLUTION),
+            IDocTagsAttributeKey.RESOLUTION: (DOCTAGS_RESOLUTION, DOCTAGS_RESOLUTION),
         },
         # Temporal components
         IDocTagsToken.HOUR: {IDocTagsAttributeKey.VALUE: (0, 99)},
@@ -653,7 +643,9 @@ class IDocTagsVocabulary(BaseModel):
         return f'<{IDocTagsToken.HEADING.value} {IDocTagsAttributeKey.LEVEL.value}="{level}">'
 
     @classmethod
-    def create_location_token(cls, *, value: int, resolution: int = 512) -> str:
+    def create_location_token(
+        cls, *, value: int, resolution: int = DOCTAGS_RESOLUTION
+    ) -> str:
         """Create a location token with value and resolution.
 
         Validates both attributes using the configured ranges and ensures
@@ -666,13 +658,13 @@ class IDocTagsVocabulary(BaseModel):
             IDocTagsAttributeKey.RESOLUTION, (resolution, resolution)
         )
         if not (r_lo <= resolution <= r_hi):
-            raise ValueError(f"resolution must be in [{r_lo}, {r_hi}]")
+            raise ValueError(f"resolution: {resolution} must be in [{r_lo}, {r_hi}]")
 
         v_lo, v_hi = range_map[IDocTagsAttributeKey.VALUE]
         if not (v_lo <= value <= v_hi):
-            raise ValueError(f"value must be in [{v_lo}, {v_hi}]")
+            raise ValueError(f"value: {value} must be in [{v_lo}, {v_hi}]")
         if not (0 <= value <= resolution):
-            raise ValueError("value must be in [0, resolution]")
+            raise ValueError(f"value: {value} must be in [0, {resolution}]")
 
         return (
             f"<{IDocTagsToken.LOCATION.value} "
@@ -760,6 +752,82 @@ class IDocTagsVocabulary(BaseModel):
 
         return special_tokens
 
+    @classmethod
+    def create_selfclosing_token(
+        cls,
+        *,
+        token: IDocTagsToken,
+        attrs: Optional[dict["IDocTagsAttributeKey", Any]] = None,
+    ) -> str:
+        """Create a self-closing token with optional attributes (default None).
+
+        - Validates the token is declared self-closing.
+        - Validates provided attributes against ``ALLOWED_ATTRIBUTES`` and
+          ``ALLOWED_ATTRIBUTE_VALUES`` or ``ALLOWED_ATTRIBUTE_RANGE`` when present.
+        """
+        if not cls.IS_SELFCLOSING.get(token, False):
+            raise ValueError(f"token '{token.value}' is not self-closing")
+
+        # No attributes requested
+        if not attrs:
+            return f"<{token.value}/>"
+
+        # Validate attribute keys
+        allowed_keys = cls.ALLOWED_ATTRIBUTES.get(token, set())
+        for k in attrs.keys():
+            if k not in allowed_keys:
+                raise ValueError(
+                    f"attribute '{getattr(k, 'value', str(k))}' not allowed on '{token.value}'"
+                )
+
+        # Validate values either via enumerations or numeric ranges
+        enum_map = cls.ALLOWED_ATTRIBUTE_VALUES.get(token, {})
+        range_map = cls.ALLOWED_ATTRIBUTE_RANGE.get(token, {})
+
+        def _coerce_value(val: Any) -> str:
+            # Accept enums or native scalars; stringify for emission
+            if isinstance(val, Enum):
+                return val.value  # type: ignore[attr-defined]
+            return str(val)
+
+        parts: list[str] = []
+        for k, v in attrs.items():
+            # Enumerated allowed values
+            if k in enum_map:
+                allowed = enum_map[k]
+                # Accept either the enum or its string representation
+                v_norm = v.value if isinstance(v, Enum) else str(v)
+                allowed_strs = {a.value for a in allowed}
+                if v_norm not in allowed_strs:
+                    raise ValueError(
+                        f"invalid value '{v_norm}' for '{k.value}' on '{token.value}'"
+                    )
+                parts.append(f'{k.value}="{v_norm}"')
+                continue
+
+            # Ranged numeric values
+            if k in range_map:
+                lo, hi = range_map[k]
+                try:
+                    v_num = int(v)
+                except Exception:
+                    raise ValueError(
+                        f"attribute '{k.value}' on '{token.value}' must be an integer"
+                    )
+                if not (lo <= v_num <= hi):
+                    raise ValueError(
+                        f"attribute '{k.value}' must be in [{lo}, {hi}] for '{token.value}'"
+                    )
+                parts.append(f'{k.value}="{v_num}"')
+                continue
+
+            # Free-form attribute without specific constraints
+            parts.append(f'{k.value}="{_coerce_value(v)}"')
+
+        # Assemble tag
+        attrs_text = " ".join(parts)
+        return f"<{token.value} {attrs_text}/>"
+
 
 class IDocTagsSerializationMode(str, Enum):
     """Serialization mode for IDocTags output."""
@@ -772,13 +840,12 @@ class IDocTagsParams(CommonParams):
     """IDocTags-specific serialization parameters independent of DocTags."""
 
     # Geometry & content controls (aligned with DocTags defaults)
-    xsize: int = 500
-    ysize: int = 500
+    xsize: int = DOCTAGS_RESOLUTION
+    ysize: int = DOCTAGS_RESOLUTION
     add_location: bool = True
     add_caption: bool = True
     add_content: bool = True
     add_table_cell_location: bool = False
-    add_table_cell_text: bool = True
     add_page_break: bool = True
 
     mode: IDocTagsSerializationMode = IDocTagsSerializationMode.HUMAN_FRIENDLY
@@ -1167,13 +1234,19 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
             if chart_data and chart_data.table_cells:
                 temp_doc = DoclingDocument(name="temp")
                 temp_table = temp_doc.add_table(data=chart_data)
-                otsl_content = temp_table.export_to_otsl(
-                    temp_doc,
-                    add_cell_location=False,
-                    # Suppress chart cell text if global content is off
-                    add_cell_text=params.add_content,
-                    self_closing=params.do_self_closing,
-                    table_token=IDocTagsTableToken,
+                # Reuse the IDocTags table emission for chart data
+                params_chart = IDocTagsParams(
+                    **{
+                        **params.model_dump(),
+                        "add_table_cell_location": False,
+                    }
+                )
+                otsl_content = IDocTagsTableSerializer()._emit_otsl(
+                    item=temp_table,  # type: ignore[arg-type]
+                    doc_serializer=doc_serializer,
+                    doc=temp_doc,
+                    params=params_chart,
+                    **kwargs,
                 )
                 body += otsl_content
 
@@ -1200,8 +1273,145 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
 class IDocTagsTableSerializer(BaseTableSerializer):
     """DocTags-specific table item serializer."""
 
-    def _get_table_token(self) -> Any:
-        return IDocTagsTableToken
+    # _get_table_token no longer needed; OTSL tokens are emitted via vocabulary
+
+    def _emit_otsl(
+        self,
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        params: "IDocTagsParams",
+        **kwargs: Any,
+    ) -> str:
+        """Emit OTSL payload using IDocTags tokens and location semantics.
+
+        Raises ValueError when per-cell location is requested but the
+        document/page context is unavailable.
+        """
+        if not item.data or not item.data.table_cells:
+            return ""
+
+        nrows, ncols = item.data.num_rows, item.data.num_cols
+
+        # If per-cell location is requested and any cell has a bbox, we
+        # require page context from the table provenance and document pages.
+        need_cell_loc = params.add_table_cell_location and any(
+            (c.bbox is not None) for row in item.data.grid for c in row
+        )
+
+        if params.add_table_cell_location and (not need_cell_loc):
+            raise ValueError("Missing cell-locations in the table-grid.")
+
+        page_no = 0
+        if need_cell_loc:
+            if not item.prov:
+                raise ValueError(
+                    "Per-cell location requested but table has no provenance (page_no)."
+                )
+            page_no = item.prov[0].page_no
+            if not doc.pages or page_no not in doc.pages:
+                raise ValueError(
+                    f"Per-cell location requested but no page info for page {page_no}."
+                )
+            page_w, page_h = doc.pages[page_no].size.as_tuple()
+            if page_w <= 0 or page_h <= 0:
+                raise ValueError(
+                    f"Invalid page size ({page_w}, {page_h}) for page {page_no}."
+                )
+        else:
+            # Defaults will not be used unless a bbox is present and
+            # add_table_cell_location is true
+            page_w, page_h = (1.0, 1.0)
+
+        parts: list[str] = []
+        for i in range(nrows):
+            for j in range(ncols):
+                cell = item.data.grid[i][j]
+                content = cell._get_text(
+                    doc=doc, doc_serializer=doc_serializer, **kwargs
+                ).strip()
+
+                rowspan, rowstart = cell.row_span, cell.start_row_offset_idx
+                colspan, colstart = cell.col_span, cell.start_col_offset_idx
+
+                # Optional per-cell location
+                cell_loc = ""
+                if params.add_table_cell_location:
+
+                    if cell.bbox is None:
+                        raise ValueError("Missing cell-bbox in the table-grid.")
+
+                    bbox = cell.bbox.to_top_left_origin(page_h).as_tuple()
+                    cell_loc = _create_location_tokens_for_bbox(
+                        bbox=bbox,
+                        page_w=page_w,
+                        page_h=page_h,
+                        xres=params.xsize,
+                        yres=params.ysize,
+                    )
+
+                if rowstart == i and colstart == j:
+                    if content:
+                        if cell.column_header:
+                            parts.append(
+                                IDocTagsVocabulary.create_selfclosing_token(
+                                    token=IDocTagsToken.CHED
+                                )
+                            )
+                        elif cell.row_header:
+                            parts.append(
+                                IDocTagsVocabulary.create_selfclosing_token(
+                                    token=IDocTagsToken.RHED
+                                )
+                            )
+                        elif cell.row_section:
+                            parts.append(
+                                IDocTagsVocabulary.create_selfclosing_token(
+                                    token=IDocTagsToken.SROW
+                                )
+                            )
+                        else:
+                            parts.append(
+                                IDocTagsVocabulary.create_selfclosing_token(
+                                    token=IDocTagsToken.FCEL
+                                )
+                            )
+
+                        if params.add_table_cell_location:
+                            parts.append(cell_loc)
+                        if params.add_content:
+                            parts.append(content)
+                    else:
+                        parts.append(
+                            IDocTagsVocabulary.create_selfclosing_token(
+                                token=IDocTagsToken.ECEL
+                            )
+                        )
+                elif rowstart != i and colspan == 1:
+                    parts.append(
+                        IDocTagsVocabulary.create_selfclosing_token(
+                            token=IDocTagsToken.UCEL
+                        )
+                    )
+                elif colstart != j and rowspan == 1:
+                    parts.append(
+                        IDocTagsVocabulary.create_selfclosing_token(
+                            token=IDocTagsToken.LCEL
+                        )
+                    )
+                else:
+                    parts.append(
+                        IDocTagsVocabulary.create_selfclosing_token(
+                            token=IDocTagsToken.XCEL
+                        )
+                    )
+
+            parts.append(
+                IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.NL)
+            )
+
+        return "".join(parts)
 
     @override
     def serialize(
@@ -1234,22 +1444,22 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                 caption_text = cap_res.text
                 res_parts.append(cap_res)
 
-        # Build table payload: location (if any) + otsl content inside <otsl> ... </otsl>
+        # Build table payload: location (if any) + OTSL content inside <otsl> ... </otsl>
         otsl_payload = ""
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
             if params.add_location:
-                body += _create_location_tokens_for_item(item=item, doc=doc)
+                body += _create_location_tokens_for_item(
+                    item=item, doc=doc, xres=params.xsize, yres=params.ysize
+                )
 
-            otsl_text = item.export_to_otsl(
+            otsl_text = self._emit_otsl(
+                item=item,
+                doc_serializer=doc_serializer,
                 doc=doc,
-                add_cell_location=params.add_table_cell_location,
-                # Suppress cell text when global content is disabled
-                add_cell_text=(params.add_table_cell_text and params.add_content),
-                xsize=params.xsize,
-                ysize=params.ysize,
+                params=params,
                 visited=visited,
-                table_token=self._get_table_token(),
+                **kwargs,
             )
             body += otsl_text
             if body:
@@ -1455,7 +1665,10 @@ class IDocTagsDocSerializer(DocSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
-            page_sep = f"<{IDocTagsToken.PAGE_BREAK.value}{'/' if self.params.do_self_closing else ''}>"
+            # Always emit well‑formed page breaks using the vocabulary
+            page_sep = IDocTagsVocabulary.create_selfclosing_token(
+                token=IDocTagsToken.PAGE_BREAK
+            )
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
@@ -1746,8 +1959,7 @@ class IDocTagsDocDeserializer(BaseModel):
         inner = self._inner_xml(otsl_el)
         # Remove any location tokens from the OTSL content before parsing
         inner = re.sub(r"<\s*location\b[^>]*/\s*>", "", inner)
-        normalized = self._normalize_otsl_tokens(inner)
-        td = parse_otsl_table_content(f"<otsl>{normalized}</otsl>")
+        td = self._parse_otsl_table_content(f"<otsl>{inner}</otsl>")
         tbl = doc.add_table(
             data=td,
             caption=caption,
@@ -1782,8 +1994,7 @@ class IDocTagsDocDeserializer(BaseModel):
             otsl_el = self._first_child(picture_el, IDocTagsToken.OTSL.value)
             if otsl_el is not None:
                 inner = self._inner_xml(otsl_el)
-                normalized = self._normalize_otsl_tokens(inner)
-                td = parse_otsl_table_content(f"<otsl>{normalized}</otsl>")
+                td = self._parse_otsl_table_content(f"<otsl>{inner}</otsl>")
                 if pic.meta is None:
                     pic.meta = PictureMeta()
                 pic.meta.tabular_chart = TabularChartMetaField(chart_data=td)
@@ -1824,21 +2035,149 @@ class IDocTagsDocDeserializer(BaseModel):
                 parts.append(node.toxml())
         return "".join(parts)
 
-    def _normalize_otsl_tokens(self, text: str) -> str:
+    # --------- OTSL table parsing (inlined) ---------
+    def _otsl_extract_tokens_and_text(self, s: str) -> tuple[list[str], list[str]]:
+        """Extract OTSL structural tokens and interleaved text.
+
+        Strips the outer <otsl> wrapper and ignores location tokens (expected
+        to be removed before).
+        """
+        pattern = r"(<[^>]+>)"
+        tokens = re.findall(pattern, s)
+        # Drop the <otsl> wrapper tags
         tokens = [
-            IDocTagsToken.FCEL.value,
-            IDocTagsToken.ECEL.value,
-            IDocTagsToken.LCEL.value,
-            IDocTagsToken.UCEL.value,
-            IDocTagsToken.XCEL.value,
-            IDocTagsToken.NL.value,
-            IDocTagsToken.CHED.value,
-            IDocTagsToken.RHED.value,
-            IDocTagsToken.SROW.value,
+            t
+            for t in tokens
+            if t
+            not in [
+                f"<{IDocTagsToken.OTSL.value}>",
+                f"</{IDocTagsToken.OTSL.value}>",
+            ]
         ]
+
+        parts = re.split(pattern, s)
+        parts = [
+            p
+            for p in parts
+            if p.strip()
+            and p
+            not in [
+                f"<{IDocTagsToken.OTSL.value}>",
+                f"</{IDocTagsToken.OTSL.value}>",
+            ]
+        ]
+        return tokens, parts
+
+    def _otsl_parse_texts(
+        self, texts: list[str], tokens: list[str]
+    ) -> tuple[list[TableCell], list[list[str]]]:
+        """Parse OTSL interleaved texts+tokens into TableCell list and row tokens."""
+        # Token strings used in the stream (normalized to <name>)
+
+        fcel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.FCEL)
+        ecel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.ECEL)
+        lcel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.LCEL)
+        ucel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.UCEL)
+        xcel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.XCEL)
+        nl = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.NL)
+        ched = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.CHED)
+        rhed = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.RHED)
+        srow = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.SROW)
+
+        # Clean tokens to only structural OTSL markers
+        clean_tokens: list[str] = []
         for t in tokens:
-            text = re.sub(rf"<\s*{t}\s*/>", f"<{t}>", text)
-        return text
+            if t in [ecel, fcel, lcel, ucel, xcel, nl, ched, rhed, srow]:
+                clean_tokens.append(t)
+        tokens = clean_tokens
+
+        # Split into rows by NL markers while keeping segments
+        split_row_tokens = [
+            list(group)
+            for is_sep, group in __import__("itertools").groupby(
+                tokens, lambda z: z == nl
+            )
+            if not is_sep
+        ]
+
+        table_cells: list[TableCell] = []
+        r_idx = 0
+        c_idx = 0
+
+        def count_right(rows: list[list[str]], c: int, r: int, which: list[str]) -> int:
+            span = 0
+            j = c
+            while j < len(rows[r]) and rows[r][j] in which:
+                j += 1
+                span += 1
+            return span
+
+        def count_down(rows: list[list[str]], c: int, r: int, which: list[str]) -> int:
+            span = 0
+            i = r
+            while i < len(rows) and c < len(rows[i]) and rows[i][c] in which:
+                i += 1
+                span += 1
+            return span
+
+        for i, t in enumerate(texts):
+            cell_text = ""
+            if t in [fcel, ecel, ched, rhed, srow]:
+                row_span = 1
+                col_span = 1
+                right_offset = 1
+                if t != ecel and (i + 1) < len(texts):
+                    cell_text = texts[i + 1]
+                    right_offset = 2
+
+                next_right = (
+                    texts[i + right_offset] if i + right_offset < len(texts) else ""
+                )
+                next_bottom = (
+                    split_row_tokens[r_idx + 1][c_idx]
+                    if (r_idx + 1) < len(split_row_tokens)
+                    and c_idx < len(split_row_tokens[r_idx + 1])
+                    else ""
+                )
+
+                if next_right in [lcel, xcel]:
+                    col_span += count_right(
+                        split_row_tokens, c_idx + 1, r_idx, [lcel, xcel]
+                    )
+                if next_bottom in [ucel, xcel]:
+                    row_span += count_down(
+                        split_row_tokens, c_idx, r_idx + 1, [ucel, xcel]
+                    )
+
+                table_cells.append(
+                    TableCell(
+                        text=cell_text.strip(),
+                        row_span=row_span,
+                        col_span=col_span,
+                        start_row_offset_idx=r_idx,
+                        end_row_offset_idx=r_idx + row_span,
+                        start_col_offset_idx=c_idx,
+                        end_col_offset_idx=c_idx + col_span,
+                    )
+                )
+
+            if t in [fcel, ecel, ched, rhed, srow, lcel, ucel, xcel]:
+                c_idx += 1
+            if t == nl:
+                r_idx += 1
+                c_idx = 0
+
+        return table_cells, split_row_tokens
+
+    def _parse_otsl_table_content(self, otsl_content: str) -> TableData:
+        """Parse OTSL content into TableData (inlined from utils)."""
+        tokens, mixed = self._otsl_extract_tokens_and_text(otsl_content)
+        table_cells, split_rows = self._otsl_parse_texts(mixed, tokens)
+        return TableData(
+            num_rows=len(split_rows),
+            num_cols=(max(len(r) for r in split_rows) if split_rows else 0),
+            table_cells=table_cells,
+        )
 
     def _get_text(self, el) -> str:
         out: list[str] = []

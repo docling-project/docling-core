@@ -91,7 +91,10 @@ chunking-openai = [
     # specific:
     'tiktoken (>=0.9.0,<0.13.0)',
 ]
-
+examples = [
+    "datasets>=4.0.0",
+    "matplotlib>=3.7.0",
+]
 [dependency-groups]
 dev = [
     "pre-commit~=3.7",
