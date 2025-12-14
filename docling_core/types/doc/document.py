@@ -67,7 +67,6 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
-from docling_core.types.doc.webvtt import WebVTTTimestamp
 
 _logger = logging.getLogger(__name__)
 
@@ -1208,17 +1207,17 @@ class ProvenanceTrack(BaseModel):
     """
 
     start_time: Annotated[
-        WebVTTTimestamp,
+        float,
         Field(
-            examples=["00.11.000", "00:00:06.500", "01:28:34.300"],
-            description="Start time offset of the track cue",
+            examples=[11.0, 6.5, 5370.0],
+            description="Start time offset of the track cue in seconds",
         ),
     ]
     end_time: Annotated[
-        WebVTTTimestamp,
+        float,
         Field(
-            examples=["00.12.000", "00:00:08.200", "01:29:30.100"],
-            description="End time offset of the track cue",
+            examples=[12.0, 8.2, 5370.1],
+            description="End time offset of the track cue in seconds",
         ),
     ]
     identifier: Optional[str] = Field(
@@ -1242,6 +1241,13 @@ class ProvenanceTrack(BaseModel):
         examples=["first", "loud", "yellow"],
         description="Classes for describing the cue significance",
     )
+
+    @model_validator(mode="after")
+    def check_order(self) -> Self:
+        """Ensure start time is less than the end time."""
+        if self.end_time <= self.start_time:
+            raise ValueError("End time must be greater than start time")
+        return self
 
 
 def get_provenance_discriminator_value(v: Any) -> str:

@@ -2228,22 +2228,24 @@
       "description": "Provenance information for elements extracted from media assets.\n\nA `ProvenanceTrack` instance describes a cue in a text track associated with a\nmedia element (audio, video, subtitles, screen recordings, ...).",
       "properties": {
         "start_time": {
-          "$ref": "#/$defs/WebVTTTimestamp",
-          "description": "Start time offset of the track cue",
+          "description": "Start time offset of the track cue in seconds",
           "examples": [
-            "00.11.000",
-            "00:00:06.500",
-            "01:28:34.300"
-          ]
+            11.0,
+            6.5,
+            5370.0
+          ],
+          "title": "Start Time",
+          "type": "number"
         },
         "end_time": {
-          "$ref": "#/$defs/WebVTTTimestamp",
-          "description": "End time offset of the track cue",
+          "description": "End time offset of the track cue in seconds",
           "examples": [
-            "00.12.000",
-            "00:00:08.200",
-            "01:29:30.100"
-          ]
+            12.0,
+            8.2,
+            5370.1
+          ],
+          "title": "End Time",
+          "type": "number"
         },
         "identifier": {
           "anyOf": [
@@ -3189,21 +3191,6 @@
         "text"
       ],
       "title": "TitleItem",
-      "type": "object"
-    },
-    "WebVTTTimestamp": {
-      "description": "WebVTT timestamp.\n\nThe timestamp is a string consisting of the following components in the given order:\n\n- hours (optional, required if non-zero): two or more digits\n- minutes: two digits between 0 and 59\n- a colon character (:)\n- seconds: two digits between 0 and 59\n- a full stop character (.)\n- thousandths of a second: three digits\n\nA WebVTT timestamp is always interpreted relative to the current playback position\nof the media data that the WebVTT file is to be synchronized with.",
-      "properties": {
-        "raw": {
-          "description": "A representation of the WebVTT Timestamp as a single string",
-          "title": "Raw",
-          "type": "string"
-        }
-      },
-      "required": [
-        "raw"
-      ],
-      "title": "WebVTTTimestamp",
       "type": "object"
     }
   },

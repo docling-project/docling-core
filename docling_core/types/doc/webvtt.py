@@ -95,7 +95,7 @@ class WebVTTCueTimings(BaseModel):
 
     @model_validator(mode="after")
     def check_order(self) -> Self:
-        """Ensure start timestamp is less than or equal to end timestamp."""
+        """Ensure start timestamp is less than end timestamp."""
         if self.start and self.end:
             if self.end.seconds <= self.start.seconds:
                 raise ValueError("End timestamp must be greater than start timestamp")

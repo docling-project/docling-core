@@ -1,8 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from docling_core.types.doc.document import ProvenanceTrack
-from docling_core.types.doc.webvtt import WebVTTTimestamp
+from docling_core.types.doc import ProvenanceTrack
 from docling_core.types.legacy_doc.base import Prov, S3Reference
 
 
@@ -45,8 +44,8 @@ def test_prov_track():
     """Test the class ProvenanceTrack."""
 
     valid_track = ProvenanceTrack(
-        start_time=WebVTTTimestamp(raw="00:11.000"),
-        end_time=WebVTTTimestamp(raw="00:12.000"),
+        start_time=11.0,
+        end_time=12.0,
         identifier="test",
         voice="Mary",
         languages=["en", "en-GB"],
@@ -54,19 +53,25 @@ def test_prov_track():
     )
 
     assert valid_track
-    assert valid_track.start_time == WebVTTTimestamp(raw="00:11.000")
-    assert valid_track.end_time == WebVTTTimestamp(raw="00:12.000")
+    assert valid_track.start_time == 11.0
+    assert valid_track.end_time == 12.0
     assert valid_track.identifier == "test"
     assert valid_track.voice == "Mary"
     assert valid_track.languages == ["en", "en-GB"]
     assert valid_track.classes == ["v.first.loud", "i.foreignphrase"]
 
     with pytest.raises(ValidationError, match="end_time"):
-        ProvenanceTrack(start_time=WebVTTTimestamp(raw="00:11.000"))
+        ProvenanceTrack(start_time=11.0)
 
     with pytest.raises(ValidationError, match="should be a valid list"):
         ProvenanceTrack(
-            start_time=WebVTTTimestamp(raw="00:11.000"),
-            end_time=WebVTTTimestamp(raw="00:12.000"),
+            start_time=11.0,
+            end_time=12.0,
             languages="en",
+        )
+
+    with pytest.raises(ValidationError, match="must be greater than start"):
+        ProvenanceTrack(
+            start_time=11.0,
+            end_time=11.0,
         )
