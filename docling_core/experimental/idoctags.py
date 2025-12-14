@@ -2,6 +2,7 @@
 
 import re
 from enum import Enum
+from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
 from xml.dom.minidom import Element, parseString
 
@@ -2094,9 +2095,7 @@ class IDocTagsDocDeserializer(BaseModel):
         # Split into rows by NL markers while keeping segments
         split_row_tokens = [
             list(group)
-            for is_sep, group in __import__("itertools").groupby(
-                tokens, lambda z: z == nl
-            )
+            for is_sep, group in groupby(tokens, key=lambda z: z == nl)
             if not is_sep
         ]
 
