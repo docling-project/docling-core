@@ -4,6 +4,7 @@ import logging
 import re
 from collections.abc import Iterator
 from enum import Enum
+from functools import total_ordering
 from typing import Annotated, ClassVar, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -29,6 +30,7 @@ class WebVTTLineTerminator(str, Enum):
 WebVTTCueIdentifier = Annotated[str, StringConstraints(strict=True, pattern=r"^(?!.*-->)[^\n\r]+$")]
 
 
+@total_ordering
 class WebVTTTimestamp(BaseModel):
     """WebVTT timestamp.
 
@@ -81,6 +83,18 @@ class WebVTTTimestamp(BaseModel):
         """A representation of the WebVTT Timestamp in seconds."""
         return self._hours * 3600 + self._minutes * 60 + self._seconds + self._millis / 1000.0
 
+    def __eq__(self, other: object) -> bool:
+        """Two timestamps are equal if their total number of seconds is equal."""
+        if not isinstance(other, WebVTTTimestamp):
+            return NotImplemented
+        return self.seconds == other.seconds
+
+    def __lt__(self, other: "WebVTTTimestamp") -> bool:
+        """Return True if this timestamp occurs before `other`."""
+        if not isinstance(other, WebVTTTimestamp):
+            return NotImplemented
+        return self.seconds < other.seconds
+
     @override
     def __str__(self) -> str:
         """Return a string representation of a WebVTT timestamp."""
@@ -97,7 +111,7 @@ class WebVTTCueTimings(BaseModel):
     def check_order(self) -> Self:
         """Ensure start timestamp is less than end timestamp."""
         if self.start and self.end:
-            if self.end.seconds <= self.start.seconds:
+            if self.end <= self.start:
                 raise ValueError("End timestamp must be greater than start timestamp")
         return self
 
@@ -511,6 +525,24 @@ class WebVTTFile(BaseModel):
             return content[6] in (" ", "\t", "\n")
         else:
             return False
+
+    @model_validator(mode="after")
+    def validate_start_time(self) -> Self:
+        """Validate cue start times.
+
+        The start time offset of the cue must be greater than or equal to the start
+        time offsets of all previous cues.
+        """
+        idx: int = 0
+        while idx < (len(self.cue_blocks) - 1):
+            if self.cue_blocks[idx + 1].timings.start < self.cue_blocks[idx].timings.start:
+                raise ValueError(
+                    f"The start time offset of block {idx + 1} must be greater than or"
+                    " equal to the start time offsets of all previous cues in the file"
+                )
+            idx += 1
+
+        return self
 
     @classmethod
     def parse(cls, raw: str) -> "WebVTTFile":
