@@ -178,3 +178,89 @@ def test_idoctags_meta():
     ser = IDocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.idt.xml"), actual=actual)
+
+
+def test_xml_compliant_escaping():
+    """Test that xml_compliant parameter properly escapes XML special characters."""
+    doc = DoclingDocument(name="test_xml_escape")
+
+    # Add text with XML special characters
+    doc.add_text(
+        label=DocItemLabel.TEXT, text="Text with <tags> & special chars like > and <"
+    )
+
+    # Add a table with special characters in cells
+    td = TableData(num_rows=0, num_cols=2)
+    td.add_row(["Header & Title", "Value > 100"])
+    td.add_row(["<script>", "A & B"])
+    doc.add_table(data=td)
+
+    # Serialize without XML compliance (default behavior)
+    # Note: We need to disable pretty_indentation because the XML parser will fail
+    # on non-compliant XML when trying to pretty-print
+    txt_default = serialize_idoctags(
+        doc,
+        xml_compliant=False,
+        add_content=True,
+        pretty_indentation=None,
+    )
+
+    # Verify special characters are NOT escaped in default mode
+    assert "Text with <tags> & special chars" in txt_default
+    assert "<script>" in txt_default
+    assert "A & B" in txt_default
+
+    # Serialize with XML compliance enabled
+    txt_compliant = serialize_idoctags(doc, xml_compliant=True, add_content=True)
+
+    # Verify special characters ARE escaped in compliant mode
+    assert "&lt;tags&gt;" in txt_compliant
+    assert "&amp;" in txt_compliant
+    assert "&gt;" in txt_compliant
+    assert "&lt;script&gt;" in txt_compliant
+    assert "A &amp; B" in txt_compliant
+
+    # Verify original unescaped characters don't appear
+    assert "Text with <tags> & special chars" not in txt_compliant
+    assert (
+        "<script>" not in txt_compliant or txt_compliant.count("<script>") == 0
+    )  # might appear in tags
+
+    # Verify XML tags themselves are not escaped
+    assert "<text>" in txt_compliant
+    assert "</text>" in txt_compliant
+    assert "<otsl>" in txt_compliant
+
+
+def test_xml_compliant_meta_fields():
+    """Test that xml_compliant escapes special characters in meta fields."""
+    from docling_core.types.doc import (
+        DescriptionMetaField,
+        PictureMeta,
+        SummaryMetaField,
+    )
+
+    doc = DoclingDocument(name="test_meta_escape")
+
+    # Add text with meta containing special characters
+    text_item = doc.add_text(label=DocItemLabel.TEXT, text="Sample text")
+    text_item.meta = PictureMeta(
+        summary=SummaryMetaField(text="Summary with <tags> & ampersands"),
+        description=DescriptionMetaField(text="Description > with < special & chars"),
+    )
+
+    # Serialize with XML compliance
+    txt_compliant = serialize_idoctags(doc, xml_compliant=True, add_content=True)
+
+    # Verify meta fields are escaped
+    assert "Summary with &lt;tags&gt; &amp; ampersands" in txt_compliant
+    assert "Description &gt; with &lt; special &amp; chars" in txt_compliant
+
+    # Serialize without XML compliance
+    txt_default = serialize_idoctags(
+        doc, xml_compliant=False, add_content=True, pretty_indentation=None
+    )
+
+    # Verify meta fields are not escaped in default mode
+    assert "Summary with <tags> & ampersands" in txt_default
+    assert "Description > with < special & chars" in txt_default

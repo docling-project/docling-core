@@ -49,7 +49,7 @@ def update_tokenizer(tokenizer: PreTrainedTokenizerBase, verbose: bool = False) 
     return tokenizer
 
 def run_dump(cfg: Dict[str, Any]) -> int:
-    """Dump/serialize documents from a dataset to IDocTags strings/files.
+    """Dump/serialize documents from a dataset to IDocTags strings/files and export a per-row report.
 
     Config keys (with defaults):
     - dataset_name: str ("docling-project/doclaynet-set-a")
@@ -58,6 +58,8 @@ def run_dump(cfg: Dict[str, Any]) -> int:
     - output_dir: str ("./scratch/idoctags")
     - failed_dir: str ("./scratch/idoctags_failed") — where to dump HTML+JSON when serialization fails
     - write_outputs: bool (True) — write serialized outputs if True
+    - report_path: str ("./scratch/idoctags_report.xlsx") — where to write the results table (xlsx or csv)
+    - limit: Optional[int] (None) — process only the first N items if set
     - variants: list of serialization variants; each item:
         {"add_content": bool, "mode": "LLM_FRIENDLY"|"HUMAN_FRIENDLY", "suffix": str}
       Defaults to three variants mirroring prior behavior.
@@ -69,6 +71,7 @@ def run_dump(cfg: Dict[str, Any]) -> int:
     failed_dir = Path(cfg.get("failed_dir", "./scratch/idoctags_failed"))
     pngs_dir = Path(cfg.get("pngs_dir", "./scratch/pngs_dir"))
     write_outputs: bool = bool(cfg.get("write_outputs", True))
+    report_path = Path(cfg.get("report_path", "./scratch/idoctags_report.xlsx"))
 
     default_variants = [
         {"add_content": False, "mode": "LLM_FRIENDLY", "suffix": "_without"},
@@ -86,79 +89,330 @@ def run_dump(cfg: Dict[str, Any]) -> int:
     split = ds[dataset_split]
     total = len(split)
 
-    errors: list[str] = []
-    ok = 0
+    # Effective processing limit
+    raw_limit = cfg.get("limit") or cfg.get("max_items") or cfg.get("max_samples")
+    limit: Optional[int] = None
+    if isinstance(raw_limit, int) and raw_limit > 0:
+        limit = raw_limit
+    processed_total = min(total, limit) if limit else total
 
-    for idx, row in tqdm(enumerate(split), total=total, ncols=128):
+    errors: list[str] = []
+
+    # Results rows for report
+    results_rows: list[dict[str, str]] = []
+
+    def _yes(b: bool) -> str:
+        return "Yes" if b else "No"
+
+    def _sanitize_cell_value(value: str, warn: bool = False) -> str:
+        """Sanitize cell value to ensure XML/Excel compliance.
+
+        Removes or replaces characters that are invalid in XML, which would
+        cause openpyxl to fail with 'not well-formed (invalid token)' errors.
+
+        Invalid XML characters include most control characters (0x00-0x1F)
+        except tab (0x09), newline (0x0A), and carriage return (0x0D).
+
+        Parameters
+        - value: the cell value to sanitize
+        - warn: if True, print a warning when invalid characters are found
+        """
+        if not isinstance(value, str):
+            return str(value)
+
+        # Filter out invalid XML characters
+        # Valid ranges: 0x09, 0x0A, 0x0D, 0x20-0xD7FF, 0xE000-0xFFFD, 0x10000-0x10FFFF
+        sanitized = []
+        invalid_chars = []
+        for char in value:
+            code = ord(char)
+            if (code == 0x09 or code == 0x0A or code == 0x0D or
+                (0x20 <= code <= 0xD7FF) or
+                (0xE000 <= code <= 0xFFFD) or
+                (0x10000 <= code <= 0x10FFFF)):
+                sanitized.append(char)
+            else:
+                # Replace invalid character with its Unicode representation
+                sanitized.append(f"[U+{code:04X}]")
+                if warn:
+                    invalid_chars.append(f"U+{code:04X}")
+
+        if warn and invalid_chars:
+            preview = value[:50] + "..." if len(value) > 50 else value
+            print(f"Warning: Found invalid XML characters {invalid_chars} in cell: {preview}")
+
+        return ''.join(sanitized)
+
+    def _write_report(rows: list[dict[str, str]], path: Path) -> None:
+        """Write a two-sheet Excel report (Results + Summary).
+
+        Sheet: Results
+        - Dataset
+        - Row ID
+        - Loaded DoclingDocument
+        - Loaded DoclingDocument Error
+        - Serialized IDocTags (mode, xml_compliant, content) for all combinations
+        - Serialized HTML
+        - Serialized HTML Error
+
+        Sheet: Summary
+        - Metric, Count
+        """
+        # Build column list matching the actual columns generated
+        cols = [
+            "Dataset",
+            "Row ID",
+            "Loaded DoclingDocument",
+            "Loaded DoclingDocument Error",
+        ]
+
+        # Add all combinations of mode, xml_compliant, and content
+        for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
+            for comp in [True, False]:
+                for content in [True, False]:
+                    cols.append(f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})")
+                    cols.append(f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error")
+
+        cols.extend([
+            "Serialized HTML",
+            "Serialized HTML Error",
+        ])
+
+        # Ensure all rows have all columns and sanitize cell values
+        norm_rows = []
+        for r in rows:
+            norm_rows.append({c: _sanitize_cell_value(r.get(c, ""), warn=True) for c in cols})
+
+        # Build summary from normalized rows
+        def _count_yes(key: str) -> int:
+            return sum(1 for r in norm_rows if r.get(key, "") == "Yes")
+
+        summary_rows = [
+            {"Metric": "Total processed", "Count": len(norm_rows)},
+            {"Metric": "Loaded DoclingDocument", "Count": _count_yes("Loaded DoclingDocument")},
+        ]
+
+        # Add summary rows for all combinations
+        for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
+            for comp in [True, False]:
+                for content in [True, False]:
+                    col_name = f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"
+                    summary_rows.append({"Metric": col_name, "Count": _count_yes(col_name)})
+
+        summary_rows.append({"Metric": "Serialized HTML", "Count": _count_yes("Serialized HTML")})
+
+        # Enforce .xlsx output; CSV export removed by request
+        if path.suffix.lower() != ".xlsx":
+            print(f"Report path '{path}' is not .xlsx; writing to .xlsx instead.")
+            path = path.with_suffix(".xlsx")
+
+        # Try pandas with ExcelWriter first
+        try:
+            import pandas as pd  # type: ignore
+            from openpyxl import load_workbook  # type: ignore
+            from openpyxl.styles import Alignment  # type: ignore
+
+            df_results = pd.DataFrame(norm_rows, columns=cols)
+            df_summary = pd.DataFrame(summary_rows, columns=["Metric", "Count"])
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with pd.ExcelWriter(path, engine='openpyxl') as writer:
+                df_results.to_excel(writer, sheet_name="Results", index=False)
+                df_summary.to_excel(writer, sheet_name="Summary", index=False)
+
+            # Post-process with openpyxl to add styling
+            wb = load_workbook(path)
+            ws_results = wb["Results"]
+
+            # Find error column indices (1-based)
+            error_col_indices = []
+            for idx, col_name in enumerate(cols, start=1):
+                if "Error" in col_name:
+                    error_col_indices.append(idx)
+
+            # Apply styling to error columns
+            for col_idx in error_col_indices:
+                col_letter = ws_results.cell(row=1, column=col_idx).column_letter
+                current_width = ws_results.column_dimensions[col_letter].width
+                if current_width is None:
+                    current_width = 8.43  # Default Excel column width
+                ws_results.column_dimensions[col_letter].width = current_width * 3
+
+                # Enable text wrapping for all cells in this column
+                for row in range(1, ws_results.max_row + 1):
+                    cell = ws_results.cell(row=row, column=col_idx)
+                    cell.alignment = Alignment(wrap_text=True, vertical='top')
+
+            # Enable text wrapping for all header cells
+            for col_idx in range(1, len(cols) + 1):
+                cell = ws_results.cell(row=1, column=col_idx)
+                cell.alignment = Alignment(wrap_text=True, vertical='top', horizontal='center')
+
+            wb.save(path)
+            print(f"Wrote report (Excel via pandas) to: {path}")
+            return
+        except Exception as exc_pd:
+            print(f"pandas export failed ({exc_pd}); will try openpyxl.")
+
+        # Try openpyxl second
+        try:
+            from openpyxl import Workbook  # type: ignore
+            from openpyxl.styles import Alignment  # type: ignore
+
+            path.parent.mkdir(parents=True, exist_ok=True)
+            wb = Workbook()
+            # Results sheet
+            ws_results = wb.active
+            ws_results.title = "Results"
+            ws_results.append(cols)
+            for r in norm_rows:
+                # norm_rows is already sanitized, but ensure column headers are also sanitized
+                ws_results.append([r.get(c, "") for c in cols])
+
+            # Find error column indices (1-based)
+            error_col_indices = []
+            for idx, col_name in enumerate(cols, start=1):
+                if "Error" in col_name:
+                    error_col_indices.append(idx)
+
+            # Apply styling to error columns
+            for col_idx in error_col_indices:
+                col_letter = ws_results.cell(row=1, column=col_idx).column_letter
+                current_width = ws_results.column_dimensions[col_letter].width
+                if current_width is None:
+                    current_width = 8.43  # Default Excel column width
+                ws_results.column_dimensions[col_letter].width = current_width * 3
+
+                # Enable text wrapping for all cells in this column
+                for row in range(1, ws_results.max_row + 1):
+                    cell = ws_results.cell(row=row, column=col_idx)
+                    cell.alignment = Alignment(wrap_text=True, vertical='top')
+
+            # Enable text wrapping for all header cells
+            for col_idx in range(1, len(cols) + 1):
+                cell = ws_results.cell(row=1, column=col_idx)
+                cell.alignment = Alignment(wrap_text=True, vertical='top', horizontal='center')
+
+            # Summary sheet
+            ws_summary = wb.create_sheet(title="Summary")
+            ws_summary.append(["Metric", "Count"])
+            for r in summary_rows:
+                ws_summary.append([_sanitize_cell_value(str(r["Metric"])), str(r["Count"])])
+            wb.save(path)
+            print(f"Wrote report (Excel via openpyxl) to: {path}")
+            return
+        except Exception as exc_xl:
+            print(f"openpyxl export failed ({exc_xl}); report not written.")
+
+    for idx, row in tqdm(enumerate(split), total=processed_total, ncols=128):
+        if limit is not None and idx >= limit:
+            break
         text = row.get("GroundTruthDocument", "")
+
+        # Initialize per-row result
+        row_result: dict[str, str] = {
+            "Dataset": dataset_name,
+            "Row ID": str(idx),
+            "Loaded DoclingDocument": _yes(False),
+            "Loaded DoclingDocument Error": "",
+            "Serialized HTML": _yes(False),
+            "Serialized HTML Error": "",            
+        }
+
+        for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
+            for comp in [True, False]:
+                for content in [True, False]:
+                    row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"] = _yes(False)
+                    row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error"] = ""
+
         try:
             doc = DoclingDocument.model_validate_json(text)
             page_images = [
                 __ for __ in row["GroundTruthPageImages"]
             ]
             # page_images[0].show()
-
+            row_result["Loaded DoclingDocument"] = _yes(True)
         except Exception as exc:
             errors.append(
                 f"Parse error: {exc} for {dataset_name}/{dataset_subset}/{dataset_split} idx={idx}"
             )
+            # Record failure outcome for this row
+            row_result["Loaded DoclingDocument Error"] = str(exc)
+
+            for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
+                for comp in [True, False]:
+                    for content in [True, False]:
+                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"] = _yes(False)
+                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error"] = "NA"
+            
+            results_rows.append(row_result)
             continue
 
-        for i, __ in enumerate(page_images, start=1):            
+        for i, __ in enumerate(page_images, start=1):
             doc.pages[i].image = ImageRef.from_pil(__, dpi=140)
             # png_path = pngs_dir / f"{idx}_{i}.png"
             # __.save(png_path)
-            
+
+        for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
+            for comp in [True, False]:
+                for content in [True, False]:
+                    try:
+                        params_probe = IDocTagsParams()
+                        params_probe.add_content = content
+                        params_probe.mode = mode
+                        params_probe.xml_compliant = comp
+                        params_probe.pretty_indentation = "  " if mode==IDocTagsSerializationMode.HUMAN_FRIENDLY else None
+
+                        iser_probe = IDocTagsDocSerializer(doc=doc, params=params_probe)
+                        _ = iser_probe.serialize().text
+
+                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"] = _yes(True)
+                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error"] = ""
+
+                    except Exception as exc_:
+                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"] = _yes(False)
+                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error"] = str(exc_)
+
+        # Attempt HTML export (non-writing) to check serialization capability
         try:
-            for var in variants:
-                params = IDocTagsParams()
-                params.add_content = bool(var.get("add_content", True))
-                mode_str = str(var.get("mode", "LLM_FRIENDLY"))
-                params.mode = (
-                    IDocTagsSerializationMode.LLM_FRIENDLY
-                    if mode_str == "LLM_FRIENDLY"
-                    else IDocTagsSerializationMode.HUMAN_FRIENDLY
-                )
+            _ = doc.export_to_html(
+                image_mode=ImageRefMode.EMBEDDED,
+                split_page_view=True,
+                include_annotations=True,
+            )
+            row_result["Serialized HTML"] = _yes(True)
+        except Exception as html_exc:
+            row_result["Serialized HTML"] = _yes(False)
+            row_result["Serialized HTML Error"] = str(html_exc)
 
-                iser = IDocTagsDocSerializer(doc=doc, params=params)
-                serialized = iser.serialize().text
+        # Append the result for this row
+        results_rows.append(row_result)
 
-                if write_outputs:
-                    suffix = var.get("suffix", "")
-                    out_path = output_dir / f"{idx}{suffix}.idoctags"
-                    with open(out_path, "w", encoding="utf-8") as fw:
-                        fw.write(serialized)
-            ok += 1
-        except Exception as exc:
-            print(f"exc: {exc}")
-            # page_images[0].show()
-            
-            failed_dir.mkdir(parents=True, exist_ok=True)
-            # JSON dump of the parsed DoclingDocument
-            json_path = failed_dir / f"{idx}.json"
-            print(f"\n\n -> writing {json_path}")
-            with open(json_path, "w", encoding="utf-8") as fj:
-                fj.write(doc.model_dump_json(indent=2))
+    # Write report at the end
+    try:
+        _write_report(results_rows, report_path)
+    except Exception as rep_exc:
+        print(f"Failed to write report to {report_path}: {rep_exc}")
 
-            try:
-                # Split-page HTML with layout/images; avoid single-column variant
-                html_path = failed_dir / f"{idx}_split.html"
-                print(f"\n\n -> writing {html_path}")
-                doc.save_as_html(
-                    filename=html_path,
-                    image_mode=ImageRefMode.EMBEDDED,
-                    split_page_view=True,
-                    include_annotations=True,
-                )
-            except Exception as exc2:
-                print(f"exception: {exc2}")
-            
-    print(f"Serialized OK: {ok} / {total}")
+    # Print summary overview
+    def _count_yes(rows: list[dict[str, str]], key: str) -> int:
+        return sum(1 for r in rows if r.get(key, "") == "Yes")
+
+    print("Overview summary:")
+    print(f" - Total processed: {len(results_rows)}")
+    print(f" - Loaded DoclingDocument: {_count_yes(results_rows, 'Loaded DoclingDocument')}")
+    for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
+        for comp in [True, False]:
+            for content in [True, False]:
+                print(f" - Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}): {_count_yes(results_rows, f'Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})')}")
+    print(f" - Serialized HTML: {_count_yes(results_rows, 'Serialized HTML')}")
+
     if errors:
         print("Errors:")
         for e in errors:
             print(" -", e)
-    return 0 if ok > 0 and not errors else (0 if ok == total else 1)
+
+    # Return 0 if no errors occurred, 1 otherwise
+    return 0 if not errors else 1
 
 
 def run_analyse(cfg: Dict[str, Any]) -> int:
@@ -362,7 +616,9 @@ def default_config(mode: str) -> Dict[str, Any]:
             "dataset_split": "train",
             "output_dir": "./scratch/idoctags",
             "failed_dir": "./scratch/idoctags_failed",
+            "report_path": "./scratch/idoctags_report.xlsx",
             "write_outputs": True,
+            "limit": None,
             "variants": [
                 {"add_content": False, "mode": "LLM_FRIENDLY", "suffix": "_without"},
                 {"add_content": True, "mode": "LLM_FRIENDLY", "suffix": "_with"},
@@ -400,6 +656,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Only write the default config for the selected mode and exit.",
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="For dump mode: process only the first N items.",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     cfg_path: Optional[Path] = args.config
@@ -417,6 +679,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     else:
         with open(cfg_path, "r", encoding="utf-8") as fr:
             cfg = json.load(fr)
+
+    # Allow CLI --limit to override config for dump mode
+    if args.mode == "dump" and args.limit is not None and args.limit > 0:
+        cfg["limit"] = args.limit
 
     if args.mode == "dump":
         return run_dump(cfg)

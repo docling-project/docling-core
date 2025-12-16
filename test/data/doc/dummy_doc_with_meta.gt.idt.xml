@@ -1,13 +1,13 @@
 <doctag version="1.0.0">
   <title>
-    <meta>
-      <summary>This is a title.</summary>
-      <my_corp__foo>More stuff here.</my_corp__foo>
-    </meta>
     <location value="43" resolution="512"/>
     <location value="26" resolution="512"/>
     <location value="415" resolution="512"/>
     <location value="47" resolution="512"/>
+    <meta>
+      <summary>This is a title.</summary>
+      <my_corp__foo>More stuff here.</my_corp__foo>
+    </meta>
     DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
   </title>
   <floating_group class="picture">
