@@ -783,8 +783,8 @@ def test_constructed_doc(sample_doc: DoclingDocument):
 
     dt2 = _serialize(doc2, add_table_cell_text=True, add_content=True)
 
-    # print(f"--------------------------dt:\n\n{dt}\n\n")
-    # print(f"--------------------------dt2:\n\n{dt2}\n\n")
+    print(f"--------------------------dt:\n\n{dt}\n\n")
+    print(f"--------------------------dt2:\n\n{dt2}\n\n")
 
     assert dt2 == dt
 

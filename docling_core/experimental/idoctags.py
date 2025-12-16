@@ -4,6 +4,7 @@ import copy
 import html
 import re
 from enum import Enum
+from html.parser import HTMLParser
 from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
 from xml.dom.minidom import Element, Text, parseString
@@ -38,6 +39,7 @@ from docling_core.types.doc import (
     DocItem,
     DoclingDocument,
     FloatingItem,
+    Formatting,
     FormItem,
     InlineGroup,
     KeyValueItem,
@@ -50,6 +52,7 @@ from docling_core.types.doc import (
     PictureItem,
     PictureMeta,
     ProvenanceItem,
+    Script,
     SectionHeaderItem,
     Size,
     SummaryMetaField,
@@ -78,11 +81,46 @@ def _wrap_token(*, text: str, open_token: str) -> str:
     return f"{open_token}{text}{close_token}"
 
 
-def _escape_xml_text(text: str, xml_compliant: bool) -> str:
-    """Escape XML special characters if xml_compliant is enabled."""
-    if xml_compliant:
-        return html.escape(text, quote=False)
-    return text
+def _xml_error_context(
+    text: str,
+    err: Exception,
+    *,
+    radius_lines: int = 2,
+    max_line_chars: int = 500,
+    max_total_chars: int = 2000,
+) -> str:
+    lineno = getattr(err, "lineno", None)
+    offset = getattr(err, "offset", None)
+    if not lineno or lineno <= 0:
+        m = re.search(r"line\s+(\d+)\s*,\s*column\s+(\d+)", str(err))
+        if m:
+            try:
+                lineno = int(m.group(1))
+                offset = int(m.group(2))
+            except Exception:
+                lineno = None
+                offset = None
+    if not lineno or lineno <= 0:
+        snippet = text[:max_total_chars]
+        if len(text) > max_total_chars:
+            snippet += " …"
+        return snippet
+    lines = text.splitlines()
+    lineno = min(max(1, lineno), len(lines))
+    start = max(1, lineno - radius_lines)
+    end = min(len(lines), lineno + radius_lines)
+    out: list[str] = []
+    for i in range(start, end + 1):
+        line = lines[i - 1]
+        line_display = line[:max_line_chars]
+        if len(line) > max_line_chars:
+            line_display += " …"
+        out.append(f"{i:>6}: {line_display}")
+        if i == lineno and offset and offset > 0:
+            caret_pos = min(offset - 1, len(line_display))
+            prefix_len = len(f"{i:>6}: ")
+            out.append(" " * (prefix_len + caret_pos) + "^")
+    return "\n".join(out)
 
 
 def _quantize_to_resolution(value: float, resolution: int) -> int:
@@ -339,15 +377,17 @@ class IDocTagsToken(str, Enum):
     LIST = "list"
     GROUP = "group"
     FLOATING_GROUP = "floating_group"
+    INLINE = "inline"
 
     # Formatting
-    BOLD = "bold"
-    ITALIC = "italic"
+    BOLD = "bold"  # instead of "strong"
+    ITALIC = "italic"  # instead of "em"
     STRIKETHROUGH = "strikethrough"
     SUPERSCRIPT = "superscript"
     SUBSCRIPT = "subscript"
+
+    # Formatting self-closing
     RTL = "rtl"
-    INLINE = "inline"
     BR = "br"
 
     # Structural
@@ -849,48 +889,6 @@ class IDocTagsVocabulary(BaseModel):
         return f"<{token.value} {attrs_text}/>"
 
 
-def _xml_error_context(
-    text: str,
-    err: Exception,
-    *,
-    radius_lines: int = 2,
-    max_line_chars: int = 500,
-    max_total_chars: int = 2000,
-) -> str:
-    lineno = getattr(err, "lineno", None)
-    offset = getattr(err, "offset", None)
-    if not lineno or lineno <= 0:
-        m = re.search(r"line\s+(\d+)\s*,\s*column\s+(\d+)", str(err))
-        if m:
-            try:
-                lineno = int(m.group(1))
-                offset = int(m.group(2))
-            except Exception:
-                lineno = None
-                offset = None
-    if not lineno or lineno <= 0:
-        snippet = text[:max_total_chars]
-        if len(text) > max_total_chars:
-            snippet += " …"
-        return snippet
-    lines = text.splitlines()
-    lineno = min(max(1, lineno), len(lines))
-    start = max(1, lineno - radius_lines)
-    end = min(len(lines), lineno + radius_lines)
-    out: list[str] = []
-    for i in range(start, end + 1):
-        line = lines[i - 1]
-        line_display = line[:max_line_chars]
-        if len(line) > max_line_chars:
-            line_display += " …"
-        out.append(f"{i:>6}: {line_display}")
-        if i == lineno and offset and offset > 0:
-            caret_pos = min(offset - 1, len(line_display))
-            prefix_len = len(f"{i:>6}: ")
-            out.append(" " * (prefix_len + caret_pos) + "^")
-    return "\n".join(out)
-
-
 class IDocTagsSerializationMode(str, Enum):
     """Serialization mode for IDocTags output."""
 
@@ -928,6 +926,86 @@ def _get_delim(*, params: IDocTagsParams) -> str:
     if params.mode == IDocTagsSerializationMode.LLM_FRIENDLY:
         return ""
     raise RuntimeError(f"Unknown IDocTags mode: {params.mode}")
+
+
+class _WhitelistHTMLParser(HTMLParser):
+    """XML-safe sanitizer that preserves only specific IDocTags formatting and content tags.
+
+    Preserves these tags (attributes are stripped):
+    bold, italic, strikethrough, superscript, subscript, inline, text, code, formula, facets.
+    All other tags are escaped literally.
+    """
+
+    # Allowed formatting and content tags
+    _ALLOWED = {
+        IDocTagsToken.BOLD.value,
+        IDocTagsToken.ITALIC.value,
+        IDocTagsToken.STRIKETHROUGH.value,
+        IDocTagsToken.SUPERSCRIPT.value,
+        IDocTagsToken.SUBSCRIPT.value,
+        IDocTagsToken.INLINE.value,
+        IDocTagsToken.TEXT.value,
+        IDocTagsToken.CODE.value,
+        IDocTagsToken.FORMULA.value,
+        IDocTagsToken.FACETS.value,
+    }
+
+    def __init__(self):
+        super().__init__(convert_charrefs=False)
+        self.out = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self._ALLOWED:
+            self.out.append(f"<{tag}>")
+        else:
+            # Escape disallowed tags literally
+            self.out.append(html.escape(self.get_starttag_text(), quote=False))
+
+    def handle_endtag(self, tag):
+        if tag in self._ALLOWED:
+            self.out.append(f"</{tag}>")
+        else:
+            self.out.append(html.escape(f"</{tag}>", quote=False))
+
+    def handle_startendtag(self, tag, attrs):
+        if tag in self._ALLOWED:
+            self.out.append(f"<{tag}></{tag}>")
+        else:
+            self.out.append(html.escape(self.get_starttag_text(), quote=False))
+
+    def handle_data(self, data):
+        self.out.append(html.escape(data, quote=False))
+
+    def handle_entityref(self, name):
+        self.out.append(f"&{name};")
+
+    def handle_charref(self, name):
+        self.out.append(f"&#{name};")
+
+    def handle_comment(self, data):
+        self.out.append(html.escape(f"<!--{data}-->", quote=False))
+
+
+# def _escape_xml_text(text: str, xml_compliant: bool) -> str:
+#     """Escape XML special characters if xml_compliant is enabled."""
+#     if xml_compliant:
+#         return html.escape(text, quote=False)
+#     return text
+
+
+def _escape_xml_text(text: str, xml_compliant: bool) -> str:
+    """Escape text for XML while optionally preserving specific IDocTags formatting tags.
+
+    If xml_compliant=True, preserves only these tags (attributes stripped):
+    bold, italic, strikethrough, superscript, subscript, inline, text, code, formula, facets.
+    All other tags are escaped. If xml_compliant=False, returns text unchanged.
+    """
+    if not xml_compliant:
+        return text
+    parser = _WhitelistHTMLParser()
+    parser.feed(text)
+    parser.close()
+    return "".join(parser.out)
 
 
 class IDocTagsListSerializer(BaseModel, BaseListSerializer):
@@ -1909,6 +1987,31 @@ class IDocTagsDocSerializer(DocSerializer):
         """Return whether page breaks should be emitted for the document."""
         return self.params.add_page_break
 
+    @override
+    def serialize_bold(self, text: str, **kwargs: Any) -> str:
+        """Apply IDocTags-specific bold serialization."""
+        return _wrap(text=text, wrap_tag=IDocTagsToken.BOLD.value)
+
+    @override
+    def serialize_italic(self, text: str, **kwargs: Any) -> str:
+        """Apply IDocTags-specific italic serialization."""
+        return _wrap(text=text, wrap_tag=IDocTagsToken.ITALIC.value)
+
+    @override
+    def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
+        """Apply IDocTags-specific strikethrough serialization."""
+        return _wrap(text=text, wrap_tag=IDocTagsToken.STRIKETHROUGH.value)
+
+    @override
+    def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Apply IDocTags-specific subscript serialization."""
+        return _wrap(text=text, wrap_tag=IDocTagsToken.SUBSCRIPT.value)
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Apply IDocTags-specific superscript serialization."""
+        return _wrap(text=text, wrap_tag=IDocTagsToken.SUPERSCRIPT.value)
+
 
 class IDocTagsDocDeserializer(BaseModel):
     """IDocTags document deserializer."""
@@ -1988,6 +2091,8 @@ class IDocTagsDocDeserializer(BaseModel):
             self._parse_list(doc=doc, el=el, parent=parent)
         elif name == IDocTagsToken.FLOATING_GROUP.value:
             self._parse_floating_group(doc=doc, el=el, parent=parent)
+        elif name == IDocTagsToken.INLINE.value:
+            self._parse_inline_group(doc=doc, el=el, parent=parent)
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
 
@@ -2011,7 +2116,8 @@ class IDocTagsDocDeserializer(BaseModel):
     ) -> None:
         """Parse text-like tokens (title, text, caption, footnotes, code, formula)."""
         prov_list = self._extract_provenance(doc=doc, el=el)
-        text = self._get_text(el).strip()
+        text, formatting = self._extract_text_with_formatting(el)
+        text = text.strip()
         if not text:
             return
 
@@ -2047,6 +2153,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 text=text,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
+                formatting=formatting,
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
@@ -2057,6 +2164,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 text=text,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
+                formatting=formatting,
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
@@ -2067,6 +2175,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 text=text,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
+                formatting=formatting,
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
@@ -2157,6 +2266,29 @@ class IDocTagsDocDeserializer(BaseModel):
             elif node.tagName == IDocTagsToken.LIST.value:
                 # Recursively handle nested lists
                 self._parse_list(doc=doc, el=node, parent=group)
+
+    # ------------- Inline groups -------------
+    def _parse_inline_group(
+        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
+    ) -> None:
+        """Parse <inline> elements into InlineGroup objects."""
+        # Create the inline group
+        inline_group = doc.add_inline_group(parent=parent)
+
+        # Process all child elements, adding them as children of the inline group
+        for node in el.childNodes:
+            if isinstance(node, Element):
+                # Recursively dispatch child elements with the inline group as parent
+                self._dispatch_element(doc=doc, el=node, parent=inline_group)
+            elif isinstance(node, Text):
+                # Handle direct text content
+                text_content = node.data.strip()
+                if text_content:
+                    doc.add_text(
+                        label=DocItemLabel.TEXT,
+                        text=text_content,
+                        parent=inline_group,
+                    )
 
     # ------------- Floating groups -------------
     def _parse_floating_group(
@@ -2401,6 +2533,64 @@ class IDocTagsDocDeserializer(BaseModel):
             num_cols=(max(len(r) for r in split_rows) if split_rows else 0),
             table_cells=table_cells,
         )
+
+    def _extract_text_with_formatting(
+        self, el: Element
+    ) -> tuple[str, Optional[Formatting]]:
+        """Extract text content and formatting from an element.
+
+        If the element contains a single formatting child (bold, italic, etc.),
+        recursively extract the text and build up the Formatting object.
+
+        Returns:
+            Tuple of (text_content, formatting_object or None)
+        """
+        # Get non-whitespace, non-location child elements
+        child_elements = [
+            node
+            for node in el.childNodes
+            if isinstance(node, Element)
+            and node.tagName not in {IDocTagsToken.LOCATION.value}
+        ]
+
+        # Check if we have a single child that is a formatting tag
+        if len(child_elements) == 1:
+            child = child_elements[0]
+            tag_name = child.tagName
+
+            # Mapping of format tags to Formatting attributes
+            format_tags = {
+                IDocTagsToken.BOLD.value: "bold",
+                IDocTagsToken.ITALIC.value: "italic",
+                IDocTagsToken.STRIKETHROUGH.value: "strikethrough",
+                IDocTagsToken.SUPERSCRIPT.value: "superscript",
+                IDocTagsToken.SUBSCRIPT.value: "subscript",
+            }
+
+            if tag_name in format_tags:
+                # Recursively extract text and formatting from the child
+                text, child_formatting = self._extract_text_with_formatting(child)
+
+                # Build up the formatting object
+                if child_formatting is None:
+                    child_formatting = Formatting()
+
+                # Apply the current formatting tag
+                if tag_name == IDocTagsToken.BOLD.value:
+                    child_formatting.bold = True
+                elif tag_name == IDocTagsToken.ITALIC.value:
+                    child_formatting.italic = True
+                elif tag_name == IDocTagsToken.STRIKETHROUGH.value:
+                    child_formatting.strikethrough = True
+                elif tag_name == IDocTagsToken.SUPERSCRIPT.value:
+                    child_formatting.script = Script.SUPER
+                elif tag_name == IDocTagsToken.SUBSCRIPT.value:
+                    child_formatting.script = Script.SUB
+
+                return text, child_formatting
+
+        # No formatting found, just extract plain text
+        return self._get_text(el), None
 
     def _get_text(self, el: Element) -> str:
         out: list[str] = []

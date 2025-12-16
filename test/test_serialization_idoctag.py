@@ -10,7 +10,13 @@ from docling_core.experimental.idoctags import (
     IDocTagsSerializationMode,
     IDocTagsVocabulary,
 )
-from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
+from docling_core.types.doc import (
+    DocItemLabel,
+    DoclingDocument,
+    Formatting,
+    Script,
+    TableData,
+)
 
 from .test_serialization import verify
 
@@ -264,3 +270,93 @@ def test_xml_compliant_meta_fields():
     # Verify meta fields are not escaped in default mode
     assert "Summary with <tags> & ampersands" in txt_default
     assert "Description > with < special & chars" in txt_default
+
+
+def test_bold_formatting():
+    """Test bold formatting serialization."""
+    doc = DoclingDocument(name="test")
+    formatting = Formatting(bold=True)
+    doc.add_text(label=DocItemLabel.TEXT, text="Bold text", formatting=formatting)
+
+    result = serialize_idoctags(
+        doc, add_location=False, add_content=True, include_formatting=True
+    )
+    assert "<bold>Bold text</bold>" in result
+
+
+def test_italic_formatting():
+    """Test italic formatting serialization."""
+    doc = DoclingDocument(name="test")
+    formatting = Formatting(italic=True)
+    doc.add_text(label=DocItemLabel.TEXT, text="Italic text", formatting=formatting)
+
+    result = serialize_idoctags(
+        doc, add_location=False, add_content=True, include_formatting=True
+    )
+    assert "<italic>Italic text</italic>" in result
+
+
+def test_strikethrough_formatting():
+    """Test strikethrough formatting serialization."""
+    doc = DoclingDocument(name="test")
+    formatting = Formatting(strikethrough=True)
+    doc.add_text(label=DocItemLabel.TEXT, text="Strike text", formatting=formatting)
+
+    result = serialize_idoctags(
+        doc, add_location=False, add_content=True, include_formatting=True
+    )
+    assert "<strikethrough>Strike text</strikethrough>" in result
+
+
+def test_subscript_formatting():
+    """Test subscript formatting serialization."""
+    doc = DoclingDocument(name="test")
+    formatting = Formatting(script=Script.SUB)
+    doc.add_text(label=DocItemLabel.TEXT, text="H2O", formatting=formatting)
+
+    result = serialize_idoctags(
+        doc, add_location=False, add_content=True, include_formatting=True
+    )
+    assert "<subscript>H2O</subscript>" in result
+
+
+def test_superscript_formatting():
+    """Test superscript formatting serialization."""
+    doc = DoclingDocument(name="test")
+    formatting = Formatting(script=Script.SUPER)
+    doc.add_text(label=DocItemLabel.TEXT, text="x^2", formatting=formatting)
+
+    result = serialize_idoctags(
+        doc, add_location=False, add_content=True, include_formatting=True
+    )
+    assert "<superscript>x^2</superscript>" in result
+
+
+def test_combined_formatting():
+    """Test combined formatting (bold + italic)."""
+    doc = DoclingDocument(name="test")
+    formatting = Formatting(bold=True, italic=True)
+    doc.add_text(label=DocItemLabel.TEXT, text="Bold and italic", formatting=formatting)
+
+    result = serialize_idoctags(
+        doc, add_location=False, add_content=True, include_formatting=True
+    )
+    # When both bold and italic are applied, they should be nested
+    assert "<bold>" in result
+    assert "<italic>" in result
+    assert "Bold and italic" in result
+
+
+def test_formatting_disabled():
+    """Test that formatting is not applied when include_formatting=False."""
+    doc = DoclingDocument(name="test")
+    formatting = Formatting(bold=True, italic=True)
+    doc.add_text(label=DocItemLabel.TEXT, text="Plain text", formatting=formatting)
+
+    result = serialize_idoctags(
+        doc, add_location=False, add_content=True, include_formatting=False
+    )
+    # Formatting tags should not be present
+    assert "<bold>" not in result
+    assert "<italic>" not in result
+    assert "Plain text" in result
