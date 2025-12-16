@@ -5,6 +5,8 @@ Examples extracted from https://www.w3.org/TR/webvtt1/
 Copyright © 2019 World Wide Web Consortium.
 """
 
+import warnings
+
 import pytest
 from pydantic import ValidationError
 
@@ -276,7 +278,9 @@ def test_webvtt_file() -> None:
 
     with open("./test/data/webvtt/webvtt_example_04.vtt", encoding="utf-8") as f:
         content = f.read()
-        vtt = WebVTTFile.parse(content)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            vtt = WebVTTFile.parse(content)
     assert len(vtt) == 2
     block = vtt.cue_blocks[1]
     assert len(block.payload) == 5
