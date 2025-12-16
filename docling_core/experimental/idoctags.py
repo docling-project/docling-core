@@ -541,30 +541,30 @@ class IDocTagsVocabulary(BaseModel):
         IDocTagsToken.H_THREAD: {IDocTagsAttributeKey.ID: (1, 10)},
     }
 
-    # Self-closing tokens map
-    IS_SELFCLOSING: ClassVar[dict[IDocTagsToken, bool]] = {
-        IDocTagsToken.PAGE_BREAK: True,
-        IDocTagsToken.TIME_BREAK: True,
-        IDocTagsToken.LOCATION: True,
-        IDocTagsToken.HOUR: True,
-        IDocTagsToken.MINUTE: True,
-        IDocTagsToken.SECOND: True,
-        IDocTagsToken.CENTISECOND: True,
-        IDocTagsToken.BR: True,
+    # Self-closing tokens set
+    IS_SELFCLOSING: ClassVar[set[IDocTagsToken]] = {
+        IDocTagsToken.PAGE_BREAK,
+        IDocTagsToken.TIME_BREAK,
+        IDocTagsToken.LOCATION,
+        IDocTagsToken.HOUR,
+        IDocTagsToken.MINUTE,
+        IDocTagsToken.SECOND,
+        IDocTagsToken.CENTISECOND,
+        IDocTagsToken.BR,
         # OTSL structural tokens are emitted as self-closing markers
-        IDocTagsToken.FCEL: True,
-        IDocTagsToken.ECEL: True,
-        IDocTagsToken.CHED: True,
-        IDocTagsToken.RHED: True,
-        IDocTagsToken.CORN: True,
-        IDocTagsToken.SROW: True,
-        IDocTagsToken.LCEL: True,
-        IDocTagsToken.UCEL: True,
-        IDocTagsToken.XCEL: True,
-        IDocTagsToken.NL: True,
+        IDocTagsToken.FCEL,
+        IDocTagsToken.ECEL,
+        IDocTagsToken.CHED,
+        IDocTagsToken.RHED,
+        IDocTagsToken.CORN,
+        IDocTagsToken.SROW,
+        IDocTagsToken.LCEL,
+        IDocTagsToken.UCEL,
+        IDocTagsToken.XCEL,
+        IDocTagsToken.NL,
         # Continuation markers
-        IDocTagsToken.THREAD: True,
-        IDocTagsToken.H_THREAD: True,
+        IDocTagsToken.THREAD,
+        IDocTagsToken.H_THREAD,
     }
 
     # Token to category mapping
@@ -700,7 +700,7 @@ class IDocTagsVocabulary(BaseModel):
         # Disallow explicit self-closing markup or inherently self-closing tokens
         if trailing_slash == "/":
             raise ValueError(f"token '{name}' is self-closing; no closing tag")
-        if cls.IS_SELFCLOSING.get(tok_enum, False):
+        if tok_enum in cls.IS_SELFCLOSING:
             raise ValueError(f"token '{name}' is self-closing; no closing tag")
 
         return f"</{name}>"
@@ -858,7 +858,7 @@ class IDocTagsVocabulary(BaseModel):
                 continue
 
             name = token.value
-            is_selfclosing = bool(cls.IS_SELFCLOSING.get(token, False))
+            is_selfclosing = token in cls.IS_SELFCLOSING
 
             # Attribute-aware emission
             attrs = cls.ALLOWED_ATTRIBUTES.get(token, set())
@@ -917,7 +917,7 @@ class IDocTagsVocabulary(BaseModel):
         - Validates provided attributes against ``ALLOWED_ATTRIBUTES`` and
           ``ALLOWED_ATTRIBUTE_VALUES`` or ``ALLOWED_ATTRIBUTE_RANGE`` when present.
         """
-        if not cls.IS_SELFCLOSING.get(token, False):
+        if token not in cls.IS_SELFCLOSING:
             raise ValueError(f"token '{token.value}' is not self-closing")
 
         # No attributes requested
@@ -2061,7 +2061,7 @@ class IDocTagsDocSerializer(DocSerializer):
                 non_selfclosing = [
                     tok
                     for tok in IDocTagsToken
-                    if not IDocTagsVocabulary.IS_SELFCLOSING.get(tok, False)
+                    if tok not in IDocTagsVocabulary.IS_SELFCLOSING
                 ]
 
                 def _expand_tag(text: str, name: str) -> str:
