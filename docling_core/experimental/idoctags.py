@@ -2450,9 +2450,8 @@ class IDocTagsDocDeserializer(BaseModel):
             return
         # Extract table provenance from <otsl> leading <location/> tokens
         tbl_provs = self._extract_provenance(doc=doc, el=otsl_el)
-        inner = self._inner_xml(otsl_el)
-        # Remove any location tokens from the OTSL content before parsing
-        inner = re.sub(r"<\s*location\b[^>]*/\s*>", "", inner)
+        # Get inner XML excluding location tokens (work directly with parsed DOM)
+        inner = self._inner_xml(otsl_el, exclude_tags={"location"})
         td = self._parse_otsl_table_content(f"<otsl>{inner}</otsl>")
         tbl = doc.add_table(
             data=td,
@@ -2489,7 +2488,7 @@ class IDocTagsDocDeserializer(BaseModel):
         if picture_el is not None:
             otsl_el = self._first_child(picture_el, IDocTagsToken.OTSL.value)
             if otsl_el is not None:
-                inner = self._inner_xml(otsl_el)
+                inner = self._inner_xml(otsl_el, exclude_tags={"location"})
                 td = self._parse_otsl_table_content(f"<otsl>{inner}</otsl>")
                 if pic.meta is None:
                     pic.meta = PictureMeta()
@@ -2521,13 +2520,21 @@ class IDocTagsDocDeserializer(BaseModel):
                 return node
         return None
 
-    def _inner_xml(self, el: Element) -> str:
+    def _inner_xml(self, el: Element, exclude_tags: Optional[set[str]] = None) -> str:
+        """Extract inner XML content, optionally excluding specific element tags.
+
+        Args:
+            el: The element to extract content from
+            exclude_tags: Optional set of tag names to exclude from the output
+        """
         parts: list[str] = []
+        exclude_tags = exclude_tags or set()
         for node in el.childNodes:
             if isinstance(node, Text):
                 parts.append(node.data)
             elif isinstance(node, Element):
-                parts.append(node.toxml())
+                if node.tagName not in exclude_tags:
+                    parts.append(node.toxml())
         return "".join(parts)
 
     # --------- OTSL table parsing (inlined) ---------
