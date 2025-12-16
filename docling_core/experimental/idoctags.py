@@ -2115,6 +2115,24 @@ class IDocTagsDocDeserializer(BaseModel):
         self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
     ) -> None:
         """Parse text-like tokens (title, text, caption, footnotes, code, formula)."""
+        # Check if we have a single child that is an inline group
+        # This matches the serialization behavior where a text item with no text
+        # and a single InlineGroup child serializes the inline group directly
+        child_elements = [
+            node
+            for node in el.childNodes
+            if isinstance(node, Element)
+            and node.tagName not in {IDocTagsToken.LOCATION.value}
+        ]
+
+        if (
+            len(child_elements) == 1
+            and child_elements[0].tagName == IDocTagsToken.INLINE.value
+        ):
+            # This text-like element wraps a single inline group; create it directly
+            self._parse_inline_group(doc=doc, el=child_elements[0], parent=parent)
+            return
+
         prov_list = self._extract_provenance(doc=doc, el=el)
         text, formatting = self._extract_text_with_formatting(el)
         text = text.strip()
@@ -2253,16 +2271,44 @@ class IDocTagsDocDeserializer(BaseModel):
             if node.tagName == IDocTagsToken.LIST_TEXT.value:
                 # Collect provenance from the <list_text> wrapper
                 prov_list = self._extract_provenance(doc=doc, el=node)
-                text = self._get_text(node).strip()
-                if text:
-                    item = doc.add_list_item(
-                        text=text,
+
+                child_elements = [
+                    child
+                    for child in node.childNodes
+                    if isinstance(child, Element)
+                    and child.tagName not in {IDocTagsToken.LOCATION.value}
+                ]
+
+                if (
+                    len(child_elements) == 1
+                    and child_elements[0].tagName == IDocTagsToken.INLINE.value
+                ):
+
+                    list_item = doc.add_list_item(
+                        text="",
                         parent=group,
                         enumerated=ordered,
                         prov=(prov_list[0] if prov_list else None),
                     )
                     for p in prov_list[1:]:
-                        item.prov.append(p)
+                        list_item.prov.append(p)
+
+                    self._parse_inline_group(
+                        doc=doc, el=child_elements[0], parent=list_item
+                    )
+
+                else:
+                    text = self._get_text(node).strip()
+                    if text:
+                        item = doc.add_list_item(
+                            text=text,
+                            parent=group,
+                            enumerated=ordered,
+                            prov=(prov_list[0] if prov_list else None),
+                        )
+                        for p in prov_list[1:]:
+                            item.prov.append(p)
+
             elif node.tagName == IDocTagsToken.LIST.value:
                 # Recursively handle nested lists
                 self._parse_list(doc=doc, el=node, parent=group)

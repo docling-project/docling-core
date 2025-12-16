@@ -773,7 +773,69 @@ def test_roundtrip_multiple_nested_lists_same_level():
     assert dt2 == dt
 
 
-@pytest.mark.xfail(reason="Known feature incompletenes in serialization/deseralization")
+def test_roundtrip_list_item_with_inline_group():
+    """Test list item containing inline group with text, code, and formula."""
+    doc = DoclingDocument(name="t")
+    lg = doc.add_list_group()
+
+    # First list item with inline group containing code
+    li1 = doc.add_list_item(text="", parent=lg, enumerated=False)
+    inline1 = doc.add_inline_group(parent=li1)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Here a code snippet:",
+        parent=inline1,
+    )
+    doc.add_code(
+        text='print("Hello world")',
+        parent=inline1,
+        code_language=CodeLanguageLabel.PYTHON,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="(to be displayed inline)",
+        parent=inline1,
+    )
+
+    # Second list item with inline group containing formula
+    li2 = doc.add_list_item(text="", parent=lg, enumerated=False)
+    inline2 = doc.add_inline_group(parent=li2)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Here a formula:",
+        parent=inline2,
+    )
+    doc.add_formula(text="E=mc^2", parent=inline2)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="(to be displayed inline)",
+        parent=inline2,
+    )
+
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+
+    doc2 = _deserialize(dt)
+
+    # Verify structure
+    assert len(doc2.groups) >= 1  # At least one list group
+    # Should have at least 2 list items, plus inline content (texts, code, formula)
+    assert len(doc2.texts) >= 2
+
+    # Verify round-trip
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+############################################
+### Feature complete document test-cases ###
+############################################
+
+
 def test_constructed_doc(sample_doc: DoclingDocument):
     doc = sample_doc
 
@@ -783,13 +845,16 @@ def test_constructed_doc(sample_doc: DoclingDocument):
 
     dt2 = _serialize(doc2, add_table_cell_text=True, add_content=True)
 
-    print(f"--------------------------dt:\n\n{dt}\n\n")
-    print(f"--------------------------dt2:\n\n{dt2}\n\n")
+    # if DO_PRINT:
+    # print(f"--------------------------dt:\n\n{dt}\n\n")
+    # print(f"--------------------------dt2:\n\n{dt2}\n\n")
 
     assert dt2 == dt
 
 
-@pytest.mark.xfail(reason="Known feature incompletenes in serialization/deseralization")
+@pytest.mark.xfail(
+    reason="Known feature incompletenes in serialization/deseralization for rich table cells!"
+)
 def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
     doc = rich_table_doc
 
