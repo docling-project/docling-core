@@ -12,7 +12,7 @@ VIZ_TEST_DATA_PATH = Path("./test/data/viz")
 
 def verify(exp_file: Path, actual: PIL.Image.Image):
     if GEN_TEST_DATA:
-        with open(exp_file, "w", encoding="utf-8") as f:
+        with open(exp_file, "w", encoding="utf-8"):
             actual.save(exp_file)
     else:
         with PIL.Image.open(exp_file) as expected:
@@ -72,14 +72,11 @@ def test_table_visualization_for_rows_and_cols():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
-    visualizer = TableVisualizer(
-        params=TableVisualizer.Params(show_cells=False, show_rows=True, show_cols=True)
-    )
+    visualizer = TableVisualizer(params=TableVisualizer.Params(show_cells=False, show_rows=True, show_cols=True))
     viz_pages = visualizer.get_visualization(doc=doc)
 
     verify(
-        exp_file=VIZ_TEST_DATA_PATH
-        / f"{src.stem}_table_viz_wout_lbl_p5_rows_and_cols.png",
+        exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_table_viz_wout_lbl_p5_rows_and_cols.png",
         actual=viz_pages[5],
     )
 
@@ -92,6 +89,6 @@ def test_cross_page_lists_with_branch_nums():
 
     for i in range(2):
         verify(
-            exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_p{i+1}.png",
+            exp_file=VIZ_TEST_DATA_PATH / f"{src.stem}_p{i + 1}.png",
             actual=viz_pages[i + 1],
         )

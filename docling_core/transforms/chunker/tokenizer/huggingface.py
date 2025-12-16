@@ -13,10 +13,7 @@ from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 try:
     from transformers import AutoTokenizer, PreTrainedTokenizerBase
 except ImportError:
-    raise RuntimeError(
-        "Module requires 'chunking' extra; to install, run: "
-        "`pip install 'docling-core[chunking]'`"
-    )
+    raise RuntimeError("Module requires 'chunking' extra; to install, run: `pip install 'docling-core[chunking]'`")
 
 
 class HuggingFaceTokenizer(BaseTokenizer):
@@ -42,10 +39,7 @@ class HuggingFaceTokenizer(BaseTokenizer):
                     data = json.load(f)
                 self.max_tokens = int(data["max_seq_length"])
             except Exception as e:
-                raise RuntimeError(
-                    "max_tokens could not be determined automatically; please set "
-                    "explicitly."
-                ) from e
+                raise RuntimeError("max_tokens could not be determined automatically; please set explicitly.") from e
         return self
 
     def count_tokens(self, text: str):
@@ -65,9 +59,7 @@ class HuggingFaceTokenizer(BaseTokenizer):
     ) -> Self:
         """Create tokenizer from model name."""
         my_kwargs = {
-            "tokenizer": AutoTokenizer.from_pretrained(
-                pretrained_model_name_or_path=model_name, **kwargs
-            ),
+            "tokenizer": AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name, **kwargs),
         }
         if max_tokens is not None:
             my_kwargs["max_tokens"] = max_tokens

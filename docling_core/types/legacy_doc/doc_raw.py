@@ -153,9 +153,7 @@ class Page(AliasModel):
     cells: list[Cell]
     paths: list[Path]
     vertical_lines: Optional[list[VerticalLine]] = Field(..., alias="vertical-lines")
-    horizontal_lines: Optional[list[HorizontalLine]] = Field(
-        ..., alias="horizontal-lines"
-    )
+    horizontal_lines: Optional[list[HorizontalLine]] = Field(..., alias="horizontal-lines")
     ignored_cells: list[IgnoredCell] = Field(..., alias="ignored-cells")
     images: list[Image]
     fonts: dict[str, FontInfo]

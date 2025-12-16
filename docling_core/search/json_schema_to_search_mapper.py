@@ -269,9 +269,7 @@ class JsonSchemaToSearchMapper:
                 if suppress_key in d_ and d_[suppress_key] is True:
                     return {}
                 else:
-                    return {
-                        k: v for k, v in ((k, __suppress(v)) for k, v in d_.items())
-                    }
+                    return {k: v for k, v in ((k, __suppress(v)) for k, v in d_.items())}
             return d_
 
         return __suppress(doc)
@@ -325,12 +323,7 @@ class JsonSchemaToSearchMapper:
                 return [v for v in (__remove(v) for v in d_)]
 
             if isinstance(d_, dict):
-                return {
-                    k: v
-                    for k, v in (
-                        (k, __remove(v)) for k, v in d_.items() if not regx.match(k)
-                    )
-                }
+                return {k: v for k, v in ((k, __remove(v)) for k, v in d_.items() if not regx.match(k))}
 
             return d_
 
@@ -393,11 +386,7 @@ class JsonSchemaToSearchMapper:
                 return [v for v in (_clean(v) for v in d_) if not _empty(v)]
 
             if isinstance(d_, dict):
-                return {
-                    k: v
-                    for k, v in ((k, _clean(v)) for k, v in d_.items())
-                    if not _empty(v)
-                }
+                return {k: v for k, v in ((k, _clean(v)) for k, v in d_.items()) if not _empty(v)}
 
             return d_
 

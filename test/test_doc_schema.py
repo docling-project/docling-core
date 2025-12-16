@@ -44,9 +44,9 @@ def test_ccs_document():
     except ValidationError as e:
         for error in e.errors():
             # print(type(error))
-            assert all(
-                item in error["loc"] for item in ("description", "logs")
-            ), f"Data in file {filename} should fail in logs"
+            assert all(item in error["loc"] for item in ("description", "logs")), (
+                f"Data in file {filename} should fail in logs"
+            )
 
     # check doc-error-2 is invalid for missing page-hashes
     with (
@@ -90,9 +90,7 @@ def test_description_advanced_t():
     # any dictionary is valid, since it is not parametrized
     CCSDocumentDescription(**desc, advanced={"serial": "CXS12345"})
     CCSDocumentDescription(**desc, advanced={0: "CXS12345"})
-    with pytest.raises(
-        ValidationError, match="should be a valid dictionary or instance of BaseModel"
-    ):
+    with pytest.raises(ValidationError, match="should be a valid dictionary or instance of BaseModel"):
         CCSDocumentDescription(**desc, advanced=False)
 
     class MyAdvanced(BaseModel):

@@ -43,9 +43,7 @@ def generate_collection_jsonschema(folder: str):
     """
     for item in MODELS:
         json_schema = generate_json_schema(item)
-        with open(
-            os.path.join(folder, f"{item}.json"), mode="w", encoding="utf8"
-        ) as json_file:
+        with open(os.path.join(folder, f"{item}.json"), mode="w", encoding="utf8") as json_file:
             json.dump(json_schema, json_file, ensure_ascii=False, indent=2)
 
 
@@ -54,10 +52,7 @@ def main() -> None:
     argparser = argparse.ArgumentParser()
     argparser.add_argument(
         "directory",
-        help=(
-            "Directory to generate files. If it exists, any existing content will be"
-            " removed."
-        ),
+        help=("Directory to generate files. If it exists, any existing content will be removed."),
     )
     argparser.add_argument(
         "--clean",

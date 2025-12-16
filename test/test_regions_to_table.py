@@ -67,11 +67,11 @@ def test_regions_to_table_convert():
     assert table_data.table_cells[0].bbox.b == 25.0
 
     assert table_data.table_cells[0].col_span == 2
-    assert table_data.table_cells[0].column_header == True
-    assert table_data.table_cells[1].column_header == True
+    assert table_data.table_cells[0].column_header
+    assert table_data.table_cells[1].column_header
 
-    assert table_data.table_cells[10].row_header == True
-    assert table_data.table_cells[12].row_section == True
+    assert table_data.table_cells[10].row_header
+    assert table_data.table_cells[12].row_section
 
     assert table_data.table_cells[17].bbox.l == 75.0
     assert table_data.table_cells[17].bbox.t == 100.0
