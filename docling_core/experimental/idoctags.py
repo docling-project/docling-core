@@ -1871,6 +1871,8 @@ class IDocTagsDocSerializer(DocSerializer):
             try:
                 my_root = parseString(text_res).documentElement
             except Exception as e:
+                # print(text_res)
+
                 ctx = _xml_error_context(text_res, e)
                 raise ValueError(
                     f"XML pretty-print failed: {e}\n--- XML context ---\n{ctx}"
@@ -2152,6 +2154,9 @@ class IDocTagsDocDeserializer(BaseModel):
                     )
                     for p in prov_list[1:]:
                         item.prov.append(p)
+            elif node.tagName == IDocTagsToken.LIST.value:
+                # Recursively handle nested lists
+                self._parse_list(doc=doc, el=node, parent=group)
 
     # ------------- Floating groups -------------
     def _parse_floating_group(

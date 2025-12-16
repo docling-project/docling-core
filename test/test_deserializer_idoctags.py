@@ -1,3 +1,5 @@
+import pytest
+
 from docling_core.experimental.idoctags import (
     IDocTagsDocDeserializer,
     IDocTagsDocSerializer,
@@ -23,6 +25,7 @@ def _serialize(
     add_content: bool = True,
     add_table_cell_location: bool = False,
     add_table_cell_text: bool = True,
+    xml_compliant: bool = True,
 ) -> str:
     ser = IDocTagsDocSerializer(
         doc=doc,
@@ -31,6 +34,7 @@ def _serialize(
             add_content=add_content,
             add_table_cell_location=add_table_cell_location,
             add_table_cell_text=add_table_cell_text,
+            xml_compliant=xml_compliant,
         ),
     )
     return ser.serialize().text
@@ -535,3 +539,266 @@ def test_roundtrip_complex_table_with_caption_prov():
     assert len(t2.captions) == 1
     cap_item = t2.captions[0].resolve(doc2)
     assert cap_item.label == DocItemLabel.CAPTION and cap_item.text == "Tbl 1"
+
+
+def test_roundtrip_nested_list_unordered_in_unordered():
+    """Test nested unordered list within unordered list."""
+    doc = DoclingDocument(name="t")
+    lg_outer = doc.add_list_group()
+    doc.add_list_item("Outer Item 1", parent=lg_outer, enumerated=False)
+
+    # Create nested list
+    lg_inner = doc.add_list_group(parent=lg_outer)
+    doc.add_list_item("Inner Item 1.1", parent=lg_inner, enumerated=False)
+    doc.add_list_item("Inner Item 1.2", parent=lg_inner, enumerated=False)
+
+    doc.add_list_item("Outer Item 2", parent=lg_outer, enumerated=False)
+
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    # Should have 2 groups (outer and inner)
+    assert len(doc2.groups) == 2
+    # Should have 4 text items total
+    assert len(doc2.texts) == 4
+    # Verify text content
+    text_contents = [it.text for it in doc2.texts]
+    assert "Outer Item 1" in text_contents
+    assert "Inner Item 1.1" in text_contents
+    assert "Inner Item 1.2" in text_contents
+    assert "Outer Item 2" in text_contents
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+def test_roundtrip_nested_list_ordered_in_ordered():
+    """Test nested ordered list within ordered list."""
+    doc = DoclingDocument(name="t")
+    lg_outer = doc.add_list_group()
+    doc.add_list_item("Step 1", parent=lg_outer, enumerated=True)
+
+    # Create nested ordered list
+    lg_inner = doc.add_list_group(parent=lg_outer)
+    doc.add_list_item("Step 1.1", parent=lg_inner, enumerated=True)
+    doc.add_list_item("Step 1.2", parent=lg_inner, enumerated=True)
+
+    doc.add_list_item("Step 2", parent=lg_outer, enumerated=True)
+
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    assert len(doc2.groups) == 2
+    assert len(doc2.texts) == 4
+    text_contents = [it.text for it in doc2.texts]
+    assert "Step 1" in text_contents
+    assert "Step 1.1" in text_contents
+    assert "Step 1.2" in text_contents
+    assert "Step 2" in text_contents
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+def test_roundtrip_nested_list_ordered_in_unordered():
+    """Test nested ordered list within unordered list."""
+    doc = DoclingDocument(name="t")
+    lg_outer = doc.add_list_group()
+    doc.add_list_item("Bullet A", parent=lg_outer, enumerated=False)
+
+    # Create nested ordered list
+    lg_inner = doc.add_list_group(parent=lg_outer)
+    doc.add_list_item("Numbered 1", parent=lg_inner, enumerated=True)
+    doc.add_list_item("Numbered 2", parent=lg_inner, enumerated=True)
+
+    doc.add_list_item("Bullet B", parent=lg_outer, enumerated=False)
+
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    assert len(doc2.groups) == 2
+    assert len(doc2.texts) == 4
+    text_contents = [it.text for it in doc2.texts]
+    assert "Bullet A" in text_contents
+    assert "Numbered 1" in text_contents
+    assert "Numbered 2" in text_contents
+    assert "Bullet B" in text_contents
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+def test_roundtrip_nested_list_unordered_in_ordered():
+    """Test nested unordered list within ordered list."""
+    doc = DoclingDocument(name="t")
+    lg_outer = doc.add_list_group()
+    doc.add_list_item("Step 1", parent=lg_outer, enumerated=True)
+
+    # Create nested unordered list
+    lg_inner = doc.add_list_group(parent=lg_outer)
+    doc.add_list_item("Bullet point", parent=lg_inner, enumerated=False)
+    doc.add_list_item("Another bullet", parent=lg_inner, enumerated=False)
+
+    doc.add_list_item("Step 2", parent=lg_outer, enumerated=True)
+
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    assert len(doc2.groups) == 2
+    assert len(doc2.texts) == 4
+    text_contents = [it.text for it in doc2.texts]
+    assert "Step 1" in text_contents
+    assert "Bullet point" in text_contents
+    assert "Another bullet" in text_contents
+    assert "Step 2" in text_contents
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+def test_roundtrip_deeply_nested_list():
+    """Test deeply nested lists (3 levels)."""
+    doc = DoclingDocument(name="t")
+
+    # Level 1
+    lg_level1 = doc.add_list_group()
+    doc.add_list_item("Level 1 Item 1", parent=lg_level1, enumerated=False)
+
+    # Level 2 (nested in level 1)
+    lg_level2 = doc.add_list_group(parent=lg_level1)
+    doc.add_list_item("Level 2 Item 1", parent=lg_level2, enumerated=False)
+
+    # Level 3 (nested in level 2)
+    lg_level3 = doc.add_list_group(parent=lg_level2)
+    doc.add_list_item("Level 3 Item 1", parent=lg_level3, enumerated=False)
+    doc.add_list_item("Level 3 Item 2", parent=lg_level3, enumerated=False)
+
+    doc.add_list_item("Level 2 Item 2", parent=lg_level2, enumerated=False)
+
+    doc.add_list_item("Level 1 Item 2", parent=lg_level1, enumerated=False)
+
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    # Should have 3 groups (3 levels)
+    assert len(doc2.groups) == 3
+    # Should have 6 text items total
+    assert len(doc2.texts) == 6
+    text_contents = [it.text for it in doc2.texts]
+    assert "Level 1 Item 1" in text_contents
+    assert "Level 2 Item 1" in text_contents
+    assert "Level 3 Item 1" in text_contents
+    assert "Level 3 Item 2" in text_contents
+    assert "Level 2 Item 2" in text_contents
+    assert "Level 1 Item 2" in text_contents
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+def test_roundtrip_multiple_nested_lists_same_level():
+    """Test multiple nested lists at the same level."""
+    doc = DoclingDocument(name="t")
+
+    lg_outer = doc.add_list_group()
+    doc.add_list_item("Item 1", parent=lg_outer, enumerated=False)
+
+    # First nested list
+    lg_inner1 = doc.add_list_group(parent=lg_outer)
+    doc.add_list_item("Nested 1.1", parent=lg_inner1, enumerated=False)
+    doc.add_list_item("Nested 1.2", parent=lg_inner1, enumerated=False)
+
+    doc.add_list_item("Item 2", parent=lg_outer, enumerated=False)
+
+    # Second nested list
+    lg_inner2 = doc.add_list_group(parent=lg_outer)
+    doc.add_list_item("Nested 2.1", parent=lg_inner2, enumerated=False)
+    doc.add_list_item("Nested 2.2", parent=lg_inner2, enumerated=False)
+
+    doc.add_list_item("Item 3", parent=lg_outer, enumerated=False)
+
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    # Should have 3 groups (1 outer, 2 inner)
+    assert len(doc2.groups) == 3
+    # Should have 7 text items total
+    assert len(doc2.texts) == 7
+    text_contents = [it.text for it in doc2.texts]
+    assert "Item 1" in text_contents
+    assert "Nested 1.1" in text_contents
+    assert "Nested 1.2" in text_contents
+    assert "Item 2" in text_contents
+    assert "Nested 2.1" in text_contents
+    assert "Nested 2.2" in text_contents
+    assert "Item 3" in text_contents
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+@pytest.mark.xfail(reason="Known feature incompletenes in serialization/deseralization")
+def test_constructed_doc(sample_doc: DoclingDocument):
+    doc = sample_doc
+
+    dt = _serialize(doc, add_table_cell_text=True, add_content=True)
+
+    doc2 = _deserialize(dt)
+
+    dt2 = _serialize(doc2, add_table_cell_text=True, add_content=True)
+
+    # print(f"--------------------------dt:\n\n{dt}\n\n")
+    # print(f"--------------------------dt2:\n\n{dt2}\n\n")
+
+    assert dt2 == dt
+
+
+@pytest.mark.xfail(reason="Known feature incompletenes in serialization/deseralization")
+def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
+    doc = rich_table_doc
+
+    dt = _serialize(doc, add_table_cell_text=True, add_content=True, xml_compliant=True)
+
+    doc2 = _deserialize(dt)
+
+    dt2 = _serialize(
+        doc2, add_table_cell_text=True, add_content=True, xml_compliant=True
+    )
+
+    assert dt2 == dt
