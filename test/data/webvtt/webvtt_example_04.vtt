@@ -2,6 +2,26 @@ WEBVTT
 
 NOTE Copyright © 2019 World Wide Web Consortium. https://www.w3.org/TR/webvtt1/
 
+STYLE
+::cue {
+    background-image: linear-gradient(to bottom, dimgray, lightgray);
+    color: papayawhip;
+}
+/* Style blocks cannot use blank lines nor "dash dash greater than" */
+
+REGION
+id:editor-comments
+width: 40%
+regionanchor:0%,100%
+viewportanchor:10%,90%
+
+REGION
+id:scroll
+width: 40%
+regionanchor:100%,100%
+viewportanchor:90%,90%
+scroll:up
+
 00:01.000 --> 00:04.000
 Never drink liquid nitrogen.
 

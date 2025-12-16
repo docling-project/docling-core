@@ -1,7 +1,7 @@
 """Models for the Docling's adoption of Web Video Text Tracks format."""
 
-import logging
 import re
+import warnings
 from collections.abc import Iterator
 from enum import Enum
 from functools import total_ordering
@@ -10,9 +10,6 @@ from typing import Annotated, ClassVar, Literal, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.types import StringConstraints
 from typing_extensions import Self, override
-
-_log = logging.getLogger(__name__)
-
 
 _VALID_ENTITIES: set = {"amp", "lt", "gt", "lrm", "rlm", "nbsp"}
 _ENTITY_PATTERN: re.Pattern = re.compile(r"&([a-zA-Z0-9]+);")
@@ -512,6 +509,7 @@ class WebVTTCueBlock(BaseModel):
 class WebVTTFile(BaseModel):
     """A model representing a WebVTT file."""
 
+    _pattern: ClassVar[re.Pattern] = re.compile(r"(?m)^(STYLE|NOTE|REGION)\b[\s\S]*?(?:\n\s*\n|\Z)")
     cue_blocks: list[WebVTTCueBlock]
 
     @staticmethod
@@ -566,8 +564,7 @@ class WebVTTFile(BaseModel):
         body = lines[1] if len(lines) > 1 else ""
 
         # Remove NOTE/STYLE/REGION blocks
-        body = re.sub(r"^(NOTE[^\n]*\n(?:.+\n)*?)\n", "", body, flags=re.MULTILINE)
-        body = re.sub(r"^(STYLE|REGION)(?:.+\n)*?\n", "", body, flags=re.MULTILINE)
+        body = re.sub(cls._pattern, "", body)
 
         # Split into cue blocks
         raw_blocks = re.split(r"\n\s*\n", body.strip())
@@ -576,7 +573,7 @@ class WebVTTFile(BaseModel):
             try:
                 cues.append(WebVTTCueBlock.parse(block))
             except ValueError as e:
-                _log.warning(f"Failed to parse cue block:\n{block}\n{e}")
+                warnings.warn(f"Failed to parse cue block:\n{block}\n{e}", RuntimeWarning)
 
         return cls(cue_blocks=cues)
 
