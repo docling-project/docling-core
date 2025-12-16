@@ -550,6 +550,7 @@ class WebVTTFile(BaseModel):
     _pattern: ClassVar[re.Pattern] = re.compile(
         r"(?m)^(STYLE|NOTE|REGION)\b[\s\S]*?(?:\n\s*\n|\Z)"
     )
+    title: Optional[str] = None
     cue_blocks: list[WebVTTCueBlock]
 
     @staticmethod
@@ -604,6 +605,7 @@ class WebVTTFile(BaseModel):
 
         # Strip "WEBVTT" header line
         lines = raw.split("\n", 1)
+        title = lines[0].removeprefix("WEBVTT").strip() or None
         body = lines[1] if len(lines) > 1 else ""
 
         # Remove NOTE/STYLE/REGION blocks
@@ -620,7 +622,7 @@ class WebVTTFile(BaseModel):
                     f"Failed to parse cue block:\n{block}\n{e}", RuntimeWarning
                 )
 
-        return cls(cue_blocks=cues)
+        return cls(title=title, cue_blocks=cues)
 
     def __iter__(self):
         """Return an iterator over the cue blocks."""
