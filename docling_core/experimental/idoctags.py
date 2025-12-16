@@ -567,6 +567,98 @@ class IDocTagsVocabulary(BaseModel):
         IDocTagsToken.H_THREAD: True,
     }
 
+    # Token to category mapping
+    TOKEN_CATEGORIES: ClassVar[dict[IDocTagsToken, IDocTagsCategory]] = {
+        # Root
+        IDocTagsToken.DOCUMENT: IDocTagsCategory.ROOT,
+        # Metadata
+        IDocTagsToken.HEAD: IDocTagsCategory.METADATA,
+        IDocTagsToken.META: IDocTagsCategory.METADATA,
+        # Special
+        IDocTagsToken.PAGE_BREAK: IDocTagsCategory.SPECIAL,
+        IDocTagsToken.TIME_BREAK: IDocTagsCategory.SPECIAL,
+        # Geometric
+        IDocTagsToken.LOCATION: IDocTagsCategory.GEOMETRIC,
+        # Temporal
+        IDocTagsToken.HOUR: IDocTagsCategory.TEMPORAL,
+        IDocTagsToken.MINUTE: IDocTagsCategory.TEMPORAL,
+        IDocTagsToken.SECOND: IDocTagsCategory.TEMPORAL,
+        IDocTagsToken.CENTISECOND: IDocTagsCategory.TEMPORAL,
+        # Semantic
+        IDocTagsToken.TITLE: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.HEADING: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.TEXT: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.CAPTION: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.FOOTNOTE: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.PAGE_HEADER: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.PAGE_FOOTER: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.WATERMARK: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.PICTURE: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.FORM: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.FORM_ITEM: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.FORM_HEADING: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.FORM_TEXT: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.HINT: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.FORMULA: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.CODE: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.LIST_TEXT: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.CHECKBOX: IDocTagsCategory.SEMANTIC,
+        IDocTagsToken.OTSL: IDocTagsCategory.SEMANTIC,
+        # Grouping
+        IDocTagsToken.SECTION: IDocTagsCategory.GROUPING,
+        IDocTagsToken.LIST: IDocTagsCategory.GROUPING,
+        IDocTagsToken.GROUP: IDocTagsCategory.GROUPING,
+        IDocTagsToken.FLOATING_GROUP: IDocTagsCategory.GROUPING,
+        IDocTagsToken.INLINE: IDocTagsCategory.GROUPING,
+        # Formatting
+        IDocTagsToken.BOLD: IDocTagsCategory.FORMATTING,
+        IDocTagsToken.ITALIC: IDocTagsCategory.FORMATTING,
+        IDocTagsToken.STRIKETHROUGH: IDocTagsCategory.FORMATTING,
+        IDocTagsToken.SUPERSCRIPT: IDocTagsCategory.FORMATTING,
+        IDocTagsToken.SUBSCRIPT: IDocTagsCategory.FORMATTING,
+        IDocTagsToken.RTL: IDocTagsCategory.FORMATTING,
+        IDocTagsToken.BR: IDocTagsCategory.FORMATTING,
+        # Structural
+        IDocTagsToken.FCEL: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.ECEL: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.CHED: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.RHED: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.CORN: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.SROW: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.LCEL: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.UCEL: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.XCEL: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.NL: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.KEY: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.IMPLICIT_KEY: IDocTagsCategory.STRUCTURAL,
+        IDocTagsToken.VALUE: IDocTagsCategory.STRUCTURAL,
+        # Continuation
+        IDocTagsToken.THREAD: IDocTagsCategory.CONTINUATION,
+        IDocTagsToken.H_THREAD: IDocTagsCategory.CONTINUATION,
+        # Content/Binary data
+        IDocTagsToken.BASE64: IDocTagsCategory.BINARY_DATA,
+        IDocTagsToken.URI: IDocTagsCategory.BINARY_DATA,
+        IDocTagsToken.MARKER: IDocTagsCategory.CONTENT,
+        IDocTagsToken.FACETS: IDocTagsCategory.CONTENT,
+    }
+
+    @classmethod
+    def get_category(cls, token: IDocTagsToken) -> IDocTagsCategory:
+        """Get the category for a given IDocTags token.
+
+        Args:
+            token: The IDocTags token to look up.
+
+        Returns:
+            The corresponding IDocTagsCategory for the token.
+
+        Raises:
+            ValueError: If the token is not found in the mapping.
+        """
+        if token not in cls.TOKEN_CATEGORIES:
+            raise ValueError(f"Token '{token}' has no defined category")
+        return cls.TOKEN_CATEGORIES[token]
+
     @classmethod
     def create_closing_token(cls, *, token: str) -> str:
         r"""Create a closing tag from an opening tag string.
