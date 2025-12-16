@@ -52,7 +52,7 @@ def resolve_source_to_stream(
 
     Args:
         source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
-        headers (Dict | None): Optional set of headers to use for fetching
+        headers (Optional[Dict[str, str]]): Optional set of headers to use for fetching
             the remote URL.
 
     Raises:
@@ -149,9 +149,9 @@ def resolve_source_to_path(
 
     Args:
         source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
-        headers (Dict | None): Optional set of headers to use for fetching
+        headers (Optional[Dict[str, str]]): Optional set of headers to use for fetching
             the remote URL.
-        workdir (Path | None): If set, the work directory where the file will
+        workdir (Optional[Path]): If set, the work directory where the file will
             be downloaded, otherwise a temp dir will be used.
 
     Raises:
@@ -178,7 +178,7 @@ def resolve_file_source(
 
     Args:
         source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
-        headers (Dict | None): Optional set of headers to use for fetching
+        headers (Optional[Dict[str, str]]): Optional set of headers to use for fetching
             the remote URL.
 
     Raises:
