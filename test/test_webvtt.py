@@ -275,6 +275,7 @@ def test_webvtt_file() -> None:
     assert len(block.payload) == 1
     assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
     assert block.payload[0].component.text == "Good."
+    assert not vtt.title
 
     with open("./test/data/webvtt/webvtt_example_04.vtt", encoding="utf-8") as f:
         content = f.read()
@@ -290,6 +291,7 @@ def test_webvtt_file() -> None:
         "— You could <b.loud>die</b>.\n"
         "<v John>This is true.</v>\n"
     )
+    assert vtt.title == "Danger of Nitrogen"
 
 
 def test_webvtt_cue_language_span_start_tag():
