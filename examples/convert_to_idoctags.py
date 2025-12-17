@@ -29,7 +29,7 @@ import numpy as np
 
 # In order to download **before** the datasets library, run
 # 
-# HF_HUB_DISABLE_XET=1 hf download --repo-type dataset "docling-project/canva-set-a"
+# HF_HUB_DISABLE_XET=1 hf download --repo-type dataset "{hf-repo-id}"
 #
 
 def update_tokenizer(tokenizer: PreTrainedTokenizerBase, verbose: bool = False) -> PreTrainedTokenizerBase:
