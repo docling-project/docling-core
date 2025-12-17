@@ -5300,7 +5300,7 @@ class DoclingDocument(BaseModel):
             if len(coords) == 4:
                 l, t, r, b = map(float, coords)
                 eps = 1 / 500
-                # Ignore bounding boxes with width or height of <1e-3, including cases where l>r or t>b.
+                # Ignore bounding boxes with width or height of < 0.2% of the image width or height.
                 if r - l < eps or b - t < eps:
                     return None
                 return BoundingBox(l=l / 500, t=t / 500, r=r / 500, b=b / 500)
@@ -5318,13 +5318,12 @@ class DoclingDocument(BaseModel):
             if caption is not None:
                 caption_content = caption.group(1)
                 bbox = extract_bounding_box(caption_content)
-                if bbox is not None:
-                    caption_text = extract_inner_text(caption_content)
-                    caption_item = doc.add_text(
-                        label=DocItemLabel.CAPTION,
-                        text=caption_text,
-                        parent=None,
-                    )
+                caption_text = extract_inner_text(caption_content)
+                caption_item = doc.add_text(
+                    label=DocItemLabel.CAPTION,
+                    text=caption_text,
+                    parent=None,
+                )
             else:
                 caption_item = None
                 bbox = None
@@ -5626,20 +5625,17 @@ class DoclingDocument(BaseModel):
                     common_bbox = extract_bounding_box(content)
                     for item_match in pattern.finditer(content):
                         item_tag = item_match.group("tag")
-                        if common_bbox is not None:
-                            _add_text(
-                                full_chunk=item_match.group(0),
-                                bbox=common_bbox,
-                                pg_width=pg_width,
-                                pg_height=pg_height,
-                                page_no=page_no,
-                                tag_name=item_tag,
-                                doc_label=tag_to_doclabel.get(
-                                    item_tag, DocItemLabel.TEXT
-                                ),
-                                doc=doc,
-                                parent=inline_group,
-                            )
+                        _add_text(
+                            full_chunk=item_match.group(0),
+                            bbox=common_bbox,
+                            pg_width=pg_width,
+                            pg_height=pg_height,
+                            page_no=page_no,
+                            tag_name=item_tag,
+                            doc_label=tag_to_doclabel.get(item_tag, DocItemLabel.TEXT),
+                            doc=doc,
+                            parent=inline_group,
+                        )
 
                 elif tag_name in [DocItemLabel.PICTURE, DocItemLabel.CHART]:
                     caption, caption_bbox = extract_caption(full_chunk)
