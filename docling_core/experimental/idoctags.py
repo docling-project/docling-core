@@ -264,8 +264,8 @@ class IDocTagsToken(str, Enum):
     | 4 | Metadata Containers | `head` | No | No | — | Document-level metadata container. |
     | 5 |  | `meta` | No | No | — | Component-level metadata container. |
     | 6 | Geometric Tokens | `location` | Yes | Yes | `value`, `resolution?` |
-      Geometric coordinate; `value` in [0, res]; optional `resolution`. |
-    | 7 | Temmporal Tokens | `hour` | Yes | Yes | `value` | Hours component; `value` in [0, 99]. |
+        Geometric coordinate; `value` in [0, res]; optional `resolution`. |
+    | 7 | Temporal Tokens | `hour` | Yes | Yes | `value` | Hours component; `value` in [0, 99]. |
     | 8 |  | `minute` | Yes | Yes | `value` | Minutes component; `value` in [0, 59]. |
     | 9 |  | `second` | Yes | Yes | `value` | Seconds component; `value` in [0, 59]. |
     | 10 |  | `centisecond` | Yes | Yes | `value` | Centiseconds component; `value` in [0, 99]. |
@@ -277,62 +277,55 @@ class IDocTagsToken(str, Enum):
     | 16 |  | `page_header` | No | No | — | Page header content. |
     | 17 |  | `page_footer` | No | No | — | Page footer content. |
     | 18 |  | `watermark` | No | No | — | Watermark indicator or content. |
-    | 19 |  | `picture` | No | No | — |
-      Block image/graphic; at most one of `base64`/`uri`; may include `meta`
-      for classification; `otsl` may encode chart data. |
+    | 19 |  | `picture` | No | No | — | Block image/graphic; at most one of
+        `base64`/`uri`; may include `meta` for classification; `otsl` may encode chart data. |
     | 20 |  | `form` | No | No | — | Form structure container. |
     | 21 |  | `formula` | No | No | — | Mathematical expression block. |
     | 22 |  | `code` | No | No | — | Code block. |
-    | 23 |  | `list_text` | No | No | — | List item content. |
-    | 24 |  | `checkbox` | No | Yes | `selected` |
-      Checkbox item; optional `selected` in {`true`,`false`} defaults to
-      `false`. |
-    | 25 |  | `form_item` | No | No | — |
-      Form item; exactly one `key`; one or more of
-      `value`/`checkbox`/`marker`/`hint`. |
-    | 26 |  | `form_heading` | No | Yes | `level?` | Form header; optional `level` (N ≥ 1). |
-    | 27 |  | `form_text` | No | No | — | Form text block. |
-    | 28 |  | `hint` | No | No | — | Hint for a fillable field (format/example/description). |
-    | 29 | Grouping Tokens | `section` | No | Yes | `level` | Document section; `level` (N ≥ 1). |
-    | 30 |  | `list` | No | Yes | `ordered` |
-      List container; optional `ordered` in {`true`,`false`} defaults to
-      `false`. |
-    | 31 |  | `group` | No | Yes | `type?` |
-      Generic group; no `location` tokens; associates composite content
-      (e.g., captions/footnotes). |
-    | 32 |  | `floating_group` | No | Yes | `class` in {`table`,`picture`,`form`,`code`} |
-      Floating container that groups a floating component with its caption,
-      footnotes, and metadata; no `location` tokens. |
-    | 33 | Formatting Tokens | `bold` | No | No | — | Bold text. |
-    | 34 |  | `italic` | No | No | — | Italic text. |
-    | 35 |  | `strikethrough` | No | No | — | Strike-through text. |
-    | 36 |  | `superscript` | No | No | — | Superscript text. |
-    | 37 |  | `subscript` | No | No | — | Subscript text. |
-    | 38 |  | `rtl` | No | No | — | Right-to-left text direction. |
-    | 39 |  | `inline` | No | Yes | `class` in {`formula`,`code`,`picture`} |
-      Inline content; if `class="picture"`, may include one of `base64` or
-      `uri`. |
-    | 40 |  | `br` | Yes | No | — | Line break. |
-    | 41 | Structural Tokens (OTSL) | `otsl` | No | No | — | Table structure container. |
-    | 42 |  | `fcel` | Yes | No | — | New cell with content. |
-    | 43 |  | `ecel` | Yes | No | — | New cell without content. |
-    | 44 |  | `ched` | Yes | No | — | Column header cell. |
-    | 45 |  | `rhed` | Yes | No | — | Row header cell. |
-    | 46 |  | `corn` | Yes | No | — | Corner header cell. |
-    | 47 |  | `srow` | Yes | No | — | Section row separator cell. |
-    | 48 |  | `lcel` | Yes | No | — | Merge with left neighbor (horizontal span). |
-    | 49 |  | `ucel` | Yes | No | — | Merge with upper neighbor (vertical span). |
-    | 50 |  | `xcel` | Yes | No | — | Merge with left and upper neighbors (2D span). |
-    | 51 |  | `nl` | Yes | No | — | New line (row separator). |
-    | 52 | Continuation Tokens | `thread` | Yes | Yes | `id` |
-      Continuation marker for split content; reuse same `id` across parts. |
-    | 53 |  | `h_thread` | Yes | Yes | `id` | Horizontal stitching marker for split tables; reuse same `id`. |
-    | 54 | Binary Data Tokens | `base64` | No | No | — | Embedded binary data (base64). |
-    | 55 |  | `uri` | No | No | — | External resource reference. |
-    | 56 | Content Tokens | `marker` | No | No | — | List/form marker content. |
-    | 57 |  | `facets` | No | No | — | Container for application-specific derived properties. |
-    | 58 | Structural Tokens (Form) | `key` | No | No | — | Form item key (child of `form_item`). |
-    | 59 |  | `value` | No | No | — | Form item value (child of `form_item`). |
+    | 23 |  | `list_text` | No | No | — | Leading text of a list item, including any
+        available marker or checkbox information. |
+    | 24 |  | `form_item` | No | No | — | Form item; exactly one `key`; one or more of
+        `value`/`checkbox`/`marker`/`hint`. |
+    | 25 |  | `form_heading` | No | Yes | `level?` | Form header; optional `level` (N ≥ 1). |
+    | 26 |  | `form_text` | No | No | — | Form text block. |
+    | 27 |  | `hint` | No | No | — | Hint for a fillable field (format/example/description). |
+    | 28 | Grouping Tokens | `group` | No | Yes | `type?` | Generic group; no `location`
+        tokens; associates composite content (e.g., captions/footnotes). |
+    | 39 |  | `list` | No | Yes | `class` in {`unordered`, `ordered`}; defaults to `unordered` | List container. |
+    | 30 |  | `floating_group` | No | Yes | `class` in {`table`,`picture`,`form`,`code`} |
+        Floating container that groups a floating component with its caption, footnotes, and
+        metadata; no `location` tokens. |
+    | 31 | Formatting Tokens | `bold` | No | No | — | Bold text. |
+    | 32 |  | `italic` | No | No | — | Italic text. |
+    | 33 |  | `strikethrough` | No | No | — | Strike-through text. |
+    | 34 |  | `superscript` | No | No | — | Superscript text. |
+    | 35 |  | `subscript` | No | No | — | Subscript text. |
+    | 36 |  | `rtl` | No | No | — | Right-to-left text direction. |
+    | 37 |  | `inline` | No | Yes | `class` in {`formula`,`code`,`picture`} |
+        Inline content; if `class="picture"`, may include one of `base64` or `uri`. |
+    | 38 |  | `br` | Yes | No | — | Line break. |
+    | 39 | Structural Tokens (OTSL) | `otsl` | No | No | — | Table structure container. |
+    | 40 |  | `fcel` | Yes | No | — | New cell with content. |
+    | 41 |  | `ecel` | Yes | No | — | New cell without content. |
+    | 42 |  | `ched` | Yes | No | — | Column header cell. |
+    | 43 |  | `rhed` | Yes | No | — | Row header cell. |
+    | 44 |  | `corn` | Yes | No | — | Corner header cell. |
+    | 45 |  | `srow` | Yes | No | — | Section row separator cell. |
+    | 46 |  | `lcel` | Yes | No | — | Merge with left neighbor (horizontal span). |
+    | 47 |  | `ucel` | Yes | No | — | Merge with upper neighbor (vertical span). |
+    | 48 |  | `xcel` | Yes | No | — | Merge with left and upper neighbors (2D span). |
+    | 49 |  | `nl` | Yes | No | — | New line (row separator). |
+    | 50 | Continuation Tokens | `thread` | Yes | Yes | `id` |
+        Continuation marker for split content; reuse same `id` across parts. |
+    | 51 |  | `h_thread` | Yes | Yes | `id` | Horizontal stitching marker for split tables; reuse same `id`. |
+    | 52 | Binary Data Tokens | `base64` | No | No | — | Embedded binary data (base64). |
+    | 53 |  | `uri` | No | No | — | External resource reference. |
+    | 54 | Content Tokens | `marker` | No | No | — | List/form marker content. |
+    | 55 |  | `checkbox` | Yes | Yes | `class` in {`unselected`, `selected`};
+        defaults to `unselected` | Checkbox status. |
+    | 56 |  | `facets` | No | No | — | Container for application-specific derived properties. |
+    | 57 | Structural Tokens (Form) | `key` | No | No | — | Form item key (child of `form_item`). |
+    | 58 |  | `value` | No | No | — | Form item value (child of `form_item`). |
     """
 
     # Root and metadata
