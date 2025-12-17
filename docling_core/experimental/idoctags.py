@@ -1417,11 +1417,12 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             # For code blocks, preserve language using a lightweight facets marker
             # e.g., <facets>language=python</facets> before the code content.
             if isinstance(item, CodeItem):
-                lang = getattr(item.code_language, "value", str(item.code_language))
-                if lang:
+                # lang = getattr(item.code_language, "value", str(item.code_language))
+                if item.code_language != CodeLanguageLabel.UNKNOWN:
                     parts.append(
                         _wrap(
-                            text=f"language={lang.lower()}",
+                            # text=f"language={lang.lower()}",
+                            text=item.code_language.value,
                             wrap_tag=IDocTagsToken.FACETS.value,
                         )
                     )
@@ -2300,6 +2301,17 @@ class IDocTagsDocDeserializer(BaseModel):
             elif isinstance(node, Element):
                 nm_child = node.tagName
                 if nm_child == IDocTagsToken.FACETS.value:
+                    language_text = self._get_text(node).strip()
+                    try:
+                        lang_label = next(
+                            lbl
+                            for lbl in CodeLanguageLabel
+                            if lbl.value == language_text
+                        )
+                    except StopIteration:
+                        lang_label = CodeLanguageLabel.UNKNOWN
+
+                    """
                     facets_text = self._get_text(node).strip()
                     if "=" in facets_text:
                         key, val = facets_text.split("=", 1)
@@ -2313,6 +2325,7 @@ class IDocTagsDocDeserializer(BaseModel):
                                 )
                             except StopIteration:
                                 lang_label = CodeLanguageLabel.UNKNOWN
+                    """
                     continue
                 if nm_child == IDocTagsToken.LOCATION.value:
                     continue
