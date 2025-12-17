@@ -2246,18 +2246,17 @@ class IDocTagsDocDeserializer(BaseModel):
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
-            return
 
         # Map text-like tokens to text item labels
-        text_label_map = {
-            IDocTagsToken.TEXT.value: DocItemLabel.TEXT,
-            IDocTagsToken.CAPTION.value: DocItemLabel.CAPTION,
-            IDocTagsToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
-            IDocTagsToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
-            IDocTagsToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
-        }
-
-        if nm in text_label_map:
+        elif nm in (
+            text_label_map := {
+                IDocTagsToken.TEXT.value: DocItemLabel.TEXT,
+                IDocTagsToken.CAPTION.value: DocItemLabel.CAPTION,
+                IDocTagsToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
+                IDocTagsToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
+                IDocTagsToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
+            }
+        ):
             item = doc.add_text(
                 label=text_label_map[nm],
                 text=text,
@@ -2267,9 +2266,8 @@ class IDocTagsDocDeserializer(BaseModel):
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
-            return
 
-        if nm == IDocTagsToken.TITLE.value:
+        elif nm == IDocTagsToken.TITLE.value:
             item = doc.add_title(
                 text=text,
                 parent=parent,
@@ -2278,9 +2276,8 @@ class IDocTagsDocDeserializer(BaseModel):
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
-            return
 
-        if nm == IDocTagsToken.FORMULA.value:
+        elif nm == IDocTagsToken.FORMULA.value:
             item = doc.add_formula(
                 text=text,
                 parent=parent,
@@ -2289,7 +2286,6 @@ class IDocTagsDocDeserializer(BaseModel):
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
-            return
 
     def _extract_code_content_and_language(
         self, el: Element
