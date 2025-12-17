@@ -1,3 +1,9 @@
+## [v2.56.0](https://github.com/docling-project/docling-core/releases/tag/v2.56.0) - 2025-12-17
+
+### Feature
+
+* Idoctags serialization and deserialization matching the iso proposal ([#457](https://github.com/docling-project/docling-core/issues/457)) ([`dda9c88`](https://github.com/docling-project/docling-core/commit/dda9c885a30427a72ea005957760f922575018c7))
+
 ## [v2.55.0](https://github.com/docling-project/docling-core/releases/tag/v2.55.0) - 2025-12-10
 
 ### Feature
