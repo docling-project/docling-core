@@ -261,6 +261,21 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         }
         return refs
 
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    def _footnotes_of_some_item(self) -> set[str]:
+        layers = {cl for cl in ContentLayer}  # TODO review
+        refs = {
+            ftn.cref
+            for (item, _) in self.doc.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers=layers,
+            )
+            for ftn in (item.footnotes if isinstance(item, FloatingItem) else [])
+        }
+        return refs
+
     @override
     def get_excluded_refs(self, **kwargs: Any) -> set[str]:
         """References to excluded items."""
@@ -391,6 +406,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             elif isinstance(my_item, TextItem):
                 if my_item.self_ref in self._captions_of_some_item:
                     # those captions will be handled by the floating item holding them
+                    return empty_res
+                elif my_item.self_ref in self._footnotes_of_some_item:
+                    # those footnotes will be handled by the floating item holding them
                     return empty_res
                 else:
                     part = (
@@ -583,6 +601,29 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 if isinstance(it := cap.resolve(self.doc), TextItem)
                 and it.self_ref not in self.get_excluded_refs(**kwargs)
             ]
+            text_res = params.caption_delim.join([r.text for r in results])
+            text_res = self.post_process(text=text_res)
+        else:
+            text_res = ""
+        return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        if DocItemLabel.FOOTNOTE in params.labels:
+            results = [
+                create_ser_result(text=it.text, span_source=it)
+                for ftn in item.footnotes
+                if isinstance(it := ftn.resolve(self.doc), TextItem)
+                and it.self_ref not in self.get_excluded_refs(**kwargs)
+            ]
+            # FIXME: using the caption_delimiter for now ...
             text_res = params.caption_delim.join([r.text for r in results])
             text_res = self.post_process(text=text_res)
         else:

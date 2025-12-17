@@ -255,6 +255,15 @@ class BaseDocSerializer(ABC):
         """Serialize the item's captions."""
         ...
 
+    @abstractmethod
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes."""
+        ...
+
     @deprecated("Use serialize_meta() instead.")
     @abstractmethod
     def serialize_annotations(

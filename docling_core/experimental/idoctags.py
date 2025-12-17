@@ -996,6 +996,7 @@ class IDocTagsParams(CommonParams):
     ysize: int = DOCTAGS_RESOLUTION
     add_location: bool = True
     add_caption: bool = True
+    add_footnote: bool = True
     add_content: bool = True
     add_table_cell_location: bool = False
     add_page_break: bool = True
@@ -1442,6 +1443,12 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 cap_text = _escape_xml_text(cap_text, params.xml_compliant)
                 parts.append(cap_text)
 
+        if params.add_footnote and isinstance(item, FloatingItem):
+            ftn_text = doc_serializer.serialize_footnotes(item=item, **kwargs).text
+            if ftn_text:
+                ftn_text = _escape_xml_text(ftn_text, params.xml_compliant)
+                parts.append(ftn_text)
+
         text_res = "".join(parts)
         if wrap_open_token is not None:
             text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
@@ -1609,9 +1616,17 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
                 text=picture_text, wrap_tag=IDocTagsToken.PICTURE.value
             )
 
+        # Build footnotes (as siblings of the picture within the floating_group)
+        footnote_text = ""
+        if params.add_footnote:
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                footnote_text = ftn_res.text
+                res_parts.append(ftn_res)
+
         # Compose final structure for picture group:
-        # <floating_group class="picture"> [<caption>] <picture>...</picture> </floating_group>
-        composed_inner = f"{caption_text}{picture_text}"
+        # <floating_group class="picture"> [<caption>] <picture>...</picture> [<footnote>...] </floating_group>
+        composed_inner = f"{caption_text}{picture_text}{footnote_text}"
         text_res = ""
         if composed_inner:
             text_res = f"{open_token}{composed_inner}{close_token}"
@@ -1828,7 +1843,15 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                 otsl_payload = _wrap(text=body, wrap_tag=IDocTagsToken.OTSL.value)
                 res_parts.append(create_ser_result(text=body, span_source=item))
 
-        composed_inner = f"{caption_text}{otsl_payload}"
+        # Footnote as sibling of the OTSL payload within the floating group
+        footnote_text = ""
+        if params.add_footnote:
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                footnote_text = ftn_res.text
+                res_parts.append(ftn_res)
+
+        composed_inner = f"{caption_text}{otsl_payload}{footnote_text}"
         text_res = ""
         if composed_inner:
             text_res = f"{open_token}{composed_inner}{close_token}"
@@ -2009,6 +2032,39 @@ class IDocTagsDocSerializer(DocSerializer):
         text_res = "".join([r.text for r in results])
         if text_res:
             text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.CAPTION.value)
+        return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes with IDocTags location tokens."""
+        params = IDocTagsParams(**kwargs)
+        results: list[SerializationResult] = []
+        for footnote in item.footnotes:
+            if footnote.cref not in self.get_excluded_refs(**kwargs):
+                if isinstance(ftn := footnote.resolve(self.doc), TextItem):
+                    location = ""
+                    if params.add_location:
+                        location = _create_location_tokens_for_item(
+                            item=ftn, doc=self.doc
+                        )
+
+                    content = ""
+                    if ftn.text and params.add_content:
+                        content = ftn.text
+
+                    text_res = f"{location}{content}"
+                    if text_res:
+                        text_res = _wrap(
+                            text_res, wrap_tag=IDocTagsToken.FOOTNOTE.value
+                        )
+                        results.append(create_ser_result(text=text_res))
+
+        text_res = "".join([r.text for r in results])
+
         return create_ser_result(text=text_res, span_source=results)
 
     @override
@@ -2453,9 +2509,12 @@ class IDocTagsDocDeserializer(BaseModel):
         self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
     ) -> None:
         caption = self._extract_caption(doc=doc, el=el)
+        footnotes = self._extract_footnotes(doc=doc, el=el)
         otsl_el = self._first_child(el, IDocTagsToken.OTSL.value)
         if otsl_el is None:
-            doc.add_table(data=TableData(), caption=caption, parent=parent)
+            tbl = doc.add_table(data=TableData(), caption=caption, parent=parent)
+            for ftn in footnotes:
+                tbl.footnotes.append(ftn.get_ref())
             return
         # Extract table provenance from <otsl> leading <location/> tokens
         tbl_provs = self._extract_provenance(doc=doc, el=otsl_el)
@@ -2470,12 +2529,15 @@ class IDocTagsDocDeserializer(BaseModel):
         )
         for p in tbl_provs[1:]:
             tbl.prov.append(p)
+        for ftn in footnotes:
+            tbl.footnotes.append(ftn.get_ref())
 
     def _parse_picture_group(
         self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
     ) -> None:
         # Extract caption from the floating group
         caption = self._extract_caption(doc=doc, el=el)
+        footnotes = self._extract_footnotes(doc=doc, el=el)
 
         # Extract provenance from the <picture> block (locations appear inside it)
         prov_list: list[ProvenanceItem] = []
@@ -2491,6 +2553,8 @@ class IDocTagsDocDeserializer(BaseModel):
         )
         for p in prov_list[1:]:
             pic.prov.append(p)
+        for ftn in footnotes:
+            pic.footnotes.append(ftn.get_ref())
 
         # If there is a <picture> child and it contains an <otsl>,
         # parse it as TabularChartMetaField and attach to picture.meta
@@ -2522,6 +2586,28 @@ class IDocTagsDocDeserializer(BaseModel):
         for p in prov_list[1:]:
             item.prov.append(p)
         return item
+
+    def _extract_footnotes(
+        self, *, doc: DoclingDocument, el: Element
+    ) -> list[TextItem]:
+        footnotes: list[TextItem] = []
+        for node in el.childNodes:
+            if (
+                isinstance(node, Element)
+                and node.tagName == IDocTagsToken.FOOTNOTE.value
+            ):
+                text = self._get_text(node).strip()
+                if text:
+                    prov_list = self._extract_provenance(doc=doc, el=node)
+                    item = doc.add_text(
+                        label=DocItemLabel.FOOTNOTE,
+                        text=text,
+                        prov=(prov_list[0] if prov_list else None),
+                    )
+                    for p in prov_list[1:]:
+                        item.prov.append(p)
+                    footnotes.append(item)
+        return footnotes
 
     def _first_child(self, el: Element, tag_name: str) -> Optional[Element]:
         for node in el.childNodes:

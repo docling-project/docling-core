@@ -9,7 +9,10 @@ from docling_core.types.doc import (
     BoundingBox,
     DocItemLabel,
     DoclingDocument,
+    PictureClassificationClass,
+    PictureClassificationData,
     ProvenanceItem,
+    RichTableCell,
     Size,
     TableCell,
     TableData,
@@ -825,6 +828,260 @@ def test_roundtrip_list_item_with_inline_group():
 
     # Verify round-trip
     dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+def test_roundtrip_table_with_caption_and_footnotes():
+    """Test table with caption and multiple footnotes."""
+    doc = DoclingDocument(name="t")
+
+    # Create caption and footnotes
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="Table 1: Sample Data")
+
+    # Create a simple 2x2 table
+    td = TableData(num_rows=0, num_cols=2)
+    td.add_row(["Header 1", "Header 2"])
+    td.add_row(["Data 1", "Data 2"])
+
+    # Add table with caption
+    table = doc.add_table(data=td, caption=cap)
+
+    footnote1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="First footnote")
+    footnote2 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Second footnote")
+    footnote3 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Third footnote")
+
+    # Add footnotes to the table
+    table.footnotes.append(footnote1.get_ref())
+    table.footnotes.append(footnote2.get_ref())
+    table.footnotes.append(footnote3.get_ref())
+
+    # Serialize and deserialize
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt2:", dt2)
+
+    # Verify table structure
+    assert len(doc2.tables) == 1
+    t2 = doc2.tables[0]
+    assert t2.data.num_rows == 2 and t2.data.num_cols == 2
+    grid_texts = [[cell.text for cell in row] for row in t2.data.grid]
+    assert grid_texts == [["Header 1", "Header 2"], ["Data 1", "Data 2"]]
+
+    # Verify caption
+    assert len(t2.captions) == 1
+    cap_item = t2.captions[0].resolve(doc2)
+    assert cap_item.label == DocItemLabel.CAPTION
+    assert cap_item.text == "Table 1: Sample Data"
+
+    # Verify footnotes
+    assert len(t2.footnotes) == 3
+    footnote_texts = [fn.resolve(doc2).text for fn in t2.footnotes]
+    assert footnote_texts == ["First footnote", "Second footnote", "Third footnote"]
+
+    # Verify all footnotes have the correct label
+    for fn_ref in t2.footnotes:
+        fn_item = fn_ref.resolve(doc2)
+        assert fn_item.label == DocItemLabel.FOOTNOTE
+
+    assert dt2 == dt
+
+
+@pytest.mark.xfail(
+    reason="Known feature incompletenes in serialization/deseralization for picture classification!"
+)
+def test_roundtrip_picture_with_classification_caption_and_footnotes():
+    """Test picture with classification, caption, and multiple footnotes."""
+    doc = DoclingDocument(name="t")
+
+    # Create caption and footnotes
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="Figure 1: Sample Image")
+    footnote1 = doc.add_text(
+        label=DocItemLabel.FOOTNOTE, text="Image source: Dataset A"
+    )
+    footnote2 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Resolution: 1024x768")
+
+    # Create classification data
+    classification = PictureClassificationData(
+        provenance="model-v1",
+        predicted_classes=[
+            PictureClassificationClass(class_name="diagram", confidence=0.95),
+            PictureClassificationClass(class_name="chart", confidence=0.05),
+        ],
+    )
+
+    # Add picture with caption and classification
+    picture = doc.add_picture(caption=cap, annotations=[classification])
+
+    # Add footnotes to the picture
+    picture.footnotes.append(footnote1.get_ref())
+    picture.footnotes.append(footnote2.get_ref())
+
+    # Serialize and deserialize
+    dt = _serialize(doc)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    # Verify picture exists
+    assert len(doc2.pictures) == 1
+    pic = doc2.pictures[0]
+
+    # Verify caption
+    assert len(pic.captions) == 1
+    cap_item = pic.captions[0].resolve(doc2)
+    assert cap_item.label == DocItemLabel.CAPTION
+    assert cap_item.text == "Figure 1: Sample Image"
+
+    # Verify footnotes
+    assert len(pic.footnotes) == 2
+    footnote_texts = [fn.resolve(doc2).text for fn in pic.footnotes]
+    assert footnote_texts == ["Image source: Dataset A", "Resolution: 1024x768"]
+
+    # Verify all footnotes have the correct label
+    for fn_ref in pic.footnotes:
+        fn_item = fn_ref.resolve(doc2)
+        assert fn_item.label == DocItemLabel.FOOTNOTE
+
+    # Verify classification data (deprecated field, but should still work)
+    assert len(pic.annotations) >= 1
+    classif = next(
+        (a for a in pic.annotations if isinstance(a, PictureClassificationData)), None
+    )
+    assert classif is not None
+    assert classif.provenance == "model-v1"
+    assert len(classif.predicted_classes) == 2
+    assert classif.predicted_classes[0].class_name == "diagram"
+    assert classif.predicted_classes[0].confidence == 0.95
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2)
+    if DO_PRINT:
+        print("\ndt:", dt)
+        print("\ndt2:", dt2)
+    assert dt2 == dt
+
+
+@pytest.mark.xfail(
+    reason="Known feature incompletenes in serialization/deseralization for rich table cells!"
+)
+def test_roundtrip_table_with_rich_cells():
+    """Test table with RichTableCells containing paragraphs, lists, and nested tables."""
+    doc = DoclingDocument(name="t")
+
+    # Create the main table (3x2 grid)
+    table = doc.add_table(data=TableData(num_rows=3, num_cols=2))
+
+    # Create content for rich cells
+    # Cell (0, 0): Multiple paragraphs
+    para1 = doc.add_text(
+        parent=table, label=DocItemLabel.TEXT, text="First paragraph in cell."
+    )
+    para2 = doc.add_text(
+        parent=table, label=DocItemLabel.TEXT, text="Second paragraph in cell."
+    )
+
+    # Cell (1, 0): A list
+    list_group = doc.add_list_group(parent=table)
+    doc.add_list_item(parent=list_group, text="List item 1", enumerated=False)
+    doc.add_list_item(parent=list_group, text="List item 2", enumerated=False)
+    doc.add_list_item(parent=list_group, text="List item 3", enumerated=False)
+
+    # Cell (2, 1): A nested table
+    nested_table_data = TableData(num_rows=0, num_cols=2)
+    nested_table_data.add_row(["A1", "A2"])
+    nested_table_data.add_row(["B1", "B2"])
+    nested_table = doc.add_table(data=nested_table_data, parent=table)
+
+    # Create the table cells
+    # Row 0: Rich cell with paragraphs in (0,0), simple cell in (0,1)
+    rich_cell_0_0 = RichTableCell(
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        ref=para1.get_ref(),  # Note: In a real scenario, we'd want a group containing both paragraphs
+        text="cell 0,0",
+    )
+    doc.add_table_cell(table_item=table, cell=rich_cell_0_0)
+
+    simple_cell_0_1 = TableCell(
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=1,
+        end_col_offset_idx=1,
+        text="Simple cell 0,1",
+    )
+    doc.add_table_cell(table_item=table, cell=simple_cell_0_1)
+
+    # Row 1: Rich cell with list in (1,0), simple cell in (1,1)
+    rich_cell_1_0 = RichTableCell(
+        start_row_offset_idx=1,
+        end_row_offset_idx=2,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        ref=list_group.get_ref(),
+        text="cell 1,0",
+    )
+    doc.add_table_cell(table_item=table, cell=rich_cell_1_0)
+
+    simple_cell_1_1 = TableCell(
+        start_row_offset_idx=1,
+        end_row_offset_idx=2,
+        start_col_offset_idx=1,
+        end_col_offset_idx=1,
+        text="Simple cell 1,1",
+    )
+    doc.add_table_cell(table_item=table, cell=simple_cell_1_1)
+
+    # Row 2: Simple cell in (2,0), rich cell with nested table in (2,1)
+    simple_cell_2_0 = TableCell(
+        start_row_offset_idx=2,
+        end_row_offset_idx=3,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        text="Simple cell 2,0",
+    )
+    doc.add_table_cell(table_item=table, cell=simple_cell_2_0)
+
+    rich_cell_2_1 = RichTableCell(
+        start_row_offset_idx=2,
+        end_row_offset_idx=3,
+        start_col_offset_idx=1,
+        end_col_offset_idx=1,
+        ref=nested_table.get_ref(),
+        text="cell 2,1",
+    )
+    doc.add_table_cell(table_item=table, cell=rich_cell_2_1)
+
+    # Serialize and deserialize
+    dt = _serialize(doc, add_table_cell_text=True, add_content=True)
+    if DO_PRINT:
+        print("\n", dt)
+    doc2 = _deserialize(dt)
+
+    # Verify main table structure
+    assert len(doc2.tables) >= 1
+    main_table = doc2.tables[0]
+    assert main_table.data.num_rows == 3
+    assert main_table.data.num_cols == 2
+
+    # Verify that we have rich table cells
+    rich_cells = [
+        cell for cell in main_table.data.table_cells if isinstance(cell, RichTableCell)
+    ]
+    assert len(rich_cells) >= 1  # At least one rich cell should be preserved
+
+    # Verify round-trip serialization
+    dt2 = _serialize(doc2, add_table_cell_text=True, add_content=True)
     if DO_PRINT:
         print("\ndt:", dt)
         print("\ndt2:", dt2)
