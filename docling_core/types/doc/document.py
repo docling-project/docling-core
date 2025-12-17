@@ -4409,12 +4409,15 @@ class DoclingDocument(BaseModel):
                 "Start NodeItem must come before or be the same as the end NodeItem in the document structure."
             )
 
-        new_doc = DoclingDocument(name=f"{self.name}- Extracted Range")
-
         ref_items = start_parent.children[start_index:end_index]
         node_items = [ref.resolve(self) for ref in ref_items]
 
-        new_doc.add_node_items(node_items=node_items, doc=self)
+        doc_index = DoclingDocument._DocIndex()
+        for node_item in node_items:
+            doc_index.index(doc=self, root=node_item)
+
+        new_doc = DoclingDocument(name="")
+        new_doc._update_from_index(doc_index)
 
         if delete:
             self.delete_items_range(
@@ -6228,7 +6231,10 @@ class DoclingDocument(BaseModel):
             return getattr(self, key)
 
         def index(
-            self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None
+            self,
+            doc: "DoclingDocument",
+            page_nrs: Optional[set[int]] = None,
+            root: Optional[NodeItem] = None,
         ) -> None:
 
             if page_nrs is not None and (
@@ -6239,15 +6245,24 @@ class DoclingDocument(BaseModel):
                 )
 
             orig_ref_to_new_ref: dict[str, str] = {}
-            page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
+
+            if root:
+                if root.parent:
+                    orig_ref_to_new_ref[root.parent.cref] = "#/body"
+                self._names.append(doc.name + root.self_ref)
+                page_delta = 0
+            else:
+                self._names.append(doc.name)
+                page_delta = (
+                    self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
+                )
 
             if self._body is None:
                 self._body = GroupItem(**doc.body.model_dump(exclude={"children"}))
 
-            self._names.append(doc.name)
-
             # collect items in traversal order
             for item, _ in doc._iterate_items_with_stack(
+                root=root,
                 with_groups=True,
                 traverse_pictures=True,
                 included_content_layers={c for c in ContentLayer},
