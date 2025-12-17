@@ -1,9 +1,20 @@
+"""Test serialization."""
+
+from pathlib import Path
+
 from docling_core.transforms.serializer.doctags import (
     DocTagsDocSerializer,
     DocTagsParams,
 )
+from docling_core.types.doc import DoclingDocument
 from docling_core.types.doc.document import DoclingDocument, TableData
 from docling_core.types.doc.labels import DocItemLabel
+
+from .test_serialization import verify
+
+# ===============================
+# DocTags tests
+# ===============================
 
 
 def serialize_doctags(doc: DoclingDocument, **param_overrides) -> str:
@@ -53,10 +64,10 @@ def test_list_items_not_double_wrapped_when_no_content():
     doc.add_list_item("Item B", parent=lst)
 
     txt = serialize_doctags(doc, add_content=True)
-    print(f"txt with content:\n{txt}")
+    # print(f"txt with content:\n{txt}")
 
     txt = serialize_doctags(doc, add_content=False)
-    print(f"txt without content:\n{txt}")
+    # print(f"txt without content:\n{txt}")
 
     # No nested <list_item><list_item>
     assert "<list_item><list_item>" not in txt
@@ -64,3 +75,38 @@ def test_list_items_not_double_wrapped_when_no_content():
     # Should still have exactly two opening list_item wrappers (for the two items)
     # Note: other occurrences could appear in location tokens etc., so be conservative
     assert txt.count("<list_item>") >= 2
+
+
+def test_doctags_inline_loc_tags():
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".out.dt"), actual=actual)
+
+
+def test_doctags_rich_table(rich_table_doc):
+    exp_file = Path("./test/data/doc/rich_table.out.dt")
+
+    ser = DocTagsDocSerializer(doc=rich_table_doc)
+    actual = ser.serialize().text
+    verify(exp_file=exp_file, actual=actual)
+
+
+def test_doctags_inline_and_formatting():
+    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
+
+
+def test_doctags_meta():
+    src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = DocTagsDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
