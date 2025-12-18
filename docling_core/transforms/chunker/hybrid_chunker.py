@@ -10,6 +10,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
 )
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
+from docling_core.types.doc.document import SectionHeaderItem, TitleItem
 
 try:
     import semchunk
@@ -55,6 +56,7 @@ class HybridChunker(BaseChunker):
         max_tokens: The maximum number of tokens per chunk. If not set, limit is
             resolved from the tokenizer
         merge_peers: Whether to merge undersized chunks sharing same relevant metadata
+        always_emit_headings: Whether to emit headings even for empty sections
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -63,6 +65,7 @@ class HybridChunker(BaseChunker):
     merge_peers: bool = True
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
+    always_emit_headings: bool = False
 
     @model_validator(mode="before")
     @classmethod
@@ -110,7 +113,10 @@ class HybridChunker(BaseChunker):
     @computed_field  # type: ignore[misc]
     @cached_property
     def _inner_chunker(self) -> HierarchicalChunker:
-        return HierarchicalChunker(serializer_provider=self.serializer_provider)
+        return HierarchicalChunker(
+            serializer_provider=self.serializer_provider,
+            always_emit_headings=self.always_emit_headings,
+        )
 
     def _count_text_tokens(self, text: Optional[Union[str, list[str]]]):
         if text is None:
@@ -162,6 +168,7 @@ class HybridChunker(BaseChunker):
                     res_text
                     for doc_item in doc_items
                     if (res_text := doc_serializer.serialize(item=doc_item).text)
+                    and not isinstance(doc_item, (TitleItem, SectionHeaderItem))
                 ]
             )
         )

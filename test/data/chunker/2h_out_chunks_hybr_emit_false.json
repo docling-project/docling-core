@@ -1,0 +1,27 @@
+{
+    "root": [
+        {
+            "text": "Foo",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/8",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": []
+                    }
+                ],
+                "headings": [
+                    "Section 3",
+                    "Section 3.1"
+                ]
+            }
+        }
+    ]
+}
