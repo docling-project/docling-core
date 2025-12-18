@@ -1,13 +1,16 @@
 import json
+from dataclasses import dataclass
 
 import pytest
 import tiktoken
 from transformers import AutoTokenizer
 
+from docling_core.transforms.chunker.base import BaseChunker
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
     DocChunk,
+    HierarchicalChunker,
 )
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
@@ -15,6 +18,7 @@ from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
 from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -377,3 +381,56 @@ def test_chunk_explicit():
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
     )
+
+
+def test_shadowed_headings_wout_content():
+
+    @dataclass
+    class Setup:
+        exp: str  # expected output file path
+        chunker: BaseChunker
+
+    setups = [
+        Setup(
+            exp="test/data/chunker/2h_out_chunks_hier_emit_false.json",
+            chunker=HierarchicalChunker(always_emit_headings=False),
+        ),
+        Setup(
+            exp="test/data/chunker/2h_out_chunks_hier_emit_true.json",
+            chunker=HierarchicalChunker(always_emit_headings=True),
+        ),
+        Setup(
+            exp="test/data/chunker/2h_out_chunks_hybr_emit_false.json",
+            chunker=HybridChunker(always_emit_headings=False),
+        ),
+        Setup(
+            exp="test/data/chunker/2h_out_chunks_hybr_emit_true.json",
+            chunker=HybridChunker(always_emit_headings=True),
+        ),
+    ]
+
+    # prepare document with different types of empty "sections" and headings shadowing each other
+    doc = DoclingDocument(name="")
+    doc.add_heading(text="Section 1", level=1)
+    doc.add_heading(text="Section 1.1", level=2)
+    doc.add_heading(text="Section 1.2", level=2)
+    doc.add_heading(text="Section 2", level=1)
+    doc.add_heading(text="Section 2.1", level=2)
+    doc.add_heading(text="Section 2.1.1", level=3)
+    doc.add_heading(text="Section 3", level=1)
+    doc.add_heading(text="Section 3.1", level=2)
+    doc.add_text(text="Foo", label=DocItemLabel.TEXT)
+    doc.add_heading(text="Section 4", level=1)
+    doc.add_heading(text="Section 4.1", level=2)
+
+    for setup in setups:
+        chunker = setup.chunker
+        chunk_iter = chunker.chunk(dl_doc=doc)
+        chunks = list(chunk_iter)
+        act_data = dict(
+            root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+        )
+        _process(
+            act_data=act_data,
+            exp_path_str=setup.exp,
+        )

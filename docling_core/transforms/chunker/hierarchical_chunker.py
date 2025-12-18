@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterator, Optional
+from typing import Any, Iterator, Optional, Union
 
 from pydantic import ConfigDict, Field
 from typing_extensions import Annotated, override
@@ -121,12 +121,14 @@ class HierarchicalChunker(BaseChunker):
         code_chunking_strategy (CodeChunkingStrategy): Optional strategy for chunking code items.
             If provided, code items will be processed using this strategy instead of being
             treated as regular text. Defaults to None (no special code processing).
+        always_emit_headings (bool): Whether to emit headings even for empty sections. Defaults to False.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
     code_chunking_strategy: Optional[BaseCodeChunkingStrategy] = Field(default=None)
+    always_emit_headings: bool = False
 
     # deprecated:
     merge_list_items: Annotated[bool, Field(deprecated=True)] = True
@@ -145,7 +147,8 @@ class HierarchicalChunker(BaseChunker):
             Iterator[Chunk]: iterator over extracted chunks
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
-        heading_by_level: dict[LevelNumber, str] = {}
+        heading_by_level: dict[LevelNumber, Union[TitleItem, SectionHeaderItem]] = {}
+        heading_emitted: set[str] = set()
         visited: set[str] = set()
         ser_res = create_ser_result()
         excluded_refs = my_doc_ser.get_excluded_refs(**kwargs)
@@ -154,12 +157,34 @@ class HierarchicalChunker(BaseChunker):
                 continue
             if isinstance(item, (TitleItem, SectionHeaderItem)):
                 level = item.level if isinstance(item, SectionHeaderItem) else 0
-                heading_by_level[level] = item.text
 
-                # remove headings of higher level as they just went out of scope
-                keys_to_del = [k for k in heading_by_level if k > level]
+                # prepare to remove shadowed headings as they just went out of scope
+                sorted_keys = sorted(heading_by_level)
+                keys_to_del = [k for k in sorted_keys if k >= level]
+
+                # before removing, check if headings need to be emitted
+                if (
+                    keys_to_del
+                    and self.always_emit_headings
+                    and (leaf_ref := heading_by_level[sorted_keys[-1]].self_ref)
+                    not in heading_emitted
+                ):
+                    yield DocChunk(
+                        text="",
+                        meta=DocMeta(
+                            doc_items=[heading_by_level[k] for k in sorted_keys],
+                            headings=[heading_by_level[k].text for k in sorted_keys],
+                        ),
+                    )
+                    heading_emitted.add(leaf_ref)
+
+                # actually remove shadowed headings
                 for k in keys_to_del:
                     heading_by_level.pop(k, None)
+
+                # capture current heading
+                heading_by_level[level] = item
+
                 continue
             elif (
                 isinstance(item, (ListGroup, InlineGroup, DocItem))
@@ -184,13 +209,35 @@ class HierarchicalChunker(BaseChunker):
             if not ser_res.text:
                 continue
             if doc_items := [u.item for u in ser_res.spans]:
+                sorted_keys = sorted(heading_by_level)
+                headings = [heading_by_level[k].text for k in sorted_keys] or None
                 c = DocChunk(
                     text=ser_res.text,
                     meta=DocMeta(
                         doc_items=doc_items,
-                        headings=[heading_by_level[k] for k in sorted(heading_by_level)]
-                        or None,
+                        headings=headings,
                         origin=dl_doc.origin,
                     ),
                 )
+                if self.always_emit_headings and headings:
+                    leaf_ref = heading_by_level[sorted_keys[-1]].self_ref
+                    heading_emitted.add(leaf_ref)
                 yield c
+
+        # if applicable, emit any remaining headings
+        if (
+            self.always_emit_headings
+            and (sorted_keys := sorted(heading_by_level))
+            and (
+                (leaf_ref := heading_by_level[sorted_keys[-1]].self_ref)
+                not in heading_emitted
+            )
+        ):
+            yield DocChunk(
+                text="",
+                meta=DocMeta(
+                    doc_items=[heading_by_level[k] for k in sorted_keys],
+                    headings=[heading_by_level[k].text for k in sorted_keys],
+                ),
+            )
+            heading_emitted.add(leaf_ref)
