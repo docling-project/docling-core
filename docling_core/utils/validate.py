@@ -32,10 +32,11 @@ def parse_arguments():
 
 def run():
     """Run the validation of a file containing a Document."""
+    from pathlib import Path
+
     file_format, input_file = parse_arguments()
 
-    with open(input_file, "r", encoding="utf-8") as fd:
-        file_ = json.load(fd)
+    file_ = json.loads(Path(input_file).read_text(encoding="utf-8"))
 
     result = (False, "Empty result")
 

@@ -5,7 +5,7 @@ import itertools
 import re
 import unicodedata
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 
@@ -13,7 +13,25 @@ if TYPE_CHECKING:
     from docling_core.types.doc.document import TableCell, TableData
 
 
-def relative_path(src: Path, target: Path) -> Path:
+def is_remote_path(p: Any) -> bool:
+    """Check if a path is a remote/cloud path (e.g., S3, GCS, Azure).
+
+    Works with UPath objects from universal-pathlib. Local paths return False.
+
+    Args:
+        p: A path object (Path, UPath, or similar)
+
+    Returns:
+        bool: True if the path is a remote/cloud path, False otherwise.
+    """
+    # UPath objects have a 'protocol' attribute
+    protocol = getattr(p, "protocol", None)
+    if protocol is not None and protocol not in ("file", ""):
+        return True
+    return False
+
+
+def relative_path(src: Union[str, Path], target: Union[str, Path]) -> Path:
     """Compute the relative path from `src` to `target`.
 
     Args:
@@ -25,9 +43,19 @@ def relative_path(src: Path, target: Path) -> Path:
 
     Raises:
         ValueError: If either `src` or `target` is not an absolute path.
+
+    Note:
+        For remote paths (UPath with non-file protocols), this function cannot
+        compute relative paths. Use is_remote_path() to check before calling.
     """
-    src = Path(src).resolve()
-    target = Path(target).resolve()
+    # Convert to Path only if string, otherwise keep original type
+    if isinstance(src, str):
+        src = Path(src)
+    if isinstance(target, str):
+        target = Path(target)
+
+    src = src.resolve()
+    target = target.resolve()
 
     # Ensure both paths are absolute
     if not src.is_absolute():
