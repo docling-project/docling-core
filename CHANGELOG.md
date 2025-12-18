@@ -1,3 +1,9 @@
+## [v2.57.0](https://github.com/docling-project/docling-core/releases/tag/v2.57.0) - 2025-12-18
+
+### Feature
+
+* Enable heading-only chunks for empty-section headings ([#461](https://github.com/docling-project/docling-core/issues/461)) ([`8b082e9`](https://github.com/docling-project/docling-core/commit/8b082e9b9d8bf7ff82bd0a32f39325052d958f9a))
+
 ## [v2.56.0](https://github.com/docling-project/docling-core/releases/tag/v2.56.0) - 2025-12-17
 
 ### Feature
