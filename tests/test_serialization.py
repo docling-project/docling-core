@@ -23,6 +23,7 @@ from docling_core.transforms.serializer.html import (
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import (
     CaptionPlacement,
+    ImageAltTextMode,
     MarkdownDocSerializer,
     MarkdownParams,
     MarkdownPictureSerializer,
@@ -38,6 +39,7 @@ from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
     DescriptionAnnotation,
+    DescriptionMetaField,
     EntitiesMetaField,
     EntityMention,
     Formatting,
@@ -1078,6 +1080,178 @@ def test_md_traverse_pictures():
     assert "Text after picture" in result_with_traverse
     assert "Text inside picture" in result_with_traverse
     assert "<!-- image -->" in result_with_traverse
+
+
+def test_md_image_alt_mode_static():
+    doc = DoclingDocument(name="test_alt_static")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="My figure caption")
+    picture = doc.add_picture(
+        caption=caption,
+        image=ImageRef.from_pil(image=Image.new("RGB", (10, 10)), dpi=72),
+    )
+    picture.meta = PictureMeta(description=DescriptionMetaField(text="AI-generated description of the image"))
+
+    result = (
+        MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                image_mode=ImageRefMode.EMBEDDED,
+                image_alt_mode=ImageAltTextMode.STATIC,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "![Image](data:image/png;base64," in result
+    assert "![AI-generated description" not in result
+    assert "![My figure caption]" not in result
+
+
+def test_md_image_alt_mode_description():
+    doc = DoclingDocument(name="test_alt_description")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="My figure caption")
+    picture = doc.add_picture(
+        caption=caption,
+        image=ImageRef.from_pil(image=Image.new("RGB", (10, 10)), dpi=72),
+    )
+    picture.meta = PictureMeta(description=DescriptionMetaField(text="AI-generated description of the image"))
+
+    result = (
+        MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                image_mode=ImageRefMode.EMBEDDED,
+                image_alt_mode=ImageAltTextMode.DESCRIPTION,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "![AI-generated description of the image](data:image/png;base64," in result
+    assert "![Image](" not in result
+
+
+def test_md_image_alt_mode_caption():
+    doc = DoclingDocument(name="test_alt_caption")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="My figure caption")
+    picture = doc.add_picture(
+        caption=caption,
+        image=ImageRef.from_pil(image=Image.new("RGB", (10, 10)), dpi=72),
+    )
+    picture.meta = PictureMeta(description=DescriptionMetaField(text="AI-generated description of the image"))
+
+    result = (
+        MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                image_mode=ImageRefMode.EMBEDDED,
+                image_alt_mode=ImageAltTextMode.CAPTION,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "![My figure caption](data:image/png;base64," in result
+    assert "![Image](" not in result
+
+
+def test_md_image_alt_mode_description_fallback():
+    doc = DoclingDocument(name="test_alt_fallback")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="My figure caption")
+    doc.add_picture(
+        caption=caption,
+        image=ImageRef.from_pil(image=Image.new("RGB", (10, 10)), dpi=72),
+    )
+
+    result = (
+        MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                image_mode=ImageRefMode.EMBEDDED,
+                image_alt_mode=ImageAltTextMode.DESCRIPTION,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "![Image](data:image/png;base64," in result
+
+
+def test_md_image_alt_mode_caption_fallback():
+    doc = DoclingDocument(name="test_alt_caption_fallback")
+    doc.add_picture(image=ImageRef.from_pil(image=Image.new("RGB", (10, 10)), dpi=72))
+
+    result = (
+        MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                image_mode=ImageRefMode.EMBEDDED,
+                image_alt_mode=ImageAltTextMode.CAPTION,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "![Image](data:image/png;base64," in result
+
+
+def test_md_image_alt_mode_with_embedded():
+    doc = DoclingDocument(name="test_alt_embedded")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Embedded figure")
+    picture = doc.add_picture(
+        caption=caption,
+        image=ImageRef.from_pil(image=Image.new("RGB", (10, 10)), dpi=72),
+    )
+    picture.meta = PictureMeta(description=DescriptionMetaField(text="Description for embedded image"))
+
+    result = (
+        MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                image_mode=ImageRefMode.EMBEDDED,
+                image_alt_mode=ImageAltTextMode.DESCRIPTION,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "![Description for embedded image](data:image/png;base64," in result
+
+
+def test_md_image_alt_mode_with_referenced():
+    doc = DoclingDocument(name="test_alt_referenced")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Referenced figure")
+    picture = doc.add_picture(
+        caption=caption,
+        image=ImageRef(
+            uri="images/figure1.png",
+            mimetype="image/png",
+            dpi=72,
+            size=Size(width=100, height=100),
+        ),
+    )
+    picture.meta = PictureMeta(description=DescriptionMetaField(text="Description for referenced image"))
+
+    result = (
+        MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(
+                image_mode=ImageRefMode.REFERENCED,
+                image_alt_mode=ImageAltTextMode.DESCRIPTION,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "![Description for referenced image](images" in result
+    assert "figure1.png)" in result
 
 
 def test_md_deep_section_headers_stay_headings():
