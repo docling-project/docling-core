@@ -175,12 +175,20 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
                 # wrap with outer marker (if applicable)
                 if params.ensure_valid_list_item_marker and not case_already_valid:
-                    assert item.parent and isinstance(
-                        (list_group := item.parent.resolve(doc)), ListGroup
-                    )
-                    if list_group.first_item_is_enumerated(doc) and (
-                        params.orig_list_item_marker_mode != OrigListItemMarkerMode.AUTO
-                        or not item.marker
+                    list_group: Optional[ListGroup] = None
+                    if item.parent is not None:
+                        parent_item = item.parent.resolve(doc)
+                        if isinstance(parent_item, ListGroup):
+                            list_group = parent_item
+
+                    if (
+                        list_group is not None
+                        and list_group.first_item_is_enumerated(doc)
+                        and (
+                            params.orig_list_item_marker_mode
+                            != OrigListItemMarkerMode.AUTO
+                            or not item.marker
+                        )
                     ):
                         pos = -1
                         for i, child in enumerate(list_group.children):
