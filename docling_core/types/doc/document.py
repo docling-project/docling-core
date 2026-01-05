@@ -71,7 +71,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.8.0"
+CURRENT_VERSION: Final = "1.9.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -1535,6 +1535,9 @@ class DocItem(
 
     label: DocItemLabel
     prov: List[ProvenanceItem] = []
+    comments: List["RefItem"] = (
+        []
+    )  # References to comment items annotating this content
 
     def get_location_tokens(
         self,
@@ -2928,6 +2931,14 @@ class DoclingDocument(BaseModel):
         lookup: dict[str, dict[int, int]],
     ):
         """Update breadth first with lookup."""
+        # Update the comments references on any DocItem
+        if isinstance(node, DocItem):
+            node.comments = self._update_refitems_with_lookup(
+                ref_items=node.comments,
+                refs_to_be_deleted=refs_to_be_deleted,
+                lookup=lookup,
+            )
+
         # Update the captions, references and footnote references
         if isinstance(node, FloatingItem):
             node.captions = self._update_refitems_with_lookup(
@@ -6136,8 +6147,8 @@ class DoclingDocument(BaseModel):
         if (
             doc_match is None
             or sdk_match is None
-            or doc_match["major"] != sdk_match["major"]
-            or doc_match["minor"] > sdk_match["minor"]
+            or int(doc_match["major"]) != int(sdk_match["major"])
+            or int(doc_match["minor"]) > int(sdk_match["minor"])
         ):
             raise ValueError(
                 f"Doc version {v} incompatible with SDK schema version {CURRENT_VERSION}"

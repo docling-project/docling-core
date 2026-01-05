@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "name": "Untitled 1",
   "furniture": {
     "self_ref": "#/furniture",
@@ -345,6 +345,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "item of leading list",
       "text": "item of leading list",
       "enumerated": false,
@@ -366,6 +367,7 @@
       "content_layer": "body",
       "label": "title",
       "prov": [],
+      "comments": [],
       "orig": "Title of the Document",
       "text": "Title of the Document"
     },
@@ -378,6 +380,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "Author 1\nAffiliation 1",
       "text": "Author 1\nAffiliation 1"
     },
@@ -390,6 +393,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "Author 2\nAffiliation 2",
       "text": "Author 2\nAffiliation 2"
     },
@@ -402,6 +406,7 @@
       "content_layer": "body",
       "label": "caption",
       "prov": [],
+      "comments": [],
       "orig": "This is the caption of table 1.",
       "text": "This is the caption of table 1."
     },
@@ -414,6 +419,7 @@
       "content_layer": "body",
       "label": "caption",
       "prov": [],
+      "comments": [],
       "orig": "This is the caption of figure 1.",
       "text": "This is the caption of figure 1."
     },
@@ -426,6 +432,7 @@
       "content_layer": "body",
       "label": "caption",
       "prov": [],
+      "comments": [],
       "orig": "This is the caption of figure 2.",
       "text": "This is the caption of figure 2."
     },
@@ -438,6 +445,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "item 1 of list",
       "text": "item 1 of list",
       "enumerated": false,
@@ -452,6 +460,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "item 1 of list after empty list",
       "text": "item 1 of list after empty list",
       "enumerated": false,
@@ -466,6 +475,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "item 2 of list after empty list",
       "text": "item 2 of list after empty list",
       "enumerated": false,
@@ -480,6 +490,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "item 1 of neighboring list",
       "text": "item 1 of neighboring list",
       "enumerated": false,
@@ -498,6 +509,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "item 2 of neighboring list",
       "text": "item 2 of neighboring list",
       "enumerated": false,
@@ -512,6 +524,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "item 1 of sub list",
       "text": "item 1 of sub list",
       "enumerated": false,
@@ -530,6 +543,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "",
       "text": "",
       "enumerated": false,
@@ -544,6 +558,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "Here a code snippet:",
       "text": "Here a code snippet:"
     },
@@ -556,6 +571,7 @@
       "content_layer": "body",
       "label": "code",
       "prov": [],
+      "comments": [],
       "orig": "print(\"Hello world\")",
       "text": "print(\"Hello world\")",
       "captions": [],
@@ -572,6 +588,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "(to be displayed inline)",
       "text": "(to be displayed inline)"
     },
@@ -588,6 +605,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "",
       "text": "",
       "enumerated": false,
@@ -602,6 +620,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "Here a formula:",
       "text": "Here a formula:"
     },
@@ -614,6 +633,7 @@
       "content_layer": "body",
       "label": "formula",
       "prov": [],
+      "comments": [],
       "orig": "E=mc^2",
       "text": "E=mc^2"
     },
@@ -626,6 +646,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "(to be displayed inline)",
       "text": "(to be displayed inline)"
     },
@@ -638,6 +659,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "Here a code block:",
       "text": "Here a code block:"
     },
@@ -650,6 +672,7 @@
       "content_layer": "body",
       "label": "code",
       "prov": [],
+      "comments": [],
       "orig": "print(\"Hello world\")",
       "text": "print(\"Hello world\")",
       "captions": [],
@@ -666,6 +689,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "Here a formula block:",
       "text": "Here a formula block:"
     },
@@ -678,6 +702,7 @@
       "content_layer": "body",
       "label": "formula",
       "prov": [],
+      "comments": [],
       "orig": "E=mc^2",
       "text": "E=mc^2"
     },
@@ -690,6 +715,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "Some formatting chops:",
       "text": "Some formatting chops:"
     },
@@ -702,6 +728,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "bold",
       "text": "bold",
       "formatting": {
@@ -721,6 +748,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "italic",
       "text": "italic",
       "formatting": {
@@ -740,6 +768,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "underline",
       "text": "underline",
       "formatting": {
@@ -759,6 +788,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "strikethrough",
       "text": "strikethrough",
       "formatting": {
@@ -778,6 +808,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "subscript",
       "text": "subscript",
       "formatting": {
@@ -797,6 +828,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "superscript",
       "text": "superscript",
       "formatting": {
@@ -816,6 +848,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "hyperlink",
       "text": "hyperlink",
       "hyperlink": "."
@@ -829,6 +862,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "&",
       "text": "&"
     },
@@ -841,6 +875,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "everything at the same time.",
       "text": "everything at the same time.",
       "formatting": {
@@ -861,6 +896,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 1 in A",
       "text": "Item 1 in A",
       "enumerated": true,
@@ -875,6 +911,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 2 in A",
       "text": "Item 2 in A",
       "enumerated": true,
@@ -893,6 +930,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 3 in A",
       "text": "Item 3 in A",
       "enumerated": true,
@@ -907,6 +945,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 1 in B",
       "text": "Item 1 in B",
       "enumerated": true,
@@ -925,6 +964,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 2 in B",
       "text": "Item 2 in B",
       "enumerated": true,
@@ -939,6 +979,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 1 in C",
       "text": "Item 1 in C",
       "enumerated": true,
@@ -953,6 +994,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 2 in C",
       "text": "Item 2 in C",
       "enumerated": true,
@@ -967,6 +1009,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 3 in B",
       "text": "Item 3 in B",
       "enumerated": true,
@@ -981,6 +1024,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "Item 4 in A",
       "text": "Item 4 in A",
       "enumerated": true,
@@ -995,6 +1039,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "List item without parent list group",
       "text": "List item without parent list group",
       "enumerated": false,
@@ -1009,6 +1054,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "The end.",
       "text": "The end."
     },
@@ -1021,6 +1067,7 @@
       "content_layer": "body",
       "label": "list_item",
       "prov": [],
+      "comments": [],
       "orig": "child text appended at body",
       "text": "child text appended at body",
       "enumerated": false,
@@ -1035,6 +1082,7 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
+      "comments": [],
       "orig": "new child",
       "text": "new child"
     }
@@ -1049,6 +1097,7 @@
       "content_layer": "body",
       "label": "picture",
       "prov": [],
+      "comments": [],
       "captions": [
         {
           "$ref": "#/texts/5"
@@ -1069,6 +1118,7 @@
       "content_layer": "body",
       "label": "table",
       "prov": [],
+      "comments": [],
       "captions": [
         {
           "$ref": "#/texts/4"
@@ -1311,6 +1361,7 @@
       "content_layer": "body",
       "label": "key_value_region",
       "prov": [],
+      "comments": [],
       "captions": [],
       "references": [],
       "footnotes": [],
@@ -1354,6 +1405,7 @@
       "content_layer": "body",
       "label": "form",
       "prov": [],
+      "comments": [],
       "captions": [],
       "references": [],
       "footnotes": [],

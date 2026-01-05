@@ -1980,3 +1980,167 @@ def test_meta_migration_warnings():
         _ = doc.pictures[0].annotations
     with pytest.warns(DeprecationWarning):
         _ = doc.tables[0].annotations
+
+
+def test_docitem_comments_field():
+    """Test that DocItem has a comments field that can hold RefItem references."""
+    doc = DoclingDocument(name="test_comments")
+
+    # Add a paragraph (which is a DocItem)
+    paragraph = doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="This paragraph has a comment attached.",
+    )
+
+    # Add a comment group (simulating Word document comments)
+    comment_group = doc.add_group(
+        label=GroupLabel.COMMENT_SECTION,
+        name="comment-0",
+        content_layer=ContentLayer.NOTES,
+    )
+
+    # Add comment text inside the group
+    comment_text = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="[John Reviewer]: This is a reviewer comment.",
+        parent=comment_group,
+        content_layer=ContentLayer.NOTES,
+    )
+
+    # Link the comment to the paragraph
+    paragraph.comments.append(comment_group.get_ref())
+
+    # Verify the comment link exists
+    assert len(paragraph.comments) == 1
+    assert paragraph.comments[0].cref == comment_group.self_ref
+
+    # Resolve the comment reference
+    resolved_comment = paragraph.comments[0].resolve(doc)
+    assert resolved_comment == comment_group
+    assert resolved_comment.name == "comment-0"
+    assert resolved_comment.label == GroupLabel.COMMENT_SECTION
+
+
+def test_docitem_comments_multiple():
+    """Test that a DocItem can have multiple comments attached."""
+    doc = DoclingDocument(name="test_multiple_comments")
+
+    paragraph = doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="This paragraph has multiple comments.",
+    )
+
+    # Add multiple comment groups
+    comment1 = doc.add_group(
+        label=GroupLabel.COMMENT_SECTION,
+        name="comment-0",
+        content_layer=ContentLayer.NOTES,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="First reviewer comment.",
+        parent=comment1,
+        content_layer=ContentLayer.NOTES,
+    )
+
+    comment2 = doc.add_group(
+        label=GroupLabel.COMMENT_SECTION,
+        name="comment-1",
+        content_layer=ContentLayer.NOTES,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Second reviewer comment.",
+        parent=comment2,
+        content_layer=ContentLayer.NOTES,
+    )
+
+    # Link both comments to the paragraph
+    paragraph.comments.append(comment1.get_ref())
+    paragraph.comments.append(comment2.get_ref())
+
+    # Verify both comment links
+    assert len(paragraph.comments) == 2
+    resolved_comments = [ref.resolve(doc) for ref in paragraph.comments]
+    assert resolved_comments[0].name == "comment-0"
+    assert resolved_comments[1].name == "comment-1"
+
+
+def test_docitem_comments_serialization():
+    """Test that comments field is properly serialized and deserialized."""
+    doc = DoclingDocument(name="test_comments_serialization")
+
+    paragraph = doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="Paragraph with comment.",
+    )
+
+    comment_group = doc.add_group(
+        label=GroupLabel.COMMENT_SECTION,
+        name="comment-0",
+        content_layer=ContentLayer.NOTES,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Comment text.",
+        parent=comment_group,
+        content_layer=ContentLayer.NOTES,
+    )
+
+    paragraph.comments.append(comment_group.get_ref())
+
+    # Serialize to JSON and back
+    json_str = doc.model_dump_json()
+    doc2 = DoclingDocument.model_validate_json(json_str)
+
+    # Verify the comments survived serialization
+    assert len(doc2.texts) >= 1
+    para2 = doc2.texts[0]
+    assert len(para2.comments) == 1
+    resolved = para2.comments[0].resolve(doc2)
+    assert resolved.name == "comment-0"
+
+
+def test_docitem_comments_delete_updates_refs():
+    """Test that deleting items properly updates comment references."""
+    doc = DoclingDocument(name="test_comments_delete")
+
+    # Add two paragraphs
+    para1 = doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="First paragraph.",
+    )
+    para2 = doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="Second paragraph with comment.",
+    )
+
+    # Add a comment group for the second paragraph
+    comment_group = doc.add_group(
+        label=GroupLabel.COMMENT_SECTION,
+        name="comment-0",
+        content_layer=ContentLayer.NOTES,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Comment on second paragraph.",
+        parent=comment_group,
+        content_layer=ContentLayer.NOTES,
+    )
+
+    para2.comments.append(comment_group.get_ref())
+
+    # Get the original reference
+    para2.comments[0].cref
+
+    # Delete the first paragraph - this should update indices
+    doc.delete_items(node_items=[para1])
+
+    # The second paragraph is now the first text item
+    assert len(doc.texts) >= 1
+    # The comment reference should still be valid
+    updated_para = doc.texts[0]
+    assert len(updated_para.comments) == 1
+    # The resolved comment should still work
+    resolved = updated_para.comments[0].resolve(doc)
+    assert resolved.name == "comment-0"
