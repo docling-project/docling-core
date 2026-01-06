@@ -44,9 +44,10 @@ from docling_core.transforms.serializer.common import (
     DocSerializer,
     create_ser_result,
 )
-from docling_core.types.doc.base import CoordOrigin
-from docling_core.types.doc.document import (
+from docling_core.types.doc import (
+    CoordOrigin,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
     FormItem,
     InlineGroup,
@@ -54,12 +55,12 @@ from docling_core.types.doc.document import (
     ListGroup,
     NodeItem,
     PictureItem,
+    ProvenanceItem,
     RefItem,
     RichTableCell,
     TableItem,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
 
 
 def _bbox_to_polygon_coords(
@@ -78,7 +79,7 @@ def _bbox_to_polygon_for_item(
     doc: DoclingDocument, item: DocItem
 ) -> Optional[list[float]]:
     """Compute a TOPLEFT-origin polygon for the first provenance of the item."""
-    if not item.prov:
+    if not item.prov or not isinstance(item.prov[0], ProvenanceItem):
         return None
 
     prov = item.prov[0]
@@ -189,7 +190,7 @@ class _AzureTextSerializer(BaseModel, BaseTextSerializer):
 
         # Lists may be represented either as TextItem(ListItem) or via groups;
         # we treat any TextItem as a paragraph-like entry.
-        if item.prov:
+        if item.prov and isinstance(item.prov[0], ProvenanceItem):
             prov = item.prov[0]
             page_no = prov.page_no
             polygon = _bbox_to_polygon_for_item(doc, item)
@@ -241,7 +242,7 @@ class _AzureTableSerializer(BaseTableSerializer):
     ) -> SerializationResult:
         assert isinstance(doc_serializer, AzureDocSerializer)
 
-        if not item.prov:
+        if not item.prov or not isinstance(item.prov[0], ProvenanceItem):
             return create_ser_result()
 
         prov = item.prov[0]
@@ -322,7 +323,7 @@ class _AzurePictureSerializer(BasePictureSerializer):
     ) -> SerializationResult:
         assert isinstance(doc_serializer, AzureDocSerializer)
 
-        if not item.prov:
+        if not item.prov or not isinstance(item.prov[0], ProvenanceItem):
             return create_ser_result()
 
         prov = item.prov[0]
@@ -340,7 +341,11 @@ class _AzurePictureSerializer(BasePictureSerializer):
         for foot_ref in item.footnotes:
             if isinstance(foot_ref, RefItem):
                 tgt = foot_ref.resolve(doc)
-                if isinstance(tgt, TextItem) and tgt.prov:
+                if (
+                    isinstance(tgt, TextItem)
+                    and tgt.prov
+                    and isinstance(tgt.prov[0], ProvenanceItem)
+                ):
                     f_poly = _bbox_to_polygon_for_item(doc, tgt)
                     if f_poly is not None:
                         foots.append(
