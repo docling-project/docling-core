@@ -30,7 +30,6 @@ body:
 form_items:
 - captions: []
   children: []
-  comments: []
   content_layer: body
   footnotes: []
   graph:
@@ -231,7 +230,6 @@ groups:
 key_value_items:
 - captions: []
   children: []
-  comments: []
   content_layer: body
   footnotes: []
   graph:
@@ -264,7 +262,6 @@ pictures:
   captions:
   - $ref: '#/texts/15'
   children: []
-  comments: []
   content_layer: body
   footnotes: []
   label: picture
@@ -277,7 +274,6 @@ pictures:
   captions:
   - $ref: '#/texts/16'
   children: []
-  comments: []
   content_layer: body
   footnotes: []
   image:
@@ -286,7 +282,7 @@ pictures:
     size:
       height: 64.0
       width: 64.0
-    uri: constructed_images\image_000001_f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a.png
+    uri: constructed_images/image_000001_f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a.png
   label: picture
   parent:
     $ref: '#/body'
@@ -299,7 +295,6 @@ tables:
   captions:
   - $ref: '#/texts/14'
   children: []
-  comments: []
   content_layer: body
   data:
     grid:
@@ -491,7 +486,6 @@ tables:
   self_ref: '#/tables/0'
 texts:
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -505,7 +499,6 @@ texts:
 - children:
   - $ref: '#/texts/2'
   - $ref: '#/texts/3'
-  comments: []
   content_layer: body
   label: title
   orig: Title of the Document
@@ -515,7 +508,6 @@ texts:
   self_ref: '#/texts/1'
   text: Title of the Document
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: 'Author 1
@@ -529,7 +521,6 @@ texts:
 
     Affiliation 1'
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: 'Author 2
@@ -543,7 +534,6 @@ texts:
 
     Affiliation 2'
 - children: []
-  comments: []
   content_layer: body
   label: section_header
   level: 1
@@ -554,7 +544,6 @@ texts:
   self_ref: '#/texts/4'
   text: 1. Introduction
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: This paper introduces the biggest invention ever made. ...
@@ -564,7 +553,6 @@ texts:
   self_ref: '#/texts/5'
   text: This paper introduces the biggest invention ever made. ...
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -576,7 +564,6 @@ texts:
   self_ref: '#/texts/6'
   text: list item 1
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -589,7 +576,6 @@ texts:
   text: list item 2
 - children:
   - $ref: '#/groups/3'
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -601,7 +587,6 @@ texts:
   self_ref: '#/texts/8'
   text: list item 3
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -613,7 +598,6 @@ texts:
   self_ref: '#/texts/9'
   text: list item 3.a
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -626,7 +610,6 @@ texts:
   text: list item 3.b
 - children:
   - $ref: '#/groups/4'
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -638,7 +621,6 @@ texts:
   self_ref: '#/texts/11'
   text: list item 3.c
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -650,7 +632,6 @@ texts:
   self_ref: '#/texts/12'
   text: list item 3.c.i
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -662,7 +643,6 @@ texts:
   self_ref: '#/texts/13'
   text: list item 4
 - children: []
-  comments: []
   content_layer: body
   label: caption
   orig: This is the caption of table 1.
@@ -672,7 +652,6 @@ texts:
   self_ref: '#/texts/14'
   text: This is the caption of table 1.
 - children: []
-  comments: []
   content_layer: body
   label: caption
   orig: This is the caption of figure 1.
@@ -682,7 +661,6 @@ texts:
   self_ref: '#/texts/15'
   text: This is the caption of figure 1.
 - children: []
-  comments: []
   content_layer: body
   label: caption
   orig: This is the caption of figure 2.
@@ -692,7 +670,6 @@ texts:
   self_ref: '#/texts/16'
   text: This is the caption of figure 2.
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -704,7 +681,6 @@ texts:
   self_ref: '#/texts/17'
   text: item 1 of list
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -716,7 +692,6 @@ texts:
   self_ref: '#/texts/18'
   text: item 1 of list after empty list
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -728,7 +703,6 @@ texts:
   self_ref: '#/texts/19'
   text: item 2 of list after empty list
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -741,7 +715,6 @@ texts:
   text: item 1 of neighboring list
 - children:
   - $ref: '#/groups/9'
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -753,7 +726,6 @@ texts:
   self_ref: '#/texts/21'
   text: item 2 of neighboring list
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -766,7 +738,6 @@ texts:
   text: item 1 of sub list
 - children:
   - $ref: '#/groups/10'
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -778,7 +749,6 @@ texts:
   self_ref: '#/texts/23'
   text: ''
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: 'Here a code snippet:'
@@ -790,7 +760,6 @@ texts:
 - captions: []
   children: []
   code_language: Python
-  comments: []
   content_layer: body
   footnotes: []
   label: code
@@ -802,7 +771,6 @@ texts:
   self_ref: '#/texts/25'
   text: print("Hello world")
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: (to be displayed inline)
@@ -813,7 +781,6 @@ texts:
   text: (to be displayed inline)
 - children:
   - $ref: '#/groups/11'
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -825,7 +792,6 @@ texts:
   self_ref: '#/texts/27'
   text: ''
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: 'Here a formula:'
@@ -835,7 +801,6 @@ texts:
   self_ref: '#/texts/28'
   text: 'Here a formula:'
 - children: []
-  comments: []
   content_layer: body
   label: formula
   orig: E=mc^2
@@ -845,7 +810,6 @@ texts:
   self_ref: '#/texts/29'
   text: E=mc^2
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: (to be displayed inline)
@@ -855,7 +819,6 @@ texts:
   self_ref: '#/texts/30'
   text: (to be displayed inline)
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: 'Here a code block:'
@@ -867,7 +830,6 @@ texts:
 - captions: []
   children: []
   code_language: Python
-  comments: []
   content_layer: body
   footnotes: []
   label: code
@@ -879,7 +841,6 @@ texts:
   self_ref: '#/texts/32'
   text: print("Hello world")
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: 'Here a formula block:'
@@ -889,7 +850,6 @@ texts:
   self_ref: '#/texts/33'
   text: 'Here a formula block:'
 - children: []
-  comments: []
   content_layer: body
   label: formula
   orig: E=mc^2
@@ -899,7 +859,6 @@ texts:
   self_ref: '#/texts/34'
   text: E=mc^2
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: 'Some formatting chops:'
@@ -909,7 +868,6 @@ texts:
   self_ref: '#/texts/35'
   text: 'Some formatting chops:'
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: true
@@ -925,7 +883,6 @@ texts:
   self_ref: '#/texts/36'
   text: bold
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: false
@@ -941,7 +898,6 @@ texts:
   self_ref: '#/texts/37'
   text: italic
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: false
@@ -957,7 +913,6 @@ texts:
   self_ref: '#/texts/38'
   text: underline
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: false
@@ -973,7 +928,6 @@ texts:
   self_ref: '#/texts/39'
   text: strikethrough
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: false
@@ -989,7 +943,6 @@ texts:
   self_ref: '#/texts/40'
   text: subscript
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: false
@@ -1005,7 +958,6 @@ texts:
   self_ref: '#/texts/41'
   text: superscript
 - children: []
-  comments: []
   content_layer: body
   hyperlink: .
   label: text
@@ -1016,7 +968,6 @@ texts:
   self_ref: '#/texts/42'
   text: hyperlink
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: '&'
@@ -1026,7 +977,6 @@ texts:
   self_ref: '#/texts/43'
   text: '&'
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: true
@@ -1043,7 +993,6 @@ texts:
   self_ref: '#/texts/44'
   text: everything at the same time.
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1055,7 +1004,6 @@ texts:
   self_ref: '#/texts/45'
   text: Item 1 in A
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1068,7 +1016,6 @@ texts:
   text: Item 2 in A
 - children:
   - $ref: '#/groups/14'
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1080,7 +1027,6 @@ texts:
   self_ref: '#/texts/47'
   text: Item 3 in A
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1093,7 +1039,6 @@ texts:
   text: Item 1 in B
 - children:
   - $ref: '#/groups/15'
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1105,7 +1050,6 @@ texts:
   self_ref: '#/texts/49'
   text: Item 2 in B
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1117,7 +1061,6 @@ texts:
   self_ref: '#/texts/50'
   text: Item 1 in C
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1129,7 +1072,6 @@ texts:
   self_ref: '#/texts/51'
   text: Item 2 in C
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1141,7 +1083,6 @@ texts:
   self_ref: '#/texts/52'
   text: Item 3 in B
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -1153,7 +1094,6 @@ texts:
   self_ref: '#/texts/53'
   text: Item 4 in A
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -1165,7 +1105,6 @@ texts:
   self_ref: '#/texts/54'
   text: List item without parent list group
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: The end.

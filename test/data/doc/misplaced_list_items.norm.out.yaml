@@ -40,7 +40,6 @@ schema_name: DoclingDocument
 tables: []
 texts:
 - children: []
-  comments: []
   content_layer: body
   enumerated: true
   label: list_item
@@ -52,7 +51,6 @@ texts:
   self_ref: '#/texts/0'
   text: foo
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: bar
@@ -62,7 +60,6 @@ texts:
   self_ref: '#/texts/1'
   text: bar
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -74,7 +71,6 @@ texts:
   self_ref: '#/texts/2'
   text: here
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item

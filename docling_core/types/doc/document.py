@@ -37,10 +37,12 @@ from pydantic import (
     ConfigDict,
     Field,
     FieldSerializationInfo,
+    SerializerFunctionWrapHandler,
     StringConstraints,
     computed_field,
     field_serializer,
     field_validator,
+    model_serializer,
     model_validator,
     validate_call,
 )
@@ -1538,6 +1540,17 @@ class DocItem(
     comments: List["RefItem"] = (
         []
     )  # References to comment items annotating this content
+
+    @model_serializer(mode="wrap")
+    def _custom_pydantic_serialize(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict:
+        dumped = handler(self)
+
+        # suppress serializing comment list when empty:
+        if dumped.get("comments") == []:
+            del dumped["comments"]
+        return dumped
 
     def get_location_tokens(
         self,

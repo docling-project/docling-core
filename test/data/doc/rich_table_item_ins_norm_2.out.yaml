@@ -25,7 +25,6 @@ tables:
   captions: []
   children:
   - $ref: '#/texts/1'
-  comments: []
   content_layer: body
   data:
     grid:
@@ -219,7 +218,6 @@ tables:
   self_ref: '#/tables/0'
 texts:
 - children: []
-  comments: []
   content_layer: body
   label: title
   orig: Rich tables
@@ -229,7 +227,6 @@ texts:
   self_ref: '#/texts/0'
   text: Rich tables
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: false
@@ -245,7 +242,6 @@ texts:
   self_ref: '#/texts/1'
   text: text in italic
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: text before

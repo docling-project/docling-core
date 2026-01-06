@@ -44,7 +44,6 @@ tables:
   - $ref: '#/groups/0'
   - $ref: '#/tables/1'
   - $ref: '#/groups/1'
-  comments: []
   content_layer: body
   data:
     grid:
@@ -289,7 +288,6 @@ tables:
 - annotations: []
   captions: []
   children: []
-  comments: []
   content_layer: body
   data:
     grid:
@@ -437,7 +435,6 @@ tables:
   self_ref: '#/tables/1'
 texts:
 - children: []
-  comments: []
   content_layer: body
   formatting:
     bold: false
@@ -453,7 +450,6 @@ texts:
   self_ref: '#/texts/0'
   text: text in italic
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -465,7 +461,6 @@ texts:
   self_ref: '#/texts/1'
   text: list item 1
 - children: []
-  comments: []
   content_layer: body
   enumerated: false
   label: list_item
@@ -477,7 +472,6 @@ texts:
   self_ref: '#/texts/2'
   text: list item 2
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: Some text in a generic group.
@@ -487,7 +481,6 @@ texts:
   self_ref: '#/texts/3'
   text: Some text in a generic group.
 - children: []
-  comments: []
   content_layer: body
   label: text
   orig: More text in the group.
