@@ -3285,6 +3285,33 @@ class DoclingDocument(BaseModel):
 
             return text_item
 
+    def add_comment(
+        self,
+        *,
+        text: str,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        targets: Optional[List[DocItem]] = None,
+    ):
+        """Adds a comment to the document, assigning it to the given targets.
+
+        :param text: str:
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param targets: List[DocItem]:  (Default value = None)
+        """
+        item = self.add_text(
+            label=DocItemLabel.TEXT,
+            text=text,
+            prov=prov,
+            parent=parent,
+            content_layer=ContentLayer.NOTES,
+        )
+        if targets:
+            for target in targets:
+                target.comments.append(item.get_ref())
+        return item
+
     def add_table(
         self,
         data: TableData,

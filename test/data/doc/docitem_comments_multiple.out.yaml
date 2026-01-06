@@ -1,0 +1,79 @@
+body:
+  children:
+  - $ref: '#/texts/0'
+  - $ref: '#/texts/1'
+  - $ref: '#/texts/2'
+  - $ref: '#/texts/3'
+  - $ref: '#/texts/4'
+  content_layer: body
+  label: unspecified
+  name: _root_
+  self_ref: '#/body'
+form_items: []
+furniture:
+  children: []
+  content_layer: furniture
+  label: unspecified
+  name: _root_
+  self_ref: '#/furniture'
+groups: []
+key_value_items: []
+name: test_multiple_comments
+pages: {}
+pictures: []
+schema_name: DoclingDocument
+tables: []
+texts:
+- children: []
+  comments:
+  - $ref: '#/texts/3'
+  content_layer: body
+  label: text
+  orig: Text 1.
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/0'
+  text: Text 1.
+- children: []
+  comments:
+  - $ref: '#/texts/3'
+  - $ref: '#/texts/4'
+  content_layer: body
+  label: text
+  orig: Text 2.
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/1'
+  text: Text 2.
+- children: []
+  comments:
+  - $ref: '#/texts/4'
+  content_layer: body
+  label: text
+  orig: Text 3.
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/2'
+  text: Text 3.
+- children: []
+  content_layer: notes
+  label: text
+  orig: '[Reviewer A]: This is a comment on texts 1 and 2.'
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/3'
+  text: '[Reviewer A]: This is a comment on texts 1 and 2.'
+- children: []
+  content_layer: notes
+  label: text
+  orig: '[Reviewer B]: This is a comment on texts 2 and 3.'
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/4'
+  text: '[Reviewer B]: This is a comment on texts 2 and 3.'
+version: 1.9.0

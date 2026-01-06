@@ -1985,120 +1985,59 @@ def test_meta_migration_warnings():
 def test_docitem_comments_field():
     """Test that DocItem has a comments field that can hold RefItem references."""
     doc = DoclingDocument(name="test_comments")
+    doc.add_text(label=DocItemLabel.TEXT, text="Normal text without comment.")
 
     # Add a paragraph (which is a DocItem)
-    paragraph = doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
-        text="This paragraph has a comment attached.",
-    )
-
-    # Add a comment group (simulating Word document comments)
-    comment_group = doc.add_group(
-        label=GroupLabel.COMMENT_SECTION,
-        name="comment-0",
-        content_layer=ContentLayer.NOTES,
-    )
-
-    # Add comment text inside the group
-    comment_text = doc.add_text(
+    text = doc.add_text(
         label=DocItemLabel.TEXT,
-        text="[John Reviewer]: This is a reviewer comment.",
-        parent=comment_group,
-        content_layer=ContentLayer.NOTES,
+        text="This text has a comment attached.",
     )
 
-    # Link the comment to the paragraph
-    paragraph.comments.append(comment_group.get_ref())
+    # Add a comment
+    doc.add_comment(
+        text="[John Reviewer]: This is a reviewer comment.",
+        targets=[text],
+    )
 
-    # Verify the comment link exists
-    assert len(paragraph.comments) == 1
-    assert paragraph.comments[0].cref == comment_group.self_ref
-
-    # Resolve the comment reference
-    resolved_comment = paragraph.comments[0].resolve(doc)
-    assert resolved_comment == comment_group
-    assert resolved_comment.name == "comment-0"
-    assert resolved_comment.label == GroupLabel.COMMENT_SECTION
+    exp_file = Path("test/data/doc/docitem_comments_field.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    exp_doc = DoclingDocument.load_from_yaml(exp_file)
+    assert doc == exp_doc
 
 
 def test_docitem_comments_multiple():
     """Test that a DocItem can have multiple comments attached."""
     doc = DoclingDocument(name="test_multiple_comments")
 
-    paragraph = doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
-        text="This paragraph has multiple comments.",
-    )
-
-    # Add multiple comment groups
-    comment1 = doc.add_group(
-        label=GroupLabel.COMMENT_SECTION,
-        name="comment-0",
-        content_layer=ContentLayer.NOTES,
-    )
-    doc.add_text(
+    text1 = doc.add_text(
         label=DocItemLabel.TEXT,
-        text="First reviewer comment.",
-        parent=comment1,
-        content_layer=ContentLayer.NOTES,
+        text="Text 1.",
     )
-
-    comment2 = doc.add_group(
-        label=GroupLabel.COMMENT_SECTION,
-        name="comment-1",
-        content_layer=ContentLayer.NOTES,
-    )
-    doc.add_text(
+    text2 = doc.add_text(
         label=DocItemLabel.TEXT,
-        text="Second reviewer comment.",
-        parent=comment2,
-        content_layer=ContentLayer.NOTES,
+        text="Text 2.",
     )
-
-    # Link both comments to the paragraph
-    paragraph.comments.append(comment1.get_ref())
-    paragraph.comments.append(comment2.get_ref())
-
-    # Verify both comment links
-    assert len(paragraph.comments) == 2
-    resolved_comments = [ref.resolve(doc) for ref in paragraph.comments]
-    assert resolved_comments[0].name == "comment-0"
-    assert resolved_comments[1].name == "comment-1"
-
-
-def test_docitem_comments_serialization():
-    """Test that comments field is properly serialized and deserialized."""
-    doc = DoclingDocument(name="test_comments_serialization")
-
-    paragraph = doc.add_text(
-        label=DocItemLabel.PARAGRAPH,
-        text="Paragraph with comment.",
-    )
-
-    comment_group = doc.add_group(
-        label=GroupLabel.COMMENT_SECTION,
-        name="comment-0",
-        content_layer=ContentLayer.NOTES,
-    )
-    doc.add_text(
+    text3 = doc.add_text(
         label=DocItemLabel.TEXT,
-        text="Comment text.",
-        parent=comment_group,
-        content_layer=ContentLayer.NOTES,
+        text="Text 3.",
     )
 
-    paragraph.comments.append(comment_group.get_ref())
+    # Add comments on overlapping scopes:
+    doc.add_comment(
+        text="[Reviewer A]: This is a comment on texts 1 and 2.",
+        targets=[text1, text2],
+    )
+    doc.add_comment(
+        text="[Reviewer B]: This is a comment on texts 2 and 3.",
+        targets=[text2, text3],
+    )
 
-    # Serialize to JSON and back
-    json_str = doc.model_dump_json()
-    doc2 = DoclingDocument.model_validate_json(json_str)
-
-    # Verify the comments survived serialization
-    assert len(doc2.texts) >= 1
-    para2 = doc2.texts[0]
-    assert len(para2.comments) == 1
-    resolved = para2.comments[0].resolve(doc2)
-    assert resolved.name == "comment-0"
+    exp_file = Path("test/data/doc/docitem_comments_multiple.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    exp_doc = DoclingDocument.load_from_yaml(exp_file)
+    assert doc == exp_doc
 
 
 def test_docitem_comments_delete_updates_refs():
