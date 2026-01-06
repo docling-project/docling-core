@@ -172,6 +172,8 @@ def _create_location_tokens_for_item(
         return ""
     out: list[str] = []
     for prov in item.prov:
+        if not isinstance(prov, ProvenanceItem):
+            continue
         page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
         bbox = prov.bbox.to_top_left_origin(page_h).as_tuple()
         out.append(
@@ -1260,12 +1262,13 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             for idp, prov_ in enumerate(item.prov):
                 item_ = copy.deepcopy(item)
                 item_.prov = [prov_]
-                item_.text = item.orig[
-                    prov_.charspan[0] : prov_.charspan[1]
-                ]  # it must be `orig`, not `text` here!
-                item_.orig = item.orig[prov_.charspan[0] : prov_.charspan[1]]
+                if isinstance(item, ProvenanceItem):
+                    item_.text = item.orig[
+                        prov_.charspan[0] : prov_.charspan[1]
+                    ]  # it must be `orig`, not `text` here!
+                    item_.orig = item.orig[prov_.charspan[0] : prov_.charspan[1]]
 
-                item_.prov[0].charspan = (0, len(item_.orig))
+                    item_.prov[0].charspan = (0, len(item_.orig))
 
                 # marker field should be cleared on subsequent split parts
                 if idp > 0 and isinstance(item_, ListItem):
@@ -1667,7 +1670,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
 
         page_no = 0
         if need_cell_loc:
-            if not item.prov:
+            if not item.prov or not isinstance(item.prov[0], ProvenanceItem):
                 raise ValueError(
                     "Per-cell location requested but table has no provenance (page_no)."
                 )
@@ -1877,6 +1880,8 @@ class IDocTagsInlineSerializer(BaseInlineSerializer):
             for it, _ in doc.iterate_items(root=item):
                 if isinstance(it, DocItem) and it.prov:
                     for prov in it.prov:
+                        if not isinstance(prov, ProvenanceItem):
+                            continue
                         page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
                         boxes.append(prov.bbox.to_top_left_origin(page_h).as_tuple())
                         prov_page_w_h = (page_w, page_h, prov.page_no)
