@@ -2061,22 +2061,10 @@ def test_docitem_comments_delete_updates_refs():
     )
 
     # Add a comment group for the second paragraph
-    comment_group = doc.add_group(
-        label=GroupLabel.COMMENT_SECTION,
-        name="comment-0",
-        content_layer=ContentLayer.NOTES,
-    )
-    doc.add_text(
-        label=DocItemLabel.TEXT,
+    doc.add_comment(
         text="Comment on second paragraph.",
-        parent=comment_group,
-        content_layer=ContentLayer.NOTES,
+        targets=[para2],
     )
-
-    para2.comments.append(comment_group.get_ref())
-
-    # Get the original reference
-    para2.comments[0].cref
 
     # Delete the first paragraph - this should update indices
     doc.delete_items(node_items=[para1])
@@ -2088,4 +2076,4 @@ def test_docitem_comments_delete_updates_refs():
     assert len(updated_para.comments) == 1
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
-    assert resolved.name == "comment-0"
+    assert resolved.text == "Comment on second paragraph."
