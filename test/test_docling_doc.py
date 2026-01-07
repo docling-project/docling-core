@@ -2026,11 +2026,17 @@ def test_docitem_comments_multiple():
     # Add comments on overlapping scopes:
     doc.add_comment(
         text="[Reviewer A]: This is a comment on texts 1 and 2.",
-        targets=[text1, text2],
+        targets=[
+            text1,
+            text2,
+        ],
     )
     doc.add_comment(
-        text="[Reviewer B]: This is a comment on texts 2 and 3.",
-        targets=[text2, text3],
+        text="[Reviewer B]: This is a comment on texts 2 (range [0,6)) and 3.",
+        targets=[
+            (text2, (0, 6)),
+            text3,
+        ],
     )
 
     exp_file = Path("test/data/doc/docitem_comments_multiple.out.yaml")

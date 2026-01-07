@@ -39,6 +39,9 @@ texts:
   comments:
   - $ref: '#/texts/3'
   - $ref: '#/texts/4'
+    range:
+    - 0
+    - 6
   content_layer: body
   label: text
   orig: Text 2.
@@ -70,10 +73,10 @@ texts:
 - children: []
   content_layer: notes
   label: text
-  orig: '[Reviewer B]: This is a comment on texts 2 and 3.'
+  orig: '[Reviewer B]: This is a comment on texts 2 (range [0,6)) and 3.'
   parent:
     $ref: '#/body'
   prov: []
   self_ref: '#/texts/4'
-  text: '[Reviewer B]: This is a comment on texts 2 and 3.'
+  text: '[Reviewer B]: This is a comment on texts 2 (range [0,6)) and 3.'
 version: 1.9.0

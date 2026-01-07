@@ -1084,6 +1084,21 @@ class RefItem(BaseModel):
             raise RuntimeError(f"Unsupported number of path components: {num_comps}")
         return obj
 
+    def _update_with_lookup(
+        self,
+        lookup: dict[str, dict[int, int]],
+    ) -> None:
+        path = self._split_ref_to_path()
+        if len(path) == 3 and (item_label := path[1]) in lookup:
+            item_index = int(path[2])
+            # Count how many items have been deleted in front of you
+            delta = sum(
+                val if item_index >= key else 0
+                for key, val in lookup[item_label].items()
+            )
+            new_index = item_index + delta
+            self.cref = f"#/{item_label}/{new_index}"
+
 
 class ImageRef(BaseModel):
     """ImageRef."""
@@ -1530,6 +1545,12 @@ class InlineGroup(GroupItem):
     label: typing.Literal[GroupLabel.INLINE] = GroupLabel.INLINE
 
 
+class FineRef(RefItem):
+    """Fine-granular reference item that can capture span range info."""
+
+    range: Optional[Tuple[int, int]] = None  # start_inclusive, end_exclusive
+
+
 class DocItem(
     NodeItem
 ):  # Base type for any element that carries content, can be a leaf node
@@ -1537,9 +1558,7 @@ class DocItem(
 
     label: DocItemLabel
     prov: List[ProvenanceItem] = []
-    comments: List["RefItem"] = (
-        []
-    )  # References to comment items annotating this content
+    comments: list[FineRef] = []  # References to comment items annotating this content
 
     @model_serializer(mode="wrap")
     def _custom_pydantic_serialize(
@@ -2946,11 +2965,13 @@ class DoclingDocument(BaseModel):
         """Update breadth first with lookup."""
         # Update the comments references on any DocItem
         if isinstance(node, DocItem):
-            node.comments = self._update_refitems_with_lookup(
-                ref_items=node.comments,
-                refs_to_be_deleted=refs_to_be_deleted,
-                lookup=lookup,
-            )
+            node.comments = [
+                ref_item
+                for ref_item in node.comments
+                if ref_item not in refs_to_be_deleted
+            ]
+            for ref_item in node.comments:
+                ref_item._update_with_lookup(lookup=lookup)
 
         # Update the captions, references and footnote references
         if isinstance(node, FloatingItem):
@@ -3291,14 +3312,15 @@ class DoclingDocument(BaseModel):
         text: str,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
-        targets: Optional[List[DocItem]] = None,
+        targets: Optional[List[Union[DocItem, Tuple[DocItem, Tuple[int, int]]]]] = None,
     ):
         """Adds a comment to the document, assigning it to the given targets.
 
         :param text: str:
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[NodeItem]:  (Default value = None)
-        :param targets: List[DocItem]:  (Default value = None)
+        :param targets: List[Union[DocItem, Tuple[DocItem, Tuple[int, int]]]]:  (Default value = None) Each list element
+            can be either a single DocItem or a tuple of a DocItem and a span range (start_inclusive, end_exclusive).
         """
         item = self.add_text(
             label=DocItemLabel.TEXT,
@@ -3309,7 +3331,11 @@ class DoclingDocument(BaseModel):
         )
         if targets:
             for target in targets:
-                target.comments.append(item.get_ref())
+                range = None
+                if isinstance(target, tuple):
+                    target, range = target
+                ref = FineRef(cref=item.self_ref, range=range)
+                target.comments.append(ref)
         return item
 
     def add_table(
