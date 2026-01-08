@@ -145,6 +145,8 @@ def _iterate_items(
                                 prev_page_nr, page_no, lvl, page_break_i
                             ):
                                 yield pb_node, pb_lvl
+                        # update previous page number to avoid duplicate page breaks
+                        prev_page_nr = page_no
                         break
             elif isinstance(item, DocItem) and item.prov:
                 page_no = item.prov[0].page_no
