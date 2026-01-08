@@ -1933,7 +1933,10 @@ class PictureItem(FloatingItem):
                     if self.meta is None:
                         self.meta = PictureMeta()
 
-                    if isinstance(ann, PictureClassificationData):
+                    if (
+                        isinstance(ann, PictureClassificationData)
+                        and self.meta.classification is None
+                    ):
                         self.meta.classification = PictureClassificationMetaField(
                             predictions=[
                                 PictureClassificationPrediction(
@@ -1944,12 +1947,18 @@ class PictureItem(FloatingItem):
                                 for pred in ann.predicted_classes
                             ],
                         )
-                    elif isinstance(ann, DescriptionAnnotation):
+                    elif (
+                        isinstance(ann, DescriptionAnnotation)
+                        and self.meta.description is None
+                    ):
                         self.meta.description = DescriptionMetaField(
                             text=ann.text,
                             created_by=ann.provenance,
                         )
-                    elif isinstance(ann, PictureMoleculeData):
+                    elif (
+                        isinstance(ann, PictureMoleculeData)
+                        and self.meta.molecule is None
+                    ):
                         self.meta.molecule = MoleculeMetaField(
                             smi=ann.smi,
                             confidence=ann.confidence,
@@ -1963,12 +1972,29 @@ class PictureItem(FloatingItem):
                                 ): ann.class_name,
                             },
                         )
-                    elif isinstance(ann, PictureTabularChartData):
+                    elif (
+                        isinstance(ann, PictureTabularChartData)
+                        and self.meta.tabular_chart is None
+                    ):
                         self.meta.tabular_chart = TabularChartMetaField(
                             title=ann.title,
                             chart_data=ann.chart_data,
                         )
-                    else:
+                    elif not isinstance(
+                        ann,
+                        (
+                            PictureClassificationData,
+                            DescriptionAnnotation,
+                            PictureMoleculeData,
+                            PictureTabularChartData,
+                        ),
+                    ) and not hasattr(
+                        self.meta,
+                        MetaUtils.create_meta_field_name(
+                            namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
+                            name=ann.kind,
+                        ),
+                    ):
                         self.meta.set_custom_field(
                             namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
                             name=ann.kind,
@@ -2149,12 +2175,21 @@ class TableItem(FloatingItem):
                     if self.meta is None:
                         self.meta = FloatingMeta()
 
-                    if isinstance(ann, DescriptionAnnotation):
+                    if (
+                        isinstance(ann, DescriptionAnnotation)
+                        and self.meta.description is None
+                    ):
                         self.meta.description = DescriptionMetaField(
                             text=ann.text,
                             created_by=ann.provenance,
                         )
-                    else:
+                    elif not isinstance(ann, DescriptionAnnotation) and not hasattr(
+                        self.meta,
+                        MetaUtils.create_meta_field_name(
+                            namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
+                            name=ann.kind,
+                        ),
+                    ):
                         self.meta.set_custom_field(
                             namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
                             name=ann.kind,

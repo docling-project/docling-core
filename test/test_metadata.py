@@ -36,6 +36,13 @@ class CustomCoordinates(BaseModel):
 def test_metadata_usage() -> None:
     src = Path("test/data/doc/dummy_doc_with_meta.yaml")
     doc = DoclingDocument.load_from_yaml(filename=src)
+
+    first_pic = doc.pictures[0]
+    assert first_pic.meta
+    assert first_pic.meta.classification
+    assert first_pic.meta.classification.predictions
+    assert first_pic.meta.classification.predictions[0].confidence == 0.78
+
     example_item: NodeItem = RefItem(cref="#/texts/2").resolve(doc=doc)
     assert example_item.meta is not None
 
@@ -64,6 +71,18 @@ def test_metadata_usage() -> None:
 
     # ensure the value is the same
     assert loaded_value == value
+
+
+def test_metadata_relaxed_migration() -> None:
+    src = Path("test/data/doc/dummy_doc_with_meta_2.yaml")
+    doc = DoclingDocument.load_from_yaml(filename=src)
+
+    first_pic = doc.pictures[0]
+    assert first_pic.meta
+    assert first_pic.meta.classification
+    assert first_pic.meta.classification.predictions
+    # check migration was skipped since respetive meta already present:
+    assert first_pic.meta.classification.predictions[0].confidence == 0.42
 
 
 def test_namespace_absence_raises():
