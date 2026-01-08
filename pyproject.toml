@@ -117,6 +117,7 @@ dev = [
     "pytest~=8.3",
     "pytest-cov>=6.1.1",
     "python-semantic-release~=7.32",
+    "universal-pathlib>=0.3.7",
 ]
 
 [tool.uv]
