@@ -238,6 +238,14 @@
           "title": "Prov",
           "type": "array"
         },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
         "orig": {
           "title": "Orig",
           "type": "string"
@@ -524,6 +532,43 @@
       "title": "DocumentOrigin",
       "type": "object"
     },
+    "FineRef": {
+      "description": "Fine-granular reference item that can capture span range info.",
+      "properties": {
+        "$ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "$Ref",
+          "type": "string"
+        },
+        "range": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Range"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "FineRef",
+      "type": "object"
+    },
     "FloatingMeta": {
       "additionalProperties": true,
       "description": "Metadata model for floating.",
@@ -609,6 +654,14 @@
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
+          "type": "array"
+        },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
           "type": "array"
         },
         "captions": {
@@ -743,6 +796,14 @@
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
+          "type": "array"
+        },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
           "type": "array"
         },
         "orig": {
@@ -1142,6 +1203,14 @@
           "title": "Prov",
           "type": "array"
         },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
         "captions": {
           "default": [],
           "items": {
@@ -1304,6 +1373,14 @@
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
+          "type": "array"
+        },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
           "type": "array"
         },
         "orig": {
@@ -1672,6 +1749,14 @@
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
+          "type": "array"
+        },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
           "type": "array"
         },
         "captions": {
@@ -2247,6 +2332,14 @@
           "title": "Prov",
           "type": "array"
         },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
         "orig": {
           "title": "Orig",
           "type": "string"
@@ -2534,6 +2627,14 @@
           "title": "Prov",
           "type": "array"
         },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
         "captions": {
           "default": [],
           "items": {
@@ -2731,6 +2832,14 @@
           "title": "Prov",
           "type": "array"
         },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
         "orig": {
           "title": "Orig",
           "type": "string"
@@ -2835,6 +2944,14 @@
           "title": "Prov",
           "type": "array"
         },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
         "orig": {
           "title": "Orig",
           "type": "string"
@@ -2891,7 +3008,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.8.0",
+      "default": "1.9.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"
