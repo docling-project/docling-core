@@ -1,3 +1,13 @@
+## [v2.58.0](https://github.com/docling-project/docling-core/releases/tag/v2.58.0) - 2026-01-08
+
+### Feature
+
+* **DocItem:** Add comments field for linking annotations to document… ([#465](https://github.com/docling-project/docling-core/issues/465)) ([`1d2e0c7`](https://github.com/docling-project/docling-core/commit/1d2e0c7ebe8e00ba475635244be67ee31d62b63e))
+
+### Fix
+
+* Skip annotation migration if respective meta present ([#469](https://github.com/docling-project/docling-core/issues/469)) ([`51a01a6`](https://github.com/docling-project/docling-core/commit/51a01a62c99e51b816335d86c52bfdbc52e239f9))
+
 ## [v2.57.0](https://github.com/docling-project/docling-core/releases/tag/v2.57.0) - 2025-12-18
 
 ### Feature
