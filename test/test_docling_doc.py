@@ -1980,3 +1980,100 @@ def test_meta_migration_warnings():
         _ = doc.pictures[0].annotations
     with pytest.warns(DeprecationWarning):
         _ = doc.tables[0].annotations
+
+
+def test_docitem_comments_field():
+    """Test that DocItem has a comments field that can hold RefItem references."""
+    doc = DoclingDocument(name="test_comments")
+    doc.add_text(label=DocItemLabel.TEXT, text="Normal text without comment.")
+
+    # Add a paragraph (which is a DocItem)
+    text = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="This text has a comment attached.",
+    )
+
+    # Add a comment
+    doc.add_comment(
+        text="[John Reviewer]: This is a reviewer comment.",
+        targets=[text],
+    )
+
+    exp_file = Path("test/data/doc/docitem_comments_field.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    exp_doc = DoclingDocument.load_from_yaml(exp_file)
+    assert doc == exp_doc
+
+
+def test_docitem_comments_multiple():
+    """Test that a DocItem can have multiple comments attached."""
+    doc = DoclingDocument(name="test_multiple_comments")
+
+    text1 = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Text 1.",
+    )
+    text2 = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Text 2.",
+    )
+    text3 = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Text 3.",
+    )
+
+    # Add comments on overlapping scopes:
+    doc.add_comment(
+        text="[Reviewer A]: This is a comment on texts 1 and 2.",
+        targets=[
+            text1,
+            text2,
+        ],
+    )
+    doc.add_comment(
+        text="[Reviewer B]: This is a comment on texts 2 (range [0,6)) and 3.",
+        targets=[
+            (text2, (0, 6)),
+            text3,
+        ],
+    )
+
+    exp_file = Path("test/data/doc/docitem_comments_multiple.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(exp_file)
+    exp_doc = DoclingDocument.load_from_yaml(exp_file)
+    assert doc == exp_doc
+
+
+def test_docitem_comments_delete_updates_refs():
+    """Test that deleting items properly updates comment references."""
+    doc = DoclingDocument(name="test_comments_delete")
+
+    # Add two paragraphs
+    para1 = doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="First paragraph.",
+    )
+    para2 = doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="Second paragraph with comment.",
+    )
+
+    # Add a comment group for the second paragraph
+    doc.add_comment(
+        text="Comment on second paragraph.",
+        targets=[para2],
+    )
+
+    # Delete the first paragraph - this should update indices
+    doc.delete_items(node_items=[para1])
+
+    # The second paragraph is now the first text item
+    assert len(doc.texts) >= 1
+    # The comment reference should still be valid
+    updated_para = doc.texts[0]
+    assert len(updated_para.comments) == 1
+    # The resolved comment should still work
+    resolved = updated_para.comments[0].resolve(doc)
+    assert resolved.text == "Comment on second paragraph."
