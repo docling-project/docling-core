@@ -417,7 +417,12 @@ class MarkdownTableSerializer(BaseTableSerializer):
             ]
             if len(rows) > 0:
                 try:
-                    table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")
+                    table_text = tabulate(
+                        rows[1:],
+                        headers=rows[0],
+                        tablefmt="github",
+                        disable_numparse=True,
+                    )
                 except ValueError:
                     table_text = tabulate(
                         rows[1:],
