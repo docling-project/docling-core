@@ -87,12 +87,12 @@ def _yield_page_breaks(
 ) -> Iterable[tuple[_PageBreakNode, int, int]]:
     """Yield page break nodes for each page in range (prev_page, next_page].
 
-    When pages are non-consecutive (e.g., page 78 -> 82), this generates
-    individual page breaks for each transition (79, 80, 81, 82).
+    Generates one PageBreakNode per page transition. For example, if prev_page=1
+    and next_page=4, yields 3 page breaks for pages 2, 3, and 4.
 
     Args:
-        prev_page: The last seen page number.
-        next_page: The current page number.
+        prev_page: The last seen page number (1-based physical index).
+        next_page: The current page number (1-based physical index).
         lvl: The nesting level for the yielded nodes.
         start_index: The starting index for page break node IDs.
 
