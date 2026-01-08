@@ -7,19 +7,8 @@ from typing import Any, Optional, Union, cast
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
-from docling_core.transforms.chunker.hierarchical_chunker import (
-    ChunkingDocSerializer,
-    ChunkingSerializerProvider,
-)
-from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
-from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
-from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
-from docling_core.transforms.serializer.base import BaseDocSerializer
-from docling_core.types.doc import SectionHeaderItem, TableItem, TitleItem
-
 try:
     import semchunk
-    from transformers import PreTrainedTokenizerBase
 except ImportError:
     raise RuntimeError(
         "Extra required by module: 'chunking' by default (or 'chunking-openai' if "
@@ -35,10 +24,27 @@ from docling_core.transforms.chunker import (
     DocMeta,
     HierarchicalChunker,
 )
+from docling_core.transforms.chunker.hierarchical_chunker import (
+    ChunkingDocSerializer,
+    ChunkingSerializerProvider,
+)
+from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
+from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
+from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 from docling_core.transforms.serializer.base import (
+    BaseDocSerializer,
     BaseSerializerProvider,
 )
 from docling_core.types import DoclingDocument
+from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
+
+
+def _get_default_tokenizer():
+    from docling_core.transforms.chunker.tokenizer.huggingface import (
+        HuggingFaceTokenizer,
+    )
+
+    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
 class HybridChunker(BaseChunker):
@@ -92,8 +98,15 @@ class HybridChunker(BaseChunker):
                         model_name=tokenizer,
                         max_tokens=max_tokens,
                     )
-                elif tokenizer is None or isinstance(tokenizer, PreTrainedTokenizerBase):
-                    kwargs = {"tokenizer": tokenizer or get_default_tokenizer().tokenizer}
+                elif tokenizer is None or (
+                    hasattr(tokenizer, "__module__")
+                    and (tokenizer.__module__.startswith("transformers.") or tokenizer.__module__ == "transformers")
+                ):
+                    from docling_core.transforms.chunker.tokenizer.huggingface import (
+                        HuggingFaceTokenizer,
+                    )
+
+                    kwargs = {"tokenizer": tokenizer or _get_default_tokenizer().tokenizer}
                     if max_tokens is not None:
                         kwargs["max_tokens"] = max_tokens
                     data["tokenizer"] = HuggingFaceTokenizer(**kwargs)
@@ -223,6 +236,8 @@ class HybridChunker(BaseChunker):
         else:
             # How much room is there for text after subtracting out the headers and
             # captions:
+            import semchunk
+
             available_length = self.max_tokens - lengths.other_len
 
             if available_length <= 0:
