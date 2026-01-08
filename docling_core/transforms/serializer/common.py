@@ -79,6 +79,36 @@ class _PageBreakSerResult(SerializationResult):
     node: _PageBreakNode
 
 
+def _yield_page_breaks(
+    prev_page: int,
+    next_page: int,
+    lvl: int,
+    start_index: int,
+) -> Iterable[tuple[_PageBreakNode, int, int]]:
+    """Yield page break nodes for each page in range (prev_page, next_page].
+
+    When pages are non-consecutive (e.g., page 78 -> 82), this generates
+    individual page breaks for each transition (79, 80, 81, 82).
+
+    Args:
+        prev_page: The last seen page number.
+        next_page: The current page number.
+        lvl: The nesting level for the yielded nodes.
+        start_index: The starting index for page break node IDs.
+
+    Yields:
+        Tuples of (PageBreakNode, level, next_index) for each page transition.
+    """
+    idx = start_index
+    for page in range(prev_page + 1, next_page + 1):
+        yield _PageBreakNode(
+            self_ref=f"#/pb/{idx}",
+            prev_page=page - 1,
+            next_page=page,
+        ), lvl, idx + 1
+        idx += 1
+
+
 def _iterate_items(
     doc: DoclingDocument,
     layers: Optional[set[ContentLayer]],
@@ -111,28 +141,19 @@ def _iterate_items(
                     if isinstance(it, DocItem) and it.prov:
                         page_no = it.prov[0].page_no
                         if prev_page_nr is not None and page_no > prev_page_nr:
-                            yield (
-                                _PageBreakNode(
-                                    self_ref=f"#/pb/{page_break_i}",
-                                    prev_page=prev_page_nr,
-                                    next_page=page_no,
-                                ),
-                                lvl,
-                            )
+                            for pb_node, pb_lvl, page_break_i in _yield_page_breaks(
+                                prev_page_nr, page_no, lvl, page_break_i
+                            ):
+                                yield pb_node, pb_lvl
                         break
             elif isinstance(item, DocItem) and item.prov:
                 page_no = item.prov[0].page_no
                 if prev_page_nr is None or page_no > prev_page_nr:
                     if prev_page_nr is not None:  # close previous range
-                        yield (
-                            _PageBreakNode(
-                                self_ref=f"#/pb/{page_break_i}",
-                                prev_page=prev_page_nr,
-                                next_page=page_no,
-                            ),
-                            lvl,
-                        )
-                        page_break_i += 1
+                        for pb_node, pb_lvl, page_break_i in _yield_page_breaks(
+                            prev_page_nr, page_no, lvl, page_break_i
+                        ):
+                            yield pb_node, pb_lvl
                     prev_page_nr = page_no
         yield item, lvl
 
