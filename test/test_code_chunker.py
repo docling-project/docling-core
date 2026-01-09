@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import pathlib
+import sys
 from typing import List, Optional
 
 import git
@@ -150,6 +151,9 @@ def _dump_or_assert(act_data: dict, out_path: pathlib.Path):
 
 @pytest.mark.parametrize("name,local_path,repo_url,chunker_factory", REPO_SPECS)
 def test_function_chunkers_repo(name, local_path, repo_url, chunker_factory):
+
+    if name == "Java" and sys.version_info < (3, 10):
+        pytest.skip("Skipping Java tests on python < 3.10.")
 
     local_path_full = os.getcwd() + local_path
 
