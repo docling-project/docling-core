@@ -1,12 +1,8 @@
 """Utility functions and classes for code language detection and processing."""
 
+import sys
 from typing import List, Optional
 
-import tree_sitter_c as ts_c
-import tree_sitter_java_orchard as ts_java
-import tree_sitter_javascript as ts_js
-import tree_sitter_python as ts_python
-import tree_sitter_typescript as ts_ts
 from tree_sitter import Language as Lang
 from tree_sitter import Node, Tree
 
@@ -28,13 +24,22 @@ def _get_file_extensions(language: CodeLanguageLabel) -> List[str]:
 
 def _get_tree_sitter_language(language: CodeLanguageLabel):
     """Get the tree-sitter language object for a language."""
+    import tree_sitter_c as ts_c
+    import tree_sitter_javascript as ts_js
+    import tree_sitter_python as ts_python
+    import tree_sitter_typescript as ts_ts
+
     language_map = {
         CodeLanguageLabel.PYTHON: lambda: Lang(ts_python.language()),
         CodeLanguageLabel.TYPESCRIPT: lambda: Lang(ts_ts.language_typescript()),
-        CodeLanguageLabel.JAVA: lambda: Lang(ts_java.language()),
         CodeLanguageLabel.JAVASCRIPT: lambda: Lang(ts_js.language()),
         CodeLanguageLabel.C: lambda: Lang(ts_c.language()),
     }
+    if sys.version_info >= (3, 10):
+        import tree_sitter_java_orchard as ts_java
+
+        language_map[CodeLanguageLabel.JAVA] = lambda: Lang(ts_java.language())
+
     factory = language_map.get(language)
     return factory() if factory else None
 
