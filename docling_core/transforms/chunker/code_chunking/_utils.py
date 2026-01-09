@@ -3,7 +3,7 @@
 from typing import List, Optional
 
 import tree_sitter_c as ts_c
-import tree_sitter_java as ts_java
+import tree_sitter_java_orchard as ts_java
 import tree_sitter_javascript as ts_js
 import tree_sitter_python as ts_python
 import tree_sitter_typescript as ts_ts
