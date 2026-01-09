@@ -48,7 +48,7 @@ dependencies = [
     'pillow (>=10.0.0,<13.0.0)',
     'pyyaml (>=5.1,<7.0.0)',
     'typing-extensions (>=4.12.2,<5.0.0)',
-    'typer (>=0.12.5,<0.20.0)',
+    'typer (>=0.12.5,<0.22.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
 ]
 
@@ -71,7 +71,7 @@ chunking = [
     'tree-sitter (>=0.23.2,<1.0.0)',
     'tree-sitter-python (>=0.23.6,<1.0.0)',
     'tree-sitter-c (>=0.23.4,<1.0.0)',
-    'tree-sitter-java (>=0.23.5,<1.0.0)',
+    'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
     'tree-sitter-javascript (>=0.23.1,<1.0.0)',
     'tree-sitter-typescript (>=0.23.2,<1.0.0)',
 
@@ -84,7 +84,7 @@ chunking-openai = [
     'tree-sitter (>=0.23.2,<1.0.0)',
     'tree-sitter-python (>=0.23.6,<1.0.0)',
     'tree-sitter-c (>=0.23.4,<1.0.0)',
-    'tree-sitter-java (>=0.23.5,<1.0.0)',
+    'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
     'tree-sitter-javascript (>=0.23.1,<1.0.0)',
     'tree-sitter-typescript (>=0.23.2,<1.0.0)',
 
