@@ -1,31 +1,27 @@
-import os
-import json
-import glob
 import argparse
-from pathlib import Path
-from typing import Sequence, Dict, Any, Optional
+import glob
+import json
+import os
 from collections import Counter
 from io import BytesIO
-
-from PIL import Image as PILImage
-
-from datasets import load_dataset
-from tqdm import tqdm
-from transformers import (
-    AutoTokenizer,
-    PreTrainedTokenizerBase,
-)
-from docling_core.types.doc import DoclingDocument, ImageRef
-from docling_core.types.doc.base import ImageRefMode
-from docling_core.experimental.idoctags import (
-    IDocTagsSerializationMode,
-    IDocTagsParams,
-    IDocTagsVocabulary,
-    IDocTagsDocSerializer,
-)
+from pathlib import Path
+from typing import Any, Dict, Optional, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
+from datasets import load_dataset
+from PIL import Image as PILImage
+from tqdm import tqdm
+from transformers import AutoTokenizer, PreTrainedTokenizerBase
+
+from docling_core.experimental.idoctags import (
+    IDocTagsDocSerializer,
+    IDocTagsParams,
+    IDocTagsSerializationMode,
+    IDocTagsVocabulary,
+)
+from docling_core.types.doc import DoclingDocument, ImageRef
+from docling_core.types.doc.base import ImageRefMode
 
 # In order to download **before** the datasets library, run
 # 
