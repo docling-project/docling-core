@@ -23,7 +23,7 @@
         <description>...</description>
         <classification>Bar chart</classification>
         <molecule>CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1</molecule>
-        <docling_legacy__misc>{'myanalysis': {'prediction': 'abc'}, 'something_else': {'text': 'aaa'}}</docling_legacy__misc>
+        <docling_legacy__misc><![CDATA[{'myanalysis': {'prediction': 'abc'}, 'something_else': {'text': 'aaa'}}]]></docling_legacy__misc>
       </meta>
       <location value="304" resolution="512"/>
       <location value="128" resolution="512"/>

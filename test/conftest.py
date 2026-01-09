@@ -26,8 +26,8 @@ from docling_core.types.doc import (
 )
 
 
-@pytest.fixture(scope="session")
-def _construct_doc() -> DoclingDocument:
+# factored out of fixture to simplify IDE-level debugging
+def _construct_doc_impl() -> DoclingDocument:
     """Fixture for a DoclingDocument to be reused across a test session."""
 
     doc = DoclingDocument(name="Untitled 1")
@@ -373,6 +373,12 @@ def _construct_doc() -> DoclingDocument:
     doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=None)
 
     return doc
+
+
+@pytest.fixture(scope="session")
+def _construct_doc() -> DoclingDocument:
+    """Fixture for a DoclingDocument to be reused across a test session."""
+    return _construct_doc_impl()
 
 
 @pytest.fixture(scope="function")
