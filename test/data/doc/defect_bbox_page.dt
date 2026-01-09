@@ -1,0 +1,4 @@
+Assistant: <doctag>
+<text><loc_68><loc_447><loc_445><loc_447>This is valid text with a zero-height bounding box.</text>
+<text><loc_68><loc_447><loc_32><loc_499>This is valid text with a negative-width bounding box.</text>
+</doctag><end_of_utterance>
