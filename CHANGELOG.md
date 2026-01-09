@@ -1,3 +1,9 @@
+## [v2.58.1](https://github.com/docling-project/docling-core/releases/tag/v2.58.1) - 2026-01-09
+
+### Fix
+
+* **deps:** Switch to tree-sitter-java-orchard and expand typer compatibility ([#473](https://github.com/docling-project/docling-core/issues/473)) ([`8c330ab`](https://github.com/docling-project/docling-core/commit/8c330ab81a39a2b23bf848e241ee70ef9d24df20))
+
 ## [v2.58.0](https://github.com/docling-project/docling-core/releases/tag/v2.58.0) - 2026-01-08
 
 ### Feature
