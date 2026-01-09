@@ -192,8 +192,8 @@ def test_idoctags_meta():
     verify(exp_file=src.with_suffix(".gt.idt.xml"), actual=actual)
 
 
-def _create_escape_test_doc():
-    doc = DoclingDocument(name="test_escape")
+def _create_escape_test_doc(inp_doc: DoclingDocument):
+    doc = inp_doc.model_copy(deep=True)
     doc.add_text(label=DocItemLabel.TEXT, text="Simple text")
     doc.add_text(label=DocItemLabel.TEXT, text="Some 'single' quotes")
     doc.add_text(label=DocItemLabel.TEXT, text='Some "double" quotes')
@@ -221,11 +221,9 @@ def _create_escape_test_doc():
     return doc
 
 
-def test_cdata_always():
+def test_cdata_always(sample_doc: DoclingDocument):
     """Test cdata_always mode."""
-
-    doc = _create_escape_test_doc()
-
+    doc = _create_escape_test_doc(sample_doc)
     serializer = IDocTagsDocSerializer(
         doc=doc,
         params=IDocTagsParams(
@@ -239,9 +237,9 @@ def test_cdata_always():
     verify(exp_file=exp_file, actual=ser_txt)
 
 
-def test_cdata_when_needed():
+def test_cdata_when_needed(sample_doc: DoclingDocument):
     """Test cdata_when_needed mode."""
-    doc = _create_escape_test_doc()
+    doc = _create_escape_test_doc(sample_doc)
     serializer = IDocTagsDocSerializer(
         doc=doc,
         params=IDocTagsParams(
@@ -251,21 +249,6 @@ def test_cdata_when_needed():
     ser_res = serializer.serialize()
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/cdata_when_needed.gt.idt.xml")
-    verify(exp_file=exp_file, actual=ser_txt)
-
-
-def test_entities():
-    """Test entities mode."""
-    doc = _create_escape_test_doc()
-    serializer = IDocTagsDocSerializer(
-        doc=doc,
-        params=IDocTagsParams(
-            escape_mode=EscapeMode.ENTITIES,
-        ),
-    )
-    ser_res = serializer.serialize()
-    ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/entities.gt.idt.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -357,3 +340,14 @@ def test_formatting_disabled():
     assert "<bold>" not in result
     assert "<italic>" not in result
     assert "Plain text" in result
+
+
+# def test_constructed_doc(sample_doc: DoclingDocument):
+#     dt = IDocTagsDocSerializer(
+#         doc=sample_doc,
+#         params=IDocTagsParams(
+#             # escape_mode=EscapeMode.CDATA_ALWAYS,
+#             # pretty_indentation=None,
+#         )
+#     ).serialize().text
+#     verify(exp_file=Path("./test/data/doc/constructed_doc.gt.idt.xml"), actual=dt)

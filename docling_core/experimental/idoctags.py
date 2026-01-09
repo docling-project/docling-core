@@ -1,7 +1,6 @@
 """Define classes for DocTags serialization."""
 
 import copy
-import html
 import re
 from enum import Enum
 from itertools import groupby
@@ -987,7 +986,6 @@ class EscapeMode(str, Enum):
     CDATA_WHEN_NEEDED = (
         "cdata_when_needed"  # wrap text in CDATA only if it contains special characters
     )
-    ENTITIES = "entities"  # escape any special characters by using predefined entities
 
 
 class IDocTagsParams(CommonParams):
@@ -1029,8 +1027,6 @@ def _escape_text(text: str, escape_mode: EscapeMode) -> str:
         and any(c in text for c in ['"', "'", "&", "<", ">"])
     ):
         return f"<![CDATA[{text}]]>"
-    elif escape_mode == EscapeMode.ENTITIES:
-        return html.escape(text, quote=True)
     return text
 
 
@@ -1365,7 +1361,8 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 text_part = text_part.strip()
 
             # Apply XML escaping according to the configured escape mode
-            text_part = _escape_text(text_part, params.escape_mode)
+            if item.text:  # skip escaping for inline groups
+                text_part = _escape_text(text_part, params.escape_mode)
 
             if text_part:
                 parts.append(text_part)

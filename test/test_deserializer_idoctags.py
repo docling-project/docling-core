@@ -1,9 +1,6 @@
-from typing import Optional
-
 import pytest
 
 from docling_core.experimental.idoctags import (
-    EscapeMode,
     IDocTagsDocDeserializer,
     IDocTagsDocSerializer,
     IDocTagsParams,
@@ -30,15 +27,12 @@ def _serialize(
     add_location: bool = True,
     add_content: bool = True,
     add_table_cell_location: bool = False,
-    escape_mode: Optional[EscapeMode] = None,
 ) -> str:
     params = IDocTagsParams(
         add_location=add_location,
         add_content=add_content,
         add_table_cell_location=add_table_cell_location,
     )
-    if escape_mode is not None:
-        params.escape_mode = escape_mode
     ser = IDocTagsDocSerializer(
         doc=doc,
         params=params,
@@ -818,9 +812,7 @@ def test_roundtrip_list_item_with_inline_group():
         parent=inline2,
     )
 
-    # FIXME: CDATA deserialization seems not in place yet
-    escape_mode = EscapeMode.ENTITIES
-    dt = _serialize(doc, escape_mode=escape_mode)
+    dt = _serialize(doc)
     if DO_PRINT:
         print("\n", dt)
 
@@ -832,7 +824,7 @@ def test_roundtrip_list_item_with_inline_group():
     assert len(doc2.texts) >= 2
 
     # Verify round-trip
-    dt2 = _serialize(doc2, escape_mode=escape_mode)
+    dt2 = _serialize(doc2)
     if DO_PRINT:
         print("\ndt:", dt)
         print("\ndt2:", dt2)
@@ -1101,13 +1093,11 @@ def test_roundtrip_table_with_rich_cells():
 def test_constructed_doc(sample_doc: DoclingDocument):
     doc = sample_doc
 
-    # FIXME: CDATA deserialization seems not in place yet
-    escape_mode = EscapeMode.ENTITIES
-    dt = _serialize(doc, escape_mode=escape_mode)
+    dt = _serialize(doc)
 
     doc2 = _deserialize(dt)
 
-    dt2 = _serialize(doc2, escape_mode=escape_mode)
+    dt2 = _serialize(doc2)
 
     # if DO_PRINT:
     # print(f"--------------------------dt:\n\n{dt}\n\n")
