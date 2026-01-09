@@ -61,9 +61,7 @@ Affiliation 2]]></text>
       <list_text>
         <inline>
           <text><![CDATA[Here a code snippet:]]></text>
-          <code>
-            <facets>Python</facets>
-<![CDATA[print("Hello world")]]>          </code>
+          <code class="Python"><![CDATA[print("Hello world")]]></code>
           <text><![CDATA[(to be displayed inline)]]></text>
         </inline>
       </list_text>
@@ -77,22 +75,40 @@ Affiliation 2]]></text>
     </list>
   </list>
   <text><![CDATA[Here a code block:]]></text>
-  <code>
-    <facets>Python</facets>
-<![CDATA[print("Hello world")]]>  </code>
+  <code class="Python"><![CDATA[print("Hello world")]]></code>
   <text><![CDATA[Here a formula block:]]></text>
   <formula><![CDATA[E=mc^2]]></formula>
   <inline>
     <text><![CDATA[Some formatting chops:]]></text>
-    <text><![CDATA[<bold>bold</bold>]]></text>
-    <text><![CDATA[<italic>italic</italic>]]></text>
-    <text><![CDATA[underline]]></text>
-    <text><![CDATA[<strikethrough>strikethrough</strikethrough>]]></text>
-    <text><![CDATA[<subscript>subscript</subscript>]]></text>
-    <text><![CDATA[<superscript>superscript</superscript>]]></text>
+    <text>
+      <bold><![CDATA[bold]]></bold>
+    </text>
+    <text>
+      <italic><![CDATA[italic]]></italic>
+    </text>
+    <text>
+      <underline><![CDATA[underline]]></underline>
+    </text>
+    <text>
+      <strikethrough><![CDATA[strikethrough]]></strikethrough>
+    </text>
+    <text>
+      <subscript><![CDATA[subscript]]></subscript>
+    </text>
+    <text>
+      <superscript><![CDATA[superscript]]></superscript>
+    </text>
     <text><![CDATA[hyperlink]]></text>
     <text><![CDATA[&]]></text>
-    <text><![CDATA[<strikethrough><italic><bold>everything at the same time.</bold></italic></strikethrough>]]></text>
+    <text>
+      <strikethrough>
+        <underline>
+          <italic>
+            <bold><![CDATA[everything at the same time.]]></bold>
+          </italic>
+        </underline>
+      </strikethrough>
+    </text>
   </inline>
   <list ordered="true">
     <list_text><![CDATA[Item 1 in A]]></list_text>
@@ -122,12 +138,10 @@ Affiliation 2]]></text>
       <description><![CDATA[Description content]]></description>
     </meta>
 <![CDATA[An ampersand: &]]>  </text>
-  <code>
-    <facets>Python</facets>
-<![CDATA[0 == 0]]>  </code>
-  <code>
-    <facets>Python</facets>
-<![CDATA[0 < 1]]>  </code>
+  <code><![CDATA[0 == 0]]></code>
+  <code><![CDATA[0 < 1]]></code>
+  <code class="Python"><![CDATA[42 == 42]]></code>
+  <code class="Python"><![CDATA[42 < 1337]]></code>
   <floating_group class="table">
     <otsl>
       <fcel/>
@@ -144,4 +158,10 @@ Affiliation 2]]></text>
 <![CDATA[<second>]]>      <nl/>
     </otsl>
   </floating_group>
+  <text><![CDATA[0 < 1]]></text>
+  <text>
+    <italic>
+      <bold><![CDATA[0 < 42]]></bold>
+    </italic>
+  </text>
 </doctag>

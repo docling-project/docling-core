@@ -371,8 +371,9 @@ class IDocTagsToken(str, Enum):
     INLINE = "inline"
 
     # Formatting
-    BOLD = "bold"  # instead of "strong"
-    ITALIC = "italic"  # instead of "em"
+    BOLD = "bold"
+    ITALIC = "italic"
+    UNDERLINE = "underline"
     STRIKETHROUGH = "strikethrough"
     SUPERSCRIPT = "superscript"
     SUBSCRIPT = "subscript"
@@ -1269,6 +1270,12 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         elif isinstance(item, ListItem):
             tok = IDocTagsToken.LIST_TEXT
             wrap_open_token = f"<{tok.value}>"
+        elif isinstance(item, CodeItem):
+            tok = IDocTagsToken.CODE
+            if item.code_language != CodeLanguageLabel.UNKNOWN:
+                wrap_open_token = f'<{tok.value} {IDocTagsAttributeKey.CLASS.value}="{item.code_language.value}">'
+            else:
+                wrap_open_token = f"<{tok.value}>"
         elif (
             isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_SELECTED
         ):
@@ -1338,31 +1345,28 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                         hyperlink=item.hyperlink,
                     )
             else:
+                text_part = _escape_text(item.text, params.escape_mode)
                 text_part = doc_serializer.post_process(
-                    text=item.text,
+                    text=text_part,
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
                 )
 
             # For code blocks, preserve language using a lightweight facets marker
             # e.g., <facets>language=python</facets> before the code content.
-            if isinstance(item, CodeItem):
-                # lang = getattr(item.code_language, "value", str(item.code_language))
-                if item.code_language != CodeLanguageLabel.UNKNOWN:
-                    parts.append(
-                        _wrap(
-                            # text=f"language={lang.lower()}",
-                            text=item.code_language.value,
-                            wrap_tag=IDocTagsToken.FACETS.value,
-                        )
-                    )
-                # Keep the textual code content as-is (no stripping)
-            else:
-                text_part = text_part.strip()
-
-            # Apply XML escaping according to the configured escape mode
-            if item.text:  # skip escaping for inline groups
-                text_part = _escape_text(text_part, params.escape_mode)
+            # if isinstance(item, CodeItem):
+            #     # lang = getattr(item.code_language, "value", str(item.code_language))
+            #     if item.code_language != CodeLanguageLabel.UNKNOWN:
+            #         parts.append(
+            #             _wrap(
+            #                 # text=f"language={lang.lower()}",
+            #                 text=item.code_language.value,
+            #                 wrap_tag=IDocTagsToken.FACETS.value,
+            #             )
+            #         )
+            #     # Keep the textual code content as-is (no stripping)
+            # else:
+            #     text_part = text_part.strip()
 
             if text_part:
                 parts.append(text_part)
@@ -2073,6 +2077,11 @@ class IDocTagsDocSerializer(DocSerializer):
         return _wrap(text=text, wrap_tag=IDocTagsToken.ITALIC.value)
 
     @override
+    def serialize_underline(self, text: str, **kwargs: Any) -> str:
+        """Apply IDocTags-specific underline serialization."""
+        return _wrap(text=text, wrap_tag=IDocTagsToken.UNDERLINE.value)
+
+    @override
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
         """Apply IDocTags-specific strikethrough serialization."""
         return _wrap(text=text, wrap_tag=IDocTagsToken.STRIKETHROUGH.value)
@@ -2274,7 +2283,12 @@ class IDocTagsDocDeserializer(BaseModel):
         self, el: Element
     ) -> tuple[str, CodeLanguageLabel]:
         """Extract code content and language from a <code> element."""
-        lang_label = CodeLanguageLabel.UNKNOWN
+        try:
+            lang_label = CodeLanguageLabel(
+                el.getAttribute(IDocTagsAttributeKey.CLASS.value)
+            )
+        except ValueError:
+            lang_label = CodeLanguageLabel.UNKNOWN
         parts: list[str] = []
         for node in el.childNodes:
             if isinstance(node, Text):
@@ -2282,36 +2296,9 @@ class IDocTagsDocDeserializer(BaseModel):
                     parts.append(node.data)
             elif isinstance(node, Element):
                 nm_child = node.tagName
-                if nm_child == IDocTagsToken.FACETS.value:
-                    language_text = self._get_text(node).strip()
-                    try:
-                        lang_label = next(
-                            lbl
-                            for lbl in CodeLanguageLabel
-                            if lbl.value == language_text
-                        )
-                    except StopIteration:
-                        lang_label = CodeLanguageLabel.UNKNOWN
-
-                    """
-                    facets_text = self._get_text(node).strip()
-                    if "=" in facets_text:
-                        key, val = facets_text.split("=", 1)
-                        if key.strip().lower() == "language":
-                            val_norm = val.strip().lower()
-                            try:
-                                lang_label = next(
-                                    lbl
-                                    for lbl in CodeLanguageLabel
-                                    if lbl.value.lower() == val_norm
-                                )
-                            except StopIteration:
-                                lang_label = CodeLanguageLabel.UNKNOWN
-                    """
-                    continue
                 if nm_child == IDocTagsToken.LOCATION.value:
                     continue
-                if nm_child == IDocTagsToken.BR.value:
+                elif nm_child == IDocTagsToken.BR.value:
                     parts.append("\n")
                 else:
                     parts.append(self._get_text(node))
@@ -2726,11 +2713,12 @@ class IDocTagsDocDeserializer(BaseModel):
 
             # Mapping of format tags to Formatting attributes
             format_tags = {
-                IDocTagsToken.BOLD.value: "bold",
-                IDocTagsToken.ITALIC.value: "italic",
-                IDocTagsToken.STRIKETHROUGH.value: "strikethrough",
-                IDocTagsToken.SUPERSCRIPT.value: "superscript",
-                IDocTagsToken.SUBSCRIPT.value: "subscript",
+                IDocTagsToken.BOLD,
+                IDocTagsToken.ITALIC,
+                IDocTagsToken.STRIKETHROUGH,
+                IDocTagsToken.UNDERLINE,
+                IDocTagsToken.SUPERSCRIPT,
+                IDocTagsToken.SUBSCRIPT,
             }
 
             if tag_name in format_tags:
@@ -2748,6 +2736,8 @@ class IDocTagsDocDeserializer(BaseModel):
                     child_formatting.italic = True
                 elif tag_name == IDocTagsToken.STRIKETHROUGH.value:
                     child_formatting.strikethrough = True
+                elif tag_name == IDocTagsToken.UNDERLINE.value:
+                    child_formatting.underline = True
                 elif tag_name == IDocTagsToken.SUPERSCRIPT.value:
                     child_formatting.script = Script.SUPER
                 elif tag_name == IDocTagsToken.SUBSCRIPT.value:

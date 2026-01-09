@@ -202,14 +202,10 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
         summary=SummaryMetaField(text="Summary with <tags> & ampersands"),
         description=DescriptionMetaField(text="Description content"),
     )
-    doc.add_code(
-        text="0 == 0",
-        code_language=CodeLanguageLabel.PYTHON,
-    )
-    doc.add_code(
-        text="0 < 1",
-        code_language=CodeLanguageLabel.PYTHON,
-    )
+    doc.add_code(text="0 == 0")
+    doc.add_code(text="0 < 1")
+    doc.add_code(text="42 == 42", code_language=CodeLanguageLabel.PYTHON)
+    doc.add_code(text="42 < 1337", code_language=CodeLanguageLabel.PYTHON)
 
     td = TableData(num_cols=2)
     td.add_row(["Foo", "Bar"])
@@ -217,6 +213,14 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
     td.add_row(["<script>", "A & B"])
     td.add_row(["Only", "<second>"])
     doc.add_table(data=td)
+
+    # test combination of formatting and special characters
+    doc.add_text(label=DocItemLabel.TEXT, text="0 < 1")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="0 < 42",
+        formatting=Formatting(bold=True, italic=True),
+    )
 
     return doc
 
@@ -250,30 +254,6 @@ def test_cdata_when_needed(sample_doc: DoclingDocument):
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/cdata_when_needed.gt.idt.xml")
     verify(exp_file=exp_file, actual=ser_txt)
-
-
-def test_bold_formatting():
-    """Test bold formatting serialization."""
-    doc = DoclingDocument(name="test")
-    formatting = Formatting(bold=True)
-    doc.add_text(label=DocItemLabel.TEXT, text="Bold text", formatting=formatting)
-
-    result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=True
-    )
-    assert "<bold>Bold text</bold>" in result
-
-
-def test_italic_formatting():
-    """Test italic formatting serialization."""
-    doc = DoclingDocument(name="test")
-    formatting = Formatting(italic=True)
-    doc.add_text(label=DocItemLabel.TEXT, text="Italic text", formatting=formatting)
-
-    result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=True
-    )
-    assert "<italic>Italic text</italic>" in result
 
 
 def test_strikethrough_formatting():
@@ -340,14 +320,3 @@ def test_formatting_disabled():
     assert "<bold>" not in result
     assert "<italic>" not in result
     assert "Plain text" in result
-
-
-# def test_constructed_doc(sample_doc: DoclingDocument):
-#     dt = IDocTagsDocSerializer(
-#         doc=sample_doc,
-#         params=IDocTagsParams(
-#             # escape_mode=EscapeMode.CDATA_ALWAYS,
-#             # pretty_indentation=None,
-#         )
-#     ).serialize().text
-#     verify(exp_file=Path("./test/data/doc/constructed_doc.gt.idt.xml"), actual=dt)
