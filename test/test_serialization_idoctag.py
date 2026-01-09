@@ -1,15 +1,6 @@
 """Unit tests for IDocTags create_closing_token helper."""
 
-import sys
 from pathlib import Path
-
-# Add project root to path for direct execution (e.g., when debugging from IDE)
-# This ensures imports work when running the file directly
-_file = Path(__file__).resolve()
-project_root = _file.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
 from test.test_serialization import verify
 
 import pytest
