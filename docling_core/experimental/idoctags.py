@@ -4,7 +4,6 @@ import copy
 import html
 import re
 from enum import Enum
-from html.parser import HTMLParser
 from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
 from xml.dom.minidom import Element, Text, parseString
@@ -981,6 +980,16 @@ class IDocTagsSerializationMode(str, Enum):
     LLM_FRIENDLY = "llm_friendly"
 
 
+class EscapeMode(str, Enum):
+    """XML escape mode for IDocTags output."""
+
+    CDATA_ALWAYS = "cdata_always"  # wrap all text in CDATA
+    CDATA_WHEN_NEEDED = (
+        "cdata_when_needed"  # wrap text in CDATA only if it contains special characters
+    )
+    ENTITIES = "entities"  # escape any special characters by using predefined entities
+
+
 class IDocTagsParams(CommonParams):
     """IDocTags-specific serialization parameters independent of DocTags."""
 
@@ -1002,7 +1011,7 @@ class IDocTagsParams(CommonParams):
     # Expand self-closing forms of non-self-closing tokens after pretty-printing
     preserve_empty_non_selfclosing: bool = True
     # XML compliance: escape special characters in text content
-    xml_compliant: bool = False
+    escape_mode: EscapeMode = EscapeMode.CDATA_WHEN_NEEDED
 
 
 def _get_delim(*, params: IDocTagsParams) -> str:
@@ -1014,84 +1023,15 @@ def _get_delim(*, params: IDocTagsParams) -> str:
     raise RuntimeError(f"Unknown IDocTags mode: {params.mode}")
 
 
-class _WhitelistHTMLParser(HTMLParser):
-    """XML-safe sanitizer that preserves only specific IDocTags formatting and content tags.
-
-    Preserves these tags (attributes are stripped):
-    bold, italic, strikethrough, superscript, subscript, inline, text, code, formula, facets.
-    All other tags are escaped literally.
-    """
-
-    # Allowed formatting and content tags
-    _ALLOWED = {
-        IDocTagsToken.BOLD.value,
-        IDocTagsToken.ITALIC.value,
-        IDocTagsToken.STRIKETHROUGH.value,
-        IDocTagsToken.SUPERSCRIPT.value,
-        IDocTagsToken.SUBSCRIPT.value,
-        IDocTagsToken.INLINE.value,
-        IDocTagsToken.TEXT.value,
-        IDocTagsToken.CODE.value,
-        IDocTagsToken.FORMULA.value,
-        IDocTagsToken.FACETS.value,
-    }
-
-    def __init__(self):
-        super().__init__(convert_charrefs=False)
-        self.out = []
-
-    def handle_starttag(self, tag, attrs):
-        if tag in self._ALLOWED:
-            self.out.append(f"<{tag}>")
-        else:
-            # Escape disallowed tags literally
-            self.out.append(html.escape(self.get_starttag_text(), quote=False))
-
-    def handle_endtag(self, tag):
-        if tag in self._ALLOWED:
-            self.out.append(f"</{tag}>")
-        else:
-            self.out.append(html.escape(f"</{tag}>", quote=False))
-
-    def handle_startendtag(self, tag, attrs):
-        if tag in self._ALLOWED:
-            self.out.append(f"<{tag}></{tag}>")
-        else:
-            self.out.append(html.escape(self.get_starttag_text(), quote=False))
-
-    def handle_data(self, data):
-        self.out.append(html.escape(data, quote=False))
-
-    def handle_entityref(self, name):
-        self.out.append(f"&{name};")
-
-    def handle_charref(self, name):
-        self.out.append(f"&#{name};")
-
-    def handle_comment(self, data):
-        self.out.append(html.escape(f"<!--{data}-->", quote=False))
-
-
-# def _escape_xml_text(text: str, xml_compliant: bool) -> str:
-#     """Escape XML special characters if xml_compliant is enabled."""
-#     if xml_compliant:
-#         return html.escape(text, quote=False)
-#     return text
-
-
-def _escape_xml_text(text: str, xml_compliant: bool) -> str:
-    """Escape text for XML while optionally preserving specific IDocTags formatting tags.
-
-    If xml_compliant=True, preserves only these tags (attributes stripped):
-    bold, italic, strikethrough, superscript, subscript, inline, text, code, formula, facets.
-    All other tags are escaped. If xml_compliant=False, returns text unchanged.
-    """
-    if not xml_compliant:
-        return text
-    parser = _WhitelistHTMLParser()
-    parser.feed(text)
-    parser.close()
-    return "".join(parser.out)
+def _escape_text(text: str, escape_mode: EscapeMode) -> str:
+    if escape_mode == EscapeMode.CDATA_ALWAYS or (
+        escape_mode == EscapeMode.CDATA_WHEN_NEEDED
+        and any(c in text for c in ['"', "'", "&", "<", ">"])
+    ):
+        return f"<![CDATA[{text}]]>"
+    elif escape_mode == EscapeMode.ENTITIES:
+        return html.escape(text, quote=True)
+    return text
 
 
 class IDocTagsListSerializer(BaseModel, BaseListSerializer):
@@ -1424,8 +1364,8 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             else:
                 text_part = text_part.strip()
 
-            # Apply XML escaping if xml_compliant is enabled
-            text_part = _escape_xml_text(text_part, params.xml_compliant)
+            # Apply XML escaping according to the configured escape mode
+            text_part = _escape_text(text_part, params.escape_mode)
 
             if text_part:
                 parts.append(text_part)
@@ -1433,13 +1373,13 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         if params.add_caption and isinstance(item, FloatingItem):
             cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
             if cap_text:
-                cap_text = _escape_xml_text(cap_text, params.xml_compliant)
+                cap_text = _escape_text(cap_text, params.escape_mode)
                 parts.append(cap_text)
 
         if params.add_footnote and isinstance(item, FloatingItem):
             ftn_text = doc_serializer.serialize_footnotes(item=item, **kwargs).text
             if ftn_text:
-                ftn_text = _escape_xml_text(ftn_text, params.xml_compliant)
+                ftn_text = _escape_text(ftn_text, params.escape_mode)
                 parts.append(ftn_text)
 
         text_res = "".join(parts)
@@ -1496,12 +1436,12 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
             if name == MetaFieldName.SUMMARY and isinstance(
                 field_val, SummaryMetaField
             ):
-                escaped_text = _escape_xml_text(field_val.text, params.xml_compliant)
+                escaped_text = _escape_text(field_val.text, params.escape_mode)
                 txt = f"<summary>{escaped_text}</summary>"
             elif name == MetaFieldName.DESCRIPTION and isinstance(
                 field_val, DescriptionMetaField
             ):
-                escaped_text = _escape_xml_text(field_val.text, params.xml_compliant)
+                escaped_text = _escape_text(field_val.text, params.escape_mode)
                 txt = f"<description>{escaped_text}</description>"
             elif name == MetaFieldName.CLASSIFICATION and isinstance(
                 field_val, PictureClassificationMetaField
@@ -1509,12 +1449,12 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
                 class_name = self._humanize_text(
                     field_val.get_main_prediction().class_name
                 )
-                escaped_class_name = _escape_xml_text(class_name, params.xml_compliant)
+                escaped_class_name = _escape_text(class_name, params.escape_mode)
                 txt = f"<classification>{escaped_class_name}</classification>"
             elif name == MetaFieldName.MOLECULE and isinstance(
                 field_val, MoleculeMetaField
             ):
-                escaped_smi = _escape_xml_text(field_val.smi, params.xml_compliant)
+                escaped_smi = _escape_text(field_val.smi, params.escape_mode)
                 txt = f"<molecule>{escaped_smi}</molecule>"
             elif name == MetaFieldName.TABULAR_CHART and isinstance(
                 field_val, TabularChartMetaField
@@ -1524,9 +1464,7 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
             # elif tmp := str(field_val or ""):
             #     txt = tmp
             elif name not in {v.value for v in MetaFieldName}:
-                escaped_text = _escape_xml_text(
-                    str(field_val or ""), params.xml_compliant
-                )
+                escaped_text = _escape_text(str(field_val or ""), params.escape_mode)
                 txt = _wrap(text=escaped_text, wrap_tag=name)
             return txt
         return None
@@ -1744,9 +1682,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                             parts.append(cell_loc)
                         if params.add_content:
                             # Apply XML escaping to table cell content
-                            escaped_content = _escape_xml_text(
-                                content, params.xml_compliant
-                            )
+                            escaped_content = _escape_text(content, params.escape_mode)
                             parts.append(escaped_content)
                     else:
                         parts.append(

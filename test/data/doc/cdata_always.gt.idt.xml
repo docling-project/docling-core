@@ -1,0 +1,33 @@
+<doctag version="1.0.0">
+  <text><![CDATA[Simple text]]></text>
+  <text><![CDATA[Some 'single' quotes]]></text>
+  <text><![CDATA[Some "double" quotes]]></text>
+  <text>
+    <meta>
+      <summary><![CDATA[Summary with <tags> & ampersands]]></summary>
+      <description><![CDATA[Description content]]></description>
+    </meta>
+<![CDATA[An ampersand: &]]>  </text>
+  <code>
+    <facets>Python</facets>
+<![CDATA[0 == 0]]>  </code>
+  <code>
+    <facets>Python</facets>
+<![CDATA[0 < 1]]>  </code>
+  <floating_group class="table">
+    <otsl>
+      <fcel/>
+<![CDATA[Foo]]>      <fcel/>
+<![CDATA[Bar]]>      <nl/>
+      <fcel/>
+<![CDATA[Header & Title]]>      <fcel/>
+<![CDATA[Value > 100]]>      <nl/>
+      <fcel/>
+<![CDATA[<script>]]>      <fcel/>
+<![CDATA[A & B]]>      <nl/>
+      <fcel/>
+<![CDATA[Only]]>      <fcel/>
+<![CDATA[<second>]]>      <nl/>
+    </otsl>
+  </floating_group>
+</doctag>

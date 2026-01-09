@@ -1,0 +1,44 @@
+<doctag version="1.0.0">
+  <text>Simple text</text>
+  <text>Some 'single' quotes</text>
+  <text>Some &quot;double&quot; quotes</text>
+  <text>
+    <meta>
+      <summary>Summary with &lt;tags&gt; &amp; ampersands</summary>
+      <description>Description content</description>
+    </meta>
+    An ampersand: &amp;
+  </text>
+  <code>
+    <facets>Python</facets>
+    0 == 0
+  </code>
+  <code>
+    <facets>Python</facets>
+    0 &lt; 1
+  </code>
+  <floating_group class="table">
+    <otsl>
+      <fcel/>
+      Foo
+      <fcel/>
+      Bar
+      <nl/>
+      <fcel/>
+      Header &amp; Title
+      <fcel/>
+      Value &gt; 100
+      <nl/>
+      <fcel/>
+      &lt;script&gt;
+      <fcel/>
+      A &amp; B
+      <nl/>
+      <fcel/>
+      Only
+      <fcel/>
+      &lt;second&gt;
+      <nl/>
+    </otsl>
+  </floating_group>
+</doctag>
