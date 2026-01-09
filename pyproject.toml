@@ -171,6 +171,7 @@ module = [
     "semchunk.*",
     "tabulate.*",
     "transformers.*",
+    "tree_sitter_java_orchard.*",
     "yaml.*",
 ]
 ignore_missing_imports = true
