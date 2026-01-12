@@ -1352,22 +1352,6 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                     hyperlink=item.hyperlink,
                 )
 
-            # For code blocks, preserve language using a lightweight facets marker
-            # e.g., <facets>language=python</facets> before the code content.
-            # if isinstance(item, CodeItem):
-            #     # lang = getattr(item.code_language, "value", str(item.code_language))
-            #     if item.code_language != CodeLanguageLabel.UNKNOWN:
-            #         parts.append(
-            #             _wrap(
-            #                 # text=f"language={lang.lower()}",
-            #                 text=item.code_language.value,
-            #                 wrap_tag=IDocTagsToken.FACETS.value,
-            #             )
-            #         )
-            #     # Keep the textual code content as-is (no stripping)
-            # else:
-            #     text_part = text_part.strip()
-
             if text_part:
                 parts.append(text_part)
 

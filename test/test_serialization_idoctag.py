@@ -195,6 +195,7 @@ def test_idoctags_meta():
 def _create_escape_test_doc(inp_doc: DoclingDocument):
     doc = inp_doc.model_copy(deep=True)
     doc.add_text(label=DocItemLabel.TEXT, text="Simple text")
+    doc.add_text(label=DocItemLabel.TEXT, text="    4 leading spaces, 1 trailing ")
     doc.add_text(label=DocItemLabel.TEXT, text="Some 'single' quotes")
     doc.add_text(label=DocItemLabel.TEXT, text='Some "double" quotes')
     text_item = doc.add_text(label=DocItemLabel.TEXT, text="An ampersand: &")
@@ -203,6 +204,7 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
         description=DescriptionMetaField(text="Description content"),
     )
     doc.add_code(text="0 == 0")
+    doc.add_code(text=" 1 leading space, 4 trailing    ")
     doc.add_code(text="0 < 1")
     doc.add_code(text="42 == 42", code_language=CodeLanguageLabel.PYTHON)
     doc.add_code(text="42 < 1337", code_language=CodeLanguageLabel.PYTHON)
