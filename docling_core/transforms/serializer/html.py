@@ -1018,7 +1018,7 @@ class HTMLDocSerializer(DocSerializer):
 
                 if is_skipped_page:
                     # Render empty figure for skipped page (same structure as normal)
-                    html_parts.append("<figure></figure>")
+                    html_parts.append("<figure>no page-image found</figure>")
                 else:
                     page_img = self.doc.pages[page_no].image
                     vized_page = vized_pages_dict.get(page_no)
