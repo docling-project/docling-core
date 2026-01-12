@@ -6,7 +6,6 @@ Example:
 
 import argparse
 import json
-import os
 from argparse import BooleanOptionalAction
 from pathlib import Path
 from shutil import rmtree
@@ -24,15 +23,16 @@ def _prepare_directory(folder: str, clean: bool = False) -> None:
         folder: The name of the directory.
         clean: Whether any existing content in the directory should be removed.
     """
-    if os.path.isdir(folder):
+    folder_path = Path(folder)
+    if folder_path.is_dir():
         if clean:
-            for path in Path(folder).glob("**/*"):
+            for path in folder_path.glob("**/*"):
                 if path.is_file():
                     path.unlink()
                 elif path.is_dir():
                     rmtree(path)
     else:
-        os.makedirs(folder, exist_ok=True)
+        folder_path.mkdir(parents=True, exist_ok=True)
 
 
 def generate_collection_jsonschema(folder: str):
@@ -41,12 +41,13 @@ def generate_collection_jsonschema(folder: str):
     Args:
         folder: The name of the directory.
     """
+    folder_path = Path(folder)
     for item in MODELS:
         json_schema = generate_json_schema(item)
-        with open(
-            os.path.join(folder, f"{item}.json"), mode="w", encoding="utf8"
-        ) as json_file:
-            json.dump(json_schema, json_file, ensure_ascii=False, indent=2)
+        output_file = folder_path / f"{item}.json"
+        output_file.write_text(
+            json.dumps(json_schema, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
 
 def main() -> None:

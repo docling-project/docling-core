@@ -6,13 +6,12 @@ import hashlib
 import json
 import logging
 import mimetypes
-import os
 import re
 import sys
 import typing
 import warnings
 from enum import Enum
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import (
     Any,
@@ -67,7 +66,11 @@ from docling_core.types.doc.labels import (
     PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
-from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
+from docling_core.types.doc.utils import (
+    is_remote_path,
+    parse_otsl_table_content,
+    relative_path,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -4881,38 +4884,50 @@ class DoclingDocument(BaseModel):
         img_count = 0
         image_dir.mkdir(parents=True, exist_ok=True)
 
-        if image_dir.is_dir():
-            for item, level in result.iterate_items(page_no=page_no, with_groups=False):
-                if isinstance(item, PictureItem):
-                    img = item.get_image(doc=self)
-                    if img is not None:
+        # Note: Skip is_dir() check for remote paths since S3/cloud storage
+        # doesn't have real directories - mkdir() is a no-op for remote paths
+        for item, level in result.iterate_items(page_no=page_no, with_groups=False):
+            if isinstance(item, PictureItem):
+                img = item.get_image(doc=self)
+                if img is not None:
 
-                        hexhash = PictureItem._image_to_hexhash(img)
+                    hexhash = PictureItem._image_to_hexhash(img)
 
-                        # loc_path = image_dir / f"image_{img_count:06}.png"
-                        if hexhash is not None:
-                            loc_path = image_dir / f"image_{img_count:06}_{hexhash}.png"
+                    # loc_path = image_dir / f"image_{img_count:06}.png"
+                    if hexhash is not None:
+                        loc_path = image_dir / f"image_{img_count:06}_{hexhash}.png"
 
-                            img.save(loc_path)
-                            if reference_path is not None:
-                                obj_path = relative_path(
-                                    reference_path.resolve(),
-                                    loc_path.resolve(),
-                                )
-                            else:
-                                obj_path = loc_path
+                        # Use BytesIO + write_bytes for UPath compatibility
+                        buf = BytesIO()
+                        img.save(buf, format="PNG")
+                        loc_path.write_bytes(buf.getvalue())
 
-                            if item.image is None:
-                                scale = img.size[0] / item.prov[0].bbox.width
-                                item.image = ImageRef.from_pil(
-                                    image=img, dpi=round(72 * scale)
-                                )
-                            item.image.uri = Path(obj_path)
+                        # For remote paths, use absolute URI string; for local, compute relative
+                        obj_path: Union[str, Path]
+                        if is_remote_path(loc_path) or is_remote_path(reference_path):
+                            # Convert to string URI for remote paths (Pydantic can't serialize UPath)
+                            obj_path = str(loc_path)
+                        elif reference_path is not None:
+                            obj_path = relative_path(
+                                reference_path.resolve(),
+                                loc_path.resolve(),
+                            )
+                        else:
+                            obj_path = loc_path
 
-                        # if item.image._pil is not None:
-                        #    item.image._pil.close()
+                        if item.image is None:
+                            scale = img.size[0] / item.prov[0].bbox.width
+                            item.image = ImageRef.from_pil(
+                                image=img, dpi=round(72 * scale)
+                            )
+                        # For remote paths, store as string URI; for local, store as Path
+                        # Pydantic coerces str to AnyUrl at runtime
+                        item.image.uri = obj_path  # type: ignore[assignment]
 
-                    img_count += 1
+                    # if item.image._pil is not None:
+                    #    item.image._pil.close()
+
+                img_count += 1
 
         return result
 
@@ -4978,7 +4993,7 @@ class DoclingDocument(BaseModel):
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
 
         if image_mode == ImageRefMode.REFERENCED:
-            os.makedirs(artifacts_dir, exist_ok=True)
+            artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         new_doc = self._make_copy_with_refmode(
             artifacts_dir, image_mode, page_no=None, reference_path=reference_path
@@ -4987,8 +5002,7 @@ class DoclingDocument(BaseModel):
         out = new_doc.export_to_dict(
             coord_precision=coord_precision, confid_precision=confid_precision
         )
-        with open(filename, "w", encoding="utf-8") as fw:
-            json.dump(out, fw, indent=indent)
+        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":
@@ -5003,8 +5017,7 @@ class DoclingDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
-            return cls.model_validate_json(f.read())
+        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
 
     def save_as_yaml(
         self,
@@ -5021,7 +5034,7 @@ class DoclingDocument(BaseModel):
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
 
         if image_mode == ImageRefMode.REFERENCED:
-            os.makedirs(artifacts_dir, exist_ok=True)
+            artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         new_doc = self._make_copy_with_refmode(
             artifacts_dir, image_mode, page_no=None, reference_path=reference_path
@@ -5030,8 +5043,9 @@ class DoclingDocument(BaseModel):
         out = new_doc.export_to_dict(
             coord_precision=coord_precision, confid_precision=confid_precision
         )
-        with open(filename, "w", encoding="utf-8") as fw:
-            yaml.dump(out, fw, default_flow_style=default_flow_style)
+        stream = StringIO()
+        yaml.dump(out, stream, default_flow_style=default_flow_style)
+        filename.write_text(stream.getvalue(), encoding="utf-8")
 
     @classmethod
     def load_from_yaml(cls, filename: Union[str, Path]) -> "DoclingDocument":
@@ -5045,8 +5059,7 @@ class DoclingDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, encoding="utf-8") as f:
-            data = yaml.load(f, Loader=yaml.SafeLoader)
+        data = yaml.load(filename.read_text(encoding="utf-8"), Loader=yaml.SafeLoader)
         return DoclingDocument.model_validate(data)
 
     def export_to_dict(
@@ -5098,7 +5111,7 @@ class DoclingDocument(BaseModel):
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
 
         if image_mode == ImageRefMode.REFERENCED:
-            os.makedirs(artifacts_dir, exist_ok=True)
+            artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         new_doc = self._make_copy_with_refmode(
             artifacts_dir, image_mode, page_no, reference_path=reference_path
@@ -5124,8 +5137,7 @@ class DoclingDocument(BaseModel):
             mark_meta=mark_meta,
         )
 
-        with open(filename, "w", encoding="utf-8") as fw:
-            fw.write(md_out)
+        filename.write_text(md_out, encoding="utf-8")
 
     def export_to_markdown(  # noqa: C901
         self,
@@ -5304,7 +5316,7 @@ class DoclingDocument(BaseModel):
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
 
         if image_mode == ImageRefMode.REFERENCED:
-            os.makedirs(artifacts_dir, exist_ok=True)
+            artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         new_doc = self._make_copy_with_refmode(
             artifacts_dir, image_mode, page_no, reference_path=reference_path
@@ -5324,8 +5336,7 @@ class DoclingDocument(BaseModel):
             include_annotations=include_annotations,
         )
 
-        with open(filename, "w", encoding="utf-8") as fw:
-            fw.write(html_out)
+        filename.write_text(html_out, encoding="utf-8")
 
     def _get_output_paths(
         self, filename: Union[str, Path], artifacts_dir: Optional[Path] = None
@@ -5969,8 +5980,7 @@ class DoclingDocument(BaseModel):
             minified=minified,
         )
 
-        with open(filename, "w", encoding="utf-8") as fw:
-            fw.write(out)
+        filename.write_text(out, encoding="utf-8")
 
     @deprecated("Use export_to_doctags() instead.")
     def export_to_document_tokens(self, *args, **kwargs):
