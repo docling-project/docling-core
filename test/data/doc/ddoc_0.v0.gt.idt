@@ -73,8 +73,7 @@
     <location value="161" resolution="512"/>
     <location value="478" resolution="512"/>
     <location value="176" resolution="512"/>
-    Set connect string for connecting to ndb_mgmd. Syntax: &quot;[nodeid=id;][host=]hostname[:port]&quot;. Overrides entries in NDB_CONNECTSTRING and my.cnf.
-  </text>
+<![CDATA[Set connect string for connecting to ndb_mgmd. Syntax: "[nodeid=id;][host=]hostname[:port]". Overrides entries in NDB_CONNECTSTRING and my.cnf.]]>  </text>
   <list ordered="false">
     <list_text>
       <location value="86" resolution="512"/>
