@@ -1,5 +1,6 @@
 """Utility functions and classes for code language detection and processing."""
 
+import logging
 import sys
 from typing import List, Optional
 
@@ -8,6 +9,8 @@ from tree_sitter import Node, Tree
 
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.types.doc.labels import CodeLanguageLabel
+
+_logger = logging.getLogger(__name__)
 
 
 def _get_file_extensions(language: CodeLanguageLabel) -> List[str]:
@@ -36,9 +39,15 @@ def _get_tree_sitter_language(language: CodeLanguageLabel):
         CodeLanguageLabel.C: lambda: Lang(ts_c.language()),
     }
     if sys.version_info >= (3, 10):
-        import tree_sitter_java_orchard as ts_java
+        try:
+            import tree_sitter_java_orchard as ts_java
 
-        language_map[CodeLanguageLabel.JAVA] = lambda: Lang(ts_java.language())
+            language_map[CodeLanguageLabel.JAVA] = lambda: Lang(ts_java.language())
+        except ImportError:
+            _logger.warning(
+                "Code chunking for Java cannot be enabled because tree-sitter-java-orchard is missing. "
+                "Please installed it via `pip install tree-sitter-java-orchard`."
+            )
 
     factory = language_map.get(language)
     return factory() if factory else None
