@@ -963,17 +963,41 @@ class HTMLDocSerializer(DocSerializer):
             html_content = "\n".join([p.text for p in parts if p.text])
             next_page: Optional[int] = None
             prev_full_match_end = 0
-            pages = {}
+            pages: dict[int, str] = {}
+
+            # Track all physical pages from page breaks
+            all_physical_pages: set[int] = set()
+
             for full_match, prev_page, next_page in self._get_page_breaks(html_content):
                 this_match_start = html_content.find(full_match)
                 pages[prev_page] = html_content[prev_full_match_end:this_match_start]
                 prev_full_match_end = this_match_start + len(full_match)
+                # Track all physical pages involved
+                all_physical_pages.add(prev_page)
+                all_physical_pages.add(next_page)
 
             # capture last page
             if next_page is not None:
                 pages[next_page] = html_content[prev_full_match_end:]
             elif applicable_pages is not None and len(applicable_pages) == 1:
                 pages[applicable_pages[0]] = html_content
+                all_physical_pages.add(applicable_pages[0])
+
+            # Determine pages to render
+            # If specific pages were requested via params.pages, only render those
+            # Otherwise, render all physical pages in range (including skipped pages)
+            if self.params.pages is not None:
+                # User requested specific pages - only render those
+                pages_to_render = sorted(self.params.pages)
+            elif all_physical_pages:
+                # No specific pages requested - render full range including skipped
+                min_page = min(all_physical_pages)
+                max_page = max(all_physical_pages)
+                pages_to_render = list(range(min_page, max_page + 1))
+            elif applicable_pages:
+                pages_to_render = sorted(applicable_pages)
+            else:
+                pages_to_render = []
 
             html_parts.append("<table>")
             html_parts.append("<tbody>")
@@ -982,16 +1006,22 @@ class HTMLDocSerializer(DocSerializer):
             if visualizer:
                 vized_pages_dict = visualizer.get_visualization(doc=self.doc)
 
-            for page_no, page in pages.items():
-                if isinstance(page_no, int):
-                    if applicable_pages is not None and page_no not in applicable_pages:
-                        continue
+            for page_no in pages_to_render:
+                # Check if this is a skipped/failed page
+                is_skipped_page = page_no not in self.doc.pages
+
+                # Get content for this page (may be empty for skipped pages)
+                page_content = pages.get(page_no, "")
+
+                html_parts.append("<tr>")
+                html_parts.append("<td>")
+
+                if is_skipped_page:
+                    # Render empty figure for skipped page (same structure as normal)
+                    html_parts.append("<figure></figure>")
+                else:
                     page_img = self.doc.pages[page_no].image
                     vized_page = vized_pages_dict.get(page_no)
-
-                    html_parts.append("<tr>")
-
-                    html_parts.append("<td>")
 
                     if vized_page:
                         html_parts.append(_serialize_page_img(page_img=vized_page))
@@ -1004,21 +1034,19 @@ class HTMLDocSerializer(DocSerializer):
                     ):
                         img_text = f'<img src="{page_img.uri}">'
                         html_parts.append(f"<figure>{img_text}</figure>")
-
                     elif (page_img is not None) and (page_img._pil is not None):
                         html_parts.append(_serialize_page_img(page_img=page_img._pil))
                     else:
                         html_parts.append("<figure>no page-image found</figure>")
 
-                    html_parts.append("</td>")
+                html_parts.append("</td>")
 
-                    html_parts.append("<td>")
-                    html_parts.append(f"<div class='page'>\n{page}\n</div>")
-                    html_parts.append("</td>")
+                html_parts.append("<td>")
+                # Use same structure for both normal and skipped pages
+                html_parts.append(f"<div class='page'>\n{page_content}\n</div>")
+                html_parts.append("</td>")
 
-                    html_parts.append("</tr>")
-                else:
-                    raise ValueError("We need page-indices to leverage `split_page_view`")
+                html_parts.append("</tr>")
 
             html_parts.append("</tbody>")
             html_parts.append("</table>")
