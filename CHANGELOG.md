@@ -1,3 +1,13 @@
+## [v2.59.0](https://github.com/docling-project/docling-core/releases/tag/v2.59.0) - 2026-01-12
+
+### Feature
+
+* **IDocTags:** Add XML escape modes ([#471](https://github.com/docling-project/docling-core/issues/471)) ([`0c9c70d`](https://github.com/docling-project/docling-core/commit/0c9c70db76f4882ef29f5dafead5ee982524e6e7))
+
+### Fix
+
+* Make tree-sitter-java-orchard optional ([#475](https://github.com/docling-project/docling-core/issues/475)) ([`980abab`](https://github.com/docling-project/docling-core/commit/980abab95f2651b3cf0ba5705a99ef4a103d80fb))
+
 ## [v2.58.1](https://github.com/docling-project/docling-core/releases/tag/v2.58.1) - 2026-01-09
 
 ### Fix
