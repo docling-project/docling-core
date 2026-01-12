@@ -172,6 +172,65 @@ def test_markdown_page_breaks_skipped_1page():
 
 
 # =============================================================================
+# Test: HTML split_page_view table row count
+# =============================================================================
+
+
+def test_html_split_page_view_normal():
+    """Test that normal 4-page document has 4 page divs in HTML split_page_view."""
+    src = Path("./test/data/doc/normal_4pages.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    html_output = doc.export_to_html(split_page_view=True)
+    # Count page divs instead of tr tags to avoid counting nested tables
+    page_div_count = html_output.count("<div class='page'>")
+
+    assert page_div_count == 4, (
+        f"Expected 4 page divs for 4-page document, got {page_div_count}"
+    )
+
+
+def test_html_split_page_view_skipped_2pages():
+    """Test that document with 2 skipped pages has 4 page divs in HTML split_page_view.
+
+    The skipped_2pages.json document has pages 1 and 4 only (pages 2 and 3
+    failed to parse), but should still generate 4 page divs to maintain
+    page number alignment with physical PDF pages.
+    """
+    src = Path("./test/data/doc/skipped_2pages.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    html_output = doc.export_to_html(split_page_view=True)
+    # Count page divs (all use same structure now)
+    page_div_count = html_output.count("<div class='page'>")
+
+    # Should have 4 page divs (pages 1, 2, 3, 4) even though pages 2 and 3 are missing
+    assert page_div_count == 4, (
+        f"Expected 4 page divs for document with 2 skipped pages, got {page_div_count}"
+    )
+
+
+def test_html_split_page_view_skipped_1page():
+    """Test that document with 1 skipped page has 3 page divs in HTML split_page_view.
+
+    The skipped_1page.json document has pages 1 and 3 only (page 2 failed
+    to parse), but should still generate 3 page divs to maintain
+    page number alignment with physical PDF pages.
+    """
+    src = Path("./test/data/doc/skipped_1page.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    html_output = doc.export_to_html(split_page_view=True)
+    # Count page divs (all use same structure now)
+    page_div_count = html_output.count("<div class='page'>")
+
+    # Should have 3 page divs (pages 1, 2, 3) even though page 2 is missing
+    assert page_div_count == 3, (
+        f"Expected 3 page divs for document with 1 skipped page, got {page_div_count}"
+    )
+
+
+# =============================================================================
 # Test: Page break index is correctly maintained
 # (Verified indirectly through correct count of page breaks)
 # =============================================================================
