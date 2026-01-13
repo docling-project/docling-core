@@ -1807,9 +1807,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                 res_parts.append(ftn_res)
 
         composed_inner = f"{caption_text}{otsl_payload}{footnote_text}"
-        text_res = ""
-        if composed_inner:
-            text_res = f"{open_token}{composed_inner}{close_token}"
+        text_res = f"{open_token}{composed_inner}{close_token}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
 

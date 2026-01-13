@@ -24,30 +24,14 @@ Affiliation 2</text>
     <list_text>list item 4</list_text>
   </list>
   <floating_group class="table">
-    <otsl>
-      <fcel/>
-      Product
-      <fcel/>
-      Years
-      <lcel/>
-      <nl/>
-      <ucel/>
-      <fcel/>
-      2016
-      <fcel/>
-      2017
-      <nl/>
-      <fcel/>
-      Apple
-      <fcel/>
-      49823
-      <fcel/>
-      695944
-      <nl/>
-    </otsl>
+    <caption>This is the caption of table 1.</caption>
   </floating_group>
-  <floating_group class="picture"></floating_group>
-  <floating_group class="picture"></floating_group>
+  <floating_group class="picture">
+    <caption>This is the caption of figure 1.</caption>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>This is the caption of figure 2.</caption>
+  </floating_group>
   <list ordered="false">
     <list_text>item 1 of list</list_text>
   </list>
@@ -63,7 +47,7 @@ Affiliation 2</text>
       <list_text>
         <inline>
           <text>Here a code snippet:</text>
-          <code class="Python"><![CDATA[print("Hello world")]]></code>
+          <code class="Python"></code>
           <text>(to be displayed inline)</text>
         </inline>
       </list_text>
@@ -77,7 +61,7 @@ Affiliation 2</text>
     </list>
   </list>
   <text>Here a code block:</text>
-  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <code class="Python"></code>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
   <inline>
@@ -132,6 +116,7 @@ Affiliation 2</text>
   </list>
   <text>The end.</text>
   <floating_group class="picture">
+    <caption>Picture Caption</caption>
     <picture>
       <meta>
         <summary>Picture Summary</summary>
@@ -144,6 +129,7 @@ Affiliation 2</text>
     </picture>
   </floating_group>
   <floating_group class="picture">
+    <caption>Picture Caption</caption>
     <picture>
       <meta>
         <summary>Picture Summary</summary>
@@ -168,12 +154,11 @@ Affiliation 2</text>
       </otsl>
     </picture>
   </floating_group>
-  <code>0 == 0</code>
+  <code></code>
   <code>
     <location value="5" resolution="512"/>
     <location value="492" resolution="512"/>
     <location value="15" resolution="512"/>
     <location value="502" resolution="512"/>
-    with location
   </code>
 </doctag>

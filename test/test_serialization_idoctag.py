@@ -1,7 +1,6 @@
 """Unit tests for IDocTags create_closing_token helper."""
 
 from pathlib import Path
-from test.conftest import _construct_doc_impl
 from test.test_serialization import verify
 
 import pytest
@@ -297,8 +296,8 @@ def test_formatting_disabled():
     assert "Plain text" in result
 
 
-def test_content():
-    doc = _construct_doc_impl().model_copy(deep=True)
+def _create_content_filtering_doc(inp_doc: DoclingDocument):
+    doc = inp_doc.model_copy(deep=True)
     doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
     prov = ProvenanceItem(
         page_no=1,
@@ -340,27 +339,67 @@ def test_content():
     doc.add_code(text="0 == 0")
     doc.add_code(text="with location", prov=prov)
 
+    return doc
+
+
+def test_content_allow_all_types(sample_doc: DoclingDocument):
+    doc = _create_content_filtering_doc(sample_doc)
     serializer = IDocTagsDocSerializer(
         doc=doc,
         params=IDocTagsParams(
-            # cross-type:
-            # add_location=False,
-            # special content filtering:
-            add_referenced_caption=False,
-            # type-specific content filtering:
-            # add_text_content=False,
-            # add_code_content=False,
-            # add_table_content=False,
-            # add_table_cell_content=False,
-            # add_picture_content=False,
-            # add_formula_content=False,
-            # add_chart_content=False,
+            content_types={ct for ct in ContentType},
         ),
     )
     ser_txt = serializer.serialize().text
 
-    exp_file = Path("./test/data/doc/content.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_all.gt.idt.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
-# test_content()
+def test_content_allow_no_types(sample_doc: DoclingDocument):
+    doc = _create_content_filtering_doc(sample_doc)
+    serializer = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            content_types=set(),
+        ),
+    )
+    ser_txt = serializer.serialize().text
+    exp_file = Path("./test/data/doc/content_none.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_content_allow_specific_types(sample_doc: DoclingDocument):
+    doc = _create_content_filtering_doc(sample_doc)
+    serializer = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            content_types={
+                ContentType.PICTURE,
+                ContentType.TABLE,
+                ContentType.TABLE_CELL,
+                ContentType.REF_CAPTION,
+                ContentType.TEXT_CODE,
+            },
+        ),
+    )
+    ser_txt = serializer.serialize().text
+    exp_file = Path("./test/data/doc/content_specific.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_content_block_specific_types(sample_doc: DoclingDocument):
+    doc = _create_content_filtering_doc(sample_doc)
+    blocked_types = {
+        ContentType.TABLE,
+        ContentType.TEXT_CODE,
+    }
+    serializer = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            content_types={ct for ct in ContentType if ct not in blocked_types},
+        ),
+    )
+    ser_txt = serializer.serialize().text
+    exp_file = Path("./test/data/doc/content_block_specific.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
