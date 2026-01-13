@@ -1,8 +1,9 @@
 """Define common models across types."""
 
+from collections.abc import Hashable
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Final, Generic, Hashable, List, Literal, Optional, TypeVar
+from typing import Annotated, Final, Generic, Literal, Optional, TypeVar
 
 from pydantic import (
     AfterValidator,
@@ -17,7 +18,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic.types import NonNegativeInt
-from typing_extensions import Annotated
 
 from docling_core.search.mapping import es_field
 from docling_core.search.package import VERSION_PATTERN
@@ -45,7 +45,7 @@ Coordinates = Annotated[
 T = TypeVar("T", bound=Hashable)
 
 UniqueList = Annotated[
-    List[T],
+    list[T],
     AfterValidator(validate_unique_list),
     Field(json_schema_extra={"uniqueItems": True}),
 ]

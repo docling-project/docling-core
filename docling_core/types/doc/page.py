@@ -6,18 +6,15 @@ import logging
 import math
 import re
 import typing
+from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Dict,
-    Iterator,
-    List,
     Literal,
     NamedTuple,
     Optional,
-    Tuple,
     Union,
 )
 
@@ -199,7 +196,7 @@ class BoundingRectangle(BaseModel):
             coord_origin=bbox.coord_origin,
         )
 
-    def to_polygon(self) -> List[Coord2D]:
+    def to_polygon(self) -> list[Coord2D]:
         """Convert to a list of point coordinates forming a polygon."""
         return [
             Coord2D(self.r_x0, self.r_y0),
@@ -378,7 +375,7 @@ class PdfLine(ColorMixin, OrderedElement):
     """Model representing a line in a PDF document."""
 
     parent_id: int
-    points: List[Coord2D]
+    points: list[Coord2D]
     width: float = 1.0
 
     coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
@@ -389,7 +386,7 @@ class PdfLine(ColorMixin, OrderedElement):
 
     def iterate_segments(
         self,
-    ) -> Iterator[Tuple[Coord2D, Coord2D]]:
+    ) -> Iterator[tuple[Coord2D, Coord2D]]:
         """Iterate through line segments defined by consecutive point pairs."""
         for k in range(len(self.points) - 1):
             yield (self.points[k], self.points[k + 1])
@@ -483,11 +480,11 @@ class SegmentedPage(BaseModel):
 
     dimension: PageGeometry
 
-    bitmap_resources: List[BitmapResource] = []
+    bitmap_resources: list[BitmapResource] = []
 
-    char_cells: List[TextCell] = []
-    word_cells: List[TextCell] = []
-    textline_cells: List[TextCell] = []
+    char_cells: list[TextCell] = []
+    word_cells: list[TextCell] = []
+    textline_cells: list[TextCell] = []
 
     # These flags are set to differentiate if above lists of this SegmentedPage
     # are empty (page had no content) or if they have not been computed (i.e. textline_cells may be present
@@ -541,16 +538,16 @@ class SegmentedPdfPage(SegmentedPage):
     # Redefine typing to use PdfPageDimensions
     dimension: PdfPageGeometry
 
-    lines: List[PdfLine] = []
+    lines: list[PdfLine] = []
 
     # Redefine typing of elements to include PdfTextCell
-    char_cells: List[Union[PdfTextCell, TextCell]]
-    word_cells: List[Union[PdfTextCell, TextCell]]
-    textline_cells: List[Union[PdfTextCell, TextCell]]
+    char_cells: list[Union[PdfTextCell, TextCell]]
+    word_cells: list[Union[PdfTextCell, TextCell]]
+    textline_cells: list[Union[PdfTextCell, TextCell]]
 
     def get_cells_in_bbox(
         self, cell_unit: TextCellUnit, bbox: BoundingBox, ios: float = 0.8
-    ) -> List[Union[PdfTextCell, TextCell]]:
+    ) -> list[Union[PdfTextCell, TextCell]]:
         """Get text cells that are within the specified bounding box.
 
         Args:
@@ -575,7 +572,7 @@ class SegmentedPdfPage(SegmentedPage):
                 cells.append(pc)
         return cells
 
-    def export_to_dict(self) -> Dict[str, Any]:
+    def export_to_dict(self) -> dict[str, Any]:
         """Export the page data to a dictionary.
 
         Returns:
@@ -655,7 +652,7 @@ class SegmentedPdfPage(SegmentedPage):
         add_fontkey: bool = False,
         add_fontname: bool = True,
         add_text_direction: bool = True,
-    ) -> List[str]:
+    ) -> list[str]:
         """Export text cells as formatted text lines.
 
         Args:
@@ -667,7 +664,7 @@ class SegmentedPdfPage(SegmentedPage):
         Returns:
             List of formatted text lines
         """
-        lines: List[str] = []
+        lines: list[str] = []
         for cell in self.iterate_cells(cell_unit):
             line = ""
             if add_location:
@@ -1131,7 +1128,7 @@ class PdfMetaData(BaseModel):
 
     xml: str = ""
 
-    data: Dict[str, str] = {}
+    data: dict[str, str] = {}
 
     def initialise(self):
         """Initialize metadata by parsing the XML content."""
@@ -1157,9 +1154,9 @@ class PdfTableOfContents(BaseModel):
 
     marker: str = ""
 
-    children: List["PdfTableOfContents"] = []
+    children: list["PdfTableOfContents"] = []
 
-    def export_to_dict(self, mode: str = "json") -> Dict[str, Any]:
+    def export_to_dict(self, mode: str = "json") -> dict[str, Any]:
         """Export the table of contents to a dictionary.
 
         Args:
@@ -1202,14 +1199,14 @@ class PdfTableOfContents(BaseModel):
 class ParsedPdfDocument(BaseModel):
     """Model representing a completely parsed PDF document with all components."""
 
-    pages: Dict[PageNumber, SegmentedPdfPage] = {}
+    pages: dict[PageNumber, SegmentedPdfPage] = {}
 
     meta_data: Optional[PdfMetaData] = None
     table_of_contents: Optional[PdfTableOfContents] = None
 
     def iterate_pages(
         self,
-    ) -> Iterator[Tuple[int, SegmentedPdfPage]]:
+    ) -> Iterator[tuple[int, SegmentedPdfPage]]:
         """Iterate through all pages in the document.
 
         Returns:
@@ -1220,7 +1217,7 @@ class ParsedPdfDocument(BaseModel):
     def export_to_dict(
         self,
         mode: str = "json",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Export the document to a dictionary.
 
         Args:

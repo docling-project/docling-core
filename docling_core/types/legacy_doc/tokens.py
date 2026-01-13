@@ -1,7 +1,7 @@
 """Tokens used in the docling document model."""
 
 from enum import Enum
-from typing import Annotated, Tuple
+from typing import Annotated
 
 from pydantic import Field
 
@@ -93,7 +93,7 @@ class DocumentToken(Enum):
         max_rows: int = 100,
         max_cols: int = 100,
         max_pages: int = 1000,
-        page_dimension: Tuple[int, int] = (100, 100),
+        page_dimension: tuple[int, int] = (100, 100),
     ):
         """Function to get all special document tokens."""
         special_tokens = [token.value for token in cls]
@@ -164,7 +164,7 @@ class DocumentToken(Enum):
 
     @staticmethod
     def get_location(
-        # bbox: Tuple[float, float, float, float],
+        # bbox: tuple[float, float, float, float],
         bbox: Annotated[list[float], Field(min_length=4, max_length=4)],
         page_w: float,
         page_h: float,

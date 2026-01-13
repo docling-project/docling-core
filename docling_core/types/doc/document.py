@@ -11,19 +11,16 @@ import re
 import sys
 import typing
 import warnings
+from collections.abc import Sequence
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
-    Dict,
     Final,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
     Union,
 )
 from urllib.parse import unquote
@@ -47,7 +44,7 @@ from pydantic import (
     validate_call,
 )
 from tabulate import tabulate
-from typing_extensions import Annotated, Self, deprecated, override
+from typing_extensions import Self, deprecated, override
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
@@ -128,7 +125,7 @@ class PictureClassificationData(BaseAnnotation):
 
     kind: Literal["classification"] = "classification"
     provenance: str
-    predicted_classes: List[PictureClassificationClass]
+    predicted_classes: list[PictureClassificationClass]
 
 
 class DescriptionAnnotation(BaseAnnotation):
@@ -146,7 +143,7 @@ class PictureMoleculeData(BaseAnnotation):
     smi: str
     confidence: float
     class_name: str
-    segmentation: List[Tuple[float, float]]
+    segmentation: list[tuple[float, float]]
     provenance: str
 
     @field_serializer("confidence")
@@ -158,7 +155,7 @@ class MiscAnnotation(BaseAnnotation):
     """MiscAnnotation."""
 
     kind: Literal["misc"] = "misc"
-    content: Dict[str, Any]
+    content: dict[str, Any]
 
 
 class ChartLine(BaseModel):
@@ -166,12 +163,12 @@ class ChartLine(BaseModel):
 
     Attributes:
         label (str): The label for the line.
-        values (List[Tuple[float, float]]): A list of (x, y) coordinate pairs
+        values (list[tuple[float, float]]): A list of (x, y) coordinate pairs
             representing the line's data points.
     """
 
     label: str
-    values: List[Tuple[float, float]]
+    values: list[tuple[float, float]]
 
 
 class ChartBar(BaseModel):
@@ -190,15 +187,15 @@ class ChartStackedBar(BaseModel):
     """Represents a stacked bar in a stacked bar chart.
 
     Attributes:
-        label (List[str]): The labels for the stacked bars. Multiple values are stored
+        label (list[str]): The labels for the stacked bars. Multiple values are stored
             in cases where the chart is "double stacked," meaning bars are stacked both
             horizontally and vertically.
-        values (List[Tuple[str, int]]): A list of values representing different segments
+        values (list[tuple[str, int]]): A list of values representing different segments
             of the stacked bar along with their label.
     """
 
-    label: List[str]
-    values: List[Tuple[str, int]]
+    label: list[str]
+    values: list[tuple[str, int]]
 
 
 class ChartSlice(BaseModel):
@@ -221,7 +218,7 @@ class ChartPoint(BaseModel):
             chart.
     """
 
-    value: Tuple[float, float]
+    value: tuple[float, float]
 
 
 class PictureChartData(BaseAnnotation):
@@ -241,13 +238,13 @@ class PictureLineChartData(PictureChartData):
         kind (Literal["line_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        lines (List[ChartLine]): A list of lines in the chart.
+        lines (list[ChartLine]): A list of lines in the chart.
     """
 
     kind: Literal["line_chart_data"] = "line_chart_data"
     x_axis_label: str
     y_axis_label: str
-    lines: List[ChartLine]
+    lines: list[ChartLine]
 
 
 class PictureBarChartData(PictureChartData):
@@ -257,13 +254,13 @@ class PictureBarChartData(PictureChartData):
         kind (Literal["bar_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        bars (List[ChartBar]): A list of bars in the chart.
+        bars (list[ChartBar]): A list of bars in the chart.
     """
 
     kind: Literal["bar_chart_data"] = "bar_chart_data"
     x_axis_label: str
     y_axis_label: str
-    bars: List[ChartBar]
+    bars: list[ChartBar]
 
 
 class PictureStackedBarChartData(PictureChartData):
@@ -273,13 +270,13 @@ class PictureStackedBarChartData(PictureChartData):
         kind (Literal["stacked_bar_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        stacked_bars (List[ChartStackedBar]): A list of stacked bars in the chart.
+        stacked_bars (list[ChartStackedBar]): A list of stacked bars in the chart.
     """
 
     kind: Literal["stacked_bar_chart_data"] = "stacked_bar_chart_data"
     x_axis_label: str
     y_axis_label: str
-    stacked_bars: List[ChartStackedBar]
+    stacked_bars: list[ChartStackedBar]
 
 
 class PicturePieChartData(PictureChartData):
@@ -287,11 +284,11 @@ class PicturePieChartData(PictureChartData):
 
     Attributes:
         kind (Literal["pie_chart_data"]): The type of the chart.
-        slices (List[ChartSlice]): A list of slices in the pie chart.
+        slices (list[ChartSlice]): A list of slices in the pie chart.
     """
 
     kind: Literal["pie_chart_data"] = "pie_chart_data"
-    slices: List[ChartSlice]
+    slices: list[ChartSlice]
 
 
 class PictureScatterChartData(PictureChartData):
@@ -301,13 +298,13 @@ class PictureScatterChartData(PictureChartData):
         kind (Literal["scatter_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        points (List[ChartPoint]): A list of points in the scatter chart.
+        points (list[ChartPoint]): A list of points in the scatter chart.
     """
 
     kind: Literal["scatter_chart_data"] = "scatter_chart_data"
     x_axis_label: str
     y_axis_label: str
-    points: List[ChartPoint]
+    points: list[ChartPoint]
 
 
 class TableCell(BaseModel):
@@ -381,7 +378,7 @@ AnyTableCell = Annotated[
 class TableData(BaseModel):  # TBD
     """BaseTableData."""
 
-    table_cells: List[AnyTableCell] = []
+    table_cells: list[AnyTableCell] = []
     num_rows: int = 0
     num_cols: int = 0
 
@@ -389,7 +386,7 @@ class TableData(BaseModel):  # TBD
     @property
     def grid(
         self,
-    ) -> List[List[TableCell]]:
+    ) -> list[list[TableCell]]:
         """grid."""
         # Initialise empty table data grid (only empty cells)
         table_data = [
@@ -420,12 +417,12 @@ class TableData(BaseModel):  # TBD
 
         return table_data
 
-    def remove_rows(self, indices: List[int], doc: Optional["DoclingDocument"] = None) -> List[List[TableCell]]:
+    def remove_rows(self, indices: list[int], doc: Optional["DoclingDocument"] = None) -> list[list[TableCell]]:
         """Remove rows from the table by their indices.
 
-        :param indices: List[int]: A list of indices of the rows to remove. (Starting from 0)
+        :param indices: list[int]: A list of indices of the rows to remove. (Starting from 0)
 
-        :return: List[List[TableCell]]: A list representation of the removed rows as lists of TableCell objects.
+        :return: list[list[TableCell]]: A list representation of the removed rows as lists of TableCell objects.
         """
         if not indices:
             return []
@@ -473,30 +470,30 @@ class TableData(BaseModel):  # TBD
 
         return all_removed_cells
 
-    def pop_row(self, doc: Optional["DoclingDocument"] = None) -> List[TableCell]:
+    def pop_row(self, doc: Optional["DoclingDocument"] = None) -> list[TableCell]:
         """Remove and return the last row from the table.
 
-        :returns: List[TableCell]: A list of TableCell objects representing the popped row.
+        :returns: list[TableCell]: A list of TableCell objects representing the popped row.
         """
         if self.num_rows == 0:
             raise IndexError("Cannot pop from an empty table.")
 
         return self.remove_row(self.num_rows - 1, doc=doc)
 
-    def remove_row(self, row_index: int, doc: Optional["DoclingDocument"] = None) -> List[TableCell]:
+    def remove_row(self, row_index: int, doc: Optional["DoclingDocument"] = None) -> list[TableCell]:
         """Remove a row from the table by its index.
 
         :param row_index: int: The index of the row to remove. (Starting from 0)
 
-        :returns: List[TableCell]: A list of TableCell objects representing the removed row.
+        :returns: list[TableCell]: A list of TableCell objects representing the removed row.
         """
         return self.remove_rows([row_index], doc=doc)[0]
 
-    def insert_rows(self, row_index: int, rows: List[List[str]], after: bool = False) -> None:
+    def insert_rows(self, row_index: int, rows: list[list[str]], after: bool = False) -> None:
         """Insert multiple new rows from a list of lists of strings before/after a specific index in the table.
 
         :param row_index: int: The index at which to insert the new rows. (Starting from 0)
-        :param rows: List[List[str]]: A list of lists, where each inner list represents the content of a new row.
+        :param rows: list[list[str]]: A list of lists, where each inner list represents the content of a new row.
         :param after: bool: If True, insert the rows after the specified index, otherwise before it. (Default is False)
 
         :returns: None
@@ -506,11 +503,11 @@ class TableData(BaseModel):  # TBD
         for row in effective_rows:
             self.insert_row(row_index, row, after)
 
-    def insert_row(self, row_index: int, row: List[str], after: bool = False) -> None:
+    def insert_row(self, row_index: int, row: list[str], after: bool = False) -> None:
         """Insert a new row from a list of strings before/after a specific index in the table.
 
         :param row_index: int: The index at which to insert the new row. (Starting from 0)
-        :param row: List[str]: A list of strings representing the content of the new row.
+        :param row: list[str]: A list of strings representing the content of the new row.
         :param after: bool: If True, insert the row after the specified index, otherwise before it. (Default is False)
 
         :returns: None
@@ -548,20 +545,20 @@ class TableData(BaseModel):  # TBD
 
         self.num_rows += 1
 
-    def add_rows(self, rows: List[List[str]]) -> None:
+    def add_rows(self, rows: list[list[str]]) -> None:
         """Add multiple new rows to the table from a list of lists of strings.
 
-        :param rows: List[List[str]]: A list of lists, where each inner list represents the content of a new row.
+        :param rows: list[list[str]]: A list of lists, where each inner list represents the content of a new row.
 
         :returns: None
         """
         for row in rows:
             self.add_row(row)
 
-    def add_row(self, row: List[str]) -> None:
+    def add_row(self, row: list[str]) -> None:
         """Add a new row to the table from a list of strings.
 
-        :param row: List[str]: A list of strings representing the content of the new row.
+        :param row: list[str]: A list of strings representing the content of the new row.
 
         :returns: None
         """
@@ -684,10 +681,10 @@ class TableData(BaseModel):  # TBD
     def _process_table_headers(
         cls,
         bbox: BoundingBox,
-        row_headers: List[BoundingBox] = [],
-        col_headers: List[BoundingBox] = [],
-        row_sections: List[BoundingBox] = [],
-    ) -> Tuple[bool, bool, bool]:
+        row_headers: list[BoundingBox] = [],
+        col_headers: list[BoundingBox] = [],
+        row_sections: list[BoundingBox] = [],
+    ) -> tuple[bool, bool, bool]:
         c_column_header = False
         c_row_header = False
         c_row_section = False
@@ -706,15 +703,15 @@ class TableData(BaseModel):  # TBD
     @classmethod
     def _compute_cells(
         cls,
-        rows: List[BoundingBox],
-        columns: List[BoundingBox],
-        merges: List[BoundingBox],
-        row_headers: List[BoundingBox] = [],
-        col_headers: List[BoundingBox] = [],
-        row_sections: List[BoundingBox] = [],
+        rows: list[BoundingBox],
+        columns: list[BoundingBox],
+        merges: list[BoundingBox],
+        row_headers: list[BoundingBox] = [],
+        col_headers: list[BoundingBox] = [],
+        row_sections: list[BoundingBox] = [],
         row_overlap_threshold: float = 0.5,  # how much of a row a merge must cover vertically
         col_overlap_threshold: float = 0.5,  # how much of a column a merge must cover horizontally
-    ) -> List[TableCell]:
+    ) -> list[TableCell]:
         """Returns TableCell. Merged cells are aligned to grid boundaries.
 
         rows, columns, merges are lists of BoundingBox(l,t,r,b).
@@ -723,8 +720,8 @@ class TableData(BaseModel):  # TBD
         columns.sort(key=lambda c: (c.l + c.r) / 2.0)
 
         def span_from_merge(
-            m: BoundingBox, lines: List[BoundingBox], axis: str, frac_threshold: float
-        ) -> Optional[Tuple[int, int]]:
+            m: BoundingBox, lines: list[BoundingBox], axis: str, frac_threshold: float
+        ) -> Optional[tuple[int, int]]:
             """Map a merge bbox to an inclusive index span over rows or columns.
 
             axis='row' uses vertical overlap vs row height; axis='col' uses horizontal overlap vs col width.
@@ -756,9 +753,9 @@ class TableData(BaseModel):  # TBD
                 return best_i, best_i
             return None
 
-        cells: List[TableCell] = []
-        covered: Set[Tuple[int, int]] = set()
-        seen_merge_rects: Set[Tuple[int, int, int, int]] = set()
+        cells: list[TableCell] = []
+        covered: set[tuple[int, int]] = set()
+        seen_merge_rects: set[tuple[int, int, int, int]] = set()
 
         # 1) Add merged cells first (and mark their covered simple cells)
         for m in merges:
@@ -838,12 +835,12 @@ class TableData(BaseModel):  # TBD
     def from_regions(
         cls,
         table_bbox: BoundingBox,
-        rows: List[BoundingBox],
-        cols: List[BoundingBox],
-        merges: List[BoundingBox],
-        row_headers: List[BoundingBox] = [],
-        col_headers: List[BoundingBox] = [],
-        row_sections: List[BoundingBox] = [],
+        rows: list[BoundingBox],
+        cols: list[BoundingBox],
+        merges: list[BoundingBox],
+        row_headers: list[BoundingBox] = [],
+        col_headers: list[BoundingBox] = [],
+        row_sections: list[BoundingBox] = [],
     ) -> Self:
         """Converts regions: rows, columns, merged cells into table_data structure.
 
@@ -951,7 +948,7 @@ class DocumentOrigin(BaseModel):
         # from any file handler protocol (e.g. https://, file://, s3://)
     )
 
-    _extra_mimetypes: typing.ClassVar[List[str]] = [
+    _extra_mimetypes: typing.ClassVar[list[str]] = [
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
         "application/vnd.openxmlformats-officedocument.presentationml.template",
@@ -1100,13 +1097,13 @@ class DocTagsPage(BaseModel):
 class DocTagsDocument(BaseModel):
     """DocTagsDocument."""
 
-    pages: List[DocTagsPage] = []
+    pages: list[DocTagsPage] = []
 
     @classmethod
     def from_doctags_and_image_pairs(
         cls,
         doctags: typing.Sequence[Union[Path, str]],
-        images: Optional[List[Union[Path, PILImage.Image]]],
+        images: Optional[list[Union[Path, PILImage.Image]]],
     ):
         """from_doctags_and_image_pairs."""
         if images is not None and len(doctags) != len(images):
@@ -1141,7 +1138,7 @@ class DocTagsDocument(BaseModel):
     def from_multipage_doctags_and_images(
         cls,
         doctags: Union[Path, str],
-        images: Optional[List[Union[Path, PILImage.Image]]],
+        images: Optional[list[Union[Path, PILImage.Image]]],
     ):
         """From doctags with `<page_break>` and corresponding list of page images."""
         if isinstance(doctags, Path):
@@ -1162,7 +1159,7 @@ class ProvenanceItem(BaseModel):
 
     page_no: int
     bbox: BoundingBox
-    charspan: Tuple[int, int]
+    charspan: tuple[int, int]
 
 
 class ContentLayer(str, Enum):
@@ -1325,7 +1322,7 @@ class NodeItem(BaseModel):
 
     self_ref: str = Field(pattern=_JSON_POINTER_REGEX)
     parent: Optional[RefItem] = None
-    children: List[RefItem] = []
+    children: list[RefItem] = []
 
     content_layer: ContentLayer = ContentLayer.BODY
 
@@ -1464,14 +1461,14 @@ class InlineGroup(GroupItem):
 class FineRef(RefItem):
     """Fine-granular reference item that can capture span range info."""
 
-    range: Optional[Tuple[int, int]] = None  # start_inclusive, end_exclusive
+    range: Optional[tuple[int, int]] = None  # start_inclusive, end_exclusive
 
 
 class DocItem(NodeItem):  # Base type for any element that carries content, can be a leaf node
     """DocItem."""
 
     label: DocItemLabel
-    prov: List[ProvenanceItem] = []
+    prov: list[ProvenanceItem] = []
     comments: list[FineRef] = []  # References to comment items annotating this content
 
     @model_serializer(mode="wrap")
@@ -1690,9 +1687,9 @@ class FloatingItem(DocItem):
 
     meta: Optional[FloatingMeta] = None
 
-    captions: List[RefItem] = []
-    references: List[RefItem] = []
-    footnotes: List[RefItem] = []
+    captions: list[RefItem] = []
+    references: list[RefItem] = []
+    footnotes: list[RefItem] = []
     image: Optional[ImageRef] = None
 
     def caption_text(self, doc: "DoclingDocument") -> str:
@@ -1803,7 +1800,7 @@ class PictureItem(FloatingItem):
 
     meta: Optional[PictureMeta] = None
     annotations: Annotated[
-        List[PictureDataType],
+        list[PictureDataType],
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
@@ -2024,7 +2021,7 @@ class TableItem(FloatingItem):
     ] = DocItemLabel.TABLE
 
     annotations: Annotated[
-        List[TableAnnotationType],
+        list[TableAnnotationType],
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
@@ -2090,7 +2087,7 @@ class TableItem(FloatingItem):
                 break
 
         # Create the column names from all col_headers
-        columns: Optional[List[str]] = None
+        columns: Optional[list[str]] = None
         if num_headers > 0:
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
@@ -2352,8 +2349,8 @@ class GraphLink(BaseModel):
 class GraphData(BaseModel):
     """GraphData."""
 
-    cells: List[GraphCell] = Field(default_factory=list)
-    links: List[GraphLink] = Field(default_factory=list)
+    cells: list[GraphCell] = Field(default_factory=list)
+    links: list[GraphLink] = Field(default_factory=list)
 
     @field_validator("links")
     @classmethod
@@ -2470,14 +2467,14 @@ class DoclingDocument(BaseModel):
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
-    groups: List[Union[ListGroup, InlineGroup, GroupItem]] = []
-    texts: List[Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]] = []
-    pictures: List[PictureItem] = []
-    tables: List[TableItem] = []
-    key_value_items: List[KeyValueItem] = []
-    form_items: List[FormItem] = []
+    groups: list[Union[ListGroup, InlineGroup, GroupItem]] = []
+    texts: list[Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]] = []
+    pictures: list[PictureItem] = []
+    tables: list[TableItem] = []
+    key_value_items: list[KeyValueItem] = []
+    form_items: list[FormItem] = []
 
-    pages: Dict[int, PageItem] = {}  # empty as default
+    pages: dict[int, PageItem] = {}  # empty as default
 
     @model_validator(mode="before")
     @classmethod
@@ -2530,7 +2527,7 @@ class DoclingDocument(BaseModel):
         """Inserts an item, given its node_item instance, before other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=False)
 
-    def delete_items(self, *, node_items: List[NodeItem]) -> None:
+    def delete_items(self, *, node_items: list[NodeItem]) -> None:
         """Deletes an item, given its instance or ref, and any children it has."""
         refs = []
         for _ in node_items:
@@ -3144,14 +3141,14 @@ class DoclingDocument(BaseModel):
         text: str,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
-        targets: Optional[List[Union[DocItem, Tuple[DocItem, Tuple[int, int]]]]] = None,
+        targets: Optional[list[Union[DocItem, tuple[DocItem, tuple[int, int]]]]] = None,
     ):
         """Adds a comment to the document, assigning it to the given targets.
 
         :param text: str:
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[NodeItem]:  (Default value = None)
-        :param targets: List[Union[DocItem, Tuple[DocItem, Tuple[int, int]]]]:  (Default value = None) Each list element
+        :param targets: list[Union[DocItem, tuple[DocItem, tuple[int, int]]]]:  (Default value = None) Each list element
             can be either a single DocItem or a tuple of a DocItem and a span range (start_inclusive, end_exclusive).
         """
         item = self.add_text(
@@ -3217,7 +3214,7 @@ class DoclingDocument(BaseModel):
 
     def add_picture(
         self,
-        annotations: Optional[List[PictureDataType]] = None,
+        annotations: Optional[list[PictureDataType]] = None,
         image: Optional[ImageRef] = None,
         caption: Optional[Union[TextItem, RefItem]] = None,
         prov: Optional[ProvenanceItem] = None,
@@ -3226,7 +3223,7 @@ class DoclingDocument(BaseModel):
     ):
         """add_picture.
 
-        :param data: Optional[List[PictureData]]: (Default value = None)
+        :param data: Optional[list[PictureData]]: (Default value = None)
         :param caption: Optional[Union[TextItem:
         :param RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
@@ -3871,7 +3868,7 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param label: DocItemLabel:  (Default value = DocItemLabel.TABLE)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
-        :param annotations: Optional[List[TableAnnotationType]]: (Default value = None)
+        :param annotations: Optional[list[TableAnnotationType]]: (Default value = None)
         :param after: bool:  (Default value = True)
 
         :returns: TableItem: The newly created TableItem item.
@@ -3902,7 +3899,7 @@ class DoclingDocument(BaseModel):
     def insert_picture(
         self,
         sibling: NodeItem,
-        annotations: Optional[List[PictureDataType]] = None,
+        annotations: Optional[list[PictureDataType]] = None,
         image: Optional[ImageRef] = None,
         caption: Optional[Union[TextItem, RefItem]] = None,
         prov: Optional[ProvenanceItem] = None,
@@ -3912,7 +3909,7 @@ class DoclingDocument(BaseModel):
         """Creates a new PictureItem item and inserts it into the document.
 
         :param sibling: NodeItem:
-        :param annotations: Optional[List[PictureDataType]]: (Default value = None)
+        :param annotations: Optional[list[PictureDataType]]: (Default value = None)
         :param image: Optional[ImageRef]:  (Default value = None)
         :param caption: Optional[Union[TextItem, RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
@@ -4351,7 +4348,7 @@ class DoclingDocument(BaseModel):
 
     def add_node_items(
         self,
-        node_items: List[NodeItem],
+        node_items: list[NodeItem],
         doc: "DoclingDocument",
         parent: Optional[NodeItem] = None,
     ) -> None:
@@ -4385,7 +4382,7 @@ class DoclingDocument(BaseModel):
     def insert_node_items(
         self,
         sibling: NodeItem,
-        node_items: List[NodeItem],
+        node_items: list[NodeItem],
         doc: "DoclingDocument",
         after: bool = True,
     ) -> None:
@@ -4433,19 +4430,19 @@ class DoclingDocument(BaseModel):
 
     def _append_item_copies(
         self,
-        node_items: List[NodeItem],
+        node_items: list[NodeItem],
         parent_ref: RefItem,
         doc: "DoclingDocument",
-    ) -> List[RefItem]:
+    ) -> list[RefItem]:
         """Append node item copies (with their children) from a different document to the content of this document.
 
-        :param node_items: List[NodeItem]: The NodeItems to be appended
+        :param node_items: list[NodeItem]: The NodeItems to be appended
         :param parent_ref: RefItem: The reference of the parent of the new items in this document
         :param doc: DoclingDocument: The document from which the NodeItems are taken
 
-        :returns: List[RefItem]: A list of references to the newly added items in this document
+        :returns: list[RefItem]: A list of references to the newly added items in this document
         """
-        new_refs: List[RefItem] = []
+        new_refs: list[RefItem] = []
 
         for item in node_items:
             item_copy = item.model_copy(deep=True)
@@ -4494,7 +4491,7 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         _level: int = 0,  # deprecated
-    ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
+    ) -> typing.Iterable[tuple[NodeItem, int]]:  # tuple of node and level
         """Iterate elements with level."""
         for item, stack in self._iterate_items_with_stack(
             root=root,
@@ -4513,7 +4510,7 @@ class DoclingDocument(BaseModel):
         page_nrs: Optional[set[int]] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         _stack: Optional[list[int]] = None,
-    ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
+    ) -> typing.Iterable[tuple[NodeItem, list[int]]]:  # tuple of node and level
         """Iterate elements with stack."""
         my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
         my_stack: list[int] = _stack if _stack is not None else []
@@ -4573,9 +4570,9 @@ class DoclingDocument(BaseModel):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
-    def _list_images_on_disk(self) -> List[Path]:
+    def _list_images_on_disk(self) -> list[Path]:
         """List all images on disk."""
-        result: List[Path] = []
+        result: list[Path] = []
 
         for item, level in self.iterate_items(with_groups=False):
             if isinstance(item, PictureItem):
@@ -4789,7 +4786,7 @@ class DoclingDocument(BaseModel):
         exclude_none: bool = True,
         coord_precision: Optional[int] = None,
         confid_precision: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Export to dict."""
         context = {}
         if coord_precision is not None:
@@ -5052,7 +5049,7 @@ class DoclingDocument(BaseModel):
 
     def _get_output_paths(
         self, filename: Union[str, Path], artifacts_dir: Optional[Path] = None
-    ) -> Tuple[Path, Optional[Path]]:
+    ) -> tuple[Path, Optional[Path]]:
         if isinstance(filename, str):
             filename = Path(filename)
         if artifacts_dir is None:
@@ -5242,7 +5239,7 @@ class DoclingDocument(BaseModel):
 
         def parse_key_value_item(
             tokens: str, image: Optional[PILImage.Image] = None
-        ) -> Tuple[GraphData, Optional[ProvenanceItem]]:
+        ) -> tuple[GraphData, Optional[ProvenanceItem]]:
             if image is not None:
                 pg_width = image.width
                 pg_height = image.height
@@ -5275,8 +5272,8 @@ class DoclingDocument(BaseModel):
                 re.DOTALL,
             )
 
-            cells: List[GraphCell] = []
-            links: List[GraphLink] = []
+            cells: list[GraphCell] = []
+            links: list[GraphLink] = []
             raw_link_predictions = []
 
             for cell_match in cell_pattern.finditer(tokens):

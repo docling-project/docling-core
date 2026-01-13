@@ -1,7 +1,7 @@
 """Define classes for Doctags serialization."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 from typing_extensions import override
@@ -355,7 +355,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
             )
 
         # mapping from source_cell_id to a list of target_cell_ids
-        source_to_targets: Dict[int, List[int]] = {}
+        source_to_targets: dict[int, list[int]] = {}
         for link in item.graph.links:
             source_to_targets.setdefault(link.source_cell_id, []).append(link.target_cell_id)
 
@@ -508,7 +508,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
-        parts: List[SerializationResult] = []
+        parts: list[SerializationResult] = []
         if params.add_location:
             inline_loc_tags_ser_res = self._get_inline_location_tags(
                 doc=doc,

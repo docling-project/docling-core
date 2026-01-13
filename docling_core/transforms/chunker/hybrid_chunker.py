@@ -1,8 +1,9 @@
 """Hybrid chunker implementation leveraging both doc structure & token awareness."""
 
 import warnings
+from collections.abc import Iterable, Iterator
 from functools import cached_property
-from typing import Any, Iterable, Iterator, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 

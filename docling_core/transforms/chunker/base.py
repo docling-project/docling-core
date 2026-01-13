@@ -2,7 +2,8 @@
 
 import json
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Iterator
+from collections.abc import Iterator
+from typing import Any, ClassVar
 
 from pydantic import BaseModel
 from typing_extensions import deprecated

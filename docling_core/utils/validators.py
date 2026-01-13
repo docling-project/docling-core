@@ -2,9 +2,10 @@
 
 import json
 import logging
+from collections.abc import Hashable
 from datetime import datetime
 from importlib import resources
-from typing import Hashable, TypeVar
+from typing import TypeVar
 
 import jsonschema
 from pydantic_core import PydanticCustomError

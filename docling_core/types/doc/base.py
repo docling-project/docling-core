@@ -1,7 +1,7 @@
 """Models for the base data types."""
 
 from enum import Enum
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 from pydantic import BaseModel, FieldSerializationInfo, field_serializer
 
@@ -121,7 +121,7 @@ class BoundingBox(BaseModel):
                 coord_origin=self.coord_origin,
             )
 
-    def as_tuple(self) -> Tuple[float, float, float, float]:
+    def as_tuple(self) -> tuple[float, float, float, float]:
         """as_tuple."""
         if self.coord_origin == CoordOrigin.TOPLEFT:
             return (self.l, self.t, self.r, self.b)
@@ -129,10 +129,10 @@ class BoundingBox(BaseModel):
             return (self.l, self.b, self.r, self.t)
 
     @classmethod
-    def from_tuple(cls, coord: Tuple[float, ...], origin: CoordOrigin):
+    def from_tuple(cls, coord: tuple[float, ...], origin: CoordOrigin):
         """from_tuple.
 
-        :param coord: Tuple[float:
+        :param coord: tuple[float:
         :param ...]:
         :param origin: CoordOrigin:
 
@@ -384,7 +384,7 @@ class BoundingBox(BaseModel):
         return False
 
     @classmethod
-    def enclosing_bbox(cls, boxes: List["BoundingBox"]) -> "BoundingBox":
+    def enclosing_bbox(cls, boxes: list["BoundingBox"]) -> "BoundingBox":
         """Create a bounding box that covers all of the given boxes."""
         if not boxes:
             raise ValueError("No bounding boxes provided for union.")

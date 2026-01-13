@@ -4,7 +4,7 @@ import warnings
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 from unittest.mock import Mock
 
 import pytest
@@ -986,14 +986,14 @@ def test_save_pictures_with_page():
     assert n_images == 1
 
 
-def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
+def _normalise_string_wrt_filepaths(instr: str, paths: list[Path]):
     for p in paths:
         instr = instr.replace(str(p), str(p.name))
 
     return instr
 
 
-def _verify_saved_output(filename: Union[str, Path], paths: List[Path]):
+def _verify_saved_output(filename: Union[str, Path], paths: list[Path]):
     pred = ""
     with open(filename, "r", encoding="utf-8") as fr:
         pred = fr.read()

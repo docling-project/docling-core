@@ -176,10 +176,8 @@ ignore = [
   "RUF005", # Consider ... instead of concatenation
   "RUF012", # Mutable Class Attributes
   "RUF034", # Useless `if`-`else` condition
-  "UP006",  # List vs list, etc
   "UP007",  # Option and Union
   "UP015",  # Unnecessary mode argument
-  "UP035",  # `typing.Set` is deprecated, use `set` instead"
   "UP045",  # Use `X | None` for type annotations
 ]
 

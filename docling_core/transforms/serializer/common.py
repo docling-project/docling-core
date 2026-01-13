@@ -5,9 +5,10 @@ import re
 import sys
 import warnings
 from abc import abstractmethod
+from collections.abc import Iterable
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Iterable, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from pydantic import (
     AnyUrl,
@@ -85,7 +86,7 @@ def _iterate_items(
     traverse_pictures: bool = False,
     add_page_breaks: bool = False,
     visited: Optional[set[str]] = None,
-) -> Iterable[Tuple[NodeItem, int]]:
+) -> Iterable[tuple[NodeItem, int]]:
     my_visited: set[str] = visited if visited is not None else set()
     prev_page_nr: Optional[int] = None
     page_break_i = 0
@@ -680,7 +681,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def _create_page_break(self, node: _PageBreakNode) -> str:
         return f"#_#_DOCLING_DOC_PAGE_BREAK_{node.prev_page}_{node.next_page}_#_#"
 
-    def _get_page_breaks(self, text: str) -> Iterable[Tuple[str, int, int]]:
+    def _get_page_breaks(self, text: str) -> Iterable[tuple[str, int, int]]:
         pattern = r"#_#_DOCLING_DOC_PAGE_BREAK_(\d+)_(\d+)_#_#"
         matches = re.finditer(pattern, text)
         for match in matches:

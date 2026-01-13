@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterator, Optional, Union
+from collections.abc import Iterator
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import ConfigDict, Field
-from typing_extensions import Annotated, override
+from typing_extensions import override
 
 from docling_core.transforms.chunker import BaseChunk, BaseChunker
 from docling_core.transforms.chunker.code_chunking.base_code_chunking_strategy import (

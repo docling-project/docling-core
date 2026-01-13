@@ -1,7 +1,8 @@
 """Language-specific code chunker implementations."""
 
 import hashlib
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from collections.abc import Iterator
+from typing import Any, Optional
 
 from pydantic import Field
 from tree_sitter import Node, Parser, Tree
@@ -40,7 +41,7 @@ class _RangeTracker:
 
     def __init__(self) -> None:
         """Initialize the range tracker with an empty list of used ranges."""
-        self.used_ranges: List[Tuple[int, int]] = []
+        self.used_ranges: list[tuple[int, int]] = []
 
     def mark_used(self, start_byte: int, end_byte: int) -> None:
         """Mark a range as used."""
@@ -50,13 +51,13 @@ class _RangeTracker:
         """Mark a node's range as used."""
         self.mark_used(node.start_byte, node.end_byte)
 
-    def merge_ranges(self) -> List[Tuple[int, int]]:
+    def merge_ranges(self) -> list[tuple[int, int]]:
         """Merge overlapping ranges and return sorted list."""
         if not self.used_ranges:
             return []
 
         sorted_ranges = sorted(self.used_ranges)
-        merged: List[Tuple[int, int]] = []
+        merged: list[tuple[int, int]] = []
 
         for start, end in sorted_ranges:
             if not merged or start > merged[-1][1]:
@@ -66,7 +67,7 @@ class _RangeTracker:
 
         return merged
 
-    def find_gaps(self, total_length: int) -> List[Tuple[int, int]]:
+    def find_gaps(self, total_length: int) -> list[tuple[int, int]]:
         """Find gaps between used ranges."""
         merged = self.merge_ranges()
         gaps = []
@@ -82,7 +83,7 @@ class _RangeTracker:
 
         return gaps
 
-    def get_used_ranges(self) -> List[Tuple[int, int]]:
+    def get_used_ranges(self) -> list[tuple[int, int]]:
         """Get all used ranges."""
         return self.used_ranges.copy()
 
@@ -90,7 +91,7 @@ class _RangeTracker:
         """Clear all used ranges."""
         self.used_ranges.clear()
 
-    def extend(self, ranges: List[Tuple[int, int]]) -> None:
+    def extend(self, ranges: list[tuple[int, int]]) -> None:
         """Add multiple ranges at once."""
         self.used_ranges.extend(ranges)
 
@@ -160,7 +161,7 @@ class _ChunkMetadataBuilder:
             chunk_type=CodeChunkType.PREAMBLE,
         )
 
-    def calculate_line_numbers(self, code: str, start_byte: int, end_byte: int) -> Tuple[int, int]:
+    def calculate_line_numbers(self, code: str, start_byte: int, end_byte: int) -> tuple[int, int]:
         """Calculate line numbers from byte positions."""
         start_line = code[:start_byte].count("\n") + 1
         if end_byte > 0 and end_byte <= len(code):
@@ -230,7 +231,7 @@ class _ChunkBuilder:
         )
         return CodeChunk(text=content, meta=metadata, doc_items=[self.item])
 
-    def process_orphan_chunks(self, used_ranges: List[Tuple[int, int]], dl_doc) -> Iterator[CodeChunk]:
+    def process_orphan_chunks(self, used_ranges: list[tuple[int, int]], dl_doc) -> Iterator[CodeChunk]:
         """Process orphan chunks (preamble) from unused code ranges."""
         from docling_core.types.doc.labels import DocItemLabel
 
@@ -268,8 +269,8 @@ class _ChunkSizeProcessor:
         self.chunker = chunker
 
     def process_chunks(
-        self, chunks_and_ranges: List[Tuple[CodeChunk, List[Tuple[int, int]]]]
-    ) -> Iterator[Tuple[CodeChunk, List[Tuple[int, int]]]]:
+        self, chunks_and_ranges: list[tuple[CodeChunk, list[tuple[int, int]]]]
+    ) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
         """Process chunks and split large ones if needed."""
         for chunk, ranges in chunks_and_ranges:
             token_count = self.tokenizer.count_tokens(chunk.text)
@@ -280,8 +281,8 @@ class _ChunkSizeProcessor:
                 yield from self._split_large_chunk(chunk, ranges)
 
     def _split_large_chunk(
-        self, chunk: CodeChunk, ranges: List[Tuple[int, int]]
-    ) -> Iterator[Tuple[CodeChunk, List[Tuple[int, int]]]]:
+        self, chunk: CodeChunk, ranges: list[tuple[int, int]]
+    ) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
         """Split a large chunk into smaller pieces."""
         if chunk.meta.chunk_type.value in {
             CodeChunkType.FUNCTION.value,
@@ -292,8 +293,8 @@ class _ChunkSizeProcessor:
             yield from self._split_generic_chunk(chunk, ranges)
 
     def _split_function_chunk(
-        self, chunk: CodeChunk, ranges: List[Tuple[int, int]]
-    ) -> Iterator[Tuple[CodeChunk, List[Tuple[int, int]]]]:
+        self, chunk: CodeChunk, ranges: list[tuple[int, int]]
+    ) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
         """Split a large function chunk using the original sophisticated logic."""
         lines = chunk.text.split("\n")
         if not lines:
@@ -373,11 +374,11 @@ class _ChunkSizeProcessor:
         return "\n}"
 
     def _split_generic_chunk(
-        self, chunk: CodeChunk, ranges: List[Tuple[int, int]]
-    ) -> Iterator[Tuple[CodeChunk, List[Tuple[int, int]]]]:
+        self, chunk: CodeChunk, ranges: list[tuple[int, int]]
+    ) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
         """Split a generic chunk by lines."""
         lines = chunk.text.split("\n")
-        current_chunk_lines: List[str] = []
+        current_chunk_lines: list[str] = []
         current_size = 0
         chunk_number = 1
 
@@ -421,12 +422,12 @@ class _CodeChunker(BaseChunker):
     function_body: str
     constructor_name: str
     decorator_type: str
-    class_definition_types: List[str]
-    docs_types: List[str]
-    expression_types: List[str]
+    class_definition_types: list[str]
+    docs_types: list[str]
+    expression_types: list[str]
     chunk_prefix: str
     chunk_suffix: str
-    function_definition_types: List[str]
+    function_definition_types: list[str]
     tokenizer: BaseTokenizer
     min_chunk_size: int
     max_tokens: int
@@ -435,9 +436,9 @@ class _CodeChunker(BaseChunker):
     name_field: str = "name"
     expression_statement: str = "expression_statement"
     string_field: str = "string"
-    identifiers: List[str] = ["identifier", "type_identifier"]
+    identifiers: list[str] = ["identifier", "type_identifier"]
     definition_field: str = "definition"
-    copyright_words: List[str] = [
+    copyright_words: list[str] = [
         "copyright",
         "license",
         "licensed under",
@@ -516,10 +517,10 @@ class _CodeChunker(BaseChunker):
         self,
         node: Node,
         root_node: Node,
-        import_nodes: Dict[str, Node],
+        import_nodes: dict[str, Node],
         chunk_builder: _ChunkBuilder,
-        module_variables: Optional[Dict[str, Node]] = None,
-    ) -> Iterator[Tuple[CodeChunk, List[Tuple[int, int]]]]:
+        module_variables: Optional[dict[str, Node]] = None,
+    ) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
         docstring = self._get_docstring(node)
         additional_context, additional_context_no_docstring = self._build_additional_context(node, root_node)
         imports = self._build_imports(import_nodes, node, additional_context_no_docstring)
@@ -586,8 +587,8 @@ class _CodeChunker(BaseChunker):
         )
 
     def _yield_class_chunk_with_ranges(
-        self, node: Node, import_nodes: Dict[str, Node], chunk_builder: _ChunkBuilder
-    ) -> Iterator[Tuple[CodeChunk, List[Tuple[int, int]]]]:
+        self, node: Node, import_nodes: dict[str, Node], chunk_builder: _ChunkBuilder
+    ) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
         docstring = self._get_docstring(node)
         function_content = self._build_class_with_comments(node)
         imports = self._build_imports(import_nodes, node, function_content)
@@ -630,7 +631,7 @@ class _CodeChunker(BaseChunker):
                 used_ranges,
             )
 
-    def _file_prefix(self, root_node: Node) -> Tuple[str, List]:
+    def _file_prefix(self, root_node: Node) -> tuple[str, list]:
         return "", []
 
     def _get_function_body(self, node: Node) -> Optional[Node]:
@@ -642,7 +643,7 @@ class _CodeChunker(BaseChunker):
             return text.decode(self.utf8_encoding) if text else ""
         return ""
 
-    def _get_all_functions(self, node: Node, parent_type: str) -> List[Node]:
+    def _get_all_functions(self, node: Node, parent_type: str) -> list[Node]:
         """Get all functions in the file."""
         if not node or parent_type in self.function_definition_types:
             return []
@@ -661,7 +662,7 @@ class _CodeChunker(BaseChunker):
 
         return nodes
 
-    def _get_classes_no_methods(self, node: Node, parent_type: str) -> List[Node]:
+    def _get_classes_no_methods(self, node: Node, parent_type: str) -> list[Node]:
         """Get classes and interfaces without methods."""
 
         def has_methods(class_node: Node) -> bool:
@@ -683,10 +684,10 @@ class _CodeChunker(BaseChunker):
 
         return nodes
 
-    def _get_class_member_ranges(self, class_node: Node) -> List[Tuple[int, int]]:
+    def _get_class_member_ranges(self, class_node: Node) -> list[tuple[int, int]]:
         return []
 
-    def _get_module_variables(self, tree: Tree) -> Dict[str, Node]:
+    def _get_module_variables(self, tree: Tree) -> dict[str, Node]:
         """Get module-level variables/macros. Must be implemented by language-specific chunkers."""
         raise NotImplementedError
 
@@ -698,7 +699,7 @@ class _CodeChunker(BaseChunker):
         """Get variable node including any preceding comments. Default implementation returns the node as-is."""
         return var_node
 
-    def _get_function_signature_end(self, node: Node) -> Tuple[int, int]:
+    def _get_function_signature_end(self, node: Node) -> tuple[int, int]:
         body_node = self._get_function_body(node)
         return body_node.start_point if body_node else node.end_point
 
@@ -710,7 +711,7 @@ class _CodeChunker(BaseChunker):
     def _build_class_with_comments(self, class_node: Node) -> str:
         """Build class content including any preceding comments and docstrings."""
         current = class_node.prev_sibling
-        comment_parts: List[str] = []
+        comment_parts: list[str] = []
 
         while current and current.type in self.docs_types:
             current_end_line = current.end_point[0]
@@ -730,7 +731,7 @@ class _CodeChunker(BaseChunker):
 
     def _build_imports(
         self,
-        imports: Dict[str, Node],
+        imports: dict[str, Node],
         function_node: Node,
         additional_context: str = "",
     ) -> str:
@@ -762,10 +763,10 @@ class _CodeChunker(BaseChunker):
 
     def _find_used_imports_in_function(
         self,
-        imports: Dict[str, Node],
+        imports: dict[str, Node],
         function_node: Node,
         additional_context: str = "",
-        module_variables: Optional[Dict[str, Node]] = None,
+        module_variables: Optional[dict[str, Node]] = None,
     ) -> set:
         """Find which imports are used in a function and its additional context."""
         used = set()
@@ -800,7 +801,7 @@ class _CodeChunker(BaseChunker):
     def _get_node_with_comments(self, node: Node) -> str:
         """Get node text including any preceding comments."""
         current = node.prev_sibling
-        comment_parts: List[str] = []
+        comment_parts: list[str] = []
 
         while current and current.type in self.docs_types:
             current_end_line = current.end_point[0]
@@ -822,7 +823,7 @@ class _CodeChunker(BaseChunker):
         """Get import text including any preceding comments."""
         return self._get_node_with_comments(import_node)
 
-    def _get_node_ranges_with_comments(self, node: Node) -> List[Tuple[int, int]]:
+    def _get_node_ranges_with_comments(self, node: Node) -> list[tuple[int, int]]:
         """Get node ranges including any preceding comments."""
         ranges = []
 
@@ -842,19 +843,19 @@ class _CodeChunker(BaseChunker):
 
         return ranges
 
-    def _get_variable_ranges_with_comments(self, var_node: Node) -> List[Tuple[int, int]]:
+    def _get_variable_ranges_with_comments(self, var_node: Node) -> list[tuple[int, int]]:
         """Get variable ranges including any preceding comments."""
         return self._get_node_ranges_with_comments(var_node)
 
-    def _get_import_ranges_with_comments(self, import_node: Node) -> List[Tuple[int, int]]:
+    def _get_import_ranges_with_comments(self, import_node: Node) -> list[tuple[int, int]]:
         """Get import ranges including any preceding comments."""
         return self._get_node_ranges_with_comments(import_node)
 
-    def _get_class_ranges_with_comments(self, class_node: Node) -> List[Tuple[int, int]]:
+    def _get_class_ranges_with_comments(self, class_node: Node) -> list[tuple[int, int]]:
         """Get class ranges including any preceding comments and docstrings."""
         return self._get_node_ranges_with_comments(class_node)
 
-    def _build_additional_context(self, function_node: Node, root_node: Node) -> Tuple[str, str]:
+    def _build_additional_context(self, function_node: Node, root_node: Node) -> tuple[str, str]:
         context = ""
         context_no_docstring = ""
         node = function_node
@@ -876,11 +877,11 @@ class _CodeChunker(BaseChunker):
             and node.named_children[0].type == self.string_field
         )
 
-    def _get_imports(self, tree: Tree) -> Dict[str, Node]:
+    def _get_imports(self, tree: Tree) -> dict[str, Node]:
         """Get imports from the AST. Must be implemented by language-specific chunkers."""
         raise NotImplementedError
 
-    def _build_class_context(self, class_node: Node, root_node: Node) -> Tuple[str, str]:
+    def _build_class_context(self, class_node: Node, root_node: Node) -> tuple[str, str]:
         class_indent = class_node.start_point.column
         start_byte = class_node.start_byte
 
@@ -971,7 +972,7 @@ class _CodeChunker(BaseChunker):
     def _track_constructor_variables(
         self,
         node: Node,
-        module_variables: Dict[str, Node],
+        module_variables: dict[str, Node],
         range_tracker: _RangeTracker,
     ) -> None:
         """Track variables used in constructor functions that aren't being chunked separately."""
@@ -991,18 +992,18 @@ class _PythonFunctionChunker(_CodeChunker):
     language: CodeLanguageLabel = CodeLanguageLabel.PYTHON
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
-    function_definition_types: List[str] = ["function_definition"]
-    class_definition_types: List[str] = ["class_definition"]
+    function_definition_types: list[str] = ["function_definition"]
+    class_definition_types: list[str] = ["class_definition"]
     constructor_name: str = "__init__"
     decorator_type: str = "decorated_definition"
-    expression_types: List[str] = ["expression_statement"]
+    expression_types: list[str] = ["expression_statement"]
     chunk_prefix: str = "\n\t"
     chunk_suffix: str = ""
     function_body: str = "block"
     tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
     min_chunk_size: int = 300
     max_tokens: int = 5000
-    docs_types: List[str] = ["body", "comment"]
+    docs_types: list[str] = ["body", "comment"]
     dotted_name: str = "dotted_name"
     aliased_import: str = "aliased_import"
 
@@ -1026,7 +1027,7 @@ class _PythonFunctionChunker(_CodeChunker):
         return ""
 
     @override
-    def _get_imports(self, tree: Tree) -> Dict[str, Node]:
+    def _get_imports(self, tree: Tree) -> dict[str, Node]:
         """Get imports for Python."""
         import_query = _get_import_query(self.language)
         if not import_query:
@@ -1052,7 +1053,7 @@ class _PythonFunctionChunker(_CodeChunker):
                     imports[name] = node
         return imports
 
-    def _get_module_variables(self, tree: Tree) -> Dict[str, Node]:
+    def _get_module_variables(self, tree: Tree) -> dict[str, Node]:
         """Get module-level variable assignments for Python."""
         variables = {}
         for child in tree.root_node.children:
@@ -1118,7 +1119,7 @@ class _TypeScriptFunctionChunker(_CodeChunker):
     language: CodeLanguageLabel = CodeLanguageLabel.TYPESCRIPT
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
-    function_definition_types: List[str] = [
+    function_definition_types: list[str] = [
         "function_declaration",
         "arrow_function",
         "method_definition",
@@ -1127,17 +1128,17 @@ class _TypeScriptFunctionChunker(_CodeChunker):
         "generator_function_declaration",
         "export_statement",
     ]
-    class_definition_types: List[str] = ["class_declaration"]
+    class_definition_types: list[str] = ["class_declaration"]
     constructor_name: str = "constructor"
     decorator_type: str = "decorator"
     function_body: str = "block"
-    expression_types: List[str] = ["expression_statement"]
+    expression_types: list[str] = ["expression_statement"]
     tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
     min_chunk_size: int = 300
     max_tokens: int = 5000
     chunk_prefix: str = " {"
     chunk_suffix: str = "\n}"
-    docs_types: List[str] = ["comment"]
+    docs_types: list[str] = ["comment"]
     import_clause: str = "import_clause"
     named_imports: str = "named_imports"
     import_specifier: str = "import_specifier"
@@ -1152,7 +1153,7 @@ class _TypeScriptFunctionChunker(_CodeChunker):
         return node.type in self.docs_types
 
     @override
-    def _get_imports(self, tree: Tree) -> Dict[str, Node]:
+    def _get_imports(self, tree: Tree) -> dict[str, Node]:
         import_query = _get_import_query(self.language)
         if not import_query:
             return {}
@@ -1186,7 +1187,7 @@ class _TypeScriptFunctionChunker(_CodeChunker):
                 imports[identifier_val] = import_node
         return imports
 
-    def _get_module_variables(self, tree: Tree) -> Dict[str, Node]:
+    def _get_module_variables(self, tree: Tree) -> dict[str, Node]:
         """TypeScript/JavaScript don't have module-level variables like Python or C macros."""
         return {}
 
@@ -1200,8 +1201,8 @@ class _CFunctionChunker(_CodeChunker):
     language: CodeLanguageLabel = CodeLanguageLabel.C
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
-    function_definition_types: List[str] = ["function_definition"]
-    class_definition_types: List[str] = [""]
+    function_definition_types: list[str] = ["function_definition"]
+    class_definition_types: list[str] = [""]
     constructor_name: str = ""
     decorator_type: str = ""
     function_body: str = "compound_statement"
@@ -1210,14 +1211,14 @@ class _CFunctionChunker(_CodeChunker):
     max_tokens: int = 5000
     chunk_prefix: str = " {"
     chunk_suffix: str = "\n}"
-    expression_types: List[str] = []
-    docs_types: List[str] = ["comment", "block_comment"]
-    structs: List[str] = ["struct_specifier", "preproc_def", "preproc_function_def"]
+    expression_types: list[str] = []
+    docs_types: list[str] = ["comment", "block_comment"]
+    structs: list[str] = ["struct_specifier", "preproc_def", "preproc_function_def"]
     declaration: str = "declaration"
     declarator: str = "declarator"
-    function_declaration: List[str] = ["type_definition", "function_declaration"]
+    function_declaration: list[str] = ["type_definition", "function_declaration"]
     type_field: str = "type"
-    identifiers: List[str] = ["identifier"]
+    identifiers: list[str] = ["identifier"]
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -1242,7 +1243,7 @@ class _CFunctionChunker(_CodeChunker):
     def _is_constructor(self, node: Node) -> bool:
         return False
 
-    def _get_imports(self, tree: Tree) -> Dict[str, Node]:
+    def _get_imports(self, tree: Tree) -> dict[str, Node]:
         structs = {}
 
         def _clean_name(name_text: str) -> str:
@@ -1284,7 +1285,7 @@ class _CFunctionChunker(_CodeChunker):
 
         return {**structs}
 
-    def _get_module_variables(self, tree: Tree) -> Dict[str, Node]:
+    def _get_module_variables(self, tree: Tree) -> dict[str, Node]:
         """Get module-level #define macros for C."""
         macros = {}
         for child in tree.root_node.children:
@@ -1343,22 +1344,22 @@ class _JavaFunctionChunker(_CodeChunker):
     ts_language: Any = Field(default=None)
     parser: Any = Field(default=None)
     method_declaration: str = "method_declaration"
-    function_definition_types: List[str] = [
+    function_definition_types: list[str] = [
         method_declaration,
         "constructor_declaration",
         "static_initializer",
     ]
-    class_definition_types: List[str] = ["class_declaration", "interface_declaration"]
+    class_definition_types: list[str] = ["class_declaration", "interface_declaration"]
     constructor_name: str = "<init>"
     decorator_type: str = "annotation"
     function_body: str = "block"
-    expression_types: List[str] = []
+    expression_types: list[str] = []
     tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
     min_chunk_size: int = 300
     max_tokens: int = 5000
     chunk_prefix: str = " {"
     chunk_suffix: str = "\n}"
-    docs_types: List[str] = ["block_comment", "comment"]
+    docs_types: list[str] = ["block_comment", "comment"]
     package_declaration: str = "package_declaration"
     import_declaration: str = "import_declaration"
     class_declaration: str = "class_declaration"
@@ -1373,19 +1374,19 @@ class _JavaFunctionChunker(_CodeChunker):
     enum_body_declarations: str = "enum_body_declarations"
     constant_declaration: str = "constant_declaration"
 
-    enum_inner_types: List[str] = [
+    enum_inner_types: list[str] = [
         field_declaration,
         method_declaration,
         function_body,
         constructor_declaration,
         compact_constructor_declaration,
     ]
-    class_header_inner_types: List[str] = [
+    class_header_inner_types: list[str] = [
         field_declaration,
         static_initializer,
         function_body,
     ]
-    object_declarations: List[str] = [
+    object_declarations: list[str] = [
         class_declaration,
         record_declaration,
         enum_declaration,
@@ -1396,7 +1397,7 @@ class _JavaFunctionChunker(_CodeChunker):
         super().__init__(**data)
 
     @override
-    def _file_prefix(self, root_node: Node) -> Tuple[str, List[Tuple[int, int]]]:
+    def _file_prefix(self, root_node: Node) -> tuple[str, list[tuple[int, int]]]:
         used_ranges = []
         prefix = ""
         for child in root_node.children:
@@ -1408,7 +1409,7 @@ class _JavaFunctionChunker(_CodeChunker):
         return prefix, used_ranges
 
     @override
-    def _get_imports(self, tree: Tree) -> Dict[str, Node]:
+    def _get_imports(self, tree: Tree) -> dict[str, Node]:
         import_nodes = _get_children(tree.root_node, [self.import_declaration])
         import_dict = {}
         for import_node in import_nodes:
@@ -1420,9 +1421,9 @@ class _JavaFunctionChunker(_CodeChunker):
         return import_dict
 
     @override
-    def _build_additional_context(self, function_node: Node, root_node: Node) -> Tuple[str, str]:
-        context: List[str] = []
-        context_no_doc: List[str] = []
+    def _build_additional_context(self, function_node: Node, root_node: Node) -> tuple[str, str]:
+        context: list[str] = []
+        context_no_doc: list[str] = []
         while function_node.parent is not None:
             if function_node.type in self.object_declarations:
                 with_doc, without_doc = self._build_java_object_context(function_node, root_node)
@@ -1436,7 +1437,7 @@ class _JavaFunctionChunker(_CodeChunker):
             without_doc + ("" if without_doc else ""),
         )
 
-    def _build_java_object_context(self, obj_node: Node, root_node: Node) -> Tuple[str, str]:
+    def _build_java_object_context(self, obj_node: Node, root_node: Node) -> tuple[str, str]:
         """Build context for Java objects (classes, enums, interfaces)."""
         obj_type = obj_node.type
 
@@ -1449,7 +1450,7 @@ class _JavaFunctionChunker(_CodeChunker):
 
         return ("", "")
 
-    def _build_java_class_like_context(self, node: Node, root_node: Node, context_type: str) -> Tuple[str, str]:
+    def _build_java_class_like_context(self, node: Node, root_node: Node, context_type: str) -> tuple[str, str]:
         """Unified context building for Java classes, enums, and interfaces."""
         body = node.child_by_field_name(self.class_body_field)
         if not body:
@@ -1508,7 +1509,7 @@ class _JavaFunctionChunker(_CodeChunker):
             sig = ""
         return (" " * indent) + sig + " {"
 
-    def _get_class_member_ranges(self, current_node: Node) -> List[Tuple[int, int]]:
+    def _get_class_member_ranges(self, current_node: Node) -> list[tuple[int, int]]:
         used_ranges = []
 
         parent = current_node.parent
@@ -1523,7 +1524,7 @@ class _JavaFunctionChunker(_CodeChunker):
 
         return used_ranges
 
-    def _get_module_variables(self, tree: Tree) -> Dict[str, Node]:
+    def _get_module_variables(self, tree: Tree) -> dict[str, Node]:
         """Java doesn't have module-level variables like Python or C macros."""
         return {}
 

@@ -3,7 +3,7 @@
 import hashlib
 import uuid
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from docling_core.types.doc import (
     BoundingBox,
@@ -416,7 +416,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
 
         # collect all captions embedded in table and figure objects
         # to avoid repeating them
-        embedded_captions: Dict[str, int] = {}
+        embedded_captions: dict[str, int] = {}
         for ix, orig_item in enumerate(legacy_doc.main_text):
             item = legacy_doc._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item
             if item is None:
@@ -426,7 +426,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
                 embedded_captions[item.text] = ix
 
         # build lookup from floating objects to their caption item
-        floating_to_caption: Dict[int, BaseText] = {}
+        floating_to_caption: dict[int, BaseText] = {}
         for ix, orig_item in enumerate(legacy_doc.main_text):
             item = legacy_doc._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item
             if item is None:

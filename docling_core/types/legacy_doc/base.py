@@ -1,6 +1,6 @@
 """Define common models across CCS objects."""
 
-from typing import Annotated, List, Literal, Optional, Union
+from typing import Annotated, Literal, Optional, Union
 
 import pandas as pd
 from pydantic import BaseModel, Field, PositiveInt, StrictStr
@@ -197,7 +197,7 @@ class Table(BaseCell):
                 break
 
         # Create the column names from all col_headers
-        columns: Optional[List[str]] = None
+        columns: Optional[list[str]] = None
         if num_headers > 0:
             columns = ["" for _ in range(self.num_cols)]
             for i in range(num_headers):

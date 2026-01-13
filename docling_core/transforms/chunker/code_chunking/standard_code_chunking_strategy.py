@@ -1,6 +1,7 @@
 """Code chunking strategy implementations for different programming languages."""
 
-from typing import Any, Dict, Iterator, Optional
+from collections.abc import Iterator
+from typing import Any, Optional
 
 from typing_extensions import override
 
@@ -40,7 +41,7 @@ class StandardCodeChunkingStrategy(BaseCodeChunkingStrategy):
     def __init__(self, **chunker_kwargs: Any):
         """Initialize the strategy with optional chunker parameters."""
         self.chunker_kwargs = chunker_kwargs
-        self._chunker_cache: Dict[CodeLanguageLabel, _CodeChunker] = {}
+        self._chunker_cache: dict[CodeLanguageLabel, _CodeChunker] = {}
 
     def _get_chunker(self, language: CodeLanguageLabel) -> Optional[_CodeChunker]:
         """Get or create a chunker for the given language."""

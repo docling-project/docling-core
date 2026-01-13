@@ -1,9 +1,8 @@
 """Define the model Attribute."""
 
-from typing import Generic, Optional
+from typing import Annotated, Generic, Optional
 
 from pydantic import Field
-from typing_extensions import Annotated
 
 from docling_core.search.mapping import es_field
 from docling_core.types.base import (

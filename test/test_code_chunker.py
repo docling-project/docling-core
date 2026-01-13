@@ -3,7 +3,7 @@ import json
 import os
 import pathlib
 import sys
-from typing import List, Optional
+from typing import Optional
 
 import git
 import pytest
@@ -35,10 +35,10 @@ def create_documents_from_repository(
     repo_url: str,
     language: CodeLanguageLabel,
     commit_id: Optional[str] = None,
-) -> List[DoclingDocument]:
+) -> list[DoclingDocument]:
     """Build DoclingDocument objects from a local checkout, one per code file."""
 
-    documents: List[DoclingDocument] = []
+    documents: list[DoclingDocument] = []
     if commit_id is None:
         commit_id = get_latest_commit_id(file_dir)
 

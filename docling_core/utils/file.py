@@ -5,7 +5,7 @@ import re
 import tempfile
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import requests
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
@@ -17,7 +17,7 @@ from docling_core.types.io import DocumentStream
 
 def resolve_remote_filename(
     http_url: AnyHttpUrl,
-    response_headers: Dict[str, str],
+    response_headers: dict[str, str],
     fallback_filename="file",
 ) -> str:
     """Resolves the filename from a remote url and its response headers.
@@ -46,13 +46,13 @@ def resolve_remote_filename(
 
 
 def resolve_source_to_stream(
-    source: Union[Path, AnyHttpUrl, str], headers: Optional[Dict[str, str]] = None
+    source: Union[Path, AnyHttpUrl, str], headers: Optional[dict[str, str]] = None
 ) -> DocumentStream:
     """Resolves the source (URL, path) of a file to a binary stream.
 
     Args:
         source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
-        headers (Optional[Dict[str, str]]): Optional set of headers to use for fetching
+        headers (Optional[dict[str, str]]): Optional set of headers to use for fetching
             the remote URL.
 
     Raises:
@@ -117,7 +117,7 @@ def resolve_source_to_stream(
 
 def _resolve_source_to_path(
     source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[Dict[str, str]] = None,
+    headers: Optional[dict[str, str]] = None,
     workdir: Optional[Path] = None,
 ) -> Path:
     doc_stream = resolve_source_to_stream(source=source, headers=headers)
@@ -139,7 +139,7 @@ def _resolve_source_to_path(
 
 def resolve_source_to_path(
     source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[Dict[str, str]] = None,
+    headers: Optional[dict[str, str]] = None,
     workdir: Optional[Path] = None,
 ) -> Path:
     """Resolves the source (URL, path) of a file to a local file path.
@@ -149,7 +149,7 @@ def resolve_source_to_path(
 
     Args:
         source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
-        headers (Optional[Dict[str, str]]): Optional set of headers to use for fetching
+        headers (Optional[dict[str, str]]): Optional set of headers to use for fetching
             the remote URL.
         workdir (Optional[Path]): If set, the work directory where the file will
             be downloaded, otherwise a temp dir will be used.
@@ -170,7 +170,7 @@ def resolve_source_to_path(
 @deprecated("Use `resolve_source_to_path()` or `resolve_source_to_stream()`  instead")
 def resolve_file_source(
     source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[Dict[str, str]] = None,
+    headers: Optional[dict[str, str]] = None,
 ) -> Path:
     """Resolves the source (URL, path) of a file to a local file path.
 
@@ -178,7 +178,7 @@ def resolve_file_source(
 
     Args:
         source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
-        headers (Optional[Dict[str, str]]): Optional set of headers to use for fetching
+        headers (Optional[dict[str, str]]): Optional set of headers to use for fetching
             the remote URL.
 
     Raises:

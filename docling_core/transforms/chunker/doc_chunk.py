@@ -2,10 +2,9 @@
 
 import logging
 import re
-from typing import ClassVar, Final, Literal, Optional
+from typing import Annotated, ClassVar, Final, Literal, Optional
 
 from pydantic import Field, StringConstraints, field_validator
-from typing_extensions import Annotated
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseMeta

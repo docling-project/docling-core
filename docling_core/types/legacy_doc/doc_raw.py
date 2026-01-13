@@ -1,9 +1,8 @@
 """Models for CCS objects in raw format."""
 
-from typing import Any, List, Optional
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated
 
 from docling_core.types.legacy_doc.base import BoundingBox
 from docling_core.utils.alias import AliasModel
@@ -36,7 +35,7 @@ class Enumeration(BaseModel):
 class Font(BaseModel):
     """Font."""
 
-    color: Annotated[List[float], Field(min_length=3, max_length=4)]
+    color: Annotated[list[float], Field(min_length=3, max_length=4)]
     name: str
     size: float
 

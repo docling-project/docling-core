@@ -2,7 +2,8 @@
 
 import re
 from copy import deepcopy
-from typing import Any, Optional, Pattern, Tuple, TypedDict
+from re import Pattern
+from typing import Any, Optional, TypedDict
 
 from jsonref import replace_refs
 
@@ -21,7 +22,7 @@ class JsonSchemaToSearchMapper:
     JSON Schema and how they should be indexed in a Lucene index of a search database.
 
     Potential issues:
-    - Tuples may not be converted properly (e.g., Tuple[float,float,float,str,str])
+    - Tuples may not be converted properly (e.g., tuple[float,float,float,str,str])
     - Method `_remove_keys` may lead to wrong results if a field is named `properties`.
     """
 
@@ -275,7 +276,7 @@ class JsonSchemaToSearchMapper:
         return __suppress(doc)
 
     @staticmethod
-    def _remove_keys(doc: dict, keys: Tuple[str, ...]) -> dict:
+    def _remove_keys(doc: dict, keys: tuple[str, ...]) -> dict:
         """Remove keys from a JSON schema to match a search database mappings.
 
         Args:

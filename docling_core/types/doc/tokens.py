@@ -1,7 +1,6 @@
 """Tokens used in the docling document model."""
 
 from enum import Enum
-from typing import Tuple
 
 from docling_core.types.doc.labels import DocItemLabel
 
@@ -186,7 +185,7 @@ class DocumentToken(str, Enum):
     @classmethod
     def get_special_tokens(
         cls,
-        page_dimension: Tuple[int, int] = (500, 500),
+        page_dimension: tuple[int, int] = (500, 500),
     ):
         """Function to get all special document tokens."""
         special_tokens: list[str] = []

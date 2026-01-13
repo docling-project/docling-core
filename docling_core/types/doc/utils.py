@@ -5,7 +5,7 @@ import itertools
 import re
 import unicodedata
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 
@@ -78,7 +78,7 @@ def get_text_direction(text: str) -> str:
     return "rtl" if unicodedata.bidirectional(text[0]) in rtl_scripts or rtl_chars > len(text) / 2 else "ltr"
 
 
-def otsl_extract_tokens_and_text(s: str) -> Tuple[List[str], List[str]]:
+def otsl_extract_tokens_and_text(s: str) -> tuple[list[str], list[str]]:
     """Extract OTSL tokens and text from an OTSL string."""
     # Pattern to match anything enclosed by < >
     # (including the angle brackets themselves)
@@ -118,7 +118,7 @@ def otsl_extract_tokens_and_text(s: str) -> Tuple[List[str], List[str]]:
     return tokens, text_parts
 
 
-def otsl_parse_texts(texts: List[str], tokens: List[str]) -> Tuple[List["TableCell"], List[List[str]]]:
+def otsl_parse_texts(texts: list[str], tokens: list[str]) -> tuple[list["TableCell"], list[list[str]]]:
     """Parse OTSL texts and tokens into table cells."""
     from docling_core.types.doc.document import TableCell
 
@@ -145,7 +145,7 @@ def otsl_parse_texts(texts: List[str], tokens: List[str]) -> Tuple[List["TableCe
     r_idx = 0
     c_idx = 0
 
-    def count_right(tokens: List[List[str]], c_idx: int, r_idx: int, which_tokens: List[str]) -> int:
+    def count_right(tokens: list[list[str]], c_idx: int, r_idx: int, which_tokens: list[str]) -> int:
         span = 0
         c_idx_iter = c_idx
         while tokens[r_idx][c_idx_iter] in which_tokens:
@@ -155,7 +155,7 @@ def otsl_parse_texts(texts: List[str], tokens: List[str]) -> Tuple[List["TableCe
                 return span
         return span
 
-    def count_down(tokens: List[List[str]], c_idx: int, r_idx: int, which_tokens: List[str]) -> int:
+    def count_down(tokens: list[list[str]], c_idx: int, r_idx: int, which_tokens: list[str]) -> int:
         span = 0
         r_idx_iter = r_idx
         while tokens[r_idx_iter][c_idx] in which_tokens:
