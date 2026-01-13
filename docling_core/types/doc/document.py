@@ -4737,7 +4737,7 @@ class DoclingDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
 
     def save_as_yaml(

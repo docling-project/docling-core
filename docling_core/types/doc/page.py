@@ -609,7 +609,7 @@ class SegmentedPdfPage(SegmentedPage):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
 
     def crop_text(self, cell_unit: TextCellUnit, bbox: BoundingBox, eps: float = 1.0) -> str:
@@ -1192,7 +1192,7 @@ class PdfTableOfContents(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
 
 
@@ -1253,5 +1253,5 @@ class ParsedPdfDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, encoding="utf-8") as f:
             return cls.model_validate_json(f.read())

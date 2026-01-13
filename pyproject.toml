@@ -177,7 +177,6 @@ ignore = [
   "RUF012", # Mutable Class Attributes
   "RUF034", # Useless `if`-`else` condition
   "UP007",  # Option and Union
-  "UP015",  # Unnecessary mode argument
   "UP045",  # Use `X | None` for type annotations
 ]
 
