@@ -11,6 +11,7 @@ from docling_core.transforms.serializer.html import (
     HTMLParams,
 )
 from docling_core.transforms.serializer.markdown import (
+    ImageAltTextMode,
     MarkdownDocSerializer,
     MarkdownParams,
     OrigListItemMarkerMode,
@@ -19,7 +20,9 @@ from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualize
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DescriptionAnnotation,
+    DescriptionMetaField,
     DoclingDocument,
+    PictureMeta,
     TableCell,
     TableData,
 )
@@ -336,6 +339,208 @@ def test_md_single_row_table():
     ser = MarkdownDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
+
+
+# ===============================
+# Image Alt Text Mode tests
+# ===============================
+
+
+def test_md_image_alt_mode_static():
+    from PIL import Image as PILImage
+
+    from docling_core.types.doc import ImageRef
+
+    doc = DoclingDocument(name="test_alt_static")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="My figure caption")
+    fig_image = PILImage.new(mode="RGB", size=(10, 10), color=(128, 128, 128))
+    pic = doc.add_picture(
+        caption=cap,
+        image=ImageRef.from_pil(image=fig_image, dpi=72),
+    )
+    pic.meta = PictureMeta(
+        description=DescriptionMetaField(text="AI-generated description of the image")
+    )
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.EMBEDDED,
+            image_alt_mode=ImageAltTextMode.STATIC,
+        ),
+    )
+    result = ser.serialize().text
+    # With STATIC mode, alt text should be "Image"
+    assert "![Image](data:image/png;base64," in result
+    assert "![AI-generated description" not in result
+    assert "![My figure caption]" not in result
+
+
+def test_md_image_alt_mode_description():
+    from PIL import Image as PILImage
+
+    from docling_core.types.doc import ImageRef
+
+    doc = DoclingDocument(name="test_alt_description")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="My figure caption")
+    fig_image = PILImage.new(mode="RGB", size=(10, 10), color=(128, 128, 128))
+    pic = doc.add_picture(
+        caption=cap,
+        image=ImageRef.from_pil(image=fig_image, dpi=72),
+    )
+    pic.meta = PictureMeta(
+        description=DescriptionMetaField(text="AI-generated description of the image")
+    )
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.EMBEDDED,
+            image_alt_mode=ImageAltTextMode.DESCRIPTION,
+        ),
+    )
+    result = ser.serialize().text
+    # With DESCRIPTION mode, alt text should be the AI-generated description
+    assert "![AI-generated description of the image](data:image/png;base64," in result
+    assert "![Image](" not in result
+
+
+def test_md_image_alt_mode_caption():
+    from PIL import Image as PILImage
+
+    from docling_core.types.doc import ImageRef
+
+    doc = DoclingDocument(name="test_alt_caption")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="My figure caption")
+    fig_image = PILImage.new(mode="RGB", size=(10, 10), color=(128, 128, 128))
+    pic = doc.add_picture(
+        caption=cap,
+        image=ImageRef.from_pil(image=fig_image, dpi=72),
+    )
+    pic.meta = PictureMeta(
+        description=DescriptionMetaField(text="AI-generated description of the image")
+    )
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.EMBEDDED,
+            image_alt_mode=ImageAltTextMode.CAPTION,
+        ),
+    )
+    result = ser.serialize().text
+    # With CAPTION mode, alt text should be the caption
+    assert "![My figure caption](data:image/png;base64," in result
+    assert "![Image](" not in result
+
+
+def test_md_image_alt_mode_description_fallback():
+    from PIL import Image as PILImage
+
+    from docling_core.types.doc import ImageRef
+
+    doc = DoclingDocument(name="test_alt_fallback")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="My figure caption")
+    fig_image = PILImage.new(mode="RGB", size=(10, 10), color=(128, 128, 128))
+    # No meta/description set
+    doc.add_picture(
+        caption=cap,
+        image=ImageRef.from_pil(image=fig_image, dpi=72),
+    )
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.EMBEDDED,
+            image_alt_mode=ImageAltTextMode.DESCRIPTION,
+        ),
+    )
+    result = ser.serialize().text
+    # Without description, should fall back to "Image"
+    assert "![Image](data:image/png;base64," in result
+
+
+def test_md_image_alt_mode_caption_fallback():
+    from PIL import Image as PILImage
+
+    from docling_core.types.doc import ImageRef
+
+    doc = DoclingDocument(name="test_alt_caption_fallback")
+    fig_image = PILImage.new(mode="RGB", size=(10, 10), color=(128, 128, 128))
+    # No caption
+    doc.add_picture(image=ImageRef.from_pil(image=fig_image, dpi=72))
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.EMBEDDED,
+            image_alt_mode=ImageAltTextMode.CAPTION,
+        ),
+    )
+    result = ser.serialize().text
+    # Without caption, should fall back to "Image"
+    assert "![Image](data:image/png;base64," in result
+
+
+def test_md_image_alt_mode_with_embedded():
+    from PIL import Image as PILImage
+
+    from docling_core.types.doc import ImageRef
+
+    doc = DoclingDocument(name="test_alt_embedded")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="Embedded figure")
+    fig_image = PILImage.new(mode="RGB", size=(10, 10), color=(128, 128, 128))
+    pic = doc.add_picture(
+        caption=cap,
+        image=ImageRef.from_pil(image=fig_image, dpi=72),
+    )
+    pic.meta = PictureMeta(
+        description=DescriptionMetaField(text="Description for embedded image")
+    )
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.EMBEDDED,
+            image_alt_mode=ImageAltTextMode.DESCRIPTION,
+        ),
+    )
+    result = ser.serialize().text
+    # With DESCRIPTION mode and EMBEDDED, alt text should be the description
+    assert "![Description for embedded image](data:image/png;base64," in result
+
+
+def test_md_image_alt_mode_with_referenced():
+    from docling_core.types.doc import ImageRef, Size
+
+    doc = DoclingDocument(name="test_alt_referenced")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="Referenced figure")
+    # Create an ImageRef with a file path URI and required fields
+    pic = doc.add_picture(
+        caption=cap,
+        image=ImageRef(
+            uri="images/figure1.png",
+            mimetype="image/png",
+            dpi=72,
+            size=Size(width=100, height=100),
+        ),
+    )
+    pic.meta = PictureMeta(
+        description=DescriptionMetaField(text="Description for referenced image")
+    )
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.REFERENCED,
+            image_alt_mode=ImageAltTextMode.DESCRIPTION,
+        ),
+    )
+    result = ser.serialize().text
+    # With DESCRIPTION mode and REFERENCED, alt text should be the description
+    # Note: Path separator may vary by platform, so check for both
+    assert "![Description for referenced image](images" in result
+    assert "figure1.png)" in result
 
 
 # ===============================

@@ -77,12 +77,27 @@ class OrigListItemMarkerMode(str, Enum):
     AUTO = "auto"
 
 
+class ImageAltTextMode(str, Enum):
+    """Mode for image alt text in markdown output."""
+
+    STATIC = "static"
+    CAPTION = "caption"
+    DESCRIPTION = "description"
+
+
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
     layers: set[ContentLayer] = {ContentLayer.BODY}
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     image_placeholder: str = "<!-- image -->"
+    image_alt_mode: ImageAltTextMode = Field(
+        default=ImageAltTextMode.STATIC,
+        description=(
+            "Mode for image alt text: 'static' uses 'Image', "
+            "'caption' uses caption text, 'description' uses AI-generated description."
+        ),
+    )
     enable_chart_tables: bool = True
     indent: int = 4
     wrap_width: Optional[PositiveInt] = None
@@ -473,6 +488,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 doc=doc,
                 image_mode=params.image_mode,
                 image_placeholder=params.image_placeholder,
+                image_alt_mode=params.image_alt_mode,
             )
             if img_res.text:
                 res_parts.append(img_res)
@@ -502,12 +518,30 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
+    def _get_alt_text(
+        self,
+        item: PictureItem,
+        doc: DoclingDocument,
+        alt_mode: ImageAltTextMode,
+    ) -> str:
+        """Get alt text for an image based on the mode, falling back to 'Image'."""
+        if alt_mode == ImageAltTextMode.DESCRIPTION:
+            if item.meta and item.meta.description:
+                return item.meta.description.text
+        elif alt_mode == ImageAltTextMode.CAPTION:
+            if item.captions:
+                cap = item.captions[0].resolve(doc)
+                if hasattr(cap, "text") and cap.text:
+                    return cap.text
+        return "Image"
+
     def _serialize_image_part(
         self,
         item: PictureItem,
         doc: DoclingDocument,
         image_mode: ImageRefMode,
         image_placeholder: str,
+        image_alt_mode: ImageAltTextMode = ImageAltTextMode.STATIC,
         **kwargs: Any,
     ) -> SerializationResult:
         error_response = (
@@ -515,6 +549,8 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             "Please use `PdfPipelineOptions(generate_picture_images=True)`"
             " -->"
         )
+        alt_text = self._get_alt_text(item=item, doc=doc, alt_mode=image_alt_mode)
+
         if image_mode == ImageRefMode.PLACEHOLDER:
             text_res = image_placeholder
         elif image_mode == ImageRefMode.EMBEDDED:
@@ -524,7 +560,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 and isinstance(item.image.uri, AnyUrl)
                 and item.image.uri.scheme == "data"
             ):
-                text = f"![Image]({item.image.uri})"
+                text = f"![{alt_text}]({item.image.uri})"
                 text_res = text
             else:
                 # get the item.image._pil or crop it out of the page-image
@@ -532,7 +568,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
                 if img is not None:
                     imgb64 = item._image_to_base64(img)
-                    text = f"![Image](data:image/png;base64,{imgb64})"
+                    text = f"![{alt_text}](data:image/png;base64,{imgb64})"
 
                     text_res = text
                 else:
@@ -543,7 +579,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             ):
                 text_res = image_placeholder
             else:
-                text_res = f"![Image]({str(item.image.uri)})"
+                text_res = f"![{alt_text}]({str(item.image.uri)})"
         else:
             text_res = image_placeholder
 
