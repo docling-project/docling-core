@@ -170,7 +170,6 @@ ignore = [
   "F401",   # imported but unused; consider using `importlib.util.find_spec` to test for "
   "F811",   # "redefinition of the same function"
   "PL",     # Pylint
-  "PD901",  # Avoid using the generic variable name `df` for DataFrames
   "RUF005", # Consider ... instead of concatenation
   "RUF012", # Mutable Class Attributes
   "UP007",  # Option and Union

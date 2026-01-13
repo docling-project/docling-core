@@ -2101,9 +2101,9 @@ class TableItem(FloatingItem):
         table_data = [[cell._get_text(doc=doc) for cell in row] for row in self.data.grid[num_headers:]]
 
         # Create DataFrame
-        df = pd.DataFrame(table_data, columns=columns)
+        table = pd.DataFrame(table_data, columns=columns)
 
-        return df
+        return table
 
     def export_to_markdown(self, doc: Optional["DoclingDocument"] = None) -> str:
         """Export the table as markdown."""

@@ -211,9 +211,9 @@ class Table(BaseCell):
         table_data = [[cell.text for cell in row] for row in self.data[num_headers:]]
 
         # Create DataFrame
-        df = pd.DataFrame(table_data, columns=columns)
+        table = pd.DataFrame(table_data, columns=columns)
 
-        return df
+        return table
 
     def export_to_html(self) -> str:
         """Export the table as html."""
