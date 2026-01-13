@@ -1,0 +1,10 @@
+<doctag version="1.0.0">
+  <list ordered="false">
+    <list_text><![CDATA[Here a code snippet:
+      print("Hello world")
+(to be displayed inline)]]></list_text>
+    <list_text>Here a formula:
+      E=mc^2
+(to be displayed inline)</list_text>
+  </list>
+</doctag>

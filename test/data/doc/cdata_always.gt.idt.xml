@@ -59,18 +59,14 @@ Affiliation 2]]></text>
     <list ordered="false">
       <list_text><![CDATA[item 1 of sub list]]></list_text>
       <list_text>
-        <inline>
-          <text><![CDATA[Here a code snippet:]]></text>
-          <code class="Python"><![CDATA[print("Hello world")]]></code>
-          <text><![CDATA[(to be displayed inline)]]></text>
-        </inline>
+<![CDATA[Here a code snippet:]]>        
+        <code class="Python"><![CDATA[print("Hello world")]]></code>
+<![CDATA[(to be displayed inline)]]>        
       </list_text>
       <list_text>
-        <inline>
-          <text><![CDATA[Here a formula:]]></text>
-          <formula><![CDATA[E=mc^2]]></formula>
-          <text><![CDATA[(to be displayed inline)]]></text>
-        </inline>
+<![CDATA[Here a formula:]]>        
+        <formula><![CDATA[E=mc^2]]></formula>
+<![CDATA[(to be displayed inline)]]>        
       </list_text>
     </list>
   </list>
@@ -78,38 +74,24 @@ Affiliation 2]]></text>
   <code class="Python"><![CDATA[print("Hello world")]]></code>
   <text><![CDATA[Here a formula block:]]></text>
   <formula><![CDATA[E=mc^2]]></formula>
-  <inline>
-    <text><![CDATA[Some formatting chops:]]></text>
-    <text>
-      <bold><![CDATA[bold]]></bold>
-    </text>
-    <text>
-      <italic><![CDATA[italic]]></italic>
-    </text>
-    <text>
-      <underline><![CDATA[underline]]></underline>
-    </text>
-    <text>
-      <strikethrough><![CDATA[strikethrough]]></strikethrough>
-    </text>
-    <text>
-      <subscript><![CDATA[subscript]]></subscript>
-    </text>
-    <text>
-      <superscript><![CDATA[superscript]]></superscript>
-    </text>
-    <text><![CDATA[hyperlink]]></text>
-    <text><![CDATA[&]]></text>
-    <text>
-      <strikethrough>
-        <underline>
-          <italic>
-            <bold><![CDATA[everything at the same time.]]></bold>
-          </italic>
-        </underline>
-      </strikethrough>
-    </text>
-  </inline>
+  <text>
+<![CDATA[Some formatting chops:]]>    
+    <bold><![CDATA[bold]]></bold>
+    <italic><![CDATA[italic]]></italic>
+    <underline><![CDATA[underline]]></underline>
+    <strikethrough><![CDATA[strikethrough]]></strikethrough>
+    <subscript><![CDATA[subscript]]></subscript>
+    <superscript><![CDATA[superscript]]></superscript>
+<![CDATA[hyperlink]]>    
+<![CDATA[&]]>    
+    <strikethrough>
+      <underline>
+        <italic>
+          <bold><![CDATA[everything at the same time.]]></bold>
+        </italic>
+      </underline>
+    </strikethrough>
+  </text>
   <list ordered="true">
     <list_text><![CDATA[Item 1 in A]]></list_text>
     <list_text><![CDATA[Item 2 in A]]></list_text>
