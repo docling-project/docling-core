@@ -159,7 +159,6 @@ select = [
 ]
 
 ignore = [
-  "C403",   # Unnecessary `list()` call (rewrite as a literal)
   "C408",   # Unnecessary `dict()` call (rewrite as a literal)
   "C413",   # Unnecessary `reversed()` call around `sorted()`
   "C416",   # Unnecessary set comprehension (rewrite using `set()`)

@@ -169,7 +169,7 @@ class Table(BaseCell):
         if cell.spans is None:
             span = set()
         else:
-            span = set([s[ix] for s in cell.spans])
+            span = {s[ix] for s in cell.spans}
         if len(span) == 0:
             return 1, None, None
         return len(span), min(span), max(span)
