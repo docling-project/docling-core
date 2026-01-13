@@ -1,9 +1,9 @@
-"""Key‑value visualizer overlaying key/value cells and their links on page images.
+"""Key-value visualizer overlaying key/value cells and their links on page images.
 
 This module complements :py:class:`layout_visualizer.LayoutVisualizer` by drawing
-*key* and *value* cells plus the directed links between them.  It can be stacked
-on top of any other :py:class:`BaseVisualizer` – e.g. first draw the general
-layout, then add the key‑value layer.
+*key* and *value* cells plus the directed links between them.  It can be stacked
+on top of any other :py:class:`BaseVisualizer` - e.g. first draw the general
+layout, then add the key-value layer.
 """
 
 from copy import deepcopy
@@ -23,13 +23,13 @@ from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
 # Helper functions / constants
 # ---------------------------------------------------------------------------
 
-# Semi‑transparent RGBA colours for key / value cells and their connecting link
+# Semi-transparent RGBA colours for key / value cells and their connecting link
 _KEY_FILL = (0, 170, 0, 70)  # greenish
 _VALUE_FILL = (0, 0, 200, 70)  # bluish
 _LINK_COLOUR = (255, 0, 0, 255)  # red line (solid)
 
 _LABEL_TXT_COLOUR = (0, 0, 0, 255)
-_LABEL_BG_COLOUR = (255, 255, 255, 180)  # semi‑transparent white
+_LABEL_BG_COLOUR = (255, 255, 255, 180)  # semi-transparent white
 
 
 class KeyValueVisualizer(BaseVisualizer):
@@ -62,7 +62,7 @@ class KeyValueVisualizer(BaseVisualizer):
         scale_x: float,
         scale_y: float,
     ) -> None:
-        """Draw every key‑value graph that has cells on *page_no* onto *image*."""
+        """Draw every key-value graph that has cells on *page_no* onto *image*."""
         draw = ImageDraw.Draw(image, "RGBA")
         # Choose a small truetype font if available, otherwise default bitmap font
         font: Union[ImageFont.ImageFont, FreeTypeFont]
@@ -115,7 +115,7 @@ class KeyValueVisualizer(BaseVisualizer):
             # ------------------------------------------------------------------
             for link in kv_item.graph.links:
                 if link.label != GraphLinkLabel.TO_VALUE:
-                    # Future‑proof: ignore other link types silently
+                    # Future-proof: ignore other link types silently
                     continue
 
                 src_cell = cell_dict.get(link.source_cell_id)
@@ -140,7 +140,7 @@ class KeyValueVisualizer(BaseVisualizer):
 
                 draw.line([src_xy, tgt_xy], fill=_LINK_COLOUR, width=2)
 
-                # draw a small arrow‑head by rendering a short orthogonal line
+                # draw a small arrow-head by rendering a short orthogonal line
                 # segment; exact geometry is not critical for visual inspection
                 arrow_len = 6
                 dx = tgt_xy[0] - src_xy[0]
@@ -161,7 +161,7 @@ class KeyValueVisualizer(BaseVisualizer):
                 draw.polygon([tgt_xy, head_base_left, head_base_right], fill=_LINK_COLOUR)
 
     # ---------------------------------------------------------------------
-    # Public API – BaseVisualizer implementation
+    # Public API - BaseVisualizer implementation
     # ---------------------------------------------------------------------
 
     @override
@@ -172,7 +172,7 @@ class KeyValueVisualizer(BaseVisualizer):
         included_content_layers: Optional[set[ContentLayer]] = None,
         **kwargs,
     ) -> dict[Optional[int], Image]:
-        """Return page‑wise images with key/value overlay (incl. base layer)."""
+        """Return page-wise images with key/value overlay (incl. base layer)."""
         base_images = (
             self.base_visualizer.get_visualization(doc=doc, included_content_layers=included_content_layers, **kwargs)
             if self.base_visualizer
@@ -193,7 +193,7 @@ class KeyValueVisualizer(BaseVisualizer):
                 base_img = deepcopy(pil_img)
             images[page_nr] = base_img
 
-        # Overlay key‑value content
+        # Overlay key-value content
         for page_nr, img in images.items():  # type: ignore
             assert isinstance(page_nr, int)
             scale_x = img.width / doc.pages[page_nr].size.width

@@ -1863,7 +1863,7 @@ class IDocTagsDocSerializer(DocSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
-            # Always emit well‑formed page breaks using the vocabulary
+            # Always emit well-formed page breaks using the vocabulary
             page_sep = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.PAGE_BREAK)
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
@@ -1969,7 +1969,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 root = cast(Element, candidates[0])
 
         doc = DoclingDocument(name="Document")
-        # Initialize with a default page so location tokens can be re‑emitted
+        # Initialize with a default page so location tokens can be re-emitted
         self._page_no = 0
         self._default_resolution = DOCTAGS_RESOLUTION
         self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
