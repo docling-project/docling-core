@@ -1,7 +1,6 @@
 """Models for the labels types."""
 
 from enum import Enum
-from typing import Tuple
 
 
 class DocItemLabel(str, Enum):
@@ -40,7 +39,7 @@ class DocItemLabel(str, Enum):
         return str(self.value)
 
     @staticmethod
-    def get_color(label: "DocItemLabel") -> Tuple[int, int, int]:
+    def get_color(label: "DocItemLabel") -> tuple[int, int, int]:
         """Return the RGB color associated with a given label."""
         color_map = {
             DocItemLabel.CAPTION: (255, 204, 153),
@@ -74,9 +73,7 @@ class GroupLabel(str, Enum):
     """GroupLabel."""
 
     UNSPECIFIED = "unspecified"
-    LIST = (
-        "list"  # group label for list container (not the list-items) (e.g. HTML <ul/>)
-    )
+    LIST = "list"  # group label for list container (not the list-items) (e.g. HTML <ul/>)
     ORDERED_LIST = "ordered_list"  # deprecated
     CHAPTER = "chapter"
     SECTION = "section"
@@ -153,7 +150,7 @@ class TableCellLabel(str, Enum):
         return str(self.value)
 
     @staticmethod
-    def get_color(label: "TableCellLabel") -> Tuple[int, int, int]:
+    def get_color(label: "TableCellLabel") -> tuple[int, int, int]:
         """Return the RGB color associated with a given label."""
         color_map = {
             TableCellLabel.COLUMN_HEADER: (255, 0, 0),
@@ -179,7 +176,7 @@ class GraphCellLabel(str, Enum):
         return str(self.value)
 
     @staticmethod
-    def get_color(label: "GraphCellLabel") -> Tuple[int, int, int]:
+    def get_color(label: "GraphCellLabel") -> tuple[int, int, int]:
         """Return the RGB color associated with a given label."""
         color_map = {
             GraphCellLabel.KEY: (255, 0, 0),

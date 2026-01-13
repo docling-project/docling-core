@@ -56,15 +56,12 @@ def test_table_export_to_tokens():
         doc = Document.model_validate_json(file_json)
 
         if doc.tables is not None and doc.page_dimensions is not None:
-
             pagedims = doc.get_map_to_page_dimensions()
 
             if doc.tables is not None:
                 for i, table in enumerate(doc.tables):
                     page = table.prov[0].page
-                    out = table.export_to_document_tokens(
-                        page_w=pagedims[page][0], page_h=pagedims[page][1]
-                    )
+                    out = table.export_to_document_tokens(page_w=pagedims[page][0], page_h=pagedims[page][1])
 
                     fname = f"{filename}_table_{i}.dt.txt"
                     if GENERATE:
@@ -81,13 +78,10 @@ def test_table_export_to_tokens():
                     break
 
         elif doc.tables is not None and doc.page_dimensions is None:
-
             if doc.tables is not None:
                 for i, table in enumerate(doc.tables):
                     page = table.prov[0].page
-                    out = table.export_to_document_tokens(
-                        add_table_location=False, add_cell_location=False
-                    )
+                    out = table.export_to_document_tokens(add_table_location=False, add_cell_location=False)
 
                     fname = f"{filename}_table_{i}.dt.txt"
                     if GENERATE:
@@ -113,9 +107,7 @@ def test_document_export_to_md():
     md = doc.export_to_markdown()
 
     if GENERATE:
-        with open(
-            "test/data/legacy_doc/doc-export.md", "w", encoding="utf-8"
-        ) as gold_obj:
+        with open("test/data/legacy_doc/doc-export.md", "w", encoding="utf-8") as gold_obj:
             gold_obj.write(md)
 
     with open("test/data/legacy_doc/doc-export.md", encoding="utf-8") as gold_obj:
@@ -133,14 +125,10 @@ def test_document_export_to_tokens():
     xml = doc.export_to_document_tokens(delim=True)
 
     if GENERATE:
-        with open(
-            "test/data/legacy_doc/doc-export.dt.txt", "w", encoding="utf-8"
-        ) as gold_obj:
+        with open("test/data/legacy_doc/doc-export.dt.txt", "w", encoding="utf-8") as gold_obj:
             gold_obj.write(xml)
 
-    with open(
-        "test/data/legacy_doc/doc-export.dt.txt", "r", encoding="utf-8"
-    ) as gold_obj:
+    with open("test/data/legacy_doc/doc-export.dt.txt", "r", encoding="utf-8") as gold_obj:
         gold_data = gold_obj.read().strip()
 
     assert xml == gold_data

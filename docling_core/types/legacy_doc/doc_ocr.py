@@ -1,6 +1,6 @@
 """Models for CCS objects with OCR."""
 
-from typing import Any, Dict, List, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +11,7 @@ CoordsOrder = Literal["x1", "y1", "x2", "y2"]
 
 CoordsOrigin = Literal["top-left"]  # TODO
 
-Info = Dict[str, Any]  # TODO
+Info = dict[str, Any]  # TODO
 
 
 class Page(BaseModel):
@@ -25,7 +25,7 @@ class Meta(AliasModel):
     """Meta."""
 
     page: Page
-    coords_order: List[CoordsOrder] = Field(..., alias="coords-order")
+    coords_order: list[CoordsOrder] = Field(..., alias="coords-order")
     coords_origin: CoordsOrigin = Field(..., alias="coords-origin")
 
 
@@ -63,8 +63,8 @@ class Box(BaseModel):
 class Path(BaseModel):
     """Path."""
 
-    x: List[float]
-    y: List[float]
+    x: list[float]
+    y: list[float]
 
 
 class OcrOutput(AliasModel):
@@ -73,7 +73,7 @@ class OcrOutput(AliasModel):
     meta: Meta = Field(..., alias="_meta")
     info: Info
     dimension: Dimension
-    words: List[Word]
-    cells: List[Cell]
-    boxes: List[Box]
-    paths: List[Path]
+    words: list[Word]
+    cells: list[Cell]
+    boxes: list[Box]
+    paths: list[Path]

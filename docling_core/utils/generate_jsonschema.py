@@ -43,15 +43,11 @@ def generate_json_schema(class_reference: str) -> Union[dict, None]:
 def main() -> None:
     """Print the JSON Schema of a model."""
     argparser = argparse.ArgumentParser()
-    argparser.add_argument(
-        "class_ref", help="Class reference, e.g., doc.document.TableCell"
-    )
+    argparser.add_argument("class_ref", help="Class reference, e.g., doc.document.TableCell")
     args = argparser.parse_args()
 
     json_schema = generate_json_schema(args.class_ref)
-    print(
-        json.dumps(json_schema, ensure_ascii=False, indent=2).encode("utf-8").decode()
-    )
+    print(json.dumps(json_schema, ensure_ascii=False, indent=2).encode("utf-8").decode())
 
 
 if __name__ == "__main__":

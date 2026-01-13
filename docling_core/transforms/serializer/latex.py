@@ -187,9 +187,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
                     )
                 lvl = item.level
                 if lvl <= 0 or lvl >= 4:
-                    raise ValueError(
-                        "LaTeX serializer: SectionHeaderItem.level must be in [1, 3]"
-                    )
+                    raise ValueError("LaTeX serializer: SectionHeaderItem.level must be in [1, 3]")
                 cmd = {1: "section", 2: "subsection", 3: "subsubsection"}[lvl]
                 text_part = f"\\{cmd}{{{text}}}"
                 post_process = False
@@ -222,7 +220,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
                 )
-            text_part = text if is_inline_scope else text
+            text_part = text
 
         if text_part:
             parts.append(create_ser_result(text=text_part, span_source=item))
@@ -267,9 +265,7 @@ class LaTeXAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
                     if len(lines) <= 1:
                         comment_text = f"% annotation[{ann.kind}]: {ann_text}"
                     else:
-                        prefixed_lines = [f"% annotation[{ann.kind}]: {lines[0]}"] + [
-                            f"% {ln}" for ln in lines[1:]
-                        ]
+                        prefixed_lines = [f"% annotation[{ann.kind}]: {lines[0]}"] + [f"% {ln}" for ln in lines[1:]]
                         comment_text = "\n".join(prefixed_lines)
                     res_parts.append(
                         create_ser_result(
@@ -310,15 +306,9 @@ class LaTeXTableSerializer(BaseTableSerializer):
                 body_row: list[str] = []
                 for cell in row:
                     if isinstance(cell, RichTableCell):
-                        cell_text = doc_serializer.serialize(
-                            item=cell.ref.resolve(doc=doc), **kwargs
-                        ).text
+                        cell_text = doc_serializer.serialize(item=cell.ref.resolve(doc=doc), **kwargs).text
                     else:
-                        cell_text = (
-                            _escape_latex(cell.text)
-                            if params.escape_latex
-                            else cell.text
-                        )
+                        cell_text = _escape_latex(cell.text) if params.escape_latex else cell.text
                     body_row.append(cell_text.replace("\n", " "))
                 body_rows.append(body_row)
 
@@ -348,9 +338,7 @@ class LaTeXTableSerializer(BaseTableSerializer):
             if table_text:
                 content.append(table_text)
             content.append("\\end{table}")
-            res_parts.append(
-                create_ser_result(text="\n".join(content), span_source=item)
-            )
+            res_parts.append(create_ser_result(text="\n".join(content), span_source=item))
 
         return create_ser_result(
             text="\n\n".join([r.text for r in res_parts if r.text]),
@@ -401,25 +389,15 @@ class LaTeXPictureSerializer(BasePictureSerializer):
                     fig_lines.append(ann_res.text)
 
             fig_lines.append("\\end{figure}")
-            res_parts.append(
-                create_ser_result(text="\n".join(fig_lines), span_source=item)
-            )
+            res_parts.append(create_ser_result(text="\n".join(fig_lines), span_source=item))
 
         # Optional chart data as a simple table after the figure
         if params.enable_chart_tables:
-            tabular_chart_annotations = [
-                ann
-                for ann in item.annotations
-                if isinstance(ann, PictureTabularChartData)
-            ]
+            tabular_chart_annotations = [ann for ann in item.annotations if isinstance(ann, PictureTabularChartData)]
             if tabular_chart_annotations:
                 temp_doc = DoclingDocument(name="temp")
-                temp_table = temp_doc.add_table(
-                    data=tabular_chart_annotations[0].chart_data
-                )
-                latex_table_content = (
-                    LaTeXDocSerializer(doc=temp_doc).serialize(item=temp_table).text
-                )
+                temp_table = temp_doc.add_table(data=tabular_chart_annotations[0].chart_data)
+                latex_table_content = LaTeXDocSerializer(doc=temp_doc).serialize(item=temp_table).text
                 if latex_table_content:
                     res_parts.append(
                         create_ser_result(
@@ -450,7 +428,7 @@ class LaTeXPictureSerializer(BasePictureSerializer):
                 return create_ser_result(text=image_placeholder, span_source=item)
             else:
                 return create_ser_result(
-                    text=f"\\includegraphics[width=\\linewidth]{{{str(item.image.uri)}}}",
+                    text=f"\\includegraphics[width=\\linewidth]{{{item.image.uri!s}}}",
                     span_source=item,
                 )
         else:  # EMBEDDED not supported natively
@@ -523,11 +501,7 @@ class LaTeXListSerializer(BaseModel, BaseListSerializer):
         env = "enumerate" if item.first_item_is_enumerated(doc) else "itemize"
         indent_str = " " * (list_level * params.indent)
         content = "\n".join([p.text for p in parts if p.text])
-        text_res = (
-            f"{indent_str}\\begin{{{env}}}\n{content}\n{indent_str}\\end{{{env}}}"
-            if content
-            else ""
-        )
+        text_res = f"{indent_str}\\begin{{{env}}}\n{content}\n{indent_str}\\end{{{env}}}" if content else ""
         return create_ser_result(text=text_res, span_source=parts)
 
 
@@ -682,11 +656,7 @@ class LaTeXDocSerializer(DocSerializer):
         if title_cmd:
             preamble_lines.append(title_cmd)
 
-        header = (
-            "\n".join(preamble_lines + ["", "\\begin{document}"])
-            if preamble_lines
-            else "\\begin{document}"
-        )
+        header = "\n".join(preamble_lines + ["", "\\begin{document}"]) if preamble_lines else "\\begin{document}"
         footer = "\\end{document}"
 
         # Compose final document with optional \maketitle after begin{document}

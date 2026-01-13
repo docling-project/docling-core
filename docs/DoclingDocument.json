@@ -72,7 +72,7 @@
       "type": "object"
     },
     "ChartLine": {
-      "description": "Represents a line in a line chart.\n\nAttributes:\n    label (str): The label for the line.\n    values (List[Tuple[float, float]]): A list of (x, y) coordinate pairs\n        representing the line's data points.",
+      "description": "Represents a line in a line chart.\n\nAttributes:\n    label (str): The label for the line.\n    values (list[tuple[float, float]]): A list of (x, y) coordinate pairs\n        representing the line's data points.",
       "properties": {
         "label": {
           "title": "Label",
@@ -147,7 +147,7 @@
       "type": "object"
     },
     "ChartStackedBar": {
-      "description": "Represents a stacked bar in a stacked bar chart.\n\nAttributes:\n    label (List[str]): The labels for the stacked bars. Multiple values are stored\n        in cases where the chart is \"double stacked,\" meaning bars are stacked both\n        horizontally and vertically.\n    values (List[Tuple[str, int]]): A list of values representing different segments\n        of the stacked bar along with their label.",
+      "description": "Represents a stacked bar in a stacked bar chart.\n\nAttributes:\n    label (list[str]): The labels for the stacked bars. Multiple values are stored\n        in cases where the chart is \"double stacked,\" meaning bars are stacked both\n        horizontally and vertically.\n    values (list[tuple[str, int]]): A list of values representing different segments\n        of the stacked bar along with their label.",
       "properties": {
         "label": {
           "items": {
@@ -1541,7 +1541,7 @@
       "type": "object"
     },
     "PictureBarChartData": {
-      "description": "Represents data of a bar chart.\n\nAttributes:\n    kind (Literal[\"bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    bars (List[ChartBar]): A list of bars in the chart.",
+      "description": "Represents data of a bar chart.\n\nAttributes:\n    kind (Literal[\"bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    bars (list[ChartBar]): A list of bars in the chart.",
       "properties": {
         "kind": {
           "const": "bar_chart_data",
@@ -1857,7 +1857,7 @@
       "type": "object"
     },
     "PictureLineChartData": {
-      "description": "Represents data of a line chart.\n\nAttributes:\n    kind (Literal[\"line_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    lines (List[ChartLine]): A list of lines in the chart.",
+      "description": "Represents data of a line chart.\n\nAttributes:\n    kind (Literal[\"line_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    lines (list[ChartLine]): A list of lines in the chart.",
       "properties": {
         "kind": {
           "const": "line_chart_data",
@@ -2011,7 +2011,7 @@
       "type": "object"
     },
     "PicturePieChartData": {
-      "description": "Represents data of a pie chart.\n\nAttributes:\n    kind (Literal[\"pie_chart_data\"]): The type of the chart.\n    slices (List[ChartSlice]): A list of slices in the pie chart.",
+      "description": "Represents data of a pie chart.\n\nAttributes:\n    kind (Literal[\"pie_chart_data\"]): The type of the chart.\n    slices (list[ChartSlice]): A list of slices in the pie chart.",
       "properties": {
         "kind": {
           "const": "pie_chart_data",
@@ -2039,7 +2039,7 @@
       "type": "object"
     },
     "PictureScatterChartData": {
-      "description": "Represents data of a scatter chart.\n\nAttributes:\n    kind (Literal[\"scatter_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    points (List[ChartPoint]): A list of points in the scatter chart.",
+      "description": "Represents data of a scatter chart.\n\nAttributes:\n    kind (Literal[\"scatter_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    points (list[ChartPoint]): A list of points in the scatter chart.",
       "properties": {
         "kind": {
           "const": "scatter_chart_data",
@@ -2077,7 +2077,7 @@
       "type": "object"
     },
     "PictureStackedBarChartData": {
-      "description": "Represents data of a stacked bar chart.\n\nAttributes:\n    kind (Literal[\"stacked_bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    stacked_bars (List[ChartStackedBar]): A list of stacked bars in the chart.",
+      "description": "Represents data of a stacked bar chart.\n\nAttributes:\n    kind (Literal[\"stacked_bar_chart_data\"]): The type of the chart.\n    x_axis_label (str): The label for the x-axis.\n    y_axis_label (str): The label for the y-axis.\n    stacked_bars (list[ChartStackedBar]): A list of stacked bars in the chart.",
       "properties": {
         "kind": {
           "const": "stacked_bar_chart_data",

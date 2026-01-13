@@ -4,7 +4,7 @@ import warnings
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 from unittest.mock import Mock
 
 import pytest
@@ -85,7 +85,6 @@ def test_overlaps_horizontally():
 
 
 def test_overlaps_vertically():
-
     page_height = 300
 
     # Same CoordOrigin (TOPLEFT)
@@ -230,27 +229,19 @@ def test_y_overlap_with():
 
 def test_union_area_with():
     # Overlapping (TOPLEFT)
-    bbox1 = BoundingBox(
-        l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT
-    )  # Area 100
-    bbox2 = BoundingBox(
-        l=5, t=5, r=15, b=15, coord_origin=CoordOrigin.TOPLEFT
-    )  # Area 100
+    bbox1 = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)  # Area 100
+    bbox2 = BoundingBox(l=5, t=5, r=15, b=15, coord_origin=CoordOrigin.TOPLEFT)  # Area 100
     # Intersection area 25
     # Union area = 100 + 100 - 25 = 175
     assert abs(bbox1.union_area_with(bbox2) - 175.0) < 1.0e-3
 
     # Non-overlapping (TOPLEFT)
-    bbox3 = BoundingBox(
-        l=20, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT
-    )  # Area 100
+    bbox3 = BoundingBox(l=20, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT)  # Area 100
     # Union area = 100 + 100 - 0 = 200
     assert abs(bbox1.union_area_with(bbox3) - 200.0) < 1.0e-3
 
     # Touching edges (TOPLEFT)
-    bbox4 = BoundingBox(
-        l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT
-    )  # Area 100
+    bbox4 = BoundingBox(l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT)  # Area 100
     # Union area = 100 + 100 - 0 = 200
     assert abs(bbox1.union_area_with(bbox4) - 200.0) < 1.0e-3
 
@@ -260,12 +251,8 @@ def test_union_area_with():
     assert abs(bbox1.union_area_with(bbox5) - 100.0) < 1.0e-3
 
     # Overlapping (BOTTOMLEFT)
-    bbox6 = BoundingBox(
-        l=0, b=0, r=10, t=10, coord_origin=CoordOrigin.BOTTOMLEFT
-    )  # Area 100
-    bbox7 = BoundingBox(
-        l=5, b=5, r=15, t=15, coord_origin=CoordOrigin.BOTTOMLEFT
-    )  # Area 100
+    bbox6 = BoundingBox(l=0, b=0, r=10, t=10, coord_origin=CoordOrigin.BOTTOMLEFT)  # Area 100
+    bbox7 = BoundingBox(l=5, b=5, r=15, t=15, coord_origin=CoordOrigin.BOTTOMLEFT)  # Area 100
     # Intersection area 25
     # Union area = 100 + 100 - 25 = 175
     assert abs(bbox6.union_area_with(bbox7) - 175.0) < 1.0e-3
@@ -307,7 +294,6 @@ def test_x_union_with():
 
 
 def test_y_union_with():
-
     bbox1_tl = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
     bbox2_tl = BoundingBox(l=0, t=5, r=10, b=15, coord_origin=CoordOrigin.TOPLEFT)
     # y_union = max(10, 15) - min(0, 5) = 15 - 0 = 15
@@ -355,7 +341,6 @@ def test_y_union_with():
 
 
 def test_orientation():
-
     page_height = 300
 
     # Same CoordOrigin (TOPLEFT)
@@ -380,12 +365,9 @@ def test_orientation():
 
 
 def test_docitems():
-
     # Iterative function to find all subclasses
     def find_all_subclasses_iterative(base_class):
-        subclasses = deque(
-            [base_class]
-        )  # Use a deque for efficient popping from the front
+        subclasses = deque([base_class])  # Use a deque for efficient popping from the front
         all_subclasses = []
 
         while subclasses:
@@ -400,15 +382,11 @@ def test_docitems():
         return yaml.safe_dump(obj.model_dump(mode="json", by_alias=True))
 
     def write(name: str, serialisation: str):
-        with open(
-            f"./test/data/docling_document/unit/{name}.yaml", "w", encoding="utf-8"
-        ) as fw:
+        with open(f"./test/data/docling_document/unit/{name}.yaml", "w", encoding="utf-8") as fw:
             fw.write(serialisation)
 
     def read(name: str):
-        with open(
-            f"./test/data/docling_document/unit/{name}.yaml", "r", encoding="utf-8"
-        ) as fr:
+        with open(f"./test/data/docling_document/unit/{name}.yaml", "r", encoding="utf-8") as fr:
             gold = fr.read()
         return yaml.safe_load(gold)
 
@@ -428,7 +406,6 @@ def test_docitems():
     # Iterate over the derived classes of the BaseClass
     derived_classes = find_all_subclasses_iterative(DocItem)
     for dc in derived_classes:
-
         if dc is TextItem:
             obj = dc(
                 text="whatever",
@@ -454,7 +431,6 @@ def test_docitems():
             verify(dc, obj)
 
         elif dc is KeyValueItem:
-
             graph = GraphData(
                 cells=[
                     GraphCell(
@@ -476,9 +452,7 @@ def test_docitems():
                         source_cell_id=0,
                         target_cell_id=1,
                     ),
-                    GraphLink(
-                        label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0
-                    ),
+                    GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0),
                 ],
             )
 
@@ -490,7 +464,6 @@ def test_docitems():
             verify(dc, obj)
 
         elif dc is FormItem:
-
             graph = GraphData(
                 cells=[
                     GraphCell(
@@ -512,9 +485,7 @@ def test_docitems():
                         source_cell_id=0,
                         target_cell_id=1,
                     ),
-                    GraphLink(
-                        label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0
-                    ),
+                    GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0),
                 ],
             )
 
@@ -578,7 +549,6 @@ def test_docitems():
 
 
 def test_reference_doc():
-
     filename = "test/data/doc/dummy_doc.yaml"
 
     # Read YAML file of manual reference doc
@@ -598,9 +568,7 @@ def test_reference_doc():
     obj = doc.texts[2]  # Text item with parent
     parent = obj.parent.resolve(doc=doc)  # it is a figure
 
-    obj2 = parent.children[0].resolve(
-        doc=doc
-    )  # Child of figure must be the same as obj
+    obj2 = parent.children[0].resolve(doc=doc)  # Child of figure must be the same as obj
 
     assert obj == obj2
     assert obj is obj2
@@ -619,7 +587,6 @@ def test_reference_doc():
 
 
 def test_parse_doc():
-
     filename = "test/data/doc/2206.01062.yaml"
 
     with open(filename, "r", encoding="utf-8") as fp:
@@ -633,7 +600,6 @@ def test_parse_doc():
 
 
 def test_construct_doc(sample_doc):
-
     filename = "test/data/doc/constructed_document.yaml"
 
     assert sample_doc.validate_tree(sample_doc.body)
@@ -647,7 +613,6 @@ def test_construct_doc(sample_doc):
 
 
 def test_construct_bad_doc():
-
     filename = "test/data/doc/bad_doc.yaml"
 
     doc = _construct_bad_doc()
@@ -685,17 +650,13 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
         with open(filename + f".{ext}", "r", encoding="utf-8") as fr:
             gt_true = fr.read().rstrip()
 
-        assert (
-            gt_true == pred
-        ), f"Does not pass regression-test for {filename}.{ext}\n\n{gt_true}\n\n{pred}"
+        assert gt_true == pred, f"Does not pass regression-test for {filename}.{ext}\n\n{gt_true}\n\n{pred}"
     else:
         with open(filename + f".{ext}", "w", encoding="utf-8") as fw:
             fw.write(f"{pred}\n")
 
 
-def _test_export_methods(
-    doc: DoclingDocument, filename: str, page_break_placeholder: Optional[str] = None
-):
+def _test_export_methods(doc: DoclingDocument, filename: str, page_break_placeholder: Optional[str] = None):
     # Iterate all elements
     et_pred = doc.export_to_element_tree()
     _verify_regression_test(et_pred, filename=filename, ext="et")
@@ -777,7 +738,6 @@ def test_pil_image():
 
 
 def test_image_ref():
-
     data_uri = {
         "dpi": 72,
         "mimetype": "image/png",
@@ -816,7 +776,6 @@ def test_upgrade_content_layer_from_1_0_0() -> None:
 
 
 def test_version_doc():
-
     # default version
     doc = DoclingDocument(name="Untitled 1")
     assert doc.version == CURRENT_VERSION
@@ -874,9 +833,7 @@ def test_formula_with_missing_fallback():
     prov = ProvenanceItem(page_no=1, bbox=bbox, charspan=(0, 2))
     doc.add_text(label=DocItemLabel.FORMULA, text="", orig="(II.24) 2 Imar", prov=prov)
 
-    doc.export_to_html(
-        formula_to_mathml=True, html_head="", image_mode=ImageRefMode.EMBEDDED
-    )
+    doc.export_to_html(formula_to_mathml=True, html_head="", image_mode=ImageRefMode.EMBEDDED)
 
     expected = """<!DOCTYPE html>
 <html lang="en">
@@ -926,17 +883,10 @@ def test_docitem_get_image():
     doc_item = DocItem(
         self_ref="#",
         label=DocItemLabel.TEXT,
-        prov=[
-            ProvenanceItem(
-                page_no=1, bbox=BoundingBox(l=2, t=4, r=4, b=8), charspan=(1, 2)
-            )
-        ],
+        prov=[ProvenanceItem(page_no=1, bbox=BoundingBox(l=2, t=4, r=4, b=8), charspan=(1, 2))],
     )
     returned_doc_item_image = doc_item.get_image(doc=doc)
-    assert (
-        returned_doc_item_image is not None
-        and returned_doc_item_image.tobytes() == doc_item_image.tobytes()
-    )
+    assert returned_doc_item_image is not None and returned_doc_item_image.tobytes() == doc_item_image.tobytes()
 
 
 def test_floatingitem_get_image():
@@ -959,20 +909,14 @@ def test_floatingitem_get_image():
     floating_item = FloatingItem(
         self_ref="#",
         label=DocItemLabel.PICTURE,
-        prov=[
-            ProvenanceItem(
-                page_no=1, bbox=BoundingBox(l=2, t=4, r=6, b=12), charspan=(1, 2)
-            )
-        ],
+        prov=[ProvenanceItem(page_no=1, bbox=BoundingBox(l=2, t=4, r=6, b=12), charspan=(1, 2))],
         image=ImageRef.from_pil(image=new_image, dpi=72),
     )
     retured_image = floating_item.get_image(doc=doc)
     assert retured_image is not None and retured_image.tobytes() == new_image.tobytes()
 
     # FloatingItem without explicit image and no provenance
-    floating_item = FloatingItem(
-        self_ref="#", label=DocItemLabel.PICTURE, prov=[], image=None
-    )
+    floating_item = FloatingItem(self_ref="#", label=DocItemLabel.PICTURE, prov=[], image=None)
     assert floating_item.get_image(doc=doc) is None
 
     # FloatingItem without explicit image on invalid page
@@ -997,24 +941,15 @@ def test_floatingitem_get_image():
     floating_item = FloatingItem(
         self_ref="#",
         label=DocItemLabel.PICTURE,
-        prov=[
-            ProvenanceItem(
-                page_no=1, bbox=BoundingBox(l=2, t=4, r=4, b=8), charspan=(1, 2)
-            )
-        ],
+        prov=[ProvenanceItem(page_no=1, bbox=BoundingBox(l=2, t=4, r=4, b=8), charspan=(1, 2))],
         image=None,
     )
     retured_image = floating_item.get_image(doc=doc)
-    assert (
-        retured_image is not None
-        and retured_image.tobytes() == floating_item_image.tobytes()
-    )
+    assert retured_image is not None and retured_image.tobytes() == floating_item_image.tobytes()
 
 
 def test_save_pictures(sample_doc):
-    new_doc = sample_doc._with_pictures_refs(
-        image_dir=Path("./test/data/constructed_images/"), page_no=None
-    )
+    new_doc = sample_doc._with_pictures_refs(image_dir=Path("./test/data/constructed_images/"), page_no=None)
 
     img_paths = new_doc._list_images_on_disk()
     assert len(img_paths) == 1, "len(img_paths)!=1"
@@ -1034,39 +969,31 @@ def test_save_pictures_with_page():
         image=ImageRef.from_pil(image=image, dpi=72),
         prov=ProvenanceItem(
             page_no=2,
-            bbox=BoundingBox(
-                b=0, l=0, r=200, t=400, coord_origin=CoordOrigin.BOTTOMLEFT
-            ),
+            bbox=BoundingBox(b=0, l=0, r=200, t=400, coord_origin=CoordOrigin.BOTTOMLEFT),
             charspan=(1, 2),
         ),
     )
 
     # When
-    with_ref = doc._with_pictures_refs(
-        image_dir=Path("./test/data/constructed_images/"), page_no=1
-    )
+    with_ref = doc._with_pictures_refs(image_dir=Path("./test/data/constructed_images/"), page_no=1)
     # Then
     n_images = len(with_ref._list_images_on_disk())
     assert n_images == 0
     # When
-    with_ref = with_ref._with_pictures_refs(
-        image_dir=Path("./test/data/constructed_images/"), page_no=2
-    )
+    with_ref = with_ref._with_pictures_refs(image_dir=Path("./test/data/constructed_images/"), page_no=2)
     n_images = len(with_ref._list_images_on_disk())
     # Then
     assert n_images == 1
 
 
-def _normalise_string_wrt_filepaths(instr: str, paths: List[Path]):
-
+def _normalise_string_wrt_filepaths(instr: str, paths: list[Path]):
     for p in paths:
         instr = instr.replace(str(p), str(p.name))
 
     return instr
 
 
-def _verify_saved_output(filename: Union[str, Path], paths: List[Path]):
-
+def _verify_saved_output(filename: Union[str, Path], paths: list[Path]):
     pred = ""
     with open(filename, "r", encoding="utf-8") as fr:
         pred = fr.read()
@@ -1095,14 +1022,11 @@ def _verify_loaded_output(filename: Path, pred=None):
     pred = pred or DoclingDocument.load_from_json(Path(filename))
     assert isinstance(pred, DoclingDocument)
 
-    assert (
-        pred.export_to_dict() == gt.export_to_dict()
-    ), f"pred.export_to_dict() != gt.export_to_dict() for {filename}"
+    assert pred.export_to_dict() == gt.export_to_dict(), f"pred.export_to_dict() != gt.export_to_dict() for {filename}"
     assert pred == gt, f"pred!=gt for {filename}"
 
 
 def test_save_to_disk(sample_doc):
-
     test_dir = Path("./test/data/doc")
     image_dir = Path("constructed_images/")  # will be relative to test_dir
 
@@ -1118,41 +1042,29 @@ def test_save_to_disk(sample_doc):
     ### MarkDown
 
     filename: Path = test_dir / "constructed_doc.placeholder.md"
-    sample_doc.save_as_markdown(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.PLACEHOLDER
-    )
+    sample_doc.save_as_markdown(filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.PLACEHOLDER)
     _verify_saved_output(filename=filename, paths=paths)
 
     filename = test_dir / "constructed_doc.embedded.md"
-    sample_doc.save_as_markdown(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
-    )
+    sample_doc.save_as_markdown(filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED)
     _verify_saved_output(filename=filename, paths=paths)
 
     filename = test_dir / "constructed_doc.referenced.md"
-    sample_doc.save_as_markdown(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED
-    )
+    sample_doc.save_as_markdown(filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED)
     _verify_saved_output(filename=filename, paths=paths)
 
     ### HTML
 
     filename = test_dir / "constructed_doc.placeholder.html"
-    sample_doc.save_as_html(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.PLACEHOLDER
-    )
+    sample_doc.save_as_html(filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.PLACEHOLDER)
     _verify_saved_output(filename=filename, paths=paths)
 
     filename = test_dir / "constructed_doc.embedded.html"
-    sample_doc.save_as_html(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED
-    )
+    sample_doc.save_as_html(filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.EMBEDDED)
     _verify_saved_output(filename=filename, paths=paths)
 
     filename = test_dir / "constructed_doc.referenced.html"
-    sample_doc.save_as_html(
-        filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED
-    )
+    sample_doc.save_as_html(filename=filename, artifacts_dir=image_dir, image_mode=ImageRefMode.REFERENCED)
     _verify_saved_output(filename=filename, paths=paths)
 
     ### Document Tokens
@@ -1207,7 +1119,6 @@ def test_save_to_disk(sample_doc):
 
 
 def test_document_stack_operations(sample_doc):
-
     # _print(document=doc)
 
     ref = RefItem(cref="#/texts/12")
@@ -1226,7 +1137,6 @@ def test_document_stack_operations(sample_doc):
 
 
 def test_document_manipulation(sample_doc: DoclingDocument) -> None:
-
     def _resolve(document: DoclingDocument, cref: str) -> NodeItem:
         ref = RefItem(cref=cref)
         return ref.resolve(doc=document)
@@ -1246,9 +1156,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
         DoclingDocument.load_from_json(filename=_gt_filename(filename=filename))
 
         # test if the document is the same as the stored GT
-        _verify_loaded_output(
-            filename=filename, pred=DoclingDocument.model_validate(document)
-        )
+        _verify_loaded_output(filename=filename, pred=DoclingDocument.model_validate(document))
 
     image_dir = Path("./test/data/doc/constructed_images/")
 
@@ -1326,11 +1234,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
                 label=DocItemLabel.TEXT,
                 text="foo",
                 orig="foo",
-                children=[
-                    _resolve(
-                        document=deepcopy(sample_doc), cref=text_item_4.self_ref
-                    ).get_ref()
-                ],
+                children=[_resolve(document=deepcopy(sample_doc), cref=text_item_4.self_ref).get_ref()],
             ),
             parent=sample_doc.body,
         )
@@ -1353,12 +1257,8 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
 
     node = _resolve(document=sample_doc, cref="#/texts/45")
 
-    last_node = sample_doc.insert_list_group(
-        sibling=node, name="Inserted List Group", after=True
-    )
-    group_node = sample_doc.insert_inline_group(
-        sibling=node, name="Inserted Inline Group", after=False
-    )
+    last_node = sample_doc.insert_list_group(sibling=node, name="Inserted List Group", after=True)
+    group_node = sample_doc.insert_inline_group(sibling=node, name="Inserted Inline Group", after=False)
     sample_doc.insert_group(
         sibling=node,
         label=GroupLabel.LIST,
@@ -1430,16 +1330,12 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
                 )
             )
 
-    table_data = TableData(
-        table_cells=table_cells, num_rows=num_rows, num_cols=num_cols
-    )
+    table_data = TableData(table_cells=table_cells, num_rows=num_rows, num_cols=num_cols)
     sample_doc.insert_table(sibling=node, data=table_data, after=False)
 
     size = (64, 64)
     img = PILImage.new("RGB", size, "black")
-    sample_doc.insert_picture(
-        sibling=node, image=ImageRef.from_pil(image=img, dpi=72), after=True
-    )
+    sample_doc.insert_picture(sibling=node, image=ImageRef.from_pil(image=img, dpi=72), after=True)
 
     sample_doc.insert_title(sibling=node, text="Inserted Title", after=False)
     sample_doc.insert_code(sibling=node, text="Inserted Code", after=True)
@@ -1480,12 +1376,8 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     # Test the handling of list items in insert_* methods, both with and without parent groups
 
     with pytest.warns(DeprecationWarning, match="ListItem parent must be a ListGroup"):
-        li_sibling = sample_doc.insert_list_item(
-            sibling=node, text="Inserted List Item, Incorrect Parent", after=False
-        )
-    sample_doc.insert_list_item(
-        sibling=li_sibling, text="Inserted List Item, Correct Parent", after=True
-    )
+        li_sibling = sample_doc.insert_list_item(sibling=node, text="Inserted List Item, Incorrect Parent", after=False)
+    sample_doc.insert_list_item(sibling=li_sibling, text="Inserted List Item, Correct Parent", after=True)
     sample_doc.insert_text(
         sibling=li_sibling,
         label=DocItemLabel.LIST_ITEM,
@@ -1518,9 +1410,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
         label=DocItemLabel.TEXT,
     )
 
-    sample_doc.add_node_items(
-        node_items=[text_item_6, text_item_7], doc=sample_doc, parent=group_node
-    )
+    sample_doc.add_node_items(node_items=[text_item_6, text_item_7], doc=sample_doc, parent=group_node)
 
     filename = Path("test/data/doc/constructed_doc.bulk_item_addition.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
@@ -1540,9 +1430,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
         label=DocItemLabel.TEXT,
     )
 
-    sample_doc.insert_node_items(
-        sibling=node, node_items=[text_item_8, text_item_9], doc=sample_doc, after=False
-    )
+    sample_doc.insert_node_items(sibling=node, node_items=[text_item_8, text_item_9], doc=sample_doc, after=False)
 
     filename = Path("test/data/doc/constructed_doc.bulk_item_insertion.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
@@ -1574,9 +1462,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     with pytest.raises(ValueError):
         extracted_doc = sample_doc.extract_items_range(start=li_sibling, end=node)
 
-    extracted_doc = sample_doc.extract_items_range(
-        start=group_node, end=node, end_inclusive=False, delete=True
-    )
+    extracted_doc = sample_doc.extract_items_range(start=group_node, end=node, end_inclusive=False, delete=True)
 
     filename = Path("test/data/doc/constructed_doc.extracted_with_deletion.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
@@ -1642,9 +1528,7 @@ def test_concatenate():
     docs = [DoclingDocument.load_from_json(filename=f) for f in files]
     doc = DoclingDocument.concatenate(docs=docs)
 
-    html_data = doc.export_to_html(
-        image_mode=ImageRefMode.EMBEDDED, split_page_view=True
-    )
+    html_data = doc.export_to_html(image_mode=ImageRefMode.EMBEDDED, split_page_view=True)
 
     exp_json_file = Path("test/data/doc/concatenated.json")
     exp_html_file = exp_json_file.with_suffix(".html")
@@ -1675,9 +1559,7 @@ def test_list_group_with_non_list_items():
     bad_doc = DoclingDocument(name="")
     l1 = bad_doc.add_list_group()
     bad_doc.add_list_item(text="ListItem 1", parent=l1)
-    bad_doc.add_text(
-        text="non-ListItem in ListGroup", label=DocItemLabel.TEXT, parent=l1
-    )
+    bad_doc.add_text(text="non-ListItem in ListGroup", label=DocItemLabel.TEXT, parent=l1)
 
     with pytest.raises(ValueError):
         bad_doc._validate_rules()
@@ -1811,7 +1693,6 @@ def test_invalid_rich_table_doc():
 
 
 def test_rich_table_item_insertion_normalization():
-
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TITLE, text="Rich tables")
 
@@ -1888,9 +1769,7 @@ def test_filter_pages():
     orig_doc = DoclingDocument.load_from_json(src)
     doc = orig_doc.filter(page_nrs={2, 3, 5})
 
-    html_data = doc.export_to_html(
-        image_mode=ImageRefMode.EMBEDDED, split_page_view=True
-    )
+    html_data = doc.export_to_html(image_mode=ImageRefMode.EMBEDDED, split_page_view=True)
 
     exp_json_file = src.with_name(f"{src.stem}_p2_p3_p5.gt.json")
     exp_html_file = exp_json_file.with_suffix(".html")
@@ -1911,27 +1790,20 @@ def test_filter_pages():
 def _create_doc_for_filtering():
     doc = DoclingDocument(
         name="",
-        pages={
-            i: PageItem(page_no=i, size=Size(width=100, height=100), image=None)
-            for i in range(1, 3)
-        },
+        pages={i: PageItem(page_no=i, size=Size(width=100, height=100), image=None) for i in range(1, 3)},
     )
     p1_text = doc.add_text(
         text="Text 1",
         parent=doc.body,
         label=DocItemLabel.TEXT,
-        prov=ProvenanceItem(
-            page_no=1, bbox=BoundingBox(l=0, t=0, r=100, b=100), charspan=(0, 1)
-        ),
+        prov=ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=100, b=100), charspan=(0, 1)),
     )
     doc.add_group(parent=p1_text)
     doc.add_text(
         text="Text 2",
         parent=doc.body,
         label=DocItemLabel.TEXT,
-        prov=ProvenanceItem(
-            page_no=2, bbox=BoundingBox(l=0, t=0, r=100, b=100), charspan=(0, 1)
-        ),
+        prov=ProvenanceItem(page_no=2, bbox=BoundingBox(l=0, t=0, r=100, b=100), charspan=(0, 1)),
     )
     return doc
 
@@ -1950,9 +1822,7 @@ def test_filter_invalid_pages():
     doc = _create_doc_for_filtering()
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            "The following page numbers are not present in the document: {3}"
-        ),
+        match=re.escape("The following page numbers are not present in the document: {3}"),
     ):
         doc.filter(page_nrs={3})
 

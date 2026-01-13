@@ -17,13 +17,9 @@ def parse_arguments():
     """Parse the arguments from the command line."""
     argparser = argparse.ArgumentParser(description="validate example-file with schema")
 
-    argparser.add_argument(
-        "-f", "--format", required=True, help="format of the file [RAW, ANN, OCR]"
-    )
+    argparser.add_argument("-f", "--format", required=True, help="format of the file [RAW, ANN, OCR]")
 
-    argparser.add_argument(
-        "-i", "--input-file", required=True, help="JSON filename to be validated"
-    )
+    argparser.add_argument("-i", "--input-file", required=True, help="JSON filename to be validated")
 
     pargs = argparser.parse_args()
 
@@ -34,7 +30,7 @@ def run():
     """Run the validation of a file containing a Document."""
     file_format, input_file = parse_arguments()
 
-    with open(input_file, "r", encoding="utf-8") as fd:
+    with open(input_file, encoding="utf-8") as fd:
         file_ = json.load(fd)
 
     result = (False, "Empty result")
@@ -54,7 +50,7 @@ def run():
     if result[0]:
         logger.info("Done!")
     else:
-        logger.error("invalid schema: {}".format(result[1]))
+        logger.error(f"invalid schema: {result[1]}")
 
 
 def main():

@@ -37,7 +37,7 @@ class TestCxsModel(unittest.TestCase):
 
         filename = "test/data/rec/error-predicate-02.json"
         with (
-            pytest.raises(ValidationError, match="geopoint_value.conf"),
+            pytest.raises(ValidationError, match="geopoint_value\\.conf"),
             open(filename, encoding="utf-8") as file_obj,
         ):
             file_json = file_obj.read()
@@ -78,9 +78,7 @@ class TestCxsModel(unittest.TestCase):
     def test_subjects2(self):
         """Validate data with Subject schema."""
         # IdentifierTypeT, SubjectTypeT, SubjectNameTypeT
-        subject = Subject[
-            Literal["db"], Literal["material"], Literal["chemical_name", "sum_formula"]
-        ]
+        subject = Subject[Literal["db"], Literal["material"], Literal["chemical_name", "sum_formula"]]
         for filename in glob.glob("test/data/rec/subject-*.json"):
             try:
                 with open(filename, encoding="utf-8") as file_obj:
@@ -93,9 +91,7 @@ class TestCxsModel(unittest.TestCase):
     def test_subjects_wrong(self):
         """Validate data with Subject schema."""
         # IdentifierTypeT, SubjectTypeT, SubjectNameTypeT
-        subject = Subject[
-            Literal["db_"], Literal["material"], Literal["chemical_name", "sum_formula"]
-        ]
+        subject = Subject[Literal["db_"], Literal["material"], Literal["chemical_name", "sum_formula"]]
         for filename in glob.glob("test/data/rec/subject-*.json"):
             with (
                 self.assertRaises(ValidationError),
@@ -103,9 +99,7 @@ class TestCxsModel(unittest.TestCase):
             ):
                 file_json = file_obj.read()
                 subject.model_validate_json(file_json)
-        subject = Subject[
-            Literal["db"], Literal["material_"], Literal["chemical_name", "sum_formula"]
-        ]
+        subject = Subject[Literal["db"], Literal["material_"], Literal["chemical_name", "sum_formula"]]
         for filename in glob.glob("test/data/rec/subject-*.json"):
             with (
                 self.assertRaises(ValidationError),

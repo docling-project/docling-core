@@ -48,16 +48,12 @@ class Subject(
     type_: SubjectTypeT = Field(
         alias="type",
         description=(
-            "Main subject type. For instance, `material`, `material-class`, "
-            "`material-device`, `company`, or `person`."
+            "Main subject type. For instance, `material`, `material-class`, `material-device`, `company`, or `person`."
         ),
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
     names: list[SubjectNameIdentifier[SubjectNameTypeT]] = Field(
-        description=(
-            "List of given names for this subject. They may not be unique across "
-            "different subjects."
-        )
+        description=("List of given names for this subject. They may not be unique across different subjects.")
     )
     identifiers: Optional[list[Identifier[IdentifierTypeT]]] = Field(
         default=None,

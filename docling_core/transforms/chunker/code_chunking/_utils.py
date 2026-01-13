@@ -2,7 +2,7 @@
 
 import logging
 import sys
-from typing import List, Optional
+from typing import Optional
 
 from tree_sitter import Language as Lang
 from tree_sitter import Node, Tree
@@ -13,7 +13,7 @@ from docling_core.types.doc.labels import CodeLanguageLabel
 _logger = logging.getLogger(__name__)
 
 
-def _get_file_extensions(language: CodeLanguageLabel) -> List[str]:
+def _get_file_extensions(language: CodeLanguageLabel) -> list[str]:
     """Get the file extensions associated with a language."""
     extensions_map = {
         CodeLanguageLabel.PYTHON: [".py"],
@@ -112,9 +112,7 @@ def _get_function_name(language: CodeLanguageLabel, node: Node) -> Optional[str]
         return None
 
 
-def _is_collectable_function(
-    language: CodeLanguageLabel, node: Node, constructor_name: str
-) -> bool:
+def _is_collectable_function(language: CodeLanguageLabel, node: Node, constructor_name: str) -> bool:
     """Check if a function should be collected for chunking."""
     if language == CodeLanguageLabel.C:
         return True
@@ -131,9 +129,7 @@ def _get_default_tokenizer() -> "BaseTokenizer":
         HuggingFaceTokenizer,
     )
 
-    return HuggingFaceTokenizer.from_pretrained(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
 def _has_child(node: Node, child_name: str) -> bool:
@@ -141,7 +137,7 @@ def _has_child(node: Node, child_name: str) -> bool:
     return bool(node and node.child_by_field_name(child_name))
 
 
-def _get_children(node: Node, child_types: List[str]) -> List[Node]:
+def _get_children(node: Node, child_types: list[str]) -> list[Node]:
     """Get all children of a node that match the specified types."""
     if not node.children:
         return []

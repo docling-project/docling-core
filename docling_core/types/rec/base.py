@@ -1,28 +1,22 @@
 """Define the base models for the Record type."""
 
-from typing import Generic, List, Optional
+from typing import Annotated, Generic, Optional
 
 from pydantic import Field, StrictInt, StrictStr
-from typing_extensions import Annotated
 
 from docling_core.search.mapping import es_field
 from docling_core.types.base import Identifier, IdentifierTypeT, ProvenanceTypeT
 from docling_core.utils.alias import AliasModel
 
 
-class ProvenanceItem(
-    AliasModel, Generic[IdentifierTypeT, ProvenanceTypeT], extra="forbid"
-):
+class ProvenanceItem(AliasModel, Generic[IdentifierTypeT, ProvenanceTypeT], extra="forbid"):
     """A representation of an object provenance."""
 
     type_: Optional[ProvenanceTypeT] = Field(
         default=None,
         alias="type",
         title="The provenance type",
-        description=(
-            "Any string representing the type of provenance, e.g. `sentence`, "
-            "`table`, or `doi`."
-        ),
+        description=("Any string representing the type of provenance, e.g. `sentence`, `table`, or `doi`."),
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
 
@@ -30,8 +24,7 @@ class ProvenanceItem(
         default=None,
         title="Evidence of the provenance",
         description=(
-            "A text representing the evidence of the provenance, e.g. the sentence "
-            "text or the content of a table cell"
+            "A text representing the evidence of the provenance, e.g. the sentence text or the content of a table cell"
         ),
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
@@ -56,15 +49,10 @@ class ProvenanceItem(
         json_schema_extra=es_field(type="keyword", ignore_above=8191),
     )
 
-    span: Optional[Annotated[List[StrictInt], Field(min_length=2, max_length=2)]] = (
-        Field(
-            default=None,
-            title="The location of the item in the text/table",
-            description=(
-                "location of the item in the text/table referenced by the `path`,"
-                " e.g., `[34, 67]`"
-            ),
-        )
+    span: Optional[Annotated[list[StrictInt], Field(min_length=2, max_length=2)]] = Field(
+        default=None,
+        title="The location of the item in the text/table",
+        description=("location of the item in the text/table referenced by the `path`, e.g., `[34, 67]`"),
     )
 
 

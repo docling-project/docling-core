@@ -2,10 +2,9 @@
 
 import logging
 import re
-from typing import ClassVar, Final, Literal, Optional
+from typing import Annotated, ClassVar, Final, Literal, Optional
 
 from pydantic import Field, StringConstraints, field_validator
-from typing_extensions import Annotated
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseMeta
@@ -30,11 +29,9 @@ class DocMeta(BaseMeta):
         default="docling_core.transforms.chunker.DocMeta",
         alias=_KEY_SCHEMA_NAME,
     )
-    version: Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)] = (
-        Field(
-            default=_VERSION,
-            alias=_KEY_VERSION,
-        )
+    version: Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)] = Field(
+        default=_VERSION,
+        alias=_KEY_VERSION,
     )
     doc_items: list[DocItem] = Field(
         alias=_KEY_DOC_ITEMS,

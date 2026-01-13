@@ -35,9 +35,7 @@ def _construct_doc_impl() -> DoclingDocument:
     leading_list = doc.add_list_group(parent=None)
     doc.add_list_item(parent=leading_list, text="item of leading list", marker="■")
 
-    title = doc.add_title(
-        text="Title of the Document"
-    )  # can be done if such information is present, or ommitted.
+    title = doc.add_title(text="Title of the Document")  # can be done if such information is present, or ommitted.
 
     # group, heading, paragraph, table, figure, title, list, provenance
     doc.add_text(parent=title, label=DocItemLabel.TEXT, text="Author 1\nAffiliation 1")
@@ -92,9 +90,7 @@ def _construct_doc_impl() -> DoclingDocument:
 
     doc.add_list_item(parent=mylist_level_1, text="list item 4", marker="■")
 
-    tab_caption = doc.add_text(
-        label=DocItemLabel.CAPTION, text="This is the caption of table 1."
-    )
+    tab_caption = doc.add_text(label=DocItemLabel.CAPTION, text="This is the caption of table 1.")
 
     # Make some table cells
     table_cells = []
@@ -166,9 +162,7 @@ def _construct_doc_impl() -> DoclingDocument:
     table_data = TableData(num_rows=3, num_cols=3, table_cells=table_cells)
     doc.add_table(data=table_data, caption=tab_caption)
 
-    fig_caption_1 = doc.add_text(
-        label=DocItemLabel.CAPTION, text="This is the caption of figure 1."
-    )
+    fig_caption_1 = doc.add_text(label=DocItemLabel.CAPTION, text="This is the caption of figure 1.")
     doc.add_picture(caption=fig_caption_1)
 
     size = (64, 64)
@@ -189,12 +183,8 @@ def _construct_doc_impl() -> DoclingDocument:
     # Draw the red square
     # draw.rectangle([x1, y1, x2, y2], fill="red")
 
-    fig_caption_2 = doc.add_text(
-        label=DocItemLabel.CAPTION, text="This is the caption of figure 2."
-    )
-    doc.add_picture(
-        image=ImageRef.from_pil(image=fig2_image, dpi=72), caption=fig_caption_2
-    )
+    fig_caption_2 = doc.add_text(label=DocItemLabel.CAPTION, text="This is the caption of figure 2.")
+    doc.add_picture(image=ImageRef.from_pil(image=fig2_image, dpi=72), caption=fig_caption_2)
 
     g0 = doc.add_list_group(parent=None)
     doc.add_list_item(text="item 1 of list", parent=g0, marker="■")
@@ -225,9 +215,7 @@ def _construct_doc_impl() -> DoclingDocument:
         parent=inline1,
         code_language=CodeLanguageLabel.PYTHON,
     )
-    doc.add_text(
-        label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1
-    )
+    doc.add_text(label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1)
 
     g2_subgroup_li_2 = doc.add_list_item(text="", parent=g2_subgroup, marker="□")
     inline2 = doc.add_inline_group(parent=g2_subgroup_li_2)
@@ -237,14 +225,10 @@ def _construct_doc_impl() -> DoclingDocument:
         parent=inline2,
     )
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline2)
-    doc.add_text(
-        label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline2
-    )
+    doc.add_text(label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline2)
 
     doc.add_text(label=DocItemLabel.TEXT, text="Here a code block:", parent=None)
-    doc.add_code(
-        text='print("Hello world")', parent=None, code_language=CodeLanguageLabel.PYTHON
-    )
+    doc.add_code(text='print("Hello world")', parent=None, code_language=CodeLanguageLabel.PYTHON)
 
     doc.add_text(label=DocItemLabel.TEXT, text="Here a formula block:", parent=None)
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=None)
@@ -279,9 +263,7 @@ def _construct_doc_impl() -> DoclingDocument:
     doc.add_form(graph=graph)
 
     inline_fmt = doc.add_inline_group()
-    doc.add_text(
-        label=DocItemLabel.TEXT, text="Some formatting chops:", parent=inline_fmt
-    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Some formatting chops:", parent=inline_fmt)
     doc.add_text(
         label=DocItemLabel.TEXT,
         text="bold",
@@ -341,21 +323,13 @@ def _construct_doc_impl() -> DoclingDocument:
     )
 
     parent_A = doc.add_list_group(name="list A")
-    doc.add_list_item(
-        text="Item 1 in A", enumerated=True, marker="(i)", parent=parent_A
-    )
-    doc.add_list_item(
-        text="Item 2 in A", enumerated=True, marker="(ii)", parent=parent_A
-    )
-    item_A_3 = doc.add_list_item(
-        text="Item 3 in A", enumerated=True, marker="(iii)", parent=parent_A
-    )
+    doc.add_list_item(text="Item 1 in A", enumerated=True, marker="(i)", parent=parent_A)
+    doc.add_list_item(text="Item 2 in A", enumerated=True, marker="(ii)", parent=parent_A)
+    item_A_3 = doc.add_list_item(text="Item 3 in A", enumerated=True, marker="(iii)", parent=parent_A)
 
     parent_B = doc.add_list_group(parent=item_A_3, name="list B")
     doc.add_list_item(text="Item 1 in B", enumerated=True, parent=parent_B)
-    item_B_2 = doc.add_list_item(
-        text="Item 2 in B", enumerated=True, marker="42.", parent=parent_B
-    )
+    item_B_2 = doc.add_list_item(text="Item 2 in B", enumerated=True, marker="42.", parent=parent_B)
 
     parent_C = doc.add_list_group(parent=item_B_2, name="list C")
     doc.add_list_item(text="Item 1 in C", enumerated=True, parent=parent_C)
@@ -363,9 +337,7 @@ def _construct_doc_impl() -> DoclingDocument:
 
     doc.add_list_item(text="Item 3 in B", enumerated=True, parent=parent_B)
 
-    doc.add_list_item(
-        text="Item 4 in A", enumerated=True, marker="(iv)", parent=parent_A
-    )
+    doc.add_list_item(text="Item 4 in A", enumerated=True, marker="(iv)", parent=parent_A)
 
     with pytest.warns(DeprecationWarning, match="list group"):
         doc.add_list_item(text="List item without parent list group")
@@ -413,9 +385,7 @@ def _rich_table_doc() -> DoclingDocument:
     doc.add_list_item(parent=rich_item_2, text="list item 1")
     doc.add_list_item(parent=rich_item_2, text="list item 2")
 
-    rich_item_3 = doc.add_table(
-        data=TableData(num_rows=2, num_cols=3), parent=table_item
-    )
+    rich_item_3 = doc.add_table(data=TableData(num_rows=2, num_cols=3), parent=table_item)
 
     rich_item_4 = doc.add_group(parent=table_item, label=GroupLabel.UNSPECIFIED)
     doc.add_text(
@@ -423,9 +393,7 @@ def _rich_table_doc() -> DoclingDocument:
         text="Some text in a generic group.",
         label=DocItemLabel.TEXT,
     )
-    doc.add_text(
-        parent=rich_item_4, text="More text in the group.", label=DocItemLabel.TEXT
-    )
+    doc.add_text(parent=rich_item_4, text="More text in the group.", label=DocItemLabel.TEXT)
 
     for i in range(rich_item_3.data.num_rows):
         for j in range(rich_item_3.data.num_cols):

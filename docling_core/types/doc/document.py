@@ -11,19 +11,16 @@ import re
 import sys
 import typing
 import warnings
+from collections.abc import Sequence
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
-    Dict,
     Final,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
     Union,
 )
 from urllib.parse import unquote
@@ -47,7 +44,7 @@ from pydantic import (
     validate_call,
 )
 from tabulate import tabulate
-from typing_extensions import Annotated, Self, deprecated, override
+from typing_extensions import Self, deprecated, override
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
@@ -128,7 +125,7 @@ class PictureClassificationData(BaseAnnotation):
 
     kind: Literal["classification"] = "classification"
     provenance: str
-    predicted_classes: List[PictureClassificationClass]
+    predicted_classes: list[PictureClassificationClass]
 
 
 class DescriptionAnnotation(BaseAnnotation):
@@ -146,7 +143,7 @@ class PictureMoleculeData(BaseAnnotation):
     smi: str
     confidence: float
     class_name: str
-    segmentation: List[Tuple[float, float]]
+    segmentation: list[tuple[float, float]]
     provenance: str
 
     @field_serializer("confidence")
@@ -158,7 +155,7 @@ class MiscAnnotation(BaseAnnotation):
     """MiscAnnotation."""
 
     kind: Literal["misc"] = "misc"
-    content: Dict[str, Any]
+    content: dict[str, Any]
 
 
 class ChartLine(BaseModel):
@@ -166,12 +163,12 @@ class ChartLine(BaseModel):
 
     Attributes:
         label (str): The label for the line.
-        values (List[Tuple[float, float]]): A list of (x, y) coordinate pairs
+        values (list[tuple[float, float]]): A list of (x, y) coordinate pairs
             representing the line's data points.
     """
 
     label: str
-    values: List[Tuple[float, float]]
+    values: list[tuple[float, float]]
 
 
 class ChartBar(BaseModel):
@@ -190,15 +187,15 @@ class ChartStackedBar(BaseModel):
     """Represents a stacked bar in a stacked bar chart.
 
     Attributes:
-        label (List[str]): The labels for the stacked bars. Multiple values are stored
+        label (list[str]): The labels for the stacked bars. Multiple values are stored
             in cases where the chart is "double stacked," meaning bars are stacked both
             horizontally and vertically.
-        values (List[Tuple[str, int]]): A list of values representing different segments
+        values (list[tuple[str, int]]): A list of values representing different segments
             of the stacked bar along with their label.
     """
 
-    label: List[str]
-    values: List[Tuple[str, int]]
+    label: list[str]
+    values: list[tuple[str, int]]
 
 
 class ChartSlice(BaseModel):
@@ -221,7 +218,7 @@ class ChartPoint(BaseModel):
             chart.
     """
 
-    value: Tuple[float, float]
+    value: tuple[float, float]
 
 
 class PictureChartData(BaseAnnotation):
@@ -241,13 +238,13 @@ class PictureLineChartData(PictureChartData):
         kind (Literal["line_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        lines (List[ChartLine]): A list of lines in the chart.
+        lines (list[ChartLine]): A list of lines in the chart.
     """
 
     kind: Literal["line_chart_data"] = "line_chart_data"
     x_axis_label: str
     y_axis_label: str
-    lines: List[ChartLine]
+    lines: list[ChartLine]
 
 
 class PictureBarChartData(PictureChartData):
@@ -257,13 +254,13 @@ class PictureBarChartData(PictureChartData):
         kind (Literal["bar_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        bars (List[ChartBar]): A list of bars in the chart.
+        bars (list[ChartBar]): A list of bars in the chart.
     """
 
     kind: Literal["bar_chart_data"] = "bar_chart_data"
     x_axis_label: str
     y_axis_label: str
-    bars: List[ChartBar]
+    bars: list[ChartBar]
 
 
 class PictureStackedBarChartData(PictureChartData):
@@ -273,13 +270,13 @@ class PictureStackedBarChartData(PictureChartData):
         kind (Literal["stacked_bar_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        stacked_bars (List[ChartStackedBar]): A list of stacked bars in the chart.
+        stacked_bars (list[ChartStackedBar]): A list of stacked bars in the chart.
     """
 
     kind: Literal["stacked_bar_chart_data"] = "stacked_bar_chart_data"
     x_axis_label: str
     y_axis_label: str
-    stacked_bars: List[ChartStackedBar]
+    stacked_bars: list[ChartStackedBar]
 
 
 class PicturePieChartData(PictureChartData):
@@ -287,11 +284,11 @@ class PicturePieChartData(PictureChartData):
 
     Attributes:
         kind (Literal["pie_chart_data"]): The type of the chart.
-        slices (List[ChartSlice]): A list of slices in the pie chart.
+        slices (list[ChartSlice]): A list of slices in the pie chart.
     """
 
     kind: Literal["pie_chart_data"] = "pie_chart_data"
-    slices: List[ChartSlice]
+    slices: list[ChartSlice]
 
 
 class PictureScatterChartData(PictureChartData):
@@ -301,13 +298,13 @@ class PictureScatterChartData(PictureChartData):
         kind (Literal["scatter_chart_data"]): The type of the chart.
         x_axis_label (str): The label for the x-axis.
         y_axis_label (str): The label for the y-axis.
-        points (List[ChartPoint]): A list of points in the scatter chart.
+        points (list[ChartPoint]): A list of points in the scatter chart.
     """
 
     kind: Literal["scatter_chart_data"] = "scatter_chart_data"
     x_axis_label: str
     y_axis_label: str
-    points: List[ChartPoint]
+    points: list[ChartPoint]
 
 
 class TableCell(BaseModel):
@@ -336,8 +333,7 @@ class TableCell(BaseModel):
                 # "bbox" not in data
                 # or data["bbox"] is None
                 # or isinstance(data["bbox"], BoundingBox)
-                "text"
-                in data
+                "text" in data
             ):
                 return data
             text = data.get("bbox", {}).get("token", "")
@@ -366,9 +362,7 @@ class RichTableCell(TableCell):
         from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 
         if doc is not None:
-            doc_serializer = kwargs.pop(
-                "doc_serializer", MarkdownDocSerializer(doc=doc)
-            )
+            doc_serializer = kwargs.pop("doc_serializer", MarkdownDocSerializer(doc=doc))
             ser_res = doc_serializer.serialize(item=self.ref.resolve(doc=doc), **kwargs)
             return ser_res.text
         else:
@@ -384,7 +378,7 @@ AnyTableCell = Annotated[
 class TableData(BaseModel):  # TBD
     """BaseTableData."""
 
-    table_cells: List[AnyTableCell] = []
+    table_cells: list[AnyTableCell] = []
     num_rows: int = 0
     num_cols: int = 0
 
@@ -392,7 +386,7 @@ class TableData(BaseModel):  # TBD
     @property
     def grid(
         self,
-    ) -> List[List[TableCell]]:
+    ) -> list[list[TableCell]]:
         """grid."""
         # Initialise empty table data grid (only empty cells)
         table_data = [
@@ -423,14 +417,12 @@ class TableData(BaseModel):  # TBD
 
         return table_data
 
-    def remove_rows(
-        self, indices: List[int], doc: Optional["DoclingDocument"] = None
-    ) -> List[List[TableCell]]:
+    def remove_rows(self, indices: list[int], doc: Optional["DoclingDocument"] = None) -> list[list[TableCell]]:
         """Remove rows from the table by their indices.
 
-        :param indices: List[int]: A list of indices of the rows to remove. (Starting from 0)
+        :param indices: list[int]: A list of indices of the rows to remove. (Starting from 0)
 
-        :return: List[List[TableCell]]: A list representation of the removed rows as lists of TableCell objects.
+        :return: list[list[TableCell]]: A list representation of the removed rows as lists of TableCell objects.
         """
         if not indices:
             return []
@@ -478,34 +470,30 @@ class TableData(BaseModel):  # TBD
 
         return all_removed_cells
 
-    def pop_row(self, doc: Optional["DoclingDocument"] = None) -> List[TableCell]:
+    def pop_row(self, doc: Optional["DoclingDocument"] = None) -> list[TableCell]:
         """Remove and return the last row from the table.
 
-        :returns: List[TableCell]: A list of TableCell objects representing the popped row.
+        :returns: list[TableCell]: A list of TableCell objects representing the popped row.
         """
         if self.num_rows == 0:
             raise IndexError("Cannot pop from an empty table.")
 
         return self.remove_row(self.num_rows - 1, doc=doc)
 
-    def remove_row(
-        self, row_index: int, doc: Optional["DoclingDocument"] = None
-    ) -> List[TableCell]:
+    def remove_row(self, row_index: int, doc: Optional["DoclingDocument"] = None) -> list[TableCell]:
         """Remove a row from the table by its index.
 
         :param row_index: int: The index of the row to remove. (Starting from 0)
 
-        :returns: List[TableCell]: A list of TableCell objects representing the removed row.
+        :returns: list[TableCell]: A list of TableCell objects representing the removed row.
         """
         return self.remove_rows([row_index], doc=doc)[0]
 
-    def insert_rows(
-        self, row_index: int, rows: List[List[str]], after: bool = False
-    ) -> None:
+    def insert_rows(self, row_index: int, rows: list[list[str]], after: bool = False) -> None:
         """Insert multiple new rows from a list of lists of strings before/after a specific index in the table.
 
         :param row_index: int: The index at which to insert the new rows. (Starting from 0)
-        :param rows: List[List[str]]: A list of lists, where each inner list represents the content of a new row.
+        :param rows: list[list[str]]: A list of lists, where each inner list represents the content of a new row.
         :param after: bool: If True, insert the rows after the specified index, otherwise before it. (Default is False)
 
         :returns: None
@@ -515,26 +503,22 @@ class TableData(BaseModel):  # TBD
         for row in effective_rows:
             self.insert_row(row_index, row, after)
 
-    def insert_row(self, row_index: int, row: List[str], after: bool = False) -> None:
+    def insert_row(self, row_index: int, row: list[str], after: bool = False) -> None:
         """Insert a new row from a list of strings before/after a specific index in the table.
 
         :param row_index: int: The index at which to insert the new row. (Starting from 0)
-        :param row: List[str]: A list of strings representing the content of the new row.
+        :param row: list[str]: A list of strings representing the content of the new row.
         :param after: bool: If True, insert the row after the specified index, otherwise before it. (Default is False)
 
         :returns: None
         """
         if len(row) != self.num_cols:
-            raise ValueError(
-                f"Row length {len(row)} does not match the number of columns {self.num_cols}."
-            )
+            raise ValueError(f"Row length {len(row)} does not match the number of columns {self.num_cols}.")
 
         effective_index = row_index + (1 if after else 0)
 
         if effective_index < 0 or effective_index > self.num_rows:
-            raise IndexError(
-                f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}."
-            )
+            raise IndexError(f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}.")
 
         new_row_cells = [
             TableCell(
@@ -561,20 +545,20 @@ class TableData(BaseModel):  # TBD
 
         self.num_rows += 1
 
-    def add_rows(self, rows: List[List[str]]) -> None:
+    def add_rows(self, rows: list[list[str]]) -> None:
         """Add multiple new rows to the table from a list of lists of strings.
 
-        :param rows: List[List[str]]: A list of lists, where each inner list represents the content of a new row.
+        :param rows: list[list[str]]: A list of lists, where each inner list represents the content of a new row.
 
         :returns: None
         """
         for row in rows:
             self.add_row(row)
 
-    def add_row(self, row: List[str]) -> None:
+    def add_row(self, row: list[str]) -> None:
         """Add a new row to the table from a list of strings.
 
-        :param row: List[str]: A list of strings representing the content of the new row.
+        :param row: list[str]: A list of strings representing the content of the new row.
 
         :returns: None
         """
@@ -606,12 +590,7 @@ class TableData(BaseModel):  # TBD
 
             # Collect all cells in this row that have bounding boxes
             for cell in self.table_cells:
-
-                if (
-                    cell.bbox is not None
-                    and cell.start_row_offset_idx <= row_idx < cell.end_row_offset_idx
-                ):
-
+                if cell.bbox is not None and cell.start_row_offset_idx <= row_idx < cell.end_row_offset_idx:
                     row_span = cell.end_row_offset_idx - cell.start_row_offset_idx
                     if row_span in row_cells_with_bbox:
                         row_cells_with_bbox[row_span].append(cell.bbox)
@@ -621,9 +600,7 @@ class TableData(BaseModel):  # TBD
             # Calculate the enclosing bounding box for this row
             if len(row_cells_with_bbox) > 0:
                 min_row_span = min(row_cells_with_bbox.keys())
-                row_bbox: BoundingBox = BoundingBox.enclosing_bbox(
-                    row_cells_with_bbox[min_row_span]
-                )
+                row_bbox: BoundingBox = BoundingBox.enclosing_bbox(row_cells_with_bbox[min_row_span])
 
                 for rspan, bboxs in row_cells_with_bbox.items():
                     for bbox in bboxs:
@@ -660,12 +637,7 @@ class TableData(BaseModel):  # TBD
 
             # Collect all cells in this row that have bounding boxes
             for cell in self.table_cells:
-
-                if (
-                    cell.bbox is not None
-                    and cell.start_col_offset_idx <= col_idx < cell.end_col_offset_idx
-                ):
-
+                if cell.bbox is not None and cell.start_col_offset_idx <= col_idx < cell.end_col_offset_idx:
                     col_span = cell.end_col_offset_idx - cell.start_col_offset_idx
                     if col_span in col_cells_with_bbox:
                         col_cells_with_bbox[col_span].append(cell.bbox)
@@ -675,9 +647,7 @@ class TableData(BaseModel):  # TBD
             # Calculate the enclosing bounding box for this row
             if len(col_cells_with_bbox) > 0:
                 min_col_span = min(col_cells_with_bbox.keys())
-                col_bbox: BoundingBox = BoundingBox.enclosing_bbox(
-                    col_cells_with_bbox[min_col_span]
-                )
+                col_bbox: BoundingBox = BoundingBox.enclosing_bbox(col_cells_with_bbox[min_col_span])
 
                 for rspan, bboxs in col_cells_with_bbox.items():
                     for bbox in bboxs:
@@ -703,10 +673,7 @@ class TableData(BaseModel):  # TBD
         """Return elements whose bounding boxes are unique within ``iou_threshold``."""
         deduped: list[BoundingBox] = []
         for element in elements:
-            if all(
-                element.intersection_over_union(kept) < iou_threshold
-                for kept in deduped
-            ):
+            if all(element.intersection_over_union(kept) < iou_threshold for kept in deduped):
                 deduped.append(element)
         return deduped
 
@@ -714,10 +681,10 @@ class TableData(BaseModel):  # TBD
     def _process_table_headers(
         cls,
         bbox: BoundingBox,
-        row_headers: List[BoundingBox] = [],
-        col_headers: List[BoundingBox] = [],
-        row_sections: List[BoundingBox] = [],
-    ) -> Tuple[bool, bool, bool]:
+        row_headers: list[BoundingBox] = [],
+        col_headers: list[BoundingBox] = [],
+        row_sections: list[BoundingBox] = [],
+    ) -> tuple[bool, bool, bool]:
         c_column_header = False
         c_row_header = False
         c_row_section = False
@@ -736,15 +703,15 @@ class TableData(BaseModel):  # TBD
     @classmethod
     def _compute_cells(
         cls,
-        rows: List[BoundingBox],
-        columns: List[BoundingBox],
-        merges: List[BoundingBox],
-        row_headers: List[BoundingBox] = [],
-        col_headers: List[BoundingBox] = [],
-        row_sections: List[BoundingBox] = [],
+        rows: list[BoundingBox],
+        columns: list[BoundingBox],
+        merges: list[BoundingBox],
+        row_headers: list[BoundingBox] = [],
+        col_headers: list[BoundingBox] = [],
+        row_sections: list[BoundingBox] = [],
         row_overlap_threshold: float = 0.5,  # how much of a row a merge must cover vertically
         col_overlap_threshold: float = 0.5,  # how much of a column a merge must cover horizontally
-    ) -> List[TableCell]:
+    ) -> list[TableCell]:
         """Returns TableCell. Merged cells are aligned to grid boundaries.
 
         rows, columns, merges are lists of BoundingBox(l,t,r,b).
@@ -753,8 +720,8 @@ class TableData(BaseModel):  # TBD
         columns.sort(key=lambda c: (c.l + c.r) / 2.0)
 
         def span_from_merge(
-            m: BoundingBox, lines: List[BoundingBox], axis: str, frac_threshold: float
-        ) -> Optional[Tuple[int, int]]:
+            m: BoundingBox, lines: list[BoundingBox], axis: str, frac_threshold: float
+        ) -> Optional[tuple[int, int]]:
             """Map a merge bbox to an inclusive index span over rows or columns.
 
             axis='row' uses vertical overlap vs row height; axis='col' uses horizontal overlap vs col width.
@@ -786,18 +753,14 @@ class TableData(BaseModel):  # TBD
                 return best_i, best_i
             return None
 
-        cells: List[TableCell] = []
-        covered: Set[Tuple[int, int]] = set()
-        seen_merge_rects: Set[Tuple[int, int, int, int]] = set()
+        cells: list[TableCell] = []
+        covered: set[tuple[int, int]] = set()
+        seen_merge_rects: set[tuple[int, int, int, int]] = set()
 
         # 1) Add merged cells first (and mark their covered simple cells)
         for m in merges:
-            rspan = span_from_merge(
-                m, rows, axis="row", frac_threshold=row_overlap_threshold
-            )
-            cspan = span_from_merge(
-                m, columns, axis="col", frac_threshold=col_overlap_threshold
-            )
+            rspan = span_from_merge(m, rows, axis="row", frac_threshold=row_overlap_threshold)
+            cspan = span_from_merge(m, columns, axis="col", frac_threshold=col_overlap_threshold)
             if rspan is None or cspan is None:
                 # Can't confidently map this merge to grid -> skip it
                 continue
@@ -848,10 +811,8 @@ class TableData(BaseModel):  # TBD
                 if not inter:
                     # In degenerate cases (big gaps), there might be no intersection; skip.
                     continue
-                c_column_header, c_row_header, c_row_section = (
-                    cls._process_table_headers(
-                        inter, col_headers, row_headers, row_sections
-                    )
+                c_column_header, c_row_header, c_row_section = cls._process_table_headers(
+                    inter, col_headers, row_headers, row_sections
                 )
                 cells.append(
                     TableCell(
@@ -874,12 +835,12 @@ class TableData(BaseModel):  # TBD
     def from_regions(
         cls,
         table_bbox: BoundingBox,
-        rows: List[BoundingBox],
-        cols: List[BoundingBox],
-        merges: List[BoundingBox],
-        row_headers: List[BoundingBox] = [],
-        col_headers: List[BoundingBox] = [],
-        row_sections: List[BoundingBox] = [],
+        rows: list[BoundingBox],
+        cols: list[BoundingBox],
+        merges: list[BoundingBox],
+        row_headers: list[BoundingBox] = [],
+        col_headers: list[BoundingBox] = [],
+        row_sections: list[BoundingBox] = [],
     ) -> Self:
         """Converts regions: rows, columns, merged cells into table_data structure.
 
@@ -888,47 +849,23 @@ class TableData(BaseModel):  # TBD
         default_containment_thresh = 0.5
         rows.extend(row_sections)  # use row sections to compensate for missing rows
         rows = cls._dedupe_bboxes(
-            [
-                e
-                for e in rows
-                if e.intersection_over_self(table_bbox) >= default_containment_thresh
-            ]
+            [e for e in rows if e.intersection_over_self(table_bbox) >= default_containment_thresh]
         )
         cols = cls._dedupe_bboxes(
-            [
-                e
-                for e in cols
-                if e.intersection_over_self(table_bbox) >= default_containment_thresh
-            ]
+            [e for e in cols if e.intersection_over_self(table_bbox) >= default_containment_thresh]
         )
         merges = cls._dedupe_bboxes(
-            [
-                e
-                for e in merges
-                if e.intersection_over_self(table_bbox) >= default_containment_thresh
-            ]
+            [e for e in merges if e.intersection_over_self(table_bbox) >= default_containment_thresh]
         )
 
         col_headers = cls._dedupe_bboxes(
-            [
-                e
-                for e in col_headers
-                if e.intersection_over_self(table_bbox) >= default_containment_thresh
-            ]
+            [e for e in col_headers if e.intersection_over_self(table_bbox) >= default_containment_thresh]
         )
         row_headers = cls._dedupe_bboxes(
-            [
-                e
-                for e in row_headers
-                if e.intersection_over_self(table_bbox) >= default_containment_thresh
-            ]
+            [e for e in row_headers if e.intersection_over_self(table_bbox) >= default_containment_thresh]
         )
         row_sections = cls._dedupe_bboxes(
-            [
-                e
-                for e in row_sections
-                if e.intersection_over_self(table_bbox) >= default_containment_thresh
-            ]
+            [e for e in row_sections if e.intersection_over_self(table_bbox) >= default_containment_thresh]
         )
 
         # Compute table cells from CVAT elements: rows, cols, merges
@@ -1011,7 +948,7 @@ class DocumentOrigin(BaseModel):
         # from any file handler protocol (e.g. https://, file://, s3://)
     )
 
-    _extra_mimetypes: typing.ClassVar[List[str]] = [
+    _extra_mimetypes: typing.ClassVar[list[str]] = [
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
         "application/vnd.openxmlformats-officedocument.presentationml.template",
@@ -1035,9 +972,7 @@ class DocumentOrigin(BaseModel):
                 # Convert hex string to an integer
                 hash_int = Uint64(value, 16)
                 # Mask to fit within 64 bits (unsigned)
-                return (
-                    hash_int & 0xFFFFFFFFFFFFFFFF
-                )  # TODO be sure it doesn't clip uint64 max
+                return hash_int & 0xFFFFFFFFFFFFFFFF  # TODO be sure it doesn't clip uint64 max
             except ValueError:
                 raise ValueError(f"Invalid sha256 hexdigest: {value}")
         return value  # If already an int, return it as is.
@@ -1092,10 +1027,7 @@ class RefItem(BaseModel):
         if len(path) == 3 and (item_label := path[1]) in lookup:
             item_index = int(path[2])
             # Count how many items have been deleted in front of you
-            delta = sum(
-                val if item_index >= key else 0
-                for key, val in lookup[item_label].items()
-            )
+            delta = sum(val if item_index >= key else 0 for key, val in lookup[item_label].items())
             new_index = item_index + delta
             self.cref = f"#/{item_label}/{new_index}"
 
@@ -1165,13 +1097,13 @@ class DocTagsPage(BaseModel):
 class DocTagsDocument(BaseModel):
     """DocTagsDocument."""
 
-    pages: List[DocTagsPage] = []
+    pages: list[DocTagsPage] = []
 
     @classmethod
     def from_doctags_and_image_pairs(
         cls,
         doctags: typing.Sequence[Union[Path, str]],
-        images: Optional[List[Union[Path, PILImage.Image]]],
+        images: Optional[list[Union[Path, PILImage.Image]]],
     ):
         """from_doctags_and_image_pairs."""
         if images is not None and len(doctags) != len(images):
@@ -1206,7 +1138,7 @@ class DocTagsDocument(BaseModel):
     def from_multipage_doctags_and_images(
         cls,
         doctags: Union[Path, str],
-        images: Optional[List[Union[Path, PILImage.Image]]],
+        images: Optional[list[Union[Path, PILImage.Image]]],
     ):
         """From doctags with `<page_break>` and corresponding list of page images."""
         if isinstance(doctags, Path):
@@ -1227,7 +1159,7 @@ class ProvenanceItem(BaseModel):
 
     page_no: int
     bbox: BoundingBox
-    charspan: Tuple[int, int]
+    charspan: tuple[int, int]
 
 
 class ContentLayer(str, Enum):
@@ -1254,9 +1186,7 @@ class _ExtraAllowingModel(BaseModel):
 
     def _copy_without_extra(self) -> Self:
         """Create a copy without the extra fields."""
-        return self.model_validate(
-            self.model_dump(exclude={ex for ex in self.get_custom_part()})
-        )
+        return self.model_validate(self.model_dump(exclude=set(self.get_custom_part())))
 
     def _check_custom_field_format(self, key: str) -> None:
         parts = key.split(MetaUtils._META_FIELD_NAMESPACE_DELIMITER, maxsplit=1)
@@ -1272,9 +1202,7 @@ class _ExtraAllowingModel(BaseModel):
             if key in extra_dict:
                 self._check_custom_field_format(key=key)
             elif MetaUtils._META_FIELD_NAMESPACE_DELIMITER in key:
-                raise ValueError(
-                    f"Standard meta field name must not contain '__': {key}"
-                )
+                raise ValueError(f"Standard meta field name must not contain '__': {key}")
 
         return self
 
@@ -1349,18 +1277,14 @@ class PictureClassificationPrediction(BasePrediction):
 class PictureClassificationMetaField(_ExtraAllowingModel):
     """Picture classification metadata field."""
 
-    predictions: list[PictureClassificationPrediction] = Field(
-        default_factory=list, min_length=1
-    )
+    predictions: list[PictureClassificationPrediction] = Field(default_factory=list, min_length=1)
 
     def get_main_prediction(self) -> PictureClassificationPrediction:
         """Get prediction with highest confidence (if confidence not available, first is used by convention)."""
         max_conf_pos: Optional[int] = None
         max_conf: Optional[float] = None
         for i, pred in enumerate(self.predictions):
-            if pred.confidence is not None and (
-                max_conf is None or pred.confidence > max_conf
-            ):
+            if pred.confidence is not None and (max_conf is None or pred.confidence > max_conf):
                 max_conf_pos = i
                 max_conf = pred.confidence
         return self.predictions[max_conf_pos if max_conf_pos is not None else 0]
@@ -1398,7 +1322,7 @@ class NodeItem(BaseModel):
 
     self_ref: str = Field(pattern=_JSON_POINTER_REGEX)
     parent: Optional[RefItem] = None
-    children: List[RefItem] = []
+    children: list[RefItem] = []
 
     content_layer: ContentLayer = ContentLayer.BODY
 
@@ -1410,9 +1334,7 @@ class NodeItem(BaseModel):
         """get_ref."""
         return RefItem(cref=self.self_ref)
 
-    def _get_parent_ref(
-        self, doc: "DoclingDocument", stack: list[int]
-    ) -> Optional[RefItem]:
+    def _get_parent_ref(self, doc: "DoclingDocument", stack: list[int]) -> Optional[RefItem]:
         """get_parent_ref."""
         if len(stack) == 0:
             return self.parent
@@ -1433,9 +1355,7 @@ class NodeItem(BaseModel):
 
         return False
 
-    def _update_child(
-        self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem
-    ) -> bool:
+    def _update_child(self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem) -> bool:
         """Update child node in tree."""
         if len(stack) == 1 and stack[0] < len(self.children):
             # ensure the parent is correct
@@ -1450,12 +1370,9 @@ class NodeItem(BaseModel):
 
         return False
 
-    def _add_child(
-        self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem
-    ) -> bool:
+    def _add_child(self, doc: "DoclingDocument", stack: list[int], new_ref: RefItem) -> bool:
         """Append child to node identified by stack."""
         if len(stack) == 0:
-
             # ensure the parent is correct
             new_item = new_ref.resolve(doc=doc)
             new_item.parent = self.get_ref()
@@ -1492,9 +1409,7 @@ class NodeItem(BaseModel):
             return True
         elif len(stack) > 1 and stack[0] < len(self.children):
             item = self.children[stack[0]].resolve(doc)
-            return item._add_sibling(
-                doc=doc, stack=stack[1:], new_ref=new_ref, after=after
-            )
+            return item._add_sibling(doc=doc, stack=stack[1:], new_ref=new_ref, after=after)
 
         return False
 
@@ -1534,9 +1449,7 @@ class ListGroup(GroupItem):
 class OrderedList(GroupItem):
     """OrderedList."""
 
-    label: typing.Literal[GroupLabel.ORDERED_LIST] = (
-        GroupLabel.ORDERED_LIST  # type: ignore[assignment]
-    )
+    label: typing.Literal[GroupLabel.ORDERED_LIST] = GroupLabel.ORDERED_LIST  # type: ignore[assignment]
 
 
 class InlineGroup(GroupItem):
@@ -1548,22 +1461,18 @@ class InlineGroup(GroupItem):
 class FineRef(RefItem):
     """Fine-granular reference item that can capture span range info."""
 
-    range: Optional[Tuple[int, int]] = None  # start_inclusive, end_exclusive
+    range: Optional[tuple[int, int]] = None  # start_inclusive, end_exclusive
 
 
-class DocItem(
-    NodeItem
-):  # Base type for any element that carries content, can be a leaf node
+class DocItem(NodeItem):  # Base type for any element that carries content, can be a leaf node
     """DocItem."""
 
     label: DocItemLabel
-    prov: List[ProvenanceItem] = []
+    prov: list[ProvenanceItem] = []
     comments: list[FineRef] = []  # References to comment items annotating this content
 
     @model_serializer(mode="wrap")
-    def _custom_pydantic_serialize(
-        self, handler: SerializerFunctionWrapHandler
-    ) -> dict:
+    def _custom_pydantic_serialize(self, handler: SerializerFunctionWrapHandler) -> dict:
         dumped = handler(self)
 
         # suppress serializing comment list when empty:
@@ -1599,9 +1508,7 @@ class DocItem(
 
         return location
 
-    def get_image(
-        self, doc: "DoclingDocument", prov_index: int = 0
-    ) -> Optional[PILImage.Image]:
+    def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> Optional[PILImage.Image]:
         """Returns the image of this DocItem.
 
         The function returns None if this DocItem has no valid provenance or
@@ -1669,9 +1576,7 @@ class TextItem(DocItem):
     text: str  # sanitized representation
 
     formatting: Optional[Formatting] = None
-    hyperlink: Optional[Union[AnyUrl, Path]] = Field(
-        union_mode="left_to_right", default=None
-    )
+    hyperlink: Optional[Union[AnyUrl, Path]] = Field(union_mode="left_to_right", default=None)
 
     @deprecated("Use export_to_doctags() instead.")
     def export_to_document_tokens(self, *args, **kwargs):
@@ -1718,17 +1623,13 @@ class TextItem(DocItem):
 class TitleItem(TextItem):
     """TitleItem."""
 
-    label: typing.Literal[DocItemLabel.TITLE] = (
-        DocItemLabel.TITLE  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.TITLE] = DocItemLabel.TITLE  # type: ignore[assignment]
 
 
 class SectionHeaderItem(TextItem):
     """SectionItem."""
 
-    label: typing.Literal[DocItemLabel.SECTION_HEADER] = (
-        DocItemLabel.SECTION_HEADER  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.SECTION_HEADER] = DocItemLabel.SECTION_HEADER  # type: ignore[assignment]
     level: LevelNumber = 1
 
     @deprecated("Use export_to_doctags() instead.")
@@ -1776,9 +1677,7 @@ class SectionHeaderItem(TextItem):
 class ListItem(TextItem):
     """SectionItem."""
 
-    label: typing.Literal[DocItemLabel.LIST_ITEM] = (
-        DocItemLabel.LIST_ITEM  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.LIST_ITEM] = DocItemLabel.LIST_ITEM  # type: ignore[assignment]
     enumerated: bool = False
     marker: str = "-"  # The bullet or number symbol that prefixes this list item
 
@@ -1788,9 +1687,9 @@ class FloatingItem(DocItem):
 
     meta: Optional[FloatingMeta] = None
 
-    captions: List[RefItem] = []
-    references: List[RefItem] = []
-    footnotes: List[RefItem] = []
+    captions: list[RefItem] = []
+    references: list[RefItem] = []
+    footnotes: list[RefItem] = []
     image: Optional[ImageRef] = None
 
     def caption_text(self, doc: "DoclingDocument") -> str:
@@ -1800,9 +1699,7 @@ class FloatingItem(DocItem):
             text += cap.resolve(doc).text
         return text
 
-    def get_image(
-        self, doc: "DoclingDocument", prov_index: int = 0
-    ) -> Optional[PILImage.Image]:
+    def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> Optional[PILImage.Image]:
         """Returns the image corresponding to this FloatingItem.
 
         This function returns the PIL image from self.image if one is available.
@@ -1820,9 +1717,7 @@ class FloatingItem(DocItem):
 class CodeItem(FloatingItem, TextItem):
     """CodeItem."""
 
-    label: typing.Literal[DocItemLabel.CODE] = (
-        DocItemLabel.CODE  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.CODE] = DocItemLabel.CODE  # type: ignore[assignment]
     code_language: CodeLanguageLabel = CodeLanguageLabel.UNKNOWN
 
     @deprecated("Use export_to_doctags() instead.")
@@ -1870,9 +1765,7 @@ class CodeItem(FloatingItem, TextItem):
 class FormulaItem(TextItem):
     """FormulaItem."""
 
-    label: typing.Literal[DocItemLabel.FORMULA] = (
-        DocItemLabel.FORMULA  # type: ignore[assignment]
-    )
+    label: typing.Literal[DocItemLabel.FORMULA] = DocItemLabel.FORMULA  # type: ignore[assignment]
 
 
 class MetaUtils:
@@ -1897,21 +1790,17 @@ class MetaUtils:
         *,
         name: str,
     ) -> str:
-        return cls.create_meta_field_name(
-            namespace=cls._META_FIELD_LEGACY_NAMESPACE, name=name
-        )
+        return cls.create_meta_field_name(namespace=cls._META_FIELD_LEGACY_NAMESPACE, name=name)
 
 
 class PictureItem(FloatingItem):
     """PictureItem."""
 
-    label: typing.Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = (
-        DocItemLabel.PICTURE
-    )
+    label: typing.Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = DocItemLabel.PICTURE
 
     meta: Optional[PictureMeta] = None
     annotations: Annotated[
-        List[PictureDataType],
+        list[PictureDataType],
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
@@ -1933,10 +1822,7 @@ class PictureItem(FloatingItem):
                     if self.meta is None:
                         self.meta = PictureMeta()
 
-                    if (
-                        isinstance(ann, PictureClassificationData)
-                        and self.meta.classification is None
-                    ):
+                    if isinstance(ann, PictureClassificationData) and self.meta.classification is None:
                         self.meta.classification = PictureClassificationMetaField(
                             predictions=[
                                 PictureClassificationPrediction(
@@ -1947,35 +1833,22 @@ class PictureItem(FloatingItem):
                                 for pred in ann.predicted_classes
                             ],
                         )
-                    elif (
-                        isinstance(ann, DescriptionAnnotation)
-                        and self.meta.description is None
-                    ):
+                    elif isinstance(ann, DescriptionAnnotation) and self.meta.description is None:
                         self.meta.description = DescriptionMetaField(
                             text=ann.text,
                             created_by=ann.provenance,
                         )
-                    elif (
-                        isinstance(ann, PictureMoleculeData)
-                        and self.meta.molecule is None
-                    ):
+                    elif isinstance(ann, PictureMoleculeData) and self.meta.molecule is None:
                         self.meta.molecule = MoleculeMetaField(
                             smi=ann.smi,
                             confidence=ann.confidence,
                             created_by=ann.provenance,
                             **{
-                                MetaUtils._create_migrated_meta_field_name(
-                                    name="segmentation"
-                                ): ann.segmentation,
-                                MetaUtils._create_migrated_meta_field_name(
-                                    name="class_name"
-                                ): ann.class_name,
+                                MetaUtils._create_migrated_meta_field_name(name="segmentation"): ann.segmentation,
+                                MetaUtils._create_migrated_meta_field_name(name="class_name"): ann.class_name,
                             },
                         )
-                    elif (
-                        isinstance(ann, PictureTabularChartData)
-                        and self.meta.tabular_chart is None
-                    ):
+                    elif isinstance(ann, PictureTabularChartData) and self.meta.tabular_chart is None:
                         self.meta.tabular_chart = TabularChartMetaField(
                             title=ann.title,
                             chart_data=ann.chart_data,
@@ -1998,11 +1871,7 @@ class PictureItem(FloatingItem):
                         self.meta.set_custom_field(
                             namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
                             name=ann.kind,
-                            value=(
-                                ann.content
-                                if isinstance(ann, MiscAnnotation)
-                                else ann.model_dump(mode="json")
-                            ),
+                            value=(ann.content if isinstance(ann, MiscAnnotation) else ann.model_dump(mode="json")),
                         )
 
             return self
@@ -2013,9 +1882,7 @@ class PictureItem(FloatingItem):
         buffered = BytesIO()
         pil_image.save(buffered, format=format)  # Save the image to the byte stream
         img_bytes = buffered.getvalue()  # Get the byte data
-        img_base64 = base64.b64encode(img_bytes).decode(
-            "utf-8"
-        )  # Encode to Base64 and decode to string
+        img_base64 = base64.b64encode(img_bytes).decode("utf-8")  # Encode to Base64 and decode to string
         return img_base64
 
     @staticmethod
@@ -2154,7 +2021,7 @@ class TableItem(FloatingItem):
     ] = DocItemLabel.TABLE
 
     annotations: Annotated[
-        List[TableAnnotationType],
+        list[TableAnnotationType],
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
     ] = []
 
@@ -2170,15 +2037,11 @@ class TableItem(FloatingItem):
                     "Note that only the first available instance of each annotation type will be migrated."
                 )
                 for ann in self.annotations:
-
                     # ensure meta field is present
                     if self.meta is None:
                         self.meta = FloatingMeta()
 
-                    if (
-                        isinstance(ann, DescriptionAnnotation)
-                        and self.meta.description is None
-                    ):
+                    if isinstance(ann, DescriptionAnnotation) and self.meta.description is None:
                         self.meta.description = DescriptionMetaField(
                             text=ann.text,
                             created_by=ann.provenance,
@@ -2193,23 +2056,15 @@ class TableItem(FloatingItem):
                         self.meta.set_custom_field(
                             namespace=MetaUtils._META_FIELD_LEGACY_NAMESPACE,
                             name=ann.kind,
-                            value=(
-                                ann.content
-                                if isinstance(ann, MiscAnnotation)
-                                else ann.model_dump(mode="json")
-                            ),
+                            value=(ann.content if isinstance(ann, MiscAnnotation) else ann.model_dump(mode="json")),
                         )
 
             return self
 
-    def export_to_dataframe(
-        self, doc: Optional["DoclingDocument"] = None
-    ) -> pd.DataFrame:
+    def export_to_dataframe(self, doc: Optional["DoclingDocument"] = None) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
         if doc is None:
-            _logger.warning(
-                "Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated."
-            )
+            _logger.warning("Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated.")
 
         if self.data.num_rows == 0 or self.data.num_cols == 0:
             return pd.DataFrame()
@@ -2218,9 +2073,7 @@ class TableItem(FloatingItem):
         num_headers = 0
         for i, row in enumerate(self.data.grid):
             if len(row) == 0:
-                raise RuntimeError(
-                    f"Invalid table. {len(row)=} but {self.data.num_cols=}."
-                )
+                raise RuntimeError(f"Invalid table. {len(row)=} but {self.data.num_cols=}.")
 
             any_header = False
             for cell in row:
@@ -2234,7 +2087,7 @@ class TableItem(FloatingItem):
                 break
 
         # Create the column names from all col_headers
-        columns: Optional[List[str]] = None
+        columns: Optional[list[str]] = None
         if num_headers > 0:
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
@@ -2245,15 +2098,12 @@ class TableItem(FloatingItem):
                     columns[j] += col_name
 
         # Create table data
-        table_data = [
-            [cell._get_text(doc=doc) for cell in row]
-            for row in self.data.grid[num_headers:]
-        ]
+        table_data = [[cell._get_text(doc=doc) for cell in row] for row in self.data.grid[num_headers:]]
 
         # Create DataFrame
-        df = pd.DataFrame(table_data, columns=columns)
+        table = pd.DataFrame(table_data, columns=columns)
 
-        return df
+        return table
 
     def export_to_markdown(self, doc: Optional["DoclingDocument"] = None) -> str:
         """Export the table as markdown."""
@@ -2267,15 +2117,13 @@ class TableItem(FloatingItem):
             return text
         else:
             _logger.warning(
-                "Usage of TableItem.export_to_markdown() without `doc` argument is "
-                "deprecated.",
+                "Usage of TableItem.export_to_markdown() without `doc` argument is deprecated.",
             )
 
             table = []
             for row in self.data.grid:
                 tmp = []
                 for col in row:
-
                     # make sure that md tables are not broken
                     # due to newline chars in the text
                     text = col._get_text(doc=doc)
@@ -2312,8 +2160,7 @@ class TableItem(FloatingItem):
             return text
         else:
             _logger.error(
-                "Usage of TableItem.export_to_html() without `doc` argument is "
-                "deprecated.",
+                "Usage of TableItem.export_to_html() without `doc` argument is deprecated.",
             )
             return ""
 
@@ -2360,9 +2207,7 @@ class TableItem(FloatingItem):
         for i in range(nrows):
             for j in range(ncols):
                 cell: TableCell = self.data.grid[i][j]
-                content = cell._get_text(
-                    doc=doc, doc_serializer=doc_serializer, **kwargs
-                ).strip()
+                content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
                 rowspan, rowstart = (
                     cell.row_span,
                     cell.start_row_offset_idx,
@@ -2504,8 +2349,8 @@ class GraphLink(BaseModel):
 class GraphData(BaseModel):
     """GraphData."""
 
-    cells: List[GraphCell] = Field(default_factory=list)
-    links: List[GraphLink] = Field(default_factory=list)
+    cells: list[GraphCell] = Field(default_factory=list)
+    links: list[GraphLink] = Field(default_factory=list)
 
     @field_validator("links")
     @classmethod
@@ -2517,13 +2362,9 @@ class GraphData(BaseModel):
 
         for link in links:
             if link.source_cell_id not in valid_cell_ids:
-                raise ValueError(
-                    f"Invalid source_cell_id {link.source_cell_id} in GraphLink"
-                )
+                raise ValueError(f"Invalid source_cell_id {link.source_cell_id} in GraphLink")
             if link.target_cell_id not in valid_cell_ids:
-                raise ValueError(
-                    f"Invalid target_cell_id {link.target_cell_id} in GraphLink"
-                )
+                raise ValueError(f"Invalid target_cell_id {link.target_cell_id} in GraphLink")
 
         return links
 
@@ -2610,9 +2451,7 @@ class DoclingDocument(BaseModel):
     """DoclingDocument."""
 
     schema_name: typing.Literal["DoclingDocument"] = "DoclingDocument"
-    version: Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)] = (
-        CURRENT_VERSION
-    )
+    version: Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)] = CURRENT_VERSION
     name: str  # The working name of this document, without extensions
     # (could be taken from originating doc, or just "Untitled 1")
     origin: Optional[DocumentOrigin] = (
@@ -2628,16 +2467,14 @@ class DoclingDocument(BaseModel):
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
-    groups: List[Union[ListGroup, InlineGroup, GroupItem]] = []
-    texts: List[
-        Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]
-    ] = []
-    pictures: List[PictureItem] = []
-    tables: List[TableItem] = []
-    key_value_items: List[KeyValueItem] = []
-    form_items: List[FormItem] = []
+    groups: list[Union[ListGroup, InlineGroup, GroupItem]] = []
+    texts: list[Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]] = []
+    pictures: list[PictureItem] = []
+    tables: list[TableItem] = []
+    key_value_items: list[KeyValueItem] = []
+    form_items: list[FormItem] = []
 
-    pages: Dict[int, PageItem] = {}  # empty as default
+    pages: dict[int, PageItem] = {}  # empty as default
 
     @model_validator(mode="before")
     @classmethod
@@ -2659,9 +2496,7 @@ class DoclingDocument(BaseModel):
     # Public Manipulation methods
     # ---------------------------
 
-    def append_child_item(
-        self, *, child: NodeItem, parent: Optional[NodeItem] = None
-    ) -> None:
+    def append_child_item(self, *, child: NodeItem, parent: Optional[NodeItem] = None) -> None:
         """Adds an item."""
         if len(child.children) > 0:
             raise ValueError("Can not append a child with children")
@@ -2671,9 +2506,7 @@ class DoclingDocument(BaseModel):
         success, stack = self._get_stack_of_item(item=parent)
 
         if not success:
-            raise ValueError(
-                f"Could not resolve the parent node in the document tree: {parent}"
-            )
+            raise ValueError(f"Could not resolve the parent node in the document tree: {parent}")
 
         # Append the item to the attributes of the doc
         self._append_item(item=child, parent_ref=parent.get_ref())
@@ -2686,19 +2519,15 @@ class DoclingDocument(BaseModel):
             self._pop_item(item=child)
             raise ValueError(f"Could not append child: {child} to parent: {parent}")
 
-    def insert_item_after_sibling(
-        self, *, new_item: NodeItem, sibling: NodeItem
-    ) -> None:
+    def insert_item_after_sibling(self, *, new_item: NodeItem, sibling: NodeItem) -> None:
         """Inserts an item, given its node_item instance, after other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=True)
 
-    def insert_item_before_sibling(
-        self, *, new_item: NodeItem, sibling: NodeItem
-    ) -> None:
+    def insert_item_before_sibling(self, *, new_item: NodeItem, sibling: NodeItem) -> None:
         """Inserts an item, given its node_item instance, before other as a sibling."""
         self._insert_item_at_refitem(item=new_item, ref=sibling.get_ref(), after=False)
 
-    def delete_items(self, *, node_items: List[NodeItem]) -> None:
+    def delete_items(self, *, node_items: list[NodeItem]) -> None:
         """Deletes an item, given its instance or ref, and any children it has."""
         refs = []
         for _ in node_items:
@@ -2742,16 +2571,12 @@ class DoclingDocument(BaseModel):
 
         return (True, stack)
 
-    def _insert_item_at_refitem(
-        self, item: NodeItem, ref: RefItem, after: bool
-    ) -> RefItem:
+    def _insert_item_at_refitem(self, item: NodeItem, ref: RefItem, after: bool) -> RefItem:
         """Insert node-item using the self-reference."""
         success, stack = self._get_stack_of_refitem(ref=ref)
 
         if not success:
-            raise ValueError(
-                f"Could not insert at {ref.cref}: could not find the stack"
-            )
+            raise ValueError(f"Could not insert at {ref.cref}: could not find the stack")
 
         return self._insert_item_at_stack(item=item, stack=stack, after=after)
 
@@ -2850,17 +2675,13 @@ class DoclingDocument(BaseModel):
         item_label = path[1]
         item_index = int(path[2])
 
-        if (
-            len(self.__getattribute__(item_label)) == item_index + 1
-        ):  # we can only pop the last item
+        if len(self.__getattribute__(item_label)) == item_index + 1:  # we can only pop the last item
             del self.__getattribute__(item_label)[item_index]
         else:
             msg = f"index:{item_index}, len:{len(self.__getattribute__(item_label))}"
             raise ValueError(f"Failed to pop: item is not last ({msg})")
 
-    def _insert_item_at_stack(
-        self, item: NodeItem, stack: list[int], after: bool
-    ) -> RefItem:
+    def _insert_item_at_stack(self, item: NodeItem, stack: list[int], after: bool) -> RefItem:
         """Insert node-item using the self-reference."""
         parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
 
@@ -2869,16 +2690,12 @@ class DoclingDocument(BaseModel):
 
         new_ref = self._append_item(item=item, parent_ref=parent_ref)
 
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
+        success = self.body._add_sibling(doc=self, stack=stack, new_ref=new_ref, after=after)
 
         if not success:
             self._pop_item(item=item)
 
-            raise ValueError(
-                f"Could not insert item: {item} under parent: {parent_ref.resolve(doc=self)}"
-            )
+            raise ValueError(f"Could not insert item: {item} under parent: {parent_ref.resolve(doc=self)}")
 
         return item.get_ref()
 
@@ -2893,7 +2710,7 @@ class DoclingDocument(BaseModel):
         for item, stack in self._iterate_items_with_stack(
             with_groups=True,
             traverse_pictures=True,
-            included_content_layers={c for c in ContentLayer},
+            included_content_layers=set(ContentLayer),
         ):
             ref = item.get_ref()
 
@@ -2906,12 +2723,10 @@ class DoclingDocument(BaseModel):
                     to_be_deleted_items[tuple(stack)] = ref.cref
 
         if len(to_be_deleted_items) < len(refs):
-            raise ValueError(
-                f"Cannot find all provided RefItems in doc: {[r.cref for r in refs]}"
-            )
+            raise ValueError(f"Cannot find all provided RefItems in doc: {[r.cref for r in refs]}")
 
         # Clean the tree, reverse the order to not have to update
-        for stack_, ref_ in reversed(sorted(to_be_deleted_items.items())):
+        for stack_, ref_ in sorted(to_be_deleted_items.items(), reverse=True):
             success = self.body._delete_child(doc=self, stack=list(stack_))
 
             if not success:
@@ -2927,7 +2742,6 @@ class DoclingDocument(BaseModel):
         for stack_, ref_ in to_be_deleted_items.items():
             path = ref_.split("/")
             if len(path) == 3:
-
                 item_label = path[1]
                 item_index = int(path[2])
 
@@ -2938,28 +2752,20 @@ class DoclingDocument(BaseModel):
 
         # Remove the orphans in reverse order
         for item_label, item_inds in lookup.items():
-            for item_index, val in reversed(
-                sorted(item_inds.items())
-            ):  # make sure you delete the last in the list first!
+            for item_index, _ in sorted(item_inds.items(), reverse=True):  # delete the last in the list first!
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
-        self._update_breadth_first_with_lookup(
-            node=self.body, refs_to_be_deleted=refs, lookup=lookup
-        )
+        self._update_breadth_first_with_lookup(node=self.body, refs_to_be_deleted=refs, lookup=lookup)
 
     # Update the references
-    def _update_ref_with_lookup(
-        self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]
-    ) -> RefItem:
+    def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
         """Update ref with lookup."""
         if item_label not in lookup:  # Nothing to be done
             return RefItem(cref=f"#/{item_label}/{item_index}")
 
         # Count how many items have been deleted in front of you
-        delta = sum(
-            val if item_index >= key else 0 for key, val in lookup[item_label].items()
-        )
+        delta = sum(val if item_index >= key else 0 for key, val in lookup[item_label].items())
         new_index = item_index + delta
 
         return RefItem(cref=f"#/{item_label}/{new_index}")
@@ -2973,10 +2779,7 @@ class DoclingDocument(BaseModel):
         """Update refitems with lookup."""
         new_refitems = []
         for ref_item in ref_items:
-
-            if (
-                ref_item not in refs_to_be_deleted
-            ):  # if ref_item is in ref, then delete/skip them
+            if ref_item not in refs_to_be_deleted:  # if ref_item is in ref, then delete/skip them
                 path = ref_item._split_ref_to_path()
                 if len(path) == 3:
                     new_refitems.append(
@@ -3000,11 +2803,7 @@ class DoclingDocument(BaseModel):
         """Update breadth first with lookup."""
         # Update the comments references on any DocItem
         if isinstance(node, DocItem):
-            node.comments = [
-                ref_item
-                for ref_item in node.comments
-                if ref_item not in refs_to_be_deleted
-            ]
+            node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
             for ref_item in node.comments:
                 ref_item._update_with_lookup(lookup=lookup)
 
@@ -3039,17 +2838,13 @@ class DoclingDocument(BaseModel):
         if node.parent is not None:
             path = node.parent._split_ref_to_path()
             if len(path) == 3:
-                node.parent = self._update_ref_with_lookup(
-                    item_label=path[1], item_index=int(path[2]), lookup=lookup
-                )
+                node.parent = self._update_ref_with_lookup(item_label=path[1], item_index=int(path[2]), lookup=lookup)
 
         # Update the parent reference
         if node.self_ref is not None:
             path = node.self_ref.split("/")
             if len(path) == 3:
-                _ref = self._update_ref_with_lookup(
-                    item_label=path[1], item_index=int(path[2]), lookup=lookup
-                )
+                _ref = self._update_ref_with_lookup(item_label=path[1], item_index=int(path[2]), lookup=lookup)
                 node.self_ref = _ref.cref
 
         # Update the child references
@@ -3061,9 +2856,7 @@ class DoclingDocument(BaseModel):
 
         for i, child_ref in enumerate(node.children):
             node = child_ref.resolve(self)
-            self._update_breadth_first_with_lookup(
-                node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup
-            )
+            self._update_breadth_first_with_lookup(node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup)
 
     ###################################
     # TODO: refactor add* methods below
@@ -3312,7 +3105,6 @@ class DoclingDocument(BaseModel):
             )
 
         else:
-
             if not parent:
                 parent = self.body
 
@@ -3347,14 +3139,14 @@ class DoclingDocument(BaseModel):
         text: str,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
-        targets: Optional[List[Union[DocItem, Tuple[DocItem, Tuple[int, int]]]]] = None,
+        targets: Optional[list[Union[DocItem, tuple[DocItem, tuple[int, int]]]]] = None,
     ):
         """Adds a comment to the document, assigning it to the given targets.
 
         :param text: str:
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[NodeItem]:  (Default value = None)
-        :param targets: List[Union[DocItem, Tuple[DocItem, Tuple[int, int]]]]:  (Default value = None) Each list element
+        :param targets: list[Union[DocItem, tuple[DocItem, tuple[int, int]]]]:  (Default value = None) Each list element
             can be either a single DocItem or a tuple of a DocItem and a span range (start_inclusive, end_exclusive).
         """
         item = self.add_text(
@@ -3420,7 +3212,7 @@ class DoclingDocument(BaseModel):
 
     def add_picture(
         self,
-        annotations: Optional[List[PictureDataType]] = None,
+        annotations: Optional[list[PictureDataType]] = None,
         image: Optional[ImageRef] = None,
         caption: Optional[Union[TextItem, RefItem]] = None,
         prov: Optional[ProvenanceItem] = None,
@@ -3429,7 +3221,7 @@ class DoclingDocument(BaseModel):
     ):
         """add_picture.
 
-        :param data: Optional[List[PictureData]]: (Default value = None)
+        :param data: Optional[list[PictureData]]: (Default value = None)
         :param caption: Optional[Union[TextItem:
         :param RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
@@ -3713,9 +3505,7 @@ class DoclingDocument(BaseModel):
     # Node Item Insertion Methods
     # ---------------------------
 
-    def _get_insertion_stack_and_parent(
-        self, sibling: NodeItem
-    ) -> tuple[list[int], RefItem]:
+    def _get_insertion_stack_and_parent(self, sibling: NodeItem) -> tuple[list[int], RefItem]:
         """Get the stack and parent reference for inserting a new item at a sibling."""
         # Get the stack of the sibling
         sibling_ref = sibling.get_ref()
@@ -3723,9 +3513,7 @@ class DoclingDocument(BaseModel):
         success, stack = self._get_stack_of_refitem(ref=sibling_ref)
 
         if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
+            raise ValueError(f"Could not insert at {sibling_ref.cref}: could not find the stack")
 
         # Get the parent RefItem
         parent_ref = self.body._get_parent_ref(doc=self, stack=stack)
@@ -3751,9 +3539,7 @@ class DoclingDocument(BaseModel):
 
         new_ref = item.get_ref()
 
-        success = self.body._add_sibling(
-            doc=self, stack=stack, new_ref=new_ref, after=after
-        )
+        success = self.body._add_sibling(doc=self, stack=stack, new_ref=new_ref, after=after)
 
         # Error handling can be determined here
         if not success:
@@ -3762,9 +3548,7 @@ class DoclingDocument(BaseModel):
             if created_parent:
                 self.delete_items(node_items=[item.parent.resolve(self)])
 
-            raise ValueError(
-                f"Could not insert item: {item} under parent: {item.parent.resolve(doc=self)}"
-            )
+            raise ValueError(f"Could not insert item: {item} under parent: {item.parent.resolve(doc=self)}")
 
     def insert_list_group(
         self,
@@ -3946,9 +3730,7 @@ class DoclingDocument(BaseModel):
         if content_layer:
             list_item.content_layer = content_layer
 
-        self._insert_in_structure(
-            item=list_item, stack=stack, after=after, created_parent=set_parent
-        )
+        self._insert_in_structure(item=list_item, stack=stack, after=after, created_parent=set_parent)
 
         return list_item
 
@@ -4084,7 +3866,7 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param label: DocItemLabel:  (Default value = DocItemLabel.TABLE)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
-        :param annotations: Optional[List[TableAnnotationType]]: (Default value = None)
+        :param annotations: Optional[list[TableAnnotationType]]: (Default value = None)
         :param after: bool:  (Default value = True)
 
         :returns: TableItem: The newly created TableItem item.
@@ -4115,7 +3897,7 @@ class DoclingDocument(BaseModel):
     def insert_picture(
         self,
         sibling: NodeItem,
-        annotations: Optional[List[PictureDataType]] = None,
+        annotations: Optional[list[PictureDataType]] = None,
         image: Optional[ImageRef] = None,
         caption: Optional[Union[TextItem, RefItem]] = None,
         prov: Optional[ProvenanceItem] = None,
@@ -4125,7 +3907,7 @@ class DoclingDocument(BaseModel):
         """Creates a new PictureItem item and inserts it into the document.
 
         :param sibling: NodeItem:
-        :param annotations: Optional[List[PictureDataType]]: (Default value = None)
+        :param annotations: Optional[list[PictureDataType]]: (Default value = None)
         :param image: Optional[ImageRef]:  (Default value = None)
         :param caption: Optional[Union[TextItem, RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
@@ -4443,15 +4225,11 @@ class DoclingDocument(BaseModel):
 
         :returns: None
         """
-        start_parent_ref = (
-            start.parent if start.parent is not None else self.body.get_ref()
-        )
+        start_parent_ref = start.parent if start.parent is not None else self.body.get_ref()
         end_parent_ref = end.parent if end.parent is not None else self.body.get_ref()
 
         if start.parent != end.parent:
-            raise ValueError(
-                "Start and end NodeItems must have the same parent to delete a range."
-            )
+            raise ValueError("Start and end NodeItems must have the same parent to delete a range.")
 
         start_ref = start.get_ref()
         end_ref = end.get_ref()
@@ -4496,24 +4274,18 @@ class DoclingDocument(BaseModel):
         :returns: DoclingDocument: A new document containing the extracted NodeItems and their children
         """
         if not start.parent == end.parent:
-            raise ValueError(
-                "Start and end NodeItems must have the same parent to extract a range."
-            )
+            raise ValueError("Start and end NodeItems must have the same parent to extract a range.")
 
         start_ref = start.get_ref()
         end_ref = end.get_ref()
 
-        start_parent_ref = (
-            start.parent if start.parent is not None else self.body.get_ref()
-        )
+        start_parent_ref = start.parent if start.parent is not None else self.body.get_ref()
         end_parent_ref = end.parent if end.parent is not None else self.body.get_ref()
 
         start_parent = start_parent_ref.resolve(doc=self)
         end_parent = end_parent_ref.resolve(doc=self)
 
-        start_index = start_parent.children.index(start_ref) + (
-            0 if start_inclusive else 1
-        )
+        start_index = start_parent.children.index(start_ref) + (0 if start_inclusive else 1)
         end_index = end_parent.children.index(end_ref) + (1 if end_inclusive else 0)
 
         if start_index > end_index:
@@ -4554,9 +4326,7 @@ class DoclingDocument(BaseModel):
         """
         ref_items = doc.body.children
         node_items = [ref.resolve(doc) for ref in ref_items]
-        self.insert_node_items(
-            sibling=sibling, node_items=node_items, doc=doc, after=after
-        )
+        self.insert_node_items(sibling=sibling, node_items=node_items, doc=doc, after=after)
 
     def add_document(
         self,
@@ -4576,7 +4346,7 @@ class DoclingDocument(BaseModel):
 
     def add_node_items(
         self,
-        node_items: List[NodeItem],
+        node_items: list[NodeItem],
         doc: "DoclingDocument",
         parent: Optional[NodeItem] = None,
     ) -> None:
@@ -4600,9 +4370,7 @@ class DoclingDocument(BaseModel):
 
         parent_ref = parent.get_ref()
 
-        new_refs = self._append_item_copies(
-            node_items=node_items, parent_ref=parent_ref, doc=doc
-        )
+        new_refs = self._append_item_copies(node_items=node_items, parent_ref=parent_ref, doc=doc)
 
         # Add the new item refs in the document structure
 
@@ -4612,7 +4380,7 @@ class DoclingDocument(BaseModel):
     def insert_node_items(
         self,
         sibling: NodeItem,
-        node_items: List[NodeItem],
+        node_items: list[NodeItem],
         doc: "DoclingDocument",
         after: bool = True,
     ) -> None:
@@ -4631,17 +4399,13 @@ class DoclingDocument(BaseModel):
         if not isinstance(parent, ListGroup):
             for item in node_items:
                 if isinstance(item, ListItem):
-                    raise ValueError(
-                        "Cannot insert ListItem into a non-ListGroup parent."
-                    )
+                    raise ValueError("Cannot insert ListItem into a non-ListGroup parent.")
 
         # Append the NodeItems to the document content
 
         parent_ref = parent.get_ref()
 
-        new_refs = self._append_item_copies(
-            node_items=node_items, parent_ref=parent_ref, doc=doc
-        )
+        new_refs = self._append_item_copies(node_items=node_items, parent_ref=parent_ref, doc=doc)
 
         # Get the stack of the sibling
 
@@ -4650,39 +4414,33 @@ class DoclingDocument(BaseModel):
         success, stack = self._get_stack_of_refitem(ref=sibling_ref)
 
         if not success:
-            raise ValueError(
-                f"Could not insert at {sibling_ref.cref}: could not find the stack"
-            )
+            raise ValueError(f"Could not insert at {sibling_ref.cref}: could not find the stack")
 
         # Insert the new item refs in the document structure
 
         reversed_new_refs = new_refs[::-1]
 
         for ref in reversed_new_refs:
-            success = self.body._add_sibling(
-                doc=self, stack=stack, new_ref=ref, after=after
-            )
+            success = self.body._add_sibling(doc=self, stack=stack, new_ref=ref, after=after)
 
             if not success:
-                raise ValueError(
-                    f"Could not insert item {ref.cref} at {sibling.get_ref().cref}"
-                )
+                raise ValueError(f"Could not insert item {ref.cref} at {sibling.get_ref().cref}")
 
     def _append_item_copies(
         self,
-        node_items: List[NodeItem],
+        node_items: list[NodeItem],
         parent_ref: RefItem,
         doc: "DoclingDocument",
-    ) -> List[RefItem]:
+    ) -> list[RefItem]:
         """Append node item copies (with their children) from a different document to the content of this document.
 
-        :param node_items: List[NodeItem]: The NodeItems to be appended
+        :param node_items: list[NodeItem]: The NodeItems to be appended
         :param parent_ref: RefItem: The reference of the parent of the new items in this document
         :param doc: DoclingDocument: The document from which the NodeItems are taken
 
-        :returns: List[RefItem]: A list of references to the newly added items in this document
+        :returns: list[RefItem]: A list of references to the newly added items in this document
         """
-        new_refs: List[RefItem] = []
+        new_refs: list[RefItem] = []
 
         for item in node_items:
             item_copy = item.model_copy(deep=True)
@@ -4717,8 +4475,7 @@ class DoclingDocument(BaseModel):
         if isinstance(root, TableItem):
             for cell in root.data.table_cells:
                 if isinstance(cell, RichTableCell) and (
-                    (par_ref := cell.ref.resolve(self).parent) is None
-                    or par_ref.resolve(self) != root
+                    (par_ref := cell.ref.resolve(self).parent) is None or par_ref.resolve(self) != root
                 ):
                     return False
 
@@ -4732,7 +4489,7 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         _level: int = 0,  # deprecated
-    ) -> typing.Iterable[Tuple[NodeItem, int]]:  # tuple of node and level
+    ) -> typing.Iterable[tuple[NodeItem, int]]:  # tuple of node and level
         """Iterate elements with level."""
         for item, stack in self._iterate_items_with_stack(
             root=root,
@@ -4751,13 +4508,9 @@ class DoclingDocument(BaseModel):
         page_nrs: Optional[set[int]] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         _stack: Optional[list[int]] = None,
-    ) -> typing.Iterable[Tuple[NodeItem, list[int]]]:  # tuple of node and level
+    ) -> typing.Iterable[tuple[NodeItem, list[int]]]:  # tuple of node and level
         """Iterate elements with stack."""
-        my_layers = (
-            included_content_layers
-            if included_content_layers is not None
-            else DEFAULT_CONTENT_LAYERS
-        )
+        my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
         my_stack: list[int] = _stack if _stack is not None else []
 
         if not root:
@@ -4770,10 +4523,7 @@ class DoclingDocument(BaseModel):
             (not isinstance(root, GroupItem) or with_groups)
             and (
                 not isinstance(root, DocItem)
-                or (
-                    page_nrs is None
-                    or any(prov.page_no in page_nrs for prov in root.prov)
-                )
+                or (page_nrs is None or any(prov.page_no in page_nrs for prov in root.prov))
             )
             and root.content_layer in my_layers
         )
@@ -4784,9 +4534,7 @@ class DoclingDocument(BaseModel):
         my_stack.append(-1)
 
         allowed_pic_refs: set[str] = (
-            {r.cref for r in root.captions}
-            if (root_is_picture := isinstance(root, PictureItem))
-            else set()
+            {r.cref for r in root.captions} if (root_is_picture := isinstance(root, PictureItem)) else set()
         )
 
         # Traverse children
@@ -4820,9 +4568,9 @@ class DoclingDocument(BaseModel):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
-    def _list_images_on_disk(self) -> List[Path]:
+    def _list_images_on_disk(self) -> list[Path]:
         """List all images on disk."""
-        result: List[Path] = []
+        result: list[Path] = []
 
         for item, level in self.iterate_items(with_groups=False):
             if isinstance(item, PictureItem):
@@ -4849,12 +4597,8 @@ class DoclingDocument(BaseModel):
 
         for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
             if isinstance(item, PictureItem):
-
                 if item.image is not None:
-                    if (
-                        isinstance(item.image.uri, AnyUrl)
-                        and item.image.uri.scheme == "file"
-                    ):
+                    if isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "file":
                         assert isinstance(item.image.uri.path, str)
                         tmp_image = PILImage.open(str(unquote(item.image.uri.path)))
                         item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
@@ -4886,7 +4630,6 @@ class DoclingDocument(BaseModel):
                 if isinstance(item, PictureItem):
                     img = item.get_image(doc=self)
                     if img is not None:
-
                         hexhash = PictureItem._image_to_hexhash(img)
 
                         # loc_path = image_dir / f"image_{img_count:06}.png"
@@ -4904,9 +4647,7 @@ class DoclingDocument(BaseModel):
 
                             if item.image is None:
                                 scale = img.size[0] / item.prov[0].bbox.width
-                                item.image = ImageRef.from_pil(
-                                    image=img, dpi=round(72 * scale)
-                                )
+                                item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
                             item.image.uri = Path(obj_path)
 
                         # if item.image._pil is not None:
@@ -4922,7 +4663,7 @@ class DoclingDocument(BaseModel):
             self.iterate_items(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers={cl for cl in ContentLayer},
+                included_content_layers=set(ContentLayer),
             )
         ):
             if isinstance(item, GroupItem):
@@ -4933,7 +4674,7 @@ class DoclingDocument(BaseModel):
             elif isinstance(item, TextItem):
                 print(
                     " " * level,
-                    f"{ix}: {item.label.value}: {item.text[:min(len(item.text), 100)]}",
+                    f"{ix}: {item.label.value}: {item.text[: min(len(item.text), 100)]}",
                 )
 
             elif isinstance(item, DocItem):
@@ -4946,18 +4687,13 @@ class DoclingDocument(BaseModel):
             self.iterate_items(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers={cl for cl in ContentLayer},
+                included_content_layers=set(ContentLayer),
             )
         ):
             if isinstance(item, GroupItem):
-                texts.append(
-                    " " * level + f"{ix}: {item.label.value} with name={item.name}"
-                )
+                texts.append(" " * level + f"{ix}: {item.label.value} with name={item.name}")
             elif isinstance(item, TextItem):
-                texts.append(
-                    " " * level
-                    + f"{ix}: {item.label.value}: {item.text[:min(len(item.text), 100)]}"
-                )
+                texts.append(" " * level + f"{ix}: {item.label.value}: {item.text[: min(len(item.text), 100)]}")
             elif isinstance(item, DocItem):
                 texts.append(" " * level + f"{ix}: {item.label.value}")
 
@@ -4980,13 +4716,9 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(
-            artifacts_dir, image_mode, page_no=None, reference_path=reference_path
-        )
+        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
 
-        out = new_doc.export_to_dict(
-            coord_precision=coord_precision, confid_precision=confid_precision
-        )
+        out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         with open(filename, "w", encoding="utf-8") as fw:
             json.dump(out, fw, indent=indent)
 
@@ -5003,7 +4735,7 @@ class DoclingDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
 
     def save_as_yaml(
@@ -5023,13 +4755,9 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(
-            artifacts_dir, image_mode, page_no=None, reference_path=reference_path
-        )
+        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
 
-        out = new_doc.export_to_dict(
-            coord_precision=coord_precision, confid_precision=confid_precision
-        )
+        out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         with open(filename, "w", encoding="utf-8") as fw:
             yaml.dump(out, fw, default_flow_style=default_flow_style)
 
@@ -5056,16 +4784,14 @@ class DoclingDocument(BaseModel):
         exclude_none: bool = True,
         coord_precision: Optional[int] = None,
         confid_precision: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Export to dict."""
         context = {}
         if coord_precision is not None:
             context[PydanticSerCtxKey.COORD_PREC.value] = coord_precision
         if confid_precision is not None:
             context[PydanticSerCtxKey.CONFID_PREC.value] = confid_precision
-        out = self.model_dump(
-            mode=mode, by_alias=by_alias, exclude_none=exclude_none, context=context
-        )
+        out = self.model_dump(mode=mode, by_alias=by_alias, exclude_none=exclude_none, context=context)
 
         return out
 
@@ -5100,9 +4826,7 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(
-            artifacts_dir, image_mode, page_no, reference_path=reference_path
-        )
+        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no, reference_path=reference_path)
 
         md_out = new_doc.export_to_markdown(
             delim=delim,
@@ -5127,7 +4851,7 @@ class DoclingDocument(BaseModel):
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(md_out)
 
-    def export_to_markdown(  # noqa: C901
+    def export_to_markdown(
         self,
         delim: str = "\n\n",
         from_element: int = 0,
@@ -5213,11 +4937,7 @@ class DoclingDocument(BaseModel):
         )
 
         my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
-        my_layers = (
-            included_content_layers
-            if included_content_layers is not None
-            else DEFAULT_CONTENT_LAYERS
-        )
+        my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
 
         if use_legacy_annotations is not None:
             warnings.warn(
@@ -5261,7 +4981,7 @@ class DoclingDocument(BaseModel):
 
         return ser_res.text
 
-    def export_to_text(  # noqa: C901
+    def export_to_text(
         self,
         delim: str = "\n\n",
         from_element: int = 0,
@@ -5306,9 +5026,7 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(
-            artifacts_dir, image_mode, page_no, reference_path=reference_path
-        )
+        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no, reference_path=reference_path)
 
         html_out = new_doc.export_to_html(
             from_element=from_element,
@@ -5329,7 +5047,7 @@ class DoclingDocument(BaseModel):
 
     def _get_output_paths(
         self, filename: Union[str, Path], artifacts_dir: Optional[Path] = None
-    ) -> Tuple[Path, Optional[Path]]:
+    ) -> tuple[Path, Optional[Path]]:
         if isinstance(filename, str):
             filename = Path(filename)
         if artifacts_dir is None:
@@ -5355,16 +5073,14 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.PLACEHOLDER:
             new_doc = self
         elif image_mode == ImageRefMode.REFERENCED:
-            new_doc = self._with_pictures_refs(
-                image_dir=artifacts_dir, page_no=page_no, reference_path=reference_path
-            )
+            new_doc = self._with_pictures_refs(image_dir=artifacts_dir, page_no=page_no, reference_path=reference_path)
         elif image_mode == ImageRefMode.EMBEDDED:
             new_doc = self._with_embedded_pictures()
         else:
             raise ValueError("Unsupported ImageRefMode")
         return new_doc
 
-    def export_to_html(  # noqa: C901
+    def export_to_html(
         self,
         from_element: int = 0,
         to_element: int = sys.maxsize,
@@ -5387,11 +5103,7 @@ class DoclingDocument(BaseModel):
         )
 
         my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
-        my_layers = (
-            included_content_layers
-            if included_content_layers is not None
-            else DEFAULT_CONTENT_LAYERS
-        )
+        my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
 
         output_style = HTMLOutputStyle.SINGLE_COLUMN
         if split_page_view:
@@ -5525,7 +5237,7 @@ class DoclingDocument(BaseModel):
 
         def parse_key_value_item(
             tokens: str, image: Optional[PILImage.Image] = None
-        ) -> Tuple[GraphData, Optional[ProvenanceItem]]:
+        ) -> tuple[GraphData, Optional[ProvenanceItem]]:
             if image is not None:
                 pg_width = image.width
                 pg_height = image.height
@@ -5558,8 +5270,8 @@ class DoclingDocument(BaseModel):
                 re.DOTALL,
             )
 
-            cells: List["GraphCell"] = []
-            links: List["GraphLink"] = []
+            cells: list[GraphCell] = []
+            links: list[GraphLink] = []
             raw_link_predictions = []
 
             for cell_match in cell_pattern.finditer(tokens):
@@ -5792,9 +5504,7 @@ class DoclingDocument(BaseModel):
                             if caption is not None and caption_bbox is not None:
                                 caption.prov.append(
                                     ProvenanceItem(
-                                        bbox=caption_bbox.resize_by_scale(
-                                            pg_width, pg_height
-                                        ),
+                                        bbox=caption_bbox.resize_by_scale(pg_width, pg_height),
                                         charspan=(0, len(caption.text)),
                                         page_no=page_no,
                                     )
@@ -5819,10 +5529,7 @@ class DoclingDocument(BaseModel):
                                     chart_data=table_data,
                                 )
 
-                            if (
-                                pic_classification is not None
-                                or pic_tabular_chart is not None
-                            ):
+                            if pic_classification is not None or pic_tabular_chart is not None:
                                 pic.meta = PictureMeta(
                                     classification=pic_classification,
                                     tabular_chart=pic_tabular_chart,
@@ -5832,17 +5539,13 @@ class DoclingDocument(BaseModel):
                             # In case we don't have access to an binary of an image
                             pic = doc.add_picture(
                                 parent=None,
-                                prov=ProvenanceItem(
-                                    bbox=bbox, charspan=(0, 0), page_no=page_no
-                                ),
+                                prov=ProvenanceItem(bbox=bbox, charspan=(0, 0), page_no=page_no),
                             )
                             # If there is a caption to an image, add it as well
                             if caption is not None and caption_bbox is not None:
                                 caption.prov.append(
                                     ProvenanceItem(
-                                        bbox=caption_bbox.resize_by_scale(
-                                            pg_width, pg_height
-                                        ),
+                                        bbox=caption_bbox.resize_by_scale(pg_width, pg_height),
                                         charspan=(0, len(caption.text)),
                                         page_no=page_no,
                                     )
@@ -5854,23 +5557,17 @@ class DoclingDocument(BaseModel):
                                         provenance="load_from_doctags",
                                         predicted_classes=[
                                             # chart_type
-                                            PictureClassificationClass(
-                                                class_name=chart_type, confidence=1.0
-                                            )
+                                            PictureClassificationClass(class_name=chart_type, confidence=1.0)
                                         ],
                                     )
                                 )
                             if table_data is not None:
                                 # Add chart data as PictureTabularChartData
-                                pd = PictureTabularChartData(
-                                    chart_data=table_data, title=pic_title
-                                )
+                                pd = PictureTabularChartData(chart_data=table_data, title=pic_title)
                                 pic.annotations.append(pd)
 
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
-                    key_value_data, kv_item_prov = parse_key_value_item(
-                        full_chunk, image
-                    )
+                    key_value_data, kv_item_prov = parse_key_value_item(full_chunk, image)
                     doc.add_key_values(graph=key_value_data, prov=kv_item_prov)
                 elif tag_name in [
                     DocumentToken.ORDERED_LIST.value,
@@ -5882,9 +5579,7 @@ class DoclingDocument(BaseModel):
                     if tag_name == DocumentToken.ORDERED_LIST.value:
                         GroupLabel.ORDERED_LIST
 
-                    list_item_pattern = (
-                        rf"<(?P<tag>{DocItemLabel.LIST_ITEM})>.*?</(?P=tag)>"
-                    )
+                    list_item_pattern = rf"<(?P<tag>{DocItemLabel.LIST_ITEM})>.*?</(?P=tag)>"
                     li_pattern = re.compile(list_item_pattern, re.DOTALL)
                     # Add list group:
                     new_list = doc.add_list_group(name="list")
@@ -5977,7 +5672,7 @@ class DoclingDocument(BaseModel):
         r"""Export to DocTags format."""
         return self.export_to_doctags(*args, **kwargs)
 
-    def export_to_doctags(  # noqa: C901
+    def export_to_doctags(
         self,
         delim: str = "",  # deprecated
         from_element: int = 0,
@@ -6037,11 +5732,7 @@ class DoclingDocument(BaseModel):
                 add_table_cell_location=add_table_cell_location,
                 add_table_cell_text=add_table_cell_text,
                 pages=pages,
-                mode=(
-                    DocTagsParams.Mode.MINIFIED
-                    if minified
-                    else DocTagsParams.Mode.HUMAN_FRIENDLY
-                ),
+                mode=(DocTagsParams.Mode.MINIFIED if minified else DocTagsParams.Mode.HUMAN_FRIENDLY),
             ),
         )
         ser_res = serializer.serialize()
@@ -6057,7 +5748,6 @@ class DoclingDocument(BaseModel):
         result = []
 
         def get_text(text: str, max_text_len: int):
-
             middle = " ... "
 
             if max_text_len == -1:
@@ -6072,48 +5762,34 @@ class DoclingDocument(BaseModel):
 
         for i, (item, level) in enumerate(self.iterate_items(with_groups=True)):
             if isinstance(item, GroupItem):
-                result.append(
-                    indent * level
-                    + f"item-{i} at level {level}: {item.label}: group {item.name}"
-                )
+                result.append(indent * level + f"item-{i} at level {level}: {item.label}: group {item.name}")
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.TITLE]:
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
-                result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
-                )
+                result.append(indent * level + f"item-{i} at level {level}: {item.label}: {text}")
 
             elif isinstance(item, SectionHeaderItem):
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
-                result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
-                )
+                result.append(indent * level + f"item-{i} at level {level}: {item.label}: {text}")
 
             elif isinstance(item, TextItem) and item.label in [DocItemLabel.CODE]:
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
-                result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
-                )
+                result.append(indent * level + f"item-{i} at level {level}: {item.label}: {text}")
 
             elif isinstance(item, ListItem) and item.label in [DocItemLabel.LIST_ITEM]:
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
-                result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
-                )
+                result.append(indent * level + f"item-{i} at level {level}: {item.label}: {text}")
 
             elif isinstance(item, TextItem):
                 text = get_text(text=item.text, max_text_len=max_text_len)
 
-                result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}: {text}"
-                )
+                result.append(indent * level + f"item-{i} at level {level}: {item.label}: {text}")
 
             elif isinstance(item, TableItem):
-
                 result.append(
                     indent * level
                     + f"item-{i} at level {level}: {item.label} with "
@@ -6123,9 +5799,7 @@ class DoclingDocument(BaseModel):
                 for _ in item.captions:
                     caption = _.resolve(self)
                     result.append(
-                        indent * (level + 1)
-                        + f"item-{i} at level {level + 1}: {caption.label}: "
-                        + f"{caption.text}"
+                        indent * (level + 1) + f"item-{i} at level {level + 1}: {caption.label}: " + f"{caption.text}"
                     )
 
                 if explicit_tables:
@@ -6134,38 +5808,26 @@ class DoclingDocument(BaseModel):
                         grid.append([])
                         for j, cell in enumerate(row):
                             if j < 10:
-                                text = get_text(
-                                    cell._get_text(doc=self), max_text_len=16
-                                )
+                                text = get_text(cell._get_text(doc=self), max_text_len=16)
                                 grid[-1].append(text)
 
                     result.append("\n" + tabulate(grid) + "\n")
 
             elif isinstance(item, PictureItem):
-
-                result.append(
-                    indent * level + f"item-{i} at level {level}: {item.label}"
-                )
+                result.append(indent * level + f"item-{i} at level {level}: {item.label}")
 
                 for _ in item.captions:
                     caption = _.resolve(self)
                     result.append(
-                        indent * (level + 1)
-                        + f"item-{i} at level {level + 1}: {caption.label}: "
-                        + f"{caption.text}"
+                        indent * (level + 1) + f"item-{i} at level {level + 1}: {caption.label}: " + f"{caption.text}"
                     )
 
             elif isinstance(item, DocItem):
-                result.append(
-                    indent * (level + 1)
-                    + f"item-{i} at level {level}: {item.label}: ignored"
-                )
+                result.append(indent * (level + 1) + f"item-{i} at level {level}: {item.label}: ignored")
 
         return "\n".join(result)
 
-    def add_page(
-        self, page_no: int, size: Size, image: Optional[ImageRef] = None
-    ) -> PageItem:
+    def add_page(self, page_no: int, size: Size, image: Optional[ImageRef] = None) -> PageItem:
         """add_page.
 
         :param page_no: int:
@@ -6251,9 +5913,7 @@ class DoclingDocument(BaseModel):
             or int(doc_match["major"]) != int(sdk_match["major"])
             or int(doc_match["minor"]) > int(sdk_match["minor"])
         ):
-            raise ValueError(
-                f"Doc version {v} incompatible with SDK schema version {CURRENT_VERSION}"
-            )
+            raise ValueError(f"Doc version {v} incompatible with SDK schema version {CURRENT_VERSION}")
         else:
             return CURRENT_VERSION
 
@@ -6263,9 +5923,7 @@ class DoclingDocument(BaseModel):
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            if not self.validate_tree(self.body) or not self.validate_tree(
-                self.furniture
-            ):
+            if not self.validate_tree(self.body) or not self.validate_tree(self.furniture):
                 raise ValueError("Document hierachy is inconsistent.")
 
         return self
@@ -6278,12 +5936,11 @@ class DoclingDocument(BaseModel):
         prev: Optional[NodeItem] = None
         for item, _ in self.iterate_items(
             traverse_pictures=True,
-            included_content_layers={c for c in ContentLayer},
+            included_content_layers=set(ContentLayer),
             with_groups=True,  # so that we can distinguish neighboring lists
         ):
             if isinstance(item, ListItem) and (
-                item.parent is None
-                or not isinstance(item.parent.resolve(doc=self), ListGroup)
+                item.parent is None or not isinstance(item.parent.resolve(doc=self), ListGroup)
             ):
                 if isinstance(prev, ListItem) and (
                     prev.parent is None or prev.parent.resolve(self) == self.body
@@ -6294,7 +5951,6 @@ class DoclingDocument(BaseModel):
             prev = item
 
         for curr_list_items in reversed(misplaced_list_items):
-
             # add group
             new_group = ListGroup(self_ref="#")
             self.insert_item_before_sibling(
@@ -6339,16 +5995,9 @@ class DoclingDocument(BaseModel):
         def get_item_list(self, key: str) -> list[NodeItem]:
             return getattr(self, key)
 
-        def index(
-            self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None
-        ) -> None:
-
-            if page_nrs is not None and (
-                unavailable_page_nrs := page_nrs - set(doc.pages.keys())
-            ):
-                raise ValueError(
-                    f"The following page numbers are not present in the document: {unavailable_page_nrs}"
-                )
+        def index(self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None) -> None:
+            if page_nrs is not None and (unavailable_page_nrs := page_nrs - set(doc.pages.keys())):
+                raise ValueError(f"The following page numbers are not present in the document: {unavailable_page_nrs}")
 
             orig_ref_to_new_ref: dict[str, str] = {}
             page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
@@ -6362,14 +6011,12 @@ class DoclingDocument(BaseModel):
             for item, _ in doc._iterate_items_with_stack(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers={c for c in ContentLayer},
+                included_content_layers=set(ContentLayer),
                 page_nrs=page_nrs,
             ):
                 key = item.self_ref.split("/")[1]
                 is_body = key == "body"
-                new_cref = (
-                    "#/body" if is_body else f"#/{key}/{len(self.get_item_list(key))}"
-                )
+                new_cref = "#/body" if is_body else f"#/{key}/{len(self.get_item_list(key))}"
                 # register cref mapping:
                 orig_ref_to_new_ref[item.self_ref] = new_cref
 
@@ -6393,15 +6040,10 @@ class DoclingDocument(BaseModel):
                         # set item's parent
                         new_parent_cref = orig_ref_to_new_ref.get(item.parent.cref)
                         if new_parent_cref is None:
-
                             parent_ref = item.parent
                             while new_parent_cref is None and parent_ref is not None:
-                                parent_ref = RefItem(
-                                    cref=parent_ref.resolve(doc).parent.cref
-                                )
-                                new_parent_cref = orig_ref_to_new_ref.get(
-                                    parent_ref.cref
-                                )
+                                parent_ref = RefItem(cref=parent_ref.resolve(doc).parent.cref)
+                                new_parent_cref = orig_ref_to_new_ref.get(parent_ref.cref)
 
                             if new_parent_cref is not None:
                                 warnings.warn(
@@ -6409,9 +6051,7 @@ class DoclingDocument(BaseModel):
                                     f"using ancestor {new_parent_cref} instead"
                                 )
                             else:
-                                warnings.warn(
-                                    "No ancestor found in indexed nodes, using body as parent"
-                                )
+                                warnings.warn("No ancestor found in indexed nodes, using body as parent")
                                 new_parent_cref = "#/body"
 
                         new_item.parent = RefItem(cref=new_parent_cref)
@@ -6428,27 +6068,20 @@ class DoclingDocument(BaseModel):
                             if isinstance(parent_item, FloatingItem):
                                 for cap_it, cap in enumerate(parent_item.captions):
                                     if cap.cref == item.self_ref:
-                                        parent_item.captions[cap_it] = RefItem(
-                                            cref=new_cref
-                                        )
+                                        parent_item.captions[cap_it] = RefItem(cref=new_cref)
                                         break
 
                             # update rich table cells references:
                             if isinstance(parent_item, TableItem):
                                 for cell in parent_item.data.table_cells:
-                                    if (
-                                        isinstance(cell, RichTableCell)
-                                        and cell.ref.cref == item.self_ref
-                                    ):
+                                    if isinstance(cell, RichTableCell) and cell.ref.cref == item.self_ref:
                                         cell.ref.cref = new_cref
                                         break
 
                         elif num_components == 2 and path_components[1] == "body":
                             parent_item = self._body
                         else:
-                            raise RuntimeError(
-                                f"Unsupported ref format: {new_parent_cref}"
-                            )
+                            raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
                         parent_item.children.append(RefItem(cref=new_cref))
 
             # update pages
@@ -6504,7 +6137,6 @@ class DoclingDocument(BaseModel):
         return res_doc
 
     def _validate_rules(self, raise_on_error: bool = True):
-
         def _handle(error: Exception):
             if raise_on_error:
                 raise error
@@ -6517,9 +6149,7 @@ class DoclingDocument(BaseModel):
                 has_furniture_children = len(doc.furniture.children) > 0
             if has_furniture_children:
                 _handle(
-                    ValueError(
-                        f"Deprecated furniture node {doc.furniture.self_ref} has children"
-                    ),
+                    ValueError(f"Deprecated furniture node {doc.furniture.self_ref} has children"),
                 )
 
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
@@ -6539,15 +6169,11 @@ class DoclingDocument(BaseModel):
                 )
             elif not isinstance(item.parent.resolve(doc), ListGroup):
                 _handle(
-                    ValueError(
-                        f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"
-                    ),
+                    ValueError(f"ListItem {item.self_ref} has non-ListGroup parent: {item.parent.cref}"),
                 )
 
         def validate_group(doc: DoclingDocument, item: GroupItem):
-            if (
-                item.parent and not item.children
-            ):  # tolerate empty body, but not other groups
+            if item.parent and not item.children:  # tolerate empty body, but not other groups
                 _handle(
                     ValueError(f"Group {item.self_ref} has no children"),
                 )
@@ -6557,7 +6183,7 @@ class DoclingDocument(BaseModel):
         for item, _ in self.iterate_items(
             with_groups=True,
             traverse_pictures=True,
-            included_content_layers={c for c in ContentLayer},
+            included_content_layers=set(ContentLayer),
         ):
             if isinstance(item, ListGroup):
                 validate_list_group(self, item)
@@ -6572,12 +6198,8 @@ class DoclingDocument(BaseModel):
         """Add a table cell to the table."""
         if isinstance(cell, RichTableCell):
             item = cell.ref.resolve(doc=self)
-            if isinstance(item, NodeItem) and (
-                (not item.parent) or item.parent.cref != table_item.self_ref
-            ):
-                raise ValueError(
-                    f"Trying to add cell with another parent {item.parent} to {table_item.self_ref}"
-                )
+            if isinstance(item, NodeItem) and ((not item.parent) or item.parent.cref != table_item.self_ref):
+                raise ValueError(f"Trying to add cell with another parent {item.parent} to {table_item.self_ref}")
         table_item.data.table_cells.append(cell)
 
 

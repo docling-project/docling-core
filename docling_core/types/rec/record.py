@@ -28,25 +28,18 @@ from docling_core.types.rec.subject import Subject
 class RecordDescription(BaseModel, Generic[CollectionNameTypeT]):
     """Additional record metadata, including optional collection-specific fields."""
 
-    logs: list[Log] = Field(
-        description="Logs that describe the ETL tasks applied to this record."
-    )
+    logs: list[Log] = Field(description="Logs that describe the ETL tasks applied to this record.")
     publication_date: Optional[StrictDateTime] = Field(
         default=None,
         title="Publication date",
-        description=(
-            "The date that best represents the last publication time of a record."
-        ),
+        description=("The date that best represents the last publication time of a record."),
     )
     collection: Optional[CollectionRecordInfo[CollectionNameTypeT]] = Field(
         default=None, description="The collection information of this record."
     )
     acquisition: Optional[Acquisition] = Field(
         default=None,
-        description=(
-            "Information on how the document was obtained, for data governance"
-            " purposes."
-        ),
+        description=("Information on how the document was obtained, for data governance purposes."),
     )
 
 

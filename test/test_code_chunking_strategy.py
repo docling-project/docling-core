@@ -49,9 +49,7 @@ def factorial(n):
             format_code_blocks=False,
         ),
     )
-    chunks = list(
-        strategy.chunk_code_item(item=code_item, doc=doc, doc_serializer=doc_ser)
-    )
+    chunks = list(strategy.chunk_code_item(item=code_item, doc=doc, doc_serializer=doc_ser))
 
     assert len(chunks) > 0
     for chunk in chunks:
@@ -77,12 +75,8 @@ def fibonacci(n):
         text="Here's some Python code:",
         orig="Here's some Python code:",
     )
-    doc.add_code(
-        text=python_code, code_language=CodeLanguageLabel.PYTHON, orig=python_code
-    )
-    doc.origin = DocumentOrigin(
-        filename="test.py", mimetype="text/x-python", binary_hash=12345
-    )
+    doc.add_code(text=python_code, code_language=CodeLanguageLabel.PYTHON, orig=python_code)
+    doc.origin = DocumentOrigin(filename="test.py", mimetype="text/x-python", binary_hash=12345)
 
     strategy = StandardCodeChunkingStrategy(min_chunk_size=50, max_tokens=1000)
     chunker_with_strategy = HierarchicalChunker(code_chunking_strategy=strategy)
@@ -114,9 +108,7 @@ def test_hybrid_chunker_with_code_files(test_data_dir):
         pytest.skip("Python test file not found")
 
     doc = DoclingDocument(name="sample.py")
-    doc.origin = DocumentOrigin(
-        filename="sample.py", mimetype="text/x-python", binary_hash=12345
-    )
+    doc.origin = DocumentOrigin(filename="sample.py", mimetype="text/x-python", binary_hash=12345)
 
     with open(python_file, "r", encoding="utf-8") as f:
         content = f.read()
@@ -141,9 +133,7 @@ def test_unsupported_language_fallback(test_data_dir):
     go_file = test_data_dir / "sample.go"
     if go_file.exists():
         doc = DoclingDocument(name="sample.go")
-        doc.origin = DocumentOrigin(
-            filename="sample.go", mimetype="text/plain", binary_hash=12345
-        )
+        doc.origin = DocumentOrigin(filename="sample.go", mimetype="text/plain", binary_hash=12345)
 
         with open(go_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -162,9 +152,7 @@ def test_unsupported_language_fallback(test_data_dir):
     md_file = test_data_dir / "sample.md"
     if md_file.exists():
         doc = DoclingDocument(name="sample.md")
-        doc.origin = DocumentOrigin(
-            filename="sample.md", mimetype="text/plain", binary_hash=12345
-        )
+        doc.origin = DocumentOrigin(filename="sample.md", mimetype="text/plain", binary_hash=12345)
 
         with open(md_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -191,9 +179,7 @@ def test_repository_processing(test_data_dir):
     all_chunks = []
     for file_path in test_data_dir.glob("sample.*"):
         doc = DoclingDocument(name=file_path.name)
-        doc.origin = DocumentOrigin(
-            filename=file_path.name, mimetype="text/plain", binary_hash=12345
-        )
+        doc.origin = DocumentOrigin(filename=file_path.name, mimetype="text/plain", binary_hash=12345)
 
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()

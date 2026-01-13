@@ -49,7 +49,7 @@ def update_tokenizer(tokenizer: PreTrainedTokenizerBase, verbose: bool = False) 
         print(f"New vocab size: {tokenizer.vocab_size}")
     return tokenizer
 
-def run_dump(cfg: Dict[str, Any]) -> int:
+def run_dump(cfg: dict[str, Any]) -> int:
     """Dump/serialize documents from a dataset to IDocTags strings/files and export a per-row report.
 
     Config keys (with defaults):
@@ -416,7 +416,7 @@ def run_dump(cfg: Dict[str, Any]) -> int:
     return 0 if not errors else 1
 
 
-def run_analyse(cfg: Dict[str, Any]) -> int:
+def run_analyse(cfg: dict[str, Any]) -> int:
     """Analyse token lengths and special-token usage from IDocTags files.
 
     Config keys (with defaults):
@@ -609,7 +609,7 @@ def plot_token_scatter_with_regression(
     plt.tight_layout()
     plt.show()
 
-def default_config(mode: str) -> Dict[str, Any]:
+def default_config(mode: str) -> dict[str, Any]:
     if mode == "dump":
         return {
             "dataset_name": "docling-project/doclaynet-set-a",
@@ -666,7 +666,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     cfg_path: Optional[Path] = args.config
-    cfg: Dict[str, Any]
+    cfg: dict[str, Any]
 
     if cfg_path is None:
         cfg = default_config(args.mode)

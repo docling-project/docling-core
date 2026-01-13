@@ -5,9 +5,10 @@ import re
 import sys
 import warnings
 from abc import abstractmethod
+from collections.abc import Iterable
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Iterable, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from pydantic import (
     AnyUrl,
@@ -59,7 +60,7 @@ from docling_core.types.doc.document import (
 from docling_core.types.doc.labels import DocItemLabel
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
-_DEFAULT_LAYERS = {cl for cl in ContentLayer}
+_DEFAULT_LAYERS = set(ContentLayer)
 
 
 _logger = logging.getLogger(__name__)
@@ -85,7 +86,7 @@ def _iterate_items(
     traverse_pictures: bool = False,
     add_page_breaks: bool = False,
     visited: Optional[set[str]] = None,
-) -> Iterable[Tuple[NodeItem, int]]:
+) -> Iterable[tuple[NodeItem, int]]:
     my_visited: set[str] = visited if visited is not None else set()
     prev_page_nr: Optional[int] = None
     page_break_i = 0
@@ -96,10 +97,7 @@ def _iterate_items(
         traverse_pictures=traverse_pictures,
     ):
         if add_page_breaks:
-            if (
-                isinstance(item, (ListGroup, InlineGroup))
-                and item.self_ref not in my_visited
-            ):
+            if isinstance(item, (ListGroup, InlineGroup)) and item.self_ref not in my_visited:
                 # if group starts with new page, yield page break before group node
                 my_visited.add(item.self_ref)
                 for it, _ in _iterate_items(
@@ -113,21 +111,27 @@ def _iterate_items(
                     if isinstance(it, DocItem) and it.prov:
                         page_no = it.prov[0].page_no
                         if prev_page_nr is not None and page_no > prev_page_nr:
-                            yield _PageBreakNode(
-                                self_ref=f"#/pb/{page_break_i}",
-                                prev_page=prev_page_nr,
-                                next_page=page_no,
-                            ), lvl
+                            yield (
+                                _PageBreakNode(
+                                    self_ref=f"#/pb/{page_break_i}",
+                                    prev_page=prev_page_nr,
+                                    next_page=page_no,
+                                ),
+                                lvl,
+                            )
                         break
             elif isinstance(item, DocItem) and item.prov:
                 page_no = item.prov[0].page_no
                 if prev_page_nr is None or page_no > prev_page_nr:
                     if prev_page_nr is not None:  # close previous range
-                        yield _PageBreakNode(
-                            self_ref=f"#/pb/{page_break_i}",
-                            prev_page=prev_page_nr,
-                            next_page=page_no,
-                        ), lvl
+                        yield (
+                            _PageBreakNode(
+                                self_ref=f"#/pb/{page_break_i}",
+                                prev_page=prev_page_nr,
+                                next_page=page_no,
+                            ),
+                            lvl,
+                        )
                         page_break_i += 1
                     prev_page_nr = page_no
         yield item, lvl
@@ -138,11 +142,7 @@ def _get_annotation_text(
 ) -> Optional[str]:
     result = None
     if isinstance(annotation, PictureClassificationData):
-        predicted_class = (
-            annotation.predicted_classes[0].class_name
-            if annotation.predicted_classes
-            else None
-        )
+        predicted_class = annotation.predicted_classes[0].class_name if annotation.predicted_classes else None
         if predicted_class is not None:
             result = predicted_class.replace("_", " ")
     elif isinstance(annotation, DescriptionAnnotation):
@@ -249,7 +249,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @computed_field  # type: ignore[misc]
     @cached_property
     def _captions_of_some_item(self) -> set[str]:
-        layers = {cl for cl in ContentLayer}  # TODO review
+        layers = set(ContentLayer)  # TODO review
         refs = {
             cap.cref
             for (item, _) in self.doc.iterate_items(
@@ -264,7 +264,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @computed_field  # type: ignore[misc]
     @cached_property
     def _footnotes_of_some_item(self) -> set[str]:
-        layers = {cl for cl in ContentLayer}  # TODO review
+        layers = set(ContentLayer)  # TODO review
         refs = {
             ftn.cref
             for (item, _) in self.doc.iterate_items(
@@ -301,10 +301,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                             or item.content_layer not in params.layers
                             or (
                                 params.pages is not None
-                                and (
-                                    (not item.prov)
-                                    or item.prov[0].page_no not in params.pages
-                                )
+                                and ((not item.prov) or item.prov[0].page_no not in params.pages)
                             )
                         )
                     )
@@ -468,9 +465,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 )
             parts.append(part)
 
-        return create_ser_result(
-            text=delim.join([p.text for p in parts if p.text]), span_source=parts
-        )
+        return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
 
     # making some assumptions about the kwargs it can pass
     @override
@@ -645,13 +640,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     **(self.params.model_dump() | kwargs),
                 )
             else:
-                return create_ser_result(
-                    text="", span_source=item if isinstance(item, DocItem) else []
-                )
+                return create_ser_result(text="", span_source=item if isinstance(item, DocItem) else [])
         else:
-            return create_ser_result(
-                text="", span_source=item if isinstance(item, DocItem) else []
-            )
+            return create_ser_result(text="", span_source=item if isinstance(item, DocItem) else [])
 
     # TODO deprecate
     @override
@@ -680,20 +671,17 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             if (
                 isinstance(item, DocItem)
                 and item.prov
-                and (
-                    self.params.pages is None
-                    or item.prov[0].page_no in self.params.pages
-                )
+                and (self.params.pages is None or item.prov[0].page_no in self.params.pages)
                 and ix >= self.params.start_idx
                 and ix < self.params.stop_idx
             )
         }
-        return [p for p in pages] or None
+        return list(pages) or None
 
     def _create_page_break(self, node: _PageBreakNode) -> str:
         return f"#_#_DOCLING_DOC_PAGE_BREAK_{node.prev_page}_{node.next_page}_#_#"
 
-    def _get_page_breaks(self, text: str) -> Iterable[Tuple[str, int, int]]:
+    def _get_page_breaks(self, text: str) -> Iterable[tuple[str, int, int]]:
         pattern = r"#_#_DOCLING_DOC_PAGE_BREAK_(\d+)_(\d+)_#_#"
         matches = re.finditer(pattern, text)
         for match in matches:
@@ -713,17 +701,9 @@ def _should_use_legacy_annotations(
         return False
     with warnings.catch_warnings(record=True) as caught_warnings:
         warnings.simplefilter("ignore", DeprecationWarning)
-        if (
-            incl_attr := getattr(params, "include_annotations", None)
-        ) is not None and not incl_attr:
+        if (incl_attr := getattr(params, "include_annotations", None)) is not None and not incl_attr:
             return False
-        use_legacy = bool(
-            [
-                ann
-                for ann in item.annotations
-                if ((ann.kind == kind) if kind is not None else True)
-            ]
-        )
+        use_legacy = bool([ann for ann in item.annotations if ((ann.kind == kind) if kind is not None else True)])
         if use_legacy:
             for w in caught_warnings:
                 warnings.warn(w.message, w.category)
