@@ -160,8 +160,6 @@ select = [
 
 ignore = [
   "C408",   # Unnecessary `dict()` call (rewrite as a literal)
-  "C413",   # Unnecessary `reversed()` call around `sorted()`
-  "C416",   # Unnecessary set comprehension (rewrite using `set()`)
   "E501",   # Line too long, handled by ruff formatter
   "E203",   # whitespace-before-punctuation
   "E741",   # Ambiguous variable name: `l`

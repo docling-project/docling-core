@@ -40,7 +40,7 @@ class LayoutVisualizer(BaseVisualizer):
         """Layout visualization parameters."""
 
         show_label: bool = True
-        content_layers: set[ContentLayer] = {cl for cl in ContentLayer}
+        content_layers: set[ContentLayer] = set(ContentLayer)
 
     base_visualizer: Optional[BaseVisualizer] = None
     params: Params = Params()
@@ -131,7 +131,7 @@ class LayoutVisualizer(BaseVisualizer):
             my_images = images
 
         if included_content_layers is None:
-            included_content_layers = {c for c in ContentLayer}
+            included_content_layers = set(ContentLayer)
 
         # Initialise `my_images` beforehand: sometimes, you have the
         # page-images but no DocItems!

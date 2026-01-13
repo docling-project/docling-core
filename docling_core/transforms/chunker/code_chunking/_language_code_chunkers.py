@@ -1036,7 +1036,7 @@ class _PythonFunctionChunker(_CodeChunker):
         imports = {}
 
         if import_query_results:
-            nodes = [node for node in import_query_results["import"]]
+            nodes = list(import_query_results["import"])
             nodes.sort(key=lambda node: node.start_point)
             for node in nodes:
                 import_names = []

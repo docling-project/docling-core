@@ -60,7 +60,7 @@ from docling_core.types.doc.document import (
 from docling_core.types.doc.labels import DocItemLabel
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
-_DEFAULT_LAYERS = {cl for cl in ContentLayer}
+_DEFAULT_LAYERS = set(ContentLayer)
 
 
 _logger = logging.getLogger(__name__)
@@ -249,7 +249,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @computed_field  # type: ignore[misc]
     @cached_property
     def _captions_of_some_item(self) -> set[str]:
-        layers = {cl for cl in ContentLayer}  # TODO review
+        layers = set(ContentLayer)  # TODO review
         refs = {
             cap.cref
             for (item, _) in self.doc.iterate_items(
@@ -264,7 +264,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @computed_field  # type: ignore[misc]
     @cached_property
     def _footnotes_of_some_item(self) -> set[str]:
-        layers = {cl for cl in ContentLayer}  # TODO review
+        layers = set(ContentLayer)  # TODO review
         refs = {
             ftn.cref
             for (item, _) in self.doc.iterate_items(
@@ -676,7 +676,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 and ix < self.params.stop_idx
             )
         }
-        return [p for p in pages] or None
+        return list(pages) or None
 
     def _create_page_break(self, node: _PageBreakNode) -> str:
         return f"#_#_DOCLING_DOC_PAGE_BREAK_{node.prev_page}_{node.next_page}_#_#"

@@ -230,7 +230,7 @@ class JsonSchemaToSearchMapper:
 
         def __collapse(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__collapse(v) for v in d_)]
+                return [__collapse(v) for v in d_]
 
             if isinstance(d_, dict):
                 if "type" in d_ and d_["type"] == "array" and "items" in d_:
@@ -264,13 +264,13 @@ class JsonSchemaToSearchMapper:
 
         def __suppress(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__suppress(v) for v in d_)]
+                return [__suppress(v) for v in d_]
 
             if isinstance(d_, dict):
                 if suppress_key in d_ and d_[suppress_key] is True:
                     return {}
                 else:
-                    return {k: v for k, v in ((k, __suppress(v)) for k, v in d_.items())}
+                    return {k: __suppress(v) for k, v in d_.items()}
             return d_
 
         return __suppress(doc)
@@ -289,7 +289,7 @@ class JsonSchemaToSearchMapper:
 
         def __remove(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__remove(v) for v in d_)]
+                return [__remove(v) for v in d_]
 
             if isinstance(d_, dict):
                 result = {}
@@ -321,10 +321,10 @@ class JsonSchemaToSearchMapper:
 
         def __remove(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__remove(v) for v in d_)]
+                return [__remove(v) for v in d_]
 
             if isinstance(d_, dict):
-                return {k: v for k, v in ((k, __remove(v)) for k, v in d_.items() if not regx.match(k))}
+                return {k: __remove(v) for k, v in d_.items() if not regx.match(k)}
 
             return d_
 
@@ -345,7 +345,7 @@ class JsonSchemaToSearchMapper:
 
         def __translate(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__translate(v) for v in d_)]
+                return [__translate(v) for v in d_]
 
             if isinstance(d_, dict):
                 new_dict = {}

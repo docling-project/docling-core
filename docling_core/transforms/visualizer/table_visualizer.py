@@ -152,7 +152,7 @@ class TableVisualizer(BaseVisualizer):
             my_images = images
 
         if included_content_layers is None:
-            included_content_layers = {c for c in ContentLayer}
+            included_content_layers = set(ContentLayer)
 
         # Initialise `my_images` beforehand: sometimes, you have the
         # page-images but no DocItems!

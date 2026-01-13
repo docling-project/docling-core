@@ -1186,7 +1186,7 @@ class _ExtraAllowingModel(BaseModel):
 
     def _copy_without_extra(self) -> Self:
         """Create a copy without the extra fields."""
-        return self.model_validate(self.model_dump(exclude={ex for ex in self.get_custom_part()}))
+        return self.model_validate(self.model_dump(exclude=set(self.get_custom_part())))
 
     def _check_custom_field_format(self, key: str) -> None:
         parts = key.split(MetaUtils._META_FIELD_NAMESPACE_DELIMITER, maxsplit=1)
@@ -2710,7 +2710,7 @@ class DoclingDocument(BaseModel):
         for item, stack in self._iterate_items_with_stack(
             with_groups=True,
             traverse_pictures=True,
-            included_content_layers={c for c in ContentLayer},
+            included_content_layers=set(ContentLayer),
         ):
             ref = item.get_ref()
 
@@ -2726,7 +2726,7 @@ class DoclingDocument(BaseModel):
             raise ValueError(f"Cannot find all provided RefItems in doc: {[r.cref for r in refs]}")
 
         # Clean the tree, reverse the order to not have to update
-        for stack_, ref_ in reversed(sorted(to_be_deleted_items.items())):
+        for stack_, ref_ in sorted(to_be_deleted_items.items(), reverse=True):
             success = self.body._delete_child(doc=self, stack=list(stack_))
 
             if not success:
@@ -2752,9 +2752,7 @@ class DoclingDocument(BaseModel):
 
         # Remove the orphans in reverse order
         for item_label, item_inds in lookup.items():
-            for item_index, val in reversed(
-                sorted(item_inds.items())
-            ):  # make sure you delete the last in the list first!
+            for item_index, _ in sorted(item_inds.items(), reverse=True):  # delete the last in the list first!
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
@@ -4665,7 +4663,7 @@ class DoclingDocument(BaseModel):
             self.iterate_items(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers={cl for cl in ContentLayer},
+                included_content_layers=set(ContentLayer),
             )
         ):
             if isinstance(item, GroupItem):
@@ -4689,7 +4687,7 @@ class DoclingDocument(BaseModel):
             self.iterate_items(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers={cl for cl in ContentLayer},
+                included_content_layers=set(ContentLayer),
             )
         ):
             if isinstance(item, GroupItem):
@@ -5938,7 +5936,7 @@ class DoclingDocument(BaseModel):
         prev: Optional[NodeItem] = None
         for item, _ in self.iterate_items(
             traverse_pictures=True,
-            included_content_layers={c for c in ContentLayer},
+            included_content_layers=set(ContentLayer),
             with_groups=True,  # so that we can distinguish neighboring lists
         ):
             if isinstance(item, ListItem) and (
@@ -6013,7 +6011,7 @@ class DoclingDocument(BaseModel):
             for item, _ in doc._iterate_items_with_stack(
                 with_groups=True,
                 traverse_pictures=True,
-                included_content_layers={c for c in ContentLayer},
+                included_content_layers=set(ContentLayer),
                 page_nrs=page_nrs,
             ):
                 key = item.self_ref.split("/")[1]
@@ -6185,7 +6183,7 @@ class DoclingDocument(BaseModel):
         for item, _ in self.iterate_items(
             with_groups=True,
             traverse_pictures=True,
-            included_content_layers={c for c in ContentLayer},
+            included_content_layers=set(ContentLayer),
         ):
             if isinstance(item, ListGroup):
                 validate_list_group(self, item)

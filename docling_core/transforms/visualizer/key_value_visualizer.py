@@ -40,7 +40,7 @@ class KeyValueVisualizer(BaseVisualizer):
 
         show_label: bool = True  # draw cell text close to bbox
         show_cell_id: bool = False  # annotate each rectangle with its cell_id
-        content_layers: set[ContentLayer] = {cl for cl in ContentLayer}
+        content_layers: set[ContentLayer] = set(ContentLayer)
 
     base_visualizer: Optional[BaseVisualizer] = None
     params: Params = Params()
@@ -180,7 +180,7 @@ class KeyValueVisualizer(BaseVisualizer):
         )
 
         if included_content_layers is None:
-            included_content_layers = {cl for cl in ContentLayer}
+            included_content_layers = set(ContentLayer)
 
         images: dict[Optional[int], Image] = {}
 
