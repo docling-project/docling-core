@@ -1,11 +1,13 @@
 """Unit tests for IDocTags create_closing_token helper."""
 
 from pathlib import Path
+from test.conftest import _construct_doc_impl
 from test.test_serialization import verify
 
 import pytest
 
 from docling_core.experimental.idoctags import (
+    ContentType,
     EscapeMode,
     IDocTagsDocSerializer,
     IDocTagsParams,
@@ -19,12 +21,17 @@ from docling_core.types.doc import (
     Script,
     TableData,
 )
+from docling_core.types.doc.base import BoundingBox, CoordOrigin, Size
 from docling_core.types.doc.document import (
     DescriptionMetaField,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
     PictureMeta,
+    ProvenanceItem,
     SummaryMetaField,
+    TabularChartMetaField,
 )
-from docling_core.types.doc.labels import CodeLanguageLabel
+from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 
 # ===============================
 # IDocTags unit-tests
@@ -92,40 +99,6 @@ def serialize_idoctags(doc: DoclingDocument, **param_overrides) -> str:
     return ser.serialize().text
 
 
-def test_no_content_suppresses_caption_and_table_cell_text():
-    doc = DoclingDocument(name="t")
-
-    # Add a caption text item
-    cap = doc.add_text(label=DocItemLabel.CAPTION, text="Table Caption Text")
-
-    # Build a 2x2 table with header row and data row
-    td = TableData(num_rows=0, num_cols=2)
-    td.add_row(["H1", "H2"])  # header
-    td.add_row(["C1", "C2"])  # data
-    doc.add_table(data=td, caption=cap)
-
-    txt = serialize_idoctags(doc, add_content=False)
-
-    # Caption text suppressed
-    assert "Table Caption Text" not in txt
-
-    # No table cell text
-    for cell_text in ["H1", "H2", "C1", "C2"]:
-        assert cell_text not in txt
-
-    # OTSL structural tokens should remain
-    assert "<otsl>" in txt and "</otsl>" in txt
-
-
-def test_no_content_suppresses_figure_caption_text():
-    doc = DoclingDocument(name="t")
-    cap = doc.add_text(label=DocItemLabel.CAPTION, text="Figure Caption Text")
-    doc.add_picture(caption=cap)
-
-    txt = serialize_idoctags(doc, add_content=False)
-    assert "Figure Caption Text" not in txt
-
-
 def test_list_items_not_double_wrapped_when_no_content():
     doc = DoclingDocument(name="t")
     lst = doc.add_list_group()
@@ -150,37 +123,37 @@ def test_idoctags():
     src = Path("./test/data/doc/ddoc_0.json")
     doc = DoclingDocument.load_from_json(src)
 
-    if True:
-        # Human readable, indented and with content
-        params = IDocTagsParams()
-        params.add_content = True
+    # Human readable, indented and with content
+    params = IDocTagsParams()
 
-        ser = IDocTagsDocSerializer(doc=doc, params=params)
-        actual = ser.serialize().text
+    ser = IDocTagsDocSerializer(doc=doc, params=params)
+    actual = ser.serialize().text
 
-        verify(exp_file=src.with_suffix(".v0.gt.idt"), actual=actual)
+    verify(exp_file=src.with_suffix(".v0.gt.idt"), actual=actual)
 
-    if True:
-        # Human readable, indented but without content
-        params = IDocTagsParams()
-        params.add_content = False
+    # Human readable, indented but without content
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            content_types={ContentType.TABLE},
+        ),
+    )
+    actual = ser.serialize().text
 
-        ser = IDocTagsDocSerializer(doc=doc, params=params)
-        actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".v1.gt.idt"), actual=actual)
 
-        verify(exp_file=src.with_suffix(".v1.gt.idt"), actual=actual)
+    # Machine readable, not indented and without content
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            pretty_indentation="",
+            content_types={ContentType.TABLE},
+            mode=IDocTagsSerializationMode.LLM_FRIENDLY,
+        ),
+    )
+    actual = ser.serialize().text
 
-    if True:
-        # Machine readable, not indented and without content
-        params = IDocTagsParams()
-        params.pretty_indentation = ""
-        params.add_content = False
-        params.mode = IDocTagsSerializationMode.LLM_FRIENDLY
-
-        ser = IDocTagsDocSerializer(doc=doc, params=params)
-        actual = ser.serialize().text
-
-        verify(exp_file=src.with_suffix(".v2.gt.idt"), actual=actual)
+    verify(exp_file=src.with_suffix(".v2.gt.idt"), actual=actual)
 
 
 def test_idoctags_meta():
@@ -322,3 +295,72 @@ def test_formatting_disabled():
     assert "<bold>" not in result
     assert "<italic>" not in result
     assert "Plain text" in result
+
+
+def test_content():
+    doc = _construct_doc_impl().model_copy(deep=True)
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    pic = doc.add_picture(
+        caption=doc.add_text(label=DocItemLabel.CAPTION, text="Picture Caption")
+    )
+    pic.prov = [prov]
+    pic.meta = PictureMeta(
+        summary=SummaryMetaField(text="Picture Summary"),
+        description=DescriptionMetaField(text="Picture Description"),
+    )
+
+    chart = doc.add_picture(
+        caption=doc.add_text(label=DocItemLabel.CAPTION, text="Picture Caption")
+    )
+    chart.prov = [prov]
+    chart.meta = PictureMeta(
+        summary=SummaryMetaField(text="Picture Summary"),
+        description=DescriptionMetaField(text="Picture Description"),
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    class_name=PictureClassificationLabel.PIE_CHART.value,
+                    confidence=1.0,
+                )
+            ]
+        ),
+    )
+    chart_data = TableData(num_cols=2)
+    chart_data.add_row(["Foo", "Bar"])
+    chart_data.add_row(["One", "Two"])
+    chart.meta.tabular_chart = TabularChartMetaField(
+        title="Chart Title",
+        chart_data=chart_data,
+    )
+    doc.add_code(text="0 == 0")
+    doc.add_code(text="with location", prov=prov)
+
+    serializer = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            # cross-type:
+            # add_location=False,
+            # special content filtering:
+            add_referenced_caption=False,
+            # type-specific content filtering:
+            # add_text_content=False,
+            # add_code_content=False,
+            # add_table_content=False,
+            # add_table_cell_content=False,
+            # add_picture_content=False,
+            # add_formula_content=False,
+            # add_chart_content=False,
+        ),
+    )
+    ser_txt = serializer.serialize().text
+
+    exp_file = Path("./test/data/doc/content.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+# test_content()
