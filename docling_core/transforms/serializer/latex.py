@@ -220,7 +220,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
                 )
-            text_part = text if is_inline_scope else text
+            text_part = text
 
         if text_part:
             parts.append(create_ser_result(text=text_part, span_source=item))

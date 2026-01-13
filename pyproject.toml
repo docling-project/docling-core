@@ -175,7 +175,6 @@ ignore = [
   "RUF003", # Comment contains ambiguous `‑` (NON-BREAKING HYPHEN).
   "RUF005", # Consider ... instead of concatenation
   "RUF012", # Mutable Class Attributes
-  "RUF034", # Useless `if`-`else` condition
   "UP007",  # Option and Union
   "UP045",  # Use `X | None` for type annotations
 ]

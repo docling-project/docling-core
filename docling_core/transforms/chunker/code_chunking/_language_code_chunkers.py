@@ -1432,10 +1432,7 @@ class _JavaFunctionChunker(_CodeChunker):
             function_node = function_node.parent
         with_doc = "".join(context).rstrip()
         without_doc = "".join(context_no_doc).rstrip()
-        return (
-            with_doc + ("" if with_doc else ""),
-            without_doc + ("" if without_doc else ""),
-        )
+        return (with_doc, without_doc)
 
     def _build_java_object_context(self, obj_node: Node, root_node: Node) -> tuple[str, str]:
         """Build context for Java objects (classes, enums, interfaces)."""
