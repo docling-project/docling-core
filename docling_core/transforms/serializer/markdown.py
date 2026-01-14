@@ -102,6 +102,7 @@ class MarkdownParams(CommonParams):
     )
     orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
+    disable_table_numparse: bool = False
     format_code_blocks: bool = Field(
         default=True,
         description="Whether to wrap code items in markdown code block formatting (```). ",
@@ -388,15 +389,12 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 for row in item.data.grid
             ]
             if len(rows) > 0:
-                try:
-                    table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")
-                except ValueError:
-                    table_text = tabulate(
-                        rows[1:],
-                        headers=rows[0],
-                        tablefmt="github",
-                        disable_numparse=True,
-                    )
+                table_text = tabulate(
+                    rows[1:],
+                    headers=rows[0],
+                    tablefmt="github",
+                    disable_numparse=params.disable_table_numparse,
+                )
             else:
                 table_text = ""
             if table_text:

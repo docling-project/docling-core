@@ -4875,6 +4875,7 @@ class DoclingDocument(BaseModel):
         allowed_meta_names: Optional[set[str]] = None,
         blocked_meta_names: Optional[set[str]] = None,
         mark_meta: bool = False,
+        disable_table_numparse: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4966,6 +4967,7 @@ class DoclingDocument(BaseModel):
                 allowed_meta_names=allowed_meta_names,
                 blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
+                disable_table_numparse=disable_table_numparse,
             ),
         )
         ser_res = serializer.serialize()
