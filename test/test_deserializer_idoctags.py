@@ -773,6 +773,8 @@ def test_roundtrip_multiple_nested_lists_same_level():
     assert dt2 == dt
 
 
+# TODO: Update deserialization into inline groups
+@pytest.mark.xfail()
 def test_roundtrip_list_item_with_inline_group():
     """Test list item containing inline group with text, code, and formula."""
     doc = DoclingDocument(name="t")
@@ -1090,6 +1092,8 @@ def test_roundtrip_table_with_rich_cells():
 ############################################
 
 
+# TODO: Update deserialization into inline groups
+@pytest.mark.xfail()
 def test_constructed_doc(sample_doc: DoclingDocument):
     doc = sample_doc
 

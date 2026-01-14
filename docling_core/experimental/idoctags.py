@@ -1129,6 +1129,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         item: "TextItem",
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
@@ -1171,6 +1172,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                     doc_serializer=doc_serializer,
                     doc=doc,
                     visited=visited,
+                    is_inline_scope=is_inline_scope,
                     **kwargs,
                 )
                 res.append(tres)
@@ -1184,6 +1186,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 doc_serializer=doc_serializer,
                 doc=doc,
                 visited=visited,
+                is_inline_scope=is_inline_scope,
                 **kwargs,
             )
 
@@ -1193,6 +1196,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         item: "TextItem",
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
@@ -1317,7 +1321,9 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(ftn_text)
 
         text_res = "".join(parts)
-        if wrap_open_token is not None:
+        if wrap_open_token is not None and not (
+            is_inline_scope and item.label == DocItemLabel.TEXT
+        ):
             text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
         return create_ser_result(text=text_res, span_source=item)
 
@@ -1699,7 +1705,10 @@ class IDocTagsInlineSerializer(BaseInlineSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
         if text_res:
             text_res = f"{text_res}{delim}"
-            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.INLINE.value)
+
+        if item.parent is None or not isinstance(item.parent.resolve(doc), TextItem):
+            # if "unwrapped", wrap in <text>...</text>
+            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.TEXT.value)
         return create_ser_result(text=text_res, span_source=parts)
 
 
