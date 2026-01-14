@@ -322,6 +322,7 @@ class TableCell(BaseModel):
     row_header: bool = False
     row_section: bool = False
     fillable: bool = False
+    page_no: Optional[int] = None
 
     @model_validator(mode="before")
     @classmethod
