@@ -207,8 +207,6 @@ R_315_TL = BoundingRectangle(
         (R_315_TL, 7 * np.pi / 4, 315),
     ],
 )
-def test_bounding_rectangle_angle(
-    rectangle: BoundingRectangle, expected_angle: float, expected_angle_360: int
-):
+def test_bounding_rectangle_angle(rectangle: BoundingRectangle, expected_angle: float, expected_angle_360: int):
     assert pytest.approx(rectangle.angle, abs=1e-6) == expected_angle
     assert pytest.approx(rectangle.angle_360, abs=1e-6) == expected_angle_360

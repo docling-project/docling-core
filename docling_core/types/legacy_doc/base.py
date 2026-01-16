@@ -1,6 +1,6 @@
 """Define common models across CCS objects."""
 
-from typing import Annotated, List, Literal, Optional, Union
+from typing import Annotated, Literal, Optional, Union
 
 import pandas as pd
 from pydantic import BaseModel, Field, PositiveInt, StrictStr
@@ -48,18 +48,14 @@ class S3Data(AliasModel):
     pdf_images: Optional[list[S3Resource]] = Field(default=None, alias="pdf-images")
     json_document: Optional[S3Resource] = Field(default=None, alias="json-document")
     json_meta: Optional[S3Resource] = Field(default=None, alias="json-meta")
-    glm_json_document: Optional[S3Resource] = Field(
-        default=None, alias="glm-json-document"
-    )
+    glm_json_document: Optional[S3Resource] = Field(default=None, alias="glm-json-document")
     figures: Optional[list[S3Resource]] = None
 
 
 class S3Reference(AliasModel):
     """References an s3 resource."""
 
-    ref_s3_data: StrictStr = Field(
-        alias="__ref_s3_data", examples=["#/_s3_data/figures/0"]
-    )
+    ref_s3_data: StrictStr = Field(alias="__ref_s3_data", examples=["#/_s3_data/figures/0"])
 
 
 class Prov(AliasModel):
@@ -84,9 +80,7 @@ class BitmapObject(AliasModel):
     """Bitmap object."""
 
     obj_type: str = Field(alias="type")
-    bounding_box: BoundingBoxContainer = Field(
-        json_schema_extra=es_field(suppress=True)
-    )
+    bounding_box: BoundingBoxContainer = Field(json_schema_extra=es_field(suppress=True))
     prov: Prov
 
 
@@ -111,31 +105,19 @@ class GlmTableCell(TableCell):
     """Glm Table cell."""
 
     col: Optional[int] = Field(default=None, json_schema_extra=es_field(suppress=True))
-    col_header: bool = Field(
-        default=False, alias="col-header", json_schema_extra=es_field(suppress=True)
-    )
-    col_span: Optional[Span] = Field(
-        default=None, alias="col-span", json_schema_extra=es_field(suppress=True)
-    )
+    col_header: bool = Field(default=False, alias="col-header", json_schema_extra=es_field(suppress=True))
+    col_span: Optional[Span] = Field(default=None, alias="col-span", json_schema_extra=es_field(suppress=True))
     row: Optional[int] = Field(default=None, json_schema_extra=es_field(suppress=True))
-    row_header: bool = Field(
-        default=False, alias="row-header", json_schema_extra=es_field(suppress=True)
-    )
-    row_span: Optional[Span] = Field(
-        default=None, alias="row-span", json_schema_extra=es_field(suppress=True)
-    )
+    row_header: bool = Field(default=False, alias="row-header", json_schema_extra=es_field(suppress=True))
+    row_span: Optional[Span] = Field(default=None, alias="row-span", json_schema_extra=es_field(suppress=True))
 
 
 class BaseCell(AliasModel):
     """Base cell."""
 
     prov: Optional[list[Prov]] = None
-    text: Optional[str] = Field(
-        default=None, json_schema_extra=es_field(term_vector="with_positions_offsets")
-    )
-    obj_type: str = Field(
-        alias="type", json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    text: Optional[str] = Field(default=None, json_schema_extra=es_field(term_vector="with_positions_offsets"))
+    obj_type: str = Field(alias="type", json_schema_extra=es_field(type="keyword", ignore_above=8191))
     payload: Optional[dict] = None
 
     def get_location_tokens(
@@ -153,7 +135,6 @@ class BaseCell(AliasModel):
 
         location = ""
         for prov in self.prov:
-
             page_i = -1
             if add_page_index:
                 page_i = prov.page
@@ -188,7 +169,7 @@ class Table(BaseCell):
         if cell.spans is None:
             span = set()
         else:
-            span = set([s[ix] for s in cell.spans])
+            span = {s[ix] for s in cell.spans}
         if len(span) == 0:
             return 1, None, None
         return len(span), min(span), max(span)
@@ -216,7 +197,7 @@ class Table(BaseCell):
                 break
 
         # Create the column names from all col_headers
-        columns: Optional[List[str]] = None
+        columns: Optional[list[str]] = None
         if num_headers > 0:
             columns = ["" for _ in range(self.num_cols)]
             for i in range(num_headers):
@@ -230,9 +211,9 @@ class Table(BaseCell):
         table_data = [[cell.text for cell in row] for row in self.data[num_headers:]]
 
         # Create DataFrame
-        df = pd.DataFrame(table_data, columns=columns)
+        table = pd.DataFrame(table_data, columns=columns)
 
-        return df
+        return table
 
     def export_to_html(self) -> str:
         """Export the table as html."""
@@ -247,8 +228,8 @@ class Table(BaseCell):
             for j in range(ncols):
                 cell: TableCell = self.data[i][j]
 
-                rowspan, rowstart, rowend = self._get_tablecell_span(cell, 0)
-                colspan, colstart, colend = self._get_tablecell_span(cell, 1)
+                rowspan, rowstart, _ = self._get_tablecell_span(cell, 0)
+                colspan, colstart, _ = self._get_tablecell_span(cell, 1)
 
                 if rowstart is not None and rowstart != i:
                     continue
@@ -318,7 +299,6 @@ class Table(BaseCell):
             for i, row in enumerate(self.data):
                 body += f"<row_{i}>"
                 for j, col in enumerate(row):
-
                     text = ""
                     if add_cell_text:
                         text = col.text.strip()
@@ -339,11 +319,7 @@ class Table(BaseCell):
                             ysize=ysize,
                             page_i=self.prov[0].page,
                         )
-                    elif (
-                        col.bbox is not None
-                        and add_cell_location
-                        and not add_page_index
-                    ):
+                    elif col.bbox is not None and add_cell_location and not add_page_index:
                         cell_loc = DocumentToken.get_location(
                             bbox=col.bbox,
                             page_w=page_w,
@@ -354,11 +330,7 @@ class Table(BaseCell):
                         )
 
                     cell_label = ""
-                    if (
-                        add_cell_label
-                        and col.obj_type is not None
-                        and len(col.obj_type) > 0
-                    ):
+                    if add_cell_label and col.obj_type is not None and len(col.obj_type) > 0:
                         cell_label = f"<{col.obj_type}>"
 
                     body += f"<col_{j}>{cell_loc}{cell_label}{text}</col_{j}>"
@@ -419,9 +391,7 @@ class BaseText(BaseCell):
     """Base model for text objects."""
 
     # FIXME: do we need these ???
-    name: Optional[StrictStr] = Field(
-        default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191)
-    )
+    name: Optional[StrictStr] = Field(default=None, json_schema_extra=es_field(type="keyword", ignore_above=8191))
     font: Optional[str] = None
 
     def export_to_document_tokens(
@@ -438,9 +408,7 @@ class BaseText(BaseCell):
         """Export text element to document tokens format."""
         body = f"<{self.obj_type}>"
 
-        assert DocumentToken.is_known_token(
-            body
-        ), f"failed DocumentToken.is_known_token({body})"
+        assert DocumentToken.is_known_token(body), f"failed DocumentToken.is_known_token({body})"
 
         if add_location:
             body += self.get_location_tokens(

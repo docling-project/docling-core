@@ -2,7 +2,8 @@
 
 import re
 from copy import deepcopy
-from typing import Any, Optional, Pattern, Tuple, TypedDict
+from re import Pattern
+from typing import Any, Optional, TypedDict
 
 from jsonref import replace_refs
 
@@ -21,7 +22,7 @@ class JsonSchemaToSearchMapper:
     JSON Schema and how they should be indexed in a Lucene index of a search database.
 
     Potential issues:
-    - Tuples may not be converted properly (e.g., Tuple[float,float,float,str,str])
+    - Tuples may not be converted properly (e.g., tuple[float,float,float,str,str])
     - Method `_remove_keys` may lead to wrong results if a field is named `properties`.
     """
 
@@ -229,7 +230,7 @@ class JsonSchemaToSearchMapper:
 
         def __collapse(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__collapse(v) for v in d_)]
+                return [__collapse(v) for v in d_]
 
             if isinstance(d_, dict):
                 if "type" in d_ and d_["type"] == "array" and "items" in d_:
@@ -263,21 +264,19 @@ class JsonSchemaToSearchMapper:
 
         def __suppress(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__suppress(v) for v in d_)]
+                return [__suppress(v) for v in d_]
 
             if isinstance(d_, dict):
                 if suppress_key in d_ and d_[suppress_key] is True:
                     return {}
                 else:
-                    return {
-                        k: v for k, v in ((k, __suppress(v)) for k, v in d_.items())
-                    }
+                    return {k: __suppress(v) for k, v in d_.items()}
             return d_
 
         return __suppress(doc)
 
     @staticmethod
-    def _remove_keys(doc: dict, keys: Tuple[str, ...]) -> dict:
+    def _remove_keys(doc: dict, keys: tuple[str, ...]) -> dict:
         """Remove keys from a JSON schema to match a search database mappings.
 
         Args:
@@ -290,7 +289,7 @@ class JsonSchemaToSearchMapper:
 
         def __remove(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__remove(v) for v in d_)]
+                return [__remove(v) for v in d_]
 
             if isinstance(d_, dict):
                 result = {}
@@ -322,15 +321,10 @@ class JsonSchemaToSearchMapper:
 
         def __remove(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__remove(v) for v in d_)]
+                return [__remove(v) for v in d_]
 
             if isinstance(d_, dict):
-                return {
-                    k: v
-                    for k, v in (
-                        (k, __remove(v)) for k, v in d_.items() if not regx.match(k)
-                    )
-                }
+                return {k: __remove(v) for k, v in d_.items() if not regx.match(k)}
 
             return d_
 
@@ -351,7 +345,7 @@ class JsonSchemaToSearchMapper:
 
         def __translate(d_: Any) -> Any:
             if isinstance(d_, list):
-                return [v for v in (__translate(v) for v in d_)]
+                return [__translate(v) for v in d_]
 
             if isinstance(d_, dict):
                 new_dict = {}
@@ -393,11 +387,7 @@ class JsonSchemaToSearchMapper:
                 return [v for v in (_clean(v) for v in d_) if not _empty(v)]
 
             if isinstance(d_, dict):
-                return {
-                    k: v
-                    for k, v in ((k, _clean(v)) for k, v in d_.items())
-                    if not _empty(v)
-                }
+                return {k: v for k, v in ((k, _clean(v)) for k, v in d_.items()) if not _empty(v)}
 
             return d_
 

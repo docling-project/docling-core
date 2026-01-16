@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.57.0"  # DO NOT EDIT, updated automatically
+version = "2.59.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -48,7 +48,7 @@ dependencies = [
     'pillow (>=10.0.0,<13.0.0)',
     'pyyaml (>=5.1,<7.0.0)',
     'typing-extensions (>=4.12.2,<5.0.0)',
-    'typer (>=0.12.5,<0.20.0)',
+    'typer (>=0.12.5,<0.22.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
 ]
 
@@ -68,12 +68,11 @@ docling-view = "docling_core.cli.view:app"
 chunking = [
     # common:
     'semchunk (>=2.2.0,<3.0.0)',
-    'tree-sitter (>=0.23.2,<1.0.0)',
-    'tree-sitter-python (>=0.23.6,<1.0.0)',
-    'tree-sitter-c (>=0.23.4,<1.0.0)',
-    'tree-sitter-java (>=0.23.5,<1.0.0)',
-    'tree-sitter-javascript (>=0.23.1,<1.0.0)',
-    'tree-sitter-typescript (>=0.23.2,<1.0.0)',
+    'tree-sitter (>=0.23.2,<0.25.0)',
+    'tree-sitter-python (>=0.23.6,<0.25.0)',
+    'tree-sitter-c (>=0.23.4,<0.23.5)',
+    'tree-sitter-javascript (>=0.23.1,<0.25.0)',
+    'tree-sitter-typescript (>=0.23.2,<0.25.0)',
 
     # specific:
     'transformers (>=4.34.0,<5.0.0)',
@@ -81,12 +80,11 @@ chunking = [
 chunking-openai = [
     # common:
     'semchunk (>=2.2.0,<3.0.0)',
-    'tree-sitter (>=0.23.2,<1.0.0)',
-    'tree-sitter-python (>=0.23.6,<1.0.0)',
-    'tree-sitter-c (>=0.23.4,<1.0.0)',
-    'tree-sitter-java (>=0.23.5,<1.0.0)',
-    'tree-sitter-javascript (>=0.23.1,<1.0.0)',
-    'tree-sitter-typescript (>=0.23.2,<1.0.0)',
+    'tree-sitter (>=0.23.2,<0.25.0)',
+    'tree-sitter-python (>=0.23.6,<0.25.0)',
+    'tree-sitter-c (>=0.23.4,<0.23.5)',
+    'tree-sitter-javascript (>=0.23.1,<0.25.0)',
+    'tree-sitter-typescript (>=0.23.2,<0.25.0)',
 
     # specific:
     'tiktoken (>=0.9.0,<0.13.0)',
@@ -117,6 +115,8 @@ dev = [
     "pytest~=8.3",
     "pytest-cov>=6.1.1",
     "python-semantic-release~=7.32",
+    'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
+    "ruff>=0.14.11",
 ]
 
 [tool.uv]
@@ -130,20 +130,69 @@ namespaces = true
 [tool.setuptools.package-data]
 "*" = ["*.json"]
 
-[tool.black]
-line-length = 88
-target-version = ["py39", "py310"]
-include = '\.pyi?$'
-preview = true
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+respect-gitignore = true
+exclude = [
+    "test/data/**"
+]
 
-[tool.isort]
-profile = "black"
-line_length = 88
-py_version = 39
-multi_line_output = 3
-include_trailing_comma = true
+[tool.ruff.format]
+skip-magic-trailing-comma = false
 
-[tool.autoflake]
+[tool.ruff.lint]
+select = [
+  "C",     # flake8-comprehensions
+  "C9",    # mccabe
+  "E",     # pycodestyle errors (default)
+  "F",     # pyflakes (default)
+  "I",     # isort
+  "PD",    # pandas-vet
+  "PIE",   # pie
+  "Q",     # flake8-quotes
+  "RUF",   # Enable all ruff-specific checks
+  "S307",  # eval
+  "W",     # pycodestyle warnings
+  "ASYNC", # async
+  "UP",    # pyupgrade
+]
+
+ignore = [
+  "C408",   # Unnecessary `dict()` call (rewrite as a literal)
+  "E501",   # Line too long, handled by ruff formatter
+  "E741",   # Ambiguous variable name: `l`
+  "D107",   # "Missing docstring in __init__",
+  "F401",   # imported but unused; consider using `importlib.util.find_spec` to test for "
+  "PL",     # Pylint
+  "RUF005", # Consider ... instead of concatenation
+  "RUF012", # Mutable Class Attributes
+  "UP007",  # Option and Union
+  "UP045",  # Use `X | None` for type annotations
+]
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+  "classmethod",
+  "validator",
+  "pydantic.validator",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+"test/*.py" = ["ASYNC"]         # Disable ASYNC check for tests
+"*.ipynb" = ["I"]  # Disable import sorting for notebooks
+
+[tool.ruff.lint.mccabe]
+max-complexity = 30
+
+[tool.ruff.lint.isort]
+combine-as-imports = false
+
+[toolruff.lint.autoflake]
 in-place = true
 ignore-init-module-imports = true
 remove-all-unused-imports = true
@@ -153,8 +202,6 @@ recursive = true
 
 [tool.mypy]
 pretty = true
-# strict = true
-# disallow_untyped_defs = true
 no_implicit_optional = true
 namespace_packages = true
 show_error_codes = true
@@ -171,6 +218,7 @@ module = [
     "semchunk.*",
     "tabulate.*",
     "transformers.*",
+    "tree_sitter_java_orchard.*",
     "yaml.*",
 ]
 ignore_missing_imports = true

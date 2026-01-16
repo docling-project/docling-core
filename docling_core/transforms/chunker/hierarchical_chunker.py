@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterator, Optional, Union
+from collections.abc import Iterator
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import ConfigDict, Field
-from typing_extensions import Annotated, override
+from typing_extensions import override
 
 from docling_core.transforms.chunker import BaseChunk, BaseChunker
 from docling_core.transforms.chunker.code_chunking.base_code_chunking_strategy import (
@@ -66,7 +67,6 @@ class TripletTableSerializer(BaseTableSerializer):
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             table_df = item.export_to_dataframe(doc)
             if table_df.shape[0] >= 1 and table_df.shape[1] >= 2:
-
                 # copy header as first row and shift all rows by one
                 table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
                 table_df.index = table_df.index + 1
@@ -166,8 +166,7 @@ class HierarchicalChunker(BaseChunker):
                 if (
                     keys_to_del
                     and self.always_emit_headings
-                    and (leaf_ref := heading_by_level[sorted_keys[-1]].self_ref)
-                    not in heading_emitted
+                    and (leaf_ref := heading_by_level[sorted_keys[-1]].self_ref) not in heading_emitted
                 ):
                     yield DocChunk(
                         text="",
@@ -186,13 +185,8 @@ class HierarchicalChunker(BaseChunker):
                 heading_by_level[level] = item
 
                 continue
-            elif (
-                isinstance(item, (ListGroup, InlineGroup, DocItem))
-                and item.self_ref not in visited
-            ):
-                if self.code_chunking_strategy is not None and isinstance(
-                    item, CodeItem
-                ):
+            elif isinstance(item, (ListGroup, InlineGroup, DocItem)) and item.self_ref not in visited:
+                if self.code_chunking_strategy is not None and isinstance(item, CodeItem):
                     yield from self.code_chunking_strategy.chunk_code_item(
                         item=item,
                         doc=dl_doc,
@@ -228,10 +222,7 @@ class HierarchicalChunker(BaseChunker):
         if (
             self.always_emit_headings
             and (sorted_keys := sorted(heading_by_level))
-            and (
-                (leaf_ref := heading_by_level[sorted_keys[-1]].self_ref)
-                not in heading_emitted
-            )
+            and ((leaf_ref := heading_by_level[sorted_keys[-1]].self_ref) not in heading_emitted)
         ):
             yield DocChunk(
                 text="",

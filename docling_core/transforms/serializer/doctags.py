@@ -1,7 +1,7 @@
 """Define classes for Doctags serialization."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 from typing_extensions import override
@@ -107,13 +107,9 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
         # Decide wrapping up-front so ListItem never gets wrapped here
-        wrap_tag_token: Optional[str] = (
-            DocumentToken.create_token_name_from_doc_item_label(
-                label=item.label,
-                **(
-                    {"level": item.level} if isinstance(item, SectionHeaderItem) else {}
-                ),
-            )
+        wrap_tag_token: Optional[str] = DocumentToken.create_token_name_from_doc_item_label(
+            label=item.label,
+            **({"level": item.level} if isinstance(item, SectionHeaderItem) else {}),
         )
         wrap_tag: Optional[str] = None if isinstance(item, ListItem) else wrap_tag_token
         parts: list[str] = []
@@ -137,9 +133,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
             if (
                 item.text == ""
                 and len(item.children) == 1
-                and isinstance(
-                    (child_group := item.children[0].resolve(doc)), InlineGroup
-                )
+                and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
             ):
                 ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
                 text_part = ser_res.text
@@ -259,23 +253,15 @@ class DocTagsPictureSerializer(BasePictureSerializer):
             predicted_class: Optional[str] = None
             if item.meta:
                 if item.meta.classification:
-                    predicted_class = (
-                        item.meta.classification.get_main_prediction().class_name
-                    )
+                    predicted_class = item.meta.classification.get_main_prediction().class_name
             elif _should_use_legacy_annotations(
                 params=params,
                 item=item,
                 kind=PictureClassificationData.model_fields["kind"].default,
             ):
-                if classifications := [
-                    ann
-                    for ann in item.annotations
-                    if isinstance(ann, PictureClassificationData)
-                ]:
+                if classifications := [ann for ann in item.annotations if isinstance(ann, PictureClassificationData)]:
                     if classifications[0].predicted_classes:
-                        predicted_class = (
-                            classifications[0].predicted_classes[0].class_name
-                        )
+                        predicted_class = classifications[0].predicted_classes[0].class_name
             if predicted_class:
                 body += DocumentToken.get_picture_classification_token(predicted_class)
                 if predicted_class in [
@@ -299,11 +285,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 item=item,
                 kind=PictureMoleculeData.model_fields["kind"].default,
             ):
-                if smiles_annotations := [
-                    ann
-                    for ann in item.annotations
-                    if isinstance(ann, PictureMoleculeData)
-                ]:
+                if smiles_annotations := [ann for ann in item.annotations if isinstance(ann, PictureMoleculeData)]:
                     smi = smiles_annotations[0].smi
             if smi:
                 body += _wrap(text=smi, wrap_tag=DocumentToken.SMILES.value)
@@ -319,17 +301,13 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 kind=PictureTabularChartData.model_fields["kind"].default,
             ):
                 if tabular_chart_annotations := [
-                    ann
-                    for ann in item.annotations
-                    if isinstance(ann, PictureTabularChartData)
+                    ann for ann in item.annotations if isinstance(ann, PictureTabularChartData)
                 ]:
                     chart_data = tabular_chart_annotations[0].chart_data
             if chart_data and chart_data.table_cells:
                 temp_doc = DoclingDocument(name="temp")
                 temp_table = temp_doc.add_table(data=chart_data)
-                otsl_content = temp_table.export_to_otsl(
-                    temp_doc, add_cell_location=False
-                )
+                otsl_content = temp_table.export_to_otsl(temp_doc, add_cell_location=False)
                 body += otsl_content
             res_parts.append(create_ser_result(text=body, span_source=item))
 
@@ -377,11 +355,9 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
             )
 
         # mapping from source_cell_id to a list of target_cell_ids
-        source_to_targets: Dict[int, List[int]] = {}
+        source_to_targets: dict[int, list[int]] = {}
         for link in item.graph.links:
-            source_to_targets.setdefault(link.source_cell_id, []).append(
-                link.target_cell_id
-            )
+            source_to_targets.setdefault(link.source_cell_id, []).append(link.target_cell_id)
 
         for cell in item.graph.cells:
             cell_txt = ""
@@ -468,11 +444,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
 
         if parts:
             text_res = delim.join(
-                [
-                    t
-                    for p in parts
-                    if (t := _wrap(text=p.text, wrap_tag=DocumentToken.LIST_ITEM.value))
-                ]
+                [t for p in parts if (t := _wrap(text=p.text, wrap_tag=DocumentToken.LIST_ITEM.value))]
             )
             text_res = f"{text_res}{delim}"
             wrap_tag = (
@@ -492,7 +464,6 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
     def _get_inline_location_tags(
         self, doc: DoclingDocument, item: InlineGroup, params: DocTagsParams
     ) -> SerializationResult:
-
         prov: Optional[ProvenanceItem] = None
         boxes: list[BoundingBox] = []
         doc_items: list[DocItem] = []
@@ -537,7 +508,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
-        parts: List[SerializationResult] = []
+        parts: list[SerializationResult] = []
         if params.add_location:
             inline_loc_tags_ser_res = self._get_inline_location_tags(
                 doc=doc,

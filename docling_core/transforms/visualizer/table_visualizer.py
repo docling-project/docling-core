@@ -57,20 +57,15 @@ class TableVisualizer(BaseVisualizer):
 
         for cell in table.data.table_cells:
             if cell.bbox is not None:
-
                 tl_bbox = cell.bbox.to_top_left_origin(page_height=page_height)
 
                 cell_color = self.params.cell_color  # Transparent black for cells
                 cell_outline = self.params.cell_outline
                 if cell.column_header:
-                    cell_color = (
-                        self.params.col_header_color
-                    )  # Transparent black for cells
+                    cell_color = self.params.col_header_color  # Transparent black for cells
                     cell_outline = self.params.col_header_outline
                 if cell.row_header:
-                    cell_color = (
-                        self.params.row_header_color
-                    )  # Transparent black for cells
+                    cell_color = self.params.row_header_color  # Transparent black for cells
                     cell_outline = self.params.row_header_outline
                 if cell.row_section:
                     cell_color = self.params.row_header_color
@@ -102,7 +97,6 @@ class TableVisualizer(BaseVisualizer):
         rows = table.data.get_row_bounding_boxes()
 
         for rid, bbox in rows.items():
-
             tl_bbox = bbox.to_top_left_origin(page_height=page_height)
 
             cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
@@ -131,7 +125,6 @@ class TableVisualizer(BaseVisualizer):
         cols = table.data.get_column_bounding_boxes()
 
         for cid, bbox in cols.items():
-
             tl_bbox = bbox.to_top_left_origin(page_height=page_height)
 
             cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
@@ -159,7 +152,7 @@ class TableVisualizer(BaseVisualizer):
             my_images = images
 
         if included_content_layers is None:
-            included_content_layers = {c for c in ContentLayer}
+            included_content_layers = set(ContentLayer)
 
         # Initialise `my_images` beforehand: sometimes, you have the
         # page-images but no DocItems!
@@ -171,16 +164,13 @@ class TableVisualizer(BaseVisualizer):
                 image = deepcopy(pil_img)
                 my_images[page_nr] = image
 
-        for idx, (elem, _) in enumerate(
-            doc.iterate_items(included_content_layers=included_content_layers)
-        ):
+        for idx, (elem, _) in enumerate(doc.iterate_items(included_content_layers=included_content_layers)):
             if not isinstance(elem, TableItem):
                 continue
             if len(elem.prov) == 0:
                 continue  # Skip elements without provenances
 
             if len(elem.prov) == 1:
-
                 page_nr = elem.prov[0].page_no
 
                 if page_nr in my_images:
@@ -229,11 +219,7 @@ class TableVisualizer(BaseVisualizer):
         **kwargs,
     ) -> dict[Optional[int], Image]:
         """Get visualization of the document as images by page."""
-        base_images = (
-            self.base_visualizer.get_visualization(doc=doc, **kwargs)
-            if self.base_visualizer
-            else None
-        )
+        base_images = self.base_visualizer.get_visualization(doc=doc, **kwargs) if self.base_visualizer else None
         return self._draw_doc_tables(
             doc=doc,
             images=base_images,

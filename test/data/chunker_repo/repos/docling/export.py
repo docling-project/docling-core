@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Iterable
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 from docling.datamodel.document import ConversionResult, Page
 
@@ -12,7 +12,7 @@ _log = logging.getLogger(__name__)
 
 def generate_multimodal_pages(
     doc_result: ConversionResult,
-) -> Iterable[Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]], Page]]:
+) -> Iterable[tuple[str, str, list[dict[str, Any]], list[dict[str, Any]], Page]]:
     label_to_doclaynet = {
         "title": "title",
         "table-of-contents": "document_index",
@@ -38,11 +38,11 @@ def generate_multimodal_pages(
     page_no = 0
     start_ix = 0
     end_ix = 0
-    doc_items: List[Tuple[int, Union[BaseCell, BaseText]]] = []
+    doc_items: list[tuple[int, Union[BaseCell, BaseText]]] = []
 
     doc = doc_result.legacy_document
 
-    def _process_page_segments(doc_items: list[Tuple[int, BaseCell]], page: Page):
+    def _process_page_segments(doc_items: list[tuple[int, BaseCell]], page: Page):
         segments = []
 
         for ix, item in doc_items:
@@ -81,7 +81,7 @@ def generate_multimodal_pages(
         return segments
 
     def _process_page_cells(page: Page):
-        cells: List[dict] = []
+        cells: list[dict] = []
         if page.size is None:
             return cells
         for cell in page.cells:

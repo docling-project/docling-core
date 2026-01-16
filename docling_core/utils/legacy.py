@@ -3,7 +3,7 @@
 import hashlib
 import uuid
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from docling_core.types.doc import (
     BoundingBox,
@@ -139,7 +139,6 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
 
     embedded_captions = set()
     for ix, (item, level) in enumerate(doc.iterate_items(doc.body)):
-
         if isinstance(item, (TableItem, PictureItem)) and len(item.captions) > 0:
             caption = item.caption_text(doc)
             if caption:
@@ -150,7 +149,6 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
             item_type = item.label
 
             if isinstance(item, (TextItem, ListItem, SectionHeaderItem)):
-
                 if isinstance(item, ListItem) and item.marker:
                     text = f"{item.marker} {item.text}"
                 else:
@@ -249,9 +247,7 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
                             table_data[i][j] = GlmTableCell(
                                 text=cell._get_text(doc=doc),
                                 bbox=(
-                                    cell.bbox.as_tuple()
-                                    if cell.bbox is not None
-                                    else None
+                                    cell.bbox.as_tuple() if cell.bbox is not None else None
                                 ),  # check if this is bottom-left
                                 spans=spans,
                                 obj_type=celltype,
@@ -322,8 +318,7 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
                 )
 
     page_dimensions = [
-        PageDimensions(page=p.page_no, height=p.size.height, width=p.size.width)
-        for p in doc.pages.values()
+        PageDimensions(page=p.page_no, height=p.size.height, width=p.size.width) for p in doc.pages.values()
     ]
 
     legacy_doc: DsDocument = DsDocument(
@@ -362,9 +357,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
             prov = ProvenanceItem(
                 page_no=int(item.prov[0].page),
                 charspan=tuple(item.prov[0].span),
-                bbox=BoundingBox.from_tuple(
-                    tuple(item.prov[0].bbox), origin=CoordOrigin.BOTTOMLEFT
-                ),
+                bbox=BoundingBox.from_tuple(tuple(item.prov[0].bbox), origin=CoordOrigin.BOTTOMLEFT),
             )
         return prov
 
@@ -415,9 +408,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
             if text_item.text is None:
                 continue
             prov = _transform_prov(text_item)
-            doc.add_text(
-                label=DocItemLabel.FOOTNOTE, text=text_item.text, parent=doc.furniture
-            )
+            doc.add_text(label=DocItemLabel.FOOTNOTE, text=text_item.text, parent=doc.furniture)
 
     # main-text content
     if legacy_doc.main_text is not None:
@@ -425,13 +416,9 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
 
         # collect all captions embedded in table and figure objects
         # to avoid repeating them
-        embedded_captions: Dict[str, int] = {}
+        embedded_captions: dict[str, int] = {}
         for ix, orig_item in enumerate(legacy_doc.main_text):
-            item = (
-                legacy_doc._resolve_ref(orig_item)
-                if isinstance(orig_item, Ref)
-                else orig_item
-            )
+            item = legacy_doc._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item
             if item is None:
                 continue
 
@@ -439,23 +426,16 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
                 embedded_captions[item.text] = ix
 
         # build lookup from floating objects to their caption item
-        floating_to_caption: Dict[int, BaseText] = {}
+        floating_to_caption: dict[int, BaseText] = {}
         for ix, orig_item in enumerate(legacy_doc.main_text):
-            item = (
-                legacy_doc._resolve_ref(orig_item)
-                if isinstance(orig_item, Ref)
-                else orig_item
-            )
+            item = legacy_doc._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item
             if item is None:
                 continue
 
             item_type = item.obj_type.lower()
             if (
                 isinstance(item, BaseText)
-                and (
-                    item_type == "caption"
-                    or (item.name is not None and item.name.lower() == "caption")
-                )
+                and (item_type == "caption" or (item.name is not None and item.name.lower() == "caption"))
                 and item.text in embedded_captions
             ):
                 floating_ix = embedded_captions[item.text]
@@ -464,11 +444,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
         # main loop iteration
         current_list: Optional[GroupItem] = None
         for ix, orig_item in enumerate(legacy_doc.main_text):
-            item = (
-                legacy_doc._resolve_ref(orig_item)
-                if isinstance(orig_item, Ref)
-                else orig_item
-            )
+            item = legacy_doc._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item
             if item is None:
                 continue
 
@@ -476,9 +452,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
             item_type = item.obj_type.lower()
 
             # if a group is needed, add it
-            if isinstance(item, BaseText) and (
-                item_type in "list-item-level-1" or item.name in {"list", "list-item"}
-            ):
+            if isinstance(item, BaseText) and (item_type in "list-item-level-1" or item.name in {"list", "list-item"}):
                 if current_list is None:
                     current_list = doc.add_list_group(name="list")
             else:
@@ -514,9 +488,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
                     "list-item",
                 }:
                     # TODO: Infer if this is a numbered or a bullet list item
-                    doc.add_list_item(
-                        text=text, enumerated=False, prov=prov, parent=current_list
-                    )
+                    doc.add_list_item(text=text, enumerated=False, prov=prov, parent=current_list)
 
                 # normal text
                 else:
@@ -530,13 +502,11 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
                     doc.add_text(label=label, text=text, prov=prov)
 
             elif isinstance(item, DsSchemaTable):
-
                 table_data = TableData(num_cols=item.num_cols, num_rows=item.num_rows)
                 if item.data is not None:
                     seen_spans = set()
                     for row_ix, row in enumerate(item.data):
                         for col_ix, orig_cell_data in enumerate(row):
-
                             cell_bbox: Optional[BoundingBox] = (
                                 BoundingBox.from_tuple(
                                     tuple(orig_cell_data.bbox),
@@ -559,9 +529,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
 
                             if orig_cell_data.spans is not None:
                                 # convert to a tuple of tuples for hashing
-                                spans_tuple = tuple(
-                                    tuple(span) for span in orig_cell_data.spans
-                                )
+                                spans_tuple = tuple(tuple(span) for span in orig_cell_data.spans)
 
                                 # skip repeated spans
                                 if spans_tuple in seen_spans:
@@ -569,25 +537,13 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
 
                                 seen_spans.add(spans_tuple)
 
-                                cell.start_row_offset_idx = min(
-                                    s[0] for s in spans_tuple
-                                )
-                                cell.end_row_offset_idx = (
-                                    max(s[0] for s in spans_tuple) + 1
-                                )
-                                cell.start_col_offset_idx = min(
-                                    s[1] for s in spans_tuple
-                                )
-                                cell.end_col_offset_idx = (
-                                    max(s[1] for s in spans_tuple) + 1
-                                )
+                                cell.start_row_offset_idx = min(s[0] for s in spans_tuple)
+                                cell.end_row_offset_idx = max(s[0] for s in spans_tuple) + 1
+                                cell.start_col_offset_idx = min(s[1] for s in spans_tuple)
+                                cell.end_col_offset_idx = max(s[1] for s in spans_tuple) + 1
 
-                                cell.row_span = (
-                                    cell.end_row_offset_idx - cell.start_row_offset_idx
-                                )
-                                cell.col_span = (
-                                    cell.end_col_offset_idx - cell.start_col_offset_idx
-                                )
+                                cell.row_span = cell.end_row_offset_idx - cell.start_row_offset_idx
+                                cell.col_span = cell.end_col_offset_idx - cell.start_col_offset_idx
 
                             table_data.table_cells.append(cell)
 
@@ -617,11 +573,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
                         new_item.captions.append(caption.get_ref())
 
             # equations
-            elif (
-                isinstance(item, BaseCell)
-                and item.text is not None
-                and item_type in {"formula", "equation"}
-            ):
+            elif isinstance(item, BaseCell) and item.text is not None and item_type in {"formula", "equation"}:
                 doc.add_text(label=DocItemLabel.FORMULA, text=item.text, prov=prov)
 
     return doc

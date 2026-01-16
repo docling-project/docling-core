@@ -283,4 +283,4 @@ texts:
   self_ref: '#/texts/3'
   text: 'Figure 1: Four examples of complex page layouts across different document
     categories'
-version: 1.8.0
+version: 1.9.0

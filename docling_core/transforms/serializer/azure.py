@@ -74,9 +74,7 @@ def _bbox_to_polygon_coords(
     return [l, t, r, t, r, b, l, b]
 
 
-def _bbox_to_polygon_for_item(
-    doc: DoclingDocument, item: DocItem
-) -> Optional[list[float]]:
+def _bbox_to_polygon_for_item(doc: DoclingDocument, item: DocItem) -> Optional[list[float]]:
     """Compute a TOPLEFT-origin polygon for the first provenance of the item."""
     if not item.prov:
         return None
@@ -113,7 +111,7 @@ class _AzureBoundingRegion(BaseModel):
     Matches Azure's schema; field names use camelCase by design.
     """
 
-    pageNumber: int  # noqa: N815
+    pageNumber: int
     polygon: list[float]
 
 
@@ -121,7 +119,7 @@ class _AzureParagraph(BaseModel):
     """Paragraph content with optional role and regions."""
 
     content: str
-    boundingRegions: list["_AzureBoundingRegion"]  # noqa: N815
+    boundingRegions: list["_AzureBoundingRegion"]
     role: Optional[str] = None
 
 
@@ -129,34 +127,34 @@ class _AzureTableCell(BaseModel):
     """Single table cell with position, span, and optional region."""
 
     content: str
-    rowIndex: int  # noqa: N815
-    columnIndex: int  # noqa: N815
-    rowSpan: int = 1  # noqa: N815
-    colSpan: int = 1  # noqa: N815
+    rowIndex: int
+    columnIndex: int
+    rowSpan: int = 1
+    colSpan: int = 1
     kind: Optional[str] = None
-    boundingRegions: Optional[list[_AzureBoundingRegion]] = None  # noqa: N815
+    boundingRegions: Optional[list[_AzureBoundingRegion]] = None
 
 
 class _AzureTable(BaseModel):
     """Table with dimensions, regions, and cells."""
 
-    rowCount: int  # noqa: N815
-    columnCount: int  # noqa: N815
-    boundingRegions: list[_AzureBoundingRegion]  # noqa: N815
+    rowCount: int
+    columnCount: int
+    boundingRegions: list[_AzureBoundingRegion]
     cells: list[_AzureTableCell]
 
 
 class _AzureImage(BaseModel):
     """Image/figure with bounding region and optional footnotes."""
 
-    boundingRegions: list[_AzureBoundingRegion]  # noqa: N815
+    boundingRegions: list[_AzureBoundingRegion]
     footnotes: Optional[list[_AzureParagraph]] = None
 
 
 class _AzurePage(BaseModel):
     """Page metadata used in the Azure-like output."""
 
-    pageNumber: int  # noqa: N815
+    pageNumber: int
     width: float
     height: float
     # Words are not currently emitted; keep as untyped list
@@ -215,9 +213,7 @@ class _AzureTextSerializer(BaseModel, BaseTextSerializer):
         if content != "" and polygon is not None:
             para = _AzureParagraph(
                 content=content,
-                boundingRegions=[
-                    _AzureBoundingRegion(pageNumber=page_no, polygon=polygon)
-                ],
+                boundingRegions=[_AzureBoundingRegion(pageNumber=page_no, polygon=polygon)],
                 role=role,
             )
 
@@ -266,9 +262,7 @@ class _AzureTableSerializer(BaseTableSerializer):
 
                 # For RichTableCell, get textual content via helper
                 if isinstance(cell, RichTableCell):
-                    content_text = cell._get_text(
-                        doc=doc, doc_serializer=doc_serializer
-                    )
+                    content_text = cell._get_text(doc=doc, doc_serializer=doc_serializer)
                 else:
                     content_text = cell.text
 
@@ -280,9 +274,7 @@ class _AzureTableSerializer(BaseTableSerializer):
                         page_h = doc.pages[page_no].size.height
                         if bbox.coord_origin != CoordOrigin.TOPLEFT:
                             bbox = bbox.to_top_left_origin(page_height=page_h)
-                    cell_poly = _bbox_to_polygon_coords(
-                        l=bbox.l, t=bbox.t, r=bbox.r, b=bbox.b
-                    )
+                    cell_poly = _bbox_to_polygon_coords(l=bbox.l, t=bbox.t, r=bbox.r, b=bbox.b)
 
                 cell_obj = _AzureTableCell(
                     content=content_text.strip(),
@@ -290,15 +282,9 @@ class _AzureTableSerializer(BaseTableSerializer):
                     columnIndex=cell.start_col_offset_idx,
                     rowSpan=max(cell.row_span, 1),
                     colSpan=max(cell.col_span, 1),
-                    kind=(
-                        "columnHeader"
-                        if cell.column_header
-                        else ("rowHeader" if cell.row_header else None)
-                    ),
+                    kind=("columnHeader" if cell.column_header else ("rowHeader" if cell.row_header else None)),
                     boundingRegions=(
-                        [_AzureBoundingRegion(pageNumber=page_no, polygon=cell_poly)]
-                        if cell_poly is not None
-                        else None
+                        [_AzureBoundingRegion(pageNumber=page_no, polygon=cell_poly)] if cell_poly is not None else None
                     ),
                 )
 
@@ -331,9 +317,7 @@ class _AzurePictureSerializer(BasePictureSerializer):
         if poly is None:
             return create_ser_result()
 
-        fig_obj = _AzureImage(
-            boundingRegions=[_AzureBoundingRegion(pageNumber=page_no, polygon=poly)]
-        )
+        fig_obj = _AzureImage(boundingRegions=[_AzureBoundingRegion(pageNumber=page_no, polygon=poly)])
 
         # Include picture footnotes if present
         foots = []
@@ -346,11 +330,7 @@ class _AzurePictureSerializer(BasePictureSerializer):
                         foots.append(
                             _AzureParagraph(
                                 content=tgt.text,
-                                boundingRegions=[
-                                    _AzureBoundingRegion(
-                                        pageNumber=tgt.prov[0].page_no, polygon=f_poly
-                                    )
-                                ],
+                                boundingRegions=[_AzureBoundingRegion(pageNumber=tgt.prov[0].page_no, polygon=f_poly)],
                             )
                         )
 

@@ -18,6 +18,7 @@ from transformers import (
 from docling_core.types.doc import DoclingDocument, ImageRef
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.experimental.idoctags import (
+    EscapeMode,
     IDocTagsSerializationMode,
     IDocTagsParams,
     IDocTagsVocabulary,
@@ -28,7 +29,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # In order to download **before** the datasets library, run
-# 
+#
 # HF_HUB_DISABLE_XET=1 hf download --repo-type dataset "{hf-repo-id}"
 #
 
@@ -48,7 +49,7 @@ def update_tokenizer(tokenizer: PreTrainedTokenizerBase, verbose: bool = False) 
         print(f"New vocab size: {tokenizer.vocab_size}")
     return tokenizer
 
-def run_dump(cfg: Dict[str, Any]) -> int:
+def run_dump(cfg: dict[str, Any]) -> int:
     """Dump/serialize documents from a dataset to IDocTags strings/files and export a per-row report.
 
     Config keys (with defaults):
@@ -151,7 +152,7 @@ def run_dump(cfg: Dict[str, Any]) -> int:
         - Row ID
         - Loaded DoclingDocument
         - Loaded DoclingDocument Error
-        - Serialized IDocTags (mode, xml_compliant, content) for all combinations
+        - Serialized IDocTags (mode, escape_mode, content) for all combinations
         - Serialized HTML
         - Serialized HTML Error
 
@@ -166,12 +167,12 @@ def run_dump(cfg: Dict[str, Any]) -> int:
             "Loaded DoclingDocument Error",
         ]
 
-        # Add all combinations of mode, xml_compliant, and content
-        for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
-            for comp in [True, False]:
+        # Add all combinations of mode, escape_mode, and content
+        for mode in IDocTagsSerializationMode:
+            for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    cols.append(f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})")
-                    cols.append(f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error")
+                    cols.append(f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content})")
+                    cols.append(f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error")
 
         cols.extend([
             "Serialized HTML",
@@ -193,10 +194,10 @@ def run_dump(cfg: Dict[str, Any]) -> int:
         ]
 
         # Add summary rows for all combinations
-        for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
-            for comp in [True, False]:
+        for mode in IDocTagsSerializationMode:
+            for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    col_name = f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"
+                    col_name = f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content})"
                     summary_rows.append({"Metric": col_name, "Count": _count_yes(col_name)})
 
         summary_rows.append({"Metric": "Serialized HTML", "Count": _count_yes("Serialized HTML")})
@@ -315,14 +316,14 @@ def run_dump(cfg: Dict[str, Any]) -> int:
             "Loaded DoclingDocument": _yes(False),
             "Loaded DoclingDocument Error": "",
             "Serialized HTML": _yes(False),
-            "Serialized HTML Error": "",            
+            "Serialized HTML Error": "",
         }
 
-        for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
-            for comp in [True, False]:
+        for mode in IDocTagsSerializationMode:
+            for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"] = _yes(False)
-                    row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error"] = ""
+                    row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
+                    row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
 
         try:
             doc = DoclingDocument.model_validate_json(text)
@@ -338,12 +339,12 @@ def run_dump(cfg: Dict[str, Any]) -> int:
             # Record failure outcome for this row
             row_result["Loaded DoclingDocument Error"] = str(exc)
 
-            for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
-                for comp in [True, False]:
+            for mode in IDocTagsSerializationMode:
+                for esc_mode in EscapeMode:
                     for content in [True, False]:
-                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"] = _yes(False)
-                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error"] = "NA"
-            
+                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
+                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error"] = "NA"
+
             results_rows.append(row_result)
             continue
 
@@ -353,24 +354,24 @@ def run_dump(cfg: Dict[str, Any]) -> int:
             # __.save(png_path)
 
         for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
-            for comp in [True, False]:
+            for esc_mode in [True, False]:
                 for content in [True, False]:
                     try:
                         params_probe = IDocTagsParams()
                         params_probe.add_content = content
                         params_probe.mode = mode
-                        params_probe.xml_compliant = comp
+                        params_probe.escape_mode = esc_mode
                         params_probe.pretty_indentation = "  " if mode==IDocTagsSerializationMode.HUMAN_FRIENDLY else None
 
                         iser_probe = IDocTagsDocSerializer(doc=doc, params=params_probe)
                         _ = iser_probe.serialize().text
 
-                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"] = _yes(True)
-                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error"] = ""
+                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(True)
+                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
 
                     except Exception as exc_:
-                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})"] = _yes(False)
-                        row_result[f"Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}) Error"] = str(exc_)
+                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(False)
+                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = str(exc_)
 
         # Attempt HTML export (non-writing) to check serialization capability
         try:
@@ -401,9 +402,9 @@ def run_dump(cfg: Dict[str, Any]) -> int:
     print(f" - Total processed: {len(results_rows)}")
     print(f" - Loaded DoclingDocument: {_count_yes(results_rows, 'Loaded DoclingDocument')}")
     for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
-        for comp in [True, False]:
+        for esc_mode in [True, False]:
             for content in [True, False]:
-                print(f" - Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content}): {_count_yes(results_rows, f'Serialized IDocTags ({mode.value}, xml_compliant={comp}, content={content})')}")
+                print(f" - Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content}): {_count_yes(results_rows, f'Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content})')}")
     print(f" - Serialized HTML: {_count_yes(results_rows, 'Serialized HTML')}")
 
     if errors:
@@ -415,7 +416,7 @@ def run_dump(cfg: Dict[str, Any]) -> int:
     return 0 if not errors else 1
 
 
-def run_analyse(cfg: Dict[str, Any]) -> int:
+def run_analyse(cfg: dict[str, Any]) -> int:
     """Analyse token lengths and special-token usage from IDocTags files.
 
     Config keys (with defaults):
@@ -608,7 +609,7 @@ def plot_token_scatter_with_regression(
     plt.tight_layout()
     plt.show()
 
-def default_config(mode: str) -> Dict[str, Any]:
+def default_config(mode: str) -> dict[str, Any]:
     if mode == "dump":
         return {
             "dataset_name": "docling-project/doclaynet-set-a",
@@ -665,7 +666,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     cfg_path: Optional[Path] = args.config
-    cfg: Dict[str, Any]
+    cfg: dict[str, Any]
 
     if cfg_path is None:
         cfg = default_config(args.mode)

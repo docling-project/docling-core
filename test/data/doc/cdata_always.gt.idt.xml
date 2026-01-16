@@ -1,0 +1,169 @@
+<doctag version="1.0.0">
+  <list ordered="false">
+    <list_text><![CDATA[item of leading list]]></list_text>
+  </list>
+  <title><![CDATA[Title of the Document]]></title>
+  <text><![CDATA[Author 1
+Affiliation 1]]></text>
+  <text><![CDATA[Author 2
+Affiliation 2]]></text>
+  <heading level="1"><![CDATA[1. Introduction]]></heading>
+  <text><![CDATA[This paper introduces the biggest invention ever made. ...]]></text>
+  <list ordered="false">
+    <list_text><![CDATA[list item 1]]></list_text>
+    <list_text><![CDATA[list item 2]]></list_text>
+    <list_text><![CDATA[list item 3]]></list_text>
+    <list ordered="true">
+      <list_text><![CDATA[list item 3.a]]></list_text>
+      <list_text><![CDATA[list item 3.b]]></list_text>
+      <list_text><![CDATA[list item 3.c]]></list_text>
+      <list ordered="true">
+        <list_text><![CDATA[list item 3.c.i]]></list_text>
+      </list>
+    </list>
+    <list_text><![CDATA[list item 4]]></list_text>
+  </list>
+  <floating_group class="table">
+    <caption>This is the caption of table 1.</caption>
+    <otsl>
+      <fcel/>
+<![CDATA[Product]]>      <fcel/>
+<![CDATA[Years]]>      <lcel/>
+      <nl/>
+      <ucel/>
+      <fcel/>
+<![CDATA[2016]]>      <fcel/>
+<![CDATA[2017]]>      <nl/>
+      <fcel/>
+<![CDATA[Apple]]>      <fcel/>
+<![CDATA[49823]]>      <fcel/>
+<![CDATA[695944]]>      <nl/>
+    </otsl>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>This is the caption of figure 1.</caption>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>This is the caption of figure 2.</caption>
+  </floating_group>
+  <list ordered="false">
+    <list_text><![CDATA[item 1 of list]]></list_text>
+  </list>
+  <list ordered="false">
+    <list_text><![CDATA[item 1 of list after empty list]]></list_text>
+    <list_text><![CDATA[item 2 of list after empty list]]></list_text>
+  </list>
+  <list ordered="false">
+    <list_text><![CDATA[item 1 of neighboring list]]></list_text>
+    <list_text><![CDATA[item 2 of neighboring list]]></list_text>
+    <list ordered="false">
+      <list_text><![CDATA[item 1 of sub list]]></list_text>
+      <list_text>
+        <inline>
+          <text><![CDATA[Here a code snippet:]]></text>
+          <code class="Python"><![CDATA[print("Hello world")]]></code>
+          <text><![CDATA[(to be displayed inline)]]></text>
+        </inline>
+      </list_text>
+      <list_text>
+        <inline>
+          <text><![CDATA[Here a formula:]]></text>
+          <formula><![CDATA[E=mc^2]]></formula>
+          <text><![CDATA[(to be displayed inline)]]></text>
+        </inline>
+      </list_text>
+    </list>
+  </list>
+  <text><![CDATA[Here a code block:]]></text>
+  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <text><![CDATA[Here a formula block:]]></text>
+  <formula><![CDATA[E=mc^2]]></formula>
+  <inline>
+    <text><![CDATA[Some formatting chops:]]></text>
+    <text>
+      <bold><![CDATA[bold]]></bold>
+    </text>
+    <text>
+      <italic><![CDATA[italic]]></italic>
+    </text>
+    <text>
+      <underline><![CDATA[underline]]></underline>
+    </text>
+    <text>
+      <strikethrough><![CDATA[strikethrough]]></strikethrough>
+    </text>
+    <text>
+      <subscript><![CDATA[subscript]]></subscript>
+    </text>
+    <text>
+      <superscript><![CDATA[superscript]]></superscript>
+    </text>
+    <text><![CDATA[hyperlink]]></text>
+    <text><![CDATA[&]]></text>
+    <text>
+      <strikethrough>
+        <underline>
+          <italic>
+            <bold><![CDATA[everything at the same time.]]></bold>
+          </italic>
+        </underline>
+      </strikethrough>
+    </text>
+  </inline>
+  <list ordered="true">
+    <list_text><![CDATA[Item 1 in A]]></list_text>
+    <list_text><![CDATA[Item 2 in A]]></list_text>
+    <list_text><![CDATA[Item 3 in A]]></list_text>
+    <list ordered="true">
+      <list_text><![CDATA[Item 1 in B]]></list_text>
+      <list_text><![CDATA[Item 2 in B]]></list_text>
+      <list ordered="true">
+        <list_text><![CDATA[Item 1 in C]]></list_text>
+        <list_text><![CDATA[Item 2 in C]]></list_text>
+      </list>
+      <list_text><![CDATA[Item 3 in B]]></list_text>
+    </list>
+    <list_text><![CDATA[Item 4 in A]]></list_text>
+  </list>
+  <list ordered="false">
+    <list_text><![CDATA[List item without parent list group]]></list_text>
+  </list>
+  <text><![CDATA[The end.]]></text>
+  <text><![CDATA[Simple text]]></text>
+  <text><![CDATA[    4 leading spaces, 1 trailing ]]></text>
+  <text><![CDATA[Some 'single' quotes]]></text>
+  <text><![CDATA[Some "double" quotes]]></text>
+  <text>
+    <meta>
+      <summary><![CDATA[Summary with <tags> & ampersands]]></summary>
+      <description><![CDATA[Description content]]></description>
+    </meta>
+<![CDATA[An ampersand: &]]>  </text>
+  <code><![CDATA[0 == 0]]></code>
+  <code><![CDATA[ 1 leading space, 4 trailing    ]]></code>
+  <code><![CDATA[0 < 1]]></code>
+  <code class="Python"><![CDATA[42 == 42]]></code>
+  <code class="Python"><![CDATA[42 < 1337]]></code>
+  <floating_group class="table">
+    <otsl>
+      <fcel/>
+<![CDATA[Foo]]>      <fcel/>
+<![CDATA[Bar]]>      <nl/>
+      <fcel/>
+<![CDATA[Header & Title]]>      <fcel/>
+<![CDATA[Value > 100]]>      <nl/>
+      <fcel/>
+<![CDATA[<script>]]>      <fcel/>
+<![CDATA[A & B]]>      <nl/>
+      <fcel/>
+<![CDATA[Only]]>      <fcel/>
+<![CDATA[<second>]]>      <nl/>
+    </otsl>
+  </floating_group>
+  <text><![CDATA[0 < 1]]></text>
+  <text>
+    <italic>
+      <bold><![CDATA[0 < 42]]></bold>
+    </italic>
+  </text>
+</doctag>

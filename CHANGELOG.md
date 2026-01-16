@@ -1,3 +1,29 @@
+## [v2.59.0](https://github.com/docling-project/docling-core/releases/tag/v2.59.0) - 2026-01-12
+
+### Feature
+
+* **IDocTags:** Add XML escape modes ([#471](https://github.com/docling-project/docling-core/issues/471)) ([`0c9c70d`](https://github.com/docling-project/docling-core/commit/0c9c70db76f4882ef29f5dafead5ee982524e6e7))
+
+### Fix
+
+* Make tree-sitter-java-orchard optional ([#475](https://github.com/docling-project/docling-core/issues/475)) ([`980abab`](https://github.com/docling-project/docling-core/commit/980abab95f2651b3cf0ba5705a99ef4a103d80fb))
+
+## [v2.58.1](https://github.com/docling-project/docling-core/releases/tag/v2.58.1) - 2026-01-09
+
+### Fix
+
+* **deps:** Switch to tree-sitter-java-orchard and expand typer compatibility ([#473](https://github.com/docling-project/docling-core/issues/473)) ([`8c330ab`](https://github.com/docling-project/docling-core/commit/8c330ab81a39a2b23bf848e241ee70ef9d24df20))
+
+## [v2.58.0](https://github.com/docling-project/docling-core/releases/tag/v2.58.0) - 2026-01-08
+
+### Feature
+
+* **DocItem:** Add comments field for linking annotations to document… ([#465](https://github.com/docling-project/docling-core/issues/465)) ([`1d2e0c7`](https://github.com/docling-project/docling-core/commit/1d2e0c7ebe8e00ba475635244be67ee31d62b63e))
+
+### Fix
+
+* Skip annotation migration if respective meta present ([#469](https://github.com/docling-project/docling-core/issues/469)) ([`51a01a6`](https://github.com/docling-project/docling-core/commit/51a01a62c99e51b816335d86c52bfdbc52e239f9))
+
 ## [v2.57.0](https://github.com/docling-project/docling-core/releases/tag/v2.57.0) - 2025-12-18
 
 ### Feature

@@ -21,8 +21,6 @@ class Generic(AliasModel):
 
     file_info: FileInfoObject = Field(
         title="Document information",
-        description=(
-            "Minimal identification information of the document within a collection."
-        ),
+        description=("Minimal identification information of the document within a collection."),
         alias="file-info",
     )

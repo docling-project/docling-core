@@ -1,10 +1,8 @@
 """Define classes for DocTags serialization."""
 
 import copy
-import html
 import re
 from enum import Enum
-from html.parser import HTMLParser
 from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
 from xml.dom.minidom import Element, Text, parseString
@@ -125,7 +123,7 @@ def _xml_error_context(
 
 def _quantize_to_resolution(value: float, resolution: int) -> int:
     """Quantize normalized value in [0,1] to [0,resolution]."""
-    n = int(round(resolution * value))
+    n = round(resolution * value)
     if n < 0:
         return 0
     if n > resolution:
@@ -174,11 +172,7 @@ def _create_location_tokens_for_item(
     for prov in item.prov:
         page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
         bbox = prov.bbox.to_top_left_origin(page_h).as_tuple()
-        out.append(
-            _create_location_tokens_for_bbox(
-                bbox=bbox, page_w=page_w, page_h=page_h, xres=xres, yres=yres
-            )
-        )
+        out.append(_create_location_tokens_for_bbox(bbox=bbox, page_w=page_w, page_h=page_h, xres=xres, yres=yres))
 
     # In a proper serialization, we should use <thread id="1|2|3|...|"/> to link different
     # sections together ...
@@ -188,9 +182,7 @@ def _create_location_tokens_for_item(
             res.append(f"{i} {_}")
         err = "\n".join(res)
 
-        raise ValueError(
-            f"We have more than 1 location for this item [{item.label}]:\n\n{err}\n\n{out}"
-        )
+        raise ValueError(f"We have more than 1 location for this item [{item.label}]:\n\n{err}\n\n{out}")
 
     return "".join(out)
 
@@ -373,8 +365,9 @@ class IDocTagsToken(str, Enum):
     INLINE = "inline"
 
     # Formatting
-    BOLD = "bold"  # instead of "strong"
-    ITALIC = "italic"  # instead of "em"
+    BOLD = "bold"
+    ITALIC = "italic"
+    UNDERLINE = "underline"
     STRIKETHROUGH = "strikethrough"
     SUPERSCRIPT = "superscript"
     SUBSCRIPT = "subscript"
@@ -511,9 +504,7 @@ class IDocTagsVocabulary(BaseModel):
         # Other attributes (e.g., level, type, id) are not enumerated here
     }
 
-    ALLOWED_ATTRIBUTE_RANGE: ClassVar[
-        dict[IDocTagsToken, dict["IDocTagsAttributeKey", tuple[int, int]]]
-    ] = {
+    ALLOWED_ATTRIBUTE_RANGE: ClassVar[dict[IDocTagsToken, dict["IDocTagsAttributeKey", tuple[int, int]]]] = {
         # Geometric: value in [0, res]; resolution optional.
         # Keep conservative defaults aligned with existing usage.
         IDocTagsToken.LOCATION: {
@@ -699,9 +690,7 @@ class IDocTagsVocabulary(BaseModel):
         return f"</{name}>"
 
     @classmethod
-    def create_doctag_root(
-        cls, *, version: str = DOCTAGS_VERSION, closing: bool = False
-    ) -> str:
+    def create_doctag_root(cls, *, version: str = DOCTAGS_VERSION, closing: bool = False) -> str:
         """Create the document root tag.
 
         - When `closing` is True, returns the closing root tag.
@@ -737,9 +726,7 @@ class IDocTagsVocabulary(BaseModel):
         return f'<{token.value} {IDocTagsAttributeKey.ID.value}="{id}"/>'
 
     @classmethod
-    def create_floating_group_token(
-        cls, *, value: IDocTagsAttributeValue, closing: bool = False
-    ) -> str:
+    def create_floating_group_token(cls, *, value: IDocTagsAttributeValue, closing: bool = False) -> str:
         """Create a floating group tag.
 
         - When `closing` is True, returns the closing tag.
@@ -777,9 +764,7 @@ class IDocTagsVocabulary(BaseModel):
         When `closing` is False, emits an opening tag with level attribute.
         When `closing` is True, emits the corresponding closing tag.
         """
-        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.HEADING][
-            IDocTagsAttributeKey.LEVEL
-        ]
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.HEADING][IDocTagsAttributeKey.LEVEL]
         if not (lo <= level <= hi):
             raise ValueError(f"level must be in [{lo}, {hi}]")
 
@@ -788,9 +773,7 @@ class IDocTagsVocabulary(BaseModel):
         return f'<{IDocTagsToken.HEADING.value} {IDocTagsAttributeKey.LEVEL.value}="{level}">'
 
     @classmethod
-    def create_location_token(
-        cls, *, value: int, resolution: int = DOCTAGS_RESOLUTION
-    ) -> str:
+    def create_location_token(cls, *, value: int, resolution: int = DOCTAGS_RESOLUTION) -> str:
         """Create a location token with value and resolution.
 
         Validates both attributes using the configured ranges and ensures
@@ -799,9 +782,7 @@ class IDocTagsVocabulary(BaseModel):
         """
         range_map = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.LOCATION]
         # Validate resolution if a constraint exists
-        r_lo, r_hi = range_map.get(
-            IDocTagsAttributeKey.RESOLUTION, (resolution, resolution)
-        )
+        r_lo, r_hi = range_map.get(IDocTagsAttributeKey.RESOLUTION, (resolution, resolution))
         if not (r_lo <= resolution <= r_hi):
             raise ValueError(f"resolution: {resolution} must be in [{r_lo}, {r_hi}]")
 
@@ -861,23 +842,16 @@ class IDocTagsVocabulary(BaseModel):
                 for attr_name, allowed_vals in enum_map.items():
                     for v in sorted(allowed_vals, key=lambda x: x.value):
                         if is_selfclosing:
-                            special_tokens.append(
-                                f'<{name} {attr_name.value}="{v.value}"/>'
-                            )
+                            special_tokens.append(f'<{name} {attr_name.value}="{v.value}"/>')
                         else:
-                            special_tokens.append(
-                                f'<{name} {attr_name.value}="{v.value}">'
-                            )
+                            special_tokens.append(f'<{name} {attr_name.value}="{v.value}">')
                             special_tokens.append(f"</{name}>")
 
                 # Ranged attribute values (emit a conservative, complete range)
                 range_map = cls.ALLOWED_ATTRIBUTE_RANGE.get(token, {})
                 for attr_name, (lo, hi) in range_map.items():
                     # Keep the list size reasonable by skipping optional resolution enumeration
-                    if (
-                        token is IDocTagsToken.LOCATION
-                        and attr_name is IDocTagsAttributeKey.RESOLUTION
-                    ):
+                    if token is IDocTagsToken.LOCATION and attr_name is IDocTagsAttributeKey.RESOLUTION:
                         continue
                     for n in range(lo, hi + 1):
                         if is_selfclosing:
@@ -921,9 +895,7 @@ class IDocTagsVocabulary(BaseModel):
         allowed_keys = cls.ALLOWED_ATTRIBUTES.get(token, set())
         for k in attrs.keys():
             if k not in allowed_keys:
-                raise ValueError(
-                    f"attribute '{getattr(k, 'value', str(k))}' not allowed on '{token.value}'"
-                )
+                raise ValueError(f"attribute '{getattr(k, 'value', str(k))}' not allowed on '{token.value}'")
 
         # Validate values either via enumerations or numeric ranges
         enum_map = cls.ALLOWED_ATTRIBUTE_VALUES.get(token, {})
@@ -944,9 +916,7 @@ class IDocTagsVocabulary(BaseModel):
                 v_norm = v.value if isinstance(v, Enum) else str(v)
                 allowed_strs = {a.value for a in allowed}
                 if v_norm not in allowed_strs:
-                    raise ValueError(
-                        f"invalid value '{v_norm}' for '{k.value}' on '{token.value}'"
-                    )
+                    raise ValueError(f"invalid value '{v_norm}' for '{k.value}' on '{token.value}'")
                 parts.append(f'{k.value}="{v_norm}"')
                 continue
 
@@ -956,13 +926,9 @@ class IDocTagsVocabulary(BaseModel):
                 try:
                     v_num = int(v)
                 except Exception:
-                    raise ValueError(
-                        f"attribute '{k.value}' on '{token.value}' must be an integer"
-                    )
+                    raise ValueError(f"attribute '{k.value}' on '{token.value}' must be an integer")
                 if not (lo <= v_num <= hi):
-                    raise ValueError(
-                        f"attribute '{k.value}' must be in [{lo}, {hi}] for '{token.value}'"
-                    )
+                    raise ValueError(f"attribute '{k.value}' must be in [{lo}, {hi}] for '{token.value}'")
                 parts.append(f'{k.value}="{v_num}"')
                 continue
 
@@ -979,6 +945,13 @@ class IDocTagsSerializationMode(str, Enum):
 
     HUMAN_FRIENDLY = "human_friendly"
     LLM_FRIENDLY = "llm_friendly"
+
+
+class EscapeMode(str, Enum):
+    """XML escape mode for IDocTags output."""
+
+    CDATA_ALWAYS = "cdata_always"  # wrap all text in CDATA
+    CDATA_WHEN_NEEDED = "cdata_when_needed"  # wrap text in CDATA only if it contains special characters
 
 
 class IDocTagsParams(CommonParams):
@@ -1002,7 +975,7 @@ class IDocTagsParams(CommonParams):
     # Expand self-closing forms of non-self-closing tokens after pretty-printing
     preserve_empty_non_selfclosing: bool = True
     # XML compliance: escape special characters in text content
-    xml_compliant: bool = False
+    escape_mode: EscapeMode = EscapeMode.CDATA_WHEN_NEEDED
 
 
 def _get_delim(*, params: IDocTagsParams) -> str:
@@ -1014,84 +987,12 @@ def _get_delim(*, params: IDocTagsParams) -> str:
     raise RuntimeError(f"Unknown IDocTags mode: {params.mode}")
 
 
-class _WhitelistHTMLParser(HTMLParser):
-    """XML-safe sanitizer that preserves only specific IDocTags formatting and content tags.
-
-    Preserves these tags (attributes are stripped):
-    bold, italic, strikethrough, superscript, subscript, inline, text, code, formula, facets.
-    All other tags are escaped literally.
-    """
-
-    # Allowed formatting and content tags
-    _ALLOWED = {
-        IDocTagsToken.BOLD.value,
-        IDocTagsToken.ITALIC.value,
-        IDocTagsToken.STRIKETHROUGH.value,
-        IDocTagsToken.SUPERSCRIPT.value,
-        IDocTagsToken.SUBSCRIPT.value,
-        IDocTagsToken.INLINE.value,
-        IDocTagsToken.TEXT.value,
-        IDocTagsToken.CODE.value,
-        IDocTagsToken.FORMULA.value,
-        IDocTagsToken.FACETS.value,
-    }
-
-    def __init__(self):
-        super().__init__(convert_charrefs=False)
-        self.out = []
-
-    def handle_starttag(self, tag, attrs):
-        if tag in self._ALLOWED:
-            self.out.append(f"<{tag}>")
-        else:
-            # Escape disallowed tags literally
-            self.out.append(html.escape(self.get_starttag_text(), quote=False))
-
-    def handle_endtag(self, tag):
-        if tag in self._ALLOWED:
-            self.out.append(f"</{tag}>")
-        else:
-            self.out.append(html.escape(f"</{tag}>", quote=False))
-
-    def handle_startendtag(self, tag, attrs):
-        if tag in self._ALLOWED:
-            self.out.append(f"<{tag}></{tag}>")
-        else:
-            self.out.append(html.escape(self.get_starttag_text(), quote=False))
-
-    def handle_data(self, data):
-        self.out.append(html.escape(data, quote=False))
-
-    def handle_entityref(self, name):
-        self.out.append(f"&{name};")
-
-    def handle_charref(self, name):
-        self.out.append(f"&#{name};")
-
-    def handle_comment(self, data):
-        self.out.append(html.escape(f"<!--{data}-->", quote=False))
-
-
-# def _escape_xml_text(text: str, xml_compliant: bool) -> str:
-#     """Escape XML special characters if xml_compliant is enabled."""
-#     if xml_compliant:
-#         return html.escape(text, quote=False)
-#     return text
-
-
-def _escape_xml_text(text: str, xml_compliant: bool) -> str:
-    """Escape text for XML while optionally preserving specific IDocTags formatting tags.
-
-    If xml_compliant=True, preserves only these tags (attributes stripped):
-    bold, italic, strikethrough, superscript, subscript, inline, text, code, formula, facets.
-    All other tags are escaped. If xml_compliant=False, returns text unchanged.
-    """
-    if not xml_compliant:
-        return text
-    parser = _WhitelistHTMLParser()
-    parser.feed(text)
-    parser.close()
-    return "".join(parser.out)
+def _escape_text(text: str, escape_mode: EscapeMode) -> str:
+    if escape_mode == EscapeMode.CDATA_ALWAYS or (
+        escape_mode == EscapeMode.CDATA_WHEN_NEEDED and any(c in text for c in ['"', "'", "&", "<", ">"])
+    ):
+        return f"<![CDATA[{text}]]>"
+    return text
 
 
 class IDocTagsListSerializer(BaseModel, BaseListSerializer):
@@ -1190,11 +1091,7 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
             # as siblings at the same level (not wrapped in <list_text>).
             for subref in child.children:
                 sub = subref.resolve(doc)
-                if (
-                    isinstance(sub, ListGroup)
-                    and sub.self_ref not in my_visited
-                    and sub.self_ref not in excluded
-                ):
+                if isinstance(sub, ListGroup) and sub.self_ref not in my_visited and sub.self_ref not in excluded:
                     my_visited.add(sub.self_ref)
                     sub_res = doc_serializer.serialize(
                         item=sub,
@@ -1260,9 +1157,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             for idp, prov_ in enumerate(item.prov):
                 item_ = copy.deepcopy(item)
                 item_.prov = [prov_]
-                item_.text = item.orig[
-                    prov_.charspan[0] : prov_.charspan[1]
-                ]  # it must be `orig`, not `text` here!
+                item_.text = item.orig[prov_.charspan[0] : prov_.charspan[1]]  # it must be `orig`, not `text` here!
                 item_.orig = item.orig[prov_.charspan[0] : prov_.charspan[1]]
 
                 item_.prov[0].charspan = (0, len(item_.orig))
@@ -1333,17 +1228,18 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         elif isinstance(item, ListItem):
             tok = IDocTagsToken.LIST_TEXT
             wrap_open_token = f"<{tok.value}>"
-        elif (
-            isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_SELECTED
-        ):
+        elif isinstance(item, CodeItem):
+            tok = IDocTagsToken.CODE
+            if item.code_language != CodeLanguageLabel.UNKNOWN:
+                wrap_open_token = f'<{tok.value} {IDocTagsAttributeKey.CLASS.value}="{item.code_language.value}">'
+            else:
+                wrap_open_token = f"<{tok.value}>"
+        elif isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_SELECTED:
             tok = IDocTagsToken.TEXT
             # FIXME: make a dedicated create_selected_token in IDocTagsVocabulary
             wrap_open_token = f"<{tok.value}>"
             selected_token = '<selected value="true"/>'
-        elif (
-            isinstance(item, TextItem)
-            and item.label == DocItemLabel.CHECKBOX_UNSELECTED
-        ):
+        elif isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_UNSELECTED:
             tok = IDocTagsToken.TEXT
             # FIXME: make a dedicated create_selected_token in IDocTagsVocabulary
             wrap_open_token = f"<{tok.value}>"
@@ -1366,9 +1262,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 tok = IDocTagsToken(label_value)
                 wrap_open_token = f"<{tok.value}>"
             except ValueError:
-                raise ValueError(
-                    f"Unsupported IDocTags token for label '{label_value}'"
-                )
+                raise ValueError(f"Unsupported IDocTags token for label '{label_value}'")
 
         parts: list[str] = []
 
@@ -1391,9 +1285,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             if not item.text and len(item.children) == 1:
                 child = item.children[0].resolve(doc)
                 if isinstance(child, InlineGroup):
-                    ser_res = doc_serializer.serialize(
-                        item=child, visited=my_visited, **kwargs
-                    )
+                    ser_res = doc_serializer.serialize(item=child, visited=my_visited, **kwargs)
                     text_part = ser_res.text
                 else:
                     text_part = doc_serializer.post_process(
@@ -1402,30 +1294,12 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                         hyperlink=item.hyperlink,
                     )
             else:
+                text_part = _escape_text(item.text, params.escape_mode)
                 text_part = doc_serializer.post_process(
-                    text=item.text,
+                    text=text_part,
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
                 )
-
-            # For code blocks, preserve language using a lightweight facets marker
-            # e.g., <facets>language=python</facets> before the code content.
-            if isinstance(item, CodeItem):
-                # lang = getattr(item.code_language, "value", str(item.code_language))
-                if item.code_language != CodeLanguageLabel.UNKNOWN:
-                    parts.append(
-                        _wrap(
-                            # text=f"language={lang.lower()}",
-                            text=item.code_language.value,
-                            wrap_tag=IDocTagsToken.FACETS.value,
-                        )
-                    )
-                # Keep the textual code content as-is (no stripping)
-            else:
-                text_part = text_part.strip()
-
-            # Apply XML escaping if xml_compliant is enabled
-            text_part = _escape_xml_text(text_part, params.xml_compliant)
 
             if text_part:
                 parts.append(text_part)
@@ -1433,13 +1307,13 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         if params.add_caption and isinstance(item, FloatingItem):
             cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
             if cap_text:
-                cap_text = _escape_xml_text(cap_text, params.xml_compliant)
+                cap_text = _escape_text(cap_text, params.escape_mode)
                 parts.append(cap_text)
 
         if params.add_footnote and isinstance(item, FloatingItem):
             ftn_text = doc_serializer.serialize_footnotes(item=item, **kwargs).text
             if ftn_text:
-                ftn_text = _escape_xml_text(ftn_text, params.xml_compliant)
+                ftn_text = _escape_text(ftn_text, params.escape_mode)
                 parts.append(ftn_text)
 
         text_res = "".join(parts)
@@ -1465,15 +1339,9 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
         texts = (
             [
                 tmp
-                for key in (
-                    list(item.meta.__class__.model_fields)
-                    + list(item.meta.get_custom_part())
-                )
+                for key in (list(item.meta.__class__.model_fields) + list(item.meta.get_custom_part()))
                 if (
-                    (
-                        params.allowed_meta_names is None
-                        or key in params.allowed_meta_names
-                    )
+                    (params.allowed_meta_names is None or key in params.allowed_meta_names)
                     and (key not in params.blocked_meta_names)
                     and (tmp := self._serialize_meta_field(item.meta, key, params))
                 )
@@ -1489,44 +1357,28 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
             span_source=item if isinstance(item, DocItem) else [],
         )
 
-    def _serialize_meta_field(
-        self, meta: BaseMeta, name: str, params: IDocTagsParams
-    ) -> Optional[str]:
+    def _serialize_meta_field(self, meta: BaseMeta, name: str, params: IDocTagsParams) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
-            if name == MetaFieldName.SUMMARY and isinstance(
-                field_val, SummaryMetaField
-            ):
-                escaped_text = _escape_xml_text(field_val.text, params.xml_compliant)
+            if name == MetaFieldName.SUMMARY and isinstance(field_val, SummaryMetaField):
+                escaped_text = _escape_text(field_val.text, params.escape_mode)
                 txt = f"<summary>{escaped_text}</summary>"
-            elif name == MetaFieldName.DESCRIPTION and isinstance(
-                field_val, DescriptionMetaField
-            ):
-                escaped_text = _escape_xml_text(field_val.text, params.xml_compliant)
+            elif name == MetaFieldName.DESCRIPTION and isinstance(field_val, DescriptionMetaField):
+                escaped_text = _escape_text(field_val.text, params.escape_mode)
                 txt = f"<description>{escaped_text}</description>"
-            elif name == MetaFieldName.CLASSIFICATION and isinstance(
-                field_val, PictureClassificationMetaField
-            ):
-                class_name = self._humanize_text(
-                    field_val.get_main_prediction().class_name
-                )
-                escaped_class_name = _escape_xml_text(class_name, params.xml_compliant)
+            elif name == MetaFieldName.CLASSIFICATION and isinstance(field_val, PictureClassificationMetaField):
+                class_name = self._humanize_text(field_val.get_main_prediction().class_name)
+                escaped_class_name = _escape_text(class_name, params.escape_mode)
                 txt = f"<classification>{escaped_class_name}</classification>"
-            elif name == MetaFieldName.MOLECULE and isinstance(
-                field_val, MoleculeMetaField
-            ):
-                escaped_smi = _escape_xml_text(field_val.smi, params.xml_compliant)
+            elif name == MetaFieldName.MOLECULE and isinstance(field_val, MoleculeMetaField):
+                escaped_smi = _escape_text(field_val.smi, params.escape_mode)
                 txt = f"<molecule>{escaped_smi}</molecule>"
-            elif name == MetaFieldName.TABULAR_CHART and isinstance(
-                field_val, TabularChartMetaField
-            ):
+            elif name == MetaFieldName.TABULAR_CHART and isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
                 return None
             # elif tmp := str(field_val or ""):
             #     txt = tmp
             elif name not in {v.value for v in MetaFieldName}:
-                escaped_text = _escape_xml_text(
-                    str(field_val or ""), params.xml_compliant
-                )
+                escaped_text = _escape_text(str(field_val or ""), params.escape_mode)
                 txt = _wrap(text=escaped_text, wrap_tag=name)
             return txt
         return None
@@ -1547,9 +1399,7 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
         """Serializes the passed item."""
         params = IDocTagsParams(**kwargs)
 
-        open_token: str = IDocTagsVocabulary.create_floating_group_token(
-            value=IDocTagsAttributeValue.PICTURE
-        )
+        open_token: str = IDocTagsVocabulary.create_floating_group_token(value=IDocTagsAttributeValue.PICTURE)
         close_token: str = IDocTagsVocabulary.create_floating_group_token(
             value=IDocTagsAttributeValue.PICTURE, closing=True
         )
@@ -1605,9 +1455,7 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
 
         picture_text = "".join(picture_inner_parts)
         if picture_text:
-            picture_text = _wrap(
-                text=picture_text, wrap_tag=IDocTagsToken.PICTURE.value
-            )
+            picture_text = _wrap(text=picture_text, wrap_tag=IDocTagsToken.PICTURE.value)
 
         # Build footnotes (as siblings of the picture within the floating_group)
         footnote_text = ""
@@ -1652,15 +1500,11 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         nrows, ncols = item.data.num_rows, item.data.num_cols
 
         # Check if any cells have bounding boxes available
-        has_any_cell_bbox = any(
-            (c.bbox is not None) for row in item.data.grid for c in row
-        )
+        has_any_cell_bbox = any((c.bbox is not None) for row in item.data.grid for c in row)
 
         # If per-cell location is requested but no cells have bboxes, fail early
         if params.add_table_cell_location and not has_any_cell_bbox:
-            raise ValueError(
-                "Cell locations requested but no cells have bounding boxes in the table."
-            )
+            raise ValueError("Cell locations requested but no cells have bounding boxes in the table.")
 
         # Determine if we need page context for location serialization
         need_cell_loc = params.add_table_cell_location and has_any_cell_bbox
@@ -1668,19 +1512,13 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         page_no = 0
         if need_cell_loc:
             if not item.prov:
-                raise ValueError(
-                    "Per-cell location requested but table has no provenance (page_no)."
-                )
+                raise ValueError("Per-cell location requested but table has no provenance (page_no).")
             page_no = item.prov[0].page_no
             if not doc.pages or page_no not in doc.pages:
-                raise ValueError(
-                    f"Per-cell location requested but no page info for page {page_no}."
-                )
+                raise ValueError(f"Per-cell location requested but no page info for page {page_no}.")
             page_w, page_h = doc.pages[page_no].size.as_tuple()
             if page_w <= 0 or page_h <= 0:
-                raise ValueError(
-                    f"Invalid page size ({page_w}, {page_h}) for page {page_no}."
-                )
+                raise ValueError(f"Invalid page size ({page_w}, {page_h}) for page {page_no}.")
         else:
             # Defaults will not be used unless a bbox is present and
             # add_table_cell_location is true
@@ -1690,9 +1528,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         for i in range(nrows):
             for j in range(ncols):
                 cell = item.data.grid[i][j]
-                content = cell._get_text(
-                    doc=doc, doc_serializer=doc_serializer, **kwargs
-                ).strip()
+                content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
 
                 rowspan, rowstart = cell.row_span, cell.start_row_offset_idx
                 colspan, colstart = cell.col_span, cell.start_col_offset_idx
@@ -1700,7 +1536,6 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                 # Optional per-cell location
                 cell_loc = ""
                 if params.add_table_cell_location:
-
                     if cell.bbox is None:
                         raise ValueError("Missing cell-bbox in the table-grid.")
 
@@ -1716,70 +1551,30 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                 if rowstart == i and colstart == j:
                     if content:
                         if cell.column_header:
-                            parts.append(
-                                IDocTagsVocabulary.create_selfclosing_token(
-                                    token=IDocTagsToken.CHED
-                                )
-                            )
+                            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.CHED))
                         elif cell.row_header:
-                            parts.append(
-                                IDocTagsVocabulary.create_selfclosing_token(
-                                    token=IDocTagsToken.RHED
-                                )
-                            )
+                            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.RHED))
                         elif cell.row_section:
-                            parts.append(
-                                IDocTagsVocabulary.create_selfclosing_token(
-                                    token=IDocTagsToken.SROW
-                                )
-                            )
+                            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.SROW))
                         else:
-                            parts.append(
-                                IDocTagsVocabulary.create_selfclosing_token(
-                                    token=IDocTagsToken.FCEL
-                                )
-                            )
+                            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.FCEL))
 
                         if params.add_table_cell_location:
                             parts.append(cell_loc)
                         if params.add_content:
                             # Apply XML escaping to table cell content
-                            escaped_content = _escape_xml_text(
-                                content, params.xml_compliant
-                            )
+                            escaped_content = _escape_text(content, params.escape_mode)
                             parts.append(escaped_content)
                     else:
-                        parts.append(
-                            IDocTagsVocabulary.create_selfclosing_token(
-                                token=IDocTagsToken.ECEL
-                            )
-                        )
-                elif (
-                    rowstart != i and colspan == 1
-                ):  # FIXME: I believe we should have colstart == j
-                    parts.append(
-                        IDocTagsVocabulary.create_selfclosing_token(
-                            token=IDocTagsToken.UCEL
-                        )
-                    )
-                elif (
-                    colstart != j and rowspan == 1
-                ):  # FIXME: I believe we should have rowstart == i
-                    parts.append(
-                        IDocTagsVocabulary.create_selfclosing_token(
-                            token=IDocTagsToken.LCEL
-                        )
-                    )
+                        parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.ECEL))
+                elif rowstart != i and colspan == 1:  # FIXME: I believe we should have colstart == j
+                    parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.UCEL))
+                elif colstart != j and rowspan == 1:  # FIXME: I believe we should have rowstart == i
+                    parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.LCEL))
                 else:
-                    parts.append(
-                        IDocTagsVocabulary.create_selfclosing_token(
-                            token=IDocTagsToken.XCEL
-                        )
-                    )
+                    parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.XCEL))
 
-            parts.append(
-                IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.NL)
-            )
+            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.NL))
 
         return "".join(parts)
 
@@ -1797,9 +1592,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         params = IDocTagsParams(**kwargs)
 
         # FIXME: we might need to check the label to distinguish between TABLE and DOCUMENT_INDEX label
-        open_token: str = IDocTagsVocabulary.create_floating_group_token(
-            value=IDocTagsAttributeValue.TABLE
-        )
+        open_token: str = IDocTagsVocabulary.create_floating_group_token(value=IDocTagsAttributeValue.TABLE)
         close_token: str = IDocTagsVocabulary.create_floating_group_token(
             value=IDocTagsAttributeValue.TABLE, closing=True
         )
@@ -1819,9 +1612,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
             if params.add_location:
-                body += _create_location_tokens_for_item(
-                    item=item, doc=doc, xres=params.xsize, yres=params.ysize
-                )
+                body += _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
 
             otsl_text = self._emit_otsl(
                 item=item,
@@ -2016,9 +1807,7 @@ class IDocTagsDocSerializer(DocSerializer):
                 for caption in item.captions:
                     if caption.cref not in self.get_excluded_refs(**kwargs):
                         if isinstance(cap := caption.resolve(self.doc), DocItem):
-                            loc_txt = _create_location_tokens_for_item(
-                                item=cap, doc=self.doc
-                            )
+                            loc_txt = _create_location_tokens_for_item(item=cap, doc=self.doc)
                             results.append(create_ser_result(text=loc_txt))
             if cap_res.text and params.add_content:
                 results.append(cap_res)
@@ -2041,9 +1830,7 @@ class IDocTagsDocSerializer(DocSerializer):
                 if isinstance(ftn := footnote.resolve(self.doc), TextItem):
                     location = ""
                     if params.add_location:
-                        location = _create_location_tokens_for_item(
-                            item=ftn, doc=self.doc
-                        )
+                        location = _create_location_tokens_for_item(item=ftn, doc=self.doc)
 
                     content = ""
                     if ftn.text and params.add_content:
@@ -2051,9 +1838,7 @@ class IDocTagsDocSerializer(DocSerializer):
 
                     text_res = f"{location}{content}"
                     if text_res:
-                        text_res = _wrap(
-                            text_res, wrap_tag=IDocTagsToken.FOOTNOTE.value
-                        )
+                        text_res = _wrap(text_res, wrap_tag=IDocTagsToken.FOOTNOTE.value)
                         results.append(create_ser_result(text=text_res))
 
         text_res = "".join([r.text for r in results])
@@ -2078,10 +1863,8 @@ class IDocTagsDocSerializer(DocSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
-            # Always emit well‑formed page breaks using the vocabulary
-            page_sep = IDocTagsVocabulary.create_selfclosing_token(
-                token=IDocTagsToken.PAGE_BREAK
-            )
+            # Always emit well-formed page breaks using the vocabulary
+            page_sep = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.PAGE_BREAK)
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
@@ -2094,25 +1877,17 @@ class IDocTagsDocSerializer(DocSerializer):
                 # print(text_res)
 
                 ctx = _xml_error_context(text_res, e)
-                raise ValueError(
-                    f"XML pretty-print failed: {e}\n--- XML context ---\n{ctx}"
-                ) from e
+                raise ValueError(f"XML pretty-print failed: {e}\n--- XML context ---\n{ctx}") from e
             if my_root is None:
                 raise ValueError("XML pretty-print failed: documentElement is None")
             text_res = my_root.toprettyxml(indent=self.params.pretty_indentation)
-            text_res = "\n".join(
-                [line for line in text_res.split("\n") if line.strip()]
-            )
+            text_res = "\n".join([line for line in text_res.split("\n") if line.strip()])
 
             if self.params.preserve_empty_non_selfclosing:
                 # Expand self-closing forms for tokens that are not allowed
                 # to be self-closing according to the vocabulary.
                 # Example: <list_text/> -> <list_text></list_text>
-                non_selfclosing = [
-                    tok
-                    for tok in IDocTagsToken
-                    if tok not in IDocTagsVocabulary.IS_SELFCLOSING
-                ]
+                non_selfclosing = [tok for tok in IDocTagsToken if tok not in IDocTagsVocabulary.IS_SELFCLOSING]
 
                 def _expand_tag(text: str, name: str) -> str:
                     # Match <name/> or <name .../>
@@ -2138,6 +1913,11 @@ class IDocTagsDocSerializer(DocSerializer):
     def serialize_italic(self, text: str, **kwargs: Any) -> str:
         """Apply IDocTags-specific italic serialization."""
         return _wrap(text=text, wrap_tag=IDocTagsToken.ITALIC.value)
+
+    @override
+    def serialize_underline(self, text: str, **kwargs: Any) -> str:
+        """Apply IDocTags-specific underline serialization."""
+        return _wrap(text=text, wrap_tag=IDocTagsToken.UNDERLINE.value)
 
     @override
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
@@ -2179,9 +1959,7 @@ class IDocTagsDocDeserializer(BaseModel):
             root_node = parseString(doctags).documentElement
         except Exception as e:
             ctx = _xml_error_context(doctags, e)
-            raise ValueError(
-                f"Invalid DocTags XML: {e}\n--- XML context ---\n{ctx}"
-            ) from e
+            raise ValueError(f"Invalid DocTags XML: {e}\n--- XML context ---\n{ctx}") from e
         if root_node is None:
             raise ValueError("Invalid DocTags XML: missing documentElement")
         root: Element = cast(Element, root_node)
@@ -2191,12 +1969,10 @@ class IDocTagsDocDeserializer(BaseModel):
                 root = cast(Element, candidates[0])
 
         doc = DoclingDocument(name="Document")
-        # Initialize with a default page so location tokens can be re‑emitted
+        # Initialize with a default page so location tokens can be re-emitted
         self._page_no = 0
         self._default_resolution = DOCTAGS_RESOLUTION
-        self._ensure_page_exists(
-            doc=doc, page_no=self._page_no, resolution=self._default_resolution
-        )
+        self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
         self._parse_document_root(doc=doc, root=root)
         return doc
 
@@ -2206,9 +1982,7 @@ class IDocTagsDocDeserializer(BaseModel):
             if isinstance(node, Element):
                 self._dispatch_element(doc=doc, el=node, parent=None)
 
-    def _dispatch_element(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
+    def _dispatch_element(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         name = el.tagName
         if name in {
             IDocTagsToken.TITLE.value,
@@ -2224,9 +1998,7 @@ class IDocTagsDocDeserializer(BaseModel):
         elif name == IDocTagsToken.PAGE_BREAK.value:
             # Start a new page; keep a default square page using the configured resolution
             self._page_no += 1
-            self._ensure_page_exists(
-                doc=doc, page_no=self._page_no, resolution=self._default_resolution
-            )
+            self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
         elif name == IDocTagsToken.HEADING.value:
             self._parse_heading(doc=doc, el=el, parent=parent)
         elif name == IDocTagsToken.LIST.value:
@@ -2238,9 +2010,7 @@ class IDocTagsDocDeserializer(BaseModel):
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
 
-    def _walk_children(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
+    def _walk_children(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         for node in el.childNodes:
             if isinstance(node, Element):
                 # Ignore geometry/meta containers at this level; pass through page breaks
@@ -2253,9 +2023,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 self._dispatch_element(doc=doc, el=node, parent=parent)
 
     # ------------- Text blocks -------------
-    def _parse_text_like(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
+    def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         """Parse text-like tokens (title, text, caption, footnotes, code, formula)."""
         # Check if we have a single child that is an inline group
         # This matches the serialization behavior where a text item with no text
@@ -2263,14 +2031,10 @@ class IDocTagsDocDeserializer(BaseModel):
         child_elements = [
             node
             for node in el.childNodes
-            if isinstance(node, Element)
-            and node.tagName not in {IDocTagsToken.LOCATION.value}
+            if isinstance(node, Element) and node.tagName not in {IDocTagsToken.LOCATION.value}
         ]
 
-        if (
-            len(child_elements) == 1
-            and child_elements[0].tagName == IDocTagsToken.INLINE.value
-        ):
+        if len(child_elements) == 1 and child_elements[0].tagName == IDocTagsToken.INLINE.value:
             # This text-like element wraps a single inline group; create it directly
             self._parse_inline_group(doc=doc, el=child_elements[0], parent=parent)
             return
@@ -2337,11 +2101,12 @@ class IDocTagsDocDeserializer(BaseModel):
             for p in prov_list[1:]:
                 item.prov.append(p)
 
-    def _extract_code_content_and_language(
-        self, el: Element
-    ) -> tuple[str, CodeLanguageLabel]:
+    def _extract_code_content_and_language(self, el: Element) -> tuple[str, CodeLanguageLabel]:
         """Extract code content and language from a <code> element."""
-        lang_label = CodeLanguageLabel.UNKNOWN
+        try:
+            lang_label = CodeLanguageLabel(el.getAttribute(IDocTagsAttributeKey.CLASS.value))
+        except ValueError:
+            lang_label = CodeLanguageLabel.UNKNOWN
         parts: list[str] = []
         for node in el.childNodes:
             if isinstance(node, Text):
@@ -2349,45 +2114,16 @@ class IDocTagsDocDeserializer(BaseModel):
                     parts.append(node.data)
             elif isinstance(node, Element):
                 nm_child = node.tagName
-                if nm_child == IDocTagsToken.FACETS.value:
-                    language_text = self._get_text(node).strip()
-                    try:
-                        lang_label = next(
-                            lbl
-                            for lbl in CodeLanguageLabel
-                            if lbl.value == language_text
-                        )
-                    except StopIteration:
-                        lang_label = CodeLanguageLabel.UNKNOWN
-
-                    """
-                    facets_text = self._get_text(node).strip()
-                    if "=" in facets_text:
-                        key, val = facets_text.split("=", 1)
-                        if key.strip().lower() == "language":
-                            val_norm = val.strip().lower()
-                            try:
-                                lang_label = next(
-                                    lbl
-                                    for lbl in CodeLanguageLabel
-                                    if lbl.value.lower() == val_norm
-                                )
-                            except StopIteration:
-                                lang_label = CodeLanguageLabel.UNKNOWN
-                    """
-                    continue
                 if nm_child == IDocTagsToken.LOCATION.value:
                     continue
-                if nm_child == IDocTagsToken.BR.value:
+                elif nm_child == IDocTagsToken.BR.value:
                     parts.append("\n")
                 else:
                     parts.append(self._get_text(node))
 
         return "".join(parts), lang_label
 
-    def _parse_heading(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
+    def _parse_heading(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         lvl_txt = el.getAttribute(IDocTagsAttributeKey.LEVEL.value) or "1"
         try:
             level = int(lvl_txt)
@@ -2407,13 +2143,8 @@ class IDocTagsDocDeserializer(BaseModel):
             for p in prov_list[1:]:
                 item.prov.append(p)
 
-    def _parse_list(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
-        ordered = (
-            el.getAttribute(IDocTagsAttributeKey.ORDERED.value)
-            == IDocTagsAttributeValue.TRUE.value
-        )
+    def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        ordered = el.getAttribute(IDocTagsAttributeKey.ORDERED.value) == IDocTagsAttributeValue.TRUE.value
         group = doc.add_list_group(parent=parent)
         for node in el.childNodes:
             if not isinstance(node, Element):
@@ -2425,15 +2156,10 @@ class IDocTagsDocDeserializer(BaseModel):
                 child_elements = [
                     child
                     for child in node.childNodes
-                    if isinstance(child, Element)
-                    and child.tagName not in {IDocTagsToken.LOCATION.value}
+                    if isinstance(child, Element) and child.tagName not in {IDocTagsToken.LOCATION.value}
                 ]
 
-                if (
-                    len(child_elements) == 1
-                    and child_elements[0].tagName == IDocTagsToken.INLINE.value
-                ):
-
+                if len(child_elements) == 1 and child_elements[0].tagName == IDocTagsToken.INLINE.value:
                     list_item = doc.add_list_item(
                         text="",
                         parent=group,
@@ -2443,9 +2169,7 @@ class IDocTagsDocDeserializer(BaseModel):
                     for p in prov_list[1:]:
                         list_item.prov.append(p)
 
-                    self._parse_inline_group(
-                        doc=doc, el=child_elements[0], parent=list_item
-                    )
+                    self._parse_inline_group(doc=doc, el=child_elements[0], parent=list_item)
 
                 else:
                     text = self._get_text(node).strip()
@@ -2464,9 +2188,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 self._parse_list(doc=doc, el=node, parent=group)
 
     # ------------- Inline groups -------------
-    def _parse_inline_group(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
+    def _parse_inline_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         """Parse <inline> elements into InlineGroup objects."""
         # Create the inline group
         inline_group = doc.add_inline_group(parent=parent)
@@ -2487,9 +2209,7 @@ class IDocTagsDocDeserializer(BaseModel):
                     )
 
     # ------------- Floating groups -------------
-    def _parse_floating_group(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
+    def _parse_floating_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         cls_val = el.getAttribute(IDocTagsAttributeKey.CLASS.value)
         if cls_val == IDocTagsAttributeValue.TABLE.value:
             self._parse_table_group(doc=doc, el=el, parent=parent)
@@ -2498,9 +2218,7 @@ class IDocTagsDocDeserializer(BaseModel):
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
 
-    def _parse_table_group(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
+    def _parse_table_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         caption = self._extract_caption(doc=doc, el=el)
         footnotes = self._extract_footnotes(doc=doc, el=el)
         otsl_el = self._first_child(el, IDocTagsToken.OTSL.value)
@@ -2525,9 +2243,7 @@ class IDocTagsDocDeserializer(BaseModel):
         for ftn in footnotes:
             tbl.footnotes.append(ftn.get_ref())
 
-    def _parse_picture_group(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]
-    ) -> None:
+    def _parse_picture_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         # Extract caption from the floating group
         caption = self._extract_caption(doc=doc, el=el)
         footnotes = self._extract_footnotes(doc=doc, el=el)
@@ -2561,9 +2277,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 pic.meta.tabular_chart = TabularChartMetaField(chart_data=td)
 
     # ------------- Helpers -------------
-    def _extract_caption(
-        self, *, doc: DoclingDocument, el: Element
-    ) -> Optional[TextItem]:
+    def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> Optional[TextItem]:
         cap_el = self._first_child(el, IDocTagsToken.CAPTION.value)
         if cap_el is None:
             return None
@@ -2580,15 +2294,10 @@ class IDocTagsDocDeserializer(BaseModel):
             item.prov.append(p)
         return item
 
-    def _extract_footnotes(
-        self, *, doc: DoclingDocument, el: Element
-    ) -> list[TextItem]:
+    def _extract_footnotes(self, *, doc: DoclingDocument, el: Element) -> list[TextItem]:
         footnotes: list[TextItem] = []
         for node in el.childNodes:
-            if (
-                isinstance(node, Element)
-                and node.tagName == IDocTagsToken.FOOTNOTE.value
-            ):
+            if isinstance(node, Element) and node.tagName == IDocTagsToken.FOOTNOTE.value:
                 text = self._get_text(node).strip()
                 if text:
                     prov_list = self._extract_provenance(doc=doc, el=node)
@@ -2658,9 +2367,7 @@ class IDocTagsDocDeserializer(BaseModel):
         ]
         return tokens, parts
 
-    def _otsl_parse_texts(
-        self, texts: list[str], tokens: list[str]
-    ) -> tuple[list[TableCell], list[list[str]]]:
+    def _otsl_parse_texts(self, texts: list[str], tokens: list[str]) -> tuple[list[TableCell], list[list[str]]]:
         """Parse OTSL interleaved texts+tokens into TableCell list and row tokens."""
         # Token strings used in the stream (normalized to <name>)
 
@@ -2682,11 +2389,7 @@ class IDocTagsDocDeserializer(BaseModel):
         tokens = clean_tokens
 
         # Split into rows by NL markers while keeping segments
-        split_row_tokens = [
-            list(group)
-            for is_sep, group in groupby(tokens, key=lambda z: z == nl)
-            if not is_sep
-        ]
+        split_row_tokens = [list(group) for is_sep, group in groupby(tokens, key=lambda z: z == nl) if not is_sep]
 
         table_cells: list[TableCell] = []
         r_idx = 0
@@ -2718,24 +2421,17 @@ class IDocTagsDocDeserializer(BaseModel):
                     cell_text = texts[i + 1]
                     right_offset = 2
 
-                next_right = (
-                    texts[i + right_offset] if i + right_offset < len(texts) else ""
-                )
+                next_right = texts[i + right_offset] if i + right_offset < len(texts) else ""
                 next_bottom = (
                     split_row_tokens[r_idx + 1][c_idx]
-                    if (r_idx + 1) < len(split_row_tokens)
-                    and c_idx < len(split_row_tokens[r_idx + 1])
+                    if (r_idx + 1) < len(split_row_tokens) and c_idx < len(split_row_tokens[r_idx + 1])
                     else ""
                 )
 
                 if next_right in [lcel, xcel]:
-                    col_span += count_right(
-                        split_row_tokens, c_idx + 1, r_idx, [lcel, xcel]
-                    )
+                    col_span += count_right(split_row_tokens, c_idx + 1, r_idx, [lcel, xcel])
                 if next_bottom in [ucel, xcel]:
-                    row_span += count_down(
-                        split_row_tokens, c_idx, r_idx + 1, [ucel, xcel]
-                    )
+                    row_span += count_down(split_row_tokens, c_idx, r_idx + 1, [ucel, xcel])
 
                 table_cells.append(
                     TableCell(
@@ -2767,9 +2463,7 @@ class IDocTagsDocDeserializer(BaseModel):
             table_cells=table_cells,
         )
 
-    def _extract_text_with_formatting(
-        self, el: Element
-    ) -> tuple[str, Optional[Formatting]]:
+    def _extract_text_with_formatting(self, el: Element) -> tuple[str, Optional[Formatting]]:
         """Extract text content and formatting from an element.
 
         If the element contains a single formatting child (bold, italic, etc.),
@@ -2782,8 +2476,7 @@ class IDocTagsDocDeserializer(BaseModel):
         child_elements = [
             node
             for node in el.childNodes
-            if isinstance(node, Element)
-            and node.tagName not in {IDocTagsToken.LOCATION.value}
+            if isinstance(node, Element) and node.tagName not in {IDocTagsToken.LOCATION.value}
         ]
 
         # Check if we have a single child that is a formatting tag
@@ -2793,11 +2486,12 @@ class IDocTagsDocDeserializer(BaseModel):
 
             # Mapping of format tags to Formatting attributes
             format_tags = {
-                IDocTagsToken.BOLD.value: "bold",
-                IDocTagsToken.ITALIC.value: "italic",
-                IDocTagsToken.STRIKETHROUGH.value: "strikethrough",
-                IDocTagsToken.SUPERSCRIPT.value: "superscript",
-                IDocTagsToken.SUBSCRIPT.value: "subscript",
+                IDocTagsToken.BOLD,
+                IDocTagsToken.ITALIC,
+                IDocTagsToken.STRIKETHROUGH,
+                IDocTagsToken.UNDERLINE,
+                IDocTagsToken.SUPERSCRIPT,
+                IDocTagsToken.SUBSCRIPT,
             }
 
             if tag_name in format_tags:
@@ -2815,6 +2509,8 @@ class IDocTagsDocDeserializer(BaseModel):
                     child_formatting.italic = True
                 elif tag_name == IDocTagsToken.STRIKETHROUGH.value:
                     child_formatting.strikethrough = True
+                elif tag_name == IDocTagsToken.UNDERLINE.value:
+                    child_formatting.underline = True
                 elif tag_name == IDocTagsToken.SUPERSCRIPT.value:
                     child_formatting.script = Script.SUPER
                 elif tag_name == IDocTagsToken.SUBSCRIPT.value:
@@ -2843,18 +2539,12 @@ class IDocTagsDocDeserializer(BaseModel):
         return "".join(out)
 
     # --------- Location helpers ---------
-    def _ensure_page_exists(
-        self, *, doc: DoclingDocument, page_no: int, resolution: int
-    ) -> None:
+    def _ensure_page_exists(self, *, doc: DoclingDocument, page_no: int, resolution: int) -> None:
         # If the page already exists, do nothing; otherwise add with a square size based on resolution
         if page_no not in doc.pages:
-            doc.add_page(
-                page_no=page_no, size=Size(width=resolution, height=resolution)
-            )
+            doc.add_page(page_no=page_no, size=Size(width=resolution, height=resolution))
 
-    def _extract_provenance(
-        self, *, doc: DoclingDocument, el: Element
-    ) -> list[ProvenanceItem]:
+    def _extract_provenance(self, *, doc: DoclingDocument, el: Element) -> list[ProvenanceItem]:
         # Collect immediate child <location value=.. resolution=.. /> tokens in groups of 4
         values: list[int] = []
         res_for_group: Optional[int] = None
@@ -2870,10 +2560,7 @@ class IDocTagsDocDeserializer(BaseModel):
             except Exception:
                 v = 0
             try:
-                r = int(
-                    node.getAttribute(IDocTagsAttributeKey.RESOLUTION.value)
-                    or str(self._default_resolution)
-                )
+                r = int(node.getAttribute(IDocTagsAttributeKey.RESOLUTION.value) or str(self._default_resolution))
             except Exception:
                 r = self._default_resolution
             values.append(v)
@@ -2890,12 +2577,8 @@ class IDocTagsDocDeserializer(BaseModel):
                 t = float(min(values[1], values[3]))
                 rgt = float(max(values[0], values[2]))
                 btm = float(max(values[1], values[3]))
-                bbox = BoundingBox.from_tuple(
-                    (l, t, rgt, btm), origin=CoordOrigin.TOPLEFT
-                )
-                provs.append(
-                    ProvenanceItem(page_no=self._page_no, bbox=bbox, charspan=(0, 0))
-                )
+                bbox = BoundingBox.from_tuple((l, t, rgt, btm), origin=CoordOrigin.TOPLEFT)
+                provs.append(ProvenanceItem(page_no=self._page_no, bbox=bbox, charspan=(0, 0)))
                 values = []
                 res_for_group = None
 

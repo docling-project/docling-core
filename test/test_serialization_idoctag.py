@@ -1,10 +1,12 @@
 """Unit tests for IDocTags create_closing_token helper."""
 
 from pathlib import Path
+from test.test_serialization import verify
 
 import pytest
 
 from docling_core.experimental.idoctags import (
+    EscapeMode,
     IDocTagsDocSerializer,
     IDocTagsParams,
     IDocTagsSerializationMode,
@@ -17,8 +19,12 @@ from docling_core.types.doc import (
     Script,
     TableData,
 )
-
-from .test_serialization import verify
+from docling_core.types.doc.document import (
+    DescriptionMetaField,
+    PictureMeta,
+    SummaryMetaField,
+)
+from docling_core.types.doc.labels import CodeLanguageLabel
 
 # ===============================
 # IDocTags unit-tests
@@ -186,114 +192,70 @@ def test_idoctags_meta():
     verify(exp_file=src.with_suffix(".gt.idt.xml"), actual=actual)
 
 
-def test_xml_compliant_escaping():
-    """Test that xml_compliant parameter properly escapes XML special characters."""
-    doc = DoclingDocument(name="test_xml_escape")
-
-    # Add text with XML special characters
-    doc.add_text(
-        label=DocItemLabel.TEXT, text="Text with <tags> & special chars like > and <"
-    )
-
-    # Add a table with special characters in cells
-    td = TableData(num_rows=0, num_cols=2)
-    td.add_row(["Header & Title", "Value > 100"])
-    td.add_row(["<script>", "A & B"])
-    doc.add_table(data=td)
-
-    # Serialize without XML compliance (default behavior)
-    # Note: We need to disable pretty_indentation because the XML parser will fail
-    # on non-compliant XML when trying to pretty-print
-    txt_default = serialize_idoctags(
-        doc,
-        xml_compliant=False,
-        add_content=True,
-        pretty_indentation=None,
-    )
-
-    # Verify special characters are NOT escaped in default mode
-    assert "Text with <tags> & special chars" in txt_default
-    assert "<script>" in txt_default
-    assert "A & B" in txt_default
-
-    # Serialize with XML compliance enabled
-    txt_compliant = serialize_idoctags(doc, xml_compliant=True, add_content=True)
-
-    # Verify special characters ARE escaped in compliant mode
-    assert "&lt;tags&gt;" in txt_compliant
-    assert "&amp;" in txt_compliant
-    assert "&gt;" in txt_compliant
-    assert "&lt;script&gt;" in txt_compliant
-    assert "A &amp; B" in txt_compliant
-
-    # Verify original unescaped characters don't appear
-    assert "Text with <tags> & special chars" not in txt_compliant
-    assert (
-        "<script>" not in txt_compliant or txt_compliant.count("<script>") == 0
-    )  # might appear in tags
-
-    # Verify XML tags themselves are not escaped
-    assert "<text>" in txt_compliant
-    assert "</text>" in txt_compliant
-    assert "<otsl>" in txt_compliant
-
-
-def test_xml_compliant_meta_fields():
-    """Test that xml_compliant escapes special characters in meta fields."""
-    from docling_core.types.doc import (
-        DescriptionMetaField,
-        PictureMeta,
-        SummaryMetaField,
-    )
-
-    doc = DoclingDocument(name="test_meta_escape")
-
-    # Add text with meta containing special characters
-    text_item = doc.add_text(label=DocItemLabel.TEXT, text="Sample text")
+def _create_escape_test_doc(inp_doc: DoclingDocument):
+    doc = inp_doc.model_copy(deep=True)
+    doc.add_text(label=DocItemLabel.TEXT, text="Simple text")
+    doc.add_text(label=DocItemLabel.TEXT, text="    4 leading spaces, 1 trailing ")
+    doc.add_text(label=DocItemLabel.TEXT, text="Some 'single' quotes")
+    doc.add_text(label=DocItemLabel.TEXT, text='Some "double" quotes')
+    text_item = doc.add_text(label=DocItemLabel.TEXT, text="An ampersand: &")
     text_item.meta = PictureMeta(
         summary=SummaryMetaField(text="Summary with <tags> & ampersands"),
-        description=DescriptionMetaField(text="Description > with < special & chars"),
+        description=DescriptionMetaField(text="Description content"),
+    )
+    doc.add_code(text="0 == 0")
+    doc.add_code(text=" 1 leading space, 4 trailing    ")
+    doc.add_code(text="0 < 1")
+    doc.add_code(text="42 == 42", code_language=CodeLanguageLabel.PYTHON)
+    doc.add_code(text="42 < 1337", code_language=CodeLanguageLabel.PYTHON)
+
+    td = TableData(num_cols=2)
+    td.add_row(["Foo", "Bar"])
+    td.add_row(["Header & Title", "Value > 100"])
+    td.add_row(["<script>", "A & B"])
+    td.add_row(["Only", "<second>"])
+    doc.add_table(data=td)
+
+    # test combination of formatting and special characters
+    doc.add_text(label=DocItemLabel.TEXT, text="0 < 1")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="0 < 42",
+        formatting=Formatting(bold=True, italic=True),
     )
 
-    # Serialize with XML compliance
-    txt_compliant = serialize_idoctags(doc, xml_compliant=True, add_content=True)
+    return doc
 
-    # Verify meta fields are escaped
-    assert "Summary with &lt;tags&gt; &amp; ampersands" in txt_compliant
-    assert "Description &gt; with &lt; special &amp; chars" in txt_compliant
 
-    # Serialize without XML compliance
-    txt_default = serialize_idoctags(
-        doc, xml_compliant=False, add_content=True, pretty_indentation=None
+def test_cdata_always(sample_doc: DoclingDocument):
+    """Test cdata_always mode."""
+    doc = _create_escape_test_doc(sample_doc)
+    serializer = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            escape_mode=EscapeMode.CDATA_ALWAYS,
+        ),
     )
+    ser_res = serializer.serialize()
+    ser_txt = ser_res.text
 
-    # Verify meta fields are not escaped in default mode
-    assert "Summary with <tags> & ampersands" in txt_default
-    assert "Description > with < special & chars" in txt_default
+    exp_file = Path("./test/data/doc/cdata_always.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
 
 
-def test_bold_formatting():
-    """Test bold formatting serialization."""
-    doc = DoclingDocument(name="test")
-    formatting = Formatting(bold=True)
-    doc.add_text(label=DocItemLabel.TEXT, text="Bold text", formatting=formatting)
-
-    result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=True
+def test_cdata_when_needed(sample_doc: DoclingDocument):
+    """Test cdata_when_needed mode."""
+    doc = _create_escape_test_doc(sample_doc)
+    serializer = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            escape_mode=EscapeMode.CDATA_WHEN_NEEDED,
+        ),
     )
-    assert "<bold>Bold text</bold>" in result
-
-
-def test_italic_formatting():
-    """Test italic formatting serialization."""
-    doc = DoclingDocument(name="test")
-    formatting = Formatting(italic=True)
-    doc.add_text(label=DocItemLabel.TEXT, text="Italic text", formatting=formatting)
-
-    result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=True
-    )
-    assert "<italic>Italic text</italic>" in result
+    ser_res = serializer.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/cdata_when_needed.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
 
 
 def test_strikethrough_formatting():

@@ -1,7 +1,6 @@
 """Tokens used in the docling document model."""
 
 from enum import Enum
-from typing import Tuple
 
 from docling_core.types.doc.labels import DocItemLabel
 
@@ -186,7 +185,7 @@ class DocumentToken(str, Enum):
     @classmethod
     def get_special_tokens(
         cls,
-        page_dimension: Tuple[int, int] = (500, 500),
+        page_dimension: tuple[int, int] = (500, 500),
     ):
         """Function to get all special document tokens."""
         special_tokens: list[str] = []
@@ -206,7 +205,7 @@ class DocumentToken(str, Enum):
         special_tokens.extend(TableToken.get_special_tokens())
 
         # Adding dynamically generated location-tokens
-        for i in range(0, max(page_dimension[0], page_dimension[1])):
+        for i in range(max(page_dimension[0], page_dimension[1])):
             special_tokens.append(f"<{_LOC_PREFIX}{i}>")
 
         return special_tokens
@@ -265,9 +264,7 @@ class DocumentToken(str, Enum):
             return _CodeLanguageToken(f"<_{code_language}_>").value
 
     @staticmethod
-    def get_location_token(
-        val: float, rnorm: int = 500, self_closing: bool = False
-    ):  # TODO review
+    def get_location_token(val: float, rnorm: int = 500, self_closing: bool = False):  # TODO review
         """Function to get location tokens."""
         val_ = round(rnorm * val)
         val_ = max(val_, 0)
@@ -292,18 +289,10 @@ class DocumentToken(str, Enum):
         x1 = bbox[2] / page_w
         y1 = bbox[3] / page_h
 
-        x0_tok = DocumentToken.get_location_token(
-            val=min(x0, x1), rnorm=xsize, self_closing=self_closing
-        )
-        y0_tok = DocumentToken.get_location_token(
-            val=min(y0, y1), rnorm=ysize, self_closing=self_closing
-        )
-        x1_tok = DocumentToken.get_location_token(
-            val=max(x0, x1), rnorm=xsize, self_closing=self_closing
-        )
-        y1_tok = DocumentToken.get_location_token(
-            val=max(y0, y1), rnorm=ysize, self_closing=self_closing
-        )
+        x0_tok = DocumentToken.get_location_token(val=min(x0, x1), rnorm=xsize, self_closing=self_closing)
+        y0_tok = DocumentToken.get_location_token(val=min(y0, y1), rnorm=ysize, self_closing=self_closing)
+        x1_tok = DocumentToken.get_location_token(val=max(x0, x1), rnorm=xsize, self_closing=self_closing)
+        y1_tok = DocumentToken.get_location_token(val=max(y0, y1), rnorm=ysize, self_closing=self_closing)
 
         loc_str = f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
 

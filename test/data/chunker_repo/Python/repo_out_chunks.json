@@ -1,7 +1,7 @@
 {
     "root": [
         {
-            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Cluster(BaseModel):\n\n    id: int\n    label: DocItemLabel\n    bbox: BoundingBox\n    confidence: float = 1.0\n    cells: List[TextCell] = []\n    children: List[\"Cluster\"] = []\n    @field_serializer(\"confidence\")\n    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:\n        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)",
+            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass Cluster(BaseModel):\n\n    id: int\n    label: DocItemLabel\n    bbox: BoundingBox\n    confidence: float = 1.0\n    cells: list[TextCell] = []\n    children: list[\"Cluster\"] = []\n    @field_serializer(\"confidence\")\n    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:\n        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -19,13 +19,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "_serialize",
                 "docstring": "",
-                "sha256": 1370311415977656221876886741900648971627414401247,
+                "sha256": 1159440466329778098851051193368025854938470210027,
                 "start_line": 150,
                 "end_line": 151,
                 "end_line_signature": 151,
@@ -33,7 +33,7 @@
             }
         },
         {
-            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass FigureElement(BasePageElement):\n\n    annotations: List[PictureDataType] = []\n    provenance: Optional[str] = None\n    predicted_class: Optional[str] = None\n    confidence: Optional[float] = None\n    @field_serializer(\"confidence\")\n    def _serialize(\n        self, value: Optional[float], info: FieldSerializationInfo\n    ) -> Optional[float]:\n        return (\n            round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)\n            if value is not None\n            else None\n        )",
+            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass FigureElement(BasePageElement):\n\n    annotations: list[PictureDataType] = []\n    provenance: Optional[str] = None\n    predicted_class: Optional[str] = None\n    confidence: Optional[float] = None\n    @field_serializer(\"confidence\")\n    def _serialize(\n        self, value: Optional[float], info: FieldSerializationInfo\n    ) -> Optional[float]:\n        return (\n            round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)\n            if value is not None\n            else None\n        )",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -51,13 +51,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "_serialize",
                 "docstring": "",
-                "sha256": 548765170194758372904020338821756398576566540703,
+                "sha256": 460144008226871963787216668640553606182925990563,
                 "start_line": 206,
                 "end_line": 213,
                 "end_line_signature": 209,
@@ -65,7 +65,7 @@
             }
         },
         {
-            "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: Dict[float, Image] = (\n        {}\n    )\n    @property\n    def cells(self) -> List[TextCell]:\n        \"\"\"Return text cells as a read-only view of parsed_page.textline_cells.\"\"\"\n        if self.parsed_page is not None:\n            return self.parsed_page.textline_cells\n        else:\n            return []",
+            "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: dict[float, Image] = (\n        {}\n    )\n    @property\n    def cells(self) -> list[TextCell]:\n        \"\"\"Return text cells as a read-only view of parsed_page.textline_cells.\"\"\"\n        if self.parsed_page is not None:\n            return self.parsed_page.textline_cells\n        else:\n            return []",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -83,13 +83,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "cells",
                 "docstring": "",
-                "sha256": 808130656114478424554213379229194132787588082937,
+                "sha256": 364079690881895293704038288110208732863509594284,
                 "start_line": 269,
                 "end_line": 274,
                 "end_line_signature": 270,
@@ -97,7 +97,7 @@
             }
         },
         {
-            "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: Dict[float, Image] = (\n        {}\n    )\n    def get_image(\n        self,\n        scale: float = 1.0,\n        max_size: Optional[int] = None,\n        cropbox: Optional[BoundingBox] = None,\n    ) -> Optional[Image]:\n        if self._backend is None:\n            return self._image_cache.get(scale, None)\n\n        if max_size:\n            assert self.size is not None\n            scale = min(scale, max_size / max(self.size.as_tuple()))\n\n        if scale not in self._image_cache:\n            if cropbox is None:\n                self._image_cache[scale] = self._backend.get_page_image(scale=scale)\n            else:\n                return self._backend.get_page_image(scale=scale, cropbox=cropbox)\n\n        if cropbox is None:\n            return self._image_cache[scale]\n        else:\n            page_im = self._image_cache[scale]\n            assert self.size is not None\n            return page_im.crop(\n                cropbox.to_top_left_origin(page_height=self.size.height)\n                .scaled(scale=scale)\n                .as_tuple()\n            )",
+            "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: dict[float, Image] = (\n        {}\n    )\n    def get_image(\n        self,\n        scale: float = 1.0,\n        max_size: Optional[int] = None,\n        cropbox: Optional[BoundingBox] = None,\n    ) -> Optional[Image]:\n        if self._backend is None:\n            return self._image_cache.get(scale, None)\n\n        if max_size:\n            assert self.size is not None\n            scale = min(scale, max_size / max(self.size.as_tuple()))\n\n        if scale not in self._image_cache:\n            if cropbox is None:\n                self._image_cache[scale] = self._backend.get_page_image(scale=scale)\n            else:\n                return self._backend.get_page_image(scale=scale, cropbox=cropbox)\n\n        if cropbox is None:\n            return self._image_cache[scale]\n        else:\n            page_im = self._image_cache[scale]\n            assert self.size is not None\n            return page_im.crop(\n                cropbox.to_top_left_origin(page_height=self.size.height)\n                .scaled(scale=scale)\n                .as_tuple()\n            )",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -115,13 +115,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "get_image",
                 "docstring": "",
-                "sha256": 730486712684958979505969494702830191562221418826,
+                "sha256": 410344986392027977600608783862521514676018433583,
                 "start_line": 276,
                 "end_line": 304,
                 "end_line_signature": 282,
@@ -129,7 +129,7 @@
             }
         },
         {
-            "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: Dict[float, Image] = (\n        {}\n    )\n    @property\n    def image(self) -> Optional[Image]:\n        return self.get_image(scale=self._default_image_scale)",
+            "text": "    from docling.backend.pdf_backend import PdfPageBackend\n# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass Page(BaseModel):\n\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n    page_no: int\n    size: Optional[Size] = None\n    parsed_page: Optional[SegmentedPdfPage] = None\n    predictions: PagePredictions = PagePredictions()\n    assembled: Optional[AssembledUnit] = None\n    _backend: Optional[\"PdfPageBackend\"] = (\n        None  # Internal PDF backend. By default it is cleared during assembling.\n    )\n    _default_image_scale: float = 1.0\n    _image_cache: dict[float, Image] = (\n        {}\n    )\n    @property\n    def image(self) -> Optional[Image]:\n        return self.get_image(scale=self._default_image_scale)",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -147,13 +147,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "image",
                 "docstring": "",
-                "sha256": 411118430431318207465607893315291238177524289712,
+                "sha256": 15061909260417615306226866280146974072504558094,
                 "start_line": 307,
                 "end_line": 308,
                 "end_line_signature": 308,
@@ -179,7 +179,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -211,7 +211,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -243,7 +243,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -275,7 +275,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -307,7 +307,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -321,7 +321,7 @@
             }
         },
         {
-            "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nimport numpy as np\nScoreValue = float\nclass ConfidenceReport(PageConfidenceScores):\n\n    pages: Dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n    @computed_field  # type: ignore\n    @property\n    def mean_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.mean_score for c in self.pages.values()],\n            )\n        )",
+            "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nimport numpy as np\nScoreValue = float\nclass ConfidenceReport(PageConfidenceScores):\n\n    pages: dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n    @computed_field  # type: ignore\n    @property\n    def mean_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.mean_score for c in self.pages.values()],\n            )\n        )",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -339,13 +339,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "mean_score",
                 "docstring": "",
-                "sha256": 132450849266989335217771535733536814236612441736,
+                "sha256": 289606053673237479691038788766074967028112842241,
                 "start_line": 420,
                 "end_line": 425,
                 "end_line_signature": 421,
@@ -353,7 +353,7 @@
             }
         },
         {
-            "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nimport numpy as np\nScoreValue = float\nclass ConfidenceReport(PageConfidenceScores):\n\n    pages: Dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n    @computed_field  # type: ignore\n    @property\n    def low_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.low_score for c in self.pages.values()],\n            )\n        )",
+            "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nimport numpy as np\nScoreValue = float\nclass ConfidenceReport(PageConfidenceScores):\n\n    pages: dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n    @computed_field  # type: ignore\n    @property\n    def low_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.low_score for c in self.pages.values()],\n            )\n        )",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -371,13 +371,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "low_score",
                 "docstring": "",
-                "sha256": 970153367204825604327172702664272609484373919390,
+                "sha256": 883194107785259558389575356645123228668758463958,
                 "start_line": 429,
                 "end_line": 434,
                 "end_line_signature": 430,
@@ -403,7 +403,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -435,7 +435,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -467,7 +467,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -499,7 +499,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -531,7 +531,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -563,7 +563,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -577,7 +577,7 @@
             }
         },
         {
-            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Cluster(BaseModel):\n    id: int\n    label: DocItemLabel\n    bbox: BoundingBox\n    confidence: float = 1.0\n    cells: List[TextCell] = []\n    children: List[\"Cluster\"] = []  # Add child cluster support\n\n    @field_serializer(\"confidence\")\n    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:\n        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)",
+            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom docling_core.types.doc.page import SegmentedPdfPage, TextCell\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass Cluster(BaseModel):\n    id: int\n    label: DocItemLabel\n    bbox: BoundingBox\n    confidence: float = 1.0\n    cells: list[TextCell] = []\n    children: list[\"Cluster\"] = []  # Add child cluster support\n\n    @field_serializer(\"confidence\")\n    def _serialize(self, value: float, info: FieldSerializationInfo) -> float:\n        return round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -595,13 +595,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "Cluster",
                 "docstring": "",
-                "sha256": 1265293438447400808420129430722899990479108904146,
+                "sha256": 1152012436559142558499614444636895383678213177338,
                 "start_line": 141,
                 "end_line": 151,
                 "end_line_signature": 151,
@@ -609,7 +609,7 @@
             }
         },
         {
-            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass BasePageElement(BaseModel):\n    label: DocItemLabel\n    id: int\n    page_no: int\n    cluster: Cluster\n    text: Optional[str] = None",
+            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass BasePageElement(BaseModel):\n    label: DocItemLabel\n    id: int\n    page_no: int\n    cluster: Cluster\n    text: Optional[str] = None",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -627,13 +627,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "BasePageElement",
                 "docstring": "",
-                "sha256": 27686403131898710443755657765582374638708518770,
+                "sha256": 225610460912917208017385989303873049473877659614,
                 "start_line": 154,
                 "end_line": 159,
                 "end_line_signature": 159,
@@ -641,7 +641,7 @@
             }
         },
         {
-            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass LayoutPrediction(BaseModel):\n    clusters: List[Cluster] = []",
+            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass LayoutPrediction(BaseModel):\n    clusters: list[Cluster] = []",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -659,13 +659,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "LayoutPrediction",
                 "docstring": "",
-                "sha256": 987561170389338380550072794621774259794654494830,
+                "sha256": 1360023463748299399387922191475352288040535470737,
                 "start_line": 162,
                 "end_line": 163,
                 "end_line_signature": 163,
@@ -691,7 +691,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -723,7 +723,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -737,7 +737,7 @@
             }
         },
         {
-            "text": "from typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass ContainerElement(\n    BasePageElement\n):  # Used for Form and Key-Value-Regions, only for typing.\n    pass",
+            "text": "from typing import TYPE_CHECKING, Optional, Union\nclass ContainerElement(\n    BasePageElement\n):  # Used for Form and Key-Value-Regions, only for typing.\n    pass",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -755,13 +755,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "ContainerElement",
                 "docstring": "",
-                "sha256": 595661713802144347628508983545186540799570992038,
+                "sha256": 416521789840464813168604569830761353872626174447,
                 "start_line": 178,
                 "end_line": 181,
                 "end_line_signature": 181,
@@ -769,7 +769,7 @@
             }
         },
         {
-            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass Table(BasePageElement):\n    otsl_seq: List[str]\n    num_rows: int = 0\n    num_cols: int = 0\n    table_cells: List[TableCell]",
+            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nclass Table(BasePageElement):\n    otsl_seq: list[str]\n    num_rows: int = 0\n    num_cols: int = 0\n    table_cells: list[TableCell]",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -787,13 +787,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "Table",
                 "docstring": "",
-                "sha256": 899700098549855605262894705349504270338610789745,
+                "sha256": 1456323109373085629676591390206341113067804891775,
                 "start_line": 184,
                 "end_line": 188,
                 "end_line_signature": 188,
@@ -801,7 +801,7 @@
             }
         },
         {
-            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass TableStructurePrediction(BaseModel):\n    table_map: Dict[int, Table] = {}",
+            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass TableStructurePrediction(BaseModel):\n    table_map: dict[int, Table] = {}",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -819,13 +819,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "TableStructurePrediction",
                 "docstring": "",
-                "sha256": 10390869097689903408310238897062292721124859701,
+                "sha256": 245644559925742260067206213847104477181514103143,
                 "start_line": 191,
                 "end_line": 192,
                 "end_line_signature": 192,
@@ -851,7 +851,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -865,7 +865,7 @@
             }
         },
         {
-            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass FigureElement(BasePageElement):\n    annotations: List[PictureDataType] = []\n    provenance: Optional[str] = None\n    predicted_class: Optional[str] = None\n    confidence: Optional[float] = None\n\n    @field_serializer(\"confidence\")\n    def _serialize(\n        self, value: Optional[float], info: FieldSerializationInfo\n    ) -> Optional[float]:\n        return (\n            round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)\n            if value is not None\n            else None\n        )",
+            "text": "from docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass FigureElement(BasePageElement):\n    annotations: list[PictureDataType] = []\n    provenance: Optional[str] = None\n    predicted_class: Optional[str] = None\n    confidence: Optional[float] = None\n\n    @field_serializer(\"confidence\")\n    def _serialize(\n        self, value: Optional[float], info: FieldSerializationInfo\n    ) -> Optional[float]:\n        return (\n            round_pydantic_float(value, info.context, PydanticSerCtxKey.CONFID_PREC)\n            if value is not None\n            else None\n        )",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -883,13 +883,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "FigureElement",
                 "docstring": "",
-                "sha256": 49150437793556841766787782882109128052965382281,
+                "sha256": 582106280423897120806167242165934346042887680565,
                 "start_line": 199,
                 "end_line": 213,
                 "end_line_signature": 213,
@@ -897,7 +897,7 @@
             }
         },
         {
-            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass FigureClassificationPrediction(BaseModel):\n    figure_count: int = 0\n    figure_map: Dict[int, FigureElement] = {}",
+            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass FigureClassificationPrediction(BaseModel):\n    figure_count: int = 0\n    figure_map: dict[int, FigureElement] = {}",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -915,13 +915,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "FigureClassificationPrediction",
                 "docstring": "",
-                "sha256": 393470850502283580013047324181028663675467213132,
+                "sha256": 779510612755012908755574096489092800572511596439,
                 "start_line": 216,
                 "end_line": 218,
                 "end_line_signature": 218,
@@ -929,7 +929,7 @@
             }
         },
         {
-            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass EquationPrediction(BaseModel):\n    equation_count: int = 0\n    equation_map: Dict[int, TextElement] = {}",
+            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass EquationPrediction(BaseModel):\n    equation_count: int = 0\n    equation_map: dict[int, TextElement] = {}",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -947,13 +947,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "EquationPrediction",
                 "docstring": "",
-                "sha256": 283019580808330812046385053785548970241882616440,
+                "sha256": 583728450839819336913394113891080422116596979193,
                 "start_line": 221,
                 "end_line": 223,
                 "end_line_signature": 223,
@@ -961,7 +961,7 @@
             }
         },
         {
-            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass PagePredictions(BaseModel):\n    layout: Optional[LayoutPrediction] = None\n    tablestructure: Optional[TableStructurePrediction] = None\n    figures_classification: Optional[FigureClassificationPrediction] = None\n    equations_prediction: Optional[EquationPrediction] = None\n    vlm_response: Optional[VlmPrediction] = None",
+            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass PagePredictions(BaseModel):\n    layout: Optional[LayoutPrediction] = None\n    tablestructure: Optional[TableStructurePrediction] = None\n    figures_classification: Optional[FigureClassificationPrediction] = None\n    equations_prediction: Optional[EquationPrediction] = None\n    vlm_response: Optional[VlmPrediction] = None",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -979,13 +979,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "PagePredictions",
                 "docstring": "",
-                "sha256": 1048734808182693909263635311132078575228024326882,
+                "sha256": 864121788893161158012258774110352773564081711359,
                 "start_line": 226,
                 "end_line": 231,
                 "end_line_signature": 231,
@@ -993,7 +993,7 @@
             }
         },
         {
-            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass AssembledUnit(BaseModel):\n    elements: List[PageElement] = []\n    body: List[PageElement] = []\n    headers: List[PageElement] = []",
+            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass AssembledUnit(BaseModel):\n    elements: list[PageElement] = []\n    body: list[PageElement] = []\n    headers: list[PageElement] = []",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -1011,13 +1011,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "AssembledUnit",
                 "docstring": "",
-                "sha256": 1094387419928066226155485436524594727573943352114,
+                "sha256": 1382210396235695783317915929855498727730422177311,
                 "start_line": 237,
                 "end_line": 240,
                 "end_line_signature": 240,
@@ -1025,7 +1025,7 @@
             }
         },
         {
-            "text": "# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass ItemAndImageEnrichmentElement(BaseModel):\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n\n    item: NodeItem\n    image: Image",
+            "text": "# DO NOT REMOVE; explicitly exposed from this location\nfrom PIL.Image import Image\nfrom docling_core.types.doc import (\n    BoundingBox,\n    DocItemLabel,\n    NodeItem,\n    PictureDataType,\n    Size,\n    TableCell,\n)\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nclass ItemAndImageEnrichmentElement(BaseModel):\n    model_config = ConfigDict(arbitrary_types_allowed=True)\n\n    item: NodeItem\n    image: Image",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -1043,13 +1043,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "ItemAndImageEnrichmentElement",
                 "docstring": "",
-                "sha256": 30748452496409606175686443467765939596665570803,
+                "sha256": 182631491689349809911860961208495792147600851741,
                 "start_line": 243,
                 "end_line": 247,
                 "end_line_signature": 247,
@@ -1075,7 +1075,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -1089,7 +1089,7 @@
             }
         },
         {
-            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass OpenAiResponseChoice(BaseModel):\n    index: int\n    message: OpenAiChatMessage\n    finish_reason: Optional[str]",
+            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass OpenAiResponseChoice(BaseModel):\n    index: int\n    message: OpenAiChatMessage\n    finish_reason: Optional[str]",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -1107,13 +1107,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "OpenAiResponseChoice",
                 "docstring": "",
-                "sha256": 337899610582669912657797333467719843029840509833,
+                "sha256": 1175467473132985101281128987371665875461601984749,
                 "start_line": 319,
                 "end_line": 322,
                 "end_line_signature": 322,
@@ -1139,7 +1139,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -1153,7 +1153,7 @@
             }
         },
         {
-            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nclass OpenAiApiResponse(BaseModel):\n    model_config = ConfigDict(\n        protected_namespaces=(),\n    )\n\n    id: str\n    model: Optional[str] = None  # returned by openai\n    choices: List[OpenAiResponseChoice]\n    created: int\n    usage: OpenAiResponseUsage",
+            "text": "from pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Optional, Union\nclass OpenAiApiResponse(BaseModel):\n    model_config = ConfigDict(\n        protected_namespaces=(),\n    )\n\n    id: str\n    model: Optional[str] = None  # returned by openai\n    choices: list[OpenAiResponseChoice]\n    created: int\n    usage: OpenAiResponseUsage",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -1171,13 +1171,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "OpenAiApiResponse",
                 "docstring": "",
-                "sha256": 891404258682255341223304052944928949828473242768,
+                "sha256": 901924718378600335565708352712051115738602071934,
                 "start_line": 331,
                 "end_line": 340,
                 "end_line_signature": 340,
@@ -1203,7 +1203,7 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
@@ -1217,7 +1217,7 @@
             }
         },
         {
-            "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nfrom typing import TYPE_CHECKING, Dict, List, Optional, Union\nimport numpy as np\nclass ConfidenceReport(PageConfidenceScores):\n    pages: Dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n\n    @computed_field  # type: ignore\n    @property\n    def mean_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.mean_score for c in self.pages.values()],\n            )\n        )\n\n    @computed_field  # type: ignore\n    @property\n    def low_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.low_score for c in self.pages.values()],\n            )\n        )",
+            "text": "from collections import defaultdict\nfrom pydantic import (\n    BaseModel,\n    ConfigDict,\n    Field,\n    FieldSerializationInfo,\n    computed_field,\n    field_serializer,\n)\nimport numpy as np\nclass ConfidenceReport(PageConfidenceScores):\n    pages: dict[int, PageConfidenceScores] = Field(\n        default_factory=lambda: defaultdict(PageConfidenceScores)\n    )\n\n    @computed_field  # type: ignore\n    @property\n    def mean_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.mean_score for c in self.pages.values()],\n            )\n        )\n\n    @computed_field  # type: ignore\n    @property\n    def low_score(self) -> ScoreValue:\n        return ScoreValue(\n            np.nanmean(\n                [c.low_score for c in self.pages.values()],\n            )\n        )",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -1235,13 +1235,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
                 "part_name": "ConfidenceReport",
                 "docstring": "",
-                "sha256": 1446615132461763223157668983795322811472146148315,
+                "sha256": 278472610690064910594785230718330858891130713043,
                 "start_line": 413,
                 "end_line": 434,
                 "end_line_signature": 434,
@@ -1249,7 +1249,7 @@
             }
         },
         {
-            "text": "if TYPE_CHECKING:\n\nFormatToExtensions: Dict[InputFormat, List[str]] = {\n    InputFormat.DOCX: [\"docx\", \"dotx\", \"docm\", \"dotm\"],\n    InputFormat.PPTX: [\"pptx\", \"potx\", \"ppsx\", \"pptm\", \"potm\", \"ppsm\"],\n    InputFormat.PDF: [\"pdf\"],\n    InputFormat.MD: [\"md\"],\n    InputFormat.HTML: [\"html\", \"htm\", \"xhtml\"],\n    InputFormat.XML_JATS: [\"xml\", \"nxml\"],\n    InputFormat.IMAGE: [\"jpg\", \"jpeg\", \"png\", \"tif\", \"tiff\", \"bmp\", \"webp\"],\n    InputFormat.ASCIIDOC: [\"adoc\", \"asciidoc\", \"asc\"],\n    InputFormat.CSV: [\"csv\"],\n    InputFormat.XLSX: [\"xlsx\", \"xlsm\"],\n    InputFormat.XML_USPTO: [\"xml\", \"txt\"],\n    InputFormat.JSON_DOCLING: [\"json\"],\n    InputFormat.AUDIO: [\"wav\", \"mp3\"],\n}\n\nFormatToMimeType: Dict[InputFormat, List[str]] = {\n    InputFormat.DOCX: [\n        \"application/vnd.openxmlformats-officedocument.wordprocessingml.document\",\n        \"application/vnd.openxmlformats-officedocument.wordprocessingml.template\",\n    ],\n    InputFormat.PPTX: [\n        \"application/vnd.openxmlformats-officedocument.presentationml.template\",\n        \"application/vnd.openxmlformats-officedocument.presentationml.slideshow\",\n        \"application/vnd.openxmlformats-officedocument.presentationml.presentation\",\n    ],\n    InputFormat.HTML: [\"text/html\", \"application/xhtml+xml\"],\n    InputFormat.XML_JATS: [\"application/xml\"],\n    InputFormat.IMAGE: [\n        \"image/png\",\n        \"image/jpeg\",\n        \"image/tiff\",\n        \"image/gif\",\n        \"image/bmp\",\n        \"image/webp\",\n    ],\n    InputFormat.PDF: [\"application/pdf\"],\n    InputFormat.ASCIIDOC: [\"text/asciidoc\"],\n    InputFormat.MD: [\"text/markdown\", \"text/x-markdown\"],\n    InputFormat.CSV: [\"text/csv\"],\n    InputFormat.XLSX: [\n        \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"\n    ],\n    InputFormat.XML_USPTO: [\"application/xml\", \"text/plain\"],\n    InputFormat.JSON_DOCLING: [\"application/json\"],\n    InputFormat.AUDIO: [\"audio/x-wav\", \"audio/mpeg\", \"audio/wav\", \"audio/mp3\"],\n}\n\nMimeTypeToFormat: dict[str, list[InputFormat]] = {\n    mime: [fmt for fmt in FormatToMimeType if mime in FormatToMimeType[fmt]]\n    for value in FormatToMimeType.values()\n    for mime in value\n}\n\nPageElement = Union[TextElement, Table, FigureElement, ContainerElement]",
+            "text": "if TYPE_CHECKING:\n\nFormatToExtensions: dict[InputFormat, list[str]] = {\n    InputFormat.DOCX: [\"docx\", \"dotx\", \"docm\", \"dotm\"],\n    InputFormat.PPTX: [\"pptx\", \"potx\", \"ppsx\", \"pptm\", \"potm\", \"ppsm\"],\n    InputFormat.PDF: [\"pdf\"],\n    InputFormat.MD: [\"md\"],\n    InputFormat.HTML: [\"html\", \"htm\", \"xhtml\"],\n    InputFormat.XML_JATS: [\"xml\", \"nxml\"],\n    InputFormat.IMAGE: [\"jpg\", \"jpeg\", \"png\", \"tif\", \"tiff\", \"bmp\", \"webp\"],\n    InputFormat.ASCIIDOC: [\"adoc\", \"asciidoc\", \"asc\"],\n    InputFormat.CSV: [\"csv\"],\n    InputFormat.XLSX: [\"xlsx\", \"xlsm\"],\n    InputFormat.XML_USPTO: [\"xml\", \"txt\"],\n    InputFormat.JSON_DOCLING: [\"json\"],\n    InputFormat.AUDIO: [\"wav\", \"mp3\"],\n}\n\nFormatToMimeType: dict[InputFormat, list[str]] = {\n    InputFormat.DOCX: [\n        \"application/vnd.openxmlformats-officedocument.wordprocessingml.document\",\n        \"application/vnd.openxmlformats-officedocument.wordprocessingml.template\",\n    ],\n    InputFormat.PPTX: [\n        \"application/vnd.openxmlformats-officedocument.presentationml.template\",\n        \"application/vnd.openxmlformats-officedocument.presentationml.slideshow\",\n        \"application/vnd.openxmlformats-officedocument.presentationml.presentation\",\n    ],\n    InputFormat.HTML: [\"text/html\", \"application/xhtml+xml\"],\n    InputFormat.XML_JATS: [\"application/xml\"],\n    InputFormat.IMAGE: [\n        \"image/png\",\n        \"image/jpeg\",\n        \"image/tiff\",\n        \"image/gif\",\n        \"image/bmp\",\n        \"image/webp\",\n    ],\n    InputFormat.PDF: [\"application/pdf\"],\n    InputFormat.ASCIIDOC: [\"text/asciidoc\"],\n    InputFormat.MD: [\"text/markdown\", \"text/x-markdown\"],\n    InputFormat.CSV: [\"text/csv\"],\n    InputFormat.XLSX: [\n        \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"\n    ],\n    InputFormat.XML_USPTO: [\"application/xml\", \"text/plain\"],\n    InputFormat.JSON_DOCLING: [\"application/json\"],\n    InputFormat.AUDIO: [\"audio/x-wav\", \"audio/mpeg\", \"audio/wav\", \"audio/mp3\"],\n}\n\nMimeTypeToFormat: dict[str, list[InputFormat]] = {\n    mime: [fmt for fmt in FormatToMimeType if mime in FormatToMimeType[fmt]]\n    for value in FormatToMimeType.values()\n    for mime in value\n}\n\nPageElement = Union[TextElement, Table, FigureElement, ContainerElement]",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -1267,18 +1267,18 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 17127733993255342652,
+                    "binary_hash": 1136416782119980381,
                     "filename": "base_models.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/base_models.py"
                 },
-                "sha256": 937534938268631177739242095765995242760409532040,
+                "sha256": 1129969879412130304729012043187757573847369778493,
                 "start_line": 27,
                 "end_line": 237,
                 "chunk_type": "preamble"
             }
         },
         {
-            "text": "from collections.abc import Iterable\nfrom docling.datamodel.document import ConversionResult, Page\nfrom docling_core.types.doc import BoundingBox, CoordOrigin\nfrom docling_core.types.legacy_doc.base import BaseCell, BaseText, Ref, Table\nfrom typing import Any, Dict, List, Tuple, Union\n_log = logging.getLogger(__name__)\ndef generate_multimodal_pages(\n    doc_result: ConversionResult,\n) -> Iterable[Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]], Page]]:\n    label_to_doclaynet = {\n        \"title\": \"title\",\n        \"table-of-contents\": \"document_index\",\n        \"subtitle-level-1\": \"section_header\",\n        \"checkbox-selected\": \"checkbox_selected\",\n        \"checkbox-unselected\": \"checkbox_unselected\",\n        \"caption\": \"caption\",\n        \"page-header\": \"page_header\",\n        \"page-footer\": \"page_footer\",\n        \"footnote\": \"footnote\",\n        \"table\": \"table\",\n        \"formula\": \"formula\",\n        \"list-item\": \"list_item\",\n        \"code\": \"code\",\n        \"figure\": \"picture\",\n        \"picture\": \"picture\",\n        \"reference\": \"text\",\n        \"paragraph\": \"text\",\n        \"text\": \"text\",\n    }\n\n    content_text = \"\"\n    page_no = 0\n    start_ix = 0\n    end_ix = 0\n    doc_items: List[Tuple[int, Union[BaseCell, BaseText]]] = []\n\n    doc = doc_result.legacy_document\n\n    def _process_page_segments(doc_items: list[Tuple[int, BaseCell]], page: Page):\n        segments = []\n\n        for ix, item in doc_items:\n            item_type = item.obj_type\n            label = label_to_doclaynet.get(item_type, None)\n\n            if label is None or item.prov is None or page.size is None:\n                continue\n\n            bbox = BoundingBox.from_tuple(\n                tuple(item.prov[0].bbox), origin=CoordOrigin.BOTTOMLEFT\n            )\n            new_bbox = bbox.to_top_left_origin(page_height=page.size.height).normalized(\n                page_size=page.size\n            )\n\n            new_segment = {\n                \"index_in_doc\": ix,\n                \"label\": label,\n                \"text\": item.text if item.text is not None else \"\",\n                \"bbox\": new_bbox.as_tuple(),\n                \"data\": [],\n            }\n\n            if isinstance(item, Table):\n                table_html = item.export_to_html()\n                new_segment[\"data\"].append(\n                    {\n                        \"html_seq\": table_html,\n                        \"otsl_seq\": \"\",\n                    }\n                )\n\n            segments.append(new_segment)\n\n        return segments\n\n    def _process_page_cells(page: Page):\n        cells: List[dict] = []\n        if page.size is None:\n            return cells\n        for cell in page.cells:\n            new_bbox = (\n                cell.rect.to_bounding_box()\n                .to_top_left_origin(page_height=page.size.height)\n                .normalized(page_size=page.size)\n            )\n            is_ocr = cell.from_ocr\n            ocr_confidence = cell.confidence\n            cells.append(\n                {\n                    \"text\": cell.text,\n                    \"bbox\": new_bbox.as_tuple(),\n                    \"ocr\": is_ocr,\n                    \"ocr_confidence\": ocr_confidence,\n                }\n            )\n        return cells\n\n    def _process_page():\n        page_ix = page_no - 1\n        page = doc_result.pages[page_ix]\n\n        page_cells = _process_page_cells(page=page)\n        page_segments = _process_page_segments(doc_items=doc_items, page=page)\n        content_md = doc.export_to_markdown(\n            main_text_start=start_ix, main_text_stop=end_ix\n        )\n        # No page-tagging since we only do 1 page at the time\n        content_dt = doc.export_to_document_tokens(\n            main_text_start=start_ix, main_text_stop=end_ix, add_page_index=False\n        )\n\n        return content_text, content_md, content_dt, page_cells, page_segments, page\n\n    if doc.main_text is None:\n        return\n    for ix, orig_item in enumerate(doc.main_text):\n        item = doc._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item\n        if item is None or item.prov is None or len(item.prov) == 0:\n            _log.debug(f\"Skipping item {orig_item}\")\n            continue\n\n        item_page = item.prov[0].page\n\n        # Page is complete\n        if page_no > 0 and item_page > page_no:\n            yield _process_page()\n\n            start_ix = ix\n            doc_items = []\n            content_text = \"\"\n\n        page_no = item_page\n        end_ix = ix\n        doc_items.append((ix, item))\n        if item.text is not None and item.text != \"\":\n            content_text += item.text + \" \"\n\n    if len(doc_items) > 0:\n        yield _process_page()",
+            "text": "from collections.abc import Iterable\nfrom docling.datamodel.document import ConversionResult, Page\nfrom docling_core.types.doc import BoundingBox, CoordOrigin\nfrom docling_core.types.legacy_doc.base import BaseCell, BaseText, Ref, Table\nfrom typing import Any, Union\n_log = logging.getLogger(__name__)\ndef generate_multimodal_pages(\n    doc_result: ConversionResult,\n) -> Iterable[tuple[str, str, list[dict[str, Any]], list[dict[str, Any]], Page]]:\n    label_to_doclaynet = {\n        \"title\": \"title\",\n        \"table-of-contents\": \"document_index\",\n        \"subtitle-level-1\": \"section_header\",\n        \"checkbox-selected\": \"checkbox_selected\",\n        \"checkbox-unselected\": \"checkbox_unselected\",\n        \"caption\": \"caption\",\n        \"page-header\": \"page_header\",\n        \"page-footer\": \"page_footer\",\n        \"footnote\": \"footnote\",\n        \"table\": \"table\",\n        \"formula\": \"formula\",\n        \"list-item\": \"list_item\",\n        \"code\": \"code\",\n        \"figure\": \"picture\",\n        \"picture\": \"picture\",\n        \"reference\": \"text\",\n        \"paragraph\": \"text\",\n        \"text\": \"text\",\n    }\n\n    content_text = \"\"\n    page_no = 0\n    start_ix = 0\n    end_ix = 0\n    doc_items: list[tuple[int, Union[BaseCell, BaseText]]] = []\n\n    doc = doc_result.legacy_document\n\n    def _process_page_segments(doc_items: list[tuple[int, BaseCell]], page: Page):\n        segments = []\n\n        for ix, item in doc_items:\n            item_type = item.obj_type\n            label = label_to_doclaynet.get(item_type, None)\n\n            if label is None or item.prov is None or page.size is None:\n                continue\n\n            bbox = BoundingBox.from_tuple(\n                tuple(item.prov[0].bbox), origin=CoordOrigin.BOTTOMLEFT\n            )\n            new_bbox = bbox.to_top_left_origin(page_height=page.size.height).normalized(\n                page_size=page.size\n            )\n\n            new_segment = {\n                \"index_in_doc\": ix,\n                \"label\": label,\n                \"text\": item.text if item.text is not None else \"\",\n                \"bbox\": new_bbox.as_tuple(),\n                \"data\": [],\n            }\n\n            if isinstance(item, Table):\n                table_html = item.export_to_html()\n                new_segment[\"data\"].append(\n                    {\n                        \"html_seq\": table_html,\n                        \"otsl_seq\": \"\",\n                    }\n                )\n\n            segments.append(new_segment)\n\n        return segments\n\n    def _process_page_cells(page: Page):\n        cells: list[dict] = []\n        if page.size is None:\n            return cells\n        for cell in page.cells:\n            new_bbox = (\n                cell.rect.to_bounding_box()\n                .to_top_left_origin(page_height=page.size.height)\n                .normalized(page_size=page.size)\n            )\n            is_ocr = cell.from_ocr\n            ocr_confidence = cell.confidence\n            cells.append(\n                {\n                    \"text\": cell.text,\n                    \"bbox\": new_bbox.as_tuple(),\n                    \"ocr\": is_ocr,\n                    \"ocr_confidence\": ocr_confidence,\n                }\n            )\n        return cells\n\n    def _process_page():\n        page_ix = page_no - 1\n        page = doc_result.pages[page_ix]\n\n        page_cells = _process_page_cells(page=page)\n        page_segments = _process_page_segments(doc_items=doc_items, page=page)\n        content_md = doc.export_to_markdown(\n            main_text_start=start_ix, main_text_stop=end_ix\n        )\n        # No page-tagging since we only do 1 page at the time\n        content_dt = doc.export_to_document_tokens(\n            main_text_start=start_ix, main_text_stop=end_ix, add_page_index=False\n        )\n\n        return content_text, content_md, content_dt, page_cells, page_segments, page\n\n    if doc.main_text is None:\n        return\n    for ix, orig_item in enumerate(doc.main_text):\n        item = doc._resolve_ref(orig_item) if isinstance(orig_item, Ref) else orig_item\n        if item is None or item.prov is None or len(item.prov) == 0:\n            _log.debug(f\"Skipping item {orig_item}\")\n            continue\n\n        item_page = item.prov[0].page\n\n        # Page is complete\n        if page_no > 0 and item_page > page_no:\n            yield _process_page()\n\n            start_ix = ix\n            doc_items = []\n            content_text = \"\"\n\n        page_no = item_page\n        end_ix = ix\n        doc_items.append((ix, item))\n        if item.text is not None and item.text != \"\":\n            content_text += item.text + \" \"\n\n    if len(doc_items) > 0:\n        yield _process_page()",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.CodeDocMeta",
                 "version": "1.0.0",
@@ -1296,13 +1296,13 @@
                 ],
                 "origin": {
                     "mimetype": "text/plain",
-                    "binary_hash": 11028592083014135829,
+                    "binary_hash": 12891324290439759340,
                     "filename": "export.py",
                     "uri": "https://github.com/docling-project/docling/blob/abc123def456/export.py"
                 },
                 "part_name": "generate_multimodal_pages",
                 "docstring": "",
-                "sha256": 1004790262158132739538587728436826033595593751761,
+                "sha256": 603092041065480766568256004468245811610643265693,
                 "start_line": 12,
                 "end_line": 145,
                 "end_line_signature": 15,

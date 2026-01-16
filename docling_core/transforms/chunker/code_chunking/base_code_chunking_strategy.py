@@ -1,7 +1,8 @@
 """Base code chunking strategy."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 from docling_core.transforms.chunker.code_chunking.code_chunk import CodeChunk
 from docling_core.types.doc.document import CodeItem, DoclingDocument

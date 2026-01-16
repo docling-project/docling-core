@@ -1,7 +1,7 @@
 """Models for the base data types."""
 
 from enum import Enum
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 from pydantic import BaseModel, FieldSerializationInfo, field_serializer
 
@@ -28,14 +28,10 @@ class PydanticSerCtxKey(str, Enum):
     CONFID_PREC = "confid_prec"  # key for confidence values precision
 
 
-def round_pydantic_float(
-    val: float, ctx: Any, precision_ctx_key: PydanticSerCtxKey
-) -> float:
+def round_pydantic_float(val: float, ctx: Any, precision_ctx_key: PydanticSerCtxKey) -> float:
     """Round float, provided the precision is available in the context."""
     precision = (
-        ctx.get(precision_ctx_key.value)
-        if isinstance(ctx, dict)
-        else getattr(ctx, precision_ctx_key.value, None)
+        ctx.get(precision_ctx_key.value) if isinstance(ctx, dict) else getattr(ctx, precision_ctx_key.value, None)
     )
     return round(val, precision) if isinstance(precision, int) else val
 
@@ -104,9 +100,7 @@ class BoundingBox(BaseModel):
     # same as before, but using the implementation above
     def normalized(self, page_size: Size):
         """normalized."""
-        return self.scale_to_size(
-            old_size=page_size, new_size=Size(height=1.0, width=1.0)
-        )
+        return self.scale_to_size(old_size=page_size, new_size=Size(height=1.0, width=1.0))
 
     def expand_by_scale(self, x_scale: float, y_scale: float) -> "BoundingBox":
         """expand_to_size."""
@@ -127,7 +121,7 @@ class BoundingBox(BaseModel):
                 coord_origin=self.coord_origin,
             )
 
-    def as_tuple(self) -> Tuple[float, float, float, float]:
+    def as_tuple(self) -> tuple[float, float, float, float]:
         """as_tuple."""
         if self.coord_origin == CoordOrigin.TOPLEFT:
             return (self.l, self.t, self.r, self.b)
@@ -135,10 +129,10 @@ class BoundingBox(BaseModel):
             return (self.l, self.b, self.r, self.t)
 
     @classmethod
-    def from_tuple(cls, coord: Tuple[float, ...], origin: CoordOrigin):
+    def from_tuple(cls, coord: tuple[float, ...], origin: CoordOrigin):
         """from_tuple.
 
-        :param coord: Tuple[float:
+        :param coord: tuple[float:
         :param ...]:
         :param origin: CoordOrigin:
 
@@ -190,9 +184,7 @@ class BoundingBox(BaseModel):
 
         return width * height
 
-    def intersection_over_union(
-        self, other: "BoundingBox", eps: float = 1.0e-6
-    ) -> float:
+    def intersection_over_union(self, other: "BoundingBox", eps: float = 1.0e-6) -> float:
         """intersection_over_union."""
         intersection_area = self.intersection_area_with(other=other)
 
@@ -204,9 +196,7 @@ class BoundingBox(BaseModel):
 
         return intersection_area / (union_area + eps)
 
-    def intersection_over_self(
-        self, other: "BoundingBox", eps: float = 1.0e-6
-    ) -> float:
+    def intersection_over_self(self, other: "BoundingBox", eps: float = 1.0e-6) -> float:
         """intersection_over_self."""
         intersection_area = self.intersection_area_with(other=other)
         if self.area() > 0:
@@ -244,17 +234,13 @@ class BoundingBox(BaseModel):
             bottom = min(self.b, other.b)
             if right <= left or bottom <= top:
                 return None
-            return BoundingBox(
-                l=left, t=top, r=right, b=bottom, coord_origin=self.coord_origin
-            )
+            return BoundingBox(l=left, t=top, r=right, b=bottom, coord_origin=self.coord_origin)
 
         top = min(self.t, other.t)
         bottom = max(self.b, other.b)
         if right <= left or top <= bottom:
             return None
-        return BoundingBox(
-            l=left, t=top, r=right, b=bottom, coord_origin=self.coord_origin
-        )
+        return BoundingBox(l=left, t=top, r=right, b=bottom, coord_origin=self.coord_origin)
 
     def to_top_left_origin(self, page_height: float) -> "BoundingBox":
         """to_top_left_origin.
@@ -275,9 +261,7 @@ class BoundingBox(BaseModel):
 
     def overlaps(self, other: "BoundingBox") -> bool:
         """overlaps."""
-        return self.overlaps_horizontally(other=other) and self.overlaps_vertically(
-            other=other
-        )
+        return self.overlaps_horizontally(other=other) and self.overlaps_vertically(other=other)
 
     def overlaps_horizontally(self, other: "BoundingBox") -> bool:
         """Check if two bounding boxes overlap horizontally."""
@@ -296,13 +280,8 @@ class BoundingBox(BaseModel):
 
     def overlaps_vertically_with_iou(self, other: "BoundingBox", iou: float) -> bool:
         """overlaps_y_with_iou."""
-        if (
-            self.coord_origin == CoordOrigin.BOTTOMLEFT
-            and other.coord_origin == CoordOrigin.BOTTOMLEFT
-        ):
-
+        if self.coord_origin == CoordOrigin.BOTTOMLEFT and other.coord_origin == CoordOrigin.BOTTOMLEFT:
             if self.overlaps_vertically(other=other):
-
                 u0 = min(self.b, other.b)
                 u1 = max(self.t, other.t)
 
@@ -314,10 +293,7 @@ class BoundingBox(BaseModel):
 
             return False
 
-        elif (
-            self.coord_origin == CoordOrigin.TOPLEFT
-            and other.coord_origin == CoordOrigin.TOPLEFT
-        ):
+        elif self.coord_origin == CoordOrigin.TOPLEFT and other.coord_origin == CoordOrigin.TOPLEFT:
             if self.overlaps_vertically(other=other):
                 u0 = min(self.t, other.t)
                 u1 = max(self.b, other.b)
@@ -344,16 +320,10 @@ class BoundingBox(BaseModel):
 
     def is_above(self, other: "BoundingBox") -> bool:
         """is_above."""
-        if (
-            self.coord_origin == CoordOrigin.BOTTOMLEFT
-            and other.coord_origin == CoordOrigin.BOTTOMLEFT
-        ):
+        if self.coord_origin == CoordOrigin.BOTTOMLEFT and other.coord_origin == CoordOrigin.BOTTOMLEFT:
             return self.t > other.t
 
-        elif (
-            self.coord_origin == CoordOrigin.TOPLEFT
-            and other.coord_origin == CoordOrigin.TOPLEFT
-        ):
+        elif self.coord_origin == CoordOrigin.TOPLEFT and other.coord_origin == CoordOrigin.TOPLEFT:
             return self.t < other.t
 
         else:
@@ -363,16 +333,10 @@ class BoundingBox(BaseModel):
 
     def is_strictly_above(self, other: "BoundingBox", eps: float = 1.0e-3) -> bool:
         """is_strictly_above."""
-        if (
-            self.coord_origin == CoordOrigin.BOTTOMLEFT
-            and other.coord_origin == CoordOrigin.BOTTOMLEFT
-        ):
+        if self.coord_origin == CoordOrigin.BOTTOMLEFT and other.coord_origin == CoordOrigin.BOTTOMLEFT:
             return (self.b + eps) > other.t
 
-        elif (
-            self.coord_origin == CoordOrigin.TOPLEFT
-            and other.coord_origin == CoordOrigin.TOPLEFT
-        ):
+        elif self.coord_origin == CoordOrigin.TOPLEFT and other.coord_origin == CoordOrigin.TOPLEFT:
             return (self.b + eps) < other.t
 
         else:
@@ -380,9 +344,7 @@ class BoundingBox(BaseModel):
 
         return False
 
-    def is_horizontally_connected(
-        self, elem_i: "BoundingBox", elem_j: "BoundingBox"
-    ) -> bool:
+    def is_horizontally_connected(self, elem_i: "BoundingBox", elem_j: "BoundingBox") -> bool:
         """is_horizontally_connected."""
         if (
             self.coord_origin == CoordOrigin.BOTTOMLEFT
@@ -422,7 +384,7 @@ class BoundingBox(BaseModel):
         return False
 
     @classmethod
-    def enclosing_bbox(cls, boxes: List["BoundingBox"]) -> "BoundingBox":
+    def enclosing_bbox(cls, boxes: list["BoundingBox"]) -> "BoundingBox":
         """Create a bounding box that covers all of the given boxes."""
         if not boxes:
             raise ValueError("No bounding boxes provided for union.")
