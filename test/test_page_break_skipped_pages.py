@@ -14,7 +14,6 @@ from pathlib import Path
 
 from docling_core.types.doc.document import DoclingDocument
 
-
 # =============================================================================
 # Test: Document page count verification
 # =============================================================================
@@ -27,9 +26,7 @@ def test_normal_4pages_has_all_pages():
 
     page_numbers = list(doc.pages.keys())
 
-    assert (
-        len(page_numbers) == 4
-    ), f"Expected 4 pages in normal_4pages.json, got {len(page_numbers)}"
+    assert len(page_numbers) == 4, f"Expected 4 pages in normal_4pages.json, got {len(page_numbers)}"
     assert page_numbers == [
         1,
         2,
@@ -45,9 +42,7 @@ def test_skipped_2pages_has_only_two_pages():
 
     page_numbers = list(doc.pages.keys())
 
-    assert (
-        len(page_numbers) == 2
-    ), f"Expected 2 pages in skipped_2pages.json, got {len(page_numbers)}"
+    assert len(page_numbers) == 2, f"Expected 2 pages in skipped_2pages.json, got {len(page_numbers)}"
     assert page_numbers == [1, 4], f"Expected pages [1, 4], got {page_numbers}"
 
 
@@ -58,9 +53,7 @@ def test_skipped_1page_has_two_pages():
 
     page_numbers = list(doc.pages.keys())
 
-    assert (
-        len(page_numbers) == 2
-    ), f"Expected 2 pages in skipped_1page.json, got {len(page_numbers)}"
+    assert len(page_numbers) == 2, f"Expected 2 pages in skipped_1page.json, got {len(page_numbers)}"
     assert page_numbers == [1, 3], f"Expected pages [1, 3], got {page_numbers}"
 
 
@@ -77,9 +70,7 @@ def test_doctags_page_breaks_normal():
     doctags_output = doc.export_to_doctags()
     page_break_count = doctags_output.count("<page_break>")
 
-    assert (
-        page_break_count == 3
-    ), f"Expected 3 page breaks for 4-page document, got {page_break_count}"
+    assert page_break_count == 3, f"Expected 3 page breaks for 4-page document, got {page_break_count}"
 
 
 def test_doctags_page_breaks_skipped_2pages():
@@ -98,9 +89,7 @@ def test_doctags_page_breaks_skipped_2pages():
     # After the fix in _yield_page_breaks(): should have 3 page breaks
     # (1->2, 2->3, 3->4) even though pages 2 and 3 are missing from the document.
     # Before the fix: only had 1 page break (1->4)
-    assert (
-        page_break_count == 3
-    ), f"Expected 3 page breaks for document with 2 skipped pages, got {page_break_count}"
+    assert page_break_count == 3, f"Expected 3 page breaks for document with 2 skipped pages, got {page_break_count}"
 
 
 def test_doctags_page_breaks_skipped_1page():
@@ -118,9 +107,7 @@ def test_doctags_page_breaks_skipped_1page():
 
     # Should have 2 page breaks (1->2, 2->3) even though page 2 is missing.
     # Before the fix: only had 1 page break (1->3)
-    assert (
-        page_break_count == 2
-    ), f"Expected 2 page breaks for document with 1 skipped page, got {page_break_count}"
+    assert page_break_count == 2, f"Expected 2 page breaks for document with 1 skipped page, got {page_break_count}"
 
 
 # =============================================================================
@@ -136,9 +123,7 @@ def test_markdown_page_breaks_normal():
     markdown_output = doc.export_to_markdown(page_break_placeholder="---PAGE BREAK---")
     page_break_count = markdown_output.count("---PAGE BREAK---")
 
-    assert (
-        page_break_count == 3
-    ), f"Expected 3 page breaks for 4-page document, got {page_break_count}"
+    assert page_break_count == 3, f"Expected 3 page breaks for 4-page document, got {page_break_count}"
 
 
 def test_markdown_page_breaks_skipped_2pages():
@@ -151,9 +136,7 @@ def test_markdown_page_breaks_skipped_2pages():
 
     # After the fix: should have 3 page breaks
     # Before the fix: only had 1 page break
-    assert (
-        page_break_count == 3
-    ), f"Expected 3 page breaks for document with 2 skipped pages, got {page_break_count}"
+    assert page_break_count == 3, f"Expected 3 page breaks for document with 2 skipped pages, got {page_break_count}"
 
 
 def test_markdown_page_breaks_skipped_1page():
@@ -165,9 +148,7 @@ def test_markdown_page_breaks_skipped_1page():
     page_break_count = markdown_output.count("---PAGE BREAK---")
 
     # Should have 2 page breaks (1->2, 2->3) even though page 2 is missing.
-    assert (
-        page_break_count == 2
-    ), f"Expected 2 page breaks for document with 1 skipped page, got {page_break_count}"
+    assert page_break_count == 2, f"Expected 2 page breaks for document with 1 skipped page, got {page_break_count}"
 
 
 # =============================================================================
@@ -184,9 +165,7 @@ def test_html_split_page_view_normal():
     # Count page divs instead of tr tags to avoid counting nested tables
     page_div_count = html_output.count("<div class='page'>")
 
-    assert (
-        page_div_count == 4
-    ), f"Expected 4 page divs for 4-page document, got {page_div_count}"
+    assert page_div_count == 4, f"Expected 4 page divs for 4-page document, got {page_div_count}"
 
 
 def test_html_split_page_view_skipped_2pages():
@@ -204,9 +183,7 @@ def test_html_split_page_view_skipped_2pages():
     page_div_count = html_output.count("<div class='page'>")
 
     # Should have 4 page divs (pages 1, 2, 3, 4) even though pages 2 and 3 are missing
-    assert (
-        page_div_count == 4
-    ), f"Expected 4 page divs for document with 2 skipped pages, got {page_div_count}"
+    assert page_div_count == 4, f"Expected 4 page divs for document with 2 skipped pages, got {page_div_count}"
 
 
 def test_html_split_page_view_skipped_1page():
@@ -224,9 +201,7 @@ def test_html_split_page_view_skipped_1page():
     page_div_count = html_output.count("<div class='page'>")
 
     # Should have 3 page divs (pages 1, 2, 3) even though page 2 is missing
-    assert (
-        page_div_count == 3
-    ), f"Expected 3 page divs for document with 1 skipped page, got {page_div_count}"
+    assert page_div_count == 3, f"Expected 3 page divs for document with 1 skipped page, got {page_div_count}"
 
 
 # =============================================================================

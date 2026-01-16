@@ -84,7 +84,7 @@ def _yield_page_breaks(
     next_page: int,
     lvl: int,
     start_index: int,
-) -> Iterable[Tuple[_PageBreakNode, int, int]]:
+) -> Iterable[tuple[_PageBreakNode, int, int]]:
     """Yield page break nodes for each page in range (prev_page, next_page].
 
     Generates one PageBreakNode per page transition. For example, if prev_page=1
@@ -101,11 +101,15 @@ def _yield_page_breaks(
     """
     idx = start_index
     for page in range(prev_page + 1, next_page + 1):
-        yield _PageBreakNode(
-            self_ref=f"#/pb/{idx}",
-            prev_page=page - 1,
-            next_page=page,
-        ), lvl, idx + 1
+        yield (
+            _PageBreakNode(
+                self_ref=f"#/pb/{idx}",
+                prev_page=page - 1,
+                next_page=page,
+            ),
+            lvl,
+            idx + 1,
+        )
         idx += 1
 
 
