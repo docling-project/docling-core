@@ -25,10 +25,10 @@ This is the caption of table 1.
 
 <!--<annotation kind="description">-->This is a description of table 1.<!--<annotation/>-->
 
-| Product   |   Years |   Years |
+| Product   | Years   | Years   |
 |-----------|---------|---------|
-| Product   |    2016 |    2017 |
-| Apple     |   49823 |  695944 |
+| Product   | 2016    | 2017    |
+| Apple     | 49823   | 695944  |
 
 This is the caption of figure 1.
 
