@@ -101,11 +101,15 @@ def _yield_page_breaks(
     """
     idx = start_index
     for page in range(prev_page + 1, next_page + 1):
-        yield _PageBreakNode(
-            self_ref=f"#/pb/{idx}",
-            prev_page=page - 1,
-            next_page=page,
-        ), lvl, idx + 1
+        yield (
+            _PageBreakNode(
+                self_ref=f"#/pb/{idx}",
+                prev_page=page - 1,
+                next_page=page,
+            ),
+            lvl,
+            idx + 1,
+        )
         idx += 1
 
 
