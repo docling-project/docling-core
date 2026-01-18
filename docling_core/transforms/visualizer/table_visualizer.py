@@ -162,6 +162,9 @@ class TableVisualizer(BaseVisualizer):
                 raise RuntimeError("Cannot visualize document without images")
             elif page_nr not in my_images:
                 image = deepcopy(pil_img)
+                # Ensure RGBA mode for proper transparency support with ImageDraw
+                if image.mode != "RGBA":
+                    image = image.convert("RGBA")
                 my_images[page_nr] = image
 
         for idx, (elem, _) in enumerate(doc.iterate_items(included_content_layers=included_content_layers)):

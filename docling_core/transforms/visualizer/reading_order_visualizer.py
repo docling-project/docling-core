@@ -149,6 +149,9 @@ class ReadingOrderVisualizer(BaseVisualizer):
                             raise RuntimeError("Cannot visualize document without images")
                         else:
                             image = deepcopy(pil_img)
+                            # Ensure RGBA mode for proper transparency support with ImageDraw
+                            if image.mode != "RGBA":
+                                image = image.convert("RGBA")
                             my_images[page_no] = image
                 draw = ImageDraw.Draw(image, "RGBA")
 

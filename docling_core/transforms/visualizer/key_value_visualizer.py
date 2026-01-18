@@ -191,6 +191,9 @@ class KeyValueVisualizer(BaseVisualizer):
                 if page.image is None or (pil_img := page.image.pil_image) is None:
                     raise RuntimeError("Cannot visualize document without page images")
                 base_img = deepcopy(pil_img)
+            # Ensure RGBA mode for proper transparency support with ImageDraw
+            if base_img.mode != "RGBA":
+                base_img = base_img.convert("RGBA")
             images[page_nr] = base_img
 
         # Overlay key-value content
