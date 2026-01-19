@@ -1,3 +1,6 @@
+from pathlib import Path
+from test.test_serialization_doctag import verify
+
 import pytest
 
 from docling_core.experimental.idoctags import (
@@ -17,14 +20,13 @@ from docling_core.types.doc import (
     TableCell,
     TableData,
 )
+from docling_core.types.doc.document import Formatting
 from docling_core.types.doc.labels import CodeLanguageLabel
 
 DO_PRINT: bool = False
 
 
-def _serialize(
-    doc: DoclingDocument,
-) -> str:
+def _serialize(doc: DoclingDocument) -> str:
     ser = IDocTagsDocSerializer(
         doc=doc,
         params=IDocTagsParams(),
@@ -52,49 +54,60 @@ def test_roundtrip_text():
     doc = DoclingDocument(name="t")
     doc.add_text(label=DocItemLabel.TEXT, text="Hello world")
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
     doc2 = _deserialize(dt)
-    assert len(doc2.texts) == 1
-    assert doc2.texts[0].label == DocItemLabel.TEXT
-    assert doc2.texts[0].text == "Hello world"
+    dt2 = _serialize(doc2)
+
+    exp_dt = """
+<doctag version="1.0.0">
+  <text>Hello world</text>
+</doctag>
+    """
+    assert dt2.strip() == exp_dt.strip()
 
 
 def test_roundtrip_title():
     doc = DoclingDocument(name="t")
     doc.add_title(text="My Title")
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
     doc2 = _deserialize(dt)
-    assert len(doc2.texts) == 1
-    assert doc2.texts[0].label == DocItemLabel.TITLE
-    assert doc2.texts[0].text == "My Title"
+    dt2 = _serialize(doc2)
+
+    exp_dt = """
+<doctag version="1.0.0">
+  <title>My Title</title>
+</doctag>
+    """
+    assert dt2.strip() == exp_dt.strip()
 
 
 def test_roundtrip_heading():
     doc = DoclingDocument(name="t")
     doc.add_heading(text="Section A", level=2)
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
     doc2 = _deserialize(dt)
-    assert len(doc2.texts) == 1
-    h = doc2.texts[0]
-    assert h.label == DocItemLabel.SECTION_HEADER and getattr(h, "level", 0) == 2
-    assert h.text == "Section A"
+    dt2 = _serialize(doc2)
+
+    exp_dt = """
+<doctag version="1.0.0">
+  <heading level="2">Section A</heading>
+</doctag>
+    """
+    assert dt2.strip() == exp_dt.strip()
 
 
 def test_roundtrip_caption():
     doc = DoclingDocument(name="t")
     doc.add_text(label=DocItemLabel.CAPTION, text="Cap text")
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
     doc2 = _deserialize(dt)
-    assert len(doc2.texts) == 1
-    assert doc2.texts[0].label == DocItemLabel.CAPTION
-    assert doc2.texts[0].text == "Cap text"
+    dt2 = _serialize(doc2)
+
+    exp_dt = """
+<doctag version="1.0.0">
+  <caption>Cap text</caption>
+</doctag>
+    """
+    assert dt2.strip() == exp_dt.strip()
 
 
 def test_roundtrip_footnote():
@@ -266,14 +279,26 @@ def test_roundtrip_text_prov():
 def test_roundtrip_title_prov():
     doc = DoclingDocument(name="t")
     _add_default_page(doc)
-    doc.add_title(text="My Title", prov=_default_prov())
+    doc.add_title(
+        text="My Title",
+        prov=_default_prov(),
+    )
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
     doc2 = _deserialize(dt)
-    assert len(doc2.texts) == 1
-    assert doc2.texts[0].label == DocItemLabel.TITLE
-    assert doc2.texts[0].text == "My Title"
+    dt2 = _serialize(doc2)
+
+    exp_dt = """
+<doctag version="1.0.0">
+  <title>
+    <location value="51" resolution="512"/>
+    <location value="51" resolution="512"/>
+    <location value="154" resolution="512"/>
+    <location value="102" resolution="512"/>
+    My Title
+  </title>
+</doctag>
+    """
+    assert dt2.strip() == exp_dt.strip()
 
 
 def test_roundtrip_heading_prov():
@@ -376,15 +401,34 @@ def test_roundtrip_list_unordered_prov():
     _add_default_page(doc)
     lg = doc.add_list_group()
     prov = _default_prov()
-    doc.add_list_item("A", parent=lg, enumerated=False, prov=prov)
-    doc.add_list_item("B", parent=lg, enumerated=False, prov=prov)
+    doc.add_list_item("A", parent=lg, prov=prov)
+    doc.add_list_item("B", parent=lg, prov=prov)
+
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
     doc2 = _deserialize(dt)
-    assert len(doc2.groups) == 1
-    assert len(doc2.texts) == 2
-    assert [it.text for it in doc2.texts] == ["A", "B"]
+    dt2 = _serialize(doc2)
+
+    exp_dt = """
+<doctag version="1.0.0">
+  <list ordered="false">
+    <list_text>
+      <location value="51" resolution="512"/>
+      <location value="51" resolution="512"/>
+      <location value="154" resolution="512"/>
+      <location value="102" resolution="512"/>
+      A
+    </list_text>
+    <list_text>
+      <location value="51" resolution="512"/>
+      <location value="51" resolution="512"/>
+      <location value="154" resolution="512"/>
+      <location value="102" resolution="512"/>
+      B
+    </list_text>
+  </list>
+</doctag>
+    """
+    assert dt2.strip() == exp_dt.strip()
 
 
 def test_roundtrip_list_ordered_prov():
@@ -574,7 +618,7 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     """Test nested ordered list within ordered list."""
     doc = DoclingDocument(name="t")
     lg_outer = doc.add_list_group()
-    doc.add_list_item("Step 1", parent=lg_outer, enumerated=True)
+    doc.add_list_item("Step 1", parent=lg_outer, enumerated=False)
 
     # Create nested ordered list
     lg_inner = doc.add_list_group(parent=lg_outer)
@@ -584,24 +628,23 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     doc.add_list_item("Step 2", parent=lg_outer, enumerated=True)
 
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
     doc2 = _deserialize(dt)
-
-    assert len(doc2.groups) == 2
-    assert len(doc2.texts) == 4
-    text_contents = [it.text for it in doc2.texts]
-    assert "Step 1" in text_contents
-    assert "Step 1.1" in text_contents
-    assert "Step 1.2" in text_contents
-    assert "Step 2" in text_contents
-
-    # Verify round-trip serialization
     dt2 = _serialize(doc2)
-    if DO_PRINT:
-        print("\ndt:", dt)
-        print("\ndt2:", dt2)
-    assert dt2 == dt
+
+    exp_dt = """
+<doctag version="1.0.0">
+  <list ordered="false">
+    <list_text>Step 1</list_text>
+    <list ordered="true">
+      <list_text>Step 1.1</list_text>
+      <list_text>Step 1.2</list_text>
+    </list>
+    <list_text>Step 2</list_text>
+  </list>
+</doctag>
+
+    """
+    assert dt2.strip() == exp_dt.strip()
 
 
 def test_roundtrip_nested_list_ordered_in_unordered():
@@ -766,61 +809,120 @@ def test_roundtrip_multiple_nested_lists_same_level():
 
 
 def test_roundtrip_list_item_with_inline_group():
-    """Test list item containing inline group with text, code, and formula."""
+
+    def add_texts(doc: DoclingDocument):
+        doc.add_text(label=DocItemLabel.TEXT, text="Simple text")
+        inline1 = doc.add_inline_group()
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="Here a code snippet: ",
+            parent=inline1,
+        )
+        doc.add_code(
+            text="help()",
+            parent=inline1,
+            code_language=CodeLanguageLabel.PYTHON,
+        )
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=" (to be shown)",
+            parent=inline1,
+        )
+
+    def add_list(doc: DoclingDocument):
+
+        lg = doc.add_list_group()
+
+        doc.add_list_item(text="foo", parent=lg)
+        doc.add_list_item(text="bar", parent=lg)
+
+        # just inline group with a formula
+        li = doc.add_list_item(text="", parent=lg)
+        inline = doc.add_inline_group(parent=li)
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="Here a formula: ",
+            parent=inline,
+        )
+        doc.add_formula(text="E=mc^2", parent=inline)
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="in line",
+            parent=inline,
+        )
+
+        # just inline group with formatted span
+        li = doc.add_list_item(text="", parent=lg)
+        inline = doc.add_inline_group(parent=li)
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="Here a ",
+            parent=inline,
+        )
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="bold",
+            parent=inline,
+            formatting=Formatting(bold=True),
+        )
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=" text",
+            parent=inline,
+        )
+
+        li = doc.add_list_item(text="will contain sublist", parent=lg)
+        lg_sub = doc.add_list_group(parent=li)
+        doc.add_list_item(text="sublist item 1", parent=lg_sub)
+        doc.add_list_item(text="sublist item 2", parent=lg_sub)
+
+        li = doc.add_list_item(text="", parent=lg)
+        inline = doc.add_inline_group(parent=li)
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="Here a ",
+            parent=inline,
+        )
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="both bold and italicized",
+            parent=inline,
+            formatting=Formatting(bold=True, italic=True),
+        )
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=" text and a sublist:",
+            parent=inline,
+        )
+        lg_sub = doc.add_list_group(parent=li)
+        doc.add_list_item(text="sublist item a", parent=lg_sub)
+        doc.add_list_item(text="sublist item b", parent=lg_sub)
+
+        doc.add_list_item(text="final element", parent=lg)
+
     doc = DoclingDocument(name="t")
-    lg = doc.add_list_group()
 
-    # First list item with inline group containing code
-    li1 = doc.add_list_item(text="", parent=lg, enumerated=False)
-    inline1 = doc.add_inline_group(parent=li1)
-    doc.add_text(
-        label=DocItemLabel.TEXT,
-        text="Here a code snippet:",
-        parent=inline1,
-    )
-    doc.add_code(
-        text='print("Hello world")',
-        parent=inline1,
-        code_language=CodeLanguageLabel.PYTHON,
-    )
-    doc.add_text(
-        label=DocItemLabel.TEXT,
-        text="(to be displayed inline)",
-        parent=inline1,
-    )
+    add_texts(doc)
+    add_list(doc)
 
-    # Second list item with inline group containing formula
-    li2 = doc.add_list_item(text="", parent=lg, enumerated=False)
-    inline2 = doc.add_inline_group(parent=li2)
-    doc.add_text(
-        label=DocItemLabel.TEXT,
-        text="Here a formula:",
-        parent=inline2,
+    target_yaml_file = (
+        Path(__file__).parent
+        / "data"
+        / "doc"
+        / "roundtrip_list_item_with_inline_group_init.yaml"
     )
-    doc.add_formula(text="E=mc^2", parent=inline2)
-    doc.add_text(
-        label=DocItemLabel.TEXT,
-        text="(to be displayed inline)",
-        parent=inline2,
-    )
-
+    doc.save_as_yaml(target_yaml_file)
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
-
     doc2 = _deserialize(dt)
-
-    # Verify structure
-    assert len(doc2.groups) >= 1  # At least one list group
-    # Should have at least 2 list items, plus inline content (texts, code, formula)
-    assert len(doc2.texts) >= 2
-
-    # Verify round-trip
     dt2 = _serialize(doc2)
-    if DO_PRINT:
-        print("\ndt:", dt)
-        print("\ndt2:", dt2)
-    assert dt2 == dt
+
+    exp_dt2_file = (
+        Path(__file__).parent
+        / "data"
+        / "doc"
+        / "roundtrip_list_item_with_inline_reserialized.idt.xml"
+    )
+    verify(exp_dt2_file, dt2)
 
 
 def test_roundtrip_table_with_caption_and_footnotes():
@@ -1086,16 +1188,13 @@ def test_constructed_doc(sample_doc: DoclingDocument):
     doc = sample_doc
 
     dt = _serialize(doc)
-
     doc2 = _deserialize(dt)
-
     dt2 = _serialize(doc2)
 
-    # if DO_PRINT:
-    # print(f"--------------------------dt:\n\n{dt}\n\n")
-    # print(f"--------------------------dt2:\n\n{dt2}\n\n")
-
-    assert dt2 == dt
+    exp_reserialized_dt_file = (
+        Path(__file__).parent / "data" / "doc" / "constr_doc_reserialized.idt.xml"
+    )
+    verify(exp_reserialized_dt_file, dt2)
 
 
 @pytest.mark.xfail(

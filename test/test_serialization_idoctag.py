@@ -403,3 +403,72 @@ def test_content_block_specific_types(sample_doc: DoclingDocument):
     ser_txt = serializer.serialize().text
     exp_file = Path("./test/data/doc/content_block_specific.gt.idt.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_inline_group():
+    doc = DoclingDocument(name="test")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+
+    parent_txt = doc.add_text(label=DocItemLabel.TEXT, text="", prov=prov)
+    simple_inline_gr = doc.add_inline_group(parent=parent_txt)
+    doc.add_text(label=DocItemLabel.TEXT, text="One", parent=simple_inline_gr)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Two",
+        parent=simple_inline_gr,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Three", parent=simple_inline_gr)
+
+    li_inline_gr = doc.add_list_group()
+    doc.add_list_item(text="Item 1", parent=li_inline_gr)
+    li2 = doc.add_list_item(text="", parent=li_inline_gr)
+    li2_inline_gr = doc.add_inline_group(parent=li2)
+    doc.add_text(label=DocItemLabel.TEXT, text="Four", parent=li2_inline_gr)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Five",
+        parent=li2_inline_gr,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Six", parent=li2_inline_gr)
+
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            add_content=True,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/inline_group.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_mini_inline():
+    doc = DoclingDocument(name="test")
+    ul = doc.add_list_group()
+    li = doc.add_list_item(text="", parent=ul)
+    inl = doc.add_inline_group(parent=li)
+    doc.add_text(label=DocItemLabel.TEXT, text="foo", parent=inl)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bar",
+        parent=inl,
+        formatting=Formatting(bold=True),
+    )
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            add_content=True,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/mini_inline.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)

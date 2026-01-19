@@ -40,32 +40,13 @@
       <list_text></list_text>
     </list>
   </list>
-  <inline>
-    <text></text>
-    <code class="Python"></code>
-    <text></text>
-  </inline>
-  <inline>
-    <text></text>
-    <formula></formula>
-    <text></text>
-  </inline>
+  <code class="Python"></code>
+  <formula></formula>
   <text></text>
   <code class="Python"></code>
   <text></text>
   <formula></formula>
-  <inline>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-  </inline>
+  <text></text>
   <list ordered="true">
     <list_text></list_text>
     <list_text></list_text>

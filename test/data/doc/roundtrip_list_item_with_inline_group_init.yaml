@@ -1,0 +1,356 @@
+body:
+  children:
+  - $ref: '#/texts/0'
+  - $ref: '#/groups/0'
+  - $ref: '#/groups/1'
+  content_layer: body
+  label: unspecified
+  name: _root_
+  self_ref: '#/body'
+form_items: []
+furniture:
+  children: []
+  content_layer: furniture
+  label: unspecified
+  name: _root_
+  self_ref: '#/furniture'
+groups:
+- children:
+  - $ref: '#/texts/1'
+  - $ref: '#/texts/2'
+  - $ref: '#/texts/3'
+  content_layer: body
+  label: inline
+  name: group
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/0'
+- children:
+  - $ref: '#/texts/4'
+  - $ref: '#/texts/5'
+  - $ref: '#/texts/6'
+  - $ref: '#/texts/10'
+  - $ref: '#/texts/14'
+  - $ref: '#/texts/17'
+  - $ref: '#/texts/23'
+  content_layer: body
+  label: list
+  name: group
+  parent:
+    $ref: '#/body'
+  self_ref: '#/groups/1'
+- children:
+  - $ref: '#/texts/7'
+  - $ref: '#/texts/8'
+  - $ref: '#/texts/9'
+  content_layer: body
+  label: inline
+  name: group
+  parent:
+    $ref: '#/texts/6'
+  self_ref: '#/groups/2'
+- children:
+  - $ref: '#/texts/11'
+  - $ref: '#/texts/12'
+  - $ref: '#/texts/13'
+  content_layer: body
+  label: inline
+  name: group
+  parent:
+    $ref: '#/texts/10'
+  self_ref: '#/groups/3'
+- children:
+  - $ref: '#/texts/15'
+  - $ref: '#/texts/16'
+  content_layer: body
+  label: list
+  name: group
+  parent:
+    $ref: '#/texts/14'
+  self_ref: '#/groups/4'
+- children:
+  - $ref: '#/texts/18'
+  - $ref: '#/texts/19'
+  - $ref: '#/texts/20'
+  content_layer: body
+  label: inline
+  name: group
+  parent:
+    $ref: '#/texts/17'
+  self_ref: '#/groups/5'
+- children:
+  - $ref: '#/texts/21'
+  - $ref: '#/texts/22'
+  content_layer: body
+  label: list
+  name: group
+  parent:
+    $ref: '#/texts/17'
+  self_ref: '#/groups/6'
+key_value_items: []
+name: t
+pages: {}
+pictures: []
+schema_name: DoclingDocument
+tables: []
+texts:
+- children: []
+  content_layer: body
+  label: text
+  orig: Simple text
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/0'
+  text: Simple text
+- children: []
+  content_layer: body
+  label: text
+  orig: 'Here a code snippet: '
+  parent:
+    $ref: '#/groups/0'
+  prov: []
+  self_ref: '#/texts/1'
+  text: 'Here a code snippet: '
+- captions: []
+  children: []
+  code_language: Python
+  content_layer: body
+  footnotes: []
+  label: code
+  orig: help()
+  parent:
+    $ref: '#/groups/0'
+  prov: []
+  references: []
+  self_ref: '#/texts/2'
+  text: help()
+- children: []
+  content_layer: body
+  label: text
+  orig: ' (to be shown)'
+  parent:
+    $ref: '#/groups/0'
+  prov: []
+  self_ref: '#/texts/3'
+  text: ' (to be shown)'
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: foo
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/4'
+  text: foo
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: bar
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/5'
+  text: bar
+- children:
+  - $ref: '#/groups/2'
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: ''
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/6'
+  text: ''
+- children: []
+  content_layer: body
+  label: text
+  orig: 'Here a formula: '
+  parent:
+    $ref: '#/groups/2'
+  prov: []
+  self_ref: '#/texts/7'
+  text: 'Here a formula: '
+- children: []
+  content_layer: body
+  label: formula
+  orig: E=mc^2
+  parent:
+    $ref: '#/groups/2'
+  prov: []
+  self_ref: '#/texts/8'
+  text: E=mc^2
+- children: []
+  content_layer: body
+  label: text
+  orig: in line
+  parent:
+    $ref: '#/groups/2'
+  prov: []
+  self_ref: '#/texts/9'
+  text: in line
+- children:
+  - $ref: '#/groups/3'
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: ''
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/10'
+  text: ''
+- children: []
+  content_layer: body
+  label: text
+  orig: 'Here a '
+  parent:
+    $ref: '#/groups/3'
+  prov: []
+  self_ref: '#/texts/11'
+  text: 'Here a '
+- children: []
+  content_layer: body
+  formatting:
+    bold: true
+    italic: false
+    script: baseline
+    strikethrough: false
+    underline: false
+  label: text
+  orig: bold
+  parent:
+    $ref: '#/groups/3'
+  prov: []
+  self_ref: '#/texts/12'
+  text: bold
+- children: []
+  content_layer: body
+  label: text
+  orig: ' text'
+  parent:
+    $ref: '#/groups/3'
+  prov: []
+  self_ref: '#/texts/13'
+  text: ' text'
+- children:
+  - $ref: '#/groups/4'
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: will contain sublist
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/14'
+  text: will contain sublist
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: sublist item 1
+  parent:
+    $ref: '#/groups/4'
+  prov: []
+  self_ref: '#/texts/15'
+  text: sublist item 1
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: sublist item 2
+  parent:
+    $ref: '#/groups/4'
+  prov: []
+  self_ref: '#/texts/16'
+  text: sublist item 2
+- children:
+  - $ref: '#/groups/5'
+  - $ref: '#/groups/6'
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: ''
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/17'
+  text: ''
+- children: []
+  content_layer: body
+  label: text
+  orig: 'Here a '
+  parent:
+    $ref: '#/groups/5'
+  prov: []
+  self_ref: '#/texts/18'
+  text: 'Here a '
+- children: []
+  content_layer: body
+  formatting:
+    bold: true
+    italic: true
+    script: baseline
+    strikethrough: false
+    underline: false
+  label: text
+  orig: both bold and italicized
+  parent:
+    $ref: '#/groups/5'
+  prov: []
+  self_ref: '#/texts/19'
+  text: both bold and italicized
+- children: []
+  content_layer: body
+  label: text
+  orig: ' text and a sublist:'
+  parent:
+    $ref: '#/groups/5'
+  prov: []
+  self_ref: '#/texts/20'
+  text: ' text and a sublist:'
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: sublist item a
+  parent:
+    $ref: '#/groups/6'
+  prov: []
+  self_ref: '#/texts/21'
+  text: sublist item a
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: sublist item b
+  parent:
+    $ref: '#/groups/6'
+  prov: []
+  self_ref: '#/texts/22'
+  text: sublist item b
+- children: []
+  content_layer: body
+  enumerated: false
+  label: list_item
+  marker: ''
+  orig: final element
+  parent:
+    $ref: '#/groups/1'
+  prov: []
+  self_ref: '#/texts/23'
+  text: final element
+version: 1.9.0
