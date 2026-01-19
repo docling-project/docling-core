@@ -5,7 +5,7 @@ import re
 from enum import Enum
 from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
-from xml.dom.minidom import Element, Text, parseString
+from xml.dom.minidom import Element, Node, Text, parseString
 
 from pydantic import BaseModel, PrivateAttr
 from typing_extensions import override
@@ -1158,6 +1158,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         item: "TextItem",
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
@@ -1200,6 +1201,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                     doc_serializer=doc_serializer,
                     doc=doc,
                     visited=visited,
+                    is_inline_scope=is_inline_scope,
                     **kwargs,
                 )
                 res.append(tres)
@@ -1213,6 +1215,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 doc_serializer=doc_serializer,
                 doc=doc,
                 visited=visited,
+                is_inline_scope=is_inline_scope,
                 **kwargs,
             )
 
@@ -1222,6 +1225,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         item: "TextItem",
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
@@ -1315,17 +1319,9 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             or (not isinstance(item, (CodeItem, FormulaItem)) and ContentType.TEXT_OTHER in params.content_types)
         ):
             # Check if we should serialize a single inline group child instead of text
-            if not item.text and len(item.children) == 1:
-                child = item.children[0].resolve(doc)
-                if isinstance(child, InlineGroup):
-                    ser_res = doc_serializer.serialize(item=child, visited=my_visited, **kwargs)
-                    text_part = ser_res.text
-                else:
-                    text_part = doc_serializer.post_process(
-                        text=item.text,
-                        formatting=item.formatting,
-                        hyperlink=item.hyperlink,
-                    )
+            if len(item.children) > 0 and isinstance((first_child := item.children[0].resolve(doc)), InlineGroup):
+                ser_res = doc_serializer.serialize(item=first_child, visited=my_visited, **kwargs)
+                text_part = ser_res.text
             else:
                 text_part = _escape_text(item.text, params.escape_mode)
                 text_part = doc_serializer.post_process(
@@ -1350,7 +1346,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(ftn_text)
 
         text_res = "".join(parts)
-        if wrap_open_token is not None:
+        if wrap_open_token is not None and not (is_inline_scope and item.label == DocItemLabel.TEXT):
             text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
         return create_ser_result(text=text_res, span_source=item)
 
@@ -1738,7 +1734,10 @@ class IDocTagsInlineSerializer(BaseInlineSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
         if text_res:
             text_res = f"{text_res}{delim}"
-            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.INLINE.value)
+
+        if item.parent is None or not isinstance(item.parent.resolve(doc), TextItem):
+            # if "unwrapped", wrap in <text>...</text>
+            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.TEXT.value)
         return create_ser_result(text=text_res, span_source=parts)
 
 
@@ -2008,6 +2007,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 root = cast(Element, candidates[0])
 
         doc = DoclingDocument(name="Document")
+        # TODO revise need for default page & resolution
         # Initialize with a default page so location tokens can be re-emitted
         self._page_no = 0
         self._default_resolution = DOCTAGS_RESOLUTION
@@ -2032,6 +2032,13 @@ class IDocTagsDocDeserializer(BaseModel):
             IDocTagsToken.PAGE_FOOTER.value,
             IDocTagsToken.CODE.value,
             IDocTagsToken.FORMULA.value,
+            IDocTagsToken.LIST_TEXT.value,
+            IDocTagsToken.BOLD.value,
+            IDocTagsToken.ITALIC.value,
+            IDocTagsToken.UNDERLINE.value,
+            IDocTagsToken.STRIKETHROUGH.value,
+            IDocTagsToken.SUBSCRIPT.value,
+            IDocTagsToken.SUPERSCRIPT.value,
         }:
             self._parse_text_like(doc=doc, el=el, parent=parent)
         elif name == IDocTagsToken.PAGE_BREAK.value:
@@ -2062,20 +2069,36 @@ class IDocTagsDocDeserializer(BaseModel):
                 self._dispatch_element(doc=doc, el=node, parent=parent)
 
     # ------------- Text blocks -------------
+
+    def _get_simple_text_block(self, elements: list) -> Optional[str]:
+        result = None
+        for el in elements:
+            if isinstance(el, Element):
+                if el.tagName not in {
+                    IDocTagsToken.LOCATION.value,
+                    IDocTagsToken.BR.value,
+                    IDocTagsToken.BOLD.value,
+                    IDocTagsToken.ITALIC.value,
+                    IDocTagsToken.UNDERLINE.value,
+                    IDocTagsToken.STRIKETHROUGH.value,
+                    IDocTagsToken.SUBSCRIPT.value,
+                    IDocTagsToken.SUPERSCRIPT.value,
+                }:
+                    return None
+                elif tmp := self._get_simple_text_block(el.childNodes):
+                    result = tmp
+            elif isinstance(el, Text) and el.data.strip():
+                if result is None:
+                    result = el.data.strip()
+                else:
+                    return None
+        return result
+
     def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         """Parse text-like tokens (title, text, caption, footnotes, code, formula)."""
-        # Check if we have a single child that is an inline group
-        # This matches the serialization behavior where a text item with no text
-        # and a single InlineGroup child serializes the inline group directly
-        child_elements = [
-            node
-            for node in el.childNodes
-            if isinstance(node, Element) and node.tagName not in {IDocTagsToken.LOCATION.value}
-        ]
-
-        if len(child_elements) == 1 and child_elements[0].tagName == IDocTagsToken.INLINE.value:
+        if self._get_simple_text_block(el.childNodes) is None:
             # This text-like element wraps a single inline group; create it directly
-            self._parse_inline_group(doc=doc, el=child_elements[0], parent=parent)
+            self._parse_inline_group(doc=doc, el=el, parent=parent)
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)
@@ -2108,8 +2131,36 @@ class IDocTagsDocDeserializer(BaseModel):
                 IDocTagsToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
                 IDocTagsToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
                 IDocTagsToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
+                IDocTagsToken.LIST_TEXT.value: DocItemLabel.TEXT,
+                IDocTagsToken.BOLD.value: DocItemLabel.TEXT,
+                IDocTagsToken.ITALIC.value: DocItemLabel.TEXT,
+                IDocTagsToken.UNDERLINE.value: DocItemLabel.TEXT,
+                IDocTagsToken.STRIKETHROUGH.value: DocItemLabel.TEXT,
+                IDocTagsToken.SUBSCRIPT.value: DocItemLabel.TEXT,
+                IDocTagsToken.SUPERSCRIPT.value: DocItemLabel.TEXT,
             }
         ):
+            is_bold = nm == IDocTagsToken.BOLD.value
+            is_italic = nm == IDocTagsToken.ITALIC.value
+            is_underline = nm == IDocTagsToken.UNDERLINE.value
+            is_strikethrough = nm == IDocTagsToken.STRIKETHROUGH.value
+            is_subscript = nm == IDocTagsToken.SUBSCRIPT.value
+            is_superscript = nm == IDocTagsToken.SUPERSCRIPT.value
+
+            if is_bold or is_italic or is_underline or is_strikethrough or is_subscript or is_superscript:
+                formatting = formatting or Formatting()
+                if is_bold:
+                    formatting.bold = True
+                elif is_italic:
+                    formatting.italic = True
+                elif is_underline:
+                    formatting.underline = True
+                elif is_strikethrough:
+                    formatting.strikethrough = True
+                elif is_subscript:
+                    formatting.script = Script.SUB
+                elif is_superscript:
+                    formatting.script = Script.SUPER
             item = doc.add_text(
                 label=text_label_map[nm],
                 text=text,
@@ -2184,56 +2235,81 @@ class IDocTagsDocDeserializer(BaseModel):
 
     def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         ordered = el.getAttribute(IDocTagsAttributeKey.ORDERED.value) == IDocTagsAttributeValue.TRUE.value
-        group = doc.add_list_group(parent=parent)
-        for node in el.childNodes:
-            if not isinstance(node, Element):
-                continue
-            if node.tagName == IDocTagsToken.LIST_TEXT.value:
-                # Collect provenance from the <list_text> wrapper
-                prov_list = self._extract_provenance(doc=doc, el=node)
-
-                child_elements = [
-                    child
-                    for child in node.childNodes
-                    if isinstance(child, Element) and child.tagName not in {IDocTagsToken.LOCATION.value}
+        li_group = doc.add_list_group(parent=parent)
+        actual_children = [
+            ch for ch in el.childNodes if isinstance(ch, Element) and ch.tagName not in {IDocTagsToken.LOCATION.value}
+        ]
+        boundaries = [
+            i
+            for i, n in enumerate(actual_children)
+            if isinstance(n, Element) and n.tagName == IDocTagsToken.LIST_TEXT.value
+        ]
+        ranges = [
+            (
+                boundaries[i],
+                (boundaries[i + 1] if i < len(boundaries) - 1 else len(actual_children)),
+            )
+            for i in range(len(boundaries))
+        ]
+        for start, end in ranges:
+            if end - start == 1:
+                child = actual_children[start]
+                actual_grandchildren = [
+                    ch
+                    for ch in child.childNodes
+                    if (isinstance(ch, Element) and ch.tagName != IDocTagsToken.LOCATION.value)
+                    or (isinstance(ch, Text) and ch.data.strip())
                 ]
-
-                if len(child_elements) == 1 and child_elements[0].tagName == IDocTagsToken.INLINE.value:
-                    list_item = doc.add_list_item(
-                        text="",
-                        parent=group,
+                prov_list = self._extract_provenance(doc=doc, el=child)
+                if len(actual_grandchildren) == 1 and isinstance(actual_grandchildren[0], Text):
+                    doc.add_list_item(
+                        text=self._get_text(child).strip(),
+                        parent=li_group,
                         enumerated=ordered,
                         prov=(prov_list[0] if prov_list else None),
                     )
-                    for p in prov_list[1:]:
-                        list_item.prov.append(p)
-
-                    self._parse_inline_group(doc=doc, el=child_elements[0], parent=list_item)
-
                 else:
-                    text = self._get_text(node).strip()
-                    if text:
-                        item = doc.add_list_item(
-                            text=text,
-                            parent=group,
-                            enumerated=ordered,
-                            prov=(prov_list[0] if prov_list else None),
-                        )
-                        for p in prov_list[1:]:
-                            item.prov.append(p)
+                    li = doc.add_list_item(
+                        text="",
+                        parent=li_group,
+                        enumerated=ordered,
+                        prov=(prov_list[0] if prov_list else None),
+                    )
+                    for el2 in actual_children[start:end]:
+                        self._dispatch_element(doc=doc, el=el2, parent=li)
+            else:
+                if (
+                    actual_children[start + 1].tagName == IDocTagsToken.LIST.value
+                    and len(actual_children[start].childNodes) == 1
+                    and isinstance(actual_children[start].childNodes[0], Text)
+                ):
+                    text = self._get_text(actual_children[start])
+                    start_to_use = start + 1
+                else:
+                    text = ""
+                    start_to_use = start
 
-            elif node.tagName == IDocTagsToken.LIST.value:
-                # Recursively handle nested lists
-                self._parse_list(doc=doc, el=node, parent=group)
+                # TODO add provenance
+                wrapper = doc.add_list_item(text=text, parent=li_group, enumerated=ordered)
+                for el in actual_children[start_to_use:end]:
+                    self._dispatch_element(doc=doc, el=el, parent=wrapper)
 
     # ------------- Inline groups -------------
-    def _parse_inline_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_inline_group(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: Optional[NodeItem],
+        nodes: Optional[list[Node]] = None,
+    ) -> None:
         """Parse <inline> elements into InlineGroup objects."""
         # Create the inline group
         inline_group = doc.add_inline_group(parent=parent)
 
         # Process all child elements, adding them as children of the inline group
-        for node in el.childNodes:
+        my_nodes = nodes or el.childNodes
+        for node in my_nodes:
             if isinstance(node, Element):
                 # Recursively dispatch child elements with the inline group as parent
                 self._dispatch_element(doc=doc, el=node, parent=inline_group)

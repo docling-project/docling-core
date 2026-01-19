@@ -1,0 +1,19 @@
+<doctag version="1.0.0">
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    One
+    <bold>Two</bold>
+Three
+  </text>
+  <list ordered="false">
+    <list_text>Item 1</list_text>
+    <list_text>
+      Four
+      <bold>Five</bold>
+Six
+    </list_text>
+  </list>
+</doctag>
