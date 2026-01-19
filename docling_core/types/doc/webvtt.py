@@ -13,7 +13,7 @@ from typing_extensions import Self, override
 
 _VALID_ENTITIES: set = {"amp", "lt", "gt", "lrm", "rlm", "nbsp"}
 _ENTITY_PATTERN: re.Pattern = re.compile(r"&([a-zA-Z0-9]+);")
-_START_TAG_NAMES = Literal["c", "b", "i", "u", "v", "lang"]
+START_TAG_NAMES = Literal["c", "b", "i", "u", "v", "lang"]
 
 
 class WebVTTLineTerminator(str, Enum):
@@ -80,6 +80,23 @@ class WebVTTTimestamp(BaseModel):
         """A representation of the WebVTT Timestamp in seconds."""
         return self._hours * 3600 + self._minutes * 60 + self._seconds + self._millis / 1000.0
 
+    @classmethod
+    def from_seconds(cls, seconds: float) -> Self:
+        """Create a WebVTT timestamp from seconds.
+
+        Args:
+            seconds: The time in seconds (can include fractional seconds for milliseconds).
+
+        Returns:
+            A WebVTT timestamp instance.
+        """
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        millis: int = round((seconds % 1) * 1000)
+
+        return cls(raw=f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}")
+
     def __eq__(self, other: object) -> bool:
         """Two timestamps are equal if their total number of seconds is equal."""
         if not isinstance(other, WebVTTTimestamp):
@@ -92,9 +109,27 @@ class WebVTTTimestamp(BaseModel):
             return NotImplemented
         return self.seconds < other.seconds
 
+    def format(self, omit_hours_if_zero: bool = False) -> str:
+        """Format the timestamp as a string.
+
+        Args:
+            omit_hours_if_zero: If True, omit hours when they are 0.
+
+        Returns:
+            Formatted timestamp string.
+        """
+        if omit_hours_if_zero and self._hours == 0:
+            return f"{self._minutes:02d}:{self._seconds:02d}.{self._millis:03d}"
+        return self.raw
+
     @override
     def __str__(self) -> str:
-        """Return a string representation of a WebVTT timestamp."""
+        """Return a string representation of a WebVTT timestamp.
+
+        Always returns the full timestamp format including hours (HH:MM:SS.mmm),
+        even when hours are zero. Use `format(omit_hours_if_zero=True)` to get
+        a shorter representation (MM:SS.mmm) when hours are zero.
+        """
         return self.raw
 
 
@@ -112,9 +147,27 @@ class WebVTTCueTimings(BaseModel):
                 raise ValueError("End timestamp must be greater than start timestamp")
         return self
 
+    def format(self, omit_hours_if_zero: bool = False) -> str:
+        """Format the cue timings as a string.
+
+        Args:
+            omit_hours_if_zero: If True, omit hours when they are 0 in both timestamps.
+
+        Returns:
+            Formatted cue timings string in the format "start --> end".
+        """
+        start_str = self.start.format(omit_hours_if_zero=omit_hours_if_zero)
+        end_str = self.end.format(omit_hours_if_zero=omit_hours_if_zero)
+        return f"{start_str} --> {end_str}"
+
     @override
-    def __str__(self):
-        """Return a string representation of the cue timings."""
+    def __str__(self) -> str:
+        """Return a string representation of the cue timings.
+
+        Always returns the full format including hours (HH:MM:SS.mmm --> HH:MM:SS.mmm),
+        even when hours are zero. Use `format(omit_hours_if_zero=True)` to get
+        a shorter representation when hours are zero.
+        """
         return f"{self.start} --> {self.end}"
 
 
@@ -142,7 +195,7 @@ class WebVTTCueTextSpan(BaseModel):
         return value
 
     @override
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the cue text span."""
         return self.text
 
@@ -154,7 +207,7 @@ class WebVTTCueComponentWithTerminator(BaseModel):
     terminator: Optional[WebVTTLineTerminator] = None
 
     @override
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the cue component with terminator."""
         return f"{self.component}{self.terminator.value if self.terminator else ''}"
 
@@ -169,7 +222,7 @@ class WebVTTCueInternalText(BaseModel):
     ] = []
 
     @override
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the cue internal text."""
         cue_str = f"{self.terminator.value if self.terminator else ''}{''.join(str(span) for span in self.components)}"
         return cue_str
@@ -178,7 +231,7 @@ class WebVTTCueInternalText(BaseModel):
 class WebVTTCueSpanStartTag(BaseModel):
     """WebVTT cue span start tag."""
 
-    name: Annotated[_START_TAG_NAMES, Field(description="The tag name")]
+    name: Annotated[START_TAG_NAMES, Field(description="The tag name")]
     classes: Annotated[
         list[str],
         Field(description="List of classes representing the cue span's significance"),
@@ -200,7 +253,7 @@ class WebVTTCueSpanStartTag(BaseModel):
         return f"{self.name}.{'.'.join(self.classes)}" if self.classes else self.name
 
     @override
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the cue span start tag."""
         return f"<{self._get_name_with_classes()}>"
 
@@ -228,7 +281,7 @@ class WebVTTCueSpanStartTagAnnotated(WebVTTCueSpanStartTag):
         return value
 
     @override
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the cue span start tag."""
         return f"<{self._get_name_with_classes()} {self.annotation}>"
 
@@ -270,7 +323,7 @@ class WebVTTCueComponentBase(BaseModel):
         return self
 
     @override
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the cue component."""
         return f"{self.start_tag}{self.internal_text}</{self.start_tag.name}>"
 
@@ -391,7 +444,7 @@ class WebVTTCueBlock(BaseModel):
                 )
 
     @classmethod
-    def parse(cls, raw: str) -> "WebVTTCueBlock":
+    def parse(cls, raw: str) -> Self:
         """Parse a WebVTT cue block from a string.
 
         Args:
@@ -489,29 +542,50 @@ class WebVTTCueBlock(BaseModel):
             payload=stack[0],
         )
 
-    def __str__(self):
-        """Return a string representation of the WebVTT cue block."""
+    def format(self, omit_hours_if_zero: bool = False, omit_voice_end: bool = False) -> str:
+        """Format the WebVTT cue block as a string.
+
+        Args:
+            omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
+            omit_voice_end: If True and this cue block has a WebVTT cue voice span as
+                its only component, omit the voice end tag for brevity.
+
+        Returns:
+            Formatted cue block string.
+        """
         parts = []
         if self.identifier:
             parts.append(f"{self.identifier}\n")
-        timings_line = str(self.timings)
+        timings_line = self.timings.format(omit_hours_if_zero=omit_hours_if_zero)
         parts.append(timings_line + "\n")
         for idx, span in enumerate(self.payload):
-            if idx == 0 and len(self.payload) == 1 and span.component.kind == "v":
-                # the end tag may be omitted for brevity
+            if omit_voice_end and idx == 0 and len(self.payload) == 1 and span.component.kind == "v":
                 parts.append(str(span).removesuffix("</v>"))
             else:
                 parts.append(str(span))
 
         return "".join(parts) + "\n"
 
+    def __str__(self) -> str:
+        """Return a string representation of the WebVTT cue block.
+
+        Always returns the full format including hours in timestamps (HH:MM:SS.mmm),
+        even when hours are zero. Use `format(omit_hours_if_zero=True)` to get
+        a shorter representation when hours are zero.
+        Always returns the WebVTT cue voice spans with the voice end tag, even if this
+        cue block has a WebVTT cue voice span as a single component in the payload. Use
+        `format(omit_voice_end=True)` to get a shorter representation without the voice
+        end tag.
+        """
+        return self.format()
+
 
 class WebVTTFile(BaseModel):
     """A model representing a WebVTT file."""
 
     _pattern: ClassVar[re.Pattern] = re.compile(r"(?m)^(STYLE|NOTE|REGION)\b[\s\S]*?(?:\n\s*\n|\Z)")
-    title: Optional[str] = None
     cue_blocks: list[WebVTTCueBlock]
+    title: Optional[str] = None
 
     @staticmethod
     def verify_signature(content: str) -> bool:
@@ -544,7 +618,7 @@ class WebVTTFile(BaseModel):
         return self
 
     @classmethod
-    def parse(cls, raw: str) -> "WebVTTFile":
+    def parse(cls, raw: str) -> Self:
         """Parse a WebVTT file.
 
         Args:
@@ -579,14 +653,46 @@ class WebVTTFile(BaseModel):
 
         return cls(title=title, cue_blocks=cues)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[WebVTTCueBlock]:  # type: ignore[override]
         """Return an iterator over the cue blocks."""
         return iter(self.cue_blocks)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> WebVTTCueBlock:
         """Return the cue block at the given index."""
         return self.cue_blocks[idx]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of cue blocks."""
         return len(self.cue_blocks)
+
+    def format(self, omit_hours_if_zero: bool = False) -> str:
+        """Format the WebVTT file as a string.
+
+        Args:
+            omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
+
+        Returns:
+            Formatted WebVTT file string.
+        """
+        parts: list[str] = []
+
+        if self.title:
+            parts.append(f"WEBVTT {self.title}\n")
+        else:
+            parts.append("WEBVTT\n")
+
+        for cue_block in self.cue_blocks:
+            parts.append("\n")
+            parts.append(cue_block.format(omit_hours_if_zero=omit_hours_if_zero))
+
+        # Remove the trailing newline from the last cue block
+        return "".join(parts).rstrip("\n")
+
+    def __str__(self) -> str:
+        """Return a string representation of the WebVTT file.
+
+        Always returns the full format including hours in timestamps (HH:MM:SS.mmm),
+        even when hours are zero. Use `format(omit_hours_if_zero=True)` to get
+        a shorter representation when hours are zero.
+        """
+        return self.format()

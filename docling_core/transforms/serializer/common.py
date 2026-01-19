@@ -324,7 +324,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         parts: list[SerializationResult],
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize a document out of its pages."""
+        """Serialize a document out of its parts."""
         ...
 
     def _serialize_body(self, **kwargs) -> SerializationResult:
@@ -355,7 +355,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         empty_res = create_ser_result()
 
         my_item = item or self.doc.body
-
         if my_item == self.doc.body:
             if my_item.meta and not self._meta_is_wrapped():
                 meta_part = self.serialize_meta(item=my_item, **my_kwargs)

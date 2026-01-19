@@ -1238,7 +1238,7 @@ class ProvenanceTrack(BaseModel):
     classes: Optional[list[str]] = Field(
         None,
         min_length=1,
-        examples=["first", "loud", "yellow"],
+        examples=["b.first", "v.loud", "c.yellow"],
         description="Classes for describing the cue significance",
     )
 
@@ -1250,7 +1250,7 @@ class ProvenanceTrack(BaseModel):
         return self
 
 
-def get_provenance_discriminator_value(v: Any) -> str:
+def _get_provenance_discriminator_value(v: Any) -> str:
     """Callable discriminator for provenance instances.
 
     Args:
@@ -1267,7 +1267,7 @@ def get_provenance_discriminator_value(v: Any) -> str:
 
 ProvenanceType = Annotated[
     Union[Annotated[ProvenanceItem, Tag("item")], Annotated[ProvenanceTrack, Tag("track")]],
-    Discriminator(get_provenance_discriminator_value),
+    Discriminator(_get_provenance_discriminator_value),
 ]
 
 

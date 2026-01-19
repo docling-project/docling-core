@@ -2324,9 +2324,9 @@
           "default": null,
           "description": "Classes for describing the cue significance",
           "examples": [
-            "first",
-            "loud",
-            "yellow"
+            "b.first",
+            "v.loud",
+            "c.yellow"
           ],
           "title": "Classes"
         }

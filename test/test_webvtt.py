@@ -255,7 +255,12 @@ def test_webvtt_file() -> None:
         "WEBVTT\n\nNOTE Copyright © 2019 World Wide Web Consortium. "
         "https://www.w3.org/TR/webvtt1/\n\n"
     )
-    reverse += "\n".join([str(block) for block in vtt.cue_blocks])
+    reverse += "\n".join(
+        [
+            block.format(omit_hours_if_zero=True, omit_voice_end=True)
+            for block in vtt.cue_blocks
+        ]
+    )
     assert content == reverse.rstrip()
 
     with open("./test/data/webvtt/webvtt_example_03.vtt", encoding="utf-8") as f:
