@@ -990,6 +990,7 @@ class DocumentOrigin(BaseModel):
         "text/asciidoc",
         "text/markdown",
         "text/csv",
+        "text/vtt",
         "audio/x-wav",
         "audio/wav",
         "audio/mp3",
