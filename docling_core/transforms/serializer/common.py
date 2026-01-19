@@ -525,19 +525,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         res = text
         if params.include_formatting and formatting:
             if formatting.bold:
-                res = self.serialize_bold(text=res)
+                res = self.serialize_bold(text=res, **kwargs)
             if formatting.italic:
-                res = self.serialize_italic(text=res)
+                res = self.serialize_italic(text=res, **kwargs)
             if formatting.underline:
-                res = self.serialize_underline(text=res)
+                res = self.serialize_underline(text=res, **kwargs)
             if formatting.strikethrough:
-                res = self.serialize_strikethrough(text=res)
+                res = self.serialize_strikethrough(text=res, **kwargs)
             if formatting.script == Script.SUB:
-                res = self.serialize_subscript(text=res)
+                res = self.serialize_subscript(text=res, **kwargs)
             elif formatting.script == Script.SUPER:
-                res = self.serialize_superscript(text=res)
+                res = self.serialize_superscript(text=res, **kwargs)
         if params.include_hyperlinks and hyperlink:
-            res = self.serialize_hyperlink(text=res, hyperlink=hyperlink)
+            res = self.serialize_hyperlink(text=res, hyperlink=hyperlink, **kwargs)
         return res
 
     @override
