@@ -506,7 +506,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 visited=my_visited,
                 **(dict(level=lvl) | kwargs),
             )
-            if len(part.text.strip()) > 0 or (not add_content):
+            if part.text or not add_content:
                 parts.append(part)
 
         return parts
