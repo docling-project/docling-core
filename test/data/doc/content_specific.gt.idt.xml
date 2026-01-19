@@ -1,0 +1,145 @@
+<doctag version="1.0.0">
+  <list ordered="false">
+    <list_text></list_text>
+  </list>
+  <title></title>
+  <text></text>
+  <text></text>
+  <heading level="1"></heading>
+  <text></text>
+  <list ordered="false">
+    <list_text></list_text>
+    <list_text></list_text>
+    <list_text></list_text>
+    <list ordered="true">
+      <list_text></list_text>
+      <list_text></list_text>
+      <list_text></list_text>
+      <list ordered="true">
+        <list_text></list_text>
+      </list>
+    </list>
+    <list_text></list_text>
+  </list>
+  <floating_group class="table">
+    <caption>This is the caption of table 1.</caption>
+    <otsl>
+      <fcel/>
+      Product
+      <fcel/>
+      Years
+      <lcel/>
+      <nl/>
+      <ucel/>
+      <fcel/>
+      2016
+      <fcel/>
+      2017
+      <nl/>
+      <fcel/>
+      Apple
+      <fcel/>
+      49823
+      <fcel/>
+      695944
+      <nl/>
+    </otsl>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>This is the caption of figure 1.</caption>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>This is the caption of figure 2.</caption>
+  </floating_group>
+  <list ordered="false">
+    <list_text></list_text>
+  </list>
+  <list ordered="false">
+    <list_text></list_text>
+    <list_text></list_text>
+  </list>
+  <list ordered="false">
+    <list_text></list_text>
+    <list_text></list_text>
+    <list ordered="false">
+      <list_text></list_text>
+      <list_text></list_text>
+      <list_text></list_text>
+    </list>
+  </list>
+  <inline>
+    <text></text>
+    <code class="Python"><![CDATA[print("Hello world")]]></code>
+    <text></text>
+  </inline>
+  <inline>
+    <text></text>
+    <formula></formula>
+    <text></text>
+  </inline>
+  <text></text>
+  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <text></text>
+  <formula></formula>
+  <inline>
+    <text></text>
+    <text></text>
+    <text></text>
+    <text></text>
+    <text></text>
+    <text></text>
+    <text></text>
+    <text></text>
+    <text></text>
+    <text></text>
+  </inline>
+  <list ordered="true">
+    <list_text></list_text>
+    <list_text></list_text>
+    <list_text></list_text>
+    <list ordered="true">
+      <list_text></list_text>
+      <list_text></list_text>
+      <list ordered="true">
+        <list_text></list_text>
+        <list_text></list_text>
+      </list>
+      <list_text></list_text>
+    </list>
+    <list_text></list_text>
+  </list>
+  <list ordered="false">
+    <list_text></list_text>
+  </list>
+  <text></text>
+  <floating_group class="picture">
+    <caption>Picture Caption</caption>
+    <picture>
+      <meta>
+        <summary>Picture Summary</summary>
+        <description>Picture Description</description>
+      </meta>
+      <location value="5" resolution="512"/>
+      <location value="492" resolution="512"/>
+      <location value="15" resolution="512"/>
+      <location value="502" resolution="512"/>
+    </picture>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>Picture Caption</caption>
+    <picture>
+      <location value="5" resolution="512"/>
+      <location value="492" resolution="512"/>
+      <location value="15" resolution="512"/>
+      <location value="502" resolution="512"/>
+    </picture>
+  </floating_group>
+  <code>0 == 0</code>
+  <code>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    with location
+  </code>
+</doctag>

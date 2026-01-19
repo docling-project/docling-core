@@ -1,0 +1,186 @@
+<doctag version="1.0.0">
+  <list ordered="false">
+    <list_text>item of leading list</list_text>
+  </list>
+  <title>Title of the Document</title>
+  <text>Author 1
+Affiliation 1</text>
+  <text>Author 2
+Affiliation 2</text>
+  <heading level="1">1. Introduction</heading>
+  <text>This paper introduces the biggest invention ever made. ...</text>
+  <list ordered="false">
+    <list_text>list item 1</list_text>
+    <list_text>list item 2</list_text>
+    <list_text>list item 3</list_text>
+    <list ordered="true">
+      <list_text>list item 3.a</list_text>
+      <list_text>list item 3.b</list_text>
+      <list_text>list item 3.c</list_text>
+      <list ordered="true">
+        <list_text>list item 3.c.i</list_text>
+      </list>
+    </list>
+    <list_text>list item 4</list_text>
+  </list>
+  <floating_group class="table">
+    <caption>This is the caption of table 1.</caption>
+    <otsl>
+      <fcel/>
+      Product
+      <fcel/>
+      Years
+      <lcel/>
+      <nl/>
+      <ucel/>
+      <fcel/>
+      2016
+      <fcel/>
+      2017
+      <nl/>
+      <fcel/>
+      Apple
+      <fcel/>
+      49823
+      <fcel/>
+      695944
+      <nl/>
+    </otsl>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>This is the caption of figure 1.</caption>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>This is the caption of figure 2.</caption>
+  </floating_group>
+  <list ordered="false">
+    <list_text>item 1 of list</list_text>
+  </list>
+  <list ordered="false">
+    <list_text>item 1 of list after empty list</list_text>
+    <list_text>item 2 of list after empty list</list_text>
+  </list>
+  <list ordered="false">
+    <list_text>item 1 of neighboring list</list_text>
+    <list_text>item 2 of neighboring list</list_text>
+    <list ordered="false">
+      <list_text>item 1 of sub list</list_text>
+      <list_text>
+        <inline>
+          <text>Here a code snippet:</text>
+          <code class="Python"><![CDATA[print("Hello world")]]></code>
+          <text>(to be displayed inline)</text>
+        </inline>
+      </list_text>
+      <list_text>
+        <inline>
+          <text>Here a formula:</text>
+          <formula>E=mc^2</formula>
+          <text>(to be displayed inline)</text>
+        </inline>
+      </list_text>
+    </list>
+  </list>
+  <text>Here a code block:</text>
+  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <text>Here a formula block:</text>
+  <formula>E=mc^2</formula>
+  <inline>
+    <text>Some formatting chops:</text>
+    <text>
+      <bold>bold</bold>
+    </text>
+    <text>
+      <italic>italic</italic>
+    </text>
+    <text>
+      <underline>underline</underline>
+    </text>
+    <text>
+      <strikethrough>strikethrough</strikethrough>
+    </text>
+    <text>
+      <subscript>subscript</subscript>
+    </text>
+    <text>
+      <superscript>superscript</superscript>
+    </text>
+    <text>hyperlink</text>
+    <text><![CDATA[&]]></text>
+    <text>
+      <strikethrough>
+        <underline>
+          <italic>
+            <bold>everything at the same time.</bold>
+          </italic>
+        </underline>
+      </strikethrough>
+    </text>
+  </inline>
+  <list ordered="true">
+    <list_text>Item 1 in A</list_text>
+    <list_text>Item 2 in A</list_text>
+    <list_text>Item 3 in A</list_text>
+    <list ordered="true">
+      <list_text>Item 1 in B</list_text>
+      <list_text>Item 2 in B</list_text>
+      <list ordered="true">
+        <list_text>Item 1 in C</list_text>
+        <list_text>Item 2 in C</list_text>
+      </list>
+      <list_text>Item 3 in B</list_text>
+    </list>
+    <list_text>Item 4 in A</list_text>
+  </list>
+  <list ordered="false">
+    <list_text>List item without parent list group</list_text>
+  </list>
+  <text>The end.</text>
+  <floating_group class="picture">
+    <caption>Picture Caption</caption>
+    <picture>
+      <meta>
+        <summary>Picture Summary</summary>
+        <description>Picture Description</description>
+      </meta>
+      <location value="5" resolution="512"/>
+      <location value="492" resolution="512"/>
+      <location value="15" resolution="512"/>
+      <location value="502" resolution="512"/>
+    </picture>
+  </floating_group>
+  <floating_group class="picture">
+    <caption>Picture Caption</caption>
+    <picture>
+      <meta>
+        <summary>Picture Summary</summary>
+        <description>Picture Description</description>
+        <classification>Pie chart</classification>
+      </meta>
+      <location value="5" resolution="512"/>
+      <location value="492" resolution="512"/>
+      <location value="15" resolution="512"/>
+      <location value="502" resolution="512"/>
+      <otsl>
+        <fcel/>
+        Foo
+        <fcel/>
+        Bar
+        <nl/>
+        <fcel/>
+        One
+        <fcel/>
+        Two
+        <nl/>
+      </otsl>
+    </picture>
+  </floating_group>
+  <code>0 == 0</code>
+  <code>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    with location
+  </code>
+</doctag>

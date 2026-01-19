@@ -358,7 +358,7 @@ def run_dump(cfg: dict[str, Any]) -> int:
                 for content in [True, False]:
                     try:
                         params_probe = IDocTagsParams()
-                        params_probe.add_content = content
+                        params_probe.add_text_content = content
                         params_probe.mode = mode
                         params_probe.escape_mode = esc_mode
                         params_probe.pretty_indentation = "  " if mode==IDocTagsSerializationMode.HUMAN_FRIENDLY else None
