@@ -61,7 +61,12 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.base import CoordOrigin
-from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
+from docling_core.types.doc.document import FormulaItem
+from docling_core.types.doc.labels import (
+    CodeLanguageLabel,
+    DocItemLabel,
+    PictureClassificationLabel,
+)
 
 # Note: Intentionally avoid importing DocumentToken here to ensure
 # IDocTags uses only its own token vocabulary.
@@ -954,6 +959,24 @@ class EscapeMode(str, Enum):
     CDATA_WHEN_NEEDED = "cdata_when_needed"  # wrap text in CDATA only if it contains special characters
 
 
+class ContentType(str, Enum):
+    """Content type for IDocTags output."""
+
+    REF_CAPTION = "ref_caption"
+    REF_FOOTNOTE = "ref_footnote"
+
+    TEXT_CODE = "text_code"
+    TEXT_FORMULA = "text_formula"
+    TEXT_OTHER = "text_other"
+    TABLE = "table"
+    CHART = "chart"
+    TABLE_CELL = "table_cell"
+    PICTURE = "picture"
+
+
+_DEFAULT_CONTENT_TYPES: set[ContentType] = set(ContentType)
+
+
 class IDocTagsParams(CommonParams):
     """IDocTags-specific serialization parameters independent of DocTags."""
 
@@ -961,18 +984,24 @@ class IDocTagsParams(CommonParams):
     xsize: int = DOCTAGS_RESOLUTION
     ysize: int = DOCTAGS_RESOLUTION
     add_location: bool = True
-    add_caption: bool = True
-    add_footnote: bool = True
-    add_content: bool = True
     add_table_cell_location: bool = False
+
+    add_referenced_caption: bool = True
+    add_referenced_footnote: bool = True
+
     add_page_break: bool = True
 
-    mode: IDocTagsSerializationMode = IDocTagsSerializationMode.HUMAN_FRIENDLY
+    # types of content to serialize:
+    content_types: set[ContentType] = _DEFAULT_CONTENT_TYPES
 
     # IDocTags formatting
     do_self_closing: bool = True
     pretty_indentation: Optional[str] = 2 * " "
+
+    # only relevant if pretty_indentation is None or empty:
+    mode: IDocTagsSerializationMode = IDocTagsSerializationMode.HUMAN_FRIENDLY
     # Expand self-closing forms of non-self-closing tokens after pretty-printing
+
     preserve_empty_non_selfclosing: bool = True
     # XML compliance: escape special characters in text content
     escape_mode: EscapeMode = EscapeMode.CDATA_WHEN_NEEDED
@@ -1280,7 +1309,11 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             if meta_res.text:
                 parts.append(meta_res.text)
 
-        if params.add_content:
+        if (
+            (isinstance(item, CodeItem) and ContentType.TEXT_CODE in params.content_types)
+            or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
+            or (not isinstance(item, (CodeItem, FormulaItem)) and ContentType.TEXT_OTHER in params.content_types)
+        ):
             # Check if we should serialize a single inline group child instead of text
             if not item.text and len(item.children) == 1:
                 child = item.children[0].resolve(doc)
@@ -1304,13 +1337,13 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             if text_part:
                 parts.append(text_part)
 
-        if params.add_caption and isinstance(item, FloatingItem):
+        if params.add_referenced_caption and isinstance(item, FloatingItem):
             cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
             if cap_text:
                 cap_text = _escape_text(cap_text, params.escape_mode)
                 parts.append(cap_text)
 
-        if params.add_footnote and isinstance(item, FloatingItem):
+        if params.add_referenced_footnote and isinstance(item, FloatingItem):
             ftn_text = doc_serializer.serialize_footnotes(item=item, **kwargs).text
             if ftn_text:
                 ftn_text = _escape_text(ftn_text, params.escape_mode)
@@ -1387,6 +1420,20 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
 class IDocTagsPictureSerializer(BasePictureSerializer):
     """DocTags-specific picture item serializer."""
 
+    def _picture_is_chart(self, item: PictureItem) -> bool:
+        """Check if predicted class indicates a chart."""
+        if item.meta and item.meta.classification:
+            return item.meta.classification.get_main_prediction().class_name in {
+                PictureClassificationLabel.PIE_CHART.value,
+                PictureClassificationLabel.BAR_CHART.value,
+                PictureClassificationLabel.STACKED_BAR_CHART.value,
+                PictureClassificationLabel.LINE_CHART.value,
+                PictureClassificationLabel.FLOW_CHART.value,
+                PictureClassificationLabel.SCATTER_CHART.value,
+                PictureClassificationLabel.HEATMAP.value,
+            }
+        return False
+
     @override
     def serialize(
         self,
@@ -1407,7 +1454,7 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
         # Build caption (as a sibling of the picture within the floating_group)
         res_parts: list[SerializationResult] = []
         caption_text = ""
-        if params.add_caption:
+        if params.add_referenced_caption:
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 caption_text = cap_res.text
@@ -1416,38 +1463,43 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
         # Build picture inner content (meta + body) that will go inside <picture> ... </picture>
         picture_inner_parts: list[str] = []
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            if item.meta:
-                meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
-                if meta_res.text:
-                    picture_inner_parts.append(meta_res.text)
-                    res_parts.append(meta_res)
-
             body = ""
             if params.add_location:
                 body += _create_location_tokens_for_item(item=item, doc=doc)
 
-            # handle tabular chart data
-            chart_data: Optional[TableData] = None
-            if item.meta and item.meta.tabular_chart:
-                chart_data = item.meta.tabular_chart.chart_data
-            if chart_data and chart_data.table_cells:
-                temp_doc = DoclingDocument(name="temp")
-                temp_table = temp_doc.add_table(data=chart_data)
-                # Reuse the IDocTags table emission for chart data
-                params_chart = IDocTagsParams(
-                    **{
-                        **params.model_dump(),
-                        "add_table_cell_location": False,
-                    }
-                )
-                otsl_content = IDocTagsTableSerializer()._emit_otsl(
-                    item=temp_table,  # type: ignore[arg-type]
-                    doc_serializer=doc_serializer,
-                    doc=temp_doc,
-                    params=params_chart,
-                    **kwargs,
-                )
-                body += otsl_content
+            is_chart = self._picture_is_chart(item)
+            if ((not is_chart) and ContentType.PICTURE in params.content_types) or (
+                is_chart and ContentType.CHART in params.content_types
+            ):
+                if item.meta:
+                    meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+                    if meta_res.text:
+                        picture_inner_parts.append(meta_res.text)
+                        res_parts.append(meta_res)
+
+                # handle tabular chart data
+                chart_data: Optional[TableData] = None
+                if item.meta and item.meta.tabular_chart:
+                    chart_data = item.meta.tabular_chart.chart_data
+                if chart_data and chart_data.table_cells:
+                    temp_doc = DoclingDocument(name="temp")
+                    temp_table = temp_doc.add_table(data=chart_data)
+                    # Reuse the IDocTags table emission for chart data
+                    params_chart = IDocTagsParams(
+                        **{
+                            **params.model_dump(),
+                            "add_table_cell_location": False,
+                        }
+                    )
+                    otsl_content = IDocTagsTableSerializer()._emit_otsl(
+                        item=temp_table,  # type: ignore[arg-type]
+                        doc_serializer=doc_serializer,
+                        doc=temp_doc,
+                        params=params_chart,
+                        **kwargs,
+                    )
+                    otsl_payload = _wrap(text=otsl_content, wrap_tag=IDocTagsToken.OTSL.value)
+                    body += otsl_payload
 
             if body:
                 picture_inner_parts.append(body)
@@ -1459,7 +1511,7 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
 
         # Build footnotes (as siblings of the picture within the floating_group)
         footnote_text = ""
-        if params.add_footnote:
+        if params.add_referenced_footnote:
             ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
             if ftn_res.text:
                 footnote_text = ftn_res.text
@@ -1468,9 +1520,7 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
         # Compose final structure for picture group:
         # <floating_group class="picture"> [<caption>] <picture>...</picture> [<footnote>...] </floating_group>
         composed_inner = f"{caption_text}{picture_text}{footnote_text}"
-        text_res = ""
-        if composed_inner:
-            text_res = f"{open_token}{composed_inner}{close_token}"
+        text_res = f"{open_token}{composed_inner}{close_token}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
@@ -1491,38 +1541,31 @@ class IDocTagsTableSerializer(BaseTableSerializer):
     ) -> str:
         """Emit OTSL payload using IDocTags tokens and location semantics.
 
-        Raises ValueError when per-cell location is requested but the
-        document/page context is unavailable.
+        Location tokens are included only when all required information is available
+        (cell bboxes, provenance, page info, valid page size). Otherwise, location
+        tokens are omitted without raising errors.
         """
         if not item.data or not item.data.table_cells:
             return ""
 
         nrows, ncols = item.data.num_rows, item.data.num_cols
 
-        # Check if any cells have bounding boxes available
-        has_any_cell_bbox = any((c.bbox is not None) for row in item.data.grid for c in row)
-
-        # If per-cell location is requested but no cells have bboxes, fail early
-        if params.add_table_cell_location and not has_any_cell_bbox:
-            raise ValueError("Cell locations requested but no cells have bounding boxes in the table.")
-
         # Determine if we need page context for location serialization
-        need_cell_loc = params.add_table_cell_location and has_any_cell_bbox
-
+        # Only proceed if all required information is available
+        need_cell_loc = False
         page_no = 0
-        if need_cell_loc:
-            if not item.prov:
-                raise ValueError("Per-cell location requested but table has no provenance (page_no).")
-            page_no = item.prov[0].page_no
-            if not doc.pages or page_no not in doc.pages:
-                raise ValueError(f"Per-cell location requested but no page info for page {page_no}.")
-            page_w, page_h = doc.pages[page_no].size.as_tuple()
-            if page_w <= 0 or page_h <= 0:
-                raise ValueError(f"Invalid page size ({page_w}, {page_h}) for page {page_no}.")
-        else:
-            # Defaults will not be used unless a bbox is present and
-            # add_table_cell_location is true
-            page_w, page_h = (1.0, 1.0)
+        page_w, page_h = (1.0, 1.0)
+
+        if params.add_table_cell_location:
+            # Check if we have all required information for location serialization
+            if item.prov and len(item.prov) > 0:
+                page_no = item.prov[0].page_no
+                if doc.pages and page_no in doc.pages:
+                    page_w, page_h = doc.pages[page_no].size.as_tuple()
+                    if page_w > 0 and page_h > 0:
+                        # All prerequisites met, enable location serialization
+                        # Individual cells will still be checked for bbox availability
+                        need_cell_loc = True
 
         parts: list[str] = []
         for i in range(nrows):
@@ -1535,10 +1578,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
 
                 # Optional per-cell location
                 cell_loc = ""
-                if params.add_table_cell_location:
-                    if cell.bbox is None:
-                        raise ValueError("Missing cell-bbox in the table-grid.")
-
+                if need_cell_loc and cell.bbox is not None:
                     bbox = cell.bbox.to_top_left_origin(page_h).as_tuple()
                     cell_loc = _create_location_tokens_for_bbox(
                         bbox=bbox,
@@ -1559,9 +1599,9 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                         else:
                             parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.FCEL))
 
-                        if params.add_table_cell_location:
+                        if cell_loc:
                             parts.append(cell_loc)
-                        if params.add_content:
+                        if ContentType.TABLE_CELL in params.content_types:
                             # Apply XML escaping to table cell content
                             escaped_content = _escape_text(content, params.escape_mode)
                             parts.append(escaped_content)
@@ -1601,7 +1641,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
 
         # Caption as sibling of the OTSL payload within the floating group
         caption_text = ""
-        if params.add_caption:
+        if params.add_referenced_caption:
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 caption_text = cap_res.text
@@ -1614,31 +1654,30 @@ class IDocTagsTableSerializer(BaseTableSerializer):
             if params.add_location:
                 body += _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
 
-            otsl_text = self._emit_otsl(
-                item=item,
-                doc_serializer=doc_serializer,
-                doc=doc,
-                params=params,
-                visited=visited,
-                **kwargs,
-            )
-            body += otsl_text
+            if ContentType.TABLE in params.content_types:
+                otsl_text = self._emit_otsl(
+                    item=item,
+                    doc_serializer=doc_serializer,
+                    doc=doc,
+                    params=params,
+                    visited=visited,
+                    **kwargs,
+                )
+                body += otsl_text
             if body:
                 otsl_payload = _wrap(text=body, wrap_tag=IDocTagsToken.OTSL.value)
                 res_parts.append(create_ser_result(text=body, span_source=item))
 
         # Footnote as sibling of the OTSL payload within the floating group
         footnote_text = ""
-        if params.add_footnote:
+        if params.add_referenced_footnote:
             ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
             if ftn_res.text:
                 footnote_text = ftn_res.text
                 res_parts.append(ftn_res)
 
         composed_inner = f"{caption_text}{otsl_payload}{footnote_text}"
-        text_res = ""
-        if composed_inner:
-            text_res = f"{open_token}{composed_inner}{close_token}"
+        text_res = f"{open_token}{composed_inner}{close_token}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
@@ -1809,7 +1848,7 @@ class IDocTagsDocSerializer(DocSerializer):
                         if isinstance(cap := caption.resolve(self.doc), DocItem):
                             loc_txt = _create_location_tokens_for_item(item=cap, doc=self.doc)
                             results.append(create_ser_result(text=loc_txt))
-            if cap_res.text and params.add_content:
+            if cap_res.text and ContentType.REF_CAPTION in params.content_types:
                 results.append(cap_res)
         text_res = "".join([r.text for r in results])
         if text_res:
@@ -1833,7 +1872,7 @@ class IDocTagsDocSerializer(DocSerializer):
                         location = _create_location_tokens_for_item(item=ftn, doc=self.doc)
 
                     content = ""
-                    if ftn.text and params.add_content:
+                    if ftn.text and ContentType.REF_FOOTNOTE in params.content_types:
                         content = ftn.text
 
                     text_res = f"{location}{content}"

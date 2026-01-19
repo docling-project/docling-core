@@ -24,18 +24,10 @@ DO_PRINT: bool = False
 
 def _serialize(
     doc: DoclingDocument,
-    add_location: bool = True,
-    add_content: bool = True,
-    add_table_cell_location: bool = False,
 ) -> str:
-    params = IDocTagsParams(
-        add_location=add_location,
-        add_content=add_content,
-        add_table_cell_location=add_table_cell_location,
-    )
     ser = IDocTagsDocSerializer(
         doc=doc,
-        params=params,
+        params=IDocTagsParams(),
     )
     return ser.serialize().text
 
@@ -521,7 +513,7 @@ def test_roundtrip_complex_table_with_caption_prov():
 
     doc.add_table(data=td, caption=cap, prov=_default_prov())
 
-    dt = _serialize(doc, add_content=True)
+    dt = _serialize(doc)
     if DO_PRINT:
         print(dt)
     doc2 = _deserialize(dt)
@@ -1060,7 +1052,7 @@ def test_roundtrip_table_with_rich_cells():
     doc.add_table_cell(table_item=table, cell=rich_cell_2_1)
 
     # Serialize and deserialize
-    dt = _serialize(doc, add_content=True)
+    dt = _serialize(doc)
     if DO_PRINT:
         print("\n", dt)
     doc2 = _deserialize(dt)
@@ -1078,7 +1070,7 @@ def test_roundtrip_table_with_rich_cells():
     assert len(rich_cells) >= 1  # At least one rich cell should be preserved
 
     # Verify round-trip serialization
-    dt2 = _serialize(doc2, add_content=True)
+    dt2 = _serialize(doc2)
     if DO_PRINT:
         print("\ndt:", dt)
         print("\ndt2:", dt2)
@@ -1112,10 +1104,10 @@ def test_constructed_doc(sample_doc: DoclingDocument):
 def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
     doc = rich_table_doc
 
-    dt = _serialize(doc, add_content=True)
+    dt = _serialize(doc)
 
     doc2 = _deserialize(dt)
 
-    dt2 = _serialize(doc2, add_content=True)
+    dt2 = _serialize(doc2)
 
     assert dt2 == dt

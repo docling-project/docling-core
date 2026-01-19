@@ -18,6 +18,7 @@ from transformers import (
 from docling_core.types.doc import DoclingDocument, ImageRef
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.experimental.idoctags import (
+    ContentType,
     EscapeMode,
     IDocTagsSerializationMode,
     IDocTagsParams,
@@ -358,7 +359,7 @@ def run_dump(cfg: dict[str, Any]) -> int:
                 for content in [True, False]:
                     try:
                         params_probe = IDocTagsParams()
-                        params_probe.add_content = content
+                        params_probe.content_types = set(ContentType) if content else set()
                         params_probe.mode = mode
                         params_probe.escape_mode = esc_mode
                         params_probe.pretty_indentation = "  " if mode==IDocTagsSerializationMode.HUMAN_FRIENDLY else None
