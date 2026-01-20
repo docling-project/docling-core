@@ -81,14 +81,10 @@ class TableVisualizer(BaseVisualizer):
                 cy1 *= scale_y
 
                 # Draw fill on overlay (for transparency)
-                overlay_draw.rectangle(
-                    [(cx0, cy0), (cx1, cy1)], fill=cell_color, outline=None
-                )
+                overlay_draw.rectangle([(cx0, cy0), (cx1, cy1)], fill=cell_color, outline=None)
 
                 # Draw outline on main image
-                main_draw.rectangle(
-                    [(cx0, cy0), (cx1, cy1)], outline=cell_outline, fill=None
-                )
+                main_draw.rectangle([(cx0, cy0), (cx1, cy1)], outline=cell_outline, fill=None)
 
         # Alpha composite the overlay onto the page image
         composited = PILImage.alpha_composite(page_image.convert("RGBA"), overlay)
@@ -120,14 +116,10 @@ class TableVisualizer(BaseVisualizer):
             cy1 *= scale_y
 
             # Draw fill on overlay (for transparency)
-            overlay_draw.rectangle(
-                [(cx0, cy0), (cx1, cy1)], fill=self.params.row_color, outline=None
-            )
+            overlay_draw.rectangle([(cx0, cy0), (cx1, cy1)], fill=self.params.row_color, outline=None)
 
             # Draw outline on main image
-            main_draw.rectangle(
-                [(cx0, cy0), (cx1, cy1)], outline=self.params.row_outline, fill=None
-            )
+            main_draw.rectangle([(cx0, cy0), (cx1, cy1)], outline=self.params.row_outline, fill=None)
 
         # Alpha composite the overlay onto the page image
         composited = PILImage.alpha_composite(page_image.convert("RGBA"), overlay)
@@ -159,14 +151,10 @@ class TableVisualizer(BaseVisualizer):
             cy1 *= scale_y
 
             # Draw fill on overlay (for transparency)
-            overlay_draw.rectangle(
-                [(cx0, cy0), (cx1, cy1)], fill=self.params.col_color, outline=None
-            )
+            overlay_draw.rectangle([(cx0, cy0), (cx1, cy1)], fill=self.params.col_color, outline=None)
 
             # Draw outline on main image
-            main_draw.rectangle(
-                [(cx0, cy0), (cx1, cy1)], outline=self.params.col_outline, fill=None
-            )
+            main_draw.rectangle([(cx0, cy0), (cx1, cy1)], outline=self.params.col_outline, fill=None)
 
         # Alpha composite the overlay onto the page image
         composited = PILImage.alpha_composite(page_image.convert("RGBA"), overlay)
