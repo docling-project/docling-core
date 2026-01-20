@@ -16,7 +16,12 @@ def verify(exp_file: Path, actual: PIL.Image.Image):
             actual.save(exp_file)
     else:
         with PIL.Image.open(exp_file) as expected:
-            assert actual == expected
+            # Compare pixel data directly instead of using `actual == expected`.
+            # PIL's == operator compares internal state/metadata, not just pixels.
+            # Since `actual` is a PIL.Image.Image (from .copy()) and `expected`
+            # is a PngImageFile (loaded from file), they have different types,
+            # causing == to fail even when pixel content is identical.
+            assert actual.tobytes() == expected.tobytes()
 
 
 def test_doc_visualization():

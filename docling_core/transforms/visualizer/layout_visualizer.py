@@ -1,8 +1,8 @@
 """Define classes for layout visualization."""
 
-from copy import deepcopy
 from typing import Literal, Optional, Union
 
+from PIL import Image as PILImage
 from PIL import ImageDraw, ImageFont
 from PIL.Image import Image
 from PIL.ImageFont import FreeTypeFont
@@ -47,7 +47,11 @@ class LayoutVisualizer(BaseVisualizer):
 
     def _draw_clusters(self, image: Image, clusters: list[_TLCluster], scale_x: float, scale_y: float) -> None:
         """Draw clusters on an image."""
-        draw = ImageDraw.Draw(image, "RGBA")
+        # Create transparent overlay for proper alpha compositing
+        overlay = PILImage.new("RGBA", image.size, (255, 255, 255, 0))
+        overlay_draw = ImageDraw.Draw(overlay)
+        main_draw = ImageDraw.Draw(image)
+
         # Create a smaller font for the labels
         font: Union[ImageFont.ImageFont, FreeTypeFont]
         try:
@@ -67,7 +71,8 @@ class LayoutVisualizer(BaseVisualizer):
                     cy0 *= scale_y
                     cy1 *= scale_y
 
-                    draw.rectangle(
+                    # Draw fill on overlay (for transparency)
+                    overlay_draw.rectangle(
                         [(cx0, cy0), (cx1, cy1)],
                         outline=None,
                         fill=cell_color,
@@ -84,19 +89,30 @@ class LayoutVisualizer(BaseVisualizer):
                     *list(DocItemLabel.get_color(c.label)),
                     255,
                 )
-                draw.rectangle(
+
+                # Draw fill on overlay (for transparency)
+                overlay_draw.rectangle(
+                    [(x0, y0), (x1, y1)],
+                    outline=None,
+                    fill=cluster_fill_color,
+                )
+
+                # Draw outline on main image
+                main_draw.rectangle(
                     [(x0, y0), (x1, y1)],
                     outline=cluster_outline_color,
-                    fill=cluster_fill_color,
+                    fill=None,
                 )
 
                 if self.params.show_label:
                     # Add label name and confidence
                     label_text = f"{c.label.name} ({c.confidence:.2f})"
                     # Create semi-transparent background for text
-                    text_bbox = draw.textbbox((x0, y0), label_text, font=font)
+                    text_bbox = overlay_draw.textbbox((x0, y0), label_text, font=font)
                     text_bg_padding = 2
-                    draw.rectangle(
+
+                    # Draw label background on overlay (for transparency)
+                    overlay_draw.rectangle(
                         [
                             (
                                 text_bbox[0] - text_bg_padding,
@@ -109,13 +125,17 @@ class LayoutVisualizer(BaseVisualizer):
                         ],
                         fill=(255, 255, 255, 180),  # Semi-transparent white
                     )
-                    # Draw text
-                    draw.text(
+                    # Draw text on overlay
+                    overlay_draw.text(
                         (x0, y0),
                         label_text,
                         fill=(0, 0, 0, 255),  # Solid black
                         font=font,
                     )
+
+        # Alpha composite the overlay onto the image
+        composited = PILImage.alpha_composite(image.convert("RGBA"), overlay)
+        image.paste(composited.convert(image.mode))
 
     def _draw_doc_layout(
         self,
@@ -140,7 +160,7 @@ class LayoutVisualizer(BaseVisualizer):
             if page_image is None or (pil_img := page_image.pil_image) is None:
                 raise RuntimeError("Cannot visualize document without images")
             elif page_nr not in my_images:
-                image = deepcopy(pil_img)
+                image = pil_img.copy()
                 my_images[page_nr] = image
 
         prev_image = None
