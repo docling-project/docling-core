@@ -1,6 +1,5 @@
 """Define classes for reading order visualization."""
 
-from copy import deepcopy
 from typing import Optional, Union
 
 from PIL import ImageDraw, ImageFont
@@ -148,7 +147,7 @@ class ReadingOrderVisualizer(BaseVisualizer):
                         if page_image is None or (pil_img := page_image.pil_image) is None:
                             raise RuntimeError("Cannot visualize document without images")
                         else:
-                            image = deepcopy(pil_img)
+                            image = pil_img.copy()
                             my_images[page_no] = image
                 draw = ImageDraw.Draw(image, "RGBA")
 

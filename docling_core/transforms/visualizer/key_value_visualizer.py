@@ -6,9 +6,9 @@ on top of any other :py:class:`BaseVisualizer` - e.g. first draw the general
 layout, then add the key-value layer.
 """
 
-from copy import deepcopy
 from typing import Optional, Union
 
+from PIL import Image as PILImage
 from PIL import ImageDraw, ImageFont
 from PIL.Image import Image
 from PIL.ImageFont import FreeTypeFont
@@ -63,7 +63,11 @@ class KeyValueVisualizer(BaseVisualizer):
         scale_y: float,
     ) -> None:
         """Draw every key-value graph that has cells on *page_no* onto *image*."""
-        draw = ImageDraw.Draw(image, "RGBA")
+        # Create transparent overlay for proper alpha compositing
+        overlay = PILImage.new("RGBA", image.size, (255, 255, 255, 0))
+        overlay_draw = ImageDraw.Draw(overlay)
+        main_draw = ImageDraw.Draw(image)
+
         # Choose a small truetype font if available, otherwise default bitmap font
         font: Union[ImageFont.ImageFont, FreeTypeFont]
         try:
@@ -89,10 +93,18 @@ class KeyValueVisualizer(BaseVisualizer):
                 y1 *= scale_y
                 fill_rgba = self._cell_fill(cell.label)
 
-                draw.rectangle(
+                # Draw fill on overlay (for transparency)
+                overlay_draw.rectangle(
+                    [(x0, y0), (x1, y1)],
+                    outline=None,
+                    fill=fill_rgba,
+                )
+
+                # Draw outline on main image
+                main_draw.rectangle(
                     [(x0, y0), (x1, y1)],
                     outline=fill_rgba[:-1] + (255,),
-                    fill=fill_rgba,
+                    fill=None,
                 )
 
                 if self.params.show_label:
@@ -102,13 +114,25 @@ class KeyValueVisualizer(BaseVisualizer):
                     txt_parts.append(cell.text)
                     label_text = " | ".join(txt_parts)
 
-                    tbx = draw.textbbox((x0, y0), label_text, font=font)
+                    tbx = overlay_draw.textbbox((x0, y0), label_text, font=font)
                     pad = 2
-                    draw.rectangle(
+
+                    # Draw label background on overlay (for transparency)
+                    overlay_draw.rectangle(
                         [(tbx[0] - pad, tbx[1] - pad), (tbx[2] + pad, tbx[3] + pad)],
                         fill=_LABEL_BG_COLOUR,
                     )
-                    draw.text((x0, y0), label_text, font=font, fill=_LABEL_TXT_COLOUR)
+                    # Draw text on overlay
+                    overlay_draw.text((x0, y0), label_text, font=font, fill=_LABEL_TXT_COLOUR)
+
+        # Alpha composite the overlay onto the image
+        composited = PILImage.alpha_composite(image.convert("RGBA"), overlay)
+        image.paste(composited.convert(image.mode))
+
+        # Draw links on top (after compositing, so they appear on top)
+        link_draw = ImageDraw.Draw(image)
+        for kv_item in doc.key_value_items:
+            cell_dict = {cell.cell_id: cell for cell in kv_item.graph.cells}
 
             # ------------------------------------------------------------------
             # Then draw links (after rectangles so they appear on top)
@@ -138,7 +162,7 @@ class KeyValueVisualizer(BaseVisualizer):
                 src_xy = _centre(src_cell.prov.bbox)
                 tgt_xy = _centre(tgt_cell.prov.bbox)
 
-                draw.line([src_xy, tgt_xy], fill=_LINK_COLOUR, width=2)
+                link_draw.line([src_xy, tgt_xy], fill=_LINK_COLOUR, width=2)
 
                 # draw a small arrow-head by rendering a short orthogonal line
                 # segment; exact geometry is not critical for visual inspection
@@ -158,7 +182,7 @@ class KeyValueVisualizer(BaseVisualizer):
                     tgt_xy[0] - ux * arrow_len + px * arrow_len / 2,
                     tgt_xy[1] - uy * arrow_len + py * arrow_len / 2,
                 )
-                draw.polygon([tgt_xy, head_base_left, head_base_right], fill=_LINK_COLOUR)
+                link_draw.polygon([tgt_xy, head_base_left, head_base_right], fill=_LINK_COLOUR)
 
     # ---------------------------------------------------------------------
     # Public API - BaseVisualizer implementation
@@ -190,7 +214,7 @@ class KeyValueVisualizer(BaseVisualizer):
             if base_img is None:
                 if page.image is None or (pil_img := page.image.pil_image) is None:
                     raise RuntimeError("Cannot visualize document without page images")
-                base_img = deepcopy(pil_img)
+                base_img = pil_img.copy()
             images[page_nr] = base_img
 
         # Overlay key-value content
