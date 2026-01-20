@@ -1,3 +1,14 @@
+## [v2.60.0](https://github.com/docling-project/docling-core/releases/tag/v2.60.0) - 2026-01-20
+
+### Feature
+
+* **IDocTags:** Add fine-grained content serialization filtering ([#476](https://github.com/docling-project/docling-core/issues/476)) ([`17bd21e`](https://github.com/docling-project/docling-core/commit/17bd21ee14c4e7f9a1fb02591fbe96dc91ed4544))
+
+### Fix
+
+* Fix transparency rendering in all visualizers ([#481](https://github.com/docling-project/docling-core/issues/481)) ([`a6d2be6`](https://github.com/docling-project/docling-core/commit/a6d2be687ee2100093d8b1c85e88ef8e73f8a588))
+* **IDocTags:** Fix `InlineGroup` serialization and deserialization ([#477](https://github.com/docling-project/docling-core/issues/477)) ([`d9e8d37`](https://github.com/docling-project/docling-core/commit/d9e8d37a91db0112e3acb7c2bd13825d17d65130))
+
 ## [v2.59.0](https://github.com/docling-project/docling-core/releases/tag/v2.59.0) - 2026-01-12
 
 ### Feature
