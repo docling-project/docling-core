@@ -331,6 +331,22 @@ def test_md_single_row_table():
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
 
+def test_md_pipe_in_table():
+    doc = DoclingDocument(name="Pipe in Table")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    # TODO: properly handle nested tables, for now just escape the pipe
+    doc.add_table_cell(
+        table,
+        TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="Fruits | Veggies",
+        )
+    )
+    ser = doc.export_to_markdown()
+    assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
 
 # ===============================
 # HTML tests
