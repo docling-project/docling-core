@@ -376,13 +376,13 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
             rows = [
                 [
-                    # make sure that md tables are not broken
-                    # due to newline chars in the text
+                    # make sure that md tables are not broken due to newline or pipe chars in the text
+                    # TODO: escape pipe characters also in RichTableCell once nested tables are properly handled
                     (
-                        doc_serializer.serialize(item=col.ref.resolve(doc=doc), **kwargs).text
+                        doc_serializer.serialize(item=col.ref.resolve(doc=doc), **kwargs).text.replace("\n", " ")
                         if isinstance(col, RichTableCell)
-                        else col.text
-                    ).replace("\n", " ")
+                        else col.text.replace("\n", " ").replace("|", "&#124;")
+                    )
                     for col in row
                 ]
                 for row in item.data.grid
