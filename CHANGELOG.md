@@ -1,3 +1,9 @@
+## [v2.60.1](https://github.com/docling-project/docling-core/releases/tag/v2.60.1) - 2026-01-22
+
+### Fix
+
+* **serialization:** Escape pipe symbol in single cell md serialization ([#485](https://github.com/docling-project/docling-core/issues/485)) ([`334575c`](https://github.com/docling-project/docling-core/commit/334575cd08098b9a07bcfe529a45319a488311e9))
+
 ## [v2.60.0](https://github.com/docling-project/docling-core/releases/tag/v2.60.0) - 2026-01-20
 
 ### Feature
