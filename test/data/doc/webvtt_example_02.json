@@ -88,8 +88,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 0.0,
           "end_time": 2.0,
           "voice": "Esme",
@@ -109,8 +110,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 2.0,
           "end_time": 4.0,
           "voice": "Mary"
@@ -127,8 +129,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 4.0,
           "end_time": 6.0,
           "voice": "Esme"
@@ -145,8 +148,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 4.0,
           "end_time": 6.0
         }
@@ -162,8 +166,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 4.0,
           "end_time": 6.0
         }
@@ -186,8 +191,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 6.0,
           "end_time": 8.0,
           "voice": "Mary",
@@ -207,8 +213,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 8.0,
           "end_time": 10.0
         }
@@ -224,8 +231,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 8.0,
           "end_time": 10.0,
           "languages": [
@@ -254,8 +262,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 8.0,
           "end_time": 10.0
         }

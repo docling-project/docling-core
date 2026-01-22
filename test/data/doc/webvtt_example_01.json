@@ -71,8 +71,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 11.0,
           "end_time": 13.0,
           "voice": "Roger Bingham"
@@ -89,8 +90,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 13.0,
           "end_time": 16.0,
           "voice": "Roger Bingham"
@@ -107,8 +109,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 16.0,
           "end_time": 18.0,
           "voice": "Roger Bingham"
@@ -125,8 +128,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 18.0,
           "end_time": 20.0,
           "voice": "Roger Bingham"
@@ -143,8 +147,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 20.0,
           "end_time": 22.0,
           "voice": "Roger Bingham"
@@ -161,8 +166,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 22.0,
           "end_time": 24.0,
           "voice": "Roger Bingham"
@@ -179,8 +185,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 24.0,
           "end_time": 26.0,
           "voice": "Roger Bingham"
@@ -197,8 +204,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 27.0,
           "end_time": 30.0,
           "voice": "Roger Bingham"
@@ -215,8 +223,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 30.0,
           "end_time": 31.5,
           "voice": "Roger Bingham"
@@ -233,8 +242,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 30.5,
           "end_time": 32.5,
           "voice": "Neil deGrasse Tyson"
@@ -251,8 +261,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 32.0,
           "end_time": 35.5,
           "voice": "Roger Bingham"
@@ -269,8 +280,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 32.5,
           "end_time": 33.5,
           "voice": "Neil deGrasse Tyson"
@@ -294,8 +306,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 35.5,
           "end_time": 38.0,
           "voice": "Roger Bingham"

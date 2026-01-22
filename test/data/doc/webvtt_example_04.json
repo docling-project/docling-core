@@ -80,8 +80,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 1.0,
           "end_time": 4.0
         }
@@ -97,8 +98,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 5.0,
           "end_time": 9.0
         }
@@ -114,8 +116,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 5.0,
           "end_time": 9.0
         }
@@ -131,8 +134,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 5.0,
           "end_time": 9.0,
           "classes": [
@@ -158,8 +162,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 5.0,
           "end_time": 9.0
         }
@@ -175,8 +180,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 5.0,
           "end_time": 9.0,
           "voice": "John"

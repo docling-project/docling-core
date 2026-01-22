@@ -38,10 +38,10 @@ from docling_core.types.doc.document import (
     ListGroup,
     NodeItem,
     PictureItem,
-    ProvenanceTrack,
     TableItem,
     TextItem,
     TitleItem,
+    TrackProvenance,
 )
 from docling_core.types.doc.webvtt import (
     START_TAG_NAMES,
@@ -140,15 +140,15 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, TitleItem):
             return create_ser_result(text=item.text, span_source=item)
 
-        # Only process items with ProvenanceTrack (WebVTT cues)
-        if not item.text or not item.prov or not isinstance(item.prov[0], ProvenanceTrack):
+        # Only process items with TrackProvenance (WebVTT cues)
+        if not item.text or not item.source or item.source[0].kind != "track":
             return create_ser_result()
 
         # Apply post-processing here: formatting, classes, language, and voice
         # If the TextItem is part of an InlineGroup, we need to further post-process it
         # within the group context
 
-        prov: ProvenanceTrack = item.prov[0]
+        prov: TrackProvenance = item.source[0]
         text: str = doc_serializer.post_process(
             text=item.text,
             formatting=item.formatting,
@@ -417,7 +417,7 @@ class WebVTTDocSerializer(DocSerializer):
         """Extract tag and values from provenance classes.
 
         Args:
-            classes: The classes from a ProvenanceTrack object.
+            classes: The classes from a TrackProvenance object.
 
         Returns:
             Map of tag to class values.
@@ -463,8 +463,8 @@ class WebVTTDocSerializer(DocSerializer):
                 continue
             if isinstance(doc_item, InlineGroup) and doc_item.children:
                 doc_item = doc_item.children[0].resolve(doc=self.doc)
-            if isinstance(doc_item, TextItem) and doc_item.prov and isinstance(doc_item.prov[0], ProvenanceTrack):
-                prov: ProvenanceTrack = doc_item.prov[0]
+            if isinstance(doc_item, TextItem) and doc_item.source and doc_item.source[0].kind == "track":
+                prov: TrackProvenance = doc_item.source[0]
                 if (
                     prov.identifier == id
                     and timings

@@ -55,7 +55,6 @@ from docling_core.types.doc import (
     ListGroup,
     NodeItem,
     PictureItem,
-    ProvenanceItem,
     RefItem,
     RichTableCell,
     TableItem,
@@ -77,7 +76,7 @@ def _bbox_to_polygon_coords(
 
 def _bbox_to_polygon_for_item(doc: DoclingDocument, item: DocItem) -> Optional[list[float]]:
     """Compute a TOPLEFT-origin polygon for the first provenance of the item."""
-    if not item.prov or not isinstance(item.prov[0], ProvenanceItem):
+    if not item.prov:
         return None
 
     prov = item.prov[0]
@@ -188,7 +187,7 @@ class _AzureTextSerializer(BaseModel, BaseTextSerializer):
 
         # Lists may be represented either as TextItem(ListItem) or via groups;
         # we treat any TextItem as a paragraph-like entry.
-        if item.prov and isinstance(item.prov[0], ProvenanceItem):
+        if item.prov:
             prov = item.prov[0]
             page_no = prov.page_no
             polygon = _bbox_to_polygon_for_item(doc, item)
@@ -238,7 +237,7 @@ class _AzureTableSerializer(BaseTableSerializer):
     ) -> SerializationResult:
         assert isinstance(doc_serializer, AzureDocSerializer)
 
-        if not item.prov or not isinstance(item.prov[0], ProvenanceItem):
+        if not item.prov:
             return create_ser_result()
 
         prov = item.prov[0]
@@ -309,7 +308,7 @@ class _AzurePictureSerializer(BasePictureSerializer):
     ) -> SerializationResult:
         assert isinstance(doc_serializer, AzureDocSerializer)
 
-        if not item.prov or not isinstance(item.prov[0], ProvenanceItem):
+        if not item.prov:
             return create_ser_result()
 
         prov = item.prov[0]
@@ -325,7 +324,7 @@ class _AzurePictureSerializer(BasePictureSerializer):
         for foot_ref in item.footnotes:
             if isinstance(foot_ref, RefItem):
                 tgt = foot_ref.resolve(doc)
-                if isinstance(tgt, TextItem) and tgt.prov and isinstance(tgt.prov[0], ProvenanceItem):
+                if isinstance(tgt, TextItem) and tgt.prov:
                     f_poly = _bbox_to_polygon_for_item(doc, tgt)
                     if f_poly is not None:
                         foots.append(

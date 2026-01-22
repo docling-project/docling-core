@@ -345,7 +345,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
         results: list[SerializationResult] = []
 
         page_no = 1
-        if len(item.prov) > 0 and isinstance(item.prov[0], ProvenanceItem):
+        if len(item.prov) > 0:
             page_no = item.prov[0].page_no
 
         if params.add_location:
@@ -363,7 +363,7 @@ class DocTagsKeyValueSerializer(BaseKeyValueSerializer):
 
         for cell in item.graph.cells:
             cell_txt = ""
-            if cell.prov is not None and isinstance(cell.prov, ProvenanceItem):
+            if cell.prov is not None:
                 if len(doc.pages.keys()):
                     page_w, page_h = doc.pages[page_no].size.as_tuple()
                     cell_txt += DocumentToken.get_location(
@@ -471,7 +471,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         doc_items: list[DocItem] = []
         for it, _ in doc.iterate_items(root=item):
             if isinstance(it, DocItem):
-                for prov in (im for im in it.prov if isinstance(im, ProvenanceItem)):
+                for prov in it.prov:
                     boxes.append(prov.bbox)
                     doc_items.append(it)
         if prov is None:

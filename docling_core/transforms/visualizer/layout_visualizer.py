@@ -17,7 +17,6 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
-    ProvenanceItem,
     TextCell,
 )
 
@@ -179,7 +178,7 @@ class LayoutVisualizer(BaseVisualizer):
             if len(elem.prov) == 0:
                 continue  # Skip elements without provenances
 
-            for prov in (item for item in elem.prov if isinstance(item, ProvenanceItem)):
+            for prov in elem.prov:
                 page_nr = prov.page_no
 
                 if page_nr in my_images:

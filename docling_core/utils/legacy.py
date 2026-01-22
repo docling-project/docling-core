@@ -165,7 +165,6 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
                         span=[0, len(item.text)],
                     )
                     for p in item.prov
-                    if isinstance(p, ProvenanceItem)
                 ]
                 main_text.append(
                     BaseText(
@@ -287,7 +286,6 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
                                 span=[0, 0],
                             )
                             for p in item.prov
-                            if isinstance(p, ProvenanceItem)
                         ],
                     )
                 )
@@ -315,7 +313,6 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
                                 span=[0, len(caption)],
                             )
                             for p in item.prov
-                            if isinstance(p, ProvenanceItem)
                         ],
                         obj_type=doc_item_label_to_legacy_type(item.label),
                         text=caption,

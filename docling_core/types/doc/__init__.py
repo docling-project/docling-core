@@ -46,6 +46,7 @@ from .document import (
     PictureClassificationClass,
     PictureClassificationData,
     PictureClassificationMetaField,
+    PictureClassificationPrediction,
     PictureDataType,
     PictureItem,
     PictureLineChartData,
@@ -56,7 +57,7 @@ from .document import (
     PictureStackedBarChartData,
     PictureTabularChartData,
     ProvenanceItem,
-    ProvenanceTrack,
+    ProvenanceType,
     RefItem,
     RichTableCell,
     Script,
@@ -69,6 +70,7 @@ from .document import (
     TabularChartMetaField,
     TextItem,
     TitleItem,
+    TrackProvenance,
     UnorderedList,
 )
 from .labels import (

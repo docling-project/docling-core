@@ -2,37 +2,39 @@
 
 from pathlib import Path
 from typing import Optional
-from test.test_serialization import verify
 
 import pytest
 
 from docling_core.experimental.idoctags import (
     ContentType,
-    WrapMode,
     EscapeMode,
     IDocTagsDocSerializer,
     IDocTagsParams,
     IDocTagsSerializationMode,
     IDocTagsVocabulary,
+    WrapMode,
 )
 from docling_core.types.doc import (
+    BoundingBox,
+    CodeLanguageLabel,
+    CoordOrigin,
+    DescriptionMetaField,
     DocItemLabel,
     DoclingDocument,
     Formatting,
-    Script,
-    TableData,
-)
-from docling_core.types.doc.base import BoundingBox, CoordOrigin, Size
-from docling_core.types.doc.document import (
-    DescriptionMetaField,
+    PictureClassificationLabel,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
     PictureMeta,
     ProvenanceItem,
+    Script,
+    Size,
     SummaryMetaField,
+    TableData,
     TabularChartMetaField,
 )
-from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
+from test.test_serialization import verify
+
 
 def add_texts_section(doc: DoclingDocument):
     doc.add_text(label=DocItemLabel.TEXT, text="Simple text")
@@ -427,7 +429,7 @@ def test_content_allow_all_types(sample_doc: DoclingDocument):
     serializer = IDocTagsDocSerializer(
         doc=doc,
         params=IDocTagsParams(
-            content_types={ct for ct in ContentType},
+            content_types=set(ContentType),
         ),
     )
     ser_txt = serializer.serialize().text

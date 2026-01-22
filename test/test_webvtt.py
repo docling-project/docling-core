@@ -1,6 +1,5 @@
 """Test the data model for WebVTT files.
 
-Assisted by watsonx Code Assistant.
 Examples extracted from https://www.w3.org/TR/webvtt1/
 Copyright © 2019 World Wide Web Consortium.
 """

@@ -94,8 +94,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14580.0,
           "end_time": 14760.0,
           "identifier": "agcvs-08234"
@@ -112,8 +113,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234"
@@ -130,8 +132,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234"
@@ -155,8 +158,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234",
@@ -183,8 +187,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234"
@@ -201,8 +206,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234"
@@ -219,8 +225,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234",
@@ -247,8 +254,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234"
@@ -272,8 +280,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234",
@@ -300,8 +309,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234"
@@ -325,8 +335,9 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [
+      "source": [
         {
+          "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234"

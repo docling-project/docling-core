@@ -406,7 +406,7 @@ class WebVTTCueBlock(BaseModel):
 
     model_config = ConfigDict(regex_engine="python-re")
 
-    identifier: Optional[WebVTTCueIdentifier] = Field(None, description="The WebVTT cue identifier")
+    identifier: Annotated[Optional[WebVTTCueIdentifier], Field(description="The WebVTT cue identifier")] = None
     timings: Annotated[WebVTTCueTimings, Field(description="The WebVTT cue timings")]
     payload: Annotated[
         list[WebVTTCueComponentWithTerminator],
