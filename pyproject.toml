@@ -31,14 +31,13 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-requires-python = '>=3.9,<4.0'
+requires-python = '>=3.10,<4.0'
 dependencies = [
     'jsonschema (>=4.16.0,<5.0.0)',
     'pydantic (>=2.6.0,<3.0.0,!=2.10.0,!=2.10.1,!=2.10.2)',
@@ -68,11 +67,11 @@ docling-view = "docling_core.cli.view:app"
 chunking = [
     # common:
     'semchunk (>=2.2.0,<3.0.0)',
-    'tree-sitter (>=0.23.2,<0.25.0)',
-    'tree-sitter-python (>=0.23.6,<0.25.0)',
-    'tree-sitter-c (>=0.23.4,<0.23.5)',
-    'tree-sitter-javascript (>=0.23.1,<0.25.0)',
-    'tree-sitter-typescript (>=0.23.2,<0.25.0)',
+    'tree-sitter (>=0.25.0,<0.27.0)',
+    'tree-sitter-python >=0.23.6',
+    'tree-sitter-c >=0.23.4',
+    'tree-sitter-javascript >=0.23.1',
+    'tree-sitter-typescript >=0.23.2',
 
     # specific:
     'transformers (>=4.34.0,<5.0.0)',
@@ -80,11 +79,11 @@ chunking = [
 chunking-openai = [
     # common:
     'semchunk (>=2.2.0,<3.0.0)',
-    'tree-sitter (>=0.23.2,<0.25.0)',
-    'tree-sitter-python (>=0.23.6,<0.25.0)',
-    'tree-sitter-c (>=0.23.4,<0.23.5)',
-    'tree-sitter-javascript (>=0.23.1,<0.25.0)',
-    'tree-sitter-typescript (>=0.23.2,<0.25.0)',
+    'tree-sitter (>=0.25.0,<0.27.0)',
+    'tree-sitter-python >=0.23.6',
+    'tree-sitter-c >=0.23.4',
+    'tree-sitter-javascript >=0.23.1',
+    'tree-sitter-typescript >=0.23.2',
 
     # specific:
     'tiktoken (>=0.9.0,<0.13.0)',
@@ -131,7 +130,7 @@ namespaces = true
 "*" = ["*.json"]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 120
 respect-gitignore = true
 exclude = [
@@ -205,7 +204,7 @@ pretty = true
 no_implicit_optional = true
 namespace_packages = true
 show_error_codes = true
-python_version = "3.9"
+python_version = "3.10"
 plugins = ["pydantic.mypy"]
 exclude = "(^|/)test/data/.*"
 
