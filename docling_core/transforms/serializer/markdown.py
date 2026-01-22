@@ -145,7 +145,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text = f"- [x] {text}"
         if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
             text = f"- [ ] {text}"
-        if isinstance(item, (ListItem, TitleItem, SectionHeaderItem)):
+        if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
                 text = doc_serializer.post_process(
@@ -320,11 +320,7 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         for ann in item.get_annotations():
             if isinstance(
                 ann,
-                (
-                    PictureClassificationData,
-                    DescriptionAnnotation,
-                    PictureMoleculeData,
-                ),
+                PictureClassificationData | DescriptionAnnotation | PictureMoleculeData,
             ):
                 if ann_text := _get_annotation_text(ann):
                     ann_res = create_ser_result(

@@ -162,7 +162,7 @@ class HybridChunker(BaseChunker):
                     res_text
                     for doc_item in doc_items
                     if (res_text := doc_serializer.serialize(item=doc_item).text)
-                    and not isinstance(doc_item, (TitleItem, SectionHeaderItem))
+                    and not isinstance(doc_item, TitleItem | SectionHeaderItem)
                 ]
             )
         )

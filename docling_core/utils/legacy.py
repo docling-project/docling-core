@@ -139,7 +139,7 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
 
     embedded_captions = set()
     for ix, (item, level) in enumerate(doc.iterate_items(doc.body)):
-        if isinstance(item, (TableItem, PictureItem)) and len(item.captions) > 0:
+        if isinstance(item, TableItem | PictureItem) and len(item.captions) > 0:
             caption = item.caption_text(doc)
             if caption:
                 embedded_captions.add(caption)
@@ -148,7 +148,7 @@ def docling_document_to_legacy(doc: DoclingDocument, fallback_filaname: str = "f
         if isinstance(item, DocItem):
             item_type = item.label
 
-            if isinstance(item, (TextItem, ListItem, SectionHeaderItem)):
+            if isinstance(item, TextItem | ListItem | SectionHeaderItem):
                 if isinstance(item, ListItem) and item.marker:
                     text = f"{item.marker} {item.text}"
                 else:
@@ -422,7 +422,7 @@ def legacy_to_docling_document(legacy_doc: DsDocument) -> DoclingDocument:  # no
             if item is None:
                 continue
 
-            if isinstance(item, (DsSchemaTable, Figure)) and item.text:
+            if isinstance(item, DsSchemaTable | Figure) and item.text:
                 embedded_captions[item.text] = ix
 
         # build lookup from floating objects to their caption item

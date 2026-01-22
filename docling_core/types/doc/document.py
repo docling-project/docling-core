@@ -1855,12 +1855,10 @@ class PictureItem(FloatingItem):
                         )
                     elif not isinstance(
                         ann,
-                        (
-                            PictureClassificationData,
-                            DescriptionAnnotation,
-                            PictureMoleculeData,
-                            PictureTabularChartData,
-                        ),
+                        PictureClassificationData
+                        | DescriptionAnnotation
+                        | PictureMoleculeData
+                        | PictureTabularChartData,
                     ) and not hasattr(
                         self.meta,
                         MetaUtils.create_meta_field_name(
@@ -2639,7 +2637,7 @@ class DoclingDocument(BaseModel):
 
             self.form_items.append(item)
 
-        elif isinstance(item, (ListGroup, InlineGroup)):
+        elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
             item_index = len(self.groups)
 
