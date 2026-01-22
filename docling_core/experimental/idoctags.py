@@ -1316,7 +1316,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         if (
             (isinstance(item, CodeItem) and ContentType.TEXT_CODE in params.content_types)
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
-            or (not isinstance(item, (CodeItem, FormulaItem)) and ContentType.TEXT_OTHER in params.content_types)
+            or (not isinstance(item, CodeItem | FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
         ):
             # Check if we should serialize a single inline group child instead of text
             if len(item.children) > 0 and isinstance((first_child := item.children[0].resolve(doc)), InlineGroup):
@@ -1754,7 +1754,7 @@ class IDocTagsFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize unsupported nodes by concatenating their textual parts."""
-        if isinstance(item, (ListGroup, InlineGroup)):
+        if isinstance(item, ListGroup | InlineGroup):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)

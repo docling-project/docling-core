@@ -38,16 +38,15 @@ def _get_tree_sitter_language(language: CodeLanguageLabel):
         CodeLanguageLabel.JAVASCRIPT: lambda: Lang(ts_js.language()),
         CodeLanguageLabel.C: lambda: Lang(ts_c.language()),
     }
-    if sys.version_info >= (3, 10):
-        try:
-            import tree_sitter_java_orchard as ts_java
+    try:
+        import tree_sitter_java_orchard as ts_java
 
-            language_map[CodeLanguageLabel.JAVA] = lambda: Lang(ts_java.language())
-        except ImportError:
-            _logger.warning(
-                "Code chunking for Java cannot be enabled because tree-sitter-java-orchard is missing. "
-                "Please installed it via `pip install tree-sitter-java-orchard`."
-            )
+        language_map[CodeLanguageLabel.JAVA] = lambda: Lang(ts_java.language())
+    except ImportError:
+        _logger.warning(
+            "Code chunking for Java cannot be enabled because tree-sitter-java-orchard is missing. "
+            "Please installed it via `pip install tree-sitter-java-orchard`."
+        )
 
     factory = language_map.get(language)
     return factory() if factory else None
@@ -157,6 +156,21 @@ def _to_str(node: Node) -> str:
 def _query_tree(language, tree: Tree, query: str):
     """Query a tree-sitter tree with the given query string."""
     if not language:
-        return []
-    q = language.query(query)
-    return q.captures(tree.root_node)
+        return {}
+    from tree_sitter import Query, QueryCursor
+
+    q = Query(language, query)
+    cursor = QueryCursor(q)
+    matches = list(cursor.matches(tree.root_node))
+
+    # Combine all captures from all matches into a single dict
+    # Old API returned: {"capture_name": [node1, node2, ...]}
+    # New API returns: [(pattern_idx, {"capture_name": [node1, ...]}), ...]
+    combined_captures: dict[str, list[Node]] = {}
+    for _, captures_dict in matches:
+        for capture_name, nodes in captures_dict.items():
+            if capture_name not in combined_captures:
+                combined_captures[capture_name] = []
+            combined_captures[capture_name].extend(nodes)
+
+    return combined_captures

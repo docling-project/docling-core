@@ -155,7 +155,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
             text = item.text
             post_process = True
 
-        if isinstance(item, (ListItem, TitleItem, SectionHeaderItem)):
+        if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             # For list items, defer environment wrapping to list serializer
             if isinstance(item, ListItem):
                 if post_process:
@@ -253,11 +253,7 @@ class LaTeXAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         for ann in item.get_annotations():
             if isinstance(
                 ann,
-                (
-                    PictureClassificationData,
-                    DescriptionAnnotation,
-                    PictureMoleculeData,
-                ),
+                PictureClassificationData | DescriptionAnnotation | PictureMoleculeData,
             ):
                 if ann_text := _get_annotation_text(ann):
                     # Ensure each line of the annotation is prefixed with '%'

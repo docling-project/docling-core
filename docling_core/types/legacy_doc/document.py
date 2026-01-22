@@ -453,7 +453,7 @@ class ExportedCCSDocument(
                 if item is None:
                     continue
 
-                if isinstance(item, (Table, Figure)) and item.text and item.obj_type in main_text_labels:
+                if isinstance(item, Table | Figure) and item.text and item.obj_type in main_text_labels:
                     embedded_captions.add(item.text)
 
             # serialize document to markdown

@@ -158,12 +158,12 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             post_processed = True
         else:
             text = item.text
-            if not isinstance(item, (CodeItem, FormulaItem)):
+            if not isinstance(item, CodeItem | FormulaItem):
                 text = html.escape(text, quote=False)
                 text = text.replace("\n", "<br>")
 
         # Prepare the HTML based on item type
-        if isinstance(item, (TitleItem, SectionHeaderItem)):
+        if isinstance(item, TitleItem | SectionHeaderItem):
             section_level = min(item.level + 1, 6) if isinstance(item, SectionHeaderItem) else 1
             text = get_html_tag_with_text_direction(html_tag=f"h{section_level}", text=text)
 
@@ -843,7 +843,7 @@ class HTMLAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         for ann in item.get_annotations():
             if isinstance(
                 ann,
-                (PictureClassificationData, DescriptionAnnotation, PictureMoleculeData),
+                PictureClassificationData | DescriptionAnnotation | PictureMoleculeData,
             ):
                 if ann_text := _get_annotation_text(ann):
                     text_dir = get_text_direction(ann_text)
@@ -1055,7 +1055,7 @@ class HTMLDocSerializer(DocSerializer):
 
         if (
             item.self_ref not in excluded_refs
-            and isinstance(item, (PictureItem, TableItem))
+            and isinstance(item, PictureItem | TableItem)
             and _should_use_legacy_annotations(params=params, item=item)
         ):
             ann_res = self.serialize_annotations(

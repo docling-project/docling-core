@@ -155,7 +155,7 @@ class HierarchicalChunker(BaseChunker):
         for item, level in dl_doc.iterate_items(with_groups=True):
             if item.self_ref in excluded_refs:
                 continue
-            if isinstance(item, (TitleItem, SectionHeaderItem)):
+            if isinstance(item, TitleItem | SectionHeaderItem):
                 level = item.level if isinstance(item, SectionHeaderItem) else 0
 
                 # prepare to remove shadowed headings as they just went out of scope
@@ -185,7 +185,7 @@ class HierarchicalChunker(BaseChunker):
                 heading_by_level[level] = item
 
                 continue
-            elif isinstance(item, (ListGroup, InlineGroup, DocItem)) and item.self_ref not in visited:
+            elif isinstance(item, ListGroup | InlineGroup | DocItem) and item.self_ref not in visited:
                 if self.code_chunking_strategy is not None and isinstance(item, CodeItem):
                     yield from self.code_chunking_strategy.chunk_code_item(
                         item=item,

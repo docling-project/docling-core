@@ -97,7 +97,7 @@ def _iterate_items(
         traverse_pictures=traverse_pictures,
     ):
         if add_page_breaks:
-            if isinstance(item, (ListGroup, InlineGroup)) and item.self_ref not in my_visited:
+            if isinstance(item, ListGroup | InlineGroup) and item.self_ref not in my_visited:
                 # if group starts with new page, yield page break before group node
                 my_visited.add(item.self_ref)
                 for it, _ in _iterate_items(
