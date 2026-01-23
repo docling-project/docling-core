@@ -21,7 +21,7 @@ pip install docling-core
 
 ### Development setup
 
-To develop for Docling Core, you need Python 3.9 through 3.14 and the `uv` package. You can then install it from your local clone's root directory:
+To develop for Docling Core, you need Python 3.10 through 3.14 and the `uv` package. You can then install it from your local clone's root directory:
 ```bash
 uv sync --all-extras
 ```
