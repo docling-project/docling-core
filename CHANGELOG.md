@@ -1,3 +1,9 @@
+## [v2.60.2](https://github.com/docling-project/docling-core/releases/tag/v2.60.2) - 2026-01-23
+
+### Fix
+
+* Drop python 3.9 and pin built tree-sitter versions ([#487](https://github.com/docling-project/docling-core/issues/487)) ([`01373c4`](https://github.com/docling-project/docling-core/commit/01373c4aab922d6fc3d49373215d4038eda3fa13))
+
 ## [v2.60.1](https://github.com/docling-project/docling-core/releases/tag/v2.60.1) - 2026-01-22
 
 ### Fix
