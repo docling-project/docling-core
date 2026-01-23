@@ -970,7 +970,7 @@
             }
         },
         {
-            "text": "These are the trends\n|   Year |   Revenue  (US$ bn) |   Net income  (US$ bn) | Employees   |",
+            "text": "These are the trends\n| Year   | Revenue  (US$ bn)   | Net income  (US$ bn)   | Employees   |",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -1073,7 +1073,7 @@
             }
         },
         {
-            "text": "-\n-----|\n|   2014 |                92.7 |                   12   | 379,592     |\n|   2015 |                81.7 |                   13.1 | 377,757     |\nA last paragraph is down here, after the results table.",
+            "text": "-\n-----|\n| 2014   | 92.7                | 12.0                   | 379,592     |\n| 2015   | 81.7                | 13.1                   | 377,757     |\nA last paragraph is down here, after the results table.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",

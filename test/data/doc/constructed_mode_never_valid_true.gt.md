@@ -23,10 +23,10 @@ This paper introduces the biggest invention ever made. ...
 
 This is the caption of table 1.
 
-| Product   |   Years |   Years |
+| Product   | Years   | Years   |
 |-----------|---------|---------|
-| Product   |    2016 |    2017 |
-| Apple     |   49823 |  695944 |
+| Product   | 2016    | 2017    |
+| Apple     | 49823   | 695944  |
 
 This is the caption of figure 1.
 
