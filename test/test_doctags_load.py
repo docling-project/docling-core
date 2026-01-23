@@ -151,8 +151,6 @@ def test_doctags_inline():
     )
     deser_doc = DoclingDocument.load_from_doctags(doctags_doc)
     exp = f"{src_path.parent / src_path.stem}.out.dt.json"
-    with open("temp.json", "w") as f:
-        json.dump(deser_doc.export_to_dict(), f, indent=2)
     verify(
         exp_file=exp,
         actual=deser_doc.export_to_dict(),
