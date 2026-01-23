@@ -1,0 +1,47 @@
+<doctag version="1.0.0">
+  <text>simple</text>
+  <text>
+    <content>  leading</content>
+  </text>
+  <text>
+    <content>trailing  </content>
+  </text>
+  <text><![CDATA[< special]]></text>
+  <text>
+    <content><![CDATA[  leading and < special]]></content>
+  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    w/prov simple
+  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    <content>  w/prov leading</content>
+  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    <content>w/prov trailing  </content>
+  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+<![CDATA[w/prov < special]]>  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    <content><![CDATA[  w/prov leading and < special]]></content>
+  </text>
+</doctag>

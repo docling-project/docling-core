@@ -354,15 +354,14 @@ def run_dump(cfg: dict[str, Any]) -> int:
             # png_path = pngs_dir / f"{idx}_{i}.png"
             # __.save(png_path)
 
-        for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
+        for indent in ["  ", None]:
             for esc_mode in [True, False]:
                 for content in [True, False]:
                     try:
                         params_probe = IDocTagsParams()
                         params_probe.content_types = set(ContentType) if content else set()
-                        params_probe.mode = mode
                         params_probe.escape_mode = esc_mode
-                        params_probe.pretty_indentation = "  " if mode==IDocTagsSerializationMode.HUMAN_FRIENDLY else None
+                        params_probe.pretty_indentation = indent
 
                         iser_probe = IDocTagsDocSerializer(doc=doc, params=params_probe)
                         _ = iser_probe.serialize().text

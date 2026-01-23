@@ -24,7 +24,7 @@ Affiliation 2]]></text>
     <list_text><![CDATA[list item 4]]></list_text>
   </list>
   <floating_group class="table">
-    <caption>This is the caption of table 1.</caption>
+    <caption><![CDATA[This is the caption of table 1.]]></caption>
     <otsl>
       <fcel/>
 <![CDATA[Product]]>      <fcel/>
@@ -41,10 +41,10 @@ Affiliation 2]]></text>
     </otsl>
   </floating_group>
   <floating_group class="picture">
-    <caption>This is the caption of figure 1.</caption>
+    <caption><![CDATA[This is the caption of figure 1.]]></caption>
   </floating_group>
   <floating_group class="picture">
-    <caption>This is the caption of figure 2.</caption>
+    <caption><![CDATA[This is the caption of figure 2.]]></caption>
   </floating_group>
   <list ordered="false">
     <list_text><![CDATA[item 1 of list]]></list_text>
@@ -112,7 +112,9 @@ Affiliation 2]]></text>
   </list>
   <text><![CDATA[The end.]]></text>
   <text><![CDATA[Simple text]]></text>
-  <text><![CDATA[    4 leading spaces, 1 trailing ]]></text>
+  <text>
+    <content><![CDATA[    4 leading spaces, 1 trailing ]]></content>
+  </text>
   <text><![CDATA[Some 'single' quotes]]></text>
   <text><![CDATA[Some "double" quotes]]></text>
   <text>
@@ -122,7 +124,9 @@ Affiliation 2]]></text>
     </meta>
 <![CDATA[An ampersand: &]]>  </text>
   <code><![CDATA[0 == 0]]></code>
-  <code><![CDATA[ 1 leading space, 4 trailing    ]]></code>
+  <code>
+    <content><![CDATA[ 1 leading space, 4 trailing    ]]></content>
+  </code>
   <code><![CDATA[0 < 1]]></code>
   <code class="Python"><![CDATA[42 == 42]]></code>
   <code class="Python"><![CDATA[42 < 1337]]></code>
