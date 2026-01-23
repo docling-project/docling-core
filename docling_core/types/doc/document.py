@@ -42,6 +42,7 @@ from pydantic import (
     model_serializer,
     model_validator,
     validate_call,
+    PrivateAttr,
 )
 from tabulate import tabulate
 from typing_extensions import Self, deprecated, override
@@ -310,7 +311,6 @@ class PictureScatterChartData(PictureChartData):
 class TableCell(BaseModel):
     """TableCell."""
 
-    bbox: Optional[BoundingBox] = None
     row_span: int = 1
     col_span: int = 1
     start_row_offset_idx: int
@@ -323,6 +323,47 @@ class TableCell(BaseModel):
     row_section: bool = False
     fillable: bool = False
 
+    prov: Optional[list["ProvenanceItem"]] = Field(default=None)
+    _bbox: Optional[BoundingBox] = PrivateAttr(default=None)
+
+    @property
+    def bbox(self) -> Optional[BoundingBox]:
+        """bbox."""
+        if self.prov:
+            if len(self.prov) == 1:
+                return self.prov[0].bbox
+            else:
+                return BoundingBox.enclosing_bbox([p.bbox for p in self.prov])
+        return self._bbox
+
+    @bbox.setter
+    def bbox(self, value: Optional[BoundingBox]) -> None:
+        """bbox setter."""
+        if self.prov:
+            if len(self.prov) == 1:
+                self.prov[0].bbox = value
+            # If multiple prov items, we cannot safely update bbox without ambiguity
+        else:
+            self._bbox = value
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_bbox(cls, data: Any) -> Any:
+        # Pydantic validation happens on input data. Pydantic 2 base model does not store PrivateAttrs automatically from init?
+        # We need init to handle this or model_validator to set it?
+        # Actually simplest is to handle it in init as we did before.
+        return data
+
+    def __init__(self, **data):
+        bbox_val = data.pop("bbox", None)
+        super().__init__(**data)
+        if bbox_val is not None:
+             if not self.prov:
+                 self._bbox = bbox_val
+             elif len(self.prov) == 1:
+                 # If user explicitly passed bbox alongside prov, maybe they want to override the prov's bbox?
+                 # Or just ensure sync. Let's update prov.
+                 self.prov[0].bbox = bbox_val
     @model_validator(mode="before")
     @classmethod
     def from_dict_format(cls, data: Any) -> Any:
