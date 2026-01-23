@@ -6,8 +6,7 @@ from docling_core.transforms.serializer.doctags import (
     DocTagsDocSerializer,
     DocTagsParams,
 )
-from docling_core.types.doc import DoclingDocument, TableData
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
 
 from .test_serialization import verify
 
