@@ -5,7 +5,7 @@ import warnings
 from collections.abc import Iterator
 from enum import Enum
 from functools import total_ordering
-from typing import Annotated, ClassVar, Literal, Optional, Union
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.types import StringConstraints
@@ -204,7 +204,7 @@ class WebVTTCueComponentWithTerminator(BaseModel):
     """WebVTT caption or subtitle cue component optionally with a line terminator."""
 
     component: "WebVTTCueComponent"
-    terminator: Optional[WebVTTLineTerminator] = None
+    terminator: WebVTTLineTerminator | None = None
 
     @override
     def __str__(self) -> str:
@@ -215,7 +215,7 @@ class WebVTTCueComponentWithTerminator(BaseModel):
 class WebVTTCueInternalText(BaseModel):
     """WebVTT cue internal text."""
 
-    terminator: Optional[WebVTTLineTerminator] = None
+    terminator: WebVTTLineTerminator | None = None
     components: Annotated[
         list[WebVTTCueComponentWithTerminator],
         Field(description=("WebVTT caption or subtitle cue components representing the cue internal text")),
@@ -380,15 +380,13 @@ class WebVTTCueLanguageSpan(WebVTTCueComponentBase):
 
 
 WebVTTCueComponent = Annotated[
-    Union[
-        WebVTTCueTextSpan,
-        WebVTTCueClassSpan,
-        WebVTTCueItalicSpan,
-        WebVTTCueBoldSpan,
-        WebVTTCueUnderlineSpan,
-        WebVTTCueVoiceSpan,
-        WebVTTCueLanguageSpan,
-    ],
+    WebVTTCueTextSpan
+    | WebVTTCueClassSpan
+    | WebVTTCueItalicSpan
+    | WebVTTCueBoldSpan
+    | WebVTTCueUnderlineSpan
+    | WebVTTCueVoiceSpan
+    | WebVTTCueLanguageSpan,
     Field(
         discriminator="kind",
         description="The type of WebVTT caption or subtitle cue component.",
@@ -406,7 +404,7 @@ class WebVTTCueBlock(BaseModel):
 
     model_config = ConfigDict(regex_engine="python-re")
 
-    identifier: Annotated[Optional[WebVTTCueIdentifier], Field(description="The WebVTT cue identifier")] = None
+    identifier: Annotated[WebVTTCueIdentifier | None, Field(description="The WebVTT cue identifier")] = None
     timings: Annotated[WebVTTCueTimings, Field(description="The WebVTT cue timings")]
     payload: Annotated[
         list[WebVTTCueComponentWithTerminator],
@@ -456,7 +454,7 @@ class WebVTTCueBlock(BaseModel):
         lines = raw.strip().splitlines()
         if not lines:
             raise ValueError("Cue block must have at least one line")
-        identifier: Optional[WebVTTCueIdentifier] = None
+        identifier: WebVTTCueIdentifier | None = None
         timing_line = lines[0]
         if "-->" not in timing_line and len(lines) > 1:
             identifier = timing_line
@@ -585,7 +583,7 @@ class WebVTTFile(BaseModel):
 
     _pattern: ClassVar[re.Pattern] = re.compile(r"(?m)^(STYLE|NOTE|REGION)\b[\s\S]*?(?:\n\s*\n|\Z)")
     cue_blocks: list[WebVTTCueBlock]
-    title: Optional[str] = None
+    title: str | None = None
 
     @staticmethod
     def verify_signature(content: str) -> bool:

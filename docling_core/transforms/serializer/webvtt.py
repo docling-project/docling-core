@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Any, Optional, get_args
+from typing import Any, get_args
 
 from pydantic import BaseModel
 from typing_extensions import override
@@ -132,7 +132,7 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -158,7 +158,7 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         )
         if is_inline_scope:
             # Iteratively remove unnecessary consecutive tag pairs until no more changes
-            prev_text: Optional[str] = None
+            prev_text: str | None = None
             while prev_text != text:
                 prev_text = text
                 text = _remove_consecutive_pairs(text)
@@ -275,7 +275,7 @@ class WebVTTInlineSerializer(BaseInlineSerializer):
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes an inline group to WebVTT format."""
@@ -343,7 +343,7 @@ class WebVTTDocSerializer(DocSerializer):
     fallback_serializer: BaseFallbackSerializer = _WebVTTFallbackSerializer()
     list_serializer: BaseListSerializer = _WebVTTListSerializer()
     inline_serializer: BaseInlineSerializer = WebVTTInlineSerializer()
-    meta_serializer: Optional[BaseMetaSerializer] = _WebVTTMetaSerializer()
+    meta_serializer: BaseMetaSerializer | None = _WebVTTMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = _WebVTTAnnotationSerializer()
 
     params: CommonParams = CommonParams()
@@ -393,7 +393,7 @@ class WebVTTDocSerializer(DocSerializer):
         self,
         text: str,
         tag: START_TAG_NAMES,
-        anno: Optional[str] = None,
+        anno: str | None = None,
         css: list[str] = [],
     ) -> str:
         """Apply serialization to a WebVTT cue span."""
@@ -442,10 +442,10 @@ class WebVTTDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its parts."""
-        title: Optional[str] = None
+        title: str | None = None
 
-        timings: Optional[WebVTTCueTimings] = None
-        id: Optional[str] = None
+        timings: WebVTTCueTimings | None = None
+        id: str | None = None
         text: str = ""
         cue_blocks: list[WebVTTCueBlock] = []
         for part in parts:
@@ -503,10 +503,10 @@ class WebVTTDocSerializer(DocSerializer):
     def post_process(
         self,
         text: str,
-        formatting: Optional[Formatting] = None,
-        voice: Optional[str] = None,
-        languages: Optional[list[str]] = None,
-        classes: Optional[list[str]] = None,
+        formatting: Formatting | None = None,
+        voice: str | None = None,
+        languages: list[str] | None = None,
+        classes: list[str] | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps by adding formatting tags.
