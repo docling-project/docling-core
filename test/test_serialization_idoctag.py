@@ -1,12 +1,14 @@
 """Unit tests for IDocTags create_closing_token helper."""
 
 from pathlib import Path
+from typing import Optional
 from test.test_serialization import verify
 
 import pytest
 
 from docling_core.experimental.idoctags import (
     ContentType,
+    WrapMode,
     EscapeMode,
     IDocTagsDocSerializer,
     IDocTagsParams,
@@ -31,6 +33,101 @@ from docling_core.types.doc.document import (
     TabularChartMetaField,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
+
+def add_texts_section(doc: DoclingDocument):
+    doc.add_text(label=DocItemLabel.TEXT, text="Simple text")
+    inline1 = doc.add_inline_group()
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Here a code snippet: ",
+        parent=inline1,
+    )
+    doc.add_code(
+        text="help()",
+        parent=inline1,
+        code_language=CodeLanguageLabel.PYTHON,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=" (to be shown)",
+        parent=inline1,
+    )
+
+def add_list_section(doc: DoclingDocument):
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    lg = doc.add_list_group()
+
+    doc.add_list_item(text="foo", parent=lg)
+    doc.add_list_item(text="bar", parent=lg)
+
+    # just inline group with a formula
+    li = doc.add_list_item(text="", parent=lg)
+    inline = doc.add_inline_group(parent=li)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Here a formula: ",
+        parent=inline,
+    )
+    doc.add_formula(text="E=mc^2 ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="in line",
+        parent=inline,
+    )
+
+    # just inline group with formatted span
+    li = doc.add_list_item(text="", parent=lg)
+    inline = doc.add_inline_group(parent=li)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Here a ",
+        parent=inline,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bold",
+        parent=inline,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=" text",
+        parent=inline,
+    )
+
+    li = doc.add_list_item(text="will contain sublist", parent=lg)
+    lg_sub = doc.add_list_group(parent=li)
+    doc.add_list_item(text="sublist item 1", parent=lg_sub)
+    doc.add_list_item(text="sublist item 2", parent=lg_sub)
+
+    li = doc.add_list_item(text="", parent=lg, prov=prov)
+    inline = doc.add_inline_group(parent=li)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Here a ",
+        parent=inline,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="both bold and italicized",
+        parent=inline,
+        formatting=Formatting(bold=True, italic=True),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=" text and a sublist:",
+        parent=inline,
+    )
+    lg_sub = doc.add_list_group(parent=li)
+    doc.add_list_item(text="sublist item a", parent=lg_sub)
+    doc.add_list_item(text="sublist item b", parent=lg_sub)
+
+    doc.add_list_item(text="final element", parent=lg)
 
 # ===============================
 # IDocTags unit-tests
@@ -92,9 +189,8 @@ def test_create_closing_token_invalid_inputs(bad):
 # ===============================
 
 
-def serialize_idoctags(doc: DoclingDocument, **param_overrides) -> str:
-    params = IDocTagsParams(**param_overrides)
-    ser = IDocTagsDocSerializer(doc=doc, params=params)
+def serialize_idoctags(doc: DoclingDocument, params: Optional[IDocTagsParams] = None) -> str:
+    ser = IDocTagsDocSerializer(doc=doc, params=params or IDocTagsParams())
     return ser.serialize().text
 
 
@@ -104,18 +200,16 @@ def test_list_items_not_double_wrapped_when_no_content():
     doc.add_list_item("Item A", parent=lst)
     doc.add_list_item("Item B", parent=lst)
 
-    txt = serialize_idoctags(doc, add_content=True)
-    # print(f"txt with content:\n{txt}")
-
-    txt = serialize_idoctags(doc, add_content=False)
-    # print(f"txt without content:\n{txt}")
-
-    # No nested <list_text><list_text>
-    assert "<list_text><list_text>" not in txt
-
-    # Should still have exactly two opening list_text wrappers (for the two items)
-    # Note: other occurrences could appear in location tokens etc., so be conservative
-    assert txt.count("<list_text>") >= 2
+    txt = serialize_idoctags(doc, params=IDocTagsParams(content_types=set()))
+    exp_txt = """
+<doctag version="1.0.0">
+  <list ordered="false">
+    <list_text></list_text>
+    <list_text></list_text>
+  </list>
+</doctag>
+    """
+    assert txt.strip() == exp_txt.strip()
 
 
 def test_idoctags():
@@ -145,9 +239,8 @@ def test_idoctags():
     ser = IDocTagsDocSerializer(
         doc=doc,
         params=IDocTagsParams(
-            pretty_indentation="",
+            pretty_indentation=None,
             content_types={ContentType.TABLE},
-            mode=IDocTagsSerializationMode.LLM_FRIENDLY,
         ),
     )
     actual = ser.serialize().text
@@ -237,7 +330,7 @@ def test_strikethrough_formatting():
     doc.add_text(label=DocItemLabel.TEXT, text="Strike text", formatting=formatting)
 
     result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=True
+        doc, params=IDocTagsParams(add_location=False)
     )
     assert "<strikethrough>Strike text</strikethrough>" in result
 
@@ -249,7 +342,7 @@ def test_subscript_formatting():
     doc.add_text(label=DocItemLabel.TEXT, text="H2O", formatting=formatting)
 
     result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=True
+        doc, params=IDocTagsParams(add_location=False)
     )
     assert "<subscript>H2O</subscript>" in result
 
@@ -261,7 +354,7 @@ def test_superscript_formatting():
     doc.add_text(label=DocItemLabel.TEXT, text="x^2", formatting=formatting)
 
     result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=True
+        doc, params=IDocTagsParams(add_location=False)
     )
     assert "<superscript>x^2</superscript>" in result
 
@@ -273,7 +366,7 @@ def test_combined_formatting():
     doc.add_text(label=DocItemLabel.TEXT, text="Bold and italic", formatting=formatting)
 
     result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=True
+        doc, params=IDocTagsParams(add_location=False)
     )
     # When both bold and italic are applied, they should be nested
     assert "<bold>" in result
@@ -281,19 +374,6 @@ def test_combined_formatting():
     assert "Bold and italic" in result
 
 
-def test_formatting_disabled():
-    """Test that formatting is not applied when include_formatting=False."""
-    doc = DoclingDocument(name="test")
-    formatting = Formatting(bold=True, italic=True)
-    doc.add_text(label=DocItemLabel.TEXT, text="Plain text", formatting=formatting)
-
-    result = serialize_idoctags(
-        doc, add_location=False, add_content=True, include_formatting=False
-    )
-    # Formatting tags should not be present
-    assert "<bold>" not in result
-    assert "<italic>" not in result
-    assert "Plain text" in result
 
 
 def _create_content_filtering_doc(inp_doc: DoclingDocument):
@@ -440,9 +520,7 @@ def test_inline_group():
 
     ser = IDocTagsDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
-            add_content=True,
-        ),
+        params=IDocTagsParams(),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
@@ -464,11 +542,75 @@ def test_mini_inline():
     )
     ser = IDocTagsDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
-            add_content=True,
-        ),
+        params=IDocTagsParams(),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/mini_inline.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+def _create_wrapping_test_doc():
+    doc = DoclingDocument(name="test")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="simple")
+    doc.add_text(label=DocItemLabel.TEXT, text="  leading")
+    doc.add_text(label=DocItemLabel.TEXT, text="trailing  ")
+    doc.add_text(label=DocItemLabel.TEXT, text="< special")
+    doc.add_text(label=DocItemLabel.TEXT, text="  leading and < special")
+
+    doc.add_text(label=DocItemLabel.TEXT, text="w/prov simple", prov=prov)
+    doc.add_text(label=DocItemLabel.TEXT, text="  w/prov leading", prov=prov)
+    doc.add_text(label=DocItemLabel.TEXT, text="w/prov trailing  ", prov=prov)
+    doc.add_text(label=DocItemLabel.TEXT, text="w/prov < special", prov=prov)
+    doc.add_text(label=DocItemLabel.TEXT, text="  w/prov leading and < special", prov=prov)
+
+    return doc
+
+def test_content_wrapping_mode_when_needed():
+    doc = _create_wrapping_test_doc()
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            content_wrapping_mode=WrapMode.WRAP_WHEN_NEEDED,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/wrapping_when_needed.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+def test_content_wrapping_mode_always():
+    doc = _create_wrapping_test_doc()
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            content_wrapping_mode=WrapMode.WRAP_ALWAYS,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/wrapping_always.gt.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+def test_vlm_mode():
+    doc = DoclingDocument(name="test")
+    add_texts_section(doc)
+    add_list_section(doc)
+
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            pretty_indentation=None,
+            escape_mode=EscapeMode.CDATA_ALWAYS,
+            content_wrapping_mode=WrapMode.WRAP_ALWAYS,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/vlm_mode.gt.idt.xml")
     verify(exp_file=exp_file, actual=ser_txt)

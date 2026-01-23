@@ -407,6 +407,7 @@ class IDocTagsToken(str, Enum):
     URI = "uri"
     MARKER = "marker"
     FACETS = "facets"
+    CONTENT = "content"  # TODO: review element name
 
 
 class IDocTagsAttributeKey(str, Enum):
@@ -629,6 +630,7 @@ class IDocTagsVocabulary(BaseModel):
         IDocTagsToken.URI: IDocTagsCategory.BINARY_DATA,
         IDocTagsToken.MARKER: IDocTagsCategory.CONTENT,
         IDocTagsToken.FACETS: IDocTagsCategory.CONTENT,
+        IDocTagsToken.CONTENT: IDocTagsCategory.CONTENT,
     }
 
     @classmethod
@@ -959,6 +961,13 @@ class EscapeMode(str, Enum):
     CDATA_WHEN_NEEDED = "cdata_when_needed"  # wrap text in CDATA only if it contains special characters
 
 
+class WrapMode(str, Enum):
+    """Wrap mode for IDocTags output."""
+
+    WRAP_ALWAYS = "wrap_always"  # wrap all text in explicit wrapper element
+    WRAP_WHEN_NEEDED = "wrap_when_needed"  # wrap text only if it has leading or trailing whitespace
+
+
 class ContentType(str, Enum):
     """Content type for IDocTags output."""
 
@@ -996,31 +1005,30 @@ class IDocTagsParams(CommonParams):
 
     # IDocTags formatting
     do_self_closing: bool = True
-    pretty_indentation: Optional[str] = 2 * " "
-
-    # only relevant if pretty_indentation is None or empty:
-    mode: IDocTagsSerializationMode = IDocTagsSerializationMode.HUMAN_FRIENDLY
-    # Expand self-closing forms of non-self-closing tokens after pretty-printing
+    pretty_indentation: Optional[str] = 2 * " "  # None means minimized serialization, "" means no indentation
 
     preserve_empty_non_selfclosing: bool = True
     # XML compliance: escape special characters in text content
     escape_mode: EscapeMode = EscapeMode.CDATA_WHEN_NEEDED
+    content_wrapping_mode: WrapMode = WrapMode.WRAP_WHEN_NEEDED
 
 
 def _get_delim(*, params: IDocTagsParams) -> str:
     """Return record delimiter based on IDocTagsSerializationMode."""
-    if params.mode == IDocTagsSerializationMode.HUMAN_FRIENDLY:
-        return "\n"
-    if params.mode == IDocTagsSerializationMode.LLM_FRIENDLY:
-        return ""
-    raise RuntimeError(f"Unknown IDocTags mode: {params.mode}")
+    return "" if params.pretty_indentation is None else "\n"
 
 
-def _escape_text(text: str, escape_mode: EscapeMode) -> str:
-    if escape_mode == EscapeMode.CDATA_ALWAYS or (
-        escape_mode == EscapeMode.CDATA_WHEN_NEEDED and any(c in text for c in ['"', "'", "&", "<", ">"])
+def _escape_text(text: str, params: IDocTagsParams) -> str:
+    do_wrap = params.content_wrapping_mode == WrapMode.WRAP_ALWAYS or (
+        params.content_wrapping_mode == WrapMode.WRAP_WHEN_NEEDED and text != text.strip()
+    )
+    if params.escape_mode == EscapeMode.CDATA_ALWAYS or (
+        params.escape_mode == EscapeMode.CDATA_WHEN_NEEDED and any(c in text for c in ['"', "'", "&", "<", ">"])
     ):
-        return f"<![CDATA[{text}]]>"
+        text = f"<![CDATA[{text}]]>"
+    if do_wrap:
+        # text = f'<{IDocTagsToken.CONTENT} xml:space="preserve">{text}</{IDocTagsToken.CONTENT}>'
+        text = f"<{IDocTagsToken.CONTENT}>{text}</{IDocTagsToken.CONTENT}>"
     return text
 
 
@@ -1323,7 +1331,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 ser_res = doc_serializer.serialize(item=first_child, visited=my_visited, **kwargs)
                 text_part = ser_res.text
             else:
-                text_part = _escape_text(item.text, params.escape_mode)
+                text_part = _escape_text(item.text, params)
                 text_part = doc_serializer.post_process(
                     text=text_part,
                     formatting=item.formatting,
@@ -1336,13 +1344,13 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         if params.add_referenced_caption and isinstance(item, FloatingItem):
             cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
             if cap_text:
-                cap_text = _escape_text(cap_text, params.escape_mode)
+                cap_text = _escape_text(cap_text, params)
                 parts.append(cap_text)
 
         if params.add_referenced_footnote and isinstance(item, FloatingItem):
             ftn_text = doc_serializer.serialize_footnotes(item=item, **kwargs).text
             if ftn_text:
-                ftn_text = _escape_text(ftn_text, params.escape_mode)
+                ftn_text = _escape_text(ftn_text, params)
                 parts.append(ftn_text)
 
         text_res = "".join(parts)
@@ -1389,17 +1397,17 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
     def _serialize_meta_field(self, meta: BaseMeta, name: str, params: IDocTagsParams) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
             if name == MetaFieldName.SUMMARY and isinstance(field_val, SummaryMetaField):
-                escaped_text = _escape_text(field_val.text, params.escape_mode)
+                escaped_text = _escape_text(field_val.text, params)
                 txt = f"<summary>{escaped_text}</summary>"
             elif name == MetaFieldName.DESCRIPTION and isinstance(field_val, DescriptionMetaField):
-                escaped_text = _escape_text(field_val.text, params.escape_mode)
+                escaped_text = _escape_text(field_val.text, params)
                 txt = f"<description>{escaped_text}</description>"
             elif name == MetaFieldName.CLASSIFICATION and isinstance(field_val, PictureClassificationMetaField):
                 class_name = self._humanize_text(field_val.get_main_prediction().class_name)
-                escaped_class_name = _escape_text(class_name, params.escape_mode)
+                escaped_class_name = _escape_text(class_name, params)
                 txt = f"<classification>{escaped_class_name}</classification>"
             elif name == MetaFieldName.MOLECULE and isinstance(field_val, MoleculeMetaField):
-                escaped_smi = _escape_text(field_val.smi, params.escape_mode)
+                escaped_smi = _escape_text(field_val.smi, params)
                 txt = f"<molecule>{escaped_smi}</molecule>"
             elif name == MetaFieldName.TABULAR_CHART and isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
@@ -1407,7 +1415,7 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
             # elif tmp := str(field_val or ""):
             #     txt = tmp
             elif name not in {v.value for v in MetaFieldName}:
-                escaped_text = _escape_text(str(field_val or ""), params.escape_mode)
+                escaped_text = _escape_text(str(field_val or ""), params)
                 txt = _wrap(text=escaped_text, wrap_tag=name)
             return txt
         return None
@@ -1599,7 +1607,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                             parts.append(cell_loc)
                         if ContentType.TABLE_CELL in params.content_types:
                             # Apply XML escaping to table cell content
-                            escaped_content = _escape_text(content, params.escape_mode)
+                            escaped_content = _escape_text(content, params)
                             parts.append(escaped_content)
                     else:
                         parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.ECEL))
@@ -1848,6 +1856,7 @@ class IDocTagsDocSerializer(DocSerializer):
                             loc_txt = _create_location_tokens_for_item(item=cap, doc=self.doc)
                             results.append(create_ser_result(text=loc_txt))
             if cap_res.text and ContentType.REF_CAPTION in params.content_types:
+                cap_res.text = _escape_text(cap_res.text, params)
                 results.append(cap_res)
         text_res = "".join([r.text for r in results])
         if text_res:
@@ -1872,7 +1881,7 @@ class IDocTagsDocSerializer(DocSerializer):
 
                     content = ""
                     if ftn.text and ContentType.REF_FOOTNOTE in params.content_types:
-                        content = ftn.text
+                        content = _escape_text(ftn.text, params)
 
                     text_res = f"{location}{content}"
                     if text_res:
@@ -1908,7 +1917,7 @@ class IDocTagsDocSerializer(DocSerializer):
 
         text_res = f"{open_token}{text_res}{close_token}"
 
-        if self.params.pretty_indentation:
+        if self.params.pretty_indentation is not None:
             try:
                 my_root = parseString(text_res).documentElement
             except Exception as e:
@@ -2039,6 +2048,7 @@ class IDocTagsDocDeserializer(BaseModel):
             IDocTagsToken.STRIKETHROUGH.value,
             IDocTagsToken.SUBSCRIPT.value,
             IDocTagsToken.SUPERSCRIPT.value,
+            IDocTagsToken.CONTENT.value,
         }:
             self._parse_text_like(doc=doc, el=el, parent=parent)
         elif name == IDocTagsToken.PAGE_BREAK.value:
@@ -2070,9 +2080,12 @@ class IDocTagsDocDeserializer(BaseModel):
 
     # ------------- Text blocks -------------
 
-    def _get_simple_text_block(self, elements: list) -> Optional[str]:
+    def _should_preserve_space(self, el: Element) -> bool:
+        return el.tagName == IDocTagsToken.CONTENT.value  # and el.getAttribute("xml:space") == "preserve"
+
+    def _get_children_simple_text_block(self, element: Element) -> Optional[str]:
         result = None
-        for el in elements:
+        for el in element.childNodes:
             if isinstance(el, Element):
                 if el.tagName not in {
                     IDocTagsToken.LOCATION.value,
@@ -2083,27 +2096,30 @@ class IDocTagsDocDeserializer(BaseModel):
                     IDocTagsToken.STRIKETHROUGH.value,
                     IDocTagsToken.SUBSCRIPT.value,
                     IDocTagsToken.SUPERSCRIPT.value,
+                    IDocTagsToken.CONTENT.value,
                 }:
                     return None
-                elif tmp := self._get_simple_text_block(el.childNodes):
+                elif tmp := self._get_children_simple_text_block(el):
                     result = tmp
-            elif isinstance(el, Text) and el.data.strip():
+            elif isinstance(el, Text) and el.data.strip():  # TODO should still support whitespace-only
                 if result is None:
-                    result = el.data.strip()
+                    result = el.data if element.tagName == IDocTagsToken.CONTENT.value else el.data.strip()
                 else:
                     return None
         return result
 
     def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         """Parse text-like tokens (title, text, caption, footnotes, code, formula)."""
-        if self._get_simple_text_block(el.childNodes) is None:
-            # This text-like element wraps a single inline group; create it directly
+        element_children = [
+            node for node in el.childNodes if isinstance(node, Element) and node.tagName != IDocTagsToken.LOCATION.value
+        ]
+
+        if len(element_children) > 1 or self._get_children_simple_text_block(el) is None:
             self._parse_inline_group(doc=doc, el=el, parent=parent)
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)
         text, formatting = self._extract_text_with_formatting(el)
-        text = text.strip()
         if not text:
             return
 
@@ -2138,6 +2154,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 IDocTagsToken.STRIKETHROUGH.value: DocItemLabel.TEXT,
                 IDocTagsToken.SUBSCRIPT.value: DocItemLabel.TEXT,
                 IDocTagsToken.SUPERSCRIPT.value: DocItemLabel.TEXT,
+                IDocTagsToken.CONTENT.value: DocItemLabel.TEXT,
             }
         ):
             is_bold = nm == IDocTagsToken.BOLD.value
@@ -2642,7 +2659,7 @@ class IDocTagsDocDeserializer(BaseModel):
             if isinstance(node, Text):
                 # Skip pure indentation/pretty-print whitespace
                 if node.data.strip():
-                    out.append(node.data)
+                    out.append(node.data if el.tagName == IDocTagsToken.CONTENT.value else node.data.strip())
             elif isinstance(node, Element):
                 nm = node.tagName
                 if nm in {IDocTagsToken.LOCATION.value}:

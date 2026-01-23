@@ -20,8 +20,8 @@ from docling_core.types.doc import (
     TableCell,
     TableData,
 )
-from docling_core.types.doc.document import Formatting
 from docling_core.types.doc.labels import CodeLanguageLabel
+from test.test_serialization_idoctag import add_texts_section, add_list_section
 
 DO_PRINT: bool = False
 
@@ -810,110 +810,28 @@ def test_roundtrip_multiple_nested_lists_same_level():
 
 def test_roundtrip_list_item_with_inline_group():
 
-    def add_texts(doc: DoclingDocument):
-        doc.add_text(label=DocItemLabel.TEXT, text="Simple text")
-        inline1 = doc.add_inline_group()
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text="Here a code snippet: ",
-            parent=inline1,
-        )
-        doc.add_code(
-            text="help()",
-            parent=inline1,
-            code_language=CodeLanguageLabel.PYTHON,
-        )
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text=" (to be shown)",
-            parent=inline1,
-        )
-
-    def add_list(doc: DoclingDocument):
-
-        lg = doc.add_list_group()
-
-        doc.add_list_item(text="foo", parent=lg)
-        doc.add_list_item(text="bar", parent=lg)
-
-        # just inline group with a formula
-        li = doc.add_list_item(text="", parent=lg)
-        inline = doc.add_inline_group(parent=li)
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text="Here a formula: ",
-            parent=inline,
-        )
-        doc.add_formula(text="E=mc^2", parent=inline)
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text="in line",
-            parent=inline,
-        )
-
-        # just inline group with formatted span
-        li = doc.add_list_item(text="", parent=lg)
-        inline = doc.add_inline_group(parent=li)
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text="Here a ",
-            parent=inline,
-        )
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text="bold",
-            parent=inline,
-            formatting=Formatting(bold=True),
-        )
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text=" text",
-            parent=inline,
-        )
-
-        li = doc.add_list_item(text="will contain sublist", parent=lg)
-        lg_sub = doc.add_list_group(parent=li)
-        doc.add_list_item(text="sublist item 1", parent=lg_sub)
-        doc.add_list_item(text="sublist item 2", parent=lg_sub)
-
-        li = doc.add_list_item(text="", parent=lg)
-        inline = doc.add_inline_group(parent=li)
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text="Here a ",
-            parent=inline,
-        )
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text="both bold and italicized",
-            parent=inline,
-            formatting=Formatting(bold=True, italic=True),
-        )
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text=" text and a sublist:",
-            parent=inline,
-        )
-        lg_sub = doc.add_list_group(parent=li)
-        doc.add_list_item(text="sublist item a", parent=lg_sub)
-        doc.add_list_item(text="sublist item b", parent=lg_sub)
-
-        doc.add_list_item(text="final element", parent=lg)
 
     doc = DoclingDocument(name="t")
 
-    add_texts(doc)
-    add_list(doc)
+    add_texts_section(doc)
+    add_list_section(doc)
 
-    target_yaml_file = (
+    dt = _serialize(doc)
+    exp_ser_file = (
         Path(__file__).parent
         / "data"
         / "doc"
-        / "roundtrip_list_item_with_inline_group_init.yaml"
+        / "roundtrip_list_item_with_inline_serialized.idt.xml"
     )
-    doc.save_as_yaml(target_yaml_file)
-    dt = _serialize(doc)
+    verify(exp_ser_file, dt)
     doc2 = _deserialize(dt)
+    deser_yaml_file = (
+        Path(__file__).parent
+        / "data"
+        / "doc"
+        / "roundtrip_list_item_with_inline_deserialized.yaml"
+    )
+    doc2.save_as_yaml(deser_yaml_file)
     dt2 = _serialize(doc2)
 
     exp_dt2_file = (
@@ -1210,3 +1128,57 @@ def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
     dt2 = _serialize(doc2)
 
     assert dt2 == dt
+
+def test_wrapping():
+    dt = """
+<doctag version="1.0.0">
+  <text>simple</text>
+  <text>
+    <content>  leading</content>
+  </text>
+  <text>
+    <content>trailing  </content>
+  </text>
+  <text><![CDATA[< special]]></text>
+  <text>
+    <content><![CDATA[  leading and < special]]></content>
+  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    w/prov simple
+  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    <content>  w/prov leading</content>
+  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    <content>w/prov trailing  </content>
+  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+<![CDATA[w/prov < special]]>  </text>
+  <text>
+    <location value="5" resolution="512"/>
+    <location value="492" resolution="512"/>
+    <location value="15" resolution="512"/>
+    <location value="502" resolution="512"/>
+    <content><![CDATA[  w/prov leading and < special]]></content>
+  </text>
+</doctag>
+    """
+    doc = _deserialize(dt)
+    dt2 = _serialize(doc)
+    assert dt2.strip() == dt.strip()

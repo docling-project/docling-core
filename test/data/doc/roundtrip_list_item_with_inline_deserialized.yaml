@@ -88,8 +88,13 @@ groups:
     $ref: '#/texts/17'
   self_ref: '#/groups/6'
 key_value_items: []
-name: t
-pages: {}
+name: Document
+pages:
+  '0':
+    page_no: 0
+    size:
+      height: 512.0
+      width: 512.0
 pictures: []
 schema_name: DoclingDocument
 tables: []
@@ -180,12 +185,12 @@ texts:
 - children: []
   content_layer: body
   label: formula
-  orig: E=mc^2
+  orig: 'E=mc^2 '
   parent:
     $ref: '#/groups/2'
   prov: []
   self_ref: '#/texts/8'
-  text: E=mc^2
+  text: 'E=mc^2 '
 - children: []
   content_layer: body
   label: text
