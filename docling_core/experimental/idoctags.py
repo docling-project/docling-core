@@ -1027,8 +1027,8 @@ def _escape_text(text: str, params: IDocTagsParams) -> str:
     ):
         text = f"<![CDATA[{text}]]>"
     if do_wrap:
-        # text = f'<{IDocTagsToken.CONTENT} xml:space="preserve">{text}</{IDocTagsToken.CONTENT}>'
-        text = f"<{IDocTagsToken.CONTENT}>{text}</{IDocTagsToken.CONTENT}>"
+        # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
+        text = _wrap(text=text, wrap_tag=IDocTagsToken.CONTENT.value)
     return text
 
 
