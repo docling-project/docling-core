@@ -3321,17 +3321,6 @@ class DoclingDocument(BaseModel):
         if not parent:
             parent = self.body
 
-        if not code_language:
-            code_language = CodeLanguageLabel.UNKNOWN
-            m = re.match(r"^<_([^>]+)_>", text)
-            if m:
-
-                text = text[m.end() :]
-                try:
-                    code_language = CodeLanguageLabel(m.group(1))
-                except ValueError:
-                    pass
-
         if not orig:
             orig = text
 
@@ -3346,8 +3335,8 @@ class DoclingDocument(BaseModel):
             hyperlink=hyperlink,
         )
 
-        code_item.code_language = code_language
-
+        if code_language:
+            code_item.code_language = code_language
         if content_layer:
             code_item.content_layer = content_layer
         if prov:
@@ -5191,7 +5180,7 @@ class DoclingDocument(BaseModel):
             return None
 
         def extract_inner_text(text_chunk: str) -> str:
-            """Strip all <...> tags inside the chunk to get the raw text content."""
+            """Strip all <...> tags (except <_..._>) to get the raw text content."""
             return re.sub(r"<(?!_.*?_>).*?>", "", text_chunk, flags=re.DOTALL).strip()
 
         def extract_caption(
@@ -5373,6 +5362,23 @@ class DoclingDocument(BaseModel):
                     parent=parent,
                     content_layer=content_layer,
                 )
+            elif doc_label == DocItemLabel.CODE:
+                code_language = CodeLanguageLabel.UNKNOWN
+                m = re.match(r"^<_([^>]+)_>", text_content)
+                if m:
+                    text_content = text_content[m.end() :]
+                    try:
+                        code_language = CodeLanguageLabel(m.group(1))
+                    except ValueError:
+                        pass
+                doc.add_code(
+                    text=text_content,
+                    code_language=code_language,
+                    prov=element_prov,
+                    parent=parent,
+                    content_layer=content_layer,
+                )
+
             else:
                 doc.add_text(
                     label=doc_label,
