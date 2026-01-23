@@ -1148,6 +1148,192 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
         return create_ser_result(text=text_res, span_source=item_results)
 
 
+class _LinguistLabel(str, Enum):
+    """Linguist-compatible labels for IDocTags output."""
+
+    # compatible with GitHub Linguist v9.4.0:
+    # https://github.com/github-linguist/linguist/blob/v9.4.0/lib/linguist/languages.yml
+
+    ADA = "Ada"
+    AWK = "Awk"
+    C = "C"
+    C_SHARP = "C#"
+    C_PLUS_PLUS = "C++"
+    CMAKE = "CMake"
+    COBOL = "COBOL"
+    CSS = "CSS"
+    CEYLON = "Ceylon"
+    CLOJURE = "Clojure"
+    CRYSTAL = "Crystal"
+    CUDA = "Cuda"
+    CYTHON = "Cython"
+    D = "D"
+    DART = "Dart"
+    DOCKERFILE = "Dockerfile"
+    ELIXIR = "Elixir"
+    ERLANG = "Erlang"
+    FORTRAN = "Fortran"
+    FORTH = "Forth"
+    GO = "Go"
+    HTML = "HTML"
+    HASKELL = "Haskell"
+    HAXE = "Haxe"
+    JAVA = "Java"
+    JAVASCRIPT = "JavaScript"
+    JSON = "JSON"
+    JULIA = "Julia"
+    KOTLIN = "Kotlin"
+    COMMON_LISP = "Common Lisp"
+    LUA = "Lua"
+    MATLAB = "MATLAB"
+    MOONSCRIPT = "MoonScript"
+    NIM = "Nim"
+    OCAML = "OCaml"
+    OBJECTIVE_C = "Objective-C"
+    PHP = "PHP"
+    PASCAL = "Pascal"
+    PERL = "Perl"
+    PROLOG = "Prolog"
+    PYTHON = "Python"
+    RACKET = "Racket"
+    RUBY = "Ruby"
+    RUST = "Rust"
+    SHELL = "Shell"
+    STANDARD_ML = "Standard ML"
+    SQL = "SQL"
+    SCALA = "Scala"
+    SCHEME = "Scheme"
+    SWIFT = "Swift"
+    TYPESCRIPT = "TypeScript"
+    VISUAL_BASIC_DOT_NET = "Visual Basic .NET"
+    XML = "XML"
+    YAML = "YAML"
+
+    @classmethod
+    def from_code_language_label(self, lang: CodeLanguageLabel) -> Optional["_LinguistLabel"]:
+        mapping: dict[CodeLanguageLabel, Optional[_LinguistLabel]] = {
+            CodeLanguageLabel.ADA: _LinguistLabel.ADA,
+            CodeLanguageLabel.AWK: _LinguistLabel.AWK,
+            CodeLanguageLabel.BASH: _LinguistLabel.SHELL,
+            CodeLanguageLabel.BC: None,
+            CodeLanguageLabel.C: _LinguistLabel.C,
+            CodeLanguageLabel.C_SHARP: _LinguistLabel.C_SHARP,
+            CodeLanguageLabel.C_PLUS_PLUS: _LinguistLabel.C_PLUS_PLUS,
+            CodeLanguageLabel.CMAKE: _LinguistLabel.CMAKE,
+            CodeLanguageLabel.COBOL: _LinguistLabel.COBOL,
+            CodeLanguageLabel.CSS: _LinguistLabel.CSS,
+            CodeLanguageLabel.CEYLON: _LinguistLabel.CEYLON,
+            CodeLanguageLabel.CLOJURE: _LinguistLabel.CLOJURE,
+            CodeLanguageLabel.CRYSTAL: _LinguistLabel.CRYSTAL,
+            CodeLanguageLabel.CUDA: _LinguistLabel.CUDA,
+            CodeLanguageLabel.CYTHON: _LinguistLabel.CYTHON,
+            CodeLanguageLabel.D: _LinguistLabel.D,
+            CodeLanguageLabel.DART: _LinguistLabel.DART,
+            CodeLanguageLabel.DC: None,
+            CodeLanguageLabel.DOCKERFILE: _LinguistLabel.DOCKERFILE,
+            CodeLanguageLabel.ELIXIR: _LinguistLabel.ELIXIR,
+            CodeLanguageLabel.ERLANG: _LinguistLabel.ERLANG,
+            CodeLanguageLabel.FORTRAN: _LinguistLabel.FORTRAN,
+            CodeLanguageLabel.FORTH: _LinguistLabel.FORTH,
+            CodeLanguageLabel.GO: _LinguistLabel.GO,
+            CodeLanguageLabel.HTML: _LinguistLabel.HTML,
+            CodeLanguageLabel.HASKELL: _LinguistLabel.HASKELL,
+            CodeLanguageLabel.HAXE: _LinguistLabel.HAXE,
+            CodeLanguageLabel.JAVA: _LinguistLabel.JAVA,
+            CodeLanguageLabel.JAVASCRIPT: _LinguistLabel.JAVASCRIPT,
+            CodeLanguageLabel.JSON: _LinguistLabel.JSON,
+            CodeLanguageLabel.JULIA: _LinguistLabel.JULIA,
+            CodeLanguageLabel.KOTLIN: _LinguistLabel.KOTLIN,
+            CodeLanguageLabel.LISP: _LinguistLabel.COMMON_LISP,
+            CodeLanguageLabel.LUA: _LinguistLabel.LUA,
+            CodeLanguageLabel.MATLAB: _LinguistLabel.MATLAB,
+            CodeLanguageLabel.MOONSCRIPT: _LinguistLabel.MOONSCRIPT,
+            CodeLanguageLabel.NIM: _LinguistLabel.NIM,
+            CodeLanguageLabel.OCAML: _LinguistLabel.OCAML,
+            CodeLanguageLabel.OBJECTIVEC: _LinguistLabel.OBJECTIVE_C,
+            CodeLanguageLabel.OCTAVE: _LinguistLabel.MATLAB,
+            CodeLanguageLabel.PHP: _LinguistLabel.PHP,
+            CodeLanguageLabel.PASCAL: _LinguistLabel.PASCAL,
+            CodeLanguageLabel.PERL: _LinguistLabel.PERL,
+            CodeLanguageLabel.PROLOG: _LinguistLabel.PROLOG,
+            CodeLanguageLabel.PYTHON: _LinguistLabel.PYTHON,
+            CodeLanguageLabel.RACKET: _LinguistLabel.RACKET,
+            CodeLanguageLabel.RUBY: _LinguistLabel.RUBY,
+            CodeLanguageLabel.RUST: _LinguistLabel.RUST,
+            CodeLanguageLabel.SML: _LinguistLabel.STANDARD_ML,
+            CodeLanguageLabel.SQL: _LinguistLabel.SQL,
+            CodeLanguageLabel.SCALA: _LinguistLabel.SCALA,
+            CodeLanguageLabel.SCHEME: _LinguistLabel.SCHEME,
+            CodeLanguageLabel.SWIFT: _LinguistLabel.SWIFT,
+            CodeLanguageLabel.TYPESCRIPT: _LinguistLabel.TYPESCRIPT,
+            CodeLanguageLabel.UNKNOWN: None,
+            CodeLanguageLabel.VISUALBASIC: _LinguistLabel.VISUAL_BASIC_DOT_NET,
+            CodeLanguageLabel.XML: _LinguistLabel.XML,
+            CodeLanguageLabel.YAML: _LinguistLabel.YAML,
+        }
+        return mapping.get(lang)
+
+    @classmethod
+    def to_code_language_label(cls, lang: "_LinguistLabel") -> CodeLanguageLabel:
+        mapping: dict[_LinguistLabel, CodeLanguageLabel] = {
+            _LinguistLabel.ADA: CodeLanguageLabel.ADA,
+            _LinguistLabel.AWK: CodeLanguageLabel.AWK,
+            _LinguistLabel.C: CodeLanguageLabel.C,
+            _LinguistLabel.C_SHARP: CodeLanguageLabel.C_SHARP,
+            _LinguistLabel.C_PLUS_PLUS: CodeLanguageLabel.C_PLUS_PLUS,
+            _LinguistLabel.CMAKE: CodeLanguageLabel.CMAKE,
+            _LinguistLabel.COBOL: CodeLanguageLabel.COBOL,
+            _LinguistLabel.CSS: CodeLanguageLabel.CSS,
+            _LinguistLabel.CEYLON: CodeLanguageLabel.CEYLON,
+            _LinguistLabel.CLOJURE: CodeLanguageLabel.CLOJURE,
+            _LinguistLabel.CRYSTAL: CodeLanguageLabel.CRYSTAL,
+            _LinguistLabel.CUDA: CodeLanguageLabel.CUDA,
+            _LinguistLabel.CYTHON: CodeLanguageLabel.CYTHON,
+            _LinguistLabel.D: CodeLanguageLabel.D,
+            _LinguistLabel.DART: CodeLanguageLabel.DART,
+            _LinguistLabel.DOCKERFILE: CodeLanguageLabel.DOCKERFILE,
+            _LinguistLabel.ELIXIR: CodeLanguageLabel.ELIXIR,
+            _LinguistLabel.ERLANG: CodeLanguageLabel.ERLANG,
+            _LinguistLabel.FORTRAN: CodeLanguageLabel.FORTRAN,
+            _LinguistLabel.FORTH: CodeLanguageLabel.FORTH,
+            _LinguistLabel.GO: CodeLanguageLabel.GO,
+            _LinguistLabel.HTML: CodeLanguageLabel.HTML,
+            _LinguistLabel.HASKELL: CodeLanguageLabel.HASKELL,
+            _LinguistLabel.HAXE: CodeLanguageLabel.HAXE,
+            _LinguistLabel.JAVA: CodeLanguageLabel.JAVA,
+            _LinguistLabel.JAVASCRIPT: CodeLanguageLabel.JAVASCRIPT,
+            _LinguistLabel.JSON: CodeLanguageLabel.JSON,
+            _LinguistLabel.JULIA: CodeLanguageLabel.JULIA,
+            _LinguistLabel.KOTLIN: CodeLanguageLabel.KOTLIN,
+            _LinguistLabel.COMMON_LISP: CodeLanguageLabel.LISP,
+            _LinguistLabel.LUA: CodeLanguageLabel.LUA,
+            _LinguistLabel.MATLAB: CodeLanguageLabel.MATLAB,
+            _LinguistLabel.MOONSCRIPT: CodeLanguageLabel.MOONSCRIPT,
+            _LinguistLabel.NIM: CodeLanguageLabel.NIM,
+            _LinguistLabel.OCAML: CodeLanguageLabel.OCAML,
+            _LinguistLabel.OBJECTIVE_C: CodeLanguageLabel.OBJECTIVEC,
+            _LinguistLabel.PHP: CodeLanguageLabel.PHP,
+            _LinguistLabel.PASCAL: CodeLanguageLabel.PASCAL,
+            _LinguistLabel.PERL: CodeLanguageLabel.PERL,
+            _LinguistLabel.PROLOG: CodeLanguageLabel.PROLOG,
+            _LinguistLabel.PYTHON: CodeLanguageLabel.PYTHON,
+            _LinguistLabel.RACKET: CodeLanguageLabel.RACKET,
+            _LinguistLabel.RUBY: CodeLanguageLabel.RUBY,
+            _LinguistLabel.RUST: CodeLanguageLabel.RUST,
+            _LinguistLabel.SHELL: CodeLanguageLabel.BASH,
+            _LinguistLabel.STANDARD_ML: CodeLanguageLabel.SML,
+            _LinguistLabel.SQL: CodeLanguageLabel.SQL,
+            _LinguistLabel.SCALA: CodeLanguageLabel.SCALA,
+            _LinguistLabel.SCHEME: CodeLanguageLabel.SCHEME,
+            _LinguistLabel.SWIFT: CodeLanguageLabel.SWIFT,
+            _LinguistLabel.TYPESCRIPT: CodeLanguageLabel.TYPESCRIPT,
+            _LinguistLabel.VISUAL_BASIC_DOT_NET: CodeLanguageLabel.VISUALBASIC,
+            _LinguistLabel.XML: CodeLanguageLabel.XML,
+            _LinguistLabel.YAML: CodeLanguageLabel.YAML,
+        }
+        return mapping.get(lang, CodeLanguageLabel.UNKNOWN)
+
+
 class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
     """IDocTags-specific text item serializer using `<location>` tokens."""
 
@@ -1263,8 +1449,8 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             wrap_open_token = f"<{tok.value}>"
         elif isinstance(item, CodeItem):
             tok = IDocTagsToken.CODE
-            if item.code_language != CodeLanguageLabel.UNKNOWN:
-                wrap_open_token = f'<{tok.value} {IDocTagsAttributeKey.CLASS.value}="{item.code_language.value}">'
+            if (linguist_lang := _LinguistLabel.from_code_language_label(item.code_language)) is not None:
+                wrap_open_token = f'<{tok.value} {IDocTagsAttributeKey.CLASS.value}="{linguist_lang.value}">'
             else:
                 wrap_open_token = f"<{tok.value}>"
         elif isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_SELECTED:
@@ -2194,7 +2380,8 @@ class IDocTagsDocDeserializer(BaseModel):
     def _extract_code_content_and_language(self, el: Element) -> tuple[str, CodeLanguageLabel]:
         """Extract code content and language from a <code> element."""
         try:
-            lang_label = CodeLanguageLabel(el.getAttribute(IDocTagsAttributeKey.CLASS.value))
+            linguist_lang = _LinguistLabel(el.getAttribute(IDocTagsAttributeKey.CLASS.value))
+            lang_label = _LinguistLabel.to_code_language_label(linguist_lang)
         except ValueError:
             lang_label = CodeLanguageLabel.UNKNOWN
         parts: list[str] = []

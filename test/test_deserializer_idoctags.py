@@ -149,15 +149,18 @@ def test_roundtrip_page_footer():
 def test_roundtrip_code():
     doc = DoclingDocument(name="t")
     doc.add_code(text="print('hi')", code_language=CodeLanguageLabel.PYTHON)
+    doc.add_code(text='disp("Hello world!")', code_language=CodeLanguageLabel.OCTAVE)
     dt = _serialize(doc)
-    if DO_PRINT:
-        print("\n", dt)
     doc2 = _deserialize(dt)
-    assert len(doc2.texts) == 1
-    assert doc2.texts[0].label == DocItemLabel.CODE
-    assert doc2.texts[0].text.strip() == "print('hi')"
-    assert getattr(doc2.texts[0], "code_language", None) == CodeLanguageLabel.PYTHON
+    dt2 = _serialize(doc2)
 
+    exp_dt = """
+<doctag version="1.0.0">
+  <code class="Python"><![CDATA[print('hi')]]></code>
+  <code class="MATLAB"><![CDATA[disp("Hello world!")]]></code>
+</doctag>
+    """
+    assert dt2.strip() == exp_dt.strip()
 
 def test_roundtrip_formula():
     doc = DoclingDocument(name="t")

@@ -149,7 +149,6 @@ def test_doctags_inline():
         doctags=doctags,
         images=[pil_img for p in doc.pages if (img_ref := doc.pages[p].image) and (pil_img := img_ref.pil_image)],
     )
-
     deser_doc = DoclingDocument.load_from_doctags(doctags_doc)
     exp = f"{src_path.parent / src_path.stem}.out.dt.json"
     verify(

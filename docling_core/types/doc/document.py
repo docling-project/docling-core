@@ -3332,6 +3332,7 @@ class DoclingDocument(BaseModel):
             formatting=formatting,
             hyperlink=hyperlink,
         )
+
         if code_language:
             code_item.code_language = code_language
         if content_layer:
@@ -5177,8 +5178,8 @@ class DoclingDocument(BaseModel):
             return None
 
         def extract_inner_text(text_chunk: str) -> str:
-            """Strip all <...> tags inside the chunk to get the raw text content."""
-            return re.sub(r"<.*?>", "", text_chunk, flags=re.DOTALL).strip()
+            """Strip all <...> tags (except <_..._>) to get the raw text content."""
+            return re.sub(r"<(?!_.*?_>).*?>", "", text_chunk, flags=re.DOTALL).strip()
 
         def extract_caption(
             text_chunk: str,
@@ -5359,6 +5360,23 @@ class DoclingDocument(BaseModel):
                     parent=parent,
                     content_layer=content_layer,
                 )
+            elif doc_label == DocItemLabel.CODE:
+                code_language = CodeLanguageLabel.UNKNOWN
+                m = re.match(r"^<_([^>]+)_>", text_content)
+                if m:
+                    text_content = text_content[m.end() :]
+                    try:
+                        code_language = CodeLanguageLabel(m.group(1))
+                    except ValueError:
+                        pass
+                doc.add_code(
+                    text=text_content,
+                    code_language=code_language,
+                    prov=element_prov,
+                    parent=parent,
+                    content_layer=content_layer,
+                )
+
             else:
                 doc.add_text(
                     label=doc_label,
