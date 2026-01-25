@@ -65,6 +65,7 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
+from docling_core.types.doc.webvtt import WebVTTCueIdentifier, WebVTTCueSpanStartTag, WebVTTCueSpanStartTagAnnotated
 
 _logger = logging.getLogger(__name__)
 
@@ -1217,8 +1218,8 @@ class TrackProvenance(BaseProvenance):
     block, an audio clip, or a timed marker in a screen-recording.
     """
 
+    model_config = ConfigDict(regex_engine="python-re")
     kind: Annotated[Literal["track"], Field(description="Identifiers this type of provenance.")] = "track"
-
     start_time: Annotated[
         float,
         Field(
@@ -1233,27 +1234,19 @@ class TrackProvenance(BaseProvenance):
             description="End time offset of the track cue in seconds",
         ),
     ]
-    identifier: Optional[str] = Field(
-        None,
-        examples=["test", "123", "b72d946"],
-        description="An identifier of the cue",
-    )
-    voice: Optional[str] = Field(
-        None,
-        examples=["Mary", "Fred", "Name Surname"],
-        description="The cue voice (speaker)",
-    )
-    languages: Optional[list[str]] = Field(
-        None,
-        examples=[["en", "en-GB"], ["fr-CA"]],
-        description="Languages of the cue in BCP 47 language tag format",
-    )
-    classes: Optional[list[str]] = Field(
-        None,
-        min_length=1,
-        examples=["b.first", "v.loud", "c.yellow"],
-        description="Classes for describing the cue significance",
-    )
+    identifier: Annotated[
+        WebVTTCueIdentifier | None, Field(description="An identifier of the cue", examples=["test", "123", "b72d946"])
+    ] = None
+    tags: Annotated[
+        list[WebVTTCueSpanStartTag | WebVTTCueSpanStartTagAnnotated] | None,
+        Field(
+            description="A list of tags that apply to a cue, including the voice tag (the speaker in a track).",
+            examples=[
+                [WebVTTCueSpanStartTagAnnotated(name="v", classes=["loud"], annotation="John")],
+                [WebVTTCueSpanStartTag(name="i", classes=["foreignphrase"])],
+            ],
+        ),
+    ] = None
 
     @model_validator(mode="after")
     def check_order(self) -> Self:
@@ -1436,7 +1429,7 @@ class PictureMeta(FloatingMeta):
     tabular_chart: Optional[TabularChartMetaField] = None
 
 
-class NodeItem(BaseModel):
+class NodeItem(BaseModel, validate_assignment=True):
     """NodeItem."""
 
     self_ref: str = Field(pattern=_JSON_POINTER_REGEX)

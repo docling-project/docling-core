@@ -164,8 +164,11 @@
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234",
-          "languages": [
-            "es-ES"
+          "tags": [
+            {
+              "name": "lang",
+              "annotation": "es-ES"
+            }
           ]
         }
       ],
@@ -231,8 +234,13 @@
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234",
-          "classes": [
-            "b.loud"
+          "tags": [
+            {
+              "name": "b",
+              "classes": [
+                "loud"
+              ]
+            }
           ]
         }
       ],
@@ -286,8 +294,11 @@
           "start_time": 14760.0,
           "end_time": 14818.239,
           "identifier": "agcvs-08234",
-          "languages": [
-            "it"
+          "tags": [
+            {
+              "name": "lang",
+              "annotation": "it"
+            }
           ]
         }
       ],

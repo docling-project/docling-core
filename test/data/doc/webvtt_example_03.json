@@ -89,7 +89,12 @@
           "start_time": 4.963,
           "end_time": 8.571,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/15-0",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "OK,",
@@ -109,7 +114,12 @@
           "start_time": 4.963,
           "end_time": 8.571,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/15-0",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "I think now we should be recording",
@@ -129,7 +139,12 @@
           "start_time": 8.571,
           "end_time": 9.403,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/15-1",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "properly.",
@@ -168,7 +183,12 @@
           "start_time": 13.363,
           "end_time": 13.803,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/17-0",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "Yeah.",
@@ -188,7 +208,12 @@
           "start_time": 49.603,
           "end_time": 53.363,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/78-0",
-          "voice": "Speaker B"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker B"
+            }
+          ]
         }
       ],
       "orig": "I was also thinking.",
@@ -208,7 +233,12 @@
           "start_time": 54.963,
           "end_time": 62.072,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/113-0",
-          "voice": "Speaker B"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker B"
+            }
+          ]
         }
       ],
       "orig": "Would be maybe good to create items,",
@@ -228,7 +258,12 @@
           "start_time": 62.072,
           "end_time": 66.811,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/113-1",
-          "voice": "Speaker B"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker B"
+            }
+          ]
         }
       ],
       "orig": "some metadata,",
@@ -248,7 +283,12 @@
           "start_time": 62.072,
           "end_time": 66.811,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/113-1",
-          "voice": "Speaker B"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker B"
+            }
+          ]
         }
       ],
       "orig": "some options that can be specific.",
@@ -268,7 +308,12 @@
           "start_time": 70.243,
           "end_time": 73.014,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/150-0",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "Yeah,",
@@ -288,7 +333,12 @@
           "start_time": 70.243,
           "end_time": 73.014,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/150-0",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "I mean I think you went even more than",
@@ -308,7 +358,12 @@
           "start_time": 70.563,
           "end_time": 72.643,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/119-0",
-          "voice": "Speaker B"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker B"
+            }
+          ]
         }
       ],
       "orig": "But we preserved the atoms.",
@@ -328,7 +383,12 @@
           "start_time": 73.014,
           "end_time": 75.907,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/150-1",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "than me.",
@@ -348,7 +408,12 @@
           "start_time": 73.014,
           "end_time": 75.907,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/150-1",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "I just opened the format.",
@@ -368,7 +433,12 @@
           "start_time": 110.222,
           "end_time": 111.643,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/197-1",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "give it a try, yeah.",
@@ -388,7 +458,12 @@
           "start_time": 112.043,
           "end_time": 115.043,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/200-0",
-          "voice": "Speaker B"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker B"
+            }
+          ]
         }
       ],
       "orig": "Okay, talk to you later.",
@@ -408,7 +483,12 @@
           "start_time": 114.603,
           "end_time": 115.283,
           "identifier": "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/202-0",
-          "voice": "Speaker A"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Speaker A"
+            }
+          ]
         }
       ],
       "orig": "See you.",

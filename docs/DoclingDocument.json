@@ -3224,6 +3224,7 @@
         "identifier": {
           "anyOf": [
             {
+              "pattern": "^(?!.*-->)[^\\n\\r]+$",
               "type": "string"
             },
             {
@@ -3239,29 +3240,18 @@
           ],
           "title": "Identifier"
         },
-        "voice": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The cue voice (speaker)",
-          "examples": [
-            "Mary",
-            "Fred",
-            "Name Surname"
-          ],
-          "title": "Voice"
-        },
-        "languages": {
+        "tags": {
           "anyOf": [
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/WebVTTCueSpanStartTag"
+                  },
+                  {
+                    "$ref": "#/$defs/WebVTTCueSpanStartTagAnnotated"
+                  }
+                ]
               },
               "type": "array"
             },
@@ -3270,39 +3260,27 @@
             }
           ],
           "default": null,
-          "description": "Languages of the cue in BCP 47 language tag format",
+          "description": "A list of tags that apply to a cue, including the voice tag (the speaker in a track).",
           "examples": [
             [
-              "en",
-              "en-GB"
+              {
+                "annotation": "John",
+                "classes": [
+                  "loud"
+                ],
+                "name": "v"
+              }
             ],
             [
-              "fr-CA"
+              {
+                "classes": [
+                  "foreignphrase"
+                ],
+                "name": "i"
+              }
             ]
           ],
-          "title": "Languages"
-        },
-        "classes": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "minItems": 1,
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Classes for describing the cue significance",
-          "examples": [
-            "b.first",
-            "v.loud",
-            "c.yellow"
-          ],
-          "title": "Classes"
+          "title": "Tags"
         }
       },
       "required": [
@@ -3310,6 +3288,90 @@
         "end_time"
       ],
       "title": "TrackProvenance",
+      "type": "object"
+    },
+    "WebVTTCueSpanStartTag": {
+      "description": "WebVTT cue span start tag.",
+      "properties": {
+        "name": {
+          "description": "The tag name",
+          "enum": [
+            "c",
+            "b",
+            "i",
+            "u",
+            "v",
+            "lang"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "classes": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of classes representing the cue span's significance",
+          "title": "Classes"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "WebVTTCueSpanStartTag",
+      "type": "object"
+    },
+    "WebVTTCueSpanStartTagAnnotated": {
+      "description": "WebVTT cue span start tag requiring an annotation.",
+      "properties": {
+        "name": {
+          "description": "The tag name",
+          "enum": [
+            "c",
+            "b",
+            "i",
+            "u",
+            "v",
+            "lang"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "classes": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of classes representing the cue span's significance",
+          "title": "Classes"
+        },
+        "annotation": {
+          "description": "Cue span start tag annotation",
+          "title": "Annotation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "annotation"
+      ],
+      "title": "WebVTTCueSpanStartTagAnnotated",
       "type": "object"
     }
   },

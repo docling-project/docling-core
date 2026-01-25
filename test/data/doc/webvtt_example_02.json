@@ -93,9 +93,15 @@
           "kind": "track",
           "start_time": 0.0,
           "end_time": 2.0,
-          "voice": "Esme",
-          "classes": [
-            "v.first.loud"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Esme",
+              "classes": [
+                "first",
+                "loud"
+              ]
+            }
           ]
         }
       ],
@@ -115,7 +121,12 @@
           "kind": "track",
           "start_time": 2.0,
           "end_time": 4.0,
-          "voice": "Mary"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Mary"
+            }
+          ]
         }
       ],
       "orig": "No way!",
@@ -134,7 +145,12 @@
           "kind": "track",
           "start_time": 4.0,
           "end_time": 6.0,
-          "voice": "Esme"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Esme"
+            }
+          ]
         }
       ],
       "orig": "Hee!",
@@ -196,9 +212,14 @@
           "kind": "track",
           "start_time": 6.0,
           "end_time": 8.0,
-          "voice": "Mary",
-          "classes": [
-            "v.loud"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Mary",
+              "classes": [
+                "loud"
+              ]
+            }
           ]
         }
       ],
@@ -236,11 +257,17 @@
           "kind": "track",
           "start_time": 8.0,
           "end_time": 10.0,
-          "languages": [
-            "en"
-          ],
-          "classes": [
-            "i.foreignphrase"
+          "tags": [
+            {
+              "name": "lang",
+              "annotation": "en"
+            },
+            {
+              "name": "i",
+              "classes": [
+                "foreignphrase"
+              ]
+            }
           ]
         }
       ],

@@ -152,9 +152,7 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         text: str = doc_serializer.post_process(
             text=item.text,
             formatting=item.formatting,
-            voice=prov.voice,
-            languages=prov.languages,
-            classes=prov.classes,
+            tags=prov.tags,
         )
         if is_inline_scope:
             # Iteratively remove unnecessary consecutive tag pairs until no more changes
@@ -394,7 +392,7 @@ class WebVTTDocSerializer(DocSerializer):
         text: str,
         tag: START_TAG_NAMES,
         anno: str | None = None,
-        css: list[str] = [],
+        css: list[str] | None = None,
     ) -> str:
         """Apply serialization to a WebVTT cue span."""
         start_tag: WebVTTCueSpanStartTag
@@ -504,9 +502,7 @@ class WebVTTDocSerializer(DocSerializer):
         self,
         text: str,
         formatting: Formatting | None = None,
-        voice: str | None = None,
-        languages: list[str] | None = None,
-        classes: list[str] | None = None,
+        tags: list[WebVTTCueSpanStartTag | WebVTTCueSpanStartTagAnnotated] | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps by adding formatting tags.
@@ -521,25 +517,40 @@ class WebVTTDocSerializer(DocSerializer):
             6. voice (<v>)
         """
         res: str = text
-        cls: dict[str, list[str]] = self._extract_classes(classes) if classes else {}
+        # cls: dict[str, list[str]] = self._extract_classes(classes) if classes else {}
 
-        for lang in languages or []:
-            res = self.serialize_cue_span(text=res, tag="lang", anno=lang, css=cls.get("lang", []))
+        languages: list[WebVTTCueSpanStartTagAnnotated] = [
+            item for item in tags or [] if isinstance(item, WebVTTCueSpanStartTagAnnotated) and item.name == "lang"
+        ]
+        for lang in languages:
+            res = self.serialize_cue_span(text=res, tag="lang", anno=lang.annotation, css=lang.classes)
 
-        res = super().post_process(text=res, formatting=formatting, classes=cls)
+        format_classes = {
+            item.name: item.classes
+            for item in tags or []
+            if isinstance(item, WebVTTCueSpanStartTag) and item.name in {"u", "i", "b"}
+        }
+        res = super().post_process(text=res, formatting=formatting, classes=format_classes)
 
-        if "c" in cls:
+        class_tag: list[WebVTTCueSpanStartTag] = [
+            item for item in tags or [] if isinstance(item, WebVTTCueSpanStartTag) and item.name == "c"
+        ]
+        if class_tag:
             res = self.serialize_cue_span(
                 text=res,
                 tag="c",
-                css=cls.get("c", []),
+                css=class_tag[0].classes,
             )
+
+        voice: list[WebVTTCueSpanStartTagAnnotated] = [
+            item for item in tags or [] if isinstance(item, WebVTTCueSpanStartTagAnnotated) and item.name == "v"
+        ]
         if voice:
             res = self.serialize_cue_span(
                 text=res,
                 tag="v",
-                anno=voice,
-                css=cls.get("v", []),
+                anno=voice[0].annotation,
+                css=voice[0].classes,
             )
 
         return res

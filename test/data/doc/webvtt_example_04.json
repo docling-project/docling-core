@@ -139,8 +139,13 @@
           "kind": "track",
           "start_time": 5.0,
           "end_time": 9.0,
-          "classes": [
-            "b.loud"
+          "tags": [
+            {
+              "name": "b",
+              "classes": [
+                "loud"
+              ]
+            }
           ]
         }
       ],
@@ -185,7 +190,12 @@
           "kind": "track",
           "start_time": 5.0,
           "end_time": 9.0,
-          "voice": "John"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "John"
+            }
+          ]
         }
       ],
       "orig": "This is true.",

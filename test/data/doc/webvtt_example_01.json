@@ -76,7 +76,12 @@
           "kind": "track",
           "start_time": 11.0,
           "end_time": 13.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "We are in New York City",
@@ -95,7 +100,12 @@
           "kind": "track",
           "start_time": 13.0,
           "end_time": 16.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "We’re actually at the Lucern Hotel, just down the street",
@@ -114,7 +124,12 @@
           "kind": "track",
           "start_time": 16.0,
           "end_time": 18.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "from the American Museum of Natural History",
@@ -133,7 +148,12 @@
           "kind": "track",
           "start_time": 18.0,
           "end_time": 20.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "And with me is Neil deGrasse Tyson",
@@ -152,7 +172,12 @@
           "kind": "track",
           "start_time": 20.0,
           "end_time": 22.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "Astrophysicist, Director of the Hayden Planetarium",
@@ -171,7 +196,12 @@
           "kind": "track",
           "start_time": 22.0,
           "end_time": 24.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "at the AMNH.",
@@ -190,7 +220,12 @@
           "kind": "track",
           "start_time": 24.0,
           "end_time": 26.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "Thank you for walking down here.",
@@ -209,7 +244,12 @@
           "kind": "track",
           "start_time": 27.0,
           "end_time": 30.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "And I want to do a follow-up on the last conversation we did.",
@@ -228,7 +268,12 @@
           "kind": "track",
           "start_time": 30.0,
           "end_time": 31.5,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "When we e-mailed—",
@@ -247,7 +292,12 @@
           "kind": "track",
           "start_time": 30.5,
           "end_time": 32.5,
-          "voice": "Neil deGrasse Tyson"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Neil deGrasse Tyson"
+            }
+          ]
         }
       ],
       "orig": "Didn’t we talk about enough in that conversation?",
@@ -266,7 +316,12 @@
           "kind": "track",
           "start_time": 32.0,
           "end_time": 35.5,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "No! No no no no; 'cos 'cos obviously 'cos",
@@ -285,7 +340,12 @@
           "kind": "track",
           "start_time": 32.5,
           "end_time": 33.5,
-          "voice": "Neil deGrasse Tyson"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Neil deGrasse Tyson"
+            }
+          ]
         }
       ],
       "orig": "Laughs",
@@ -311,7 +371,12 @@
           "kind": "track",
           "start_time": 35.5,
           "end_time": 38.0,
-          "voice": "Roger Bingham"
+          "tags": [
+            {
+              "name": "v",
+              "annotation": "Roger Bingham"
+            }
+          ]
         }
       ],
       "orig": "You know I’m so excited my glasses are falling off here.",

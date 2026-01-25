@@ -233,19 +233,19 @@ class WebVTTCueSpanStartTag(BaseModel):
 
     name: Annotated[START_TAG_NAMES, Field(description="The tag name")]
     classes: Annotated[
-        list[str],
+        list[str] | None,
         Field(description="List of classes representing the cue span's significance"),
-    ] = []
+    ] = None
 
     @field_validator("classes", mode="after")
     @classmethod
-    def validate_classes(cls, value: list[str]) -> list[str]:
+    def validate_classes(cls, value: list[str] | None) -> list[str] | None:
         """Validate cue span start tag classes."""
-        for item in value:
+        for item in value or []:
             if any(ch in item for ch in {"\t", "\n", "\r", " ", "&", "<", ">", "."}):
                 raise ValueError("A cue span start tag class contains invalid characters")
             if not item:
-                raise ValueError("Cue span start tag classes cannot be empty")
+                raise ValueError("A cue span start tag class cannot be empty")
         return value
 
     def _get_name_with_classes(self) -> str:
@@ -501,7 +501,7 @@ class WebVTTCueBlock(BaseModel):
                             raise ValueError(f"Incorrect end tag: {ct}")
                         class_string = closed["class"]
                         annotation = closed["annotation"]
-                        classes: list[str] = []
+                        classes: list[str] | None = None
                         if class_string:
                             classes = [c for c in class_string.split(".") if c]
                         st: WebVTTCueSpanStartTag
