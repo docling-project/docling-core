@@ -25,6 +25,8 @@ class TableVisualizer(BaseVisualizer):
         show_cells: bool = True
         show_rows: bool = False
         show_cols: bool = False
+        minimal_row_bboxes: bool = True
+        minimal_col_bboxes: bool = True
 
         cell_color: tuple[int, int, int, int] = (255, 0, 0, 32)
         cell_outline: tuple[int, int, int, int] = (255, 0, 0, 128)
@@ -104,7 +106,7 @@ class TableVisualizer(BaseVisualizer):
         overlay_draw = ImageDraw.Draw(overlay)
         main_draw = ImageDraw.Draw(page_image)
 
-        rows = table.data.get_row_bounding_boxes()
+        rows = table.data.get_row_bounding_boxes(minimal=self.params.minimal_row_bboxes)
 
         for rid, bbox in rows.items():
             tl_bbox = bbox.to_top_left_origin(page_height=page_height)
@@ -139,7 +141,7 @@ class TableVisualizer(BaseVisualizer):
         overlay_draw = ImageDraw.Draw(overlay)
         main_draw = ImageDraw.Draw(page_image)
 
-        cols = table.data.get_column_bounding_boxes()
+        cols = table.data.get_column_bounding_boxes(minimal=self.params.minimal_col_bboxes)
 
         for cid, bbox in cols.items():
             tl_bbox = bbox.to_top_left_origin(page_height=page_height)
