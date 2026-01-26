@@ -564,13 +564,17 @@ class TableData(BaseModel):  # TBD
         """
         self.insert_row(row_index=self.num_rows - 1, row=row, after=True)
 
-    def get_row_bounding_boxes(self) -> dict[int, BoundingBox]:
-        """Get the minimal bounding box for each row in the table.
+    def get_row_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
+        """Get the bounding box for each row in the table.
+
+        Args:
+            minimal: If True (default), returns the minimal bounding box for each
+                row based on its cells. If False, all rows will have uniform
+                horizontal extent (same x0/x1 values) spanning the full table width.
 
         Returns:
-        List[Optional[BoundingBox]]: A list where each element is the minimal
-        bounding box that encompasses all cells in that row, or None if no
-        cells in the row have bounding boxes.
+            dict[int, BoundingBox]: A dictionary mapping row indices to their
+            bounding boxes. Only rows with cells that have bounding boxes are included.
         """
         coords = []
         for cell in self.table_cells:
@@ -609,15 +613,27 @@ class TableData(BaseModel):  # TBD
 
                 row_bboxes[row_idx] = row_bbox
 
+        # If not minimal, make all rows have uniform horizontal extent
+        if not minimal and row_bboxes:
+            global_l = min(bbox.l for bbox in row_bboxes.values())
+            global_r = max(bbox.r for bbox in row_bboxes.values())
+            for bbox in row_bboxes.values():
+                bbox.l = global_l
+                bbox.r = global_r
+
         return row_bboxes
 
-    def get_column_bounding_boxes(self) -> dict[int, BoundingBox]:
-        """Get the minimal bounding box for each column in the table.
+    def get_column_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
+        """Get the bounding box for each column in the table.
+
+        Args:
+            minimal: If True (default), returns the minimal bounding box for each
+                column based on its cells. If False, all columns will have uniform
+                vertical extent (same y0/y1 values) spanning the full table height.
 
         Returns:
-            List[Optional[BoundingBox]]: A list where each element is the minimal
-            bounding box that encompasses all cells in that column, or None if no
-            cells in the column have bounding boxes.
+            dict[int, BoundingBox]: A dictionary mapping column indices to their
+            bounding boxes. Only columns with cells that have bounding boxes are included.
         """
         coords = []
         for cell in self.table_cells:
@@ -660,6 +676,20 @@ class TableData(BaseModel):  # TBD
                             col_bbox.t = max(col_bbox.t, bbox.t)
 
                 col_bboxes[col_idx] = col_bbox
+
+        # If not minimal, make all columns have uniform vertical extent
+        if not minimal and col_bboxes:
+            # Get the coord_origin from the first bbox (they're all the same)
+            first_bbox = next(iter(col_bboxes.values()))
+            if first_bbox.coord_origin == CoordOrigin.TOPLEFT:
+                global_t = min(bbox.t for bbox in col_bboxes.values())
+                global_b = max(bbox.b for bbox in col_bboxes.values())
+            else:  # BOTTOMLEFT
+                global_t = max(bbox.t for bbox in col_bboxes.values())
+                global_b = min(bbox.b for bbox in col_bboxes.values())
+            for bbox in col_bboxes.values():
+                bbox.t = global_t
+                bbox.b = global_b
 
         return col_bboxes
 
