@@ -163,19 +163,13 @@
           "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
-          "identifier": "agcvs-08234",
-          "tags": [
-            {
-              "name": "lang",
-              "annotation": "es-ES"
-            }
-          ]
+          "identifier": "agcvs-08234"
         }
       ],
       "orig": "paella",
       "text": "paella",
       "formatting": {
-        "bold": false,
+        "bold": true,
         "italic": true,
         "underline": false,
         "strikethrough": false,
@@ -233,15 +227,7 @@
           "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
-          "identifier": "agcvs-08234",
-          "tags": [
-            {
-              "name": "b",
-              "classes": [
-                "loud"
-              ]
-            }
-          ]
+          "identifier": "agcvs-08234"
         }
       ],
       "orig": "unexpected",
@@ -293,13 +279,7 @@
           "kind": "track",
           "start_time": 14760.0,
           "end_time": 14818.239,
-          "identifier": "agcvs-08234",
-          "tags": [
-            {
-              "name": "lang",
-              "annotation": "it"
-            }
-          ]
+          "identifier": "agcvs-08234"
         }
       ],
       "orig": "arcobaleno",

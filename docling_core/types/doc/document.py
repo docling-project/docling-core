@@ -1233,17 +1233,11 @@ class TrackSource(BaseSource):
         ),
     ]
     identifier: Annotated[
-        WebVTTCueIdentifier | None, Field(description="An identifier of the cue", examples=["test", "123", "b72d946"])
+        str | None, Field(description="An identifier of the cue", examples=["test", "123", "b72d946"])
     ] = None
-    tags: Annotated[
-        list[WebVTTCueSpanStartTag | WebVTTCueSpanStartTagAnnotated] | None,
-        Field(
-            description="A list of tags that apply to a cue, including the voice tag (the speaker in a track).",
-            examples=[
-                [WebVTTCueSpanStartTagAnnotated(name="v", classes=["loud"], annotation="John")],
-                [WebVTTCueSpanStartTag(name="i", classes=["foreignphrase"])],
-            ],
-        ),
+    voice: Annotated[
+        str | None,
+        Field(description="The name of the voice in this track (the speaker)", examples=["John", "Mary", "Speaker 1"]),
     ] = None
 
     @model_validator(mode="after")
@@ -1426,7 +1420,7 @@ class PictureMeta(FloatingMeta):
     tabular_chart: Optional[TabularChartMetaField] = None
 
 
-class NodeItem(BaseModel, validate_assignment=True):
+class NodeItem(BaseModel):
     """NodeItem."""
 
     self_ref: str = Field(pattern=_JSON_POINTER_REGEX)
@@ -3155,6 +3149,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_text.
 
@@ -3242,6 +3238,8 @@ class DoclingDocument(BaseModel):
             )
             if prov:
                 text_item.prov.append(prov)
+            if source:
+                text_item.source.append(source)
 
             if content_layer:
                 text_item.content_layer = content_layer

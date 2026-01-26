@@ -2,9 +2,10 @@
 
 import logging
 import re
+from pathlib import Path
 from typing import Any, get_args
 
-from pydantic import BaseModel
+from pydantic import AnyUrl, BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -144,15 +145,13 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         if not item.text or not item.source or item.source[0].kind != "track":
             return create_ser_result()
 
-        # Apply post-processing here: formatting, classes, language, and voice
-        # If the TextItem is part of an InlineGroup, we need to further post-process it
-        # within the group context
-
-        prov: TrackSource = item.source[0]
+        # Apply post-processing here: formatting and voice.
+        # If the TextItem is part of an InlineGroup, we need to further post-process it within the group context.
+        source: TrackSource = item.source[0]
         text: str = doc_serializer.post_process(
             text=item.text,
             formatting=item.formatting,
-            tags=prov.tags,
+            voice=source.voice,
         )
         if is_inline_scope:
             # Iteratively remove unnecessary consecutive tag pairs until no more changes
@@ -355,55 +354,42 @@ class WebVTTDocSerializer(DocSerializer):
         return False
 
     @override
-    def serialize_bold(self, text: str, **kwargs: Any) -> str:
+    def serialize_bold(self, text: str, **kwargs) -> str:
         """Apply WebVTT-specific bold serialization."""
-        classes: list[str] = kwargs.get("classes", {}).get("b", [])
 
-        return self.serialize_cue_span(
-            text,
-            tag="b",
-            css=classes,
-        )
+        return self.serialize_cue_span(text=text, tag="b")
 
     @override
-    def serialize_italic(self, text: str, **kwargs: Any) -> str:
+    def serialize_italic(self, text: str, **kwargs) -> str:
         """Apply WebVTT-specific italic serialization."""
-        classes: list[str] = kwargs.get("classes", {}).get("i", [])
 
-        return self.serialize_cue_span(
-            text,
-            tag="i",
-            css=classes,
-        )
+        return self.serialize_cue_span(text=text, tag="i")
 
     @override
-    def serialize_underline(self, text: str, **kwargs: Any) -> str:
+    def serialize_underline(self, text: str, **kwargs) -> str:
         """Apply WebVTT-specific underline serialization."""
-        classes: list[str] = kwargs.get("classes", {}).get("u", [])
 
-        return self.serialize_cue_span(
-            text,
-            tag="u",
-            css=classes,
-        )
+        return self.serialize_cue_span(text=text, tag="u")
 
     def serialize_cue_span(
         self,
         text: str,
         tag: START_TAG_NAMES,
         anno: str | None = None,
-        css: list[str] | None = None,
     ) -> str:
-        """Apply serialization to a WebVTT cue span."""
+        """Apply serialization to a WebVTT cue span.
+
+        Currently, only b, i, u, and v tags are supported.
+        """
         start_tag: WebVTTCueSpanStartTag
-        if tag in {"b", "i", "u", "c"}:
-            start_tag = WebVTTCueSpanStartTag(name=tag, classes=css)
-        elif tag in {"v", "lang"}:
+        if tag in {"b", "i", "u"}:
+            start_tag = WebVTTCueSpanStartTag(name=tag)
+        elif tag in {"v"}:
             if not anno:
                 _logger.warning(f"Invalid {tag} cue span without annotation: {text}")
                 return text
             else:
-                start_tag = WebVTTCueSpanStartTagAnnotated(name=tag, classes=css, annotation=anno)
+                start_tag = WebVTTCueSpanStartTagAnnotated(name=tag, annotation=anno)
         else:
             return text
 
@@ -501,56 +487,26 @@ class WebVTTDocSerializer(DocSerializer):
     def post_process(
         self,
         text: str,
+        *,
         formatting: Formatting | None = None,
-        tags: list[WebVTTCueSpanStartTag | WebVTTCueSpanStartTagAnnotated] | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps by adding formatting tags.
 
         The order of the formatting tags is determined by this function and `DocSerializer.post_process`,
         from the innermost to the outermost:
-            1. language (<lang>)
-            2. underline (<u>)
-            3. italic (<i>)
-            4. bold (<b>)
-            5. class (<c>)
-            6. voice (<v>)
+            1. underline (<u>)
+            2. italic (<i>)
+            3. bold (<b>)
+            4. voice (<v>)
         """
         res: str = text
-        # cls: dict[str, list[str]] = self._extract_classes(classes) if classes else {}
 
-        languages: list[WebVTTCueSpanStartTagAnnotated] = [
-            item for item in tags or [] if isinstance(item, WebVTTCueSpanStartTagAnnotated) and item.name == "lang"
-        ]
-        for lang in languages:
-            res = self.serialize_cue_span(text=res, tag="lang", anno=lang.annotation, css=lang.classes)
+        res = super().post_process(text=res, formatting=formatting)
 
-        format_classes = {
-            item.name: item.classes
-            for item in tags or []
-            if isinstance(item, WebVTTCueSpanStartTag) and item.name in {"u", "i", "b"}
-        }
-        res = super().post_process(text=res, formatting=formatting, classes=format_classes)
-
-        class_tag: list[WebVTTCueSpanStartTag] = [
-            item for item in tags or [] if isinstance(item, WebVTTCueSpanStartTag) and item.name == "c"
-        ]
-        if class_tag:
-            res = self.serialize_cue_span(
-                text=res,
-                tag="c",
-                css=class_tag[0].classes,
-            )
-
-        voice: list[WebVTTCueSpanStartTagAnnotated] = [
-            item for item in tags or [] if isinstance(item, WebVTTCueSpanStartTagAnnotated) and item.name == "v"
-        ]
+        voice: str | None = kwargs.get("voice", None)
         if voice:
-            res = self.serialize_cue_span(
-                text=res,
-                tag="v",
-                anno=voice[0].annotation,
-                css=voice[0].classes,
-            )
+            res = self.serialize_cue_span(text=res, tag="v", anno=voice)
 
         return res

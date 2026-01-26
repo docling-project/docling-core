@@ -93,16 +93,7 @@
           "kind": "track",
           "start_time": 0.0,
           "end_time": 2.0,
-          "tags": [
-            {
-              "name": "v",
-              "annotation": "Esme",
-              "classes": [
-                "first",
-                "loud"
-              ]
-            }
-          ]
+          "voice": "Esme"
         }
       ],
       "orig": "It\u2019s a blue apple tree!",
@@ -121,12 +112,7 @@
           "kind": "track",
           "start_time": 2.0,
           "end_time": 4.0,
-          "tags": [
-            {
-              "name": "v",
-              "annotation": "Mary"
-            }
-          ]
+          "voice": "Mary"
         }
       ],
       "orig": "No way!",
@@ -145,12 +131,7 @@
           "kind": "track",
           "start_time": 4.0,
           "end_time": 6.0,
-          "tags": [
-            {
-              "name": "v",
-              "annotation": "Esme"
-            }
-          ]
+          "voice": "Esme"
         }
       ],
       "orig": "Hee!",
@@ -212,15 +193,7 @@
           "kind": "track",
           "start_time": 6.0,
           "end_time": 8.0,
-          "tags": [
-            {
-              "name": "v",
-              "annotation": "Mary",
-              "classes": [
-                "loud"
-              ]
-            }
-          ]
+          "voice": "Mary"
         }
       ],
       "orig": "That\u2019s awesome!",
@@ -256,19 +229,7 @@
         {
           "kind": "track",
           "start_time": 8.0,
-          "end_time": 10.0,
-          "tags": [
-            {
-              "name": "lang",
-              "annotation": "en"
-            },
-            {
-              "name": "i",
-              "classes": [
-                "foreignphrase"
-              ]
-            }
-          ]
+          "end_time": 10.0
         }
       ],
       "orig": "playground",

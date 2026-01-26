@@ -40,40 +40,30 @@ def test_prov():
         Prov(**prov)
 
 
-def test_track_provenance():
+def test_track_source():
     """Test the class TrackSource."""
 
     valid_track = TrackSource(
         start_time=11.0,
         end_time=12.0,
         identifier="test",
-        tags = [
-            {"name": "v", "annotation": "Mary", "classes": ["first", "loud"]},
-            {"name": "lang", "annotation": "en"},
-            {"name": "lang", "annotation": "en-GB"},
-            {"name": "i", "classes": ["foreignphrase"]},
-        ]
+        voice="Mary",
     )
 
     assert valid_track
     assert valid_track.start_time == 11.0
     assert valid_track.end_time == 12.0
     assert valid_track.identifier == "test"
-    assert valid_track.tags
-    assert valid_track.tags[0].annotation == "Mary"
-    assert valid_track.tags[0].classes == ["first", "loud"]
-    assert valid_track.tags[1].annotation == "en"
-    assert valid_track.tags[2].annotation == "en-GB"
-    assert valid_track.tags[3].classes == ["foreignphrase"]
+    assert valid_track.voice == "Mary"
 
     with pytest.raises(ValidationError, match="end_time"):
         TrackSource(start_time=11.0)
 
-    with pytest.raises(ValidationError, match="should be a valid dictionary"):
+    with pytest.raises(ValidationError, match="should be a valid string"):
         TrackSource(
             start_time=11.0,
             end_time=12.0,
-            tags=["en"],
+            voice=["Mary"],
         )
 
     with pytest.raises(ValidationError, match="must be greater than start"):
@@ -83,7 +73,7 @@ def test_track_provenance():
         )
 
     doc = DoclingDocument(name="Unknown")
-    item = doc.add_text(text="Hello world", label=DocItemLabel.TEXT)
-    item.source = [valid_track]
-    with pytest.raises(ValidationError, match="should be a valid list"):
-        item.source = "Invalid source"
+    item = doc.add_text(text="Hello world", label=DocItemLabel.TEXT, source=valid_track)
+    assert item.source
+    assert len(item.source) == 1
+    assert item.source[0] == valid_track
