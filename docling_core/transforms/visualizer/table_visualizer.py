@@ -37,6 +37,9 @@ class TableVisualizer(BaseVisualizer):
         row_header_color: tuple[int, int, int, int] = (0, 255, 0, 32)
         row_header_outline: tuple[int, int, int, int] = (0, 255, 0, 128)
 
+        row_section_color: tuple[int, int, int, int] = (255, 165, 0, 32)
+        row_section_outline: tuple[int, int, int, int] = (255, 165, 0, 128)
+
         col_color: tuple[int, int, int, int] = (0, 255, 0, 32)
         col_outline: tuple[int, int, int, int] = (0, 255, 0, 128)
 
@@ -73,8 +76,8 @@ class TableVisualizer(BaseVisualizer):
                     cell_color = self.params.row_header_color
                     cell_outline = self.params.row_header_outline
                 if cell.row_section:
-                    cell_color = self.params.row_header_color
-                    cell_outline = self.params.row_header_outline
+                    cell_color = self.params.row_section_color
+                    cell_outline = self.params.row_section_outline
 
                 cx0, cy0, cx1, cy1 = tl_bbox.as_tuple()
                 cx0 *= scale_x
