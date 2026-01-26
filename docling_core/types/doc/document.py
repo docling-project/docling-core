@@ -1199,27 +1199,25 @@ class ProvenanceItem(BaseModel):
     charspan: Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
 
 
-class BaseProvenance(BaseModel):
-    """Base class for provenance information.
+class BaseSource(BaseModel):
+    """Base class for source information.
 
-    Represents the provenance of an extracted component within a digital asset.
+    Represents the source of an extracted component within a digital asset.
     """
 
-    kind: Annotated[
-        str, Field(description="Kind of provenance. It is used as a discriminator for the provenance type.")
-    ]
+    kind: Annotated[str, Field(description="Kind of source. It is used as a discriminator for the source type.")]
 
 
-class TrackProvenance(BaseProvenance):
-    """Provenance metadata for a cue extracted from a media track.
+class TrackSource(BaseSource):
+    """Source metadata for a cue extracted from a media track.
 
-    A `TrackProvenance` instance identifies a cue in a media track (audio, video, subtitles, screen-recording captions,
+    A `TrackSource` instance identifies a cue in a media track (audio, video, subtitles, screen-recording captions,
     etc.). A *cue* here refers to any discrete segment that was pulled out of the original asset, e.g., a subtitle
     block, an audio clip, or a timed marker in a screen-recording.
     """
 
     model_config = ConfigDict(regex_engine="python-re")
-    kind: Annotated[Literal["track"], Field(description="Identifiers this type of provenance.")] = "track"
+    kind: Annotated[Literal["track"], Field(description="Identifies this type of source.")] = "track"
     start_time: Annotated[
         float,
         Field(
@@ -1256,19 +1254,18 @@ class TrackProvenance(BaseProvenance):
         return self
 
 
-ProvenanceType = Annotated[Union[TrackProvenance], Field(discriminator="kind")]
-"""Union type for all provenance types.
+SourceType = Annotated[Union[TrackSource], Field(discriminator="kind")]
+"""Union type for all source types.
 
-This type alias represents a discriminated union of all available provenance types that can be associated with
+This type alias represents a discriminated union of all available source types that can be associated with
 extracted elements in a document. The `kind` field is used as a discriminator to determine the specific
-provenance type at runtime.
+source type at runtime.
 
-Currently supported provenance types:
-    - `TrackProvenance`: For elements extracted from media assets (audio, video, subtitles)
+Currently supported source types:
+    - `TrackSource`: For elements extracted from media assets (audio, video, subtitles)
 
 Notes:
-    - Additional provenance types may be added to this union in the future to support
-        other content sources.
+    - Additional source types may be added to this union in the future to support other content sources.
     - For documents with an implicit or explicity layout, such as PDF, HTML, docx, pptx, or markdown files, the
         `ProvenanceItem` should still be used.
 """
@@ -1582,7 +1579,7 @@ class DocItem(NodeItem):
     label: DocItemLabel
     prov: list[ProvenanceItem] = []
     source: Annotated[
-        list[ProvenanceType],
+        list[SourceType],
         Field(
             description="The provenance of this document item. Currently, it is only used for media track provenance."
         ),

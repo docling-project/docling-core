@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from docling_core.types.doc import DocItemLabel, DoclingDocument, TrackProvenance
+from docling_core.types.doc import DocItemLabel, DoclingDocument, TrackSource
 from docling_core.types.legacy_doc.base import Prov, S3Reference
 
 
@@ -41,9 +41,9 @@ def test_prov():
 
 
 def test_track_provenance():
-    """Test the class TrackProvenance."""
+    """Test the class TrackSource."""
 
-    valid_track = TrackProvenance(
+    valid_track = TrackSource(
         start_time=11.0,
         end_time=12.0,
         identifier="test",
@@ -67,17 +67,17 @@ def test_track_provenance():
     assert valid_track.tags[3].classes == ["foreignphrase"]
 
     with pytest.raises(ValidationError, match="end_time"):
-        TrackProvenance(start_time=11.0)
+        TrackSource(start_time=11.0)
 
     with pytest.raises(ValidationError, match="should be a valid dictionary"):
-        TrackProvenance(
+        TrackSource(
             start_time=11.0,
             end_time=12.0,
             tags=["en"],
         )
 
     with pytest.raises(ValidationError, match="must be greater than start"):
-        TrackProvenance(
+        TrackSource(
             start_time=11.0,
             end_time=11.0,
         )

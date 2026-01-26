@@ -41,7 +41,7 @@ from docling_core.types.doc.document import (
     TableItem,
     TextItem,
     TitleItem,
-    TrackProvenance,
+    TrackSource,
 )
 from docling_core.types.doc.webvtt import (
     START_TAG_NAMES,
@@ -140,7 +140,7 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, TitleItem):
             return create_ser_result(text=item.text, span_source=item)
 
-        # Only process items with TrackProvenance (WebVTT cues)
+        # Only process items with TrackSource (WebVTT cues)
         if not item.text or not item.source or item.source[0].kind != "track":
             return create_ser_result()
 
@@ -148,7 +148,7 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         # If the TextItem is part of an InlineGroup, we need to further post-process it
         # within the group context
 
-        prov: TrackProvenance = item.source[0]
+        prov: TrackSource = item.source[0]
         text: str = doc_serializer.post_process(
             text=item.text,
             formatting=item.formatting,
@@ -415,7 +415,7 @@ class WebVTTDocSerializer(DocSerializer):
         """Extract tag and values from provenance classes.
 
         Args:
-            classes: The classes from a TrackProvenance object.
+            classes: The classes from a TrackSource object.
 
         Returns:
             Map of tag to class values.
@@ -462,7 +462,7 @@ class WebVTTDocSerializer(DocSerializer):
             if isinstance(doc_item, InlineGroup) and doc_item.children:
                 doc_item = doc_item.children[0].resolve(doc=self.doc)
             if isinstance(doc_item, TextItem) and doc_item.source and doc_item.source[0].kind == "track":
-                prov: TrackProvenance = doc_item.source[0]
+                prov: TrackSource = doc_item.source[0]
                 if (
                     prov.identifier == id
                     and timings

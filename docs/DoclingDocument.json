@@ -244,13 +244,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -681,13 +681,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -842,13 +842,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -1266,13 +1266,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -1457,13 +1457,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -1852,13 +1852,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -2455,13 +2455,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -2769,13 +2769,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -2993,13 +2993,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -3124,13 +3124,13 @@
           "items": {
             "discriminator": {
               "mapping": {
-                "track": "#/$defs/TrackProvenance"
+                "track": "#/$defs/TrackSource"
               },
               "propertyName": "kind"
             },
             "oneOf": [
               {
-                "$ref": "#/$defs/TrackProvenance"
+                "$ref": "#/$defs/TrackSource"
               }
             ]
           },
@@ -3191,13 +3191,13 @@
       "title": "TitleItem",
       "type": "object"
     },
-    "TrackProvenance": {
-      "description": "Provenance metadata for a cue extracted from a media track.\n\nA `TrackProvenance` instance identifies a cue in a media track (audio, video, subtitles, screen-recording captions,\netc.). A *cue* here refers to any discrete segment that was pulled out of the original asset, e.g., a subtitle\nblock, an audio clip, or a timed marker in a screen-recording.",
+    "TrackSource": {
+      "description": "Source metadata for a cue extracted from a media track.\n\nA `TrackSource` instance identifies a cue in a media track (audio, video, subtitles, screen-recording captions,\netc.). A *cue* here refers to any discrete segment that was pulled out of the original asset, e.g., a subtitle\nblock, an audio clip, or a timed marker in a screen-recording.",
       "properties": {
         "kind": {
           "const": "track",
           "default": "track",
-          "description": "Identifiers this type of provenance.",
+          "description": "Identifies this type of source.",
           "title": "Kind",
           "type": "string"
         },
@@ -3287,7 +3287,7 @@
         "start_time",
         "end_time"
       ],
-      "title": "TrackProvenance",
+      "title": "TrackSource",
       "type": "object"
     },
     "WebVTTCueSpanStartTag": {

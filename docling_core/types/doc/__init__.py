@@ -57,11 +57,11 @@ from .document import (
     PictureStackedBarChartData,
     PictureTabularChartData,
     ProvenanceItem,
-    ProvenanceType,
     RefItem,
     RichTableCell,
     Script,
     SectionHeaderItem,
+    SourceType,
     SummaryMetaField,
     TableAnnotationType,
     TableCell,
@@ -70,7 +70,7 @@ from .document import (
     TabularChartMetaField,
     TextItem,
     TitleItem,
-    TrackProvenance,
+    TrackSource,
     UnorderedList,
 )
 from .labels import (
