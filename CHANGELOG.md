@@ -1,3 +1,14 @@
+## [v2.61.0](https://github.com/docling-project/docling-core/releases/tag/v2.61.0) - 2026-01-26
+
+### Feature
+
+* Added  parameter to get_row_bounding_boxes and get_column_bounding_boxes ([#490](https://github.com/docling-project/docling-core/issues/490)) ([`577a1a7`](https://github.com/docling-project/docling-core/commit/577a1a7b42f3c6bfb7699fb04dd5ba79757349e7))
+* **IDocTags:** Add content wrapping for handling whitespace ([#489](https://github.com/docling-project/docling-core/issues/489)) ([`fdcdfd1`](https://github.com/docling-project/docling-core/commit/fdcdfd1f275c903c01849c60eb0eba54ea1b9453))
+
+### Fix
+
+* **IDocTags:** Align code labels with Linguist ([#484](https://github.com/docling-project/docling-core/issues/484)) ([`e5c0015`](https://github.com/docling-project/docling-core/commit/e5c0015fbeb3d71e391fde1f72fa7034d00f3479))
+
 ## [v2.60.2](https://github.com/docling-project/docling-core/releases/tag/v2.60.2) - 2026-01-23
 
 ### Fix

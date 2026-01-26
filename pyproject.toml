@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.60.2"  # DO NOT EDIT, updated automatically
+version = "2.61.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
