@@ -65,6 +65,7 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
+from docling_core.types.doc.webvtt import WebVTTCueIdentifier, WebVTTCueSpanStartTag, WebVTTCueSpanStartTagAnnotated
 
 _logger = logging.getLogger(__name__)
 
@@ -988,6 +989,7 @@ class DocumentOrigin(BaseModel):
         "text/asciidoc",
         "text/markdown",
         "text/csv",
+        "text/vtt",
         "audio/x-wav",
         "audio/wav",
         "audio/mp3",
@@ -1185,11 +1187,82 @@ class DocTagsDocument(BaseModel):
 
 
 class ProvenanceItem(BaseModel):
-    """ProvenanceItem."""
+    """Provenance information for elements extracted from a textual document.
 
-    page_no: int
-    bbox: BoundingBox
-    charspan: tuple[int, int]
+    A `ProvenanceItem` object acts as a lightweight pointer back into the original
+    document for an extracted element. It applies to documents with an explicity
+    or implicit layout, such as PDF, HTML, docx, or pptx.
+    """
+
+    page_no: Annotated[int, Field(description="Page number")]
+    bbox: Annotated[BoundingBox, Field(description="Bounding box")]
+    charspan: Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
+
+
+class BaseSource(BaseModel):
+    """Base class for source information.
+
+    Represents the source of an extracted component within a digital asset.
+    """
+
+    kind: Annotated[str, Field(description="Kind of source. It is used as a discriminator for the source type.")]
+
+
+class TrackSource(BaseSource):
+    """Source metadata for a cue extracted from a media track.
+
+    A `TrackSource` instance identifies a cue in a media track (audio, video, subtitles, screen-recording captions,
+    etc.). A *cue* here refers to any discrete segment that was pulled out of the original asset, e.g., a subtitle
+    block, an audio clip, or a timed marker in a screen-recording.
+    """
+
+    model_config = ConfigDict(regex_engine="python-re")
+    kind: Annotated[Literal["track"], Field(description="Identifies this type of source.")] = "track"
+    start_time: Annotated[
+        float,
+        Field(
+            examples=[11.0, 6.5, 5370.0],
+            description="Start time offset of the track cue in seconds",
+        ),
+    ]
+    end_time: Annotated[
+        float,
+        Field(
+            examples=[12.0, 8.2, 5370.1],
+            description="End time offset of the track cue in seconds",
+        ),
+    ]
+    identifier: Annotated[
+        str | None, Field(description="An identifier of the cue", examples=["test", "123", "b72d946"])
+    ] = None
+    voice: Annotated[
+        str | None,
+        Field(description="The name of the voice in this track (the speaker)", examples=["John", "Mary", "Speaker 1"]),
+    ] = None
+
+    @model_validator(mode="after")
+    def check_order(self) -> Self:
+        """Ensure start time is less than the end time."""
+        if self.end_time <= self.start_time:
+            raise ValueError("End time must be greater than start time")
+        return self
+
+
+SourceType = Annotated[Union[TrackSource], Field(discriminator="kind")]
+"""Union type for all source types.
+
+This type alias represents a discriminated union of all available source types that can be associated with
+extracted elements in a document. The `kind` field is used as a discriminator to determine the specific
+source type at runtime.
+
+Currently supported source types:
+    - `TrackSource`: For elements extracted from media assets (audio, video, subtitles)
+
+Notes:
+    - Additional source types may be added to this union in the future to support other content sources.
+    - For documents with an implicit or explicity layout, such as PDF, HTML, docx, pptx, or markdown files, the
+        `ProvenanceItem` should still be used.
+"""
 
 
 class ContentLayer(str, Enum):
@@ -1494,20 +1567,28 @@ class FineRef(RefItem):
     range: Optional[tuple[int, int]] = None  # start_inclusive, end_exclusive
 
 
-class DocItem(NodeItem):  # Base type for any element that carries content, can be a leaf node
-    """DocItem."""
+class DocItem(NodeItem):
+    """Base type for any element that carries content, can be a leaf node."""
 
     label: DocItemLabel
     prov: list[ProvenanceItem] = []
+    source: Annotated[
+        list[SourceType],
+        Field(
+            description="The provenance of this document item. Currently, it is only used for media track provenance."
+        ),
+    ] = []
     comments: list[FineRef] = []  # References to comment items annotating this content
 
     @model_serializer(mode="wrap")
     def _custom_pydantic_serialize(self, handler: SerializerFunctionWrapHandler) -> dict:
         dumped = handler(self)
 
-        # suppress serializing comment list when empty:
-        if dumped.get("comments") == []:
-            del dumped["comments"]
+        # suppress serializing comment and source lists when empty:
+        for field in {"comments", "source"}:
+            if dumped.get(field) == []:
+                del dumped[field]
+
         return dumped
 
     def get_location_tokens(
@@ -1545,10 +1626,13 @@ class DocItem(NodeItem):  # Base type for any element that carries content, can 
         if a valid image of the page containing this DocItem is not available
         in doc.
         """
-        if not len(self.prov):
+        if not self.prov or prov_index >= len(self.prov):
+            return None
+        prov = self.prov[prov_index]
+        if not isinstance(prov, ProvenanceItem):
             return None
 
-        page = doc.pages.get(self.prov[prov_index].page_no)
+        page = doc.pages.get(prov.page_no)
         if page is None or page.size is None or page.image is None:
             return None
 
@@ -3065,6 +3149,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_text.
 
@@ -3152,6 +3238,8 @@ class DoclingDocument(BaseModel):
             )
             if prov:
                 text_item.prov.append(prov)
+            if source:
+                text_item.source.append(source)
 
             if content_layer:
                 text_item.content_layer = content_layer
@@ -4655,7 +4743,7 @@ class DoclingDocument(BaseModel):
         image_dir.mkdir(parents=True, exist_ok=True)
 
         if image_dir.is_dir():
-            for item, level in result.iterate_items(page_no=page_no, with_groups=False):
+            for item, _ in result.iterate_items(page_no=page_no, with_groups=False):
                 if isinstance(item, PictureItem):
                     img = item.get_image(doc=self)
                     if img is not None:
@@ -4677,7 +4765,8 @@ class DoclingDocument(BaseModel):
                             if item.image is None:
                                 scale = img.size[0] / item.prov[0].bbox.width
                                 item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
-                            item.image.uri = Path(obj_path)
+                            elif item.image is not None:
+                                item.image.uri = Path(obj_path)
 
                         # if item.image._pil is not None:
                         #    item.image._pil.close()

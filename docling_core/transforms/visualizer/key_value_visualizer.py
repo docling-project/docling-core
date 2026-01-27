@@ -16,8 +16,12 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
-from docling_core.types.doc.document import ContentLayer, DoclingDocument
-from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
+from docling_core.types.doc import (
+    ContentLayer,
+    DoclingDocument,
+    GraphCellLabel,
+    GraphLinkLabel,
+)
 
 # ---------------------------------------------------------------------------
 # Helper functions / constants

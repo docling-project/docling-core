@@ -1,5 +1,4 @@
 from pathlib import Path
-from test.test_serialization_doctag import verify
 
 import pytest
 
@@ -21,7 +20,8 @@ from docling_core.types.doc import (
     TableData,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel
-from test.test_serialization_idoctag import add_texts_section, add_list_section
+from test.test_serialization_doctag import verify
+from test.test_serialization_idoctag import add_list_section, add_texts_section
 
 DO_PRINT: bool = False
 

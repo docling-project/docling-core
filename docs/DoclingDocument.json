@@ -238,6 +238,25 @@
           "title": "Prov",
           "type": "array"
         },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
         "comments": {
           "default": [],
           "items": {
@@ -656,6 +675,25 @@
           "title": "Prov",
           "type": "array"
         },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
         "comments": {
           "default": [],
           "items": {
@@ -796,6 +834,25 @@
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
+          "type": "array"
+        },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
           "type": "array"
         },
         "comments": {
@@ -1203,6 +1260,25 @@
           "title": "Prov",
           "type": "array"
         },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
         "comments": {
           "default": [],
           "items": {
@@ -1373,6 +1449,25 @@
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
+          "type": "array"
+        },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
           "type": "array"
         },
         "comments": {
@@ -1749,6 +1844,25 @@
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
+          "type": "array"
+        },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
           "type": "array"
         },
         "comments": {
@@ -2139,16 +2253,19 @@
       "type": "object"
     },
     "ProvenanceItem": {
-      "description": "ProvenanceItem.",
+      "description": "Provenance information for elements extracted from a textual document.\n\nA `ProvenanceItem` object acts as a lightweight pointer back into the original\ndocument for an extracted element. It applies to documents with an explicity\nor implicit layout, such as PDF, HTML, docx, or pptx.",
       "properties": {
         "page_no": {
+          "description": "Page number",
           "title": "Page No",
           "type": "integer"
         },
         "bbox": {
-          "$ref": "#/$defs/BoundingBox"
+          "$ref": "#/$defs/BoundingBox",
+          "description": "Bounding box"
         },
         "charspan": {
+          "description": "Character span (0-indexed)",
           "maxItems": 2,
           "minItems": 2,
           "prefixItems": [
@@ -2330,6 +2447,25 @@
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
+          "type": "array"
+        },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
           "type": "array"
         },
         "comments": {
@@ -2627,6 +2763,25 @@
           "title": "Prov",
           "type": "array"
         },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
         "comments": {
           "default": [],
           "items": {
@@ -2832,6 +2987,25 @@
           "title": "Prov",
           "type": "array"
         },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
         "comments": {
           "default": [],
           "items": {
@@ -2944,6 +3118,25 @@
           "title": "Prov",
           "type": "array"
         },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
         "comments": {
           "default": [],
           "items": {
@@ -2996,6 +3189,80 @@
         "text"
       ],
       "title": "TitleItem",
+      "type": "object"
+    },
+    "TrackSource": {
+      "description": "Source metadata for a cue extracted from a media track.\n\nA `TrackSource` instance identifies a cue in a media track (audio, video, subtitles, screen-recording captions,\netc.). A *cue* here refers to any discrete segment that was pulled out of the original asset, e.g., a subtitle\nblock, an audio clip, or a timed marker in a screen-recording.",
+      "properties": {
+        "kind": {
+          "const": "track",
+          "default": "track",
+          "description": "Identifies this type of source.",
+          "title": "Kind",
+          "type": "string"
+        },
+        "start_time": {
+          "description": "Start time offset of the track cue in seconds",
+          "examples": [
+            11.0,
+            6.5,
+            5370.0
+          ],
+          "title": "Start Time",
+          "type": "number"
+        },
+        "end_time": {
+          "description": "End time offset of the track cue in seconds",
+          "examples": [
+            12.0,
+            8.2,
+            5370.1
+          ],
+          "title": "End Time",
+          "type": "number"
+        },
+        "identifier": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An identifier of the cue",
+          "examples": [
+            "test",
+            "123",
+            "b72d946"
+          ],
+          "title": "Identifier"
+        },
+        "voice": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The name of the voice in this track (the speaker)",
+          "examples": [
+            "John",
+            "Mary",
+            "Speaker 1"
+          ],
+          "title": "Voice"
+        }
+      },
+      "required": [
+        "start_time",
+        "end_time"
+      ],
+      "title": "TrackSource",
       "type": "object"
     }
   },

@@ -44,9 +44,10 @@ from docling_core.transforms.serializer.common import (
     DocSerializer,
     create_ser_result,
 )
-from docling_core.types.doc.base import CoordOrigin
-from docling_core.types.doc.document import (
+from docling_core.types.doc import (
+    CoordOrigin,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
     FormItem,
     InlineGroup,
@@ -59,7 +60,6 @@ from docling_core.types.doc.document import (
     TableItem,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
 
 
 def _bbox_to_polygon_coords(

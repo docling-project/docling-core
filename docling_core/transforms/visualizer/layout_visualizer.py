@@ -10,10 +10,15 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
-from docling_core.types.doc import DocItemLabel
-from docling_core.types.doc.base import CoordOrigin
-from docling_core.types.doc.document import ContentLayer, DocItem, DoclingDocument
-from docling_core.types.doc.page import BoundingRectangle, TextCell
+from docling_core.types.doc import (
+    BoundingRectangle,
+    ContentLayer,
+    CoordOrigin,
+    DocItem,
+    DocItemLabel,
+    DoclingDocument,
+    TextCell,
+)
 
 
 class _TLBoundingRectangle(BoundingRectangle):

@@ -35,11 +35,11 @@ from docling_core.transforms.serializer.base import (
     SerializationResult,
     Span,
 )
-from docling_core.types.doc.document import (
-    DOCUMENT_TOKENS_EXPORT_LABELS,
+from docling_core.types.doc import (
     ContentLayer,
     DescriptionAnnotation,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
     FloatingItem,
     Formatting,
@@ -57,7 +57,7 @@ from docling_core.types.doc.document import (
     TableItem,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.document import DOCUMENT_TOKENS_EXPORT_LABELS
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 _DEFAULT_LAYERS = set(ContentLayer)
@@ -317,7 +317,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         parts: list[SerializationResult],
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize a document out of its pages."""
+        """Serialize a document out of its parts."""
         ...
 
     def _serialize_body(self, **kwargs) -> SerializationResult:

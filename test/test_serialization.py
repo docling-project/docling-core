@@ -15,6 +15,7 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownParams,
     OrigListItemMarkerMode,
 )
+from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
@@ -563,3 +564,27 @@ def test_html_inline_and_formatting():
     ser = HTMLDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
+# ===============================
+# WebVTT tests
+# ===============================
+
+
+@pytest.mark.parametrize(
+    "file_name",
+    [
+        "webvtt_example_01",
+        "webvtt_example_02",
+        "webvtt_example_03",
+        "webvtt_example_04",
+        "webvtt_example_05",
+    ],
+)
+def test_webvtt(file_name):
+    src = Path(f"./test/data/doc/{file_name}.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = WebVTTDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.vtt"), actual=actual)

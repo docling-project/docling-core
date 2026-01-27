@@ -7,20 +7,23 @@ from typing import Optional, Union
 
 from docling_core.types.doc import (
     BoundingBox,
+    ContentLayer,
     CoordOrigin,
     DocItem,
     DocItemLabel,
     DoclingDocument,
     DocumentOrigin,
+    GroupItem,
+    ListItem,
     PictureItem,
     ProvenanceItem,
     SectionHeaderItem,
     Size,
     TableCell,
+    TableData,
     TableItem,
     TextItem,
 )
-from docling_core.types.doc.document import ContentLayer, GroupItem, ListItem, TableData
 from docling_core.types.legacy_doc.base import (
     BaseCell,
     BaseText,

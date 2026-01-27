@@ -26,11 +26,13 @@ from docling_core.transforms.serializer.common import (
     _should_use_legacy_annotations,
     create_ser_result,
 )
-from docling_core.types.doc.base import BoundingBox
 from docling_core.types.doc.document import (
+    BoundingBox,
     CodeItem,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
+    DocumentToken,
     FloatingItem,
     FormItem,
     GroupItem,
@@ -40,6 +42,7 @@ from docling_core.types.doc.document import (
     ListItem,
     NodeItem,
     PictureClassificationData,
+    PictureClassificationLabel,
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
@@ -47,10 +50,9 @@ from docling_core.types.doc.document import (
     SectionHeaderItem,
     TableData,
     TableItem,
+    TableToken,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel, PictureClassificationLabel
-from docling_core.types.doc.tokens import DocumentToken, TableToken
 
 
 def _wrap(text: str, wrap_tag: str) -> str:
