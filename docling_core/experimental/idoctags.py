@@ -61,7 +61,7 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.base import CoordOrigin
-from docling_core.types.doc.document import FormulaItem
+from docling_core.types.doc.document import FormulaItem, RichTableCell
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -1793,8 +1793,9 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                             parts.append(cell_loc)
                         if ContentType.TABLE_CELL in params.content_types:
                             # Apply XML escaping to table cell content
-                            escaped_content = _escape_text(content, params)
-                            parts.append(escaped_content)
+                            if not isinstance(cell, RichTableCell):
+                                content = _escape_text(content, params)
+                            parts.append(content)
                     else:
                         parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.ECEL))
                 elif rowstart != i and colspan == 1:  # FIXME: I believe we should have colstart == j

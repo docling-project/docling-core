@@ -614,3 +614,13 @@ def test_vlm_mode():
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/vlm_mode.gt.idt.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+
+def test_rich_cells(rich_table_doc):
+    ser = IDocTagsDocSerializer(
+        doc=rich_table_doc,
+        params=IDocTagsParams(),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/rich_table.out.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)

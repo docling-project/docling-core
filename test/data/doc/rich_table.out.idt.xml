@@ -1,0 +1,55 @@
+<doctag version="1.0.0">
+  <title>Rich tables</title>
+  <floating_group class="table">
+    <otsl>
+      <fcel/>
+      cell 0,0
+      <fcel/>
+      cell 0,1
+      <nl/>
+      <fcel/>
+      cell 1,0
+      <fcel/>
+      <text>
+        <italic>text in italic</italic>
+      </text>
+      <nl/>
+      <fcel/>
+      <list ordered="false">
+        <list_text>list item 1</list_text>
+        <list_text>list item 2</list_text>
+      </list>
+      <fcel/>
+      cell 2,1
+      <nl/>
+      <fcel/>
+      cell 3,0
+      <fcel/>
+      <floating_group class="table">
+        <otsl>
+          <fcel/>
+          inner cell 0,0
+          <fcel/>
+          inner cell 0,1
+          <fcel/>
+          inner cell 0,2
+          <nl/>
+          <fcel/>
+          inner cell 1,0
+          <fcel/>
+          inner cell 1,1
+          <fcel/>
+          inner cell 1,2
+          <nl/>
+        </otsl>
+      </floating_group>
+      <nl/>
+      <ecel/>
+      <fcel/>
+      cell 4,1
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>Some text in a generic group.</text>
+  <text>More text in the group.</text>
+</doctag>
