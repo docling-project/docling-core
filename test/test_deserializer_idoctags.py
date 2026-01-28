@@ -963,8 +963,10 @@ def test_roundtrip_picture_with_classification_caption_and_footnotes():
         fn_item = fn_ref.resolve(doc2)
         assert fn_item.label == DocItemLabel.FOOTNOTE
 
-    # Verify classification data (deprecated field, but should still work)
-    assert len(pic.annotations) >= 1
+    # Verify classification data
+    with pytest.warns(DeprecationWarning):
+        num_annotations = len(pic.annotations)
+    assert num_annotations >= 1
     classif = next(
         (a for a in pic.annotations if isinstance(a, PictureClassificationData)), None
     )
@@ -982,9 +984,6 @@ def test_roundtrip_picture_with_classification_caption_and_footnotes():
     assert dt2 == dt
 
 
-@pytest.mark.xfail(
-    reason="Known feature incompletenes in serialization/deseralization for rich table cells!"
-)
 def test_roundtrip_table_with_rich_cells():
     """Test table with RichTableCells containing paragraphs, lists, and nested tables."""
     doc = DoclingDocument(name="t")
@@ -1118,9 +1117,6 @@ def test_constructed_doc(sample_doc: DoclingDocument):
     verify(exp_reserialized_dt_file, dt2)
 
 
-@pytest.mark.xfail(
-    reason="Known feature incompletenes in serialization/deseralization for rich table cells!"
-)
 def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
     doc = rich_table_doc
 
@@ -1182,6 +1178,47 @@ def test_wrapping():
   </text>
 </doctag>
     """
+    doc = _deserialize(dt)
+    dt2 = _serialize(doc)
+    assert dt2.strip() == dt.strip()
+
+def test_rich_table_cells():
+    dt = """
+<doctag version="1.0.0">
+  <floating_group class="table">
+    <otsl>
+      <fcel/>
+      foo
+      <fcel/>
+      <text>
+        <italic>text in italic</italic>
+      </text>
+      <nl/>
+      <fcel/>
+      <floating_group class="table">
+        <otsl>
+          <fcel/>
+          inner cell 0,0
+          <fcel/>
+          inner cell 0,1
+          <nl/>
+          <fcel/>
+          inner cell 1,0
+          <fcel/>
+          <text>
+            <content>inner cell 1,1 </content>
+            <bold>in bold</bold>
+          </text>
+          <nl/>
+        </otsl>
+      </floating_group>
+      <fcel/>
+      bar
+      <nl/>
+    </otsl>
+  </floating_group>
+</doctag>
+"""
     doc = _deserialize(dt)
     dt2 = _serialize(doc)
     assert dt2.strip() == dt.strip()
