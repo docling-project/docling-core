@@ -61,12 +61,13 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.base import CoordOrigin
-from docling_core.types.doc.document import FormulaItem
+from docling_core.types.doc.document import FormulaItem, RichTableCell
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
     PictureClassificationLabel,
 )
+from docling_core.types.doc.tokens import DocumentToken
 
 # Note: Intentionally avoid importing DocumentToken here to ensure
 # IDocTags uses only its own token vocabulary.
@@ -1793,8 +1794,9 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                             parts.append(cell_loc)
                         if ContentType.TABLE_CELL in params.content_types:
                             # Apply XML escaping to table cell content
-                            escaped_content = _escape_text(content, params)
-                            parts.append(escaped_content)
+                            if not isinstance(cell, RichTableCell):
+                                content = _escape_text(content, params)
+                            parts.append(content)
                     else:
                         parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.ECEL))
                 elif rowstart != i and colspan == 1:  # FIXME: I believe we should have colstart == j
@@ -2550,13 +2552,15 @@ class IDocTagsDocDeserializer(BaseModel):
         tbl_provs = self._extract_provenance(doc=doc, el=otsl_el)
         # Get inner XML excluding location tokens (work directly with parsed DOM)
         inner = self._inner_xml(otsl_el, exclude_tags={"location"})
-        td = self._parse_otsl_table_content(f"<otsl>{inner}</otsl>")
         tbl = doc.add_table(
-            data=td,
+            data=TableData(),
             caption=caption,
             parent=parent,
             prov=(tbl_provs[0] if tbl_provs else None),
         )
+        tbl_content = _wrap(text=inner, wrap_tag=DocumentToken.OTSL.value)
+        td = self._parse_otsl_table_content(otsl_content=tbl_content, doc=doc, parent=tbl)
+        tbl.data = td
         for p in tbl_provs[1:]:
             tbl.prov.append(p)
         for ftn in footnotes:
@@ -2590,7 +2594,7 @@ class IDocTagsDocDeserializer(BaseModel):
             otsl_el = self._first_child(picture_el, IDocTagsToken.OTSL.value)
             if otsl_el is not None:
                 inner = self._inner_xml(otsl_el, exclude_tags={"location"})
-                td = self._parse_otsl_table_content(f"<otsl>{inner}</otsl>")
+                td = self._parse_otsl_table_content(_wrap(inner, DocumentToken.OTSL.value))
                 if pic.meta is None:
                     pic.meta = PictureMeta()
                 pic.meta.tabular_chart = TabularChartMetaField(chart_data=td)
@@ -2658,35 +2662,56 @@ class IDocTagsDocDeserializer(BaseModel):
         """Extract OTSL structural tokens and interleaved text.
 
         Strips the outer <otsl> wrapper and ignores location tokens (expected
-        to be removed before).
+        to be removed before). Handles nested XML elements (like <text><italic>...</italic></text>)
+        by keeping them as single units.
         """
-        pattern = r"(<[^>]+>)"
-        tokens = re.findall(pattern, s)
-        # Drop the <otsl> wrapper tags
-        tokens = [
-            t
-            for t in tokens
-            if t
-            not in [
-                f"<{IDocTagsToken.OTSL.value}>",
-                f"</{IDocTagsToken.OTSL.value}>",
-            ]
-        ]
 
-        parts = re.split(pattern, s)
-        parts = [
-            p
-            for p in parts
-            if p.strip()
-            and p
-            not in [
-                f"<{IDocTagsToken.OTSL.value}>",
-                f"</{IDocTagsToken.OTSL.value}>",
-            ]
-        ]
+        tokens: list[str] = []
+        parts: list[str] = []
+
+        dom = parseString(s)
+        otsl_el = dom.documentElement
+        if otsl_el is None:
+            raise ValueError("No document element found")
+
+        otsl_tokens = {
+            IDocTagsToken.FCEL.value,
+            IDocTagsToken.ECEL.value,
+            IDocTagsToken.LCEL.value,
+            IDocTagsToken.UCEL.value,
+            IDocTagsToken.XCEL.value,
+            IDocTagsToken.NL.value,
+            IDocTagsToken.CHED.value,
+            IDocTagsToken.RHED.value,
+            IDocTagsToken.SROW.value,
+        }
+
+        for node in otsl_el.childNodes:
+            if isinstance(node, Text):
+                text = node.data.strip()
+                if text:
+                    parts.append(text)
+            elif isinstance(node, Element):
+                tag_name = node.tagName
+                if tag_name in otsl_tokens:
+                    token_str = f"<{tag_name}/>"
+                    tokens.append(token_str)
+                    parts.append(token_str)
+                else:
+                    # This is a nested element (like <text>, <italic>, etc.)
+                    # Keep it as a complete XML string
+                    xml_str = node.toxml()
+                    parts.append(xml_str)
+
         return tokens, parts
 
-    def _otsl_parse_texts(self, texts: list[str], tokens: list[str]) -> tuple[list[TableCell], list[list[str]]]:
+    def _otsl_parse_texts(
+        self,
+        texts: list[str],
+        tokens: list[str],
+        doc: Optional["DoclingDocument"] = None,
+        parent: Optional[NodeItem] = None,
+    ) -> tuple[list[TableCell], list[list[str]]]:
         """Parse OTSL interleaved texts+tokens into TableCell list and row tokens."""
         # Token strings used in the stream (normalized to <name>)
 
@@ -2752,17 +2777,65 @@ class IDocTagsDocDeserializer(BaseModel):
                 if next_bottom in [ucel, xcel]:
                     row_span += count_down(split_row_tokens, c_idx, r_idx + 1, [ucel, xcel])
 
-                table_cells.append(
-                    TableCell(
-                        text=cell_text.strip(),
-                        row_span=row_span,
-                        col_span=col_span,
-                        start_row_offset_idx=r_idx,
-                        end_row_offset_idx=r_idx + row_span,
-                        start_col_offset_idx=c_idx,
-                        end_col_offset_idx=c_idx + col_span,
+                # Check if cell_text contains XML content (rich cell)
+                cell_text_stripped = cell_text.strip()
+                cell_added = False
+                if (
+                    cell_text_stripped.startswith("<")
+                    and cell_text_stripped.endswith(">")
+                    and doc is not None
+                    and parent is not None
+                ):
+                    # Wrap in a root element to ensure valid XML
+                    wrapped_xml = f"<root>{cell_text_stripped}</root>"
+                    dom = parseString(wrapped_xml)
+                    root_el = dom.documentElement
+
+                    if root_el is None:
+                        raise ValueError("No document element found")
+
+                    # Get the number of children before parsing
+                    children_before = len(parent.children)
+
+                    # Parse the child elements and create document items
+                    for child_node in root_el.childNodes:
+                        if isinstance(child_node, Element):
+                            # Dispatch to parse this element (creates items as side effect)
+                            self._dispatch_element(doc=doc, el=child_node, parent=parent)
+                            break  # Only process first element
+
+                    # Check if a new child was added
+                    if len(parent.children) > children_before:
+                        # Get the newly created item
+                        child_item = parent.children[-1].resolve(doc=doc)
+                        # Create a RichTableCell with reference to the parsed content
+                        table_cells.append(
+                            RichTableCell(
+                                text=cell_text_stripped,
+                                row_span=row_span,
+                                col_span=col_span,
+                                start_row_offset_idx=r_idx,
+                                end_row_offset_idx=r_idx + row_span,
+                                start_col_offset_idx=c_idx,
+                                end_col_offset_idx=c_idx + col_span,
+                                ref=child_item.get_ref(),
+                            )
+                        )
+                        cell_added = True
+
+                if not cell_added:
+                    # Regular text cell
+                    table_cells.append(
+                        TableCell(
+                            text=cell_text_stripped,
+                            row_span=row_span,
+                            col_span=col_span,
+                            start_row_offset_idx=r_idx,
+                            end_row_offset_idx=r_idx + row_span,
+                            start_col_offset_idx=c_idx,
+                            end_col_offset_idx=c_idx + col_span,
+                        )
                     )
-                )
 
             if t in [fcel, ecel, ched, rhed, srow, lcel, ucel, xcel]:
                 c_idx += 1
@@ -2772,10 +2845,12 @@ class IDocTagsDocDeserializer(BaseModel):
 
         return table_cells, split_row_tokens
 
-    def _parse_otsl_table_content(self, otsl_content: str) -> TableData:
+    def _parse_otsl_table_content(
+        self, otsl_content: str, doc: Optional["DoclingDocument"] = None, parent: Optional[NodeItem] = None
+    ) -> TableData:
         """Parse OTSL content into TableData (inlined from utils)."""
         tokens, mixed = self._otsl_extract_tokens_and_text(otsl_content)
-        table_cells, split_rows = self._otsl_parse_texts(mixed, tokens)
+        table_cells, split_rows = self._otsl_parse_texts(mixed, tokens, doc=doc, parent=parent)
         return TableData(
             num_rows=len(split_rows),
             num_cols=(max(len(r) for r in split_rows) if split_rows else 0),

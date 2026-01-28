@@ -360,8 +360,7 @@ def sample_doc(_construct_doc: DoclingDocument) -> DoclingDocument:
     return _construct_doc.model_copy(deep=True)
 
 
-@pytest.fixture(scope="session")
-def _rich_table_doc() -> DoclingDocument:
+def _rich_table_doc_impl() -> DoclingDocument:
     """Fixture for a rich table document to be reused across the test session."""
 
     doc = DoclingDocument(name="")
@@ -456,6 +455,10 @@ def _rich_table_doc() -> DoclingDocument:
 
     return doc
 
+@pytest.fixture(scope="session")
+def _rich_table_doc() -> DoclingDocument:
+    """Fixture for a rich table document to be reused across the test session."""
+    return _rich_table_doc_impl()
 
 @pytest.fixture(scope="function")
 def rich_table_doc(_rich_table_doc: DoclingDocument) -> DoclingDocument:
