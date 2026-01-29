@@ -355,16 +355,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
     def _compact_table(table_text: str) -> str:
         """Remove padding from a markdown table.
 
-        Converts a padded table like:
-            | item   | qty   |
-            |--------|-------|
-            | spam   | 42    |
-
-        Into a compact table like:
-            | item | qty |
-            | - | - |
-            | spam | 42 |
-
         Args:
             table_text: Padded markdown table string
 
@@ -379,13 +369,24 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 continue
 
             parts = line.split("|")[1:-1]
-            stripped_parts = [part.strip() for part in parts]
 
-            # Check if this is the separator line (second line, contains only dashes/colons)
+            # For separator line (second line), preserve alignment marks
             if i == 1:
-                compact_lines.append("| " + " | ".join("-" * len(stripped_parts)) + " |")
+                compact_parts = []
+                for part in parts:
+                    p = part.strip()
+                    if p.startswith(":") and p.endswith(":"):
+                        compact_parts.append(":-:")
+                    elif p.startswith(":"):
+                        compact_parts.append(":-")
+                    elif p.endswith(":"):
+                        compact_parts.append("-:")
+                    else:
+                        compact_parts.append("-")
             else:
-                compact_lines.append("| " + " | ".join(stripped_parts) + " |")
+                compact_parts = [part.strip() for part in parts]
+
+            compact_lines.append("| " + " | ".join(compact_parts) + " |")
 
         return "\n".join(compact_lines)
 
@@ -442,7 +443,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
                         disable_numparse=True,
                     )
 
-                # Apply compact formatting if requested
                 if params.compact_tables:
                     table_text = self._compact_table(table_text)
             else:

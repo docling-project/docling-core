@@ -356,13 +356,13 @@ def test_md_compact_table():
 
     # Test the _compact_table method directly
     padded_table = """| item   | qty   | description           |
-|--------|-------|-----------------------|
+| ------ | ----: | :-------------------: |
 | spam   | 42    | A canned meat product |
 | eggs   | 451   | Fresh farm eggs       |
 | bacon  | 0     | Out of stock          |"""
 
     expected_compact = """| item | qty | description |
-| - | - | - |
+| - | -: | :-: |
 | spam | 42 | A canned meat product |
 | eggs | 451 | Fresh farm eggs |
 | bacon | 0 | Out of stock |"""
