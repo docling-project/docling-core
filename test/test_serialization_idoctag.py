@@ -224,7 +224,7 @@ def test_idoctags():
     ser = IDocTagsDocSerializer(doc=doc, params=params)
     actual = ser.serialize().text
 
-    verify(exp_file=src.with_suffix(".v0.gt.idt"), actual=actual)
+    verify(exp_file=src.with_suffix(".v0.gt.cygl"), actual=actual)
 
     # Human readable, indented but without content
     ser = IDocTagsDocSerializer(
@@ -235,7 +235,7 @@ def test_idoctags():
     )
     actual = ser.serialize().text
 
-    verify(exp_file=src.with_suffix(".v1.gt.idt"), actual=actual)
+    verify(exp_file=src.with_suffix(".v1.gt.cygl"), actual=actual)
 
     # Machine readable, not indented and without content
     ser = IDocTagsDocSerializer(
@@ -247,7 +247,7 @@ def test_idoctags():
     )
     actual = ser.serialize().text
 
-    verify(exp_file=src.with_suffix(".v2.gt.idt"), actual=actual)
+    verify(exp_file=src.with_suffix(".v2.gt.cygl"), actual=actual)
 
 
 def test_idoctags_meta():
