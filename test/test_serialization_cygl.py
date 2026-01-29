@@ -5,7 +5,7 @@ from typing import Optional
 
 import pytest
 
-from docling_core.experimental.idoctags import (
+from docling_core.experimental.cygl import (
     ContentType,
     EscapeMode,
     CYGLDocSerializer,

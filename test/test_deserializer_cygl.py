@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from docling_core.experimental.idoctags import (
+from docling_core.experimental.cygl import (
     CYGLDeserializer,
     CYGLDocSerializer,
     CYGLParams,
@@ -21,7 +21,7 @@ from docling_core.types.doc import (
 )
 from docling_core.types.doc.labels import CodeLanguageLabel
 from test.test_serialization_doctag import verify
-from test.test_serialization_idoctag import add_list_section, add_texts_section
+from test.test_serialization_cygl import add_list_section, add_texts_section
 
 DO_PRINT: bool = False
 

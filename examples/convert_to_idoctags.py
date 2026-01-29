@@ -17,7 +17,7 @@ from transformers import (
 )
 from docling_core.types.doc import DoclingDocument, ImageRef
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.experimental.idoctags import (
+from docling_core.experimental.cygl import (
     ContentType,
     EscapeMode,
     CYGLSerializationMode,
