@@ -1,0 +1,19 @@
+<doctag version="1.0.0">
+  <head>
+    <default_resolution width="256" height="256"/>
+  </head>
+  <text>
+    <location value="3"/>
+    <location value="246"/>
+    <location value="8"/>
+    <location value="251"/>
+    Hello
+  </text>
+  <text>
+    <location value="3"/>
+    <location value="246"/>
+    <location value="8"/>
+    <location value="251"/>
+    World
+  </text>
+</doctag>

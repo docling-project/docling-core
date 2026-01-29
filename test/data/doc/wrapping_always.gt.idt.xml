@@ -15,38 +15,38 @@
     <content><![CDATA[  leading and < special]]></content>
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <content>w/prov simple</content>
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <content>  w/prov leading</content>
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <content>w/prov trailing  </content>
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <content><![CDATA[w/prov < special]]></content>
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <content><![CDATA[  w/prov leading and < special]]></content>
   </text>
 </doctag>

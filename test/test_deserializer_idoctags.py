@@ -293,10 +293,10 @@ def test_roundtrip_title_prov():
     exp_dt = """
 <doctag version="1.0.0">
   <title>
-    <location value="51" resolution="512"/>
-    <location value="51" resolution="512"/>
-    <location value="154" resolution="512"/>
-    <location value="102" resolution="512"/>
+    <location value="51"/>
+    <location value="51"/>
+    <location value="154"/>
+    <location value="102"/>
     My Title
   </title>
 </doctag>
@@ -415,17 +415,17 @@ def test_roundtrip_list_unordered_prov():
 <doctag version="1.0.0">
   <list ordered="false">
     <list_text>
-      <location value="51" resolution="512"/>
-      <location value="51" resolution="512"/>
-      <location value="154" resolution="512"/>
-      <location value="102" resolution="512"/>
+      <location value="51"/>
+      <location value="51"/>
+      <location value="154"/>
+      <location value="102"/>
       A
     </list_text>
     <list_text>
-      <location value="51" resolution="512"/>
-      <location value="51" resolution="512"/>
-      <location value="154" resolution="512"/>
-      <location value="102" resolution="512"/>
+      <location value="51"/>
+      <location value="51"/>
+      <location value="154"/>
+      <location value="102"/>
       B
     </list_text>
   </list>
@@ -1143,37 +1143,37 @@ def test_wrapping():
     <content><![CDATA[  leading and < special]]></content>
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     w/prov simple
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <content>  w/prov leading</content>
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <content>w/prov trailing  </content>
   </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
 <![CDATA[w/prov < special]]>  </text>
   <text>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <content><![CDATA[  w/prov leading and < special]]></content>
   </text>
 </doctag>

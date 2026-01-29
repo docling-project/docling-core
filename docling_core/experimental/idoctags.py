@@ -2,6 +2,7 @@
 
 import copy
 import re
+import warnings
 from enum import Enum
 from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
@@ -67,7 +68,6 @@ from docling_core.types.doc.labels import (
     DocItemLabel,
     PictureClassificationLabel,
 )
-from docling_core.types.doc.tokens import DocumentToken
 
 # Note: Intentionally avoid importing DocumentToken here to ensure
 # IDocTags uses only its own token vocabulary.
@@ -128,13 +128,16 @@ def _xml_error_context(
 
 
 def _quantize_to_resolution(value: float, resolution: int) -> int:
-    """Quantize normalized value in [0,1] to [0,resolution]."""
+    """Quantize normalized value in [0,1) to [0,resolution)."""
     n = round(resolution * value)
     if n < 0:
+        warnings.warn(f"Normalized {value=} less than 0; returning 0", stacklevel=2)
         return 0
-    if n > resolution:
-        return resolution
-    return n
+    elif n >= resolution:
+        warnings.warn(f"Normalized {value=} greater or equal to 1; returning {resolution-1=}", stacklevel=2)
+        return resolution - 1
+    else:
+        return n
 
 
 def _create_location_tokens_for_bbox(
@@ -168,8 +171,8 @@ def _create_location_tokens_for_item(
     *,
     item: "DocItem",
     doc: "DoclingDocument",
-    xres: int = DOCTAGS_RESOLUTION,
-    yres: int = DOCTAGS_RESOLUTION,
+    xres: int,
+    yres: int,
 ) -> str:
     """Create concatenated `<location .../>` tokens for an item's provenance."""
     if not getattr(item, "prov", None):
@@ -515,8 +518,8 @@ class IDocTagsVocabulary(BaseModel):
         # Geometric: value in [0, res]; resolution optional.
         # Keep conservative defaults aligned with existing usage.
         IDocTagsToken.LOCATION: {
-            IDocTagsAttributeKey.VALUE: (0, DOCTAGS_RESOLUTION),
-            IDocTagsAttributeKey.RESOLUTION: (DOCTAGS_RESOLUTION, DOCTAGS_RESOLUTION),
+            IDocTagsAttributeKey.VALUE: (0, DOCTAGS_RESOLUTION),  # TODO: review
+            IDocTagsAttributeKey.RESOLUTION: (DOCTAGS_RESOLUTION, DOCTAGS_RESOLUTION),  # TODO: review
         },
         # Temporal components
         IDocTagsToken.HOUR: {IDocTagsAttributeKey.VALUE: (0, 99)},
@@ -781,30 +784,17 @@ class IDocTagsVocabulary(BaseModel):
         return f'<{IDocTagsToken.HEADING.value} {IDocTagsAttributeKey.LEVEL.value}="{level}">'
 
     @classmethod
-    def create_location_token(cls, *, value: int, resolution: int = DOCTAGS_RESOLUTION) -> str:
+    def create_location_token(cls, *, value: int, resolution: int) -> str:
         """Create a location token with value and resolution.
 
         Validates both attributes using the configured ranges and ensures
         `value` lies within [0, resolution]. Always emits the resolution
         attribute for explicitness.
         """
-        range_map = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.LOCATION]
-        # Validate resolution if a constraint exists
-        r_lo, r_hi = range_map.get(IDocTagsAttributeKey.RESOLUTION, (resolution, resolution))
-        if not (r_lo <= resolution <= r_hi):
-            raise ValueError(f"resolution: {resolution} must be in [{r_lo}, {r_hi}]")
+        if not (0 <= value < resolution):
+            raise ValueError(f"value ({value}) must be in [0, {resolution})")
 
-        v_lo, v_hi = range_map[IDocTagsAttributeKey.VALUE]
-        if not (v_lo <= value <= v_hi):
-            raise ValueError(f"value: {value} must be in [{v_lo}, {v_hi}]")
-        if not (0 <= value <= resolution):
-            raise ValueError(f"value: {value} must be in [0, {resolution}]")
-
-        return (
-            f"<{IDocTagsToken.LOCATION.value} "
-            f'{IDocTagsAttributeKey.VALUE.value}="{value}" '
-            f'{IDocTagsAttributeKey.RESOLUTION.value}="{resolution}"/>'
-        )
+        return f'<{IDocTagsToken.LOCATION.value} {IDocTagsAttributeKey.VALUE.value}="{value}"/>'
 
     @classmethod
     def get_special_tokens(
@@ -1496,7 +1486,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
 
         if params.add_location:
             # Use IDocTags `<location>` tokens instead of `<loc_.../>`
-            loc = _create_location_tokens_for_item(item=item, doc=doc)
+            loc = _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
             if loc:
                 parts.append(loc)
 
@@ -1656,7 +1646,7 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
             if params.add_location:
-                body += _create_location_tokens_for_item(item=item, doc=doc)
+                body += _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
 
             is_chart = self._picture_is_chart(item)
             if ((not is_chart) and ContentType.PICTURE in params.content_types) or (
@@ -2041,7 +2031,9 @@ class IDocTagsDocSerializer(DocSerializer):
                 for caption in item.captions:
                     if caption.cref not in self.get_excluded_refs(**kwargs):
                         if isinstance(cap := caption.resolve(self.doc), DocItem):
-                            loc_txt = _create_location_tokens_for_item(item=cap, doc=self.doc)
+                            loc_txt = _create_location_tokens_for_item(
+                                item=cap, doc=self.doc, xres=params.xsize, yres=params.ysize
+                            )
                             results.append(create_ser_result(text=loc_txt))
             if cap_res.text and ContentType.REF_CAPTION in params.content_types:
                 cap_res.text = _escape_text(cap_res.text, params)
@@ -2065,7 +2057,9 @@ class IDocTagsDocSerializer(DocSerializer):
                 if isinstance(ftn := footnote.resolve(self.doc), TextItem):
                     location = ""
                     if params.add_location:
-                        location = _create_location_tokens_for_item(item=ftn, doc=self.doc)
+                        location = _create_location_tokens_for_item(
+                            item=ftn, doc=self.doc, xres=params.xsize, yres=params.ysize
+                        )
 
                     content = ""
                     if ftn.text and ContentType.REF_FOOTNOTE in params.content_types:
@@ -2080,6 +2074,13 @@ class IDocTagsDocSerializer(DocSerializer):
 
         return create_ser_result(text=text_res, span_source=results)
 
+    def _create_head(self) -> str:
+        """Create the head section of the IDocTags document."""
+        parts = []
+        if self.params.xsize != DOCTAGS_RESOLUTION or self.params.ysize != DOCTAGS_RESOLUTION:
+            parts.append(f'<default_resolution width="{self.params.xsize}" height="{self.params.ysize}"/>')
+        return _wrap(text="".join(parts), wrap_tag=IDocTagsToken.HEAD.value) if parts else ""
+
     @override
     def serialize_doc(
         self,
@@ -2093,6 +2094,7 @@ class IDocTagsDocSerializer(DocSerializer):
         delim = _get_delim(params=self.params)
 
         open_token: str = IDocTagsVocabulary.create_doctag_root()
+        head = self._create_head()
         close_token: str = IDocTagsVocabulary.create_doctag_root(closing=True)
 
         text_res = delim.join([p.text for p in parts if p.text])
@@ -2103,7 +2105,7 @@ class IDocTagsDocSerializer(DocSerializer):
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
-        text_res = f"{open_token}{text_res}{close_token}"
+        text_res = f"{open_token}{head}{text_res}{close_token}"
 
         if self.params.pretty_indentation is not None:
             try:
@@ -2558,7 +2560,7 @@ class IDocTagsDocDeserializer(BaseModel):
             parent=parent,
             prov=(tbl_provs[0] if tbl_provs else None),
         )
-        tbl_content = _wrap(text=inner, wrap_tag=DocumentToken.OTSL.value)
+        tbl_content = _wrap(text=inner, wrap_tag=IDocTagsToken.OTSL.value)
         td = self._parse_otsl_table_content(otsl_content=tbl_content, doc=doc, parent=tbl)
         tbl.data = td
         for p in tbl_provs[1:]:
@@ -2594,7 +2596,7 @@ class IDocTagsDocDeserializer(BaseModel):
             otsl_el = self._first_child(picture_el, IDocTagsToken.OTSL.value)
             if otsl_el is not None:
                 inner = self._inner_xml(otsl_el, exclude_tags={"location"})
-                td = self._parse_otsl_table_content(_wrap(inner, DocumentToken.OTSL.value))
+                td = self._parse_otsl_table_content(_wrap(inner, IDocTagsToken.OTSL.value))
                 if pic.meta is None:
                     pic.meta = PictureMeta()
                 pic.meta.tabular_chart = TabularChartMetaField(chart_data=td)

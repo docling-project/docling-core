@@ -26,10 +26,10 @@ in line
       <list_text>sublist item 2</list_text>
     </list>
     <list_text>
-      <location value="5" resolution="512"/>
-      <location value="492" resolution="512"/>
-      <location value="15" resolution="512"/>
-      <location value="502" resolution="512"/>
+      <location value="5"/>
+      <location value="492"/>
+      <location value="15"/>
+      <location value="502"/>
       <content>Here a </content>
       <italic>
         <bold>both bold and italicized</bold>

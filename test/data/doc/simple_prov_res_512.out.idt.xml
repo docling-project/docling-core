@@ -1,0 +1,16 @@
+<doctag version="1.0.0">
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    Hello
+  </text>
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    World
+  </text>
+</doctag>
