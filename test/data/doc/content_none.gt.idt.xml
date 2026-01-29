@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <list ordered="false">
     <list_text></list_text>
   </list>
@@ -89,4 +89,4 @@
     <location value="15"/>
     <location value="502"/>
   </code>
-</doctag>
+</cygl>

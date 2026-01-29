@@ -58,9 +58,9 @@ def test_roundtrip_text():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <text>Hello world</text>
-</doctag>
+</cygl>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -73,9 +73,9 @@ def test_roundtrip_title():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <title>My Title</title>
-</doctag>
+</cygl>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -88,9 +88,9 @@ def test_roundtrip_heading():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <heading level="2">Section A</heading>
-</doctag>
+</cygl>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -103,9 +103,9 @@ def test_roundtrip_caption():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <caption>Cap text</caption>
-</doctag>
+</cygl>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -155,10 +155,10 @@ def test_roundtrip_code():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <code class="Python"><![CDATA[print('hi')]]></code>
   <code class="MATLAB"><![CDATA[disp("Hello world!")]]></code>
-</doctag>
+</cygl>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -291,7 +291,7 @@ def test_roundtrip_title_prov():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <title>
     <location value="51"/>
     <location value="51"/>
@@ -299,7 +299,7 @@ def test_roundtrip_title_prov():
     <location value="102"/>
     My Title
   </title>
-</doctag>
+</cygl>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -412,7 +412,7 @@ def test_roundtrip_list_unordered_prov():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <list ordered="false">
     <list_text>
       <location value="51"/>
@@ -429,7 +429,7 @@ def test_roundtrip_list_unordered_prov():
       B
     </list_text>
   </list>
-</doctag>
+</cygl>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -635,7 +635,7 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <list ordered="false">
     <list_text>Step 1</list_text>
     <list ordered="true">
@@ -644,7 +644,7 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     </list>
     <list_text>Step 2</list_text>
   </list>
-</doctag>
+</cygl>
 
     """
     assert dt2.strip() == exp_dt.strip()
@@ -1130,7 +1130,7 @@ def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
 
 def test_wrapping():
     dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <text>simple</text>
   <text>
     <content>  leading</content>
@@ -1176,7 +1176,7 @@ def test_wrapping():
     <location value="502"/>
     <content><![CDATA[  w/prov leading and < special]]></content>
   </text>
-</doctag>
+</cygl>
     """
     doc = _deserialize(dt)
     dt2 = _serialize(doc)
@@ -1184,7 +1184,7 @@ def test_wrapping():
 
 def test_rich_table_cells():
     dt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <floating_group class="table">
     <otsl>
       <fcel/>
@@ -1217,7 +1217,7 @@ def test_rich_table_cells():
       <nl/>
     </otsl>
   </floating_group>
-</doctag>
+</cygl>
 """
     doc = _deserialize(dt)
     dt2 = _serialize(doc)

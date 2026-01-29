@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <text>
     <location value="172"/>
     <location value="24"/>
@@ -246,4 +246,4 @@
     <location value="487"/>
     4253
   </text>
-</doctag>
+</cygl>

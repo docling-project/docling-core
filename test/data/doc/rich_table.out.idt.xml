@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <title>Rich tables</title>
   <floating_group class="table">
     <otsl>
@@ -52,4 +52,4 @@
   </floating_group>
   <text>Some text in a generic group.</text>
   <text>More text in the group.</text>
-</doctag>
+</cygl>

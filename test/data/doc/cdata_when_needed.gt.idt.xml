@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <list ordered="false">
     <list_text>item of leading list</list_text>
   </list>
@@ -162,4 +162,4 @@ hyperlink
       <bold><![CDATA[0 < 42]]></bold>
     </italic>
   </text>
-</doctag>
+</cygl>

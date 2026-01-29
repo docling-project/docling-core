@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <text>
     <location value="5"/>
     <location value="492"/>
@@ -13,4 +13,4 @@
     <location value="502"/>
     World
   </text>
-</doctag>
+</cygl>

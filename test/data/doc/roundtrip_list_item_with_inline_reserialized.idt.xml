@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <text>Simple text</text>
   <text>
     <content>Here a code snippet: </content>
@@ -38,4 +38,4 @@ in line
     </list>
     <list_text>final element</list_text>
   </list>
-</doctag>
+</cygl>

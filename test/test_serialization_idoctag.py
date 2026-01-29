@@ -204,12 +204,12 @@ def test_list_items_not_double_wrapped_when_no_content():
 
     txt = serialize_idoctags(doc, params=IDocTagsParams(content_types=set()))
     exp_txt = """
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <list ordered="false">
     <list_text></list_text>
     <list_text></list_text>
   </list>
-</doctag>
+</cygl>
     """
     assert txt.strip() == exp_txt.strip()
 

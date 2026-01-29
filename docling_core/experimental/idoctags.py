@@ -330,7 +330,7 @@ class IDocTagsToken(str, Enum):
     """
 
     # Root and metadata
-    DOCUMENT = "doctag"
+    DOCUMENT = "cygl"
     HEAD = "head"
     META = "meta"
 

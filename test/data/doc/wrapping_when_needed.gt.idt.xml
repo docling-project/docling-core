@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<cygl version="1.0.0">
   <text>simple</text>
   <text>
     <content>  leading</content>
@@ -44,4 +44,4 @@
     <location value="502"/>
     <content><![CDATA[  w/prov leading and < special]]></content>
   </text>
-</doctag>
+</cygl>
