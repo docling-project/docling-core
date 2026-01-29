@@ -5,7 +5,7 @@ import re
 import textwrap
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import tabulate
@@ -106,6 +106,16 @@ class MarkdownParams(CommonParams):
         default=True,
         description="Whether to wrap code items in markdown code block formatting (```). ",
     )
+    compact_tables: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether to use compact table format without column padding. "
+                "When False (default), tables use padded columns for better visual formatting. "
+                "When True, tables use minimal whitespace, which is better for large tables and downstream processing."
+            )
+        ),
+    ] = False
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -341,6 +351,45 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
 class MarkdownTableSerializer(BaseTableSerializer):
     """Markdown-specific table item serializer."""
 
+    @staticmethod
+    def _compact_table(table_text: str) -> str:
+        """Remove padding from a markdown table.
+
+        Args:
+            table_text: Padded markdown table string
+
+        Returns:
+            Compact markdown table string
+        """
+        lines = table_text.split("\n")
+        compact_lines = []
+
+        for i, line in enumerate(lines):
+            if not line:
+                continue
+
+            parts = line.split("|")[1:-1]
+
+            # For separator line (second line), preserve alignment marks
+            if i == 1:
+                compact_parts = []
+                for part in parts:
+                    p = part.strip()
+                    if p.startswith(":") and p.endswith(":"):
+                        compact_parts.append(":-:")
+                    elif p.startswith(":"):
+                        compact_parts.append(":-")
+                    elif p.endswith(":"):
+                        compact_parts.append("-:")
+                    else:
+                        compact_parts.append("-")
+            else:
+                compact_parts = [part.strip() for part in parts]
+
+            compact_lines.append("| " + " | ".join(compact_parts) + " |")
+
+        return "\n".join(compact_lines)
+
     @override
     def serialize(
         self,
@@ -393,6 +442,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
                         tablefmt="github",
                         disable_numparse=True,
                     )
+
+                if params.compact_tables:
+                    table_text = self._compact_table(table_text)
             else:
                 table_text = ""
             if table_text:

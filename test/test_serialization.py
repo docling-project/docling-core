@@ -34,7 +34,7 @@ def verify(exp_file: Path, actual: str):
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(f"{actual}\n")
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = f.read().rstrip()
 
         # Normalize platform-dependent quote escaping for DocTags outputs
@@ -348,6 +348,31 @@ def test_md_pipe_in_table():
     )
     ser = doc.export_to_markdown()
     assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
+
+
+def test_md_compact_table():
+    """Test compact table format removes padding and uses minimal separators."""
+    from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
+
+    # Test the _compact_table method directly
+    padded_table = """| item   | qty   | description           |
+| ------ | ----: | :-------------------: |
+| spam   | 42    | A canned meat product |
+| eggs   | 451   | Fresh farm eggs       |
+| bacon  | 0     | Out of stock          |"""
+
+    expected_compact = """| item | qty | description |
+| - | -: | :-: |
+| spam | 42 | A canned meat product |
+| eggs | 451 | Fresh farm eggs |
+| bacon | 0 | Out of stock |"""
+
+    compact_result = MarkdownTableSerializer._compact_table(padded_table)
+    assert compact_result == expected_compact
+
+    # Verify space savings
+    assert len(compact_result) < len(padded_table)
+
 
 # ===============================
 # HTML tests

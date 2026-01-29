@@ -386,7 +386,7 @@ def test_docitems():
             fw.write(serialisation)
 
     def read(name: str):
-        with open(f"./test/data/docling_document/unit/{name}.yaml", "r", encoding="utf-8") as fr:
+        with open(f"./test/data/docling_document/unit/{name}.yaml", encoding="utf-8") as fr:
             gold = fr.read()
         return yaml.safe_load(gold)
 
@@ -552,7 +552,7 @@ def test_reference_doc():
     filename = "test/data/doc/dummy_doc.yaml"
 
     # Read YAML file of manual reference doc
-    with open(filename, "r", encoding="utf-8") as fp:
+    with open(filename, encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
 
     doc = DoclingDocument.model_validate(dict_from_yaml)
@@ -589,7 +589,7 @@ def test_reference_doc():
 def test_parse_doc():
     filename = "test/data/doc/2206.01062.yaml"
 
-    with open(filename, "r", encoding="utf-8") as fp:
+    with open(filename, encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
 
     doc = DoclingDocument.model_validate(dict_from_yaml)
@@ -647,7 +647,7 @@ def _test_serialize_and_reload(doc):
 
 def _verify_regression_test(pred: str, filename: str, ext: str):
     if os.path.exists(filename + f".{ext}") and not GEN_TEST_DATA:
-        with open(filename + f".{ext}", "r", encoding="utf-8") as fr:
+        with open(filename + f".{ext}", encoding="utf-8") as fr:
             gt_true = fr.read().rstrip()
 
         assert gt_true == pred, f"Does not pass regression-test for {filename}.{ext}\n\n{gt_true}\n\n{pred}"
@@ -822,7 +822,7 @@ def test_formula_mathml():
         with open(file, mode="w", encoding="utf8") as f:
             f.write(f"{doc_html}\n")
     else:
-        with open(file, mode="r", encoding="utf8") as f:
+        with open(file, encoding="utf8") as f:
             gt_html = f.read().rstrip()
         assert doc_html == gt_html
 
@@ -995,7 +995,7 @@ def _normalise_string_wrt_filepaths(instr: str, paths: list[Path]):
 
 def _verify_saved_output(filename: Union[str, Path], paths: list[Path]):
     pred = ""
-    with open(filename, "r", encoding="utf-8") as fr:
+    with open(filename, encoding="utf-8") as fr:
         pred = fr.read()
 
     pred = _normalise_string_wrt_filepaths(pred, paths=paths)
@@ -1005,7 +1005,7 @@ def _verify_saved_output(filename: Union[str, Path], paths: list[Path]):
             fw.write(pred)
     else:
         gt = ""
-        with open(str(filename) + ".gt", "r", encoding="utf-8") as fr:
+        with open(str(filename) + ".gt", encoding="utf-8") as fr:
             gt = fr.read()
 
         assert pred == gt, f"pred!=gt for {filename}"
@@ -1514,7 +1514,7 @@ def test_export_with_precision():
         with open(exp_file, "w", encoding="utf-8") as f:
             yaml.dump(act_data, f, default_flow_style=False)
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             exp_data = yaml.load(f, Loader=yaml.SafeLoader)
         assert act_data == exp_data
 
@@ -1541,9 +1541,48 @@ def test_concatenate():
         exp_doc = DoclingDocument.load_from_json(exp_json_file)
         assert doc == exp_doc
 
-        with open(exp_html_file, "r", encoding="utf-8") as f:
+        with open(exp_html_file, encoding="utf-8") as f:
             exp_html_data = f.read()
         assert html_data == exp_html_data
+
+def test_export_markdown_compact_tables():
+    """Test compact_tables parameter for markdown export."""
+    doc = DoclingDocument(name="Compact Table Test")
+    table = doc.add_table(data=TableData(num_rows=3, num_cols=3))
+
+    # Add cells with varying lengths to demonstrate padding difference
+    cells_data = [
+        ["item", "qty", "description"],
+        ["spam", "42", "A canned meat product"],
+        ["eggs", "451", "Fresh farm eggs"],
+    ]
+
+    for row in range(3):
+        for col in range(3):
+            doc.add_table_cell(
+                table,
+                TableCell(
+                    start_row_offset_idx=row,
+                    end_row_offset_idx=row + 1,
+                    start_col_offset_idx=col,
+                    end_col_offset_idx=col + 1,
+                    text=cells_data[row][col],
+                ),
+            )
+
+    # Test default (padded) format
+    md_padded = doc.export_to_markdown()
+    assert "| item   |" in md_padded  # Has padding
+    assert "|--------|" in md_padded  # Long separator
+
+    # Test compact format
+    md_compact = doc.export_to_markdown(compact_tables=True)
+    assert "| item |" in md_compact  # No padding
+    assert "| - |" in md_compact  # Minimal separator
+
+    # Verify compact is shorter
+    assert len(md_compact) < len(md_padded)
+
 
 
 def test_list_group_with_list_items():
@@ -1782,7 +1821,7 @@ def test_filter_pages():
         exp_doc = DoclingDocument.load_from_json(exp_json_file)
         assert doc == exp_doc
 
-        with open(exp_html_file, "r", encoding="utf-8") as f:
+        with open(exp_html_file, encoding="utf-8") as f:
             exp_html_data = f.read()
         assert html_data == exp_html_data
 
