@@ -626,3 +626,45 @@ def test_rich_cells(rich_table_doc):
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/rich_table.out.idt.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+
+
+def _create_simple_prov_doc():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello", prov=prov)
+    doc.add_text(label=DocItemLabel.TEXT, text="World", prov=prov)
+    return doc
+
+def test_def_prov_512():
+    doc = _create_simple_prov_doc()
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            xsize=512,
+            ysize=512,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/simple_prov_res_512.out.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_def_prov_256():
+    doc = _create_simple_prov_doc()
+    ser = IDocTagsDocSerializer(
+        doc=doc,
+        params=IDocTagsParams(
+            xsize=256,
+            ysize=256,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/simple_prov_res_256.out.idt.xml")
+    verify(exp_file=exp_file, actual=ser_txt)

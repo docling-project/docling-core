@@ -125,10 +125,10 @@ hyperlink
         <summary>Picture Summary</summary>
         <description>Picture Description</description>
       </meta>
-      <location value="5" resolution="512"/>
-      <location value="492" resolution="512"/>
-      <location value="15" resolution="512"/>
-      <location value="502" resolution="512"/>
+      <location value="5"/>
+      <location value="492"/>
+      <location value="15"/>
+      <location value="502"/>
     </picture>
   </floating_group>
   <floating_group class="picture">
@@ -139,10 +139,10 @@ hyperlink
         <description>Picture Description</description>
         <classification>Pie chart</classification>
       </meta>
-      <location value="5" resolution="512"/>
-      <location value="492" resolution="512"/>
-      <location value="15" resolution="512"/>
-      <location value="502" resolution="512"/>
+      <location value="5"/>
+      <location value="492"/>
+      <location value="15"/>
+      <location value="502"/>
       <otsl>
         <fcel/>
         Foo
@@ -159,10 +159,10 @@ hyperlink
   </floating_group>
   <code>0 == 0</code>
   <code>
-    <location value="5" resolution="512"/>
-    <location value="492" resolution="512"/>
-    <location value="15" resolution="512"/>
-    <location value="502" resolution="512"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     with location
   </code>
 </doctag>

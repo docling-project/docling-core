@@ -112,7 +112,7 @@ pictures:
     $ref: '#/body'
   prov:
   - bbox:
-      b: 623.4
+      b: 582.4
       coord_origin: TOPLEFT
       l: 456.3
       r: 702.5
