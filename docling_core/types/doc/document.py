@@ -4932,6 +4932,7 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
         page_break_placeholder: Optional[str] = None,
         include_annotations: bool = True,
+        compact_tables: bool = False,
         *,
         mark_meta: bool = False,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
@@ -4962,6 +4963,7 @@ class DoclingDocument(BaseModel):
             included_content_layers=included_content_layers,
             page_break_placeholder=page_break_placeholder,
             include_annotations=include_annotations,
+            compact_tables=compact_tables,
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
         )
@@ -4988,6 +4990,7 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,  # e.g. "<!-- page break -->",
         include_annotations: bool = True,
         mark_annotations: bool = False,
+        compact_tables: bool = False,
         *,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
         allowed_meta_names: Optional[set[str]] = None,
@@ -5038,6 +5041,8 @@ class DoclingDocument(BaseModel):
         :param mark_annotations: bool: Whether to mark annotations in the export; only considered if item does not have
             meta. (Default value = False).
         :type mark_annotations: bool = False
+        :param compact_tables: bool: Whether to use compact table format without column padding. (Default value = False).
+        :type compact_tables: bool = False
         :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
         :type use_legacy_annotations: Optional[bool] = None
         :param mark_meta: bool: Whether to mark meta in the export
@@ -5084,6 +5089,7 @@ class DoclingDocument(BaseModel):
                 allowed_meta_names=allowed_meta_names,
                 blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
+                compact_tables=compact_tables,
             ),
         )
         ser_res = serializer.serialize()

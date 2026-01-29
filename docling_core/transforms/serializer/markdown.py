@@ -5,7 +5,7 @@ import re
 import textwrap
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import tabulate
@@ -106,6 +106,16 @@ class MarkdownParams(CommonParams):
         default=True,
         description="Whether to wrap code items in markdown code block formatting (```). ",
     )
+    compact_tables: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether to use compact table format without column padding. "
+                "When False (default), tables use padded columns for better visual formatting. "
+                "When True, tables use minimal whitespace, which is better for large tables and downstream processing."
+            )
+        ),
+    ] = False
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -341,6 +351,44 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
 class MarkdownTableSerializer(BaseTableSerializer):
     """Markdown-specific table item serializer."""
 
+    @staticmethod
+    def _compact_table(table_text: str) -> str:
+        """Remove padding from a markdown table.
+
+        Converts a padded table like:
+            | item   | qty   |
+            |--------|-------|
+            | spam   | 42    |
+
+        Into a compact table like:
+            | item | qty |
+            | - | - |
+            | spam | 42 |
+
+        Args:
+            table_text: Padded markdown table string
+
+        Returns:
+            Compact markdown table string
+        """
+        lines = table_text.split("\n")
+        compact_lines = []
+
+        for i, line in enumerate(lines):
+            if not line:
+                continue
+
+            parts = line.split("|")[1:-1]
+            stripped_parts = [part.strip() for part in parts]
+
+            # Check if this is the separator line (second line, contains only dashes/colons)
+            if i == 1:
+                compact_lines.append("| " + " | ".join("-" * len(stripped_parts)) + " |")
+            else:
+                compact_lines.append("| " + " | ".join(stripped_parts) + " |")
+
+        return "\n".join(compact_lines)
+
     @override
     def serialize(
         self,
@@ -393,6 +441,10 @@ class MarkdownTableSerializer(BaseTableSerializer):
                         tablefmt="github",
                         disable_numparse=True,
                     )
+
+                # Apply compact formatting if requested
+                if params.compact_tables:
+                    table_text = self._compact_table(table_text)
             else:
                 table_text = ""
             if table_text:
