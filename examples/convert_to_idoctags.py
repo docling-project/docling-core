@@ -20,10 +20,10 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.experimental.idoctags import (
     ContentType,
     EscapeMode,
-    IDocTagsSerializationMode,
-    IDocTagsParams,
-    IDocTagsVocabulary,
-    IDocTagsDocSerializer,
+    CYGLSerializationMode,
+    CYGLParams,
+    CYGLVocabulary,
+    CYGLDocSerializer,
 )
 
 import matplotlib.pyplot as plt
@@ -35,13 +35,13 @@ import numpy as np
 #
 
 def update_tokenizer(tokenizer: PreTrainedTokenizerBase, verbose: bool = False) -> PreTrainedTokenizerBase:
-    """Extend tokenizer with IDocTags special tokens.
+    """Extend tokenizer with CYGL special tokens.
 
     Parameters
     - tokenizer: base tokenizer to extend
     - verbose: print added tokens if True
     """
-    special_tokens = IDocTagsVocabulary.get_special_tokens()
+    special_tokens = CYGLVocabulary.get_special_tokens()
     if verbose:
         for i, tok in enumerate(special_tokens):
             print(i, "\t", tok)
@@ -51,16 +51,16 @@ def update_tokenizer(tokenizer: PreTrainedTokenizerBase, verbose: bool = False) 
     return tokenizer
 
 def run_dump(cfg: dict[str, Any]) -> int:
-    """Dump/serialize documents from a dataset to IDocTags strings/files and export a per-row report.
+    """Dump/serialize documents from a dataset to CYGL strings/files and export a per-row report.
 
     Config keys (with defaults):
     - dataset_name: str ("docling-project/doclaynet-set-a")
     - dataset_subset: str ("pdf_train")
     - dataset_split: str ("train")
-    - output_dir: str ("./scratch/idoctags")
-    - failed_dir: str ("./scratch/idoctags_failed") — where to dump HTML+JSON when serialization fails
+    - output_dir: str ("./scratch/cygl")
+    - failed_dir: str ("./scratch/cygl_failed") — where to dump HTML+JSON when serialization fails
     - write_outputs: bool (True) — write serialized outputs if True
-    - report_path: str ("./scratch/idoctags_report.xlsx") — where to write the results table (xlsx or csv)
+    - report_path: str ("./scratch/cygl_report.xlsx") — where to write the results table (xlsx or csv)
     - limit: Optional[int] (None) — process only the first N items if set
     - variants: list of serialization variants; each item:
         {"add_content": bool, "mode": "LLM_FRIENDLY"|"HUMAN_FRIENDLY", "suffix": str}
@@ -69,11 +69,11 @@ def run_dump(cfg: dict[str, Any]) -> int:
     dataset_name = cfg.get("dataset_name", "docling-project/doclaynet-set-a")
     dataset_subset = cfg.get("dataset_subset", "train")
     dataset_split = cfg.get("dataset_split", "train")
-    output_dir = Path(cfg.get("output_dir", "./scratch/idoctags"))
-    failed_dir = Path(cfg.get("failed_dir", "./scratch/idoctags_failed"))
+    output_dir = Path(cfg.get("output_dir", "./scratch/cygl"))
+    failed_dir = Path(cfg.get("failed_dir", "./scratch/cygl_failed"))
     pngs_dir = Path(cfg.get("pngs_dir", "./scratch/pngs_dir"))
     write_outputs: bool = bool(cfg.get("write_outputs", True))
-    report_path = Path(cfg.get("report_path", "./scratch/idoctags_report.xlsx"))
+    report_path = Path(cfg.get("report_path", "./scratch/cygl_report.xlsx"))
 
     default_variants = [
         {"add_content": False, "mode": "LLM_FRIENDLY", "suffix": "_without"},
@@ -153,7 +153,7 @@ def run_dump(cfg: dict[str, Any]) -> int:
         - Row ID
         - Loaded DoclingDocument
         - Loaded DoclingDocument Error
-        - Serialized IDocTags (mode, escape_mode, content) for all combinations
+        - Serialized CYGL (mode, escape_mode, content) for all combinations
         - Serialized HTML
         - Serialized HTML Error
 
@@ -169,11 +169,11 @@ def run_dump(cfg: dict[str, Any]) -> int:
         ]
 
         # Add all combinations of mode, escape_mode, and content
-        for mode in IDocTagsSerializationMode:
+        for mode in CYGLSerializationMode:
             for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    cols.append(f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content})")
-                    cols.append(f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error")
+                    cols.append(f"Serialized CYGL ({mode.value}, escape_mode={esc_mode.value}, content={content})")
+                    cols.append(f"Serialized CYGL ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error")
 
         cols.extend([
             "Serialized HTML",
@@ -195,10 +195,10 @@ def run_dump(cfg: dict[str, Any]) -> int:
         ]
 
         # Add summary rows for all combinations
-        for mode in IDocTagsSerializationMode:
+        for mode in CYGLSerializationMode:
             for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    col_name = f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content})"
+                    col_name = f"Serialized CYGL ({mode.value}, escape_mode={esc_mode.value}, content={content})"
                     summary_rows.append({"Metric": col_name, "Count": _count_yes(col_name)})
 
         summary_rows.append({"Metric": "Serialized HTML", "Count": _count_yes("Serialized HTML")})
@@ -320,11 +320,11 @@ def run_dump(cfg: dict[str, Any]) -> int:
             "Serialized HTML Error": "",
         }
 
-        for mode in IDocTagsSerializationMode:
+        for mode in CYGLSerializationMode:
             for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
-                    row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
+                    row_result[f"Serialized CYGL ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
+                    row_result[f"Serialized CYGL ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
 
         try:
             doc = DoclingDocument.model_validate_json(text)
@@ -340,11 +340,11 @@ def run_dump(cfg: dict[str, Any]) -> int:
             # Record failure outcome for this row
             row_result["Loaded DoclingDocument Error"] = str(exc)
 
-            for mode in IDocTagsSerializationMode:
+            for mode in CYGLSerializationMode:
                 for esc_mode in EscapeMode:
                     for content in [True, False]:
-                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
-                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error"] = "NA"
+                        row_result[f"Serialized CYGL ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
+                        row_result[f"Serialized CYGL ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error"] = "NA"
 
             results_rows.append(row_result)
             continue
@@ -358,20 +358,20 @@ def run_dump(cfg: dict[str, Any]) -> int:
             for esc_mode in [True, False]:
                 for content in [True, False]:
                     try:
-                        params_probe = IDocTagsParams()
+                        params_probe = CYGLParams()
                         params_probe.content_types = set(ContentType) if content else set()
                         params_probe.escape_mode = esc_mode
                         params_probe.pretty_indentation = indent
 
-                        iser_probe = IDocTagsDocSerializer(doc=doc, params=params_probe)
+                        iser_probe = CYGLDocSerializer(doc=doc, params=params_probe)
                         _ = iser_probe.serialize().text
 
-                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(True)
-                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
+                        row_result[f"Serialized CYGL ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(True)
+                        row_result[f"Serialized CYGL ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
 
                     except Exception as exc_:
-                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(False)
-                        row_result[f"Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = str(exc_)
+                        row_result[f"Serialized CYGL ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(False)
+                        row_result[f"Serialized CYGL ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = str(exc_)
 
         # Attempt HTML export (non-writing) to check serialization capability
         try:
@@ -401,10 +401,10 @@ def run_dump(cfg: dict[str, Any]) -> int:
     print("Overview summary:")
     print(f" - Total processed: {len(results_rows)}")
     print(f" - Loaded DoclingDocument: {_count_yes(results_rows, 'Loaded DoclingDocument')}")
-    for mode in [IDocTagsSerializationMode.HUMAN_FRIENDLY, IDocTagsSerializationMode.LLM_FRIENDLY]:
+    for mode in [CYGLSerializationMode.HUMAN_FRIENDLY, CYGLSerializationMode.LLM_FRIENDLY]:
         for esc_mode in [True, False]:
             for content in [True, False]:
-                print(f" - Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content}): {_count_yes(results_rows, f'Serialized IDocTags ({mode.value}, escape_mode={esc_mode}, content={content})')}")
+                print(f" - Serialized CYGL ({mode.value}, escape_mode={esc_mode}, content={content}): {_count_yes(results_rows, f'Serialized CYGL ({mode.value}, escape_mode={esc_mode}, content={content})')}")
     print(f" - Serialized HTML: {_count_yes(results_rows, 'Serialized HTML')}")
 
     if errors:
@@ -417,17 +417,17 @@ def run_dump(cfg: dict[str, Any]) -> int:
 
 
 def run_analyse(cfg: dict[str, Any]) -> int:
-    """Analyse token lengths and special-token usage from IDocTags files.
+    """Analyse token lengths and special-token usage from CYGL files.
 
     Config keys (with defaults):
     - tokenizer_name: str ("ibm-granite/granite-docling-258M")
-    - input_glob: str ("./scratch/idoctags/*_with_h.idoctags")
+    - input_glob: str ("./scratch/cygl/*_with_h.cygl")
     - pair_replace: dict with {"from": "_h", "to": ""} to locate paired files (optional)
     - show_plots: bool (True)
     - verbose: bool (False)
     """
     tokenizer_name = cfg.get("tokenizer_name", "ibm-granite/granite-docling-258M")
-    input_glob_pat = cfg.get("input_glob", "./scratch/idoctags/*_with_h.idoctags")
+    input_glob_pat = cfg.get("input_glob", "./scratch/cygl/*_with_h.cygl")
     pair_replace = cfg.get("pair_replace", {"from": "_h", "to": ""})
     show_plots = bool(cfg.get("show_plots", True))
     verbose = bool(cfg.get("verbose", False))
@@ -446,7 +446,7 @@ def run_analyse(cfg: dict[str, Any]) -> int:
     special_counts: Counter[int] = Counter()
 
     # Map special tokens to IDs in the extended tokenizer
-    special_tokens = IDocTagsVocabulary.get_special_tokens()
+    special_tokens = CYGLVocabulary.get_special_tokens()
     special_token_ids = {ext_tokenizer.convert_tokens_to_ids(tok) for tok in special_tokens}
 
     for filename in tqdm(filenames, desc="Analyse", ncols=128):
@@ -615,9 +615,9 @@ def default_config(mode: str) -> dict[str, Any]:
             "dataset_name": "docling-project/doclaynet-set-a",
             "dataset_subset": "pdf_train",
             "dataset_split": "train",
-            "output_dir": "./scratch/idoctags",
-            "failed_dir": "./scratch/idoctags_failed",
-            "report_path": "./scratch/idoctags_report.xlsx",
+            "output_dir": "./scratch/cygl",
+            "failed_dir": "./scratch/cygl_failed",
+            "report_path": "./scratch/cygl_report.xlsx",
             "write_outputs": True,
             "limit": None,
             "variants": [
@@ -629,7 +629,7 @@ def default_config(mode: str) -> dict[str, Any]:
     elif mode == "analyse":
         return {
             "tokenizer_name": "ibm-granite/granite-docling-258M",
-            "input_glob": "./scratch/idoctags/*_with_h.idoctags",
+            "input_glob": "./scratch/cygl/*_with_h.cygl",
             "pair_replace": {"from": "_h", "to": ""},
             "show_plots": True,
             "verbose": False,
@@ -639,12 +639,12 @@ def default_config(mode: str) -> dict[str, Any]:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Convert and analyse IDocTags data")
+    parser = argparse.ArgumentParser(description="Convert and analyse CYGL data")
     parser.add_argument(
         "--mode",
         choices=["dump", "analyse"],
         required=True,
-        help="Mode: dump dataset to idoctags or analyse token stats",
+        help="Mode: dump dataset to cygl or analyse token stats",
     )
     parser.add_argument(
         "--config",
@@ -670,7 +670,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if cfg_path is None:
         cfg = default_config(args.mode)
-        out_name = Path(f"idoctags_{args.mode}_config.json")
+        out_name = Path(f"cygl_{args.mode}_config.json")
         with open(out_name, "w", encoding="utf-8") as fw:
             json.dump(cfg, fw, indent=2)
         print(f"Wrote default config to: {out_name.resolve()}")

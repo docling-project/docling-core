@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 from docling_core.experimental.idoctags import (
-    IDocTagsDocDeserializer,
-    IDocTagsDocSerializer,
-    IDocTagsParams,
+    CYGLDeserializer,
+    CYGLDocSerializer,
+    CYGLParams,
 )
 from docling_core.types.doc import (
     BoundingBox,
@@ -27,15 +27,15 @@ DO_PRINT: bool = False
 
 
 def _serialize(doc: DoclingDocument) -> str:
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(),
+        params=CYGLParams(),
     )
     return ser.serialize().text
 
 
 def _deserialize(text: str) -> DoclingDocument:
-    return IDocTagsDocDeserializer().deserialize(doctags=text)
+    return CYGLDeserializer().deserialize(cygl_txt=text)
 
 
 def _add_default_page(doc: DoclingDocument):

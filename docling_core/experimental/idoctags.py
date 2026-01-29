@@ -1,4 +1,4 @@
-"""Define classes for DocTags serialization."""
+"""Define classes for CYGL serialization."""
 
 import copy
 import re
@@ -70,10 +70,10 @@ from docling_core.types.doc.labels import (
 )
 
 # Note: Intentionally avoid importing DocumentToken here to ensure
-# IDocTags uses only its own token vocabulary.
+# CYGL uses only its own token vocabulary.
 
-DOCTAGS_VERSION: Final = "1.0.0"
-DOCTAGS_RESOLUTION: int = 512
+CYGL_VERSION: Final = "1.0.0"
+CYGL_DFLT_RESOLUTION: int = 512
 
 
 def _wrap(text: str, wrap_tag: str) -> str:
@@ -81,7 +81,7 @@ def _wrap(text: str, wrap_tag: str) -> str:
 
 
 def _wrap_token(*, text: str, open_token: str) -> str:
-    close_token = IDocTagsVocabulary.create_closing_token(token=open_token)
+    close_token = CYGLVocabulary.create_closing_token(token=open_token)
     return f"{open_token}{text}{close_token}"
 
 
@@ -160,10 +160,10 @@ def _create_location_tokens_for_bbox(
     y1v = _quantize_to_resolution(max(y0, y1), yres)
 
     return (
-        IDocTagsVocabulary.create_location_token(value=x0v, resolution=xres)
-        + IDocTagsVocabulary.create_location_token(value=y0v, resolution=yres)
-        + IDocTagsVocabulary.create_location_token(value=x1v, resolution=xres)
-        + IDocTagsVocabulary.create_location_token(value=y1v, resolution=yres)
+        CYGLVocabulary.create_location_token(value=x0v, resolution=xres)
+        + CYGLVocabulary.create_location_token(value=y0v, resolution=yres)
+        + CYGLVocabulary.create_location_token(value=x1v, resolution=xres)
+        + CYGLVocabulary.create_location_token(value=y1v, resolution=yres)
     )
 
 
@@ -196,13 +196,13 @@ def _create_location_tokens_for_item(
     return "".join(out)
 
 
-class IDocTagsCategory(str, Enum):
-    """IDocTagsCtegory.
+class CYGLCategory(str, Enum):
+    """CYGLCtegory.
 
-    DocTags defines the following categories of elements:
+    CYGL defines the following categories of elements:
 
     - **root**: Elements that establish document scope such as
-      `doctag`.
+      `cygl`.
     - **special**: Elements that establish document pagination, such as
       `page_break`, and `time_break`.
     - **geometric**: Elements that capture geometric position as normalized
@@ -252,14 +252,14 @@ class IDocTagsCategory(str, Enum):
     CONTINUATION = "continuation"
 
 
-class IDocTagsToken(str, Enum):
-    """IDocTagsToken.
+class CYGLToken(str, Enum):
+    """CYGLToken.
 
     This class implements the tokens from the Token table,
 
     | # | Category | Token | Self-Closing [Yes/No] | Parametrized [Yes/No] | Attributes | Description |
     |---|----------|-------|-----------------------|-----------------------|------------|-------------|
-    | 1 | Root Elements | `doctag` | No | Yes | `version` | Root container; optional semantic version `version`. |
+    | 1 | Root Elements | `cygl` | No | Yes | `version` | Root container; optional semantic version `version`. |
     | 2 | Special Elements | `page_break` | Yes | No | — | Page delimiter. |
     | 3 |  | `time_break` | Yes | No | — | Temporal segment delimiter. |
     | 4 | Metadata Containers | `head` | No | No | — | Document-level metadata container. |
@@ -414,8 +414,8 @@ class IDocTagsToken(str, Enum):
     CONTENT = "content"  # TODO: review element name
 
 
-class IDocTagsAttributeKey(str, Enum):
-    """Attribute keys allowed on DocTags tokens."""
+class CYGLAttributeKey(str, Enum):
+    """Attribute keys allowed on CYGL tokens."""
 
     VERSION = "version"
     VALUE = "value"
@@ -428,8 +428,8 @@ class IDocTagsAttributeKey(str, Enum):
     ID = "id"
 
 
-class IDocTagsAttributeValue(str, Enum):
-    """Enumerated values for specific DocTags attributes."""
+class CYGLAttributeValue(str, Enum):
+    """Enumerated values for specific CYGL attributes."""
 
     # Generic boolean-like values
     TRUE = "true"
@@ -446,206 +446,206 @@ class IDocTagsAttributeValue(str, Enum):
     FORM = "form"
 
 
-class IDocTagsVocabulary(BaseModel):
-    """IDocTagsVocabulary."""
+class CYGLVocabulary(BaseModel):
+    """CYGLVocabulary."""
 
     # Allowed attributes per token (defined outside the Enum to satisfy mypy)
-    ALLOWED_ATTRIBUTES: ClassVar[dict[IDocTagsToken, set["IDocTagsAttributeKey"]]] = {
-        IDocTagsToken.DOCUMENT: {
-            IDocTagsAttributeKey.VERSION,
+    ALLOWED_ATTRIBUTES: ClassVar[dict[CYGLToken, set["CYGLAttributeKey"]]] = {
+        CYGLToken.DOCUMENT: {
+            CYGLAttributeKey.VERSION,
         },
-        IDocTagsToken.LOCATION: {
-            IDocTagsAttributeKey.VALUE,
-            IDocTagsAttributeKey.RESOLUTION,
+        CYGLToken.LOCATION: {
+            CYGLAttributeKey.VALUE,
+            CYGLAttributeKey.RESOLUTION,
         },
-        IDocTagsToken.HOUR: {IDocTagsAttributeKey.VALUE},
-        IDocTagsToken.MINUTE: {IDocTagsAttributeKey.VALUE},
-        IDocTagsToken.SECOND: {IDocTagsAttributeKey.VALUE},
-        IDocTagsToken.CENTISECOND: {IDocTagsAttributeKey.VALUE},
-        IDocTagsToken.HEADING: {IDocTagsAttributeKey.LEVEL},
-        IDocTagsToken.FORM_HEADING: {IDocTagsAttributeKey.LEVEL},
-        IDocTagsToken.CHECKBOX: {IDocTagsAttributeKey.SELECTED},
-        IDocTagsToken.SECTION: {IDocTagsAttributeKey.LEVEL},
-        IDocTagsToken.LIST: {IDocTagsAttributeKey.ORDERED},
-        IDocTagsToken.GROUP: {IDocTagsAttributeKey.TYPE},
-        IDocTagsToken.FLOATING_GROUP: {IDocTagsAttributeKey.CLASS},
-        IDocTagsToken.INLINE: {IDocTagsAttributeKey.CLASS},
-        IDocTagsToken.THREAD: {IDocTagsAttributeKey.ID},
-        IDocTagsToken.H_THREAD: {IDocTagsAttributeKey.ID},
+        CYGLToken.HOUR: {CYGLAttributeKey.VALUE},
+        CYGLToken.MINUTE: {CYGLAttributeKey.VALUE},
+        CYGLToken.SECOND: {CYGLAttributeKey.VALUE},
+        CYGLToken.CENTISECOND: {CYGLAttributeKey.VALUE},
+        CYGLToken.HEADING: {CYGLAttributeKey.LEVEL},
+        CYGLToken.FORM_HEADING: {CYGLAttributeKey.LEVEL},
+        CYGLToken.CHECKBOX: {CYGLAttributeKey.SELECTED},
+        CYGLToken.SECTION: {CYGLAttributeKey.LEVEL},
+        CYGLToken.LIST: {CYGLAttributeKey.ORDERED},
+        CYGLToken.GROUP: {CYGLAttributeKey.TYPE},
+        CYGLToken.FLOATING_GROUP: {CYGLAttributeKey.CLASS},
+        CYGLToken.INLINE: {CYGLAttributeKey.CLASS},
+        CYGLToken.THREAD: {CYGLAttributeKey.ID},
+        CYGLToken.H_THREAD: {CYGLAttributeKey.ID},
     }
 
     # Allowed values for specific attributes (enumerations)
     # Structure: token -> attribute name -> set of allowed string values
     ALLOWED_ATTRIBUTE_VALUES: ClassVar[
         dict[
-            IDocTagsToken,
-            dict["IDocTagsAttributeKey", set["IDocTagsAttributeValue"]],
+            CYGLToken,
+            dict["CYGLAttributeKey", set["CYGLAttributeValue"]],
         ]
     ] = {
         # Grouping and inline enumerations
-        IDocTagsToken.LIST: {
-            IDocTagsAttributeKey.ORDERED: {
-                IDocTagsAttributeValue.TRUE,
-                IDocTagsAttributeValue.FALSE,
+        CYGLToken.LIST: {
+            CYGLAttributeKey.ORDERED: {
+                CYGLAttributeValue.TRUE,
+                CYGLAttributeValue.FALSE,
             }
         },
-        IDocTagsToken.CHECKBOX: {
-            IDocTagsAttributeKey.SELECTED: {
-                IDocTagsAttributeValue.TRUE,
-                IDocTagsAttributeValue.FALSE,
+        CYGLToken.CHECKBOX: {
+            CYGLAttributeKey.SELECTED: {
+                CYGLAttributeValue.TRUE,
+                CYGLAttributeValue.FALSE,
             }
         },
-        IDocTagsToken.INLINE: {
-            IDocTagsAttributeKey.CLASS: {
-                IDocTagsAttributeValue.FORMULA,
-                IDocTagsAttributeValue.CODE,
-                IDocTagsAttributeValue.PICTURE,
+        CYGLToken.INLINE: {
+            CYGLAttributeKey.CLASS: {
+                CYGLAttributeValue.FORMULA,
+                CYGLAttributeValue.CODE,
+                CYGLAttributeValue.PICTURE,
             }
         },
-        IDocTagsToken.FLOATING_GROUP: {
-            IDocTagsAttributeKey.CLASS: {
-                IDocTagsAttributeValue.DOCUMENT_INDEX,
-                IDocTagsAttributeValue.TABLE,
-                IDocTagsAttributeValue.PICTURE,
-                IDocTagsAttributeValue.FORM,
-                IDocTagsAttributeValue.CODE,
+        CYGLToken.FLOATING_GROUP: {
+            CYGLAttributeKey.CLASS: {
+                CYGLAttributeValue.DOCUMENT_INDEX,
+                CYGLAttributeValue.TABLE,
+                CYGLAttributeValue.PICTURE,
+                CYGLAttributeValue.FORM,
+                CYGLAttributeValue.CODE,
             }
         },
         # Other attributes (e.g., level, type, id) are not enumerated here
     }
 
-    ALLOWED_ATTRIBUTE_RANGE: ClassVar[dict[IDocTagsToken, dict["IDocTagsAttributeKey", tuple[int, int]]]] = {
+    ALLOWED_ATTRIBUTE_RANGE: ClassVar[dict[CYGLToken, dict["CYGLAttributeKey", tuple[int, int]]]] = {
         # Geometric: value in [0, res]; resolution optional.
         # Keep conservative defaults aligned with existing usage.
-        IDocTagsToken.LOCATION: {
-            IDocTagsAttributeKey.VALUE: (0, DOCTAGS_RESOLUTION),  # TODO: review
-            IDocTagsAttributeKey.RESOLUTION: (DOCTAGS_RESOLUTION, DOCTAGS_RESOLUTION),  # TODO: review
+        CYGLToken.LOCATION: {
+            CYGLAttributeKey.VALUE: (0, CYGL_DFLT_RESOLUTION),  # TODO: review
+            CYGLAttributeKey.RESOLUTION: (CYGL_DFLT_RESOLUTION, CYGL_DFLT_RESOLUTION),  # TODO: review
         },
         # Temporal components
-        IDocTagsToken.HOUR: {IDocTagsAttributeKey.VALUE: (0, 99)},
-        IDocTagsToken.MINUTE: {IDocTagsAttributeKey.VALUE: (0, 59)},
-        IDocTagsToken.SECOND: {IDocTagsAttributeKey.VALUE: (0, 59)},
-        IDocTagsToken.CENTISECOND: {IDocTagsAttributeKey.VALUE: (0, 99)},
+        CYGLToken.HOUR: {CYGLAttributeKey.VALUE: (0, 99)},
+        CYGLToken.MINUTE: {CYGLAttributeKey.VALUE: (0, 59)},
+        CYGLToken.SECOND: {CYGLAttributeKey.VALUE: (0, 59)},
+        CYGLToken.CENTISECOND: {CYGLAttributeKey.VALUE: (0, 99)},
         # Levels (N ≥ 1)
-        IDocTagsToken.HEADING: {IDocTagsAttributeKey.LEVEL: (1, 6)},
-        IDocTagsToken.FORM_HEADING: {IDocTagsAttributeKey.LEVEL: (1, 6)},
-        IDocTagsToken.SECTION: {IDocTagsAttributeKey.LEVEL: (1, 6)},
+        CYGLToken.HEADING: {CYGLAttributeKey.LEVEL: (1, 6)},
+        CYGLToken.FORM_HEADING: {CYGLAttributeKey.LEVEL: (1, 6)},
+        CYGLToken.SECTION: {CYGLAttributeKey.LEVEL: (1, 6)},
         # Continuation markers (id length constraints)
-        IDocTagsToken.THREAD: {IDocTagsAttributeKey.ID: (1, 10)},
-        IDocTagsToken.H_THREAD: {IDocTagsAttributeKey.ID: (1, 10)},
+        CYGLToken.THREAD: {CYGLAttributeKey.ID: (1, 10)},
+        CYGLToken.H_THREAD: {CYGLAttributeKey.ID: (1, 10)},
     }
 
     # Self-closing tokens set
-    IS_SELFCLOSING: ClassVar[set[IDocTagsToken]] = {
-        IDocTagsToken.PAGE_BREAK,
-        IDocTagsToken.TIME_BREAK,
-        IDocTagsToken.LOCATION,
-        IDocTagsToken.HOUR,
-        IDocTagsToken.MINUTE,
-        IDocTagsToken.SECOND,
-        IDocTagsToken.CENTISECOND,
-        IDocTagsToken.BR,
+    IS_SELFCLOSING: ClassVar[set[CYGLToken]] = {
+        CYGLToken.PAGE_BREAK,
+        CYGLToken.TIME_BREAK,
+        CYGLToken.LOCATION,
+        CYGLToken.HOUR,
+        CYGLToken.MINUTE,
+        CYGLToken.SECOND,
+        CYGLToken.CENTISECOND,
+        CYGLToken.BR,
         # OTSL structural tokens are emitted as self-closing markers
-        IDocTagsToken.FCEL,
-        IDocTagsToken.ECEL,
-        IDocTagsToken.CHED,
-        IDocTagsToken.RHED,
-        IDocTagsToken.CORN,
-        IDocTagsToken.SROW,
-        IDocTagsToken.LCEL,
-        IDocTagsToken.UCEL,
-        IDocTagsToken.XCEL,
-        IDocTagsToken.NL,
+        CYGLToken.FCEL,
+        CYGLToken.ECEL,
+        CYGLToken.CHED,
+        CYGLToken.RHED,
+        CYGLToken.CORN,
+        CYGLToken.SROW,
+        CYGLToken.LCEL,
+        CYGLToken.UCEL,
+        CYGLToken.XCEL,
+        CYGLToken.NL,
         # Continuation markers
-        IDocTagsToken.THREAD,
-        IDocTagsToken.H_THREAD,
+        CYGLToken.THREAD,
+        CYGLToken.H_THREAD,
     }
 
     # Token to category mapping
-    TOKEN_CATEGORIES: ClassVar[dict[IDocTagsToken, IDocTagsCategory]] = {
+    TOKEN_CATEGORIES: ClassVar[dict[CYGLToken, CYGLCategory]] = {
         # Root
-        IDocTagsToken.DOCUMENT: IDocTagsCategory.ROOT,
+        CYGLToken.DOCUMENT: CYGLCategory.ROOT,
         # Metadata
-        IDocTagsToken.HEAD: IDocTagsCategory.METADATA,
-        IDocTagsToken.META: IDocTagsCategory.METADATA,
+        CYGLToken.HEAD: CYGLCategory.METADATA,
+        CYGLToken.META: CYGLCategory.METADATA,
         # Special
-        IDocTagsToken.PAGE_BREAK: IDocTagsCategory.SPECIAL,
-        IDocTagsToken.TIME_BREAK: IDocTagsCategory.SPECIAL,
+        CYGLToken.PAGE_BREAK: CYGLCategory.SPECIAL,
+        CYGLToken.TIME_BREAK: CYGLCategory.SPECIAL,
         # Geometric
-        IDocTagsToken.LOCATION: IDocTagsCategory.GEOMETRIC,
+        CYGLToken.LOCATION: CYGLCategory.GEOMETRIC,
         # Temporal
-        IDocTagsToken.HOUR: IDocTagsCategory.TEMPORAL,
-        IDocTagsToken.MINUTE: IDocTagsCategory.TEMPORAL,
-        IDocTagsToken.SECOND: IDocTagsCategory.TEMPORAL,
-        IDocTagsToken.CENTISECOND: IDocTagsCategory.TEMPORAL,
+        CYGLToken.HOUR: CYGLCategory.TEMPORAL,
+        CYGLToken.MINUTE: CYGLCategory.TEMPORAL,
+        CYGLToken.SECOND: CYGLCategory.TEMPORAL,
+        CYGLToken.CENTISECOND: CYGLCategory.TEMPORAL,
         # Semantic
-        IDocTagsToken.TITLE: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.HEADING: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.TEXT: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.CAPTION: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.FOOTNOTE: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.PAGE_HEADER: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.PAGE_FOOTER: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.WATERMARK: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.PICTURE: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.FORM: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.FORM_ITEM: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.FORM_HEADING: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.FORM_TEXT: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.HINT: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.FORMULA: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.CODE: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.LIST_TEXT: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.CHECKBOX: IDocTagsCategory.SEMANTIC,
-        IDocTagsToken.OTSL: IDocTagsCategory.SEMANTIC,
+        CYGLToken.TITLE: CYGLCategory.SEMANTIC,
+        CYGLToken.HEADING: CYGLCategory.SEMANTIC,
+        CYGLToken.TEXT: CYGLCategory.SEMANTIC,
+        CYGLToken.CAPTION: CYGLCategory.SEMANTIC,
+        CYGLToken.FOOTNOTE: CYGLCategory.SEMANTIC,
+        CYGLToken.PAGE_HEADER: CYGLCategory.SEMANTIC,
+        CYGLToken.PAGE_FOOTER: CYGLCategory.SEMANTIC,
+        CYGLToken.WATERMARK: CYGLCategory.SEMANTIC,
+        CYGLToken.PICTURE: CYGLCategory.SEMANTIC,
+        CYGLToken.FORM: CYGLCategory.SEMANTIC,
+        CYGLToken.FORM_ITEM: CYGLCategory.SEMANTIC,
+        CYGLToken.FORM_HEADING: CYGLCategory.SEMANTIC,
+        CYGLToken.FORM_TEXT: CYGLCategory.SEMANTIC,
+        CYGLToken.HINT: CYGLCategory.SEMANTIC,
+        CYGLToken.FORMULA: CYGLCategory.SEMANTIC,
+        CYGLToken.CODE: CYGLCategory.SEMANTIC,
+        CYGLToken.LIST_TEXT: CYGLCategory.SEMANTIC,
+        CYGLToken.CHECKBOX: CYGLCategory.SEMANTIC,
+        CYGLToken.OTSL: CYGLCategory.SEMANTIC,
         # Grouping
-        IDocTagsToken.SECTION: IDocTagsCategory.GROUPING,
-        IDocTagsToken.LIST: IDocTagsCategory.GROUPING,
-        IDocTagsToken.GROUP: IDocTagsCategory.GROUPING,
-        IDocTagsToken.FLOATING_GROUP: IDocTagsCategory.GROUPING,
-        IDocTagsToken.INLINE: IDocTagsCategory.GROUPING,
+        CYGLToken.SECTION: CYGLCategory.GROUPING,
+        CYGLToken.LIST: CYGLCategory.GROUPING,
+        CYGLToken.GROUP: CYGLCategory.GROUPING,
+        CYGLToken.FLOATING_GROUP: CYGLCategory.GROUPING,
+        CYGLToken.INLINE: CYGLCategory.GROUPING,
         # Formatting
-        IDocTagsToken.BOLD: IDocTagsCategory.FORMATTING,
-        IDocTagsToken.ITALIC: IDocTagsCategory.FORMATTING,
-        IDocTagsToken.STRIKETHROUGH: IDocTagsCategory.FORMATTING,
-        IDocTagsToken.SUPERSCRIPT: IDocTagsCategory.FORMATTING,
-        IDocTagsToken.SUBSCRIPT: IDocTagsCategory.FORMATTING,
-        IDocTagsToken.RTL: IDocTagsCategory.FORMATTING,
-        IDocTagsToken.BR: IDocTagsCategory.FORMATTING,
+        CYGLToken.BOLD: CYGLCategory.FORMATTING,
+        CYGLToken.ITALIC: CYGLCategory.FORMATTING,
+        CYGLToken.STRIKETHROUGH: CYGLCategory.FORMATTING,
+        CYGLToken.SUPERSCRIPT: CYGLCategory.FORMATTING,
+        CYGLToken.SUBSCRIPT: CYGLCategory.FORMATTING,
+        CYGLToken.RTL: CYGLCategory.FORMATTING,
+        CYGLToken.BR: CYGLCategory.FORMATTING,
         # Structural
-        IDocTagsToken.FCEL: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.ECEL: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.CHED: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.RHED: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.CORN: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.SROW: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.LCEL: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.UCEL: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.XCEL: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.NL: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.KEY: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.IMPLICIT_KEY: IDocTagsCategory.STRUCTURAL,
-        IDocTagsToken.VALUE: IDocTagsCategory.STRUCTURAL,
+        CYGLToken.FCEL: CYGLCategory.STRUCTURAL,
+        CYGLToken.ECEL: CYGLCategory.STRUCTURAL,
+        CYGLToken.CHED: CYGLCategory.STRUCTURAL,
+        CYGLToken.RHED: CYGLCategory.STRUCTURAL,
+        CYGLToken.CORN: CYGLCategory.STRUCTURAL,
+        CYGLToken.SROW: CYGLCategory.STRUCTURAL,
+        CYGLToken.LCEL: CYGLCategory.STRUCTURAL,
+        CYGLToken.UCEL: CYGLCategory.STRUCTURAL,
+        CYGLToken.XCEL: CYGLCategory.STRUCTURAL,
+        CYGLToken.NL: CYGLCategory.STRUCTURAL,
+        CYGLToken.KEY: CYGLCategory.STRUCTURAL,
+        CYGLToken.IMPLICIT_KEY: CYGLCategory.STRUCTURAL,
+        CYGLToken.VALUE: CYGLCategory.STRUCTURAL,
         # Continuation
-        IDocTagsToken.THREAD: IDocTagsCategory.CONTINUATION,
-        IDocTagsToken.H_THREAD: IDocTagsCategory.CONTINUATION,
+        CYGLToken.THREAD: CYGLCategory.CONTINUATION,
+        CYGLToken.H_THREAD: CYGLCategory.CONTINUATION,
         # Content/Binary data
-        IDocTagsToken.BASE64: IDocTagsCategory.BINARY_DATA,
-        IDocTagsToken.URI: IDocTagsCategory.BINARY_DATA,
-        IDocTagsToken.MARKER: IDocTagsCategory.CONTENT,
-        IDocTagsToken.FACETS: IDocTagsCategory.CONTENT,
-        IDocTagsToken.CONTENT: IDocTagsCategory.CONTENT,
+        CYGLToken.BASE64: CYGLCategory.BINARY_DATA,
+        CYGLToken.URI: CYGLCategory.BINARY_DATA,
+        CYGLToken.MARKER: CYGLCategory.CONTENT,
+        CYGLToken.FACETS: CYGLCategory.CONTENT,
+        CYGLToken.CONTENT: CYGLCategory.CONTENT,
     }
 
     @classmethod
-    def get_category(cls, token: IDocTagsToken) -> IDocTagsCategory:
-        """Get the category for a given IDocTags token.
+    def get_category(cls, token: CYGLToken) -> CYGLCategory:
+        """Get the category for a given CYGL token.
 
         Args:
-            token: The IDocTags token to look up.
+            token: The CYGL token to look up.
 
         Returns:
-            The corresponding IDocTagsCategory for the token.
+            The corresponding CYGLCategory for the token.
 
         Raises:
             ValueError: If the token is not found in the mapping.
@@ -674,7 +674,7 @@ class IDocTagsVocabulary(BaseModel):
                 raise ValueError("invalid closing tag format")
             name = m_close.group(1)
             try:
-                IDocTagsToken(name)
+                CYGLToken(name)
             except ValueError:
                 raise ValueError(f"unknown token '{name}'")
             return s
@@ -688,7 +688,7 @@ class IDocTagsVocabulary(BaseModel):
 
         # Validate the tag name against known tokens
         try:
-            tok_enum = IDocTagsToken(name)
+            tok_enum = CYGLToken(name)
         except ValueError:
             raise ValueError(f"unknown token '{name}'")
 
@@ -701,7 +701,7 @@ class IDocTagsVocabulary(BaseModel):
         return f"</{name}>"
 
     @classmethod
-    def create_doctag_root(cls, *, version: str = DOCTAGS_VERSION, closing: bool = False) -> str:
+    def create_cygl_root(cls, *, version: str = CYGL_VERSION, closing: bool = False) -> str:
         """Create the document root tag.
 
         - When `closing` is True, returns the closing root tag.
@@ -709,12 +709,12 @@ class IDocTagsVocabulary(BaseModel):
         - Otherwise returns a bare opening root tag.
         """
         if closing:
-            return f"</{IDocTagsToken.DOCUMENT.value}>"
+            return f"</{CYGLToken.DOCUMENT.value}>"
         elif version:
-            return f'<{IDocTagsToken.DOCUMENT.value} {IDocTagsAttributeKey.VERSION.value}="{version}">'
+            return f'<{CYGLToken.DOCUMENT.value} {CYGLAttributeKey.VERSION.value}="{version}">'
         else:
             # Version attribute is optional; emit bare root tag when not provided
-            return f"<{IDocTagsToken.DOCUMENT.value}>"
+            return f"<{CYGLToken.DOCUMENT.value}>"
 
     @classmethod
     def create_threading_token(cls, *, id: str, horizontal: bool = False) -> str:
@@ -724,29 +724,29 @@ class IDocTagsVocabulary(BaseModel):
         the `horizontal` flag. Validates required attributes against the
         class schema and basic value sanity.
         """
-        token = IDocTagsToken.H_THREAD if horizontal else IDocTagsToken.THREAD
+        token = CYGLToken.H_THREAD if horizontal else CYGLToken.THREAD
         # Ensure the required attribute is declared for this token
-        assert IDocTagsAttributeKey.ID in cls.ALLOWED_ATTRIBUTES.get(token, set())
+        assert CYGLAttributeKey.ID in cls.ALLOWED_ATTRIBUTES.get(token, set())
 
         # Validate id length if a range is specified
-        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token][IDocTagsAttributeKey.ID]
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token][CYGLAttributeKey.ID]
         length = len(id)
         if not (lo <= length <= hi):
             raise ValueError(f"id length must be in [{lo}, {hi}]")
 
-        return f'<{token.value} {IDocTagsAttributeKey.ID.value}="{id}"/>'
+        return f'<{token.value} {CYGLAttributeKey.ID.value}="{id}"/>'
 
     @classmethod
-    def create_floating_group_token(cls, *, value: IDocTagsAttributeValue, closing: bool = False) -> str:
+    def create_floating_group_token(cls, *, value: CYGLAttributeValue, closing: bool = False) -> str:
         """Create a floating group tag.
 
         - When `closing` is True, returns the closing tag.
         - Otherwise returns an opening tag with a class attribute derived from `value`.
         """
         if closing:
-            return f"</{IDocTagsToken.FLOATING_GROUP.value}>"
+            return f"</{CYGLToken.FLOATING_GROUP.value}>"
         else:
-            return f'<{IDocTagsToken.FLOATING_GROUP.value} {IDocTagsAttributeKey.CLASS.value}="{value.value}">'
+            return f'<{CYGLToken.FLOATING_GROUP.value} {CYGLAttributeKey.CLASS.value}="{value.value}">'
 
     @classmethod
     def create_list_token(cls, *, ordered: bool, closing: bool = False) -> str:
@@ -756,17 +756,11 @@ class IDocTagsVocabulary(BaseModel):
         - Otherwise returns an opening tag with an `ordered` boolean attribute.
         """
         if closing:
-            return f"</{IDocTagsToken.LIST.value}>"
+            return f"</{CYGLToken.LIST.value}>"
         elif ordered:
-            return (
-                f"<{IDocTagsToken.LIST.value} "
-                f'{IDocTagsAttributeKey.ORDERED.value}="{IDocTagsAttributeValue.TRUE.value}">'
-            )
+            return f'<{CYGLToken.LIST.value} {CYGLAttributeKey.ORDERED.value}="{CYGLAttributeValue.TRUE.value}">'
         else:
-            return (
-                f"<{IDocTagsToken.LIST.value} "
-                f'{IDocTagsAttributeKey.ORDERED.value}="{IDocTagsAttributeValue.FALSE.value}">'
-            )
+            return f'<{CYGLToken.LIST.value} {CYGLAttributeKey.ORDERED.value}="{CYGLAttributeValue.FALSE.value}">'
 
     @classmethod
     def create_heading_token(cls, *, level: int, closing: bool = False) -> str:
@@ -775,13 +769,13 @@ class IDocTagsVocabulary(BaseModel):
         When `closing` is False, emits an opening tag with level attribute.
         When `closing` is True, emits the corresponding closing tag.
         """
-        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[IDocTagsToken.HEADING][IDocTagsAttributeKey.LEVEL]
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[CYGLToken.HEADING][CYGLAttributeKey.LEVEL]
         if not (lo <= level <= hi):
             raise ValueError(f"level must be in [{lo}, {hi}]")
 
         if closing:
-            return f"</{IDocTagsToken.HEADING.value}>"
-        return f'<{IDocTagsToken.HEADING.value} {IDocTagsAttributeKey.LEVEL.value}="{level}">'
+            return f"</{CYGLToken.HEADING.value}>"
+        return f'<{CYGLToken.HEADING.value} {CYGLAttributeKey.LEVEL.value}="{level}">'
 
     @classmethod
     def create_location_token(cls, *, value: int, resolution: int) -> str:
@@ -794,7 +788,7 @@ class IDocTagsVocabulary(BaseModel):
         if not (0 <= value < resolution):
             raise ValueError(f"value ({value}) must be in [0, {resolution})")
 
-        return f'<{IDocTagsToken.LOCATION.value} {IDocTagsAttributeKey.VALUE.value}="{value}"/>'
+        return f'<{CYGLToken.LOCATION.value} {CYGLAttributeKey.VALUE.value}="{value}"/>'
 
     @classmethod
     def get_special_tokens(
@@ -803,7 +797,7 @@ class IDocTagsVocabulary(BaseModel):
         include_location_tokens: bool = True,
         include_temporal_tokens: bool = True,
     ) -> list[str]:
-        """Return all DocTags special tokens.
+        """Return all CYGL special tokens.
 
         Rules:
         - If a token has attributes, do not emit a bare opening tag without attributes.
@@ -816,15 +810,15 @@ class IDocTagsVocabulary(BaseModel):
         special_tokens: list[str] = []
 
         temporal_tokens = {
-            IDocTagsToken.HOUR,
-            IDocTagsToken.MINUTE,
-            IDocTagsToken.SECOND,
-            IDocTagsToken.CENTISECOND,
+            CYGLToken.HOUR,
+            CYGLToken.MINUTE,
+            CYGLToken.SECOND,
+            CYGLToken.CENTISECOND,
         }
 
-        for token in IDocTagsToken:
+        for token in CYGLToken:
             # Optional gating for location/temporal tokens
-            if not include_location_tokens and token is IDocTagsToken.LOCATION:
+            if not include_location_tokens and token is CYGLToken.LOCATION:
                 continue
             if not include_temporal_tokens and token in temporal_tokens:
                 continue
@@ -849,7 +843,7 @@ class IDocTagsVocabulary(BaseModel):
                 range_map = cls.ALLOWED_ATTRIBUTE_RANGE.get(token, {})
                 for attr_name, (lo, hi) in range_map.items():
                     # Keep the list size reasonable by skipping optional resolution enumeration
-                    if token is IDocTagsToken.LOCATION and attr_name is IDocTagsAttributeKey.RESOLUTION:
+                    if token is CYGLToken.LOCATION and attr_name is CYGLAttributeKey.RESOLUTION:
                         continue
                     for n in range(lo, hi + 1):
                         if is_selfclosing:
@@ -873,8 +867,8 @@ class IDocTagsVocabulary(BaseModel):
     def create_selfclosing_token(
         cls,
         *,
-        token: IDocTagsToken,
-        attrs: Optional[dict["IDocTagsAttributeKey", Any]] = None,
+        token: CYGLToken,
+        attrs: Optional[dict["CYGLAttributeKey", Any]] = None,
     ) -> str:
         """Create a self-closing token with optional attributes (default None).
 
@@ -938,29 +932,29 @@ class IDocTagsVocabulary(BaseModel):
         return f"<{token.value} {attrs_text}/>"
 
 
-class IDocTagsSerializationMode(str, Enum):
-    """Serialization mode for IDocTags output."""
+class CYGLSerializationMode(str, Enum):
+    """Serialization mode for CYGL output."""
 
     HUMAN_FRIENDLY = "human_friendly"
     LLM_FRIENDLY = "llm_friendly"
 
 
 class EscapeMode(str, Enum):
-    """XML escape mode for IDocTags output."""
+    """XML escape mode for CYGL output."""
 
     CDATA_ALWAYS = "cdata_always"  # wrap all text in CDATA
     CDATA_WHEN_NEEDED = "cdata_when_needed"  # wrap text in CDATA only if it contains special characters
 
 
 class WrapMode(str, Enum):
-    """Wrap mode for IDocTags output."""
+    """Wrap mode for CYGL output."""
 
     WRAP_ALWAYS = "wrap_always"  # wrap all text in explicit wrapper element
     WRAP_WHEN_NEEDED = "wrap_when_needed"  # wrap text only if it has leading or trailing whitespace
 
 
 class ContentType(str, Enum):
-    """Content type for IDocTags output."""
+    """Content type for CYGL output."""
 
     REF_CAPTION = "ref_caption"
     REF_FOOTNOTE = "ref_footnote"
@@ -977,12 +971,12 @@ class ContentType(str, Enum):
 _DEFAULT_CONTENT_TYPES: set[ContentType] = set(ContentType)
 
 
-class IDocTagsParams(CommonParams):
-    """IDocTags-specific serialization parameters independent of DocTags."""
+class CYGLParams(CommonParams):
+    """CYGL-specific serialization parameters independent of CYGL."""
 
-    # Geometry & content controls (aligned with DocTags defaults)
-    xsize: int = DOCTAGS_RESOLUTION
-    ysize: int = DOCTAGS_RESOLUTION
+    # Geometry & content controls (aligned with CYGL defaults)
+    xsize: int = CYGL_DFLT_RESOLUTION
+    ysize: int = CYGL_DFLT_RESOLUTION
     add_location: bool = True
     add_table_cell_location: bool = False
 
@@ -994,7 +988,7 @@ class IDocTagsParams(CommonParams):
     # types of content to serialize:
     content_types: set[ContentType] = _DEFAULT_CONTENT_TYPES
 
-    # IDocTags formatting
+    # CYGL formatting
     do_self_closing: bool = True
     pretty_indentation: Optional[str] = 2 * " "  # None means minimized serialization, "" means no indentation
 
@@ -1004,12 +998,12 @@ class IDocTagsParams(CommonParams):
     content_wrapping_mode: WrapMode = WrapMode.WRAP_WHEN_NEEDED
 
 
-def _get_delim(*, params: IDocTagsParams) -> str:
-    """Return record delimiter based on IDocTagsSerializationMode."""
+def _get_delim(*, params: CYGLParams) -> str:
+    """Return record delimiter based on CYGLSerializationMode."""
     return "" if params.pretty_indentation is None else "\n"
 
 
-def _escape_text(text: str, params: IDocTagsParams) -> str:
+def _escape_text(text: str, params: CYGLParams) -> str:
     do_wrap = params.content_wrapping_mode == WrapMode.WRAP_ALWAYS or (
         params.content_wrapping_mode == WrapMode.WRAP_WHEN_NEEDED and text != text.strip()
     )
@@ -1019,12 +1013,12 @@ def _escape_text(text: str, params: IDocTagsParams) -> str:
         text = f"<![CDATA[{text}]]>"
     if do_wrap:
         # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
-        text = _wrap(text=text, wrap_tag=IDocTagsToken.CONTENT.value)
+        text = _wrap(text=text, wrap_tag=CYGLToken.CONTENT.value)
     return text
 
 
-class IDocTagsListSerializer(BaseModel, BaseListSerializer):
-    """DocTags-specific list serializer."""
+class CYGLListSerializer(BaseModel, BaseListSerializer):
+    """CYGL-specific list serializer."""
 
     indent: int = 4
 
@@ -1040,7 +1034,7 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
         visited: Optional[set[str]] = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize a ``ListGroup`` into IDocTags markup.
+        """Serialize a ``ListGroup`` into CYGL markup.
 
         This emits list containers (``<ordered_list>``/``<unordered_list>``) and
         serializes children explicitly. Nested ``ListGroup`` items are emitted as
@@ -1055,13 +1049,13 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
             list_level: Current nesting depth (0-based).
             is_inline_scope: Whether serialization happens in an inline context.
             visited: Set of already visited item refs to avoid cycles.
-            **kwargs: Additional serializer parameters forwarded to ``IDocTagsParams``.
+            **kwargs: Additional serializer parameters forwarded to ``CYGLParams``.
 
         Returns:
             A ``SerializationResult`` containing serialized text and metadata.
         """
         my_visited = visited if visited is not None else set()
-        params = IDocTagsParams(**kwargs)
+        params = CYGLParams(**kwargs)
 
         # Build list children explicitly. Requirements:
         # 1) <list ordered="true|false"></list> can be children of lists.
@@ -1137,9 +1131,9 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
             text_res = delim.join(child_texts)
             text_res = f"{text_res}{delim}"
             open_token = (
-                IDocTagsVocabulary.create_list_token(ordered=True)
+                CYGLVocabulary.create_list_token(ordered=True)
                 if item.first_item_is_enumerated(doc)
-                else IDocTagsVocabulary.create_list_token(ordered=False)
+                else CYGLVocabulary.create_list_token(ordered=False)
             )
             text_res = _wrap_token(text=text_res, open_token=open_token)
         else:
@@ -1148,7 +1142,7 @@ class IDocTagsListSerializer(BaseModel, BaseListSerializer):
 
 
 class _LinguistLabel(str, Enum):
-    """Linguist-compatible labels for IDocTags output."""
+    """Linguist-compatible labels for CYGL output."""
 
     # compatible with GitHub Linguist v9.4.0:
     # https://github.com/github-linguist/linguist/blob/v9.4.0/lib/linguist/languages.yml
@@ -1333,8 +1327,8 @@ class _LinguistLabel(str, Enum):
         return mapping.get(lang, CodeLanguageLabel.UNKNOWN)
 
 
-class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
-    """IDocTags-specific text item serializer using `<location>` tokens."""
+class CYGLTextSerializer(BaseModel, BaseTextSerializer):
+    """CYGL-specific text item serializer using `<location>` tokens."""
 
     @override
     def serialize(
@@ -1347,7 +1341,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize a text item to IDocTags format.
+        """Serialize a text item to CYGL format.
 
         Handles multi-provenance items by splitting them into per-provenance items,
         serializing each separately, and merging the results.
@@ -1414,7 +1408,7 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize a ``TextItem`` into IDocTags markup.
+        """Serialize a ``TextItem`` into CYGL markup.
 
         Depending on parameters, emits meta blocks, location tokens, and the
         item's textual content (prefixing code language for ``CodeItem``). For
@@ -1426,40 +1420,40 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
             doc_serializer: The document-level serializer for delegating nested items.
             doc: The document used to resolve references and children.
             visited: Set of already visited item refs to avoid cycles.
-            **kwargs: Additional serializer parameters forwarded to ``IDocTagsParams``.
+            **kwargs: Additional serializer parameters forwarded to ``CYGLParams``.
 
         Returns:
             A ``SerializationResult`` with the serialized text and span source.
         """
         my_visited = visited if visited is not None else set()
-        params = IDocTagsParams(**kwargs)
+        params = CYGLParams(**kwargs)
 
-        # Determine wrapper open-token for this item using IDocTags vocabulary.
+        # Determine wrapper open-token for this item using CYGL vocabulary.
         # - SectionHeaderItem: use <heading level="N"> ... </heading>.
-        # - Other text-like items: map the label to an IDocTagsToken; for
+        # - Other text-like items: map the label to an CYGLToken; for
         #   list items, this maps to <list_text> and keeps the text serializer
         #   free of type-based special casing.
         wrap_open_token: Optional[str]
         selected_token: str = ""
         if isinstance(item, SectionHeaderItem):
-            wrap_open_token = IDocTagsVocabulary.create_heading_token(level=item.level)
+            wrap_open_token = CYGLVocabulary.create_heading_token(level=item.level)
         elif isinstance(item, ListItem):
-            tok = IDocTagsToken.LIST_TEXT
+            tok = CYGLToken.LIST_TEXT
             wrap_open_token = f"<{tok.value}>"
         elif isinstance(item, CodeItem):
-            tok = IDocTagsToken.CODE
+            tok = CYGLToken.CODE
             if (linguist_lang := _LinguistLabel.from_code_language_label(item.code_language)) is not None:
-                wrap_open_token = f'<{tok.value} {IDocTagsAttributeKey.CLASS.value}="{linguist_lang.value}">'
+                wrap_open_token = f'<{tok.value} {CYGLAttributeKey.CLASS.value}="{linguist_lang.value}">'
             else:
                 wrap_open_token = f"<{tok.value}>"
         elif isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_SELECTED:
-            tok = IDocTagsToken.TEXT
-            # FIXME: make a dedicated create_selected_token in IDocTagsVocabulary
+            tok = CYGLToken.TEXT
+            # FIXME: make a dedicated create_selected_token in CYGLVocabulary
             wrap_open_token = f"<{tok.value}>"
             selected_token = '<selected value="true"/>'
         elif isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_UNSELECTED:
-            tok = IDocTagsToken.TEXT
-            # FIXME: make a dedicated create_selected_token in IDocTagsVocabulary
+            tok = CYGLToken.TEXT
+            # FIXME: make a dedicated create_selected_token in CYGLVocabulary
             wrap_open_token = f"<{tok.value}>"
             selected_token = '<selected value="false"/>'
         elif isinstance(item, TextItem) and (
@@ -1472,20 +1466,20 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 DocItemLabel.GRADING_SCALE,
             ]
         ):
-            tok = IDocTagsToken.TEXT
+            tok = CYGLToken.TEXT
             wrap_open_token = f"<{tok.value}>"
         else:
             label_value = str(item.label)
             try:
-                tok = IDocTagsToken(label_value)
+                tok = CYGLToken(label_value)
                 wrap_open_token = f"<{tok.value}>"
             except ValueError:
-                raise ValueError(f"Unsupported IDocTags token for label '{label_value}'")
+                raise ValueError(f"Unsupported CYGL token for label '{label_value}'")
 
         parts: list[str] = []
 
         if params.add_location:
-            # Use IDocTags `<location>` tokens instead of `<loc_.../>`
+            # Use CYGL `<location>` tokens instead of `<loc_.../>`
             loc = _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
             if loc:
                 parts.append(loc)
@@ -1536,8 +1530,8 @@ class IDocTagsTextSerializer(BaseModel, BaseTextSerializer):
         return create_ser_result(text=text_res, span_source=item)
 
 
-class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
-    """DocTags-specific meta serializer."""
+class CYGLMetaSerializer(BaseModel, BaseMetaSerializer):
+    """CYGL-specific meta serializer."""
 
     @override
     def serialize(
@@ -1546,8 +1540,8 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
         item: NodeItem,
         **kwargs: Any,
     ) -> SerializationResult:
-        """DocTags-specific meta serializer."""
-        params = IDocTagsParams(**kwargs)
+        """CYGL-specific meta serializer."""
+        params = CYGLParams(**kwargs)
 
         elem_delim = ""
         texts = (
@@ -1571,7 +1565,7 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
             span_source=item if isinstance(item, DocItem) else [],
         )
 
-    def _serialize_meta_field(self, meta: BaseMeta, name: str, params: IDocTagsParams) -> Optional[str]:
+    def _serialize_meta_field(self, meta: BaseMeta, name: str, params: CYGLParams) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
             if name == MetaFieldName.SUMMARY and isinstance(field_val, SummaryMetaField):
                 escaped_text = _escape_text(field_val.text, params)
@@ -1598,8 +1592,8 @@ class IDocTagsMetaSerializer(BaseModel, BaseMetaSerializer):
         return None
 
 
-class IDocTagsPictureSerializer(BasePictureSerializer):
-    """DocTags-specific picture item serializer."""
+class CYGLPictureSerializer(BasePictureSerializer):
+    """CYGL-specific picture item serializer."""
 
     def _picture_is_chart(self, item: PictureItem) -> bool:
         """Check if predicted class indicates a chart."""
@@ -1625,12 +1619,10 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        params = IDocTagsParams(**kwargs)
+        params = CYGLParams(**kwargs)
 
-        open_token: str = IDocTagsVocabulary.create_floating_group_token(value=IDocTagsAttributeValue.PICTURE)
-        close_token: str = IDocTagsVocabulary.create_floating_group_token(
-            value=IDocTagsAttributeValue.PICTURE, closing=True
-        )
+        open_token: str = CYGLVocabulary.create_floating_group_token(value=CYGLAttributeValue.PICTURE)
+        close_token: str = CYGLVocabulary.create_floating_group_token(value=CYGLAttributeValue.PICTURE, closing=True)
 
         # Build caption (as a sibling of the picture within the floating_group)
         res_parts: list[SerializationResult] = []
@@ -1665,21 +1657,21 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
                 if chart_data and chart_data.table_cells:
                     temp_doc = DoclingDocument(name="temp")
                     temp_table = temp_doc.add_table(data=chart_data)
-                    # Reuse the IDocTags table emission for chart data
-                    params_chart = IDocTagsParams(
+                    # Reuse the CYGL table emission for chart data
+                    params_chart = CYGLParams(
                         **{
                             **params.model_dump(),
                             "add_table_cell_location": False,
                         }
                     )
-                    otsl_content = IDocTagsTableSerializer()._emit_otsl(
+                    otsl_content = CYGLTableSerializer()._emit_otsl(
                         item=temp_table,  # type: ignore[arg-type]
                         doc_serializer=doc_serializer,
                         doc=temp_doc,
                         params=params_chart,
                         **kwargs,
                     )
-                    otsl_payload = _wrap(text=otsl_content, wrap_tag=IDocTagsToken.OTSL.value)
+                    otsl_payload = _wrap(text=otsl_content, wrap_tag=CYGLToken.OTSL.value)
                     body += otsl_payload
 
             if body:
@@ -1688,7 +1680,7 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
 
         picture_text = "".join(picture_inner_parts)
         if picture_text:
-            picture_text = _wrap(text=picture_text, wrap_tag=IDocTagsToken.PICTURE.value)
+            picture_text = _wrap(text=picture_text, wrap_tag=CYGLToken.PICTURE.value)
 
         # Build footnotes (as siblings of the picture within the floating_group)
         footnote_text = ""
@@ -1706,8 +1698,8 @@ class IDocTagsPictureSerializer(BasePictureSerializer):
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
-class IDocTagsTableSerializer(BaseTableSerializer):
-    """DocTags-specific table item serializer."""
+class CYGLTableSerializer(BaseTableSerializer):
+    """CYGL-specific table item serializer."""
 
     # _get_table_token no longer needed; OTSL tokens are emitted via vocabulary
 
@@ -1717,10 +1709,10 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         item: TableItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        params: "IDocTagsParams",
+        params: "CYGLParams",
         **kwargs: Any,
     ) -> str:
-        """Emit OTSL payload using IDocTags tokens and location semantics.
+        """Emit OTSL payload using CYGL tokens and location semantics.
 
         Location tokens are included only when all required information is available
         (cell bboxes, provenance, page info, valid page size). Otherwise, location
@@ -1772,13 +1764,13 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                 if rowstart == i and colstart == j:
                     if content:
                         if cell.column_header:
-                            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.CHED))
+                            parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.CHED))
                         elif cell.row_header:
-                            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.RHED))
+                            parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.RHED))
                         elif cell.row_section:
-                            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.SROW))
+                            parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.SROW))
                         else:
-                            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.FCEL))
+                            parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.FCEL))
 
                         if cell_loc:
                             parts.append(cell_loc)
@@ -1788,15 +1780,15 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                                 content = _escape_text(content, params)
                             parts.append(content)
                     else:
-                        parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.ECEL))
+                        parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.ECEL))
                 elif rowstart != i and colspan == 1:  # FIXME: I believe we should have colstart == j
-                    parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.UCEL))
+                    parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.UCEL))
                 elif colstart != j and rowspan == 1:  # FIXME: I believe we should have rowstart == i
-                    parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.LCEL))
+                    parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.LCEL))
                 else:
-                    parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.XCEL))
+                    parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.XCEL))
 
-            parts.append(IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.NL))
+            parts.append(CYGLVocabulary.create_selfclosing_token(token=CYGLToken.NL))
 
         return "".join(parts)
 
@@ -1811,13 +1803,11 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        params = IDocTagsParams(**kwargs)
+        params = CYGLParams(**kwargs)
 
         # FIXME: we might need to check the label to distinguish between TABLE and DOCUMENT_INDEX label
-        open_token: str = IDocTagsVocabulary.create_floating_group_token(value=IDocTagsAttributeValue.TABLE)
-        close_token: str = IDocTagsVocabulary.create_floating_group_token(
-            value=IDocTagsAttributeValue.TABLE, closing=True
-        )
+        open_token: str = CYGLVocabulary.create_floating_group_token(value=CYGLAttributeValue.TABLE)
+        close_token: str = CYGLVocabulary.create_floating_group_token(value=CYGLAttributeValue.TABLE, closing=True)
 
         res_parts: list[SerializationResult] = []
 
@@ -1847,7 +1837,7 @@ class IDocTagsTableSerializer(BaseTableSerializer):
                 )
                 body += otsl_text
             if body:
-                otsl_payload = _wrap(text=body, wrap_tag=IDocTagsToken.OTSL.value)
+                otsl_payload = _wrap(text=body, wrap_tag=CYGLToken.OTSL.value)
                 res_parts.append(create_ser_result(text=body, span_source=item))
 
         # Footnote as sibling of the OTSL payload within the floating group
@@ -1864,8 +1854,8 @@ class IDocTagsTableSerializer(BaseTableSerializer):
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
-class IDocTagsInlineSerializer(BaseInlineSerializer):
-    """Inline serializer emitting IDocTags `<inline>` and `<location>` tokens."""
+class CYGLInlineSerializer(BaseInlineSerializer):
+    """Inline serializer emitting CYGL `<inline>` and `<location>` tokens."""
 
     @override
     def serialize(
@@ -1878,9 +1868,9 @@ class IDocTagsInlineSerializer(BaseInlineSerializer):
         visited: Optional[set[str]] = None,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize inline content with optional location into IDocTags text."""
+        """Serialize inline content with optional location into CYGL text."""
         my_visited = visited if visited is not None else set()
-        params = IDocTagsParams(**kwargs)
+        params = CYGLParams(**kwargs)
         parts: list[SerializationResult] = []
         if params.add_location:
             # Create a single enclosing bbox over inline children
@@ -1923,11 +1913,11 @@ class IDocTagsInlineSerializer(BaseInlineSerializer):
 
         if item.parent is None or not isinstance(item.parent.resolve(doc), TextItem):
             # if "unwrapped", wrap in <text>...</text>
-            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.TEXT.value)
+            text_res = _wrap(text=text_res, wrap_tag=CYGLToken.TEXT.value)
         return create_ser_result(text=text_res, span_source=parts)
 
 
-class IDocTagsFallbackSerializer(BaseFallbackSerializer):
+class CYGLFallbackSerializer(BaseFallbackSerializer):
     """Fallback serializer concatenating text for list/inline groups."""
 
     @override
@@ -1947,8 +1937,8 @@ class IDocTagsFallbackSerializer(BaseFallbackSerializer):
         return create_ser_result()
 
 
-class IDocTagsKeyValueSerializer(BaseKeyValueSerializer):
-    """No-op serializer for key/value items in IDocTags."""
+class CYGLKeyValueSerializer(BaseKeyValueSerializer):
+    """No-op serializer for key/value items in CYGL."""
 
     @override
     def serialize(
@@ -1963,8 +1953,8 @@ class IDocTagsKeyValueSerializer(BaseKeyValueSerializer):
         return create_ser_result()
 
 
-class IDocTagsFormSerializer(BaseFormSerializer):
-    """No-op serializer for form items in IDocTags."""
+class CYGLFormSerializer(BaseFormSerializer):
+    """No-op serializer for form items in CYGL."""
 
     @override
     def serialize(
@@ -1979,8 +1969,8 @@ class IDocTagsFormSerializer(BaseFormSerializer):
         return create_ser_result()
 
 
-class IDocTagsAnnotationSerializer(BaseAnnotationSerializer):
-    """No-op annotation serializer; IDocTags relies on meta instead."""
+class CYGLAnnotationSerializer(BaseAnnotationSerializer):
+    """No-op annotation serializer; CYGL relies on meta instead."""
 
     @override
     def serialize(
@@ -1994,23 +1984,23 @@ class IDocTagsAnnotationSerializer(BaseAnnotationSerializer):
         return create_ser_result()
 
 
-class IDocTagsDocSerializer(DocSerializer):
-    """IDocTags document serializer."""
+class CYGLDocSerializer(DocSerializer):
+    """CYGL document serializer."""
 
-    text_serializer: BaseTextSerializer = IDocTagsTextSerializer()
-    table_serializer: BaseTableSerializer = IDocTagsTableSerializer()
-    picture_serializer: BasePictureSerializer = IDocTagsPictureSerializer()
-    key_value_serializer: BaseKeyValueSerializer = IDocTagsKeyValueSerializer()
-    form_serializer: BaseFormSerializer = IDocTagsFormSerializer()
-    fallback_serializer: BaseFallbackSerializer = IDocTagsFallbackSerializer()
+    text_serializer: BaseTextSerializer = CYGLTextSerializer()
+    table_serializer: BaseTableSerializer = CYGLTableSerializer()
+    picture_serializer: BasePictureSerializer = CYGLPictureSerializer()
+    key_value_serializer: BaseKeyValueSerializer = CYGLKeyValueSerializer()
+    form_serializer: BaseFormSerializer = CYGLFormSerializer()
+    fallback_serializer: BaseFallbackSerializer = CYGLFallbackSerializer()
 
-    list_serializer: BaseListSerializer = IDocTagsListSerializer()
-    inline_serializer: BaseInlineSerializer = IDocTagsInlineSerializer()
+    list_serializer: BaseListSerializer = CYGLListSerializer()
+    inline_serializer: BaseInlineSerializer = CYGLInlineSerializer()
 
-    meta_serializer: BaseMetaSerializer = IDocTagsMetaSerializer()
-    annotation_serializer: BaseAnnotationSerializer = IDocTagsAnnotationSerializer()
+    meta_serializer: BaseMetaSerializer = CYGLMetaSerializer()
+    annotation_serializer: BaseAnnotationSerializer = CYGLAnnotationSerializer()
 
-    params: IDocTagsParams = IDocTagsParams()
+    params: CYGLParams = CYGLParams()
 
     @override
     def _meta_is_wrapped(self) -> bool:
@@ -2022,8 +2012,8 @@ class IDocTagsDocSerializer(DocSerializer):
         item: FloatingItem,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize the item's captions with IDocTags location tokens."""
-        params = IDocTagsParams(**kwargs)
+        """Serialize the item's captions with CYGL location tokens."""
+        params = CYGLParams(**kwargs)
         results: list[SerializationResult] = []
         if item.captions:
             cap_res = super().serialize_captions(item, **kwargs)
@@ -2040,7 +2030,7 @@ class IDocTagsDocSerializer(DocSerializer):
                 results.append(cap_res)
         text_res = "".join([r.text for r in results])
         if text_res:
-            text_res = _wrap(text=text_res, wrap_tag=IDocTagsToken.CAPTION.value)
+            text_res = _wrap(text=text_res, wrap_tag=CYGLToken.CAPTION.value)
         return create_ser_result(text=text_res, span_source=results)
 
     @override
@@ -2049,8 +2039,8 @@ class IDocTagsDocSerializer(DocSerializer):
         item: FloatingItem,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize the item's footnotes with IDocTags location tokens."""
-        params = IDocTagsParams(**kwargs)
+        """Serialize the item's footnotes with CYGL location tokens."""
+        params = CYGLParams(**kwargs)
         results: list[SerializationResult] = []
         for footnote in item.footnotes:
             if footnote.cref not in self.get_excluded_refs(**kwargs):
@@ -2067,7 +2057,7 @@ class IDocTagsDocSerializer(DocSerializer):
 
                     text_res = f"{location}{content}"
                     if text_res:
-                        text_res = _wrap(text_res, wrap_tag=IDocTagsToken.FOOTNOTE.value)
+                        text_res = _wrap(text_res, wrap_tag=CYGLToken.FOOTNOTE.value)
                         results.append(create_ser_result(text=text_res))
 
         text_res = "".join([r.text for r in results])
@@ -2075,11 +2065,11 @@ class IDocTagsDocSerializer(DocSerializer):
         return create_ser_result(text=text_res, span_source=results)
 
     def _create_head(self) -> str:
-        """Create the head section of the IDocTags document."""
+        """Create the head section of the CYGL document."""
         parts = []
-        if self.params.xsize != DOCTAGS_RESOLUTION or self.params.ysize != DOCTAGS_RESOLUTION:
+        if self.params.xsize != CYGL_DFLT_RESOLUTION or self.params.ysize != CYGL_DFLT_RESOLUTION:
             parts.append(f'<default_resolution width="{self.params.xsize}" height="{self.params.ysize}"/>')
-        return _wrap(text="".join(parts), wrap_tag=IDocTagsToken.HEAD.value) if parts else ""
+        return _wrap(text="".join(parts), wrap_tag=CYGLToken.HEAD.value) if parts else ""
 
     @override
     def serialize_doc(
@@ -2088,20 +2078,20 @@ class IDocTagsDocSerializer(DocSerializer):
         parts: list[SerializationResult],
         **kwargs: Any,
     ) -> SerializationResult:
-        """Doc-level serialization with IDocTags root wrapper."""
+        """Doc-level serialization with CYGL root wrapper."""
         # Note: removed internal thread counting; not used.
 
         delim = _get_delim(params=self.params)
 
-        open_token: str = IDocTagsVocabulary.create_doctag_root()
+        open_token: str = CYGLVocabulary.create_cygl_root()
         head = self._create_head()
-        close_token: str = IDocTagsVocabulary.create_doctag_root(closing=True)
+        close_token: str = CYGLVocabulary.create_cygl_root(closing=True)
 
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
             # Always emit well-formed page breaks using the vocabulary
-            page_sep = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.PAGE_BREAK)
+            page_sep = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.PAGE_BREAK)
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
 
@@ -2124,7 +2114,7 @@ class IDocTagsDocSerializer(DocSerializer):
                 # Expand self-closing forms for tokens that are not allowed
                 # to be self-closing according to the vocabulary.
                 # Example: <list_text/> -> <list_text></list_text>
-                non_selfclosing = [tok for tok in IDocTagsToken if tok not in IDocTagsVocabulary.IS_SELFCLOSING]
+                non_selfclosing = [tok for tok in CYGLToken if tok not in CYGLVocabulary.IS_SELFCLOSING]
 
                 def _expand_tag(text: str, name: str) -> str:
                     # Match <name/> or <name .../>
@@ -2143,65 +2133,65 @@ class IDocTagsDocSerializer(DocSerializer):
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:
-        """Apply IDocTags-specific bold serialization."""
-        return _wrap(text=text, wrap_tag=IDocTagsToken.BOLD.value)
+        """Apply CYGL-specific bold serialization."""
+        return _wrap(text=text, wrap_tag=CYGLToken.BOLD.value)
 
     @override
     def serialize_italic(self, text: str, **kwargs: Any) -> str:
-        """Apply IDocTags-specific italic serialization."""
-        return _wrap(text=text, wrap_tag=IDocTagsToken.ITALIC.value)
+        """Apply CYGL-specific italic serialization."""
+        return _wrap(text=text, wrap_tag=CYGLToken.ITALIC.value)
 
     @override
     def serialize_underline(self, text: str, **kwargs: Any) -> str:
-        """Apply IDocTags-specific underline serialization."""
-        return _wrap(text=text, wrap_tag=IDocTagsToken.UNDERLINE.value)
+        """Apply CYGL-specific underline serialization."""
+        return _wrap(text=text, wrap_tag=CYGLToken.UNDERLINE.value)
 
     @override
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
-        """Apply IDocTags-specific strikethrough serialization."""
-        return _wrap(text=text, wrap_tag=IDocTagsToken.STRIKETHROUGH.value)
+        """Apply CYGL-specific strikethrough serialization."""
+        return _wrap(text=text, wrap_tag=CYGLToken.STRIKETHROUGH.value)
 
     @override
     def serialize_subscript(self, text: str, **kwargs: Any) -> str:
-        """Apply IDocTags-specific subscript serialization."""
-        return _wrap(text=text, wrap_tag=IDocTagsToken.SUBSCRIPT.value)
+        """Apply CYGL-specific subscript serialization."""
+        return _wrap(text=text, wrap_tag=CYGLToken.SUBSCRIPT.value)
 
     @override
     def serialize_superscript(self, text: str, **kwargs: Any) -> str:
-        """Apply IDocTags-specific superscript serialization."""
-        return _wrap(text=text, wrap_tag=IDocTagsToken.SUPERSCRIPT.value)
+        """Apply CYGL-specific superscript serialization."""
+        return _wrap(text=text, wrap_tag=CYGLToken.SUPERSCRIPT.value)
 
 
-class IDocTagsDocDeserializer(BaseModel):
-    """IDocTags document deserializer."""
+class CYGLDeserializer(BaseModel):
+    """CYGL deserializer."""
 
     # Internal state used while walking the tree (private instance attributes)
     _page_no: int = PrivateAttr(default=0)
-    _default_resolution: int = PrivateAttr(default=DOCTAGS_RESOLUTION)
+    _default_resolution: int = PrivateAttr(default=CYGL_DFLT_RESOLUTION)
 
     def deserialize(
         self,
         *,
-        doctags: str,
+        cygl_txt: str,
     ) -> DoclingDocument:
-        """Deserialize DocTags XML into a DoclingDocument.
+        """Deserialize CYGL XML into a DoclingDocument.
 
         Args:
-            doctags: DocTags XML string to parse.
+            cygl_txt: CYGL XML string to parse.
 
         Returns:
             A populated `DoclingDocument` parsed from the input.
         """
         try:
-            root_node = parseString(doctags).documentElement
+            root_node = parseString(cygl_txt).documentElement
         except Exception as e:
-            ctx = _xml_error_context(doctags, e)
-            raise ValueError(f"Invalid DocTags XML: {e}\n--- XML context ---\n{ctx}") from e
+            ctx = _xml_error_context(cygl_txt, e)
+            raise ValueError(f"Invalid CYGL XML: {e}\n--- XML context ---\n{ctx}") from e
         if root_node is None:
-            raise ValueError("Invalid DocTags XML: missing documentElement")
+            raise ValueError("Invalid CYGL XML: missing documentElement")
         root: Element = cast(Element, root_node)
-        if root.tagName != IDocTagsToken.DOCUMENT.value:
-            candidates = root.getElementsByTagName(IDocTagsToken.DOCUMENT.value)
+        if root.tagName != CYGLToken.DOCUMENT.value:
+            candidates = root.getElementsByTagName(CYGLToken.DOCUMENT.value)
             if candidates:
                 root = cast(Element, candidates[0])
 
@@ -2209,7 +2199,7 @@ class IDocTagsDocDeserializer(BaseModel):
         # TODO revise need for default page & resolution
         # Initialize with a default page so location tokens can be re-emitted
         self._page_no = 0
-        self._default_resolution = DOCTAGS_RESOLUTION
+        self._default_resolution = CYGL_DFLT_RESOLUTION
         self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
         self._parse_document_root(doc=doc, root=root)
         return doc
@@ -2223,35 +2213,35 @@ class IDocTagsDocDeserializer(BaseModel):
     def _dispatch_element(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         name = el.tagName
         if name in {
-            IDocTagsToken.TITLE.value,
-            IDocTagsToken.TEXT.value,
-            IDocTagsToken.CAPTION.value,
-            IDocTagsToken.FOOTNOTE.value,
-            IDocTagsToken.PAGE_HEADER.value,
-            IDocTagsToken.PAGE_FOOTER.value,
-            IDocTagsToken.CODE.value,
-            IDocTagsToken.FORMULA.value,
-            IDocTagsToken.LIST_TEXT.value,
-            IDocTagsToken.BOLD.value,
-            IDocTagsToken.ITALIC.value,
-            IDocTagsToken.UNDERLINE.value,
-            IDocTagsToken.STRIKETHROUGH.value,
-            IDocTagsToken.SUBSCRIPT.value,
-            IDocTagsToken.SUPERSCRIPT.value,
-            IDocTagsToken.CONTENT.value,
+            CYGLToken.TITLE.value,
+            CYGLToken.TEXT.value,
+            CYGLToken.CAPTION.value,
+            CYGLToken.FOOTNOTE.value,
+            CYGLToken.PAGE_HEADER.value,
+            CYGLToken.PAGE_FOOTER.value,
+            CYGLToken.CODE.value,
+            CYGLToken.FORMULA.value,
+            CYGLToken.LIST_TEXT.value,
+            CYGLToken.BOLD.value,
+            CYGLToken.ITALIC.value,
+            CYGLToken.UNDERLINE.value,
+            CYGLToken.STRIKETHROUGH.value,
+            CYGLToken.SUBSCRIPT.value,
+            CYGLToken.SUPERSCRIPT.value,
+            CYGLToken.CONTENT.value,
         }:
             self._parse_text_like(doc=doc, el=el, parent=parent)
-        elif name == IDocTagsToken.PAGE_BREAK.value:
+        elif name == CYGLToken.PAGE_BREAK.value:
             # Start a new page; keep a default square page using the configured resolution
             self._page_no += 1
             self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
-        elif name == IDocTagsToken.HEADING.value:
+        elif name == CYGLToken.HEADING.value:
             self._parse_heading(doc=doc, el=el, parent=parent)
-        elif name == IDocTagsToken.LIST.value:
+        elif name == CYGLToken.LIST.value:
             self._parse_list(doc=doc, el=el, parent=parent)
-        elif name == IDocTagsToken.FLOATING_GROUP.value:
+        elif name == CYGLToken.FLOATING_GROUP.value:
             self._parse_floating_group(doc=doc, el=el, parent=parent)
-        elif name == IDocTagsToken.INLINE.value:
+        elif name == CYGLToken.INLINE.value:
             self._parse_inline_group(doc=doc, el=el, parent=parent)
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
@@ -2261,9 +2251,9 @@ class IDocTagsDocDeserializer(BaseModel):
             if isinstance(node, Element):
                 # Ignore geometry/meta containers at this level; pass through page breaks
                 if node.tagName in {
-                    IDocTagsToken.HEAD.value,
-                    IDocTagsToken.META.value,
-                    IDocTagsToken.LOCATION.value,
+                    CYGLToken.HEAD.value,
+                    CYGLToken.META.value,
+                    CYGLToken.LOCATION.value,
                 }:
                     continue
                 self._dispatch_element(doc=doc, el=node, parent=parent)
@@ -2271,29 +2261,29 @@ class IDocTagsDocDeserializer(BaseModel):
     # ------------- Text blocks -------------
 
     def _should_preserve_space(self, el: Element) -> bool:
-        return el.tagName == IDocTagsToken.CONTENT.value  # and el.getAttribute("xml:space") == "preserve"
+        return el.tagName == CYGLToken.CONTENT.value  # and el.getAttribute("xml:space") == "preserve"
 
     def _get_children_simple_text_block(self, element: Element) -> Optional[str]:
         result = None
         for el in element.childNodes:
             if isinstance(el, Element):
                 if el.tagName not in {
-                    IDocTagsToken.LOCATION.value,
-                    IDocTagsToken.BR.value,
-                    IDocTagsToken.BOLD.value,
-                    IDocTagsToken.ITALIC.value,
-                    IDocTagsToken.UNDERLINE.value,
-                    IDocTagsToken.STRIKETHROUGH.value,
-                    IDocTagsToken.SUBSCRIPT.value,
-                    IDocTagsToken.SUPERSCRIPT.value,
-                    IDocTagsToken.CONTENT.value,
+                    CYGLToken.LOCATION.value,
+                    CYGLToken.BR.value,
+                    CYGLToken.BOLD.value,
+                    CYGLToken.ITALIC.value,
+                    CYGLToken.UNDERLINE.value,
+                    CYGLToken.STRIKETHROUGH.value,
+                    CYGLToken.SUBSCRIPT.value,
+                    CYGLToken.SUPERSCRIPT.value,
+                    CYGLToken.CONTENT.value,
                 }:
                     return None
                 elif tmp := self._get_children_simple_text_block(el):
                     result = tmp
             elif isinstance(el, Text) and el.data.strip():  # TODO should still support whitespace-only
                 if result is None:
-                    result = el.data if element.tagName == IDocTagsToken.CONTENT.value else el.data.strip()
+                    result = el.data if element.tagName == CYGLToken.CONTENT.value else el.data.strip()
                 else:
                     return None
         return result
@@ -2301,7 +2291,7 @@ class IDocTagsDocDeserializer(BaseModel):
     def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         """Parse text-like tokens (title, text, caption, footnotes, code, formula)."""
         element_children = [
-            node for node in el.childNodes if isinstance(node, Element) and node.tagName != IDocTagsToken.LOCATION.value
+            node for node in el.childNodes if isinstance(node, Element) and node.tagName != CYGLToken.LOCATION.value
         ]
 
         if len(element_children) > 1 or self._get_children_simple_text_block(el) is None:
@@ -2316,7 +2306,7 @@ class IDocTagsDocDeserializer(BaseModel):
         nm = el.tagName
 
         # Handle code separately (language + content extraction)
-        if nm == IDocTagsToken.CODE.value:
+        if nm == CYGLToken.CODE.value:
             code_text, lang_label = self._extract_code_content_and_language(el)
             if not code_text.strip():
                 return
@@ -2332,27 +2322,27 @@ class IDocTagsDocDeserializer(BaseModel):
         # Map text-like tokens to text item labels
         elif nm in (
             text_label_map := {
-                IDocTagsToken.TEXT.value: DocItemLabel.TEXT,
-                IDocTagsToken.CAPTION.value: DocItemLabel.CAPTION,
-                IDocTagsToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
-                IDocTagsToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
-                IDocTagsToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
-                IDocTagsToken.LIST_TEXT.value: DocItemLabel.TEXT,
-                IDocTagsToken.BOLD.value: DocItemLabel.TEXT,
-                IDocTagsToken.ITALIC.value: DocItemLabel.TEXT,
-                IDocTagsToken.UNDERLINE.value: DocItemLabel.TEXT,
-                IDocTagsToken.STRIKETHROUGH.value: DocItemLabel.TEXT,
-                IDocTagsToken.SUBSCRIPT.value: DocItemLabel.TEXT,
-                IDocTagsToken.SUPERSCRIPT.value: DocItemLabel.TEXT,
-                IDocTagsToken.CONTENT.value: DocItemLabel.TEXT,
+                CYGLToken.TEXT.value: DocItemLabel.TEXT,
+                CYGLToken.CAPTION.value: DocItemLabel.CAPTION,
+                CYGLToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
+                CYGLToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
+                CYGLToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
+                CYGLToken.LIST_TEXT.value: DocItemLabel.TEXT,
+                CYGLToken.BOLD.value: DocItemLabel.TEXT,
+                CYGLToken.ITALIC.value: DocItemLabel.TEXT,
+                CYGLToken.UNDERLINE.value: DocItemLabel.TEXT,
+                CYGLToken.STRIKETHROUGH.value: DocItemLabel.TEXT,
+                CYGLToken.SUBSCRIPT.value: DocItemLabel.TEXT,
+                CYGLToken.SUPERSCRIPT.value: DocItemLabel.TEXT,
+                CYGLToken.CONTENT.value: DocItemLabel.TEXT,
             }
         ):
-            is_bold = nm == IDocTagsToken.BOLD.value
-            is_italic = nm == IDocTagsToken.ITALIC.value
-            is_underline = nm == IDocTagsToken.UNDERLINE.value
-            is_strikethrough = nm == IDocTagsToken.STRIKETHROUGH.value
-            is_subscript = nm == IDocTagsToken.SUBSCRIPT.value
-            is_superscript = nm == IDocTagsToken.SUPERSCRIPT.value
+            is_bold = nm == CYGLToken.BOLD.value
+            is_italic = nm == CYGLToken.ITALIC.value
+            is_underline = nm == CYGLToken.UNDERLINE.value
+            is_strikethrough = nm == CYGLToken.STRIKETHROUGH.value
+            is_subscript = nm == CYGLToken.SUBSCRIPT.value
+            is_superscript = nm == CYGLToken.SUPERSCRIPT.value
 
             if is_bold or is_italic or is_underline or is_strikethrough or is_subscript or is_superscript:
                 formatting = formatting or Formatting()
@@ -2378,7 +2368,7 @@ class IDocTagsDocDeserializer(BaseModel):
             for p in prov_list[1:]:
                 item.prov.append(p)
 
-        elif nm == IDocTagsToken.TITLE.value:
+        elif nm == CYGLToken.TITLE.value:
             item = doc.add_title(
                 text=text,
                 parent=parent,
@@ -2388,7 +2378,7 @@ class IDocTagsDocDeserializer(BaseModel):
             for p in prov_list[1:]:
                 item.prov.append(p)
 
-        elif nm == IDocTagsToken.FORMULA.value:
+        elif nm == CYGLToken.FORMULA.value:
             item = doc.add_formula(
                 text=text,
                 parent=parent,
@@ -2401,7 +2391,7 @@ class IDocTagsDocDeserializer(BaseModel):
     def _extract_code_content_and_language(self, el: Element) -> tuple[str, CodeLanguageLabel]:
         """Extract code content and language from a <code> element."""
         try:
-            linguist_lang = _LinguistLabel(el.getAttribute(IDocTagsAttributeKey.CLASS.value))
+            linguist_lang = _LinguistLabel(el.getAttribute(CYGLAttributeKey.CLASS.value))
             lang_label = _LinguistLabel.to_code_language_label(linguist_lang)
         except ValueError:
             lang_label = CodeLanguageLabel.UNKNOWN
@@ -2412,9 +2402,9 @@ class IDocTagsDocDeserializer(BaseModel):
                     parts.append(node.data)
             elif isinstance(node, Element):
                 nm_child = node.tagName
-                if nm_child == IDocTagsToken.LOCATION.value:
+                if nm_child == CYGLToken.LOCATION.value:
                     continue
-                elif nm_child == IDocTagsToken.BR.value:
+                elif nm_child == CYGLToken.BR.value:
                     parts.append("\n")
                 else:
                     parts.append(self._get_text(node))
@@ -2422,7 +2412,7 @@ class IDocTagsDocDeserializer(BaseModel):
         return "".join(parts), lang_label
 
     def _parse_heading(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
-        lvl_txt = el.getAttribute(IDocTagsAttributeKey.LEVEL.value) or "1"
+        lvl_txt = el.getAttribute(CYGLAttributeKey.LEVEL.value) or "1"
         try:
             level = int(lvl_txt)
         except Exception:
@@ -2442,15 +2432,15 @@ class IDocTagsDocDeserializer(BaseModel):
                 item.prov.append(p)
 
     def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
-        ordered = el.getAttribute(IDocTagsAttributeKey.ORDERED.value) == IDocTagsAttributeValue.TRUE.value
+        ordered = el.getAttribute(CYGLAttributeKey.ORDERED.value) == CYGLAttributeValue.TRUE.value
         li_group = doc.add_list_group(parent=parent)
         actual_children = [
-            ch for ch in el.childNodes if isinstance(ch, Element) and ch.tagName not in {IDocTagsToken.LOCATION.value}
+            ch for ch in el.childNodes if isinstance(ch, Element) and ch.tagName not in {CYGLToken.LOCATION.value}
         ]
         boundaries = [
             i
             for i, n in enumerate(actual_children)
-            if isinstance(n, Element) and n.tagName == IDocTagsToken.LIST_TEXT.value
+            if isinstance(n, Element) and n.tagName == CYGLToken.LIST_TEXT.value
         ]
         ranges = [
             (
@@ -2465,7 +2455,7 @@ class IDocTagsDocDeserializer(BaseModel):
                 actual_grandchildren = [
                     ch
                     for ch in child.childNodes
-                    if (isinstance(ch, Element) and ch.tagName != IDocTagsToken.LOCATION.value)
+                    if (isinstance(ch, Element) and ch.tagName != CYGLToken.LOCATION.value)
                     or (isinstance(ch, Text) and ch.data.strip())
                 ]
                 prov_list = self._extract_provenance(doc=doc, el=child)
@@ -2487,7 +2477,7 @@ class IDocTagsDocDeserializer(BaseModel):
                         self._dispatch_element(doc=doc, el=el2, parent=li)
             else:
                 if (
-                    actual_children[start + 1].tagName == IDocTagsToken.LIST.value
+                    actual_children[start + 1].tagName == CYGLToken.LIST.value
                     and len(actual_children[start].childNodes) == 1
                     and isinstance(actual_children[start].childNodes[0], Text)
                 ):
@@ -2533,10 +2523,10 @@ class IDocTagsDocDeserializer(BaseModel):
 
     # ------------- Floating groups -------------
     def _parse_floating_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
-        cls_val = el.getAttribute(IDocTagsAttributeKey.CLASS.value)
-        if cls_val == IDocTagsAttributeValue.TABLE.value:
+        cls_val = el.getAttribute(CYGLAttributeKey.CLASS.value)
+        if cls_val == CYGLAttributeValue.TABLE.value:
             self._parse_table_group(doc=doc, el=el, parent=parent)
-        elif cls_val == IDocTagsAttributeValue.PICTURE.value:
+        elif cls_val == CYGLAttributeValue.PICTURE.value:
             self._parse_picture_group(doc=doc, el=el, parent=parent)
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
@@ -2544,7 +2534,7 @@ class IDocTagsDocDeserializer(BaseModel):
     def _parse_table_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         caption = self._extract_caption(doc=doc, el=el)
         footnotes = self._extract_footnotes(doc=doc, el=el)
-        otsl_el = self._first_child(el, IDocTagsToken.OTSL.value)
+        otsl_el = self._first_child(el, CYGLToken.OTSL.value)
         if otsl_el is None:
             tbl = doc.add_table(data=TableData(), caption=caption, parent=parent)
             for ftn in footnotes:
@@ -2560,7 +2550,7 @@ class IDocTagsDocDeserializer(BaseModel):
             parent=parent,
             prov=(tbl_provs[0] if tbl_provs else None),
         )
-        tbl_content = _wrap(text=inner, wrap_tag=IDocTagsToken.OTSL.value)
+        tbl_content = _wrap(text=inner, wrap_tag=CYGLToken.OTSL.value)
         td = self._parse_otsl_table_content(otsl_content=tbl_content, doc=doc, parent=tbl)
         tbl.data = td
         for p in tbl_provs[1:]:
@@ -2575,7 +2565,7 @@ class IDocTagsDocDeserializer(BaseModel):
 
         # Extract provenance from the <picture> block (locations appear inside it)
         prov_list: list[ProvenanceItem] = []
-        picture_el = self._first_child(el, IDocTagsToken.PICTURE.value)
+        picture_el = self._first_child(el, CYGLToken.PICTURE.value)
         if picture_el is not None:
             prov_list = self._extract_provenance(doc=doc, el=picture_el)
 
@@ -2593,17 +2583,17 @@ class IDocTagsDocDeserializer(BaseModel):
         # If there is a <picture> child and it contains an <otsl>,
         # parse it as TabularChartMetaField and attach to picture.meta
         if picture_el is not None:
-            otsl_el = self._first_child(picture_el, IDocTagsToken.OTSL.value)
+            otsl_el = self._first_child(picture_el, CYGLToken.OTSL.value)
             if otsl_el is not None:
                 inner = self._inner_xml(otsl_el, exclude_tags={"location"})
-                td = self._parse_otsl_table_content(_wrap(inner, IDocTagsToken.OTSL.value))
+                td = self._parse_otsl_table_content(_wrap(inner, CYGLToken.OTSL.value))
                 if pic.meta is None:
                     pic.meta = PictureMeta()
                 pic.meta.tabular_chart = TabularChartMetaField(chart_data=td)
 
     # ------------- Helpers -------------
     def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> Optional[TextItem]:
-        cap_el = self._first_child(el, IDocTagsToken.CAPTION.value)
+        cap_el = self._first_child(el, CYGLToken.CAPTION.value)
         if cap_el is None:
             return None
         text = self._get_text(cap_el).strip()
@@ -2622,7 +2612,7 @@ class IDocTagsDocDeserializer(BaseModel):
     def _extract_footnotes(self, *, doc: DoclingDocument, el: Element) -> list[TextItem]:
         footnotes: list[TextItem] = []
         for node in el.childNodes:
-            if isinstance(node, Element) and node.tagName == IDocTagsToken.FOOTNOTE.value:
+            if isinstance(node, Element) and node.tagName == CYGLToken.FOOTNOTE.value:
                 text = self._get_text(node).strip()
                 if text:
                     prov_list = self._extract_provenance(doc=doc, el=node)
@@ -2677,15 +2667,15 @@ class IDocTagsDocDeserializer(BaseModel):
             raise ValueError("No document element found")
 
         otsl_tokens = {
-            IDocTagsToken.FCEL.value,
-            IDocTagsToken.ECEL.value,
-            IDocTagsToken.LCEL.value,
-            IDocTagsToken.UCEL.value,
-            IDocTagsToken.XCEL.value,
-            IDocTagsToken.NL.value,
-            IDocTagsToken.CHED.value,
-            IDocTagsToken.RHED.value,
-            IDocTagsToken.SROW.value,
+            CYGLToken.FCEL.value,
+            CYGLToken.ECEL.value,
+            CYGLToken.LCEL.value,
+            CYGLToken.UCEL.value,
+            CYGLToken.XCEL.value,
+            CYGLToken.NL.value,
+            CYGLToken.CHED.value,
+            CYGLToken.RHED.value,
+            CYGLToken.SROW.value,
         }
 
         for node in otsl_el.childNodes:
@@ -2717,15 +2707,15 @@ class IDocTagsDocDeserializer(BaseModel):
         """Parse OTSL interleaved texts+tokens into TableCell list and row tokens."""
         # Token strings used in the stream (normalized to <name>)
 
-        fcel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.FCEL)
-        ecel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.ECEL)
-        lcel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.LCEL)
-        ucel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.UCEL)
-        xcel = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.XCEL)
-        nl = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.NL)
-        ched = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.CHED)
-        rhed = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.RHED)
-        srow = IDocTagsVocabulary.create_selfclosing_token(token=IDocTagsToken.SROW)
+        fcel = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.FCEL)
+        ecel = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.ECEL)
+        lcel = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.LCEL)
+        ucel = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.UCEL)
+        xcel = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.XCEL)
+        nl = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.NL)
+        ched = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.CHED)
+        rhed = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.RHED)
+        srow = CYGLVocabulary.create_selfclosing_token(token=CYGLToken.SROW)
 
         # Clean tokens to only structural OTSL markers
         clean_tokens: list[str] = []
@@ -2872,7 +2862,7 @@ class IDocTagsDocDeserializer(BaseModel):
         child_elements = [
             node
             for node in el.childNodes
-            if isinstance(node, Element) and node.tagName not in {IDocTagsToken.LOCATION.value}
+            if isinstance(node, Element) and node.tagName not in {CYGLToken.LOCATION.value}
         ]
 
         # Check if we have a single child that is a formatting tag
@@ -2882,12 +2872,12 @@ class IDocTagsDocDeserializer(BaseModel):
 
             # Mapping of format tags to Formatting attributes
             format_tags = {
-                IDocTagsToken.BOLD,
-                IDocTagsToken.ITALIC,
-                IDocTagsToken.STRIKETHROUGH,
-                IDocTagsToken.UNDERLINE,
-                IDocTagsToken.SUPERSCRIPT,
-                IDocTagsToken.SUBSCRIPT,
+                CYGLToken.BOLD,
+                CYGLToken.ITALIC,
+                CYGLToken.STRIKETHROUGH,
+                CYGLToken.UNDERLINE,
+                CYGLToken.SUPERSCRIPT,
+                CYGLToken.SUBSCRIPT,
             }
 
             if tag_name in format_tags:
@@ -2899,17 +2889,17 @@ class IDocTagsDocDeserializer(BaseModel):
                     child_formatting = Formatting()
 
                 # Apply the current formatting tag
-                if tag_name == IDocTagsToken.BOLD.value:
+                if tag_name == CYGLToken.BOLD.value:
                     child_formatting.bold = True
-                elif tag_name == IDocTagsToken.ITALIC.value:
+                elif tag_name == CYGLToken.ITALIC.value:
                     child_formatting.italic = True
-                elif tag_name == IDocTagsToken.STRIKETHROUGH.value:
+                elif tag_name == CYGLToken.STRIKETHROUGH.value:
                     child_formatting.strikethrough = True
-                elif tag_name == IDocTagsToken.UNDERLINE.value:
+                elif tag_name == CYGLToken.UNDERLINE.value:
                     child_formatting.underline = True
-                elif tag_name == IDocTagsToken.SUPERSCRIPT.value:
+                elif tag_name == CYGLToken.SUPERSCRIPT.value:
                     child_formatting.script = Script.SUPER
-                elif tag_name == IDocTagsToken.SUBSCRIPT.value:
+                elif tag_name == CYGLToken.SUBSCRIPT.value:
                     child_formatting.script = Script.SUB
 
                 return text, child_formatting
@@ -2923,12 +2913,12 @@ class IDocTagsDocDeserializer(BaseModel):
             if isinstance(node, Text):
                 # Skip pure indentation/pretty-print whitespace
                 if node.data.strip():
-                    out.append(node.data if el.tagName == IDocTagsToken.CONTENT.value else node.data.strip())
+                    out.append(node.data if el.tagName == CYGLToken.CONTENT.value else node.data.strip())
             elif isinstance(node, Element):
                 nm = node.tagName
-                if nm in {IDocTagsToken.LOCATION.value}:
+                if nm in {CYGLToken.LOCATION.value}:
                     continue
-                if nm == IDocTagsToken.BR.value:
+                if nm == CYGLToken.BR.value:
                     out.append("\n")
                 else:
                     out.append(self._get_text(node))
@@ -2949,14 +2939,14 @@ class IDocTagsDocDeserializer(BaseModel):
         for node in el.childNodes:
             if not isinstance(node, Element):
                 continue
-            if node.tagName != IDocTagsToken.LOCATION.value:
+            if node.tagName != CYGLToken.LOCATION.value:
                 continue
             try:
-                v = int(node.getAttribute(IDocTagsAttributeKey.VALUE.value) or "0")
+                v = int(node.getAttribute(CYGLAttributeKey.VALUE.value) or "0")
             except Exception:
                 v = 0
             try:
-                r = int(node.getAttribute(IDocTagsAttributeKey.RESOLUTION.value) or str(self._default_resolution))
+                r = int(node.getAttribute(CYGLAttributeKey.RESOLUTION.value) or str(self._default_resolution))
             except Exception:
                 r = self._default_resolution
             values.append(v)

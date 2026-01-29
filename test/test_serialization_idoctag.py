@@ -1,4 +1,4 @@
-"""Unit tests for IDocTags create_closing_token helper."""
+"""Unit tests for CYGL create_closing_token helper."""
 
 from pathlib import Path
 from typing import Optional
@@ -8,10 +8,9 @@ import pytest
 from docling_core.experimental.idoctags import (
     ContentType,
     EscapeMode,
-    IDocTagsDocSerializer,
-    IDocTagsParams,
-    IDocTagsSerializationMode,
-    IDocTagsVocabulary,
+    CYGLDocSerializer,
+    CYGLParams,
+    CYGLVocabulary,
     WrapMode,
 )
 from docling_core.types.doc import (
@@ -132,29 +131,29 @@ def add_list_section(doc: DoclingDocument):
     doc.add_list_item(text="final element", parent=lg)
 
 # ===============================
-# IDocTags unit-tests
+# CYGL unit-tests
 # ===============================
 
 
 def test_create_closing_token_from_opening_tag_simple():
-    assert IDocTagsVocabulary.create_closing_token(token="<text>") == "</text>"
+    assert CYGLVocabulary.create_closing_token(token="<text>") == "</text>"
     assert (
-        IDocTagsVocabulary.create_closing_token(token='\n  <heading level="2">  ')
+        CYGLVocabulary.create_closing_token(token='\n  <heading level="2">  ')
         == "</heading>"
     )
     assert (
-        IDocTagsVocabulary.create_closing_token(token=' <list ordered="true"> ')
+        CYGLVocabulary.create_closing_token(token=' <list ordered="true"> ')
         == "</list>"
     )
     # Inline with attribute
     assert (
-        IDocTagsVocabulary.create_closing_token(token=' <inline class="code"> ')
+        CYGLVocabulary.create_closing_token(token=' <inline class="code"> ')
         == "</inline>"
     )
 
 
 def test_create_closing_token_returns_existing_closing():
-    assert IDocTagsVocabulary.create_closing_token(token="</text>") == "</text>"
+    assert CYGLVocabulary.create_closing_token(token="</text>") == "</text>"
 
 
 @pytest.mark.parametrize(
@@ -168,7 +167,7 @@ def test_create_closing_token_returns_existing_closing():
 )
 def test_create_closing_token_rejects_self_closing(bad):
     with pytest.raises(ValueError):
-        IDocTagsVocabulary.create_closing_token(token=bad)
+        CYGLVocabulary.create_closing_token(token=bad)
 
 
 @pytest.mark.parametrize(
@@ -183,16 +182,16 @@ def test_create_closing_token_rejects_self_closing(bad):
 )
 def test_create_closing_token_invalid_inputs(bad):
     with pytest.raises(ValueError):
-        IDocTagsVocabulary.create_closing_token(token=bad)
+        CYGLVocabulary.create_closing_token(token=bad)
 
 
 # ===============================
-# IDocTags tests
+# CYGL tests
 # ===============================
 
 
-def serialize_idoctags(doc: DoclingDocument, params: Optional[IDocTagsParams] = None) -> str:
-    ser = IDocTagsDocSerializer(doc=doc, params=params or IDocTagsParams())
+def serialize_cygl(doc: DoclingDocument, params: Optional[CYGLParams] = None) -> str:
+    ser = CYGLDocSerializer(doc=doc, params=params or CYGLParams())
     return ser.serialize().text
 
 
@@ -202,7 +201,7 @@ def test_list_items_not_double_wrapped_when_no_content():
     doc.add_list_item("Item A", parent=lst)
     doc.add_list_item("Item B", parent=lst)
 
-    txt = serialize_idoctags(doc, params=IDocTagsParams(content_types=set()))
+    txt = serialize_cygl(doc, params=CYGLParams(content_types=set()))
     exp_txt = """
 <cygl version="1.0.0">
   <list ordered="false">
@@ -214,22 +213,22 @@ def test_list_items_not_double_wrapped_when_no_content():
     assert txt.strip() == exp_txt.strip()
 
 
-def test_idoctags():
+def test_cygl():
     src = Path("./test/data/doc/ddoc_0.json")
     doc = DoclingDocument.load_from_json(src)
 
     # Human readable, indented and with content
-    params = IDocTagsParams()
+    params = CYGLParams()
 
-    ser = IDocTagsDocSerializer(doc=doc, params=params)
+    ser = CYGLDocSerializer(doc=doc, params=params)
     actual = ser.serialize().text
 
     verify(exp_file=src.with_suffix(".v0.gt.cygl"), actual=actual)
 
     # Human readable, indented but without content
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             content_types={ContentType.TABLE},
         ),
     )
@@ -238,9 +237,9 @@ def test_idoctags():
     verify(exp_file=src.with_suffix(".v1.gt.cygl"), actual=actual)
 
     # Machine readable, not indented and without content
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             pretty_indentation=None,
             content_types={ContentType.TABLE},
         ),
@@ -250,11 +249,11 @@ def test_idoctags():
     verify(exp_file=src.with_suffix(".v2.gt.cygl"), actual=actual)
 
 
-def test_idoctags_meta():
+def test_cygl_meta():
     src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
-    ser = IDocTagsDocSerializer(doc=doc)
+    ser = CYGLDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.cygl"), actual=actual)
 
@@ -297,9 +296,9 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
 def test_cdata_always(sample_doc: DoclingDocument):
     """Test cdata_always mode."""
     doc = _create_escape_test_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             escape_mode=EscapeMode.CDATA_ALWAYS,
         ),
     )
@@ -313,9 +312,9 @@ def test_cdata_always(sample_doc: DoclingDocument):
 def test_cdata_when_needed(sample_doc: DoclingDocument):
     """Test cdata_when_needed mode."""
     doc = _create_escape_test_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             escape_mode=EscapeMode.CDATA_WHEN_NEEDED,
         ),
     )
@@ -331,8 +330,8 @@ def test_strikethrough_formatting():
     formatting = Formatting(strikethrough=True)
     doc.add_text(label=DocItemLabel.TEXT, text="Strike text", formatting=formatting)
 
-    result = serialize_idoctags(
-        doc, params=IDocTagsParams(add_location=False)
+    result = serialize_cygl(
+        doc, params=CYGLParams(add_location=False)
     )
     assert "<strikethrough>Strike text</strikethrough>" in result
 
@@ -343,8 +342,8 @@ def test_subscript_formatting():
     formatting = Formatting(script=Script.SUB)
     doc.add_text(label=DocItemLabel.TEXT, text="H2O", formatting=formatting)
 
-    result = serialize_idoctags(
-        doc, params=IDocTagsParams(add_location=False)
+    result = serialize_cygl(
+        doc, params=CYGLParams(add_location=False)
     )
     assert "<subscript>H2O</subscript>" in result
 
@@ -355,8 +354,8 @@ def test_superscript_formatting():
     formatting = Formatting(script=Script.SUPER)
     doc.add_text(label=DocItemLabel.TEXT, text="x^2", formatting=formatting)
 
-    result = serialize_idoctags(
-        doc, params=IDocTagsParams(add_location=False)
+    result = serialize_cygl(
+        doc, params=CYGLParams(add_location=False)
     )
     assert "<superscript>x^2</superscript>" in result
 
@@ -367,8 +366,8 @@ def test_combined_formatting():
     formatting = Formatting(bold=True, italic=True)
     doc.add_text(label=DocItemLabel.TEXT, text="Bold and italic", formatting=formatting)
 
-    result = serialize_idoctags(
-        doc, params=IDocTagsParams(add_location=False)
+    result = serialize_cygl(
+        doc, params=CYGLParams(add_location=False)
     )
     # When both bold and italic are applied, they should be nested
     assert "<bold>" in result
@@ -426,9 +425,9 @@ def _create_content_filtering_doc(inp_doc: DoclingDocument):
 
 def test_content_allow_all_types(sample_doc: DoclingDocument):
     doc = _create_content_filtering_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             content_types=set(ContentType),
         ),
     )
@@ -440,9 +439,9 @@ def test_content_allow_all_types(sample_doc: DoclingDocument):
 
 def test_content_allow_no_types(sample_doc: DoclingDocument):
     doc = _create_content_filtering_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             content_types=set(),
         ),
     )
@@ -453,9 +452,9 @@ def test_content_allow_no_types(sample_doc: DoclingDocument):
 
 def test_content_allow_specific_types(sample_doc: DoclingDocument):
     doc = _create_content_filtering_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             content_types={
                 ContentType.PICTURE,
                 ContentType.TABLE,
@@ -476,9 +475,9 @@ def test_content_block_specific_types(sample_doc: DoclingDocument):
         ContentType.TABLE,
         ContentType.TEXT_CODE,
     }
-    serializer = IDocTagsDocSerializer(
+    serializer = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             content_types={ct for ct in ContentType if ct not in blocked_types},
         ),
     )
@@ -520,9 +519,9 @@ def test_inline_group():
     )
     doc.add_text(label=DocItemLabel.TEXT, text="Six", parent=li2_inline_gr)
 
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(),
+        params=CYGLParams(),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
@@ -542,9 +541,9 @@ def test_mini_inline():
         parent=inl,
         formatting=Formatting(bold=True),
     )
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(),
+        params=CYGLParams(),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
@@ -575,9 +574,9 @@ def _create_wrapping_test_doc():
 
 def test_content_wrapping_mode_when_needed():
     doc = _create_wrapping_test_doc()
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             content_wrapping_mode=WrapMode.WRAP_WHEN_NEEDED,
         ),
     )
@@ -588,9 +587,9 @@ def test_content_wrapping_mode_when_needed():
 
 def test_content_wrapping_mode_always():
     doc = _create_wrapping_test_doc()
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             content_wrapping_mode=WrapMode.WRAP_ALWAYS,
         ),
     )
@@ -604,9 +603,9 @@ def test_vlm_mode():
     add_texts_section(doc)
     add_list_section(doc)
 
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             pretty_indentation=None,
             escape_mode=EscapeMode.CDATA_ALWAYS,
             content_wrapping_mode=WrapMode.WRAP_ALWAYS,
@@ -618,9 +617,9 @@ def test_vlm_mode():
     verify(exp_file=exp_file, actual=ser_txt)
 
 def test_rich_cells(rich_table_doc):
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=rich_table_doc,
-        params=IDocTagsParams(),
+        params=CYGLParams(),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
@@ -642,9 +641,9 @@ def _create_simple_prov_doc():
 
 def test_def_prov_512():
     doc = _create_simple_prov_doc()
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             xsize=512,
             ysize=512,
         ),
@@ -657,9 +656,9 @@ def test_def_prov_512():
 
 def test_def_prov_256():
     doc = _create_simple_prov_doc()
-    ser = IDocTagsDocSerializer(
+    ser = CYGLDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=CYGLParams(
             xsize=256,
             ysize=256,
         ),
