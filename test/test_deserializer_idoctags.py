@@ -824,7 +824,7 @@ def test_roundtrip_list_item_with_inline_group():
         Path(__file__).parent
         / "data"
         / "doc"
-        / "roundtrip_list_item_with_inline_serialized.idt.xml"
+        / "roundtrip_list_item_with_inline_serialized.cygl"
     )
     verify(exp_ser_file, dt)
     doc2 = _deserialize(dt)
@@ -841,7 +841,7 @@ def test_roundtrip_list_item_with_inline_group():
         Path(__file__).parent
         / "data"
         / "doc"
-        / "roundtrip_list_item_with_inline_reserialized.idt.xml"
+        / "roundtrip_list_item_with_inline_reserialized.cygl"
     )
     verify(exp_dt2_file, dt2)
 
@@ -1112,7 +1112,7 @@ def test_constructed_doc(sample_doc: DoclingDocument):
     dt2 = _serialize(doc2)
 
     exp_reserialized_dt_file = (
-        Path(__file__).parent / "data" / "doc" / "constr_doc_reserialized.idt.xml"
+        Path(__file__).parent / "data" / "doc" / "constr_doc_reserialized.cygl"
     )
     verify(exp_reserialized_dt_file, dt2)
 

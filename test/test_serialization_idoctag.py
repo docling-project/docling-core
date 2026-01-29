@@ -256,7 +256,7 @@ def test_idoctags_meta():
 
     ser = IDocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".gt.idt.xml"), actual=actual)
+    verify(exp_file=src.with_suffix(".gt.cygl"), actual=actual)
 
 
 def _create_escape_test_doc(inp_doc: DoclingDocument):
@@ -306,7 +306,7 @@ def test_cdata_always(sample_doc: DoclingDocument):
     ser_res = serializer.serialize()
     ser_txt = ser_res.text
 
-    exp_file = Path("./test/data/doc/cdata_always.gt.idt.xml")
+    exp_file = Path("./test/data/doc/cdata_always.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -321,7 +321,7 @@ def test_cdata_when_needed(sample_doc: DoclingDocument):
     )
     ser_res = serializer.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/cdata_when_needed.gt.idt.xml")
+    exp_file = Path("./test/data/doc/cdata_when_needed.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -434,7 +434,7 @@ def test_content_allow_all_types(sample_doc: DoclingDocument):
     )
     ser_txt = serializer.serialize().text
 
-    exp_file = Path("./test/data/doc/content_all.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_all.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -447,7 +447,7 @@ def test_content_allow_no_types(sample_doc: DoclingDocument):
         ),
     )
     ser_txt = serializer.serialize().text
-    exp_file = Path("./test/data/doc/content_none.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_none.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -466,7 +466,7 @@ def test_content_allow_specific_types(sample_doc: DoclingDocument):
         ),
     )
     ser_txt = serializer.serialize().text
-    exp_file = Path("./test/data/doc/content_specific.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_specific.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -483,7 +483,7 @@ def test_content_block_specific_types(sample_doc: DoclingDocument):
         ),
     )
     ser_txt = serializer.serialize().text
-    exp_file = Path("./test/data/doc/content_block_specific.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_block_specific.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -526,7 +526,7 @@ def test_inline_group():
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/inline_group.gt.idt.xml")
+    exp_file = Path("./test/data/doc/inline_group.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -548,7 +548,7 @@ def test_mini_inline():
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/mini_inline.gt.idt.xml")
+    exp_file = Path("./test/data/doc/mini_inline.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 def _create_wrapping_test_doc():
@@ -583,7 +583,7 @@ def test_content_wrapping_mode_when_needed():
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/wrapping_when_needed.gt.idt.xml")
+    exp_file = Path("./test/data/doc/wrapping_when_needed.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 def test_content_wrapping_mode_always():
@@ -596,7 +596,7 @@ def test_content_wrapping_mode_always():
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/wrapping_always.gt.idt.xml")
+    exp_file = Path("./test/data/doc/wrapping_always.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 def test_vlm_mode():
@@ -614,7 +614,7 @@ def test_vlm_mode():
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/vlm_mode.gt.idt.xml")
+    exp_file = Path("./test/data/doc/vlm_mode.gt.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 def test_rich_cells(rich_table_doc):
@@ -624,7 +624,7 @@ def test_rich_cells(rich_table_doc):
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/rich_table.out.idt.xml")
+    exp_file = Path("./test/data/doc/rich_table.out.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -651,7 +651,7 @@ def test_def_prov_512():
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/simple_prov_res_512.out.idt.xml")
+    exp_file = Path("./test/data/doc/simple_prov_res_512.out.cygl")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -666,5 +666,5 @@ def test_def_prov_256():
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/simple_prov_res_256.out.idt.xml")
+    exp_file = Path("./test/data/doc/simple_prov_res_256.out.cygl")
     verify(exp_file=exp_file, actual=ser_txt)

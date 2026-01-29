@@ -1,1 +1,2 @@
 test/data/** linguist-vendored
+*.cygl linguist-language=XML
