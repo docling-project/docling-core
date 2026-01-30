@@ -667,3 +667,13 @@ def test_def_prov_256():
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/simple_prov_res_256.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+
+def test_chart():
+    doc = DoclingDocument.load_from_json("./test/data/doc/barchart.json")
+    ser = DoclangDocSerializer(
+        doc=doc,
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/barchart.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
