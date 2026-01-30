@@ -5328,7 +5328,7 @@ class DoclingDocument(BaseModel):
         def extract_picture_classification(text_chunk: str):
             """Extract any picture classification label from the chunk."""
             label = None
-            
+
             # All possible picture classification labels
             all_labels = [
                 # Charts
@@ -5362,7 +5362,7 @@ class DoclingDocument(BaseModel):
                 "vbar_categorical",
                 "hbar_categorical",
             ]
-            
+
             # Mapping for legacy labels
             label_mapping = {
                 "line": PictureClassificationLabel.LINE_CHART,
@@ -5370,7 +5370,7 @@ class DoclingDocument(BaseModel):
                 "vbar_categorical": PictureClassificationLabel.BAR_CHART,
                 "hbar_categorical": PictureClassificationLabel.BAR_CHART,
             }
-            
+
             for clabel in all_labels:
                 tag = f"<{clabel}>"
                 if tag in text_chunk:
