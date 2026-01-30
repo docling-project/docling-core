@@ -493,6 +493,17 @@
       },
       "children": [],
       "content_layer": "body",
+      "meta": {
+        "classification": {
+          "predictions": [
+            {
+              "confidence": 1.0,
+              "created_by": "load_from_doctags",
+              "class_name": "other"
+            }
+          ]
+        }
+      },
       "label": "picture",
       "prov": [
         {
@@ -504,10 +515,7 @@
             "b": 693.6,
             "coord_origin": "TOPLEFT"
           },
-          "charspan": [
-            0,
-            0
-          ]
+          "charspan": [0, 0]
         }
       ],
       "captions": [

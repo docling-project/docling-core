@@ -414,10 +414,7 @@
             "b": 0.34,
             "coord_origin": "TOPLEFT"
           },
-          "charspan": [
-            0,
-            0
-          ]
+          "charspan": [0, 0]
         }
       ],
       "captions": [
@@ -427,7 +424,18 @@
       ],
       "references": [],
       "footnotes": [],
-      "annotations": []
+      "annotations": [
+        {
+          "kind": "classification",
+          "provenance": "load_from_doctags",
+          "predicted_classes": [
+            {
+              "class_name": "other",
+              "confidence": 1.0
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [],
