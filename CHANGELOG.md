@@ -1,3 +1,16 @@
+## [v2.62.0](https://github.com/docling-project/docling-core/releases/tag/v2.62.0) - 2026-01-30
+
+### Feature
+
+* **IDocTags:** Add rich table support ([#491](https://github.com/docling-project/docling-core/issues/491)) ([`62f8d4d`](https://github.com/docling-project/docling-core/commit/62f8d4d838b17c9969f8da10df075f6ab215bf51))
+* Model and serializer for audio tracks ([#426](https://github.com/docling-project/docling-core/issues/426)) ([`c8f3c01`](https://github.com/docling-project/docling-core/commit/c8f3c01a6190a49d7431f800a1a29d30862a8d2b))
+
+### Fix
+
+* **html:** Visualize picture meta as html collapsible ([#497](https://github.com/docling-project/docling-core/issues/497)) ([`fd27df1`](https://github.com/docling-project/docling-core/commit/fd27df1f073a725673bd700355308aa07549cca0))
+* **markdown:** Add an option to compact table serialization ([#495](https://github.com/docling-project/docling-core/issues/495)) ([`3b0b909`](https://github.com/docling-project/docling-core/commit/3b0b909c894a37eee980e4f99d675a6de0ff5891))
+* **IDocTags:** Fix default location resolution handling ([#492](https://github.com/docling-project/docling-core/issues/492)) ([`549a2f1`](https://github.com/docling-project/docling-core/commit/549a2f1472696bb7055326d5e5eafcf086b6a7bc))
+
 ## [v2.61.0](https://github.com/docling-project/docling-core/releases/tag/v2.61.0) - 2026-01-26
 
 ### Feature
