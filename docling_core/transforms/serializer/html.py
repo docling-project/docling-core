@@ -478,14 +478,8 @@ class HTMLPictureSerializer(BasePictureSerializer):
         if item.meta:
             meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
             if meta_res.text:
-                details_html = (
-                    f"<details><summary>Meta</summary>"
-                    f"{meta_res.text}"
-                    f"</details>"
-                )
-                res_parts.append(
-                    create_ser_result(text=details_html, span_source=[meta_res])
-                )
+                details_html = f"<details><summary>Meta</summary>{meta_res.text}</details>"
+                res_parts.append(create_ser_result(text=details_html, span_source=[meta_res]))
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
