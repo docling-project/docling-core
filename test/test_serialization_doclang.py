@@ -1,17 +1,16 @@
-"""Unit tests for IDocTags create_closing_token helper."""
+"""Unit tests for Doclang create_closing_token helper."""
 
 from pathlib import Path
 from typing import Optional
 
 import pytest
 
-from docling_core.experimental.idoctags import (
+from docling_core.experimental.doclang import (
     ContentType,
     EscapeMode,
-    IDocTagsDocSerializer,
-    IDocTagsParams,
-    IDocTagsSerializationMode,
-    IDocTagsVocabulary,
+    DoclangDocSerializer,
+    DoclangParams,
+    DoclangVocabulary,
     WrapMode,
 )
 from docling_core.types.doc import (
@@ -132,29 +131,29 @@ def add_list_section(doc: DoclingDocument):
     doc.add_list_item(text="final element", parent=lg)
 
 # ===============================
-# IDocTags unit-tests
+# Doclang unit-tests
 # ===============================
 
 
 def test_create_closing_token_from_opening_tag_simple():
-    assert IDocTagsVocabulary.create_closing_token(token="<text>") == "</text>"
+    assert DoclangVocabulary.create_closing_token(token="<text>") == "</text>"
     assert (
-        IDocTagsVocabulary.create_closing_token(token='\n  <heading level="2">  ')
+        DoclangVocabulary.create_closing_token(token='\n  <heading level="2">  ')
         == "</heading>"
     )
     assert (
-        IDocTagsVocabulary.create_closing_token(token=' <list ordered="true"> ')
+        DoclangVocabulary.create_closing_token(token=' <list ordered="true"> ')
         == "</list>"
     )
     # Inline with attribute
     assert (
-        IDocTagsVocabulary.create_closing_token(token=' <inline class="code"> ')
+        DoclangVocabulary.create_closing_token(token=' <inline class="code"> ')
         == "</inline>"
     )
 
 
 def test_create_closing_token_returns_existing_closing():
-    assert IDocTagsVocabulary.create_closing_token(token="</text>") == "</text>"
+    assert DoclangVocabulary.create_closing_token(token="</text>") == "</text>"
 
 
 @pytest.mark.parametrize(
@@ -168,7 +167,7 @@ def test_create_closing_token_returns_existing_closing():
 )
 def test_create_closing_token_rejects_self_closing(bad):
     with pytest.raises(ValueError):
-        IDocTagsVocabulary.create_closing_token(token=bad)
+        DoclangVocabulary.create_closing_token(token=bad)
 
 
 @pytest.mark.parametrize(
@@ -183,16 +182,16 @@ def test_create_closing_token_rejects_self_closing(bad):
 )
 def test_create_closing_token_invalid_inputs(bad):
     with pytest.raises(ValueError):
-        IDocTagsVocabulary.create_closing_token(token=bad)
+        DoclangVocabulary.create_closing_token(token=bad)
 
 
 # ===============================
-# IDocTags tests
+# Doclang tests
 # ===============================
 
 
-def serialize_idoctags(doc: DoclingDocument, params: Optional[IDocTagsParams] = None) -> str:
-    ser = IDocTagsDocSerializer(doc=doc, params=params or IDocTagsParams())
+def serialize_doclang(doc: DoclingDocument, params: Optional[DoclangParams] = None) -> str:
+    ser = DoclangDocSerializer(doc=doc, params=params or DoclangParams())
     return ser.serialize().text
 
 
@@ -202,61 +201,61 @@ def test_list_items_not_double_wrapped_when_no_content():
     doc.add_list_item("Item A", parent=lst)
     doc.add_list_item("Item B", parent=lst)
 
-    txt = serialize_idoctags(doc, params=IDocTagsParams(content_types=set()))
+    txt = serialize_doclang(doc, params=DoclangParams(content_types=set()))
     exp_txt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <list ordered="false">
     <list_text></list_text>
     <list_text></list_text>
   </list>
-</doctag>
+</doclang>
     """
     assert txt.strip() == exp_txt.strip()
 
 
-def test_idoctags():
+def test_doclang():
     src = Path("./test/data/doc/ddoc_0.json")
     doc = DoclingDocument.load_from_json(src)
 
     # Human readable, indented and with content
-    params = IDocTagsParams()
+    params = DoclangParams()
 
-    ser = IDocTagsDocSerializer(doc=doc, params=params)
+    ser = DoclangDocSerializer(doc=doc, params=params)
     actual = ser.serialize().text
 
-    verify(exp_file=src.with_suffix(".v0.gt.idt"), actual=actual)
+    verify(exp_file=src.with_suffix(".v0.gt.dclg.xml"), actual=actual)
 
     # Human readable, indented but without content
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             content_types={ContentType.TABLE},
         ),
     )
     actual = ser.serialize().text
 
-    verify(exp_file=src.with_suffix(".v1.gt.idt"), actual=actual)
+    verify(exp_file=src.with_suffix(".v1.gt.dclg.xml"), actual=actual)
 
     # Machine readable, not indented and without content
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             pretty_indentation=None,
             content_types={ContentType.TABLE},
         ),
     )
     actual = ser.serialize().text
 
-    verify(exp_file=src.with_suffix(".v2.gt.idt"), actual=actual)
+    verify(exp_file=src.with_suffix(".v2.gt.dclg.xml"), actual=actual)
 
 
-def test_idoctags_meta():
+def test_doclang_meta():
     src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
-    ser = IDocTagsDocSerializer(doc=doc)
+    ser = DoclangDocSerializer(doc=doc)
     actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".gt.idt.xml"), actual=actual)
+    verify(exp_file=src.with_suffix(".gt.dclg.xml"), actual=actual)
 
 
 def _create_escape_test_doc(inp_doc: DoclingDocument):
@@ -297,31 +296,31 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
 def test_cdata_always(sample_doc: DoclingDocument):
     """Test cdata_always mode."""
     doc = _create_escape_test_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             escape_mode=EscapeMode.CDATA_ALWAYS,
         ),
     )
     ser_res = serializer.serialize()
     ser_txt = ser_res.text
 
-    exp_file = Path("./test/data/doc/cdata_always.gt.idt.xml")
+    exp_file = Path("./test/data/doc/cdata_always.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
 def test_cdata_when_needed(sample_doc: DoclingDocument):
     """Test cdata_when_needed mode."""
     doc = _create_escape_test_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             escape_mode=EscapeMode.CDATA_WHEN_NEEDED,
         ),
     )
     ser_res = serializer.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/cdata_when_needed.gt.idt.xml")
+    exp_file = Path("./test/data/doc/cdata_when_needed.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -331,8 +330,8 @@ def test_strikethrough_formatting():
     formatting = Formatting(strikethrough=True)
     doc.add_text(label=DocItemLabel.TEXT, text="Strike text", formatting=formatting)
 
-    result = serialize_idoctags(
-        doc, params=IDocTagsParams(add_location=False)
+    result = serialize_doclang(
+        doc, params=DoclangParams(add_location=False)
     )
     assert "<strikethrough>Strike text</strikethrough>" in result
 
@@ -343,8 +342,8 @@ def test_subscript_formatting():
     formatting = Formatting(script=Script.SUB)
     doc.add_text(label=DocItemLabel.TEXT, text="H2O", formatting=formatting)
 
-    result = serialize_idoctags(
-        doc, params=IDocTagsParams(add_location=False)
+    result = serialize_doclang(
+        doc, params=DoclangParams(add_location=False)
     )
     assert "<subscript>H2O</subscript>" in result
 
@@ -355,8 +354,8 @@ def test_superscript_formatting():
     formatting = Formatting(script=Script.SUPER)
     doc.add_text(label=DocItemLabel.TEXT, text="x^2", formatting=formatting)
 
-    result = serialize_idoctags(
-        doc, params=IDocTagsParams(add_location=False)
+    result = serialize_doclang(
+        doc, params=DoclangParams(add_location=False)
     )
     assert "<superscript>x^2</superscript>" in result
 
@@ -367,8 +366,8 @@ def test_combined_formatting():
     formatting = Formatting(bold=True, italic=True)
     doc.add_text(label=DocItemLabel.TEXT, text="Bold and italic", formatting=formatting)
 
-    result = serialize_idoctags(
-        doc, params=IDocTagsParams(add_location=False)
+    result = serialize_doclang(
+        doc, params=DoclangParams(add_location=False)
     )
     # When both bold and italic are applied, they should be nested
     assert "<bold>" in result
@@ -426,36 +425,36 @@ def _create_content_filtering_doc(inp_doc: DoclingDocument):
 
 def test_content_allow_all_types(sample_doc: DoclingDocument):
     doc = _create_content_filtering_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             content_types=set(ContentType),
         ),
     )
     ser_txt = serializer.serialize().text
 
-    exp_file = Path("./test/data/doc/content_all.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_all.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
 def test_content_allow_no_types(sample_doc: DoclingDocument):
     doc = _create_content_filtering_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             content_types=set(),
         ),
     )
     ser_txt = serializer.serialize().text
-    exp_file = Path("./test/data/doc/content_none.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_none.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
 def test_content_allow_specific_types(sample_doc: DoclingDocument):
     doc = _create_content_filtering_doc(sample_doc)
-    serializer = IDocTagsDocSerializer(
+    serializer = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             content_types={
                 ContentType.PICTURE,
                 ContentType.TABLE,
@@ -466,7 +465,7 @@ def test_content_allow_specific_types(sample_doc: DoclingDocument):
         ),
     )
     ser_txt = serializer.serialize().text
-    exp_file = Path("./test/data/doc/content_specific.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_specific.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -476,14 +475,14 @@ def test_content_block_specific_types(sample_doc: DoclingDocument):
         ContentType.TABLE,
         ContentType.TEXT_CODE,
     }
-    serializer = IDocTagsDocSerializer(
+    serializer = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             content_types={ct for ct in ContentType if ct not in blocked_types},
         ),
     )
     ser_txt = serializer.serialize().text
-    exp_file = Path("./test/data/doc/content_block_specific.gt.idt.xml")
+    exp_file = Path("./test/data/doc/content_block_specific.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -520,13 +519,13 @@ def test_inline_group():
     )
     doc.add_text(label=DocItemLabel.TEXT, text="Six", parent=li2_inline_gr)
 
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(),
+        params=DoclangParams(),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/inline_group.gt.idt.xml")
+    exp_file = Path("./test/data/doc/inline_group.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -542,13 +541,13 @@ def test_mini_inline():
         parent=inl,
         formatting=Formatting(bold=True),
     )
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(),
+        params=DoclangParams(),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/mini_inline.gt.idt.xml")
+    exp_file = Path("./test/data/doc/mini_inline.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 def _create_wrapping_test_doc():
@@ -575,28 +574,28 @@ def _create_wrapping_test_doc():
 
 def test_content_wrapping_mode_when_needed():
     doc = _create_wrapping_test_doc()
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             content_wrapping_mode=WrapMode.WRAP_WHEN_NEEDED,
         ),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/wrapping_when_needed.gt.idt.xml")
+    exp_file = Path("./test/data/doc/wrapping_when_needed.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 def test_content_wrapping_mode_always():
     doc = _create_wrapping_test_doc()
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             content_wrapping_mode=WrapMode.WRAP_ALWAYS,
         ),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/wrapping_always.gt.idt.xml")
+    exp_file = Path("./test/data/doc/wrapping_always.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 def test_vlm_mode():
@@ -604,9 +603,9 @@ def test_vlm_mode():
     add_texts_section(doc)
     add_list_section(doc)
 
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             pretty_indentation=None,
             escape_mode=EscapeMode.CDATA_ALWAYS,
             content_wrapping_mode=WrapMode.WRAP_ALWAYS,
@@ -614,17 +613,17 @@ def test_vlm_mode():
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/vlm_mode.gt.idt.xml")
+    exp_file = Path("./test/data/doc/vlm_mode.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 def test_rich_cells(rich_table_doc):
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=rich_table_doc,
-        params=IDocTagsParams(),
+        params=DoclangParams(),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/rich_table.out.idt.xml")
+    exp_file = Path("./test/data/doc/rich_table.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
@@ -642,29 +641,29 @@ def _create_simple_prov_doc():
 
 def test_def_prov_512():
     doc = _create_simple_prov_doc()
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             xsize=512,
             ysize=512,
         ),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/simple_prov_res_512.out.idt.xml")
+    exp_file = Path("./test/data/doc/simple_prov_res_512.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
 
 def test_def_prov_256():
     doc = _create_simple_prov_doc()
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(
+        params=DoclangParams(
             xsize=256,
             ysize=256,
         ),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
-    exp_file = Path("./test/data/doc/simple_prov_res_256.out.idt.xml")
+    exp_file = Path("./test/data/doc/simple_prov_res_256.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)

@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <list ordered="false">
     <list_text></list_text>
   </list>
@@ -123,4 +123,4 @@
     <location value="502"/>
     with location
   </code>
-</doctag>
+</doclang>

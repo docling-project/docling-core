@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <head>
     <default_resolution width="256" height="256"/>
   </head>
@@ -16,4 +16,4 @@
     <location value="251"/>
     World
   </text>
-</doctag>
+</doclang>

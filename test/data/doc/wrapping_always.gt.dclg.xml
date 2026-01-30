@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <text>
     <content>simple</content>
   </text>
@@ -49,4 +49,4 @@
     <location value="502"/>
     <content><![CDATA[  w/prov leading and < special]]></content>
   </text>
-</doctag>
+</doclang>

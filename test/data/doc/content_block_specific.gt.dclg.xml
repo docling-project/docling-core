@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <list ordered="false">
     <list_text>item of leading list</list_text>
   </list>
@@ -25,27 +25,6 @@ Affiliation 2</text>
   </list>
   <floating_group class="table">
     <caption>This is the caption of table 1.</caption>
-    <otsl>
-      <fcel/>
-      Product
-      <fcel/>
-      Years
-      <lcel/>
-      <nl/>
-      <ucel/>
-      <fcel/>
-      2016
-      <fcel/>
-      2017
-      <nl/>
-      <fcel/>
-      Apple
-      <fcel/>
-      49823
-      <fcel/>
-      695944
-      <nl/>
-    </otsl>
   </floating_group>
   <floating_group class="picture">
     <caption>This is the caption of figure 1.</caption>
@@ -67,7 +46,7 @@ Affiliation 2</text>
       <list_text>item 1 of sub list</list_text>
       <list_text>
         Here a code snippet:
-        <code class="Python"><![CDATA[print("Hello world")]]></code>
+        <code class="Python"></code>
 (to be displayed inline)
       </list_text>
       <list_text>
@@ -78,7 +57,7 @@ Affiliation 2</text>
     </list>
   </list>
   <text>Here a code block:</text>
-  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <code class="Python"></code>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
   <text>
@@ -118,48 +97,50 @@ hyperlink
     <list_text>List item without parent list group</list_text>
   </list>
   <text>The end.</text>
-  <text>Simple text</text>
-  <text>
-    <content>    4 leading spaces, 1 trailing </content>
-  </text>
-  <text><![CDATA[Some 'single' quotes]]></text>
-  <text><![CDATA[Some "double" quotes]]></text>
-  <text>
-    <meta>
-      <summary><![CDATA[Summary with <tags> & ampersands]]></summary>
-      <description>Description content</description>
-    </meta>
-<![CDATA[An ampersand: &]]>  </text>
-  <code>0 == 0</code>
-  <code>
-    <content> 1 leading space, 4 trailing    </content>
-  </code>
-  <code><![CDATA[0 < 1]]></code>
-  <code class="Python">42 == 42</code>
-  <code class="Python"><![CDATA[42 < 1337]]></code>
-  <floating_group class="table">
-    <otsl>
-      <fcel/>
-      Foo
-      <fcel/>
-      Bar
-      <nl/>
-      <fcel/>
-<![CDATA[Header & Title]]>      <fcel/>
-<![CDATA[Value > 100]]>      <nl/>
-      <fcel/>
-<![CDATA[<script>]]>      <fcel/>
-<![CDATA[A & B]]>      <nl/>
-      <fcel/>
-      Only
-      <fcel/>
-<![CDATA[<second>]]>      <nl/>
-    </otsl>
+  <floating_group class="picture">
+    <caption>Picture Caption</caption>
+    <picture>
+      <meta>
+        <summary>Picture Summary</summary>
+        <description>Picture Description</description>
+      </meta>
+      <location value="5"/>
+      <location value="492"/>
+      <location value="15"/>
+      <location value="502"/>
+    </picture>
   </floating_group>
-  <text><![CDATA[0 < 1]]></text>
-  <text>
-    <italic>
-      <bold><![CDATA[0 < 42]]></bold>
-    </italic>
-  </text>
-</doctag>
+  <floating_group class="picture">
+    <caption>Picture Caption</caption>
+    <picture>
+      <meta>
+        <summary>Picture Summary</summary>
+        <description>Picture Description</description>
+        <classification>Pie chart</classification>
+      </meta>
+      <location value="5"/>
+      <location value="492"/>
+      <location value="15"/>
+      <location value="502"/>
+      <otsl>
+        <fcel/>
+        Foo
+        <fcel/>
+        Bar
+        <nl/>
+        <fcel/>
+        One
+        <fcel/>
+        Two
+        <nl/>
+      </otsl>
+    </picture>
+  </floating_group>
+  <code></code>
+  <code>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+  </code>
+</doclang>

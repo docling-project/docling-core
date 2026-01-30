@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <list ordered="false">
     <list_text>item of leading list</list_text>
   </list>
@@ -25,6 +25,27 @@ Affiliation 2</text>
   </list>
   <floating_group class="table">
     <caption>This is the caption of table 1.</caption>
+    <otsl>
+      <fcel/>
+      Product
+      <fcel/>
+      Years
+      <lcel/>
+      <nl/>
+      <ucel/>
+      <fcel/>
+      2016
+      <fcel/>
+      2017
+      <nl/>
+      <fcel/>
+      Apple
+      <fcel/>
+      49823
+      <fcel/>
+      695944
+      <nl/>
+    </otsl>
   </floating_group>
   <floating_group class="picture">
     <caption>This is the caption of figure 1.</caption>
@@ -46,7 +67,7 @@ Affiliation 2</text>
       <list_text>item 1 of sub list</list_text>
       <list_text>
         Here a code snippet:
-        <code class="Python"></code>
+        <code class="Python"><![CDATA[print("Hello world")]]></code>
 (to be displayed inline)
       </list_text>
       <list_text>
@@ -57,7 +78,7 @@ Affiliation 2</text>
     </list>
   </list>
   <text>Here a code block:</text>
-  <code class="Python"></code>
+  <code class="Python"><![CDATA[print("Hello world")]]></code>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
   <text>
@@ -97,50 +118,4 @@ hyperlink
     <list_text>List item without parent list group</list_text>
   </list>
   <text>The end.</text>
-  <floating_group class="picture">
-    <caption>Picture Caption</caption>
-    <picture>
-      <meta>
-        <summary>Picture Summary</summary>
-        <description>Picture Description</description>
-      </meta>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-    </picture>
-  </floating_group>
-  <floating_group class="picture">
-    <caption>Picture Caption</caption>
-    <picture>
-      <meta>
-        <summary>Picture Summary</summary>
-        <description>Picture Description</description>
-        <classification>Pie chart</classification>
-      </meta>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-      <otsl>
-        <fcel/>
-        Foo
-        <fcel/>
-        Bar
-        <nl/>
-        <fcel/>
-        One
-        <fcel/>
-        Two
-        <nl/>
-      </otsl>
-    </picture>
-  </floating_group>
-  <code></code>
-  <code>
-    <location value="5"/>
-    <location value="492"/>
-    <location value="15"/>
-    <location value="502"/>
-  </code>
-</doctag>
+</doclang>
