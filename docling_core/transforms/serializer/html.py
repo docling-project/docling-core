@@ -475,6 +475,18 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 if len(html_table_content) > 0:
                     res_parts.append(create_ser_result(text=html_table_content, span_source=item))
 
+        if item.meta:
+            meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+            if meta_res.text:
+                details_html = (
+                    f"<details><summary>Meta</summary>"
+                    f"{meta_res.text}"
+                    f"</details>"
+                )
+                res_parts.append(
+                    create_ser_result(text=details_html, span_source=[meta_res])
+                )
+
         text_res = "".join([r.text for r in res_parts])
         if text_res:
             text_res = f"<figure>{text_res}</figure>"
@@ -877,6 +889,11 @@ class HTMLDocSerializer(DocSerializer):
     annotation_serializer: BaseAnnotationSerializer = HTMLAnnotationSerializer()
 
     params: HTMLParams = HTMLParams()
+
+    @override
+    def _item_wraps_meta(self, item: NodeItem) -> bool:
+        """PictureItem meta is wrapped inside the figure element."""
+        return isinstance(item, PictureItem)
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:

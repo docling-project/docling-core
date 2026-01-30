@@ -329,6 +329,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def _meta_is_wrapped(self) -> bool:
         return False
 
+    def _item_wraps_meta(self, item: NodeItem) -> bool:
+        """Whether the item's serializer handles meta wrapping internally."""
+        return False
+
     @override
     def serialize(
         self,
@@ -369,7 +373,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         my_visited.add(my_item.self_ref)
 
-        if my_item.meta and not self._meta_is_wrapped():
+        if my_item.meta and not self._meta_is_wrapped() and not self._item_wraps_meta(my_item):
             meta_part = self.serialize_meta(item=my_item, **my_kwargs)
             if meta_part.text:
                 parts.append(meta_part)
