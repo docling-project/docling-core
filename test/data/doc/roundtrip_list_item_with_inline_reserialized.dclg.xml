@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <text>Simple text</text>
   <text>
     <content>Here a code snippet: </content>
@@ -26,10 +26,6 @@ in line
       <list_text>sublist item 2</list_text>
     </list>
     <list_text>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
       <content>Here a </content>
       <italic>
         <bold>both bold and italicized</bold>
@@ -42,4 +38,4 @@ in line
     </list>
     <list_text>final element</list_text>
   </list>
-</doctag>
+</doclang>

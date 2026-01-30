@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <title>
     <location value="43"/>
     <location value="26"/>
@@ -39,4 +39,4 @@
       <location value="218"/>
     </otsl>
   </floating_group>
-</doctag>
+</doclang>

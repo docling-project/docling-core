@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from docling_core.experimental.idoctags import (
-    IDocTagsDocDeserializer,
-    IDocTagsDocSerializer,
-    IDocTagsParams,
+from docling_core.experimental.doclang import (
+    DoclangDeserializer,
+    DoclangDocSerializer,
+    DoclangParams,
 )
 from docling_core.types.doc import (
     BoundingBox,
@@ -21,21 +21,21 @@ from docling_core.types.doc import (
 )
 from docling_core.types.doc.labels import CodeLanguageLabel
 from test.test_serialization_doctag import verify
-from test.test_serialization_idoctag import add_list_section, add_texts_section
+from test.test_serialization_doclang import add_list_section, add_texts_section
 
 DO_PRINT: bool = False
 
 
 def _serialize(doc: DoclingDocument) -> str:
-    ser = IDocTagsDocSerializer(
+    ser = DoclangDocSerializer(
         doc=doc,
-        params=IDocTagsParams(),
+        params=DoclangParams(),
     )
     return ser.serialize().text
 
 
 def _deserialize(text: str) -> DoclingDocument:
-    return IDocTagsDocDeserializer().deserialize(doctags=text)
+    return DoclangDeserializer().deserialize(text=text)
 
 
 def _add_default_page(doc: DoclingDocument):
@@ -58,9 +58,9 @@ def test_roundtrip_text():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <text>Hello world</text>
-</doctag>
+</doclang>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -73,9 +73,9 @@ def test_roundtrip_title():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <title>My Title</title>
-</doctag>
+</doclang>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -88,9 +88,9 @@ def test_roundtrip_heading():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <heading level="2">Section A</heading>
-</doctag>
+</doclang>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -103,9 +103,9 @@ def test_roundtrip_caption():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <caption>Cap text</caption>
-</doctag>
+</doclang>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -155,10 +155,10 @@ def test_roundtrip_code():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <code class="Python"><![CDATA[print('hi')]]></code>
   <code class="MATLAB"><![CDATA[disp("Hello world!")]]></code>
-</doctag>
+</doclang>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -291,7 +291,7 @@ def test_roundtrip_title_prov():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <title>
     <location value="51"/>
     <location value="51"/>
@@ -299,7 +299,7 @@ def test_roundtrip_title_prov():
     <location value="102"/>
     My Title
   </title>
-</doctag>
+</doclang>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -412,7 +412,7 @@ def test_roundtrip_list_unordered_prov():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <list ordered="false">
     <list_text>
       <location value="51"/>
@@ -429,7 +429,7 @@ def test_roundtrip_list_unordered_prov():
       B
     </list_text>
   </list>
-</doctag>
+</doclang>
     """
     assert dt2.strip() == exp_dt.strip()
 
@@ -635,7 +635,7 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     dt2 = _serialize(doc2)
 
     exp_dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <list ordered="false">
     <list_text>Step 1</list_text>
     <list ordered="true">
@@ -644,7 +644,7 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     </list>
     <list_text>Step 2</list_text>
   </list>
-</doctag>
+</doclang>
 
     """
     assert dt2.strip() == exp_dt.strip()
@@ -824,7 +824,7 @@ def test_roundtrip_list_item_with_inline_group():
         Path(__file__).parent
         / "data"
         / "doc"
-        / "roundtrip_list_item_with_inline_serialized.idt.xml"
+        / "roundtrip_list_item_with_inline_serialized.dclg.xml"
     )
     verify(exp_ser_file, dt)
     doc2 = _deserialize(dt)
@@ -841,7 +841,7 @@ def test_roundtrip_list_item_with_inline_group():
         Path(__file__).parent
         / "data"
         / "doc"
-        / "roundtrip_list_item_with_inline_reserialized.idt.xml"
+        / "roundtrip_list_item_with_inline_reserialized.dclg.xml"
     )
     verify(exp_dt2_file, dt2)
 
@@ -1112,7 +1112,7 @@ def test_constructed_doc(sample_doc: DoclingDocument):
     dt2 = _serialize(doc2)
 
     exp_reserialized_dt_file = (
-        Path(__file__).parent / "data" / "doc" / "constr_doc_reserialized.idt.xml"
+        Path(__file__).parent / "data" / "doc" / "constr_doc_reserialized.dclg.xml"
     )
     verify(exp_reserialized_dt_file, dt2)
 
@@ -1130,7 +1130,7 @@ def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
 
 def test_wrapping():
     dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <text>simple</text>
   <text>
     <content>  leading</content>
@@ -1176,7 +1176,7 @@ def test_wrapping():
     <location value="502"/>
     <content><![CDATA[  w/prov leading and < special]]></content>
   </text>
-</doctag>
+</doclang>
     """
     doc = _deserialize(dt)
     dt2 = _serialize(doc)
@@ -1184,7 +1184,7 @@ def test_wrapping():
 
 def test_rich_table_cells():
     dt = """
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <floating_group class="table">
     <otsl>
       <fcel/>
@@ -1217,7 +1217,7 @@ def test_rich_table_cells():
       <nl/>
     </otsl>
   </floating_group>
-</doctag>
+</doclang>
 """
     doc = _deserialize(dt)
     dt2 = _serialize(doc)

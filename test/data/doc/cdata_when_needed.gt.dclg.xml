@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <list ordered="false">
     <list_text>item of leading list</list_text>
   </list>
@@ -118,4 +118,48 @@ hyperlink
     <list_text>List item without parent list group</list_text>
   </list>
   <text>The end.</text>
-</doctag>
+  <text>Simple text</text>
+  <text>
+    <content>    4 leading spaces, 1 trailing </content>
+  </text>
+  <text><![CDATA[Some 'single' quotes]]></text>
+  <text><![CDATA[Some "double" quotes]]></text>
+  <text>
+    <meta>
+      <summary><![CDATA[Summary with <tags> & ampersands]]></summary>
+      <description>Description content</description>
+    </meta>
+<![CDATA[An ampersand: &]]>  </text>
+  <code>0 == 0</code>
+  <code>
+    <content> 1 leading space, 4 trailing    </content>
+  </code>
+  <code><![CDATA[0 < 1]]></code>
+  <code class="Python">42 == 42</code>
+  <code class="Python"><![CDATA[42 < 1337]]></code>
+  <floating_group class="table">
+    <otsl>
+      <fcel/>
+      Foo
+      <fcel/>
+      Bar
+      <nl/>
+      <fcel/>
+<![CDATA[Header & Title]]>      <fcel/>
+<![CDATA[Value > 100]]>      <nl/>
+      <fcel/>
+<![CDATA[<script>]]>      <fcel/>
+<![CDATA[A & B]]>      <nl/>
+      <fcel/>
+      Only
+      <fcel/>
+<![CDATA[<second>]]>      <nl/>
+    </otsl>
+  </floating_group>
+  <text><![CDATA[0 < 1]]></text>
+  <text>
+    <italic>
+      <bold><![CDATA[0 < 42]]></bold>
+    </italic>
+  </text>
+</doclang>

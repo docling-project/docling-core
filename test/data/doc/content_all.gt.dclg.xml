@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <list ordered="false">
     <list_text>item of leading list</list_text>
   </list>
@@ -165,4 +165,4 @@ hyperlink
     <location value="502"/>
     with location
   </code>
-</doctag>
+</doclang>

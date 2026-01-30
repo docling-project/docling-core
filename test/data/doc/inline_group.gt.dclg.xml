@@ -1,4 +1,4 @@
-<doctag version="1.0.0">
+<doclang version="1.0.0">
   <text>
     <location value="5"/>
     <location value="492"/>
@@ -16,4 +16,4 @@ Three
 Six
     </list_text>
   </list>
-</doctag>
+</doclang>
