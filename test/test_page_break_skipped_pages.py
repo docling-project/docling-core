@@ -35,26 +35,28 @@ def test_normal_4pages_has_all_pages():
     ], f"Expected pages [1, 2, 3, 4], got {page_numbers}"
 
 
-def test_skipped_2pages_has_only_two_pages():
-    """Test that skipped_2pages.json has only 2 pages (pages 2 and 3 failed to parse)."""
+def test_skipped_2pages_has_all_pages_including_failed():
+    """Test that skipped_2pages.json has all 4 pages (pages 2 and 3 failed to parse but are still present)."""
     src = Path("./test/data/doc/skipped_2pages.json")
     doc = DoclingDocument.load_from_json(src)
 
     page_numbers = list(doc.pages.keys())
 
-    assert len(page_numbers) == 2, f"Expected 2 pages in skipped_2pages.json, got {len(page_numbers)}"
-    assert page_numbers == [1, 4], f"Expected pages [1, 4], got {page_numbers}"
+    # After fix: all pages including failed ones should be present in pages dict
+    assert len(page_numbers) == 4, f"Expected 4 pages in skipped_2pages.json, got {len(page_numbers)}"
+    assert page_numbers == [1, 2, 3, 4], f"Expected pages [1, 2, 3, 4], got {page_numbers}"
 
 
-def test_skipped_1page_has_two_pages():
-    """Test that skipped_1page.json has 2 pages (page 2 failed to parse)."""
+def test_skipped_1page_has_all_pages_including_failed():
+    """Test that skipped_1page.json has all 3 pages (page 2 failed to parse but is still present)."""
     src = Path("./test/data/doc/skipped_1page.json")
     doc = DoclingDocument.load_from_json(src)
 
     page_numbers = list(doc.pages.keys())
 
-    assert len(page_numbers) == 2, f"Expected 2 pages in skipped_1page.json, got {len(page_numbers)}"
-    assert page_numbers == [1, 3], f"Expected pages [1, 3], got {page_numbers}"
+    # After fix: all pages including failed ones should be present in pages dict
+    assert len(page_numbers) == 3, f"Expected 3 pages in skipped_1page.json, got {len(page_numbers)}"
+    assert page_numbers == [1, 2, 3], f"Expected pages [1, 2, 3], got {page_numbers}"
 
 
 # =============================================================================
