@@ -84,23 +84,34 @@ def _yield_page_breaks(
     next_page: int,
     lvl: int,
     start_index: int,
+    page_numbers: Optional[set[int]] = None,
 ) -> Iterable[tuple[_PageBreakNode, int, int]]:
     """Yield page break nodes for each page in range (prev_page, next_page].
 
     Generates one PageBreakNode per page transition. For example, if prev_page=1
-    and next_page=4, yields 3 page breaks for pages 2, 3, and 4.
+    and next_page=4, and page_numbers contains pages 1, 2, 3, 4, yields 3 page
+    breaks for pages 2, 3, and 4.
+
+    If page_numbers is provided, only generates page breaks for pages that exist
+    in page_numbers. This ensures filtered documents (via filter()) don't generate
+    spurious page breaks for excluded pages.
 
     Args:
         prev_page: The last seen page number (1-based physical index).
         next_page: The current page number (1-based physical index).
         lvl: The nesting level for the yielded nodes.
         start_index: The starting index for page break node IDs.
+        page_numbers: Optional set of valid page numbers. If provided, only pages
+            in this set will generate page breaks.
 
     Yields:
         Tuples of (PageBreakNode, level, next_index) for each page transition.
     """
     idx = start_index
     for page in range(prev_page + 1, next_page + 1):
+        # Skip pages that are not in the document's pages dict
+        if page_numbers is not None and page not in page_numbers:
+            continue
         yield (
             _PageBreakNode(
                 self_ref=f"#/pb/{idx}",
@@ -124,6 +135,9 @@ def _iterate_items(
     my_visited: set[str] = visited if visited is not None else set()
     prev_page_nr: Optional[int] = None
     page_break_i = 0
+    # Get the set of valid page numbers from the document's pages dict
+    # This ensures filtered documents don't generate spurious page breaks
+    page_numbers: set[int] = set(doc.pages.keys())
     for item, lvl in doc.iterate_items(
         root=node,
         with_groups=True,
@@ -146,7 +160,7 @@ def _iterate_items(
                         page_no = it.prov[0].page_no
                         if prev_page_nr is not None and page_no > prev_page_nr:
                             for pb_node, pb_lvl, page_break_i in _yield_page_breaks(
-                                prev_page_nr, page_no, lvl, page_break_i
+                                prev_page_nr, page_no, lvl, page_break_i, page_numbers
                             ):
                                 yield pb_node, pb_lvl
                         # update previous page number to avoid duplicate page breaks
@@ -157,7 +171,7 @@ def _iterate_items(
                 if prev_page_nr is None or page_no > prev_page_nr:
                     if prev_page_nr is not None:  # close previous range
                         for pb_node, pb_lvl, page_break_i in _yield_page_breaks(
-                            prev_page_nr, page_no, lvl, page_break_i
+                            prev_page_nr, page_no, lvl, page_break_i, page_numbers
                         ):
                             yield pb_node, pb_lvl
                     prev_page_nr = page_no
