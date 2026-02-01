@@ -443,11 +443,80 @@
             }
         },
         {
-            "text": "These are the trends\n2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income  (US$ bn) = 13.1. 2015, Employees = 377,757\nA last paragraph is down here, after the results table.",
+            "text": "#### Business trends too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
                 "doc_items": [
+                    {
+                        "self_ref": "#/texts/16",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 36.0,
+                                    "t": 719.7390747070312,
+                                    "r": 142.1737823486328,
+                                    "b": 700.1054077148438,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    15
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "Corporate affairs",
+                    "Business trends too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "long too long too long too long too long too long\nThese are the trends\n2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income  (US$ bn) = 13.1. 2015, Employees = 377,757\nA last paragraph is down here, after the results table.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/16",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 36.0,
+                                    "t": 719.7390747070312,
+                                    "r": 142.1737823486328,
+                                    "b": 700.1054077148438,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    15
+                                ]
+                            }
+                        ]
+                    },
                     {
                         "self_ref": "#/texts/17",
                         "parent": {

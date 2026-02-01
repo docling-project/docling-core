@@ -184,6 +184,34 @@ class HierarchicalChunker(BaseChunker):
                 # capture current heading
                 heading_by_level[level] = item
 
+                # Check if this heading has substantial content (not just a title)
+                # If so, also process it as a content item
+                has_substantial_content = hasattr(item, "text") and item.text and len(item.text.strip()) > 20
+
+                if not has_substantial_content:
+                    # Header-only, skip content processing
+                    continue
+
+                # Has content - serialize it as a content item
+                if item.self_ref not in visited:
+                    ser_res = my_doc_ser.serialize(item=item, visited=visited)
+                    if ser_res.text:
+                        if doc_items := [u.item for u in ser_res.spans]:
+                            sorted_keys = sorted(heading_by_level)
+                            headings = [heading_by_level[k].text for k in sorted_keys] or None
+                            c = DocChunk(
+                                text=ser_res.text,
+                                meta=DocMeta(
+                                    doc_items=doc_items,
+                                    headings=headings,
+                                    origin=dl_doc.origin,
+                                ),
+                            )
+                            if self.always_emit_headings and headings:
+                                leaf_ref = heading_by_level[sorted_keys[-1]].self_ref
+                                heading_emitted.add(leaf_ref)
+                            yield c
+
                 continue
             elif isinstance(item, ListGroup | InlineGroup | DocItem) and item.self_ref not in visited:
                 if self.code_chunking_strategy is not None and isinstance(item, CodeItem):

@@ -987,6 +987,123 @@
             }
         },
         {
+            "text": "#### Business trends too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/16",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 36.0,
+                                    "t": 719.7390747070312,
+                                    "r": 142.1737823486328,
+                                    "b": 700.1054077148438,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    15
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long too long",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/16",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 36.0,
+                                    "t": 719.7390747070312,
+                                    "r": 142.1737823486328,
+                                    "b": 700.1054077148438,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    15
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "too long too long too long",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/16",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 36.0,
+                                    "t": 719.7390747070312,
+                                    "r": 142.1737823486328,
+                                    "b": 700.1054077148438,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    15
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
             "text": "These are the trends",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
