@@ -8,7 +8,7 @@ from abc import abstractmethod
 from collections.abc import Iterable
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import (
     AnyUrl,
@@ -215,6 +215,12 @@ class CommonParams(BaseModel):
         default_factory=set,
         description="Meta name to block; takes precedence over allowed_meta_names.",
     )
+    traverse_pictures: Annotated[
+        bool,
+        Field(
+            description="Whether to traverse into picture objects to serialize their children (e.g., text objects).",
+        ),
+    ] = False
 
     def merge_with_patch(self, patch: dict[str, Any]) -> Self:
         """Create an instance by merging the provided patch dict on top of self."""
@@ -496,6 +502,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             node=item,
             doc=self.doc,
             layers=params.layers,
+            traverse_pictures=params.traverse_pictures,
             add_page_breaks=self.requires_page_break(),
         ):
             if node.self_ref in my_visited:
