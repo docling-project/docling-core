@@ -421,7 +421,6 @@ class DoclangAttributeKey(str, Enum):
     VALUE = "value"
     RESOLUTION = "resolution"
     LEVEL = "level"
-    SELECTED = "selected"
     ORDERED = "ordered"
     TYPE = "type"
     CLASS = "class"
@@ -434,6 +433,10 @@ class DoclangAttributeValue(str, Enum):
     # Generic boolean-like values
     TRUE = "true"
     FALSE = "false"
+
+    # Checkbox classes
+    SELECTED = "selected"
+    UNSELECTED = "unselected"
 
     # Inline class values
     FORMULA = "formula"
@@ -464,7 +467,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.CENTISECOND: {DoclangAttributeKey.VALUE},
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL},
-        DoclangToken.CHECKBOX: {DoclangAttributeKey.SELECTED},
+        DoclangToken.CHECKBOX: {DoclangAttributeKey.CLASS},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL},
         DoclangToken.LIST: {DoclangAttributeKey.ORDERED},
         DoclangToken.GROUP: {DoclangAttributeKey.TYPE},
@@ -490,9 +493,9 @@ class DoclangVocabulary(BaseModel):
             }
         },
         DoclangToken.CHECKBOX: {
-            DoclangAttributeKey.SELECTED: {
-                DoclangAttributeValue.TRUE,
-                DoclangAttributeValue.FALSE,
+            DoclangAttributeKey.CLASS: {
+                DoclangAttributeValue.SELECTED,
+                DoclangAttributeValue.UNSELECTED,
             }
         },
         DoclangToken.INLINE: {
@@ -545,6 +548,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.SECOND,
         DoclangToken.CENTISECOND,
         DoclangToken.BR,
+        DoclangToken.CHECKBOX,
         # OTSL structural tokens are emitted as self-closing markers
         DoclangToken.FCEL,
         DoclangToken.ECEL,
@@ -934,6 +938,18 @@ class DoclangVocabulary(BaseModel):
         # Assemble tag
         attrs_text = " ".join(parts)
         return f"<{token.value} {attrs_text}/>"
+
+    @classmethod
+    def create_checkbox_token(cls, selected: bool) -> str:
+        """Create a checkbox token."""
+        return cls.create_selfclosing_token(
+            token=DoclangToken.CHECKBOX,
+            attrs={
+                DoclangAttributeKey.CLASS: (
+                    DoclangAttributeValue.SELECTED if selected else DoclangAttributeValue.UNSELECTED
+                ),
+            },
+        )
 
 
 class DoclangSerializationMode(str, Enum):
@@ -1450,16 +1466,15 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                 wrap_open_token = f'<{tok.value} {DoclangAttributeKey.CLASS.value}="{linguist_lang.value}">'
             else:
                 wrap_open_token = f"<{tok.value}>"
-        elif isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_SELECTED:
+        elif isinstance(item, TextItem) and item.label in [
+            DocItemLabel.CHECKBOX_SELECTED,
+            DocItemLabel.CHECKBOX_UNSELECTED,
+        ]:
             tok = DoclangToken.TEXT
-            # FIXME: make a dedicated create_selected_token in DoclangVocabulary
-            wrap_open_token = f"<{tok.value}>"
-            selected_token = '<selected value="true"/>'
-        elif isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_UNSELECTED:
-            tok = DoclangToken.TEXT
-            # FIXME: make a dedicated create_selected_token in DoclangVocabulary
-            wrap_open_token = f"<{tok.value}>"
-            selected_token = '<selected value="false"/>'
+            wrap_open_token = None
+            selected_token = DoclangVocabulary.create_checkbox_token(
+                selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
+            )
         elif isinstance(item, TextItem) and (
             item.label
             in [  # FIXME: Catch all ...

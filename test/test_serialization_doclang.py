@@ -639,6 +639,16 @@ def _create_simple_prov_doc():
     doc.add_text(label=DocItemLabel.TEXT, text="World", prov=prov)
     return doc
 
+def test_checkboxes():
+    doc = DoclingDocument(name="")
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="TODO")
+    doc.add_text(label=DocItemLabel.CHECKBOX_SELECTED, text="DONE")
+    ser = DoclangDocSerializer(doc=doc)
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/checkboxes.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
 def test_def_prov_512():
     doc = _create_simple_prov_doc()
     ser = DoclangDocSerializer(
