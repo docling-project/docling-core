@@ -403,6 +403,17 @@
       },
       "children": [],
       "content_layer": "body",
+      "meta": {
+        "classification": {
+          "predictions": [
+            {
+              "confidence": 1.0,
+              "created_by": "load_from_doctags",
+              "class_name": "other"
+            }
+          ]
+        }
+      },
       "label": "picture",
       "prov": [
         {

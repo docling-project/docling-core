@@ -5714,6 +5714,18 @@ class DoclingDocument(BaseModel):
                                 )
                                 pic.captions.append(caption.get_ref())
                             if image_classification is not None:
+                                if pic.meta is None:
+                                    pic.meta = PictureMeta()
+                                pic.meta.classification = PictureClassificationMetaField(
+                                    predictions=[
+                                        PictureClassificationPrediction(
+                                            class_name=image_classification,
+                                            confidence=1.0,
+                                            created_by="load_from_doctags",
+                                        )
+                                    ]
+                                )
+                                # legacy annotations:
                                 pic.annotations.append(
                                     PictureClassificationData(
                                         provenance="load_from_doctags",
@@ -5724,6 +5736,10 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                             if table_data is not None:
+                                if pic.meta is None:
+                                    pic.meta = PictureMeta()
+                                pic.meta.tabular_chart = TabularChartMetaField(chart_data=table_data, title=pic_title)
+                                # legacy annotations:
                                 # Add chart data as PictureTabularChartData
                                 pd = PictureTabularChartData(chart_data=table_data, title=pic_title)
                                 pic.annotations.append(pd)
