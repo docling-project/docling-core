@@ -31,6 +31,9 @@ Affiliation 2</text>
   </floating_group>
   <floating_group class="picture">
     <caption>This is the caption of figure 2.</caption>
+    <picture>
+      <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
+    </picture>
   </floating_group>
   <list ordered="false">
     <list_text>item 1 of list</list_text>
