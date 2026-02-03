@@ -13,6 +13,7 @@ from docling_core.transforms.serializer.html import (
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
+    MarkdownTableSerializer,
     OrigListItemMarkerMode,
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer
@@ -21,8 +22,11 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DescriptionAnnotation,
     DoclingDocument,
+    PictureItem,
+    RefItem,
     TableCell,
     TableData,
+    TextItem,
 )
 from docling_core.types.doc.labels import DocItemLabel
 
@@ -352,7 +356,6 @@ def test_md_pipe_in_table():
 
 def test_md_compact_table():
     """Test compact table format removes padding and uses minimal separators."""
-    from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
 
     # Test the _compact_table method directly
     padded_table = """| item   | qty   | description           |
@@ -372,6 +375,60 @@ def test_md_compact_table():
 
     # Verify space savings
     assert len(compact_result) < len(padded_table)
+
+
+def test_md_traverse_pictures():
+    """Test traverse_pictures parameter to include text inside PictureItems."""
+
+    doc = DoclingDocument(name="Test Document")
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text="Text before picture")
+    picture = doc.add_picture()
+
+    # Manually add a text item as child of picture
+    text_in_picture = TextItem(
+        self_ref=f"#/texts/{len(doc.texts)}",
+        parent=RefItem(cref=picture.self_ref),
+        label=DocItemLabel.PARAGRAPH,
+        text="Text inside picture",
+        orig="Text inside picture",
+    )
+    doc.texts.append(text_in_picture)
+    picture.children.append(RefItem(cref=text_in_picture.self_ref))
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text="Text after picture")
+
+    # Test with traverse_pictures=False (default)
+    ser_no_traverse = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            traverse_pictures=False,
+        ),
+    )
+    result_no_traverse = ser_no_traverse.serialize().text
+
+    # Should NOT contain text inside picture
+    assert "Text before picture" in result_no_traverse
+    assert "Text after picture" in result_no_traverse
+    assert "Text inside picture" not in result_no_traverse
+    assert "<!-- image -->" in result_no_traverse
+
+    # Test with traverse_pictures=True
+    ser_with_traverse = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            traverse_pictures=True,
+        ),
+    )
+    result_with_traverse = ser_with_traverse.serialize().text
+
+    # Should contain text inside picture
+    assert "Text before picture" in result_with_traverse
+    assert "Text after picture" in result_with_traverse
+    assert "Text inside picture" in result_with_traverse
+    assert "<!-- image -->" in result_with_traverse
 
 
 # ===============================
