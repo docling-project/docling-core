@@ -1,3 +1,15 @@
+## [v2.63.0](https://github.com/docling-project/docling-core/releases/tag/v2.63.0) - 2026-02-03
+
+### Feature
+
+* Add image to BitMapResource ([#502](https://github.com/docling-project/docling-core/issues/502)) ([`409c83e`](https://github.com/docling-project/docling-core/commit/409c83e32d24d2c7f9c9e5cdba6ab572f6e7e920))
+
+### Fix
+
+* **serialization:** Add 'traverse_pictures' parameter to serializers ([#501](https://github.com/docling-project/docling-core/issues/501)) ([`04cf44b`](https://github.com/docling-project/docling-core/commit/04cf44b2c5870715add3dad2e25df6ee4389d4a4))
+* **DocTags:** Fix picture classification deserialization ([#500](https://github.com/docling-project/docling-core/issues/500)) ([`de2b729`](https://github.com/docling-project/docling-core/commit/de2b729617a7c677ca5d9e5f9e2df21e86d4b1a5))
+* **Doclang:** Fix checkbox serialization ([#503](https://github.com/docling-project/docling-core/issues/503)) ([`1d8b78c`](https://github.com/docling-project/docling-core/commit/1d8b78cbadb78574c8b4cadaff1df44066ee7add))
+
 ## [v2.62.0](https://github.com/docling-project/docling-core/releases/tag/v2.62.0) - 2026-01-30
 
 ### Feature
