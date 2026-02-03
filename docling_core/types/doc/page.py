@@ -791,6 +791,7 @@ class SegmentedPdfPage(SegmentedPage):
         # Draw each rectangle by connecting its four points
         if draw_bitmap_resources:
             draw = self._render_bitmap_resources(
+                result=result,
                 draw=draw,
                 page_height=page_height,
                 bitmap_resources_fill=bitmap_resources_fill,
@@ -863,6 +864,7 @@ class SegmentedPdfPage(SegmentedPage):
 
     def _render_bitmap_resources(
         self,
+        result: PILImage.Image,
         draw: ImageDraw.ImageDraw,
         page_height: float,
         bitmap_resources_fill: str,
@@ -872,6 +874,7 @@ class SegmentedPdfPage(SegmentedPage):
         """Render bitmap resources on the page.
 
         Args:
+            result: PIL Image to paste bitmap images onto
             draw: PIL ImageDraw object
             page_height: Height of the page
             bitmap_resources_fill: Fill color for bitmap resources
@@ -882,7 +885,20 @@ class SegmentedPdfPage(SegmentedPage):
             Updated ImageDraw object
         """
         for bitmap_resource in self.bitmap_resources:
-            poly = bitmap_resource.rect.to_top_left_origin(page_height=page_height).to_polygon()
+            rect_tl = bitmap_resource.rect.to_top_left_origin(page_height=page_height)
+            poly = rect_tl.to_polygon()
+
+            if bitmap_resource.image is not None:
+                pil_img = bitmap_resource.image.pil_image
+                if pil_img is not None:
+                    bbox = rect_tl.to_bounding_box()
+                    x0 = round(bbox.l)
+                    y0 = round(bbox.t)
+                    x1 = round(bbox.r)
+                    y1 = round(bbox.b)
+                    resized = pil_img.resize((x1 - x0, y1 - y0))
+                    result.paste(resized, (x0, y0))
+                    continue
 
             fill = self._get_rgba(name=bitmap_resources_fill, alpha=bitmap_resources_alpha)
             outline = self._get_rgba(name=bitmap_resources_outline, alpha=bitmap_resources_alpha)
