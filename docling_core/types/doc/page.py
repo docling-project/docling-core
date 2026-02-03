@@ -34,6 +34,7 @@ from pydantic import (
 from docling_core.types.doc.base import (
     BoundingBox,
     CoordOrigin,
+    ImageRefMode,
     PydanticSerCtxKey,
     round_pydantic_float,
 )
@@ -352,7 +353,9 @@ class BitmapResource(OrderedElement):
     """Model representing a bitmap resource with positioning and URI information."""
 
     rect: BoundingRectangle
-    uri: Optional[AnyUrl] = None
+    mode: ImageRefMode = ImageRefMode.PLACEHOLDER
+    image: Optional[ImageRef] = None
+    uri: Optional[AnyUrl] = Field(default=None, deprecated="Use 'image' field instead.")
 
     def to_bottom_left_origin(self, page_height: float):
         """Convert the resource's coordinates to use bottom-left origin.
