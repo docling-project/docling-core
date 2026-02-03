@@ -1682,6 +1682,12 @@ def test_rich_tables(rich_table_doc):
 
 
 def test_doc_manipulation_with_rich_tables(rich_table_doc):
+    rich_table = rich_table_doc.tables[0]
+    extracted_doc = rich_table_doc.extract_items_range(start=rich_table, end=rich_table)
+    extracted_md = extracted_doc.export_to_markdown()
+    assert len(extracted_md) > 0
+    assert len(extracted_doc.tables) == 2
+
     rich_table_doc.delete_items(node_items=[rich_table_doc.texts[0]])
 
     exp_file = Path("test/data/doc/rich_table_post_text_del.out.yaml")
