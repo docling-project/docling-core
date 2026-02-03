@@ -5325,9 +5325,13 @@ class DoclingDocument(BaseModel):
                 bbox = None
             return caption_item, bbox
 
-        def extract_chart_type(text_chunk: str):
+        def extract_picture_classification(text_chunk: str):
+            """Extract any picture classification label from the chunk."""
             label = None
-            chart_labels = [
+
+            # All possible picture classification labels
+            all_labels = [
+                # Charts
                 PictureClassificationLabel.PIE_CHART,
                 PictureClassificationLabel.BAR_CHART,
                 PictureClassificationLabel.STACKED_BAR_CHART,
@@ -5335,25 +5339,43 @@ class DoclingDocument(BaseModel):
                 PictureClassificationLabel.FLOW_CHART,
                 PictureClassificationLabel.SCATTER_CHART,
                 PictureClassificationLabel.HEATMAP,
+                # Images
+                PictureClassificationLabel.NATURAL_IMAGE,
+                PictureClassificationLabel.REMOTE_SENSING,
+                # Company/Document elements
+                PictureClassificationLabel.ICON,
+                PictureClassificationLabel.LOGO,
+                PictureClassificationLabel.SIGNATURE,
+                PictureClassificationLabel.STAMP,
+                PictureClassificationLabel.QR_CODE,
+                PictureClassificationLabel.BAR_CODE,
+                PictureClassificationLabel.SCREENSHOT,
+                # Chemistry
+                PictureClassificationLabel.MOLECULAR_STRUCTURE,
+                PictureClassificationLabel.MARKUSH_STRUCTURE,
+                # Other
+                PictureClassificationLabel.OTHER,
+                PictureClassificationLabel.PICTURE_GROUP,
+                # Legacy SmolDocling labels
                 "line",
                 "dot_line",
                 "vbar_categorical",
                 "hbar_categorical",
             ]
 
-            # Current SmolDocling can predict different labels:
-            chart_labels_mapping = {
+            # Mapping for legacy labels
+            label_mapping = {
                 "line": PictureClassificationLabel.LINE_CHART,
                 "dot_line": PictureClassificationLabel.LINE_CHART,
                 "vbar_categorical": PictureClassificationLabel.BAR_CHART,
                 "hbar_categorical": PictureClassificationLabel.BAR_CHART,
             }
 
-            for clabel in chart_labels:
+            for clabel in all_labels:
                 tag = f"<{clabel}>"
                 if tag in text_chunk:
-                    if clabel in chart_labels_mapping:
-                        label = PictureClassificationLabel(chart_labels_mapping[clabel])
+                    if clabel in label_mapping:
+                        label = PictureClassificationLabel(label_mapping[clabel])
                     else:
                         label = PictureClassificationLabel(clabel)
                     break
@@ -5614,11 +5636,10 @@ class DoclingDocument(BaseModel):
                 elif tag_name in [DocItemLabel.PICTURE, DocItemLabel.CHART]:
                     caption, caption_bbox = extract_caption(full_chunk)
                     table_data = None
-                    chart_type = None
+                    image_classification = extract_picture_classification(full_chunk)
                     if tag_name == DocumentToken.CHART.value:
                         table_data = parse_otsl_table_content(full_chunk)
-                        chart_type = extract_chart_type(full_chunk)
-                    pic_title = chart_type if chart_type is not None else "other"
+                    pic_title = image_classification if image_classification is not None else "other"
                     if image:
                         if bbox:
                             im_width, im_height = image.size
@@ -5653,11 +5674,11 @@ class DoclingDocument(BaseModel):
                                 pic.captions.append(caption.get_ref())
 
                             pic_classification = None
-                            if chart_type is not None:
+                            if image_classification is not None:
                                 pic_classification = PictureClassificationMetaField(
                                     predictions=[
                                         PictureClassificationPrediction(
-                                            class_name=chart_type,
+                                            class_name=image_classification,
                                             confidence=1.0,
                                             created_by="load_from_doctags",
                                         )
@@ -5692,13 +5713,13 @@ class DoclingDocument(BaseModel):
                                     )
                                 )
                                 pic.captions.append(caption.get_ref())
-                            if chart_type is not None:
+                            if image_classification is not None:
                                 pic.annotations.append(
                                     PictureClassificationData(
                                         provenance="load_from_doctags",
                                         predicted_classes=[
                                             # chart_type
-                                            PictureClassificationClass(class_name=chart_type, confidence=1.0)
+                                            PictureClassificationClass(class_name=image_classification, confidence=1.0)
                                         ],
                                     )
                                 )
