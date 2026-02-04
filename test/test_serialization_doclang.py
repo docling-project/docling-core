@@ -32,6 +32,7 @@ from docling_core.types.doc import (
     TableData,
     TabularChartMetaField,
 )
+from docling_core.types.doc.base import ImageRefMode
 from test.test_serialization import verify
 
 
@@ -253,10 +254,38 @@ def test_doclang_meta():
     src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
-    ser = DoclangDocSerializer(doc=doc)
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(image_mode=ImageRefMode.EMBEDDED),
+    )
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.dclg.xml"), actual=actual)
 
+
+def test_doclang_crop_embedded():
+    src = Path("./test/data/doc/activities_simplified.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    serializer = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(image_mode=ImageRefMode.EMBEDDED),
+    )
+    actual = serializer.serialize().text
+    exp_file = src.parent / f"{src.stem}_cropped_embedded.dclg.xml"
+    verify(exp_file=exp_file, actual=actual)
+
+
+def test_doclang_crop_placeholder():
+    src = Path("./test/data/doc/activities_simplified.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    serializer = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(image_mode=ImageRefMode.PLACEHOLDER),
+    )
+    actual = serializer.serialize().text
+    exp_file = src.parent / f"{src.stem}_cropped_placeholder.dclg.xml"
+    verify(exp_file=exp_file, actual=actual)
 
 def _create_escape_test_doc(inp_doc: DoclingDocument):
     doc = inp_doc.model_copy(deep=True)
@@ -300,6 +329,7 @@ def test_cdata_always(sample_doc: DoclingDocument):
         doc=doc,
         params=DoclangParams(
             escape_mode=EscapeMode.CDATA_ALWAYS,
+            image_mode=ImageRefMode.EMBEDDED,
         ),
     )
     ser_res = serializer.serialize()
@@ -316,6 +346,7 @@ def test_cdata_when_needed(sample_doc: DoclingDocument):
         doc=doc,
         params=DoclangParams(
             escape_mode=EscapeMode.CDATA_WHEN_NEEDED,
+            image_mode=ImageRefMode.EMBEDDED,
         ),
     )
     ser_res = serializer.serialize()
@@ -429,6 +460,7 @@ def test_content_allow_all_types(sample_doc: DoclingDocument):
         doc=doc,
         params=DoclangParams(
             content_types=set(ContentType),
+            image_mode=ImageRefMode.EMBEDDED,
         ),
     )
     ser_txt = serializer.serialize().text
@@ -443,6 +475,7 @@ def test_content_allow_no_types(sample_doc: DoclingDocument):
         doc=doc,
         params=DoclangParams(
             content_types=set(),
+            image_mode=ImageRefMode.EMBEDDED,
         ),
     )
     ser_txt = serializer.serialize().text
@@ -462,6 +495,7 @@ def test_content_allow_specific_types(sample_doc: DoclingDocument):
                 ContentType.REF_CAPTION,
                 ContentType.TEXT_CODE,
             },
+            image_mode=ImageRefMode.EMBEDDED,
         ),
     )
     ser_txt = serializer.serialize().text
@@ -479,6 +513,7 @@ def test_content_block_specific_types(sample_doc: DoclingDocument):
         doc=doc,
         params=DoclangParams(
             content_types={ct for ct in ContentType if ct not in blocked_types},
+            image_mode=ImageRefMode.EMBEDDED,
         ),
     )
     ser_txt = serializer.serialize().text
