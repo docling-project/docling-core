@@ -248,7 +248,6 @@ class DoclangCategory(str, Enum):
     GROUPING = "grouping"
     STRUCTURAL = "structural"
     CONTENT = "content"
-    BINARY_DATA = "binary_data"
     CONTINUATION = "continuation"
 
 
@@ -407,7 +406,6 @@ class DoclangToken(str, Enum):
     H_THREAD = "h_thread"
 
     # Binary data / content helpers
-    BASE64 = "base64"
     URI = "uri"
     MARKER = "marker"
     FACETS = "facets"
@@ -634,8 +632,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.THREAD: DoclangCategory.CONTINUATION,
         DoclangToken.H_THREAD: DoclangCategory.CONTINUATION,
         # Content/Binary data
-        DoclangToken.BASE64: DoclangCategory.BINARY_DATA,
-        DoclangToken.URI: DoclangCategory.BINARY_DATA,
+        DoclangToken.URI: DoclangCategory.CONTENT,
         DoclangToken.MARKER: DoclangCategory.CONTENT,
         DoclangToken.FACETS: DoclangCategory.CONTENT,
         DoclangToken.CONTENT: DoclangCategory.CONTENT,
@@ -1660,6 +1657,9 @@ class DoclangPictureSerializer(BasePictureSerializer):
             body = ""
             if params.add_location:
                 body += _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
+
+            if item.image and item.image.uri:
+                body += _wrap(text=str(item.image.uri), wrap_tag=DoclangToken.URI.value)
 
             is_chart = self._picture_is_chart(item)
             if ((not is_chart) and ContentType.PICTURE in params.content_types) or (
