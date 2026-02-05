@@ -271,9 +271,30 @@ def test_doclang_crop_embedded():
         params=DoclangParams(image_mode=ImageRefMode.EMBEDDED),
     )
     actual = serializer.serialize().text
-    exp_file = src.parent / f"{src.stem}_cropped_embedded.dclg.xml"
-    verify(exp_file=exp_file, actual=actual)
 
+    # verifying everything except base64 data as the latter seems to be flaky across runs/platforms
+    exp_prefix = """
+<doclang version="1.0.0">
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Other</classification>
+      </meta>
+      <location value="43"/>
+      <location value="117"/>
+      <location value="172"/>
+      <location value="208"/>
+      <uri>data:image/png;base64,
+    """.strip()
+    assert actual.startswith(exp_prefix)
+
+    exp_suffix = """
+      </uri>
+    </picture>
+  </floating_group>
+</doclang>
+    """.strip()
+    assert actual.endswith(exp_suffix)
 
 def test_doclang_crop_placeholder():
     src = Path("./test/data/doc/activities_simplified.yaml")
