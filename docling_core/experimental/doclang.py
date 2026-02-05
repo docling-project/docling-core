@@ -61,7 +61,7 @@ from docling_core.types.doc import (
     TabularChartMetaField,
     TextItem,
 )
-from docling_core.types.doc.base import CoordOrigin
+from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.document import FormulaItem, RichTableCell
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
@@ -1013,6 +1013,7 @@ class DoclangParams(CommonParams):
     # XML compliance: escape special characters in text content
     escape_mode: EscapeMode = EscapeMode.CDATA_WHEN_NEEDED
     content_wrapping_mode: WrapMode = WrapMode.WRAP_WHEN_NEEDED
+    image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
 
 
 def _get_delim(*, params: DoclangParams) -> str:
@@ -1658,8 +1659,15 @@ class DoclangPictureSerializer(BasePictureSerializer):
             if params.add_location:
                 body += _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
 
-            if item.image and item.image.uri:
-                body += _wrap(text=str(item.image.uri), wrap_tag=DoclangToken.URI.value)
+            uri: Optional[str] = None
+            if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
+                uri = str(item.image.uri)
+            elif params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
+                imgb64 = item._image_to_base64(img)
+                uri = f"data:image/png;base64,{imgb64}"
+
+            if uri:
+                body += _wrap(text=uri, wrap_tag=DoclangToken.URI.value)
 
             is_chart = self._picture_is_chart(item)
             if ((not is_chart) and ContentType.PICTURE in params.content_types) or (
