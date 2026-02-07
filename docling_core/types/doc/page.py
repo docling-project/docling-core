@@ -374,7 +374,7 @@ class BitmapResource(OrderedElement):
         self.rect = self.rect.to_top_left_origin(page_height=page_height)
 
 
-class PdfLine(ColorMixin, OrderedElement):
+class PdfShape(ColorMixin, OrderedElement):
     """Model representing a line in a PDF document."""
 
     parent_id: int
@@ -541,7 +541,7 @@ class SegmentedPdfPage(SegmentedPage):
     # Redefine typing to use PdfPageDimensions
     dimension: PdfPageGeometry
 
-    lines: list[PdfLine] = []
+    shapes: list[PdfShape] = []
 
     # Redefine typing of elements to include PdfTextCell
     char_cells: list[Union[PdfTextCell, TextCell]]
@@ -713,10 +713,10 @@ class SegmentedPdfPage(SegmentedPage):
         bitmap_resources_outline: str = "black",
         bitmap_resources_fill: str = "yellow",
         bitmap_resources_alpha: float = 1.0,
-        draw_lines: bool = True,
-        line_color: str = "black",
-        line_width: int = 1,
-        line_alpha: float = 1.0,
+        draw_shapes: bool = True,
+        shape_color: str = "black",
+        shape_width: int = 1,
+        shape_alpha: float = 1.0,
         draw_annotations: bool = True,
         annotations_outline: str = "white",
         annotations_color: str = "green",
@@ -750,10 +750,10 @@ class SegmentedPdfPage(SegmentedPage):
             bitmap_resources_outline: Outline color for bitmap resources
             bitmap_resources_fill: Fill color for bitmap resources
             bitmap_resources_alpha: Alpha value for bitmap resources
-            draw_lines: Whether to draw lines
-            line_color: Color for lines
-            line_width: Width for lines
-            line_alpha: Alpha value for lines
+            draw_shapes: Whether to draw shapes
+            shape_color: Color for shapes
+            shape_width: Width for shapes
+            shape_alpha: Alpha value for shapes
             draw_annotations: Whether to draw annotations
             annotations_outline: Outline color for annotations
             annotations_color: Fill color for annotations
@@ -771,7 +771,7 @@ class SegmentedPdfPage(SegmentedPage):
             cell_bl_alpha,
             cell_tr_alpha,
             bitmap_resources_alpha,
-            line_alpha,
+            shape_alpha,
             annotations_alpha,
             cropbox_alpha,
         ]:
@@ -834,13 +834,13 @@ class SegmentedPdfPage(SegmentedPage):
                 cell_tr_radius=cell_tr_radius,
             )
 
-        if draw_lines:
-            draw = self._render_lines(
+        if draw_shapes:
+            draw = self._render_shapes(
                 draw=draw,
                 page_height=page_height,
-                line_color=line_color,
-                line_alpha=line_alpha,
-                line_width=line_width,
+                shape_color=shape_color,
+                shape_alpha=shape_alpha,
+                shape_width=shape_width,
             )
 
         return result
@@ -1107,36 +1107,36 @@ class SegmentedPdfPage(SegmentedPage):
 
         return draw
 
-    def _render_lines(
+    def _render_shapes(
         self,
         draw: ImageDraw.ImageDraw,
         page_height: float,
-        line_color: str,
-        line_alpha: float,
-        line_width: float,
+        shape_color: str,
+        shape_alpha: float,
+        shape_width: float,
     ) -> ImageDraw.ImageDraw:
-        """Render lines on the page.
+        """Render shapes on the page.
 
         Args:
             draw: PIL ImageDraw object
             page_height: Height of the page
-            line_color: Color for lines
-            line_alpha: Alpha value for lines
-            line_width: Width for lines
+            shape_color: Color for shapes
+            shape_alpha: Alpha value for shapes
+            shape_width: Width for shapes
 
         Returns:
             Updated ImageDraw object
         """
-        fill = self._get_rgba(name=line_color, alpha=line_alpha)
+        fill = self._get_rgba(name=shape_color, alpha=shape_alpha)
 
         # Draw each rectangle by connecting its four points
-        for line in self.lines:
-            line.to_top_left_origin(page_height=page_height)
-            for segment in line.iterate_segments():
+        for shape in self.shapes:
+            shape.to_top_left_origin(page_height=page_height)
+            for segment in shape.iterate_segments():
                 draw.line(
                     (segment[0][0], segment[0][1], segment[1][0], segment[1][1]),
                     fill=fill,
-                    width=max(1, round(line.width)),
+                    width=max(1, round(shape.width)),
                 )
 
         return draw
