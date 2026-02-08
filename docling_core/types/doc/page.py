@@ -374,14 +374,40 @@ class BitmapResource(OrderedElement):
         self.rect = self.rect.to_top_left_origin(page_height=page_height)
 
 
-class PdfShape(ColorMixin, OrderedElement):
-    """Model representing a line in a PDF document."""
+class PdfShape(OrderedElement):
+    """Model representing a vector shape in a PDF document."""
 
     parent_id: int
     points: list[Coord2D]
-    width: float = 1.0
 
     coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
+
+    # graphics state
+    has_graphics_state: bool = False
+
+    line_width: float = -1.0
+    miter_limit: float = -1.0
+
+    line_cap: int = -1  # 0=butt, 1=round, 2=projecting square
+    line_join: int = -1  # 0=miter, 1=round, 2=bevel
+
+    dash_phase: float = 0.0
+    dash_array: list[float] = []
+
+    flatness: float = -1.0
+
+    rgb_stroking: ColorRGBA = ColorRGBA(r=0, g=0, b=0, a=255)
+    rgb_filling: ColorRGBA = ColorRGBA(r=0, g=0, b=0, a=255)
+
+    # deprecated — use rgb_stroking / rgb_filling instead
+    rgba: Optional[ColorRGBA] = Field(
+        default=None,
+        deprecated="Use `rgb_stroking` and `rgb_filling` instead.",
+    )
+    width: Optional[float] = Field(
+        default=None,
+        deprecated="Use `line_width` instead.",
+    )
 
     def __len__(self) -> int:
         """Return the number of points in the line."""
@@ -1136,7 +1162,7 @@ class SegmentedPdfPage(SegmentedPage):
                 draw.line(
                     (segment[0][0], segment[0][1], segment[1][0], segment[1][1]),
                     fill=fill,
-                    width=max(1, round(shape.width)),
+                    width=max(1, round(shape.width or 0)),
                 )
 
         return draw
