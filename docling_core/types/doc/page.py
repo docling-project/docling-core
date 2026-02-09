@@ -1146,24 +1146,33 @@ class SegmentedPdfPage(SegmentedPage):
         Args:
             draw: PIL ImageDraw object
             page_height: Height of the page
-            shape_color: Color for shapes
+            shape_color: Default color for shapes (used as fallback)
             shape_alpha: Alpha value for shapes
-            shape_width: Width for shapes
+            shape_width: Default width for shapes (used as fallback)
 
         Returns:
             Updated ImageDraw object
         """
-        fill = self._get_rgba(name=shape_color, alpha=shape_alpha)
-
-        # Draw each rectangle by connecting its four points
+        # Draw each shape using its own stroking/filling colors
         for shape in self.shapes:
             shape.to_top_left_origin(page_height=page_height)
-            for segment in shape.iterate_segments():
-                draw.line(
-                    (segment[0][0], segment[0][1], segment[1][0], segment[1][1]),
-                    fill=fill,
-                    width=max(1, round(shape.width or 0)),
-                )
+
+            stroking_rgba = shape.rgb_stroking.as_tuple()
+            filling_rgba = shape.rgb_filling.as_tuple()
+
+            width = max(1, round(shape.line_width)) if shape.line_width > 0 else max(1, round(shape_width))
+
+            # If the shape is closed (first and last points coincide), fill it
+            if len(shape.points) >= 3 and shape.points[0] == shape.points[-1]:
+                poly = [(p.x, p.y) for p in shape.points]
+                draw.polygon(poly, outline=stroking_rgba, fill=filling_rgba)
+            else:
+                for segment in shape.iterate_segments():
+                    draw.line(
+                        (segment[0][0], segment[0][1], segment[1][0], segment[1][1]),
+                        fill=stroking_rgba,
+                        width=width,
+                    )
 
         return draw
 
