@@ -1,3 +1,14 @@
+## [v2.64.0](https://github.com/docling-project/docling-core/releases/tag/v2.64.0) - 2026-02-09
+
+### Feature
+
+* Add PdfShape to SegmentedPdfPage ([#507](https://github.com/docling-project/docling-core/issues/507)) ([`6adfbda`](https://github.com/docling-project/docling-core/commit/6adfbdacdcfcf459b9f11b23fd95c976550afae9))
+
+### Fix
+
+* **Doclang:** Fix image URI serialization ([#504](https://github.com/docling-project/docling-core/issues/504)) ([`193c25f`](https://github.com/docling-project/docling-core/commit/193c25f0833b6b637fad60ca479db0eedcfe798f))
+* **DocTags:** Fix deserialization to populate picture meta fields ([#505](https://github.com/docling-project/docling-core/issues/505)) ([`8005892`](https://github.com/docling-project/docling-core/commit/8005892f6cbde41e94d5a83ba8578e7f37820f4a))
+
 ## [v2.63.0](https://github.com/docling-project/docling-core/releases/tag/v2.63.0) - 2026-02-03
 
 ### Feature
