@@ -6,6 +6,7 @@ import logging
 import math
 import re
 import typing
+import warnings
 from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
@@ -375,13 +376,62 @@ class BitmapResource(OrderedElement):
 
 
 class PdfLine(ColorMixin, OrderedElement):
-    """Model representing a line in a PDF document."""
+    """Model representing a line in a PDF document.
+
+    .. deprecated::
+        Use :class:`PdfShape` instead.
+    """
 
     parent_id: int
     points: list[Coord2D]
     width: float = 1.0
 
     coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
+
+    def __init__(self, **data):
+        """Initialize PdfLine with a deprecation warning."""
+        warnings.warn(
+            "PdfLine is deprecated, use PdfShape instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(**data)
+
+
+class PdfShape(OrderedElement):
+    """Model representing a vector shape in a PDF document."""
+
+    parent_id: int
+    points: list[Coord2D]
+
+    coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
+
+    # graphics state
+    has_graphics_state: bool = False
+
+    line_width: float = -1.0
+    miter_limit: float = -1.0
+
+    line_cap: int = -1  # 0=butt, 1=round, 2=projecting square
+    line_join: int = -1  # 0=miter, 1=round, 2=bevel
+
+    dash_phase: float = 0.0
+    dash_array: list[float] = []
+
+    flatness: float = -1.0
+
+    rgb_stroking: ColorRGBA = ColorRGBA(r=0, g=0, b=0, a=255)
+    rgb_filling: ColorRGBA = ColorRGBA(r=0, g=0, b=0, a=255)
+
+    # deprecated — use rgb_stroking / rgb_filling instead
+    rgba: Optional[ColorRGBA] = Field(
+        default=None,
+        deprecated="Use `rgb_stroking` and `rgb_filling` instead.",
+    )
+    width: Optional[float] = Field(
+        default=None,
+        deprecated="Use `line_width` instead.",
+    )
 
     def __len__(self) -> int:
         """Return the number of points in the line."""
@@ -541,7 +591,11 @@ class SegmentedPdfPage(SegmentedPage):
     # Redefine typing to use PdfPageDimensions
     dimension: PdfPageGeometry
 
-    lines: list[PdfLine] = []
+    lines: list[PdfLine] = Field(
+        default=[],
+        deprecated="Use `shapes` instead.",
+    )
+    shapes: list[PdfShape] = []
 
     # Redefine typing of elements to include PdfTextCell
     char_cells: list[Union[PdfTextCell, TextCell]]
@@ -713,10 +767,10 @@ class SegmentedPdfPage(SegmentedPage):
         bitmap_resources_outline: str = "black",
         bitmap_resources_fill: str = "yellow",
         bitmap_resources_alpha: float = 1.0,
-        draw_lines: bool = True,
-        line_color: str = "black",
-        line_width: int = 1,
-        line_alpha: float = 1.0,
+        draw_shapes: bool = True,
+        shape_color: str = "black",
+        shape_width: int = 1,
+        shape_alpha: float = 1.0,
         draw_annotations: bool = True,
         annotations_outline: str = "white",
         annotations_color: str = "green",
@@ -750,10 +804,10 @@ class SegmentedPdfPage(SegmentedPage):
             bitmap_resources_outline: Outline color for bitmap resources
             bitmap_resources_fill: Fill color for bitmap resources
             bitmap_resources_alpha: Alpha value for bitmap resources
-            draw_lines: Whether to draw lines
-            line_color: Color for lines
-            line_width: Width for lines
-            line_alpha: Alpha value for lines
+            draw_shapes: Whether to draw shapes
+            shape_color: Color for shapes
+            shape_width: Width for shapes
+            shape_alpha: Alpha value for shapes
             draw_annotations: Whether to draw annotations
             annotations_outline: Outline color for annotations
             annotations_color: Fill color for annotations
@@ -771,7 +825,7 @@ class SegmentedPdfPage(SegmentedPage):
             cell_bl_alpha,
             cell_tr_alpha,
             bitmap_resources_alpha,
-            line_alpha,
+            shape_alpha,
             annotations_alpha,
             cropbox_alpha,
         ]:
@@ -797,6 +851,15 @@ class SegmentedPdfPage(SegmentedPage):
                 bitmap_resources_fill=bitmap_resources_fill,
                 bitmap_resources_outline=bitmap_resources_outline,
                 bitmap_resources_alpha=bitmap_resources_alpha,
+            )
+
+        if draw_shapes:
+            draw = self._render_shapes(
+                draw=draw,
+                page_height=page_height,
+                shape_color=shape_color,
+                shape_alpha=shape_alpha,
+                shape_width=shape_width,
             )
 
         if draw_cells_text:
@@ -832,15 +895,6 @@ class SegmentedPdfPage(SegmentedPage):
                 cell_tr_outline=cell_tr_outline,
                 cell_tr_alpha=cell_tr_alpha,
                 cell_tr_radius=cell_tr_radius,
-            )
-
-        if draw_lines:
-            draw = self._render_lines(
-                draw=draw,
-                page_height=page_height,
-                line_color=line_color,
-                line_alpha=line_alpha,
-                line_width=line_width,
             )
 
         return result
@@ -1107,37 +1161,46 @@ class SegmentedPdfPage(SegmentedPage):
 
         return draw
 
-    def _render_lines(
+    def _render_shapes(
         self,
         draw: ImageDraw.ImageDraw,
         page_height: float,
-        line_color: str,
-        line_alpha: float,
-        line_width: float,
+        shape_color: str,
+        shape_alpha: float,
+        shape_width: float,
     ) -> ImageDraw.ImageDraw:
-        """Render lines on the page.
+        """Render shapes on the page.
 
         Args:
             draw: PIL ImageDraw object
             page_height: Height of the page
-            line_color: Color for lines
-            line_alpha: Alpha value for lines
-            line_width: Width for lines
+            shape_color: Default color for shapes (used as fallback)
+            shape_alpha: Alpha value for shapes
+            shape_width: Default width for shapes (used as fallback)
 
         Returns:
             Updated ImageDraw object
         """
-        fill = self._get_rgba(name=line_color, alpha=line_alpha)
+        # Draw each shape using its own stroking/filling colors
+        for shape in self.shapes:
+            shape.to_top_left_origin(page_height=page_height)
 
-        # Draw each rectangle by connecting its four points
-        for line in self.lines:
-            line.to_top_left_origin(page_height=page_height)
-            for segment in line.iterate_segments():
-                draw.line(
-                    (segment[0][0], segment[0][1], segment[1][0], segment[1][1]),
-                    fill=fill,
-                    width=max(1, round(line.width)),
-                )
+            stroking_rgba = shape.rgb_stroking.as_tuple()
+            filling_rgba = shape.rgb_filling.as_tuple()
+
+            width = max(1, round(shape.line_width)) if shape.line_width > 0 else max(1, round(shape_width))
+
+            # If the shape is closed (first and last points coincide), fill it
+            if len(shape.points) >= 3 and shape.points[0] == shape.points[-1]:
+                poly = [(p.x, p.y) for p in shape.points]
+                draw.polygon(poly, outline=stroking_rgba, fill=filling_rgba)
+            else:
+                for segment in shape.iterate_segments():
+                    draw.line(
+                        (segment[0][0], segment[0][1], segment[1][0], segment[1][1]),
+                        fill=stroking_rgba,
+                        width=width,
+                    )
 
         return draw
 
