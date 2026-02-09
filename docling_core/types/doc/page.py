@@ -6,6 +6,7 @@ import logging
 import math
 import re
 import typing
+import warnings
 from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
@@ -374,6 +375,29 @@ class BitmapResource(OrderedElement):
         self.rect = self.rect.to_top_left_origin(page_height=page_height)
 
 
+class PdfLine(ColorMixin, OrderedElement):
+    """Model representing a line in a PDF document.
+
+    .. deprecated::
+        Use :class:`PdfShape` instead.
+    """
+
+    parent_id: int
+    points: list[Coord2D]
+    width: float = 1.0
+
+    coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
+
+    def __init__(self, **data):
+        """Initialize PdfLine with a deprecation warning."""
+        warnings.warn(
+            "PdfLine is deprecated, use PdfShape instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(**data)
+
+
 class PdfShape(OrderedElement):
     """Model representing a vector shape in a PDF document."""
 
@@ -567,6 +591,10 @@ class SegmentedPdfPage(SegmentedPage):
     # Redefine typing to use PdfPageDimensions
     dimension: PdfPageGeometry
 
+    lines: list[PdfLine] = Field(
+        default=[],
+        deprecated="Use `shapes` instead.",
+    )
     shapes: list[PdfShape] = []
 
     # Redefine typing of elements to include PdfTextCell
