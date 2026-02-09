@@ -825,6 +825,15 @@ class SegmentedPdfPage(SegmentedPage):
                 bitmap_resources_alpha=bitmap_resources_alpha,
             )
 
+        if draw_shapes:
+            draw = self._render_shapes(
+                draw=draw,
+                page_height=page_height,
+                shape_color=shape_color,
+                shape_alpha=shape_alpha,
+                shape_width=shape_width,
+            )
+
         if draw_cells_text:
             result = self._render_cells_text(cell_unit=cell_unit, img=result, page_height=page_height)
 
@@ -858,15 +867,6 @@ class SegmentedPdfPage(SegmentedPage):
                 cell_tr_outline=cell_tr_outline,
                 cell_tr_alpha=cell_tr_alpha,
                 cell_tr_radius=cell_tr_radius,
-            )
-
-        if draw_shapes:
-            draw = self._render_shapes(
-                draw=draw,
-                page_height=page_height,
-                shape_color=shape_color,
-                shape_alpha=shape_alpha,
-                shape_width=shape_width,
             )
 
         return result
