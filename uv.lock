@@ -919,7 +919,6 @@ dependencies = [
     { name = "pyyaml" },
     { name = "tabulate" },
     { name = "typer" },
-    { name = "types-defusedxml" },
     { name = "typing-extensions" },
 ]
 
@@ -969,6 +968,7 @@ dev = [
     { name = "python-semantic-release" },
     { name = "ruff" },
     { name = "tree-sitter-java-orchard" },
+    { name = "types-defusedxml" },
     { name = "types-setuptools" },
 ]
 
@@ -1002,7 +1002,6 @@ requires-dist = [
     { name = "tree-sitter-typescript", marker = "extra == 'chunking'", specifier = ">=0.23.2" },
     { name = "tree-sitter-typescript", marker = "extra == 'chunking-openai'", specifier = ">=0.23.2" },
     { name = "typer", specifier = ">=0.12.5,<0.22.0" },
-    { name = "types-defusedxml", specifier = ">=0.7.0.20250822,<0.8.0" },
     { name = "typing-extensions", specifier = ">=4.12.2,<5.0.0" },
 ]
 provides-extras = ["chunking", "chunking-openai", "examples"]
@@ -1027,6 +1026,7 @@ dev = [
     { name = "python-semantic-release", specifier = "~=7.32" },
     { name = "ruff", specifier = ">=0.14.11" },
     { name = "tree-sitter-java-orchard", marker = "python_full_version >= '3.10'", specifier = ">=0.3.0,<1.0.0" },
+    { name = "types-defusedxml", specifier = ">=0.7.0.20250822,<0.8.0" },
     { name = "types-setuptools", specifier = "~=70.3" },
 ]
 
