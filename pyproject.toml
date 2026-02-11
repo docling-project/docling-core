@@ -49,6 +49,7 @@ dependencies = [
     'typing-extensions (>=4.12.2,<5.0.0)',
     'typer (>=0.12.5,<0.22.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
+    "defusedxml (>=0.7.1, <0.8.0)",
 ]
 
 [project.urls]
@@ -92,7 +93,7 @@ examples = [
     "datasets>=4.0.0",
     "matplotlib>=3.7.0",
     "openpyxl>=3.1.5",
-    "pandas>=2.3.3",    
+    "pandas>=2.3.3",
 ]
 
 [dependency-groups]
@@ -116,6 +117,7 @@ dev = [
     "python-semantic-release~=7.32",
     'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
     "ruff>=0.14.11",
+    "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
 ]
 
 [tool.uv]
@@ -191,13 +193,14 @@ max-complexity = 30
 [tool.ruff.lint.isort]
 combine-as-imports = false
 
-[toolruff.lint.autoflake]
-in-place = true
-ignore-init-module-imports = true
-remove-all-unused-imports = true
-remove-unused-variables = true
-expand-star-imports = true
-recursive = true
+# TODO: move to schema-compatible location
+# [toolruff.lint.autoflake]
+# in-place = true
+# ignore-init-module-imports = true
+# remove-all-unused-imports = true
+# remove-unused-variables = true
+# expand-star-imports = true
+# recursive = true
 
 [tool.mypy]
 pretty = true

@@ -6,8 +6,9 @@ import warnings
 from enum import Enum
 from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
-from xml.dom.minidom import Element, Node, Text, parseString
+from xml.dom.minidom import Element, Node, Text
 
+from defusedxml.minidom import parseString
 from pydantic import BaseModel, PrivateAttr
 from typing_extensions import override
 

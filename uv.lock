@@ -878,6 +878,15 @@ wheels = [
 ]
 
 [[package]]
+name = "defusedxml"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/d5/c66da9b79e5bdb124974bfe172b4daf3c984ebd9c2a06e2b8a4dc7331c72/defusedxml-0.7.1.tar.gz", hash = "sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69", size = 75520, upload-time = "2021-03-08T10:59:26.269Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/6c/aa3f2f849e01cb6a001cd8554a88d4c77c5c1a31c95bdf1cf9301e6d9ef4/defusedxml-0.7.1-py2.py3-none-any.whl", hash = "sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61", size = 25604, upload-time = "2021-03-08T10:59:24.45Z" },
+]
+
+[[package]]
 name = "dill"
 version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -900,6 +909,7 @@ name = "docling-core"
 version = "2.64.0"
 source = { editable = "." }
 dependencies = [
+    { name = "defusedxml" },
     { name = "jsonref" },
     { name = "jsonschema" },
     { name = "latex2mathml" },
@@ -958,12 +968,14 @@ dev = [
     { name = "python-semantic-release" },
     { name = "ruff" },
     { name = "tree-sitter-java-orchard" },
+    { name = "types-defusedxml" },
     { name = "types-setuptools" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "datasets", marker = "extra == 'examples'", specifier = ">=4.0.0" },
+    { name = "defusedxml", specifier = ">=0.7.1,<0.8.0" },
     { name = "jsonref", specifier = ">=1.1.0,<2.0.0" },
     { name = "jsonschema", specifier = ">=4.16.0,<5.0.0" },
     { name = "latex2mathml", specifier = ">=3.77.0,<4.0.0" },
@@ -1014,6 +1026,7 @@ dev = [
     { name = "python-semantic-release", specifier = "~=7.32" },
     { name = "ruff", specifier = ">=0.14.11" },
     { name = "tree-sitter-java-orchard", marker = "python_full_version >= '3.10'", specifier = ">=0.3.0,<1.0.0" },
+    { name = "types-defusedxml", specifier = ">=0.7.0.20250822,<0.8.0" },
     { name = "types-setuptools", specifier = "~=70.3" },
 ]
 
@@ -4218,6 +4231,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/36/bf/8825b5929afd84d0dabd606c67cd57b8388cb3ec385f7ef19c5cc2202069/typer-0.21.1.tar.gz", hash = "sha256:ea835607cd752343b6b2b7ce676893e5a0324082268b48f27aa058bdb7d2145d", size = 110371, upload-time = "2026-01-06T11:21:10.989Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/1d/d9257dd49ff2ca23ea5f132edf1281a0c4f9de8a762b9ae399b670a59235/typer-0.21.1-py3-none-any.whl", hash = "sha256:7985e89081c636b88d172c2ee0cfe33c253160994d47bdfdc302defd7d1f1d01", size = 47381, upload-time = "2026-01-06T11:21:09.824Z" },
+]
+
+[[package]]
+name = "types-defusedxml"
+version = "0.7.0.20250822"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/4a/5b997ae87bf301d1796f72637baa4e0e10d7db17704a8a71878a9f77f0c0/types_defusedxml-0.7.0.20250822.tar.gz", hash = "sha256:ba6c395105f800c973bba8a25e41b215483e55ec79c8ca82b6fe90ba0bc3f8b2", size = 10590, upload-time = "2025-08-22T03:02:59.547Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/13/73/8a36998cee9d7c9702ed64a31f0866c7f192ecffc22771d44dbcc7878f18/types_defusedxml-0.7.0.20250822-py3-none-any.whl", hash = "sha256:5ee219f8a9a79c184773599ad216123aedc62a969533ec36737ec98601f20dcf", size = 13430, upload-time = "2025-08-22T03:02:58.466Z" },
 ]
 
 [[package]]
