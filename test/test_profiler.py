@@ -180,9 +180,12 @@ def test_profile_collection_single_document():
     assert stats.total_texts == 1
     assert stats.min_pages == 1
     assert stats.max_pages == 1
-    assert stats.median_pages == 1.0
+    assert stats.deciles_pages[4] == 1.0  # median is d5 (5th decile, index 4)
     assert stats.mean_pages == 1.0
     assert stats.std_pages == 0.0
+    # Check histogram exists
+    assert len(stats.histogram_pages.bins) > 0
+    assert len(stats.histogram_pages.frequencies) > 0
 
 
 def test_profile_collection_multiple_documents():
@@ -241,27 +244,38 @@ def test_profile_collection_multiple_documents():
     # Page statistics
     assert stats.min_pages == 1
     assert stats.max_pages == 5
-    assert stats.median_pages == 2.0
+    assert stats.deciles_pages[4] == 2.0  # median is d5 (5th decile, index 4)
     assert stats.mean_pages == pytest.approx(8 / 3)
     assert stats.std_pages > 0
+    # Check deciles are in order: [d1, d2, d3, d4, d5, d6, d7, d8, d9]
+    assert stats.deciles_pages[0] <= stats.deciles_pages[4] <= stats.deciles_pages[8]
+    # Check histogram exists
+    assert len(stats.histogram_pages.bins) > 0
+    assert len(stats.histogram_pages.frequencies) > 0
 
     # Table statistics
     assert stats.min_tables == 0
     assert stats.max_tables == 3
-    assert stats.median_tables == 1.0
+    assert stats.deciles_tables[4] == 1.0  # median is d5 (5th decile, index 4)
     assert stats.mean_tables == pytest.approx(4 / 3)
+    # Check histogram exists
+    assert len(stats.histogram_tables.bins) > 0
 
     # Picture statistics
     assert stats.min_pictures == 1
     assert stats.max_pictures == 5
-    assert stats.median_pictures == 2.0
+    assert stats.deciles_pictures[4] == 2.0  # median is d5 (5th decile, index 4)
     assert stats.mean_pictures == pytest.approx(8 / 3)
+    # Check histogram exists
+    assert len(stats.histogram_pictures.bins) > 0
 
     # Text statistics
     assert stats.min_texts == 2
     assert stats.max_texts == 10
-    assert stats.median_texts == 2.0
+    assert stats.deciles_texts[4] == 2.0  # median is d5 (5th decile, index 4)
     assert stats.mean_texts == pytest.approx(14 / 3)
+    # Check histogram exists
+    assert len(stats.histogram_texts.bins) > 0
 
     # Document characteristics
     assert len(stats.document_stats) == 3
