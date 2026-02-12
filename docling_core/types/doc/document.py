@@ -6185,6 +6185,10 @@ class DoclingDocument(BaseModel):
 
             self._names.append(doc.name)
 
+            # record starting indices so post-processing only touches new items
+            post_processing_keys = ["texts", "pictures", "tables", "key_value_items", "form_items"]
+            start_indices = {k: len(self.get_item_list(k)) for k in post_processing_keys}
+
             # collect items in traversal order
             for item, _ in doc._iterate_items_with_stack(
                 with_groups=True,
@@ -6242,13 +6246,6 @@ class DoclingDocument(BaseModel):
                             parent_index = int(parent_index_str)
                             parent_item = self.get_item_list(parent_key)[parent_index]
 
-                            # update captions field (not possible in iterate_items order):
-                            if isinstance(parent_item, FloatingItem):
-                                for cap_it, cap in enumerate(parent_item.captions):
-                                    if cap.cref == item.self_ref:
-                                        parent_item.captions[cap_it] = RefItem(cref=new_cref)
-                                        break
-
                             # update rich table cells references:
                             if isinstance(parent_item, TableItem):
                                 for cell in parent_item.data.table_cells:
@@ -6261,6 +6258,26 @@ class DoclingDocument(BaseModel):
                         else:
                             raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
                         parent_item.children.append(RefItem(cref=new_cref))
+
+            # rewrite FloatingItem explicit refs starting from start_indices to avoid corrupting items from prior calls
+            for key in post_processing_keys:
+                for idx_item in self.get_item_list(key)[start_indices[key] :]:
+                    if isinstance(idx_item, FloatingItem):
+                        idx_item.captions = [
+                            RefItem(cref=orig_ref_to_new_ref[cap.cref])
+                            for cap in idx_item.captions
+                            if cap.cref in orig_ref_to_new_ref
+                        ]
+                        idx_item.references = [
+                            RefItem(cref=orig_ref_to_new_ref[ref.cref])
+                            for ref in idx_item.references
+                            if ref.cref in orig_ref_to_new_ref
+                        ]
+                        idx_item.footnotes = [
+                            RefItem(cref=orig_ref_to_new_ref[fn.cref])
+                            for fn in idx_item.footnotes
+                            if fn.cref in orig_ref_to_new_ref
+                        ]
 
             # update pages
             new_max_page = None
