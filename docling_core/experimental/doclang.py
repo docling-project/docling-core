@@ -2669,7 +2669,10 @@ class DoclangDeserializer(BaseModel):
             if isinstance(node, Text):
                 parts.append(node.data)
             elif isinstance(node, Element):
-                if node.tagName not in exclude_tags:
+                if node.tagName == DoclangToken.CONTENT.value:
+                    res = self._inner_xml(node, exclude_tags=exclude_tags)
+                    parts.append(res)
+                elif node.tagName not in exclude_tags:
                     parts.append(node.toxml())
         return "".join(parts)
 
