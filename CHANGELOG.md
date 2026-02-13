@@ -1,3 +1,9 @@
+## [v2.65.1](https://github.com/docling-project/docling-core/releases/tag/v2.65.1) - 2026-02-13
+
+### Fix
+
+* Add pdf page widget and hyperlink ([#516](https://github.com/docling-project/docling-core/issues/516)) ([`a63685e`](https://github.com/docling-project/docling-core/commit/a63685e827182462a35700b8bd128a2225227d13))
+
 ## [v2.65.0](https://github.com/docling-project/docling-core/releases/tag/v2.65.0) - 2026-02-13
 
 ### Feature
