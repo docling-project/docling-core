@@ -371,7 +371,6 @@ class DoclangToken(str, Enum):
     LIST = "list"
     GROUP = "group"
     FLOATING_GROUP = "floating_group"
-    INLINE = "inline"
 
     # Formatting
     BOLD = "bold"
@@ -471,7 +470,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.LIST: {DoclangAttributeKey.ORDERED},
         DoclangToken.GROUP: {DoclangAttributeKey.TYPE},
         DoclangToken.FLOATING_GROUP: {DoclangAttributeKey.CLASS},
-        DoclangToken.INLINE: {DoclangAttributeKey.CLASS},
         DoclangToken.THREAD: {DoclangAttributeKey.ID},
         DoclangToken.H_THREAD: {DoclangAttributeKey.ID},
     }
@@ -495,13 +493,6 @@ class DoclangVocabulary(BaseModel):
             DoclangAttributeKey.CLASS: {
                 DoclangAttributeValue.SELECTED,
                 DoclangAttributeValue.UNSELECTED,
-            }
-        },
-        DoclangToken.INLINE: {
-            DoclangAttributeKey.CLASS: {
-                DoclangAttributeValue.FORMULA,
-                DoclangAttributeValue.CODE,
-                DoclangAttributeValue.PICTURE,
             }
         },
         DoclangToken.FLOATING_GROUP: {
@@ -606,7 +597,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.LIST: DoclangCategory.GROUPING,
         DoclangToken.GROUP: DoclangCategory.GROUPING,
         DoclangToken.FLOATING_GROUP: DoclangCategory.GROUPING,
-        DoclangToken.INLINE: DoclangCategory.GROUPING,
         # Formatting
         DoclangToken.BOLD: DoclangCategory.FORMATTING,
         DoclangToken.ITALIC: DoclangCategory.FORMATTING,
@@ -2273,8 +2263,6 @@ class DoclangDeserializer(BaseModel):
             self._parse_list(doc=doc, el=el, parent=parent)
         elif name == DoclangToken.FLOATING_GROUP.value:
             self._parse_floating_group(doc=doc, el=el, parent=parent)
-        elif name == DoclangToken.INLINE.value:
-            self._parse_inline_group(doc=doc, el=el, parent=parent)
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
 

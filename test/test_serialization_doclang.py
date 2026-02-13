@@ -146,11 +146,6 @@ def test_create_closing_token_from_opening_tag_simple():
         DoclangVocabulary.create_closing_token(token=' <list ordered="true"> ')
         == "</list>"
     )
-    # Inline with attribute
-    assert (
-        DoclangVocabulary.create_closing_token(token=' <inline class="code"> ')
-        == "</inline>"
-    )
 
 
 def test_create_closing_token_returns_existing_closing():
