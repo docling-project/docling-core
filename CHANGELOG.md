@@ -1,3 +1,16 @@
+## [v2.65.0](https://github.com/docling-project/docling-core/releases/tag/v2.65.0) - 2026-02-13
+
+### Feature
+
+* Add hyperlinks and widgets ([#515](https://github.com/docling-project/docling-core/issues/515)) ([`4e47259`](https://github.com/docling-project/docling-core/commit/4e472592ed9aebbd8b86c7091a2dedd7f515bd5a))
+
+### Fix
+
+* **Doclang:** Fix table cell `content` deserialization ([#512](https://github.com/docling-project/docling-core/issues/512)) ([`9ba605d`](https://github.com/docling-project/docling-core/commit/9ba605d225c2eb9c2d27c8729053436770d7a6ae))
+* **Doclang:** Align image mode, defaulting to placeholder ([#506](https://github.com/docling-project/docling-core/issues/506)) ([`aec74d4`](https://github.com/docling-project/docling-core/commit/aec74d4eb070cce02ad961c28a6e37e8de8d4982))
+* Fix document re-indexing ([#510](https://github.com/docling-project/docling-core/issues/510)) ([`1d969d4`](https://github.com/docling-project/docling-core/commit/1d969d4e378450d6802c39222b1f1c79e8d004ee))
+* Switch XML parsing ([#509](https://github.com/docling-project/docling-core/issues/509)) ([`2793dda`](https://github.com/docling-project/docling-core/commit/2793dda9d7a3062a84fdedc8ffb466179a5e9cb7))
+
 ## [v2.64.0](https://github.com/docling-project/docling-core/releases/tag/v2.64.0) - 2026-02-09
 
 ### Feature
