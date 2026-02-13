@@ -350,6 +350,23 @@ class PdfTextCell(TextCell):
         return data
 
 
+class PdfWidget(OrderedElement):
+    rect: BoundingRectangle
+
+    widget_text: Optional[str] = None
+    widget_description: Optional[str] = None
+    widget_field_name: Optional[str] = None
+    widget_field_type: Optional[str] = None
+
+
+class PdfHyperlink(OrderedElement):
+    rect: BoundingRectangle
+    uri: Optional[AnyUrl] = None
+
+    widget_text: Optional[str] = None
+    widget_description: Optional[str] = None
+
+
 class BitmapResource(OrderedElement):
     """Model representing a bitmap resource with positioning and URI information."""
 
@@ -547,6 +564,9 @@ class SegmentedPage(BaseModel):
     has_lines: bool = False
 
     image: Optional[ImageRef] = None
+
+    widgets: list[PdfWidget] = []
+    hyperlinks: list[PdfWidget] = []
 
     @model_validator(mode="after")
     def validate_page(self) -> "SegmentedPage":
