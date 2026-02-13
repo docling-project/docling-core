@@ -4562,6 +4562,19 @@ class DoclingDocument(BaseModel):
         for item in node_items:
             item_copy = item.model_copy(deep=True)
 
+            # handling captions for floating items (Tables/Pictures)
+            captions = getattr(item, "captions", None)
+            if captions:
+                new_caption_refs = []
+                for cap_ref in captions:
+                    cap_item = cap_ref.resolve(doc)
+                    if cap_item:
+                        cap_copy = cap_item.model_copy(deep=True)
+                        self._append_item(item=cap_copy, parent_ref=parent_ref)
+                        new_caption_refs.append(cap_copy.get_ref())
+                # update the internal reference list
+                setattr(item_copy, "captions", new_caption_refs)
+
             self._append_item(item=item_copy, parent_ref=parent_ref)
 
             if item_copy.children:
