@@ -1,0 +1,71 @@
+<doclang version="1.0.0">
+  <page_header>
+    <location value="73"/>
+    <location value="14"/>
+    <location value="222"/>
+    <location value="20"/>
+    Probability, Combinatorics and Control
+  </page_header>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Bar chart</classification>
+      </meta>
+      <location value="104"/>
+      <location value="38"/>
+      <location value="401"/>
+      <location value="152"/>
+      <otsl>
+        <fcel/>
+        Number of impellers
+        <fcel/>
+        single-frequency
+        <fcel/>
+        multi-frequency
+        <nl/>
+        <fcel/>
+        1
+        <fcel/>
+        0.06
+        <fcel/>
+        0.16
+        <nl/>
+        <fcel/>
+        2
+        <fcel/>
+        0.12
+        <fcel/>
+        0.26
+        <nl/>
+        <fcel/>
+        3
+        <fcel/>
+        0.16
+        <fcel/>
+        0.27
+        <nl/>
+        <fcel/>
+        4
+        <fcel/>
+        0.14
+        <fcel/>
+        0.26
+        <nl/>
+        <fcel/>
+        5
+        <fcel/>
+        0.16
+        <fcel/>
+        0.25
+        <nl/>
+        <fcel/>
+        6
+        <fcel/>
+        0.24
+        <fcel/>
+        0.24
+        <nl/>
+      </otsl>
+    </picture>
+  </floating_group>
+</doclang>
