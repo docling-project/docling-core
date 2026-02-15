@@ -1986,3 +1986,32 @@ def test_docitem_comments_delete_updates_refs():
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
+
+def test_add_node_items_updates_captions():
+    """ Verifies that copying a TableItem updates its caption reference """
+    src_doc = DoclingDocument(name="source")
+
+    caption = src_doc.add_text(
+        label=DocItemLabel.CAPTION, 
+        text="Source Caption"
+    )
+
+    table = src_doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    table.captions = [caption.get_ref()]
+
+    dest_doc = DoclingDocument(name="dest")
+    dest_doc.add_text(label=DocItemLabel.TEXT, text="Padding Text")
+    dest_doc.add_node_items(node_items=[table], doc=src_doc)
+
+    new_table = dest_doc.tables[0]
+    assert len(new_table.captions) == 1
+
+    # the new caption should be at index 1 not index 0.
+    expected_ref = "#/texts/1"
+    actual_ref = new_table.captions[0].cref
+
+    assert actual_ref == expected_ref, f"Expected caption ref {expected_ref}, but got {actual_ref}"
+
+    resolved_cap = new_table.captions[0].resolve(dest_doc)
+    assert resolved_cap is not None
+    assert resolved_cap.text == "Source Caption"
