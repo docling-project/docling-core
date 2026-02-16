@@ -385,3 +385,17 @@ def test_profile_sample_document(sample_doc):
 
     # sample_doc has no pages, so avg_items_per_page should be 0
     assert stats.avg_items_per_page == 0.0
+
+
+def test_calculate_deciles_empty():
+    """Test _calculate_deciles with empty data (line 191)."""
+    result = DocumentProfiler._calculate_deciles([])
+    assert result == [0.0] * 9
+
+
+def test_calculate_histogram_empty():
+    """Test _calculate_histogram with empty data (line 208)."""
+    result = DocumentProfiler._calculate_histogram([])
+    assert result.bins == []
+    assert result.frequencies == []
+    assert result.bin_width == 0.0
