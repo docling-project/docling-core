@@ -39,6 +39,7 @@ class StatsVisualizer:
         ylabel: str = "Frequency",
         color: str = "steelblue",
         figsize: tuple[int, int] = (10, 6),
+        log_scale: bool = False,
     ) -> "matplotlib.figure.Figure":
         """Plot a histogram from Histogram data.
 
@@ -49,6 +50,7 @@ class StatsVisualizer:
             ylabel: Y-axis label
             color: Bar color
             figsize: Figure size as (width, height)
+            log_scale: If True, use logarithmic scale for y-axis (frequency counts)
 
         Returns:
             matplotlib Figure object
@@ -75,6 +77,10 @@ class StatsVisualizer:
         ax.set_ylabel(ylabel, fontsize=12)
         ax.set_title(title, fontsize=14, fontweight="bold")
         ax.grid(axis="y", alpha=0.3, linestyle="--")
+
+        if log_scale:
+            ax.set_yscale('log')
+            ax.set_ylabel(f"{ylabel} (log scale)", fontsize=12)
 
         plt.tight_layout()
         return fig
@@ -131,6 +137,7 @@ class StatsVisualizer:
         stats: CollectionStats,
         metrics: list[Literal["pages", "tables", "pictures", "texts"]] | None = None,
         figsize: tuple[int, int] = (16, 10),
+        log_scale: bool = False,
     ) -> "matplotlib.figure.Figure":
         """Create a comprehensive overview plot with multiple histograms.
 
@@ -138,6 +145,7 @@ class StatsVisualizer:
             stats: CollectionStats object
             metrics: List of metrics to plot. If None, plots all available metrics.
             figsize: Figure size as (width, height)
+            log_scale: If True, use logarithmic scale for y-axis (frequency counts)
 
         Returns:
             matplotlib Figure object with subplots
@@ -205,9 +213,13 @@ class StatsVisualizer:
                 )
 
             ax.set_xlabel("Count", fontsize=10)
-            ax.set_ylabel("Frequency", fontsize=10)
+            ylabel = "Frequency (log scale)" if log_scale else "Frequency"
+            ax.set_ylabel(ylabel, fontsize=10)
             ax.set_title(config["title"], fontsize=12, fontweight="bold")
             ax.grid(axis="y", alpha=0.3, linestyle="--")
+
+            if log_scale:
+                ax.set_yscale("log")
 
         # Hide unused subplots
         for idx in range(n_metrics, n_rows * n_cols):

@@ -37,7 +37,6 @@ def profile_single_document():
     print(f"\nTotal items: {stats.total_items}")
     print(f"Average items per page: {stats.avg_items_per_page:.2f}")
     print(f"\nOrigin MIME type: {stats.origin_mimetype}")
-    print(f"Likely scanned: {stats.is_likely_scanned}")
     print(f"Pictures requiring OCR: {stats.num_pictures_for_ocr}")
 
     # Export to JSON
@@ -106,9 +105,6 @@ def profile_document_collection():
     print(f"  Median (d5): {stats.deciles_texts[4]:.1f}, Mean: {stats.mean_texts:.2f}")
     print(f"  Deciles: d1={stats.deciles_texts[0]:.1f}, d5={stats.deciles_texts[4]:.1f}, d9={stats.deciles_texts[8]:.1f}")
     print(f"  Std Dev: {stats.std_texts:.2f}")
-
-    print("\nDocument Characteristics:")
-    print(f"  Likely scanned documents: {stats.num_likely_scanned}")
 
     print("\nPictures Requiring OCR:")
     print(f"  Total: {stats.total_pictures_for_ocr}")
@@ -222,7 +218,6 @@ def analyze_document_characteristics():
         return
 
     # Profile each document individually
-    scanned_docs = []
     ocr_candidate_docs = []
 
     for json_file in doc_dir.glob("*.json"):
@@ -230,18 +225,10 @@ def analyze_document_characteristics():
             doc = DoclingDocument.load_from_json(json_file)
             stats = DocumentProfiler.profile_document(doc)
 
-            if stats.is_likely_scanned:
-                scanned_docs.append(stats.name)
-
             if stats.num_pictures_for_ocr > 0:
                 ocr_candidate_docs.append((stats.name, stats.num_pictures_for_ocr))
         except Exception:
             pass
-
-    print(f"\nDocuments likely scanned: {len(scanned_docs)}")
-    if scanned_docs:
-        for name in scanned_docs[:5]:  # Show first 5
-            print(f"  - {name}")
 
     print(f"\nDocuments with OCR requirements: {len(ocr_candidate_docs)}")
     if ocr_candidate_docs:

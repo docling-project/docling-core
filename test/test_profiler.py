@@ -27,7 +27,6 @@ def test_profile_empty_document():
     assert stats.total_items == 0
     assert stats.avg_items_per_page == 0.0
     assert stats.origin_mimetype is None
-    assert not stats.is_likely_scanned
 
 
 def test_profile_simple_document():
@@ -67,7 +66,6 @@ def test_profile_simple_document():
     assert stats.total_items == 5
     assert stats.avg_items_per_page == 2.5
     assert stats.origin_mimetype == "application/pdf"
-    assert not stats.is_likely_scanned  # Not enough pictures to trigger heuristic
 
 
 def test_profile_document_with_pictures_for_ocr():
@@ -121,38 +119,6 @@ def test_profile_document_with_pictures_for_ocr():
     assert stats_custom2.num_pictures_for_ocr == 2
 
 
-def test_profile_likely_scanned_document():
-    """Test detection of likely scanned documents."""
-    from docling_core.types.doc.document import ImageRef
-
-    doc = DoclingDocument(name="Scanned Document")
-
-    # Add pages with images
-    for i in range(1, 6):
-        doc.pages[i] = PageItem(
-            page_no=i,
-            size=Size(width=612, height=792),
-            image=ImageRef(
-                mimetype="image/png",
-                dpi=300,
-                size=Size(width=612, height=792),
-                uri=f"page_{i}.png",
-            ),
-        )
-
-    # Add many pictures (more than text items)
-    for i in range(10):
-        doc.add_picture()
-
-    # Add few text items
-    doc.add_text(label=DocItemLabel.PARAGRAPH, text="Text 1", orig="Text 1")
-    doc.add_text(label=DocItemLabel.PARAGRAPH, text="Text 2", orig="Text 2")
-
-    stats = DocumentProfiler.profile_document(doc)
-
-    assert stats.is_likely_scanned
-
-
 def test_profile_collection_empty():
     """Test profiling an empty collection."""
     stats = DocumentProfiler.profile_collection([])
@@ -161,6 +127,13 @@ def test_profile_collection_empty():
     assert stats.total_pages == 0
     assert stats.total_tables == 0
     assert stats.total_pictures == 0
+    assert stats.avg_items_per_document == 0.0
+    assert stats.avg_items_per_page == 0.0
+    assert stats.deciles_pages == [0.0] * 9
+    assert stats.deciles_tables == [0.0] * 9
+    assert stats.histogram_pages.bins == []
+    assert stats.histogram_pages.frequencies == []
+    assert stats.histogram_pages.bin_width == 0.0
 
 
 def test_profile_collection_single_document():
@@ -412,6 +385,3 @@ def test_profile_sample_document(sample_doc):
 
     # sample_doc has no pages, so avg_items_per_page should be 0
     assert stats.avg_items_per_page == 0.0
-
-    # Verify it's not detected as scanned (no page images)
-    assert not stats.is_likely_scanned

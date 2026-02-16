@@ -43,10 +43,6 @@ class DocumentStats(BaseModel):
 
     # Document characteristics
     origin_mimetype: Annotated[str | None, Field(description="Origin MIME type if available")] = None
-    is_likely_scanned: Annotated[
-        bool,
-        Field(description="Whether document is likely scanned (heuristic based on image presence and text density)"),
-    ] = False
     num_pictures_for_ocr: Annotated[
         int,
         Field(description="Number of pictures that would trigger OCR based on area coverage threshold"),
@@ -117,7 +113,6 @@ class CollectionStats(BaseModel):
     total_formulas: Annotated[int, Field(description="Total number of formula items")] = 0
 
     # Document characteristics
-    num_likely_scanned: Annotated[int, Field(description="Number of documents likely to be scanned")] = 0
     # Pictures for OCR statistics
     total_pictures_for_ocr: Annotated[
         int, Field(description="Total number of pictures requiring OCR across all documents")
@@ -272,19 +267,6 @@ class DocumentProfiler:
                         if coverage_ratio >= bitmap_coverage_threshold:
                             num_pictures_for_ocr += 1
 
-        # Heuristic for detecting scanned documents:
-        # - Has pages with images
-        # - Low text density (many pictures, few text items)
-        is_likely_scanned = False
-        if len(doc.pages) > 0 and len(doc.pictures) > 0:
-            # If there are more pictures than text items, likely scanned
-            if len(doc.pictures) > len(doc.texts) * 0.5:
-                is_likely_scanned = True
-            # Or if most pages have images
-            pages_with_images = sum(1 for page in doc.pages.values() if page.image is not None)
-            if pages_with_images / len(doc.pages) > 0.7:
-                is_likely_scanned = True
-
         return DocumentStats(
             name=doc.name,
             num_pages=len(doc.pages),
@@ -298,7 +280,6 @@ class DocumentProfiler:
             num_code_items=label_counts[DocItemLabel.CODE],
             num_formulas=label_counts[DocItemLabel.FORMULA],
             origin_mimetype=doc.origin.mimetype if doc.origin else None,
-            is_likely_scanned=is_likely_scanned,
             num_pictures_for_ocr=num_pictures_for_ocr,
         )
 
@@ -347,7 +328,6 @@ class DocumentProfiler:
         total_formulas = 0
         total_pictures_for_ocr = 0
 
-        num_likely_scanned = 0
         mimetype_distribution: dict[str, int] = {}
 
         # Process each document
@@ -376,9 +356,6 @@ class DocumentProfiler:
             total_code_items += doc_stats.num_code_items
             total_formulas += doc_stats.num_formulas
             total_pictures_for_ocr += doc_stats.num_pictures_for_ocr
-
-            if doc_stats.is_likely_scanned:
-                num_likely_scanned += 1
 
             # Track MIME types
             if doc_stats.origin_mimetype:
@@ -435,7 +412,6 @@ class DocumentProfiler:
             total_code_items=total_code_items,
             total_formulas=total_formulas,
             # Document characteristics
-            num_likely_scanned=num_likely_scanned,
             # Pictures for OCR statistics
             total_pictures_for_ocr=total_pictures_for_ocr,
             min_pictures_for_ocr=min(pictures_for_ocr_list),

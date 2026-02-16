@@ -17,10 +17,10 @@ from docling_core.types.doc import DoclingDocument
 
 def load_documents_and_profile(doc_dir: Path) -> CollectionStats | None:
     """Load documents from directory and profile them.
-    
+
     Args:
         doc_dir: Directory containing JSON documents
-        
+
     Returns:
         CollectionStats object or None if no documents found
     """
@@ -51,7 +51,7 @@ def visualize_single_histogram(stats: CollectionStats):
     print("Example 1: Single Histogram Plot")
     print("=" * 80)
 
-    # Create histogram plot for pages
+    # Create histogram plot for pages (linear scale)
     fig = StatsVisualizer.plot_histogram(
         histogram=stats.histogram_pages,
         title="Distribution of Pages per Document",
@@ -64,6 +64,21 @@ def visualize_single_histogram(stats: CollectionStats):
     output_file = Path("./pages_histogram.png")
     StatsVisualizer.save_figure(fig, output_file)
     print(f"Saved histogram to: {output_file}")
+
+    # Create histogram plot for pages (logarithmic scale)
+    fig_log = StatsVisualizer.plot_histogram(
+        histogram=stats.histogram_pages,
+        title="Distribution of Pages per Document (Log Scale)",
+        xlabel="Number of Pages",
+        ylabel="Number of Documents",
+        color="steelblue",
+        log_scale=True,
+    )
+
+    # Save the figure
+    output_file_log = Path("./pages_histogram_log.png")
+    StatsVisualizer.save_figure(fig_log, output_file_log)
+    print(f"Saved histogram (log scale) to: {output_file_log}")
 
 
 def visualize_deciles(stats: CollectionStats):
@@ -92,7 +107,7 @@ def visualize_collection_overview(stats: CollectionStats):
     print("Example 3: Collection Overview (Multiple Histograms)")
     print("=" * 80)
 
-    # Create overview plot with all metrics
+    # Create overview plot with all metrics (linear scale)
     fig = StatsVisualizer.plot_collection_overview(
         stats=stats,
         metrics=["pages", "tables", "pictures", "texts"],
@@ -103,6 +118,19 @@ def visualize_collection_overview(stats: CollectionStats):
     output_file = Path("./collection_overview.png")
     StatsVisualizer.save_figure(fig, output_file)
     print(f"Saved collection overview to: {output_file}")
+
+    # Create overview plot with all metrics (logarithmic scale)
+    fig_log = StatsVisualizer.plot_collection_overview(
+        stats=stats,
+        metrics=["pages", "tables", "pictures", "texts"],
+        figsize=(16, 10),
+        log_scale=True,
+    )
+
+    # Save the figure
+    output_file_log = Path("./collection_overview_log.png")
+    StatsVisualizer.save_figure(fig_log, output_file_log)
+    print(f"Saved collection overview (log scale) to: {output_file_log}")
 
 
 def visualize_deciles_comparison(stats: CollectionStats):
@@ -130,17 +158,18 @@ def create_custom_visualization(stats: CollectionStats):
     print("Example 5: Custom Visualization")
     print("=" * 80)
 
-    # Create histogram for pictures only
+    # Create histogram for pictures only (with log scale for high frequency on low values)
     fig1 = StatsVisualizer.plot_histogram(
         histogram=stats.histogram_pictures,
-        title="Picture Distribution",
+        title="Picture Distribution (Log Scale)",
         xlabel="Pictures per Document",
         ylabel="Frequency",
         color="coral",
         figsize=(10, 6),
+        log_scale=True,
     )
-    StatsVisualizer.save_figure(fig1, "./pictures_histogram.png")
-    print("Saved pictures histogram")
+    StatsVisualizer.save_figure(fig1, "./pictures_histogram_log.png")
+    print("Saved pictures histogram (log scale)")
 
     # Create decile plot for texts only
     fig2 = StatsVisualizer.plot_deciles(
@@ -153,14 +182,15 @@ def create_custom_visualization(stats: CollectionStats):
     StatsVisualizer.save_figure(fig2, "./texts_deciles.png")
     print("Saved texts decile plot")
 
-    # Create overview with selected metrics
+    # Create overview with selected metrics (log scale)
     fig3 = StatsVisualizer.plot_collection_overview(
         stats=stats,
         metrics=["pages", "tables"],  # Only pages and tables
         figsize=(12, 6),
+        log_scale=True,
     )
-    StatsVisualizer.save_figure(fig3, "./pages_tables_overview.png")
-    print("Saved pages and tables overview")
+    StatsVisualizer.save_figure(fig3, "./pages_tables_overview_log.png")
+    print("Saved pages and tables overview (log scale)")
 
 
 def display_statistics_summary(stats: CollectionStats):
@@ -198,7 +228,7 @@ if __name__ == "__main__":
         # Load documents once and profile them
         doc_dir = Path("./test/data/doc")
         stats = load_documents_and_profile(doc_dir)
-        
+
         if stats is None:
             print("Failed to load documents. Exiting.")
             exit(1)
@@ -207,7 +237,7 @@ if __name__ == "__main__":
         visualize_single_histogram(stats)
         visualize_deciles(stats)
         visualize_collection_overview(stats)
-        visualize_deciles_comparison(stats)
+        # visualize_deciles_comparison(stats)
         create_custom_visualization(stats)
         display_statistics_summary(stats)
 
