@@ -8,7 +8,6 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     DocChunk,
 )
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.document import DoclingDocument, PictureItem, TextItem
 from docling_core.types.doc.labels import DocItemLabel
 
@@ -29,7 +28,7 @@ def _process(act_data, exp_path_str):
 def test_chunk():
     with open("test/data/chunker/0_inp_dl_doc.json", encoding="utf-8") as f:
         data_json = f.read()
-    dl_doc = DLDocument.model_validate_json(data_json)
+    dl_doc = DoclingDocument.model_validate_json(data_json)
     chunker = HierarchicalChunker(
         merge_list_items=True,
     )
@@ -44,7 +43,7 @@ def test_chunk():
 def test_chunk_custom_serializer():
     with open("test/data/chunker/0_inp_dl_doc.json", encoding="utf-8") as f:
         data_json = f.read()
-    dl_doc = DLDocument.model_validate_json(data_json)
+    dl_doc = DoclingDocument.model_validate_json(data_json)
 
     class MySerializerProvider(ChunkingSerializerProvider):
         def get_serializer(self, doc: DoclingDocument):
