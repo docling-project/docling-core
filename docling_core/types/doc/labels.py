@@ -34,6 +34,20 @@ class DocItemLabel(str, Enum):
     PARAGRAPH = "paragraph"
     REFERENCE = "reference"
 
+    KV_MAP = "kv_map"
+    KV_HEADING = "kv_heading"
+    # KV_ENTRY = "kv_entry"
+    KV_KEY = "kv_key"
+    KV_VALUE = "kv_value"
+    KV_HINT = "kv_hint"
+    # KV_MARKER = "kv_marker"
+    # KV_OPTION_RADIO_SELECTED = "kv_option_radio_selected"
+    # KV_OPTION_RADIO_UNSELECTED = "kv_option_radio_unselected"
+    # KV_OPTION_CHECKBOX_SELECTED = "kv_option_checkbox_selected"
+    # KV_OPTION_CHECKBOX_UNSELECTED = "kv_option_checkbox_unselected"
+    # KV_OPTION_DROPDOWN_SELECTED = "kv_option_dropdown_selected"
+    # KV_OPTION_DROPDOWN_UNSELECTED = "kv_option_dropdown_unselected"
+
     def __str__(self):
         """Get string value."""
         return str(self.value)
@@ -65,6 +79,7 @@ class DocItemLabel(str, Enum):
             DocItemLabel.GRADING_SCALE: (255, 204, 204),
             DocItemLabel.HANDWRITTEN_TEXT: (204, 255, 204),
             DocItemLabel.EMPTY_VALUE: (220, 220, 220),
+            DocItemLabel.KV_MAP: (183, 65, 14),
         }
         return color_map.get(label, (0, 0, 0))
 
@@ -84,6 +99,7 @@ class GroupLabel(str, Enum):
     COMMENT_SECTION = "comment_section"
     INLINE = "inline"
     PICTURE_AREA = "picture_area"
+    KV_ENTRY = "kv_entry"
 
     def __str__(self):
         """Get string value."""

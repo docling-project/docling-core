@@ -48,7 +48,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import CURRENT_VERSION, PageItem
+from docling_core.types.doc.document import CURRENT_VERSION, KeyValueHeading, KeyValueKey, KeyValueMap, KeyValueValue, PageItem
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -540,6 +540,20 @@ def test_docitems():
                 self_ref="#",
                 orig="whatever",
                 text="E=mc^2",
+            )
+            verify(dc, obj)
+        elif dc is KeyValueKey or dc is KeyValueValue or dc is KeyValueMap:
+            obj = dc(
+                self_ref="#",
+            )
+            verify(dc, obj)
+        elif dc is KeyValueHeading:
+            obj = dc(
+                text="whatever",
+                orig="whatever",
+                label=DocItemLabel.KV_HEADING,
+                self_ref="#",
+                level=2,
             )
             verify(dc, obj)
         elif dc is GraphData:  # we skip this on purpose
