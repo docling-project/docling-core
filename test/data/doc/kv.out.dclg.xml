@@ -1,0 +1,22 @@
+<doclang version="1.0.0">
+  <form>
+    <form_heading>First form section</form_heading>
+    <form_item>
+      <key>number</key>
+      <value>1</value>
+    </form_item>
+    <form_heading>Second form section</form_heading>
+    <form_item>
+      <key>name</key>
+      <value>John Doe</value>
+      <value>Max Mustermann</value>
+      <value>
+        <checkbox class="unselected"/>
+        <content>Klark </content>
+        <bold>Kent</bold>
+        <hint>Select this if you are a Superman fan</hint>
+      </value>
+      <value></value>
+    </form_item>
+  </form>
+</doclang>

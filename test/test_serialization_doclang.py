@@ -743,3 +743,38 @@ def test_chart():
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/barchart.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+
+def test_kv():
+    doc = DoclingDocument(name="")
+    kv_map = doc.add_key_value_map()
+
+    doc.add_kv_heading(text="First form section", parent=kv_map)
+
+    kv_entry_1 = doc.add_kv_entry(parent=kv_map)
+    doc.add_text(label=DocItemLabel.KV_KEY, text="number", parent=kv_entry_1)
+    doc.add_text(label=DocItemLabel.KV_VALUE, text="1", parent=kv_entry_1)
+
+    doc.add_kv_heading(level=2, text="Second form section", parent=kv_map)
+
+    kv_entry_2 = doc.add_kv_entry(parent=kv_map)
+    doc.add_text(label=DocItemLabel.KV_KEY, text="name", parent=kv_entry_2)
+
+    doc.add_text(label=DocItemLabel.KV_VALUE, text="John Doe", parent=kv_entry_2)
+    doc.add_text(label=DocItemLabel.KV_VALUE, text="Max Mustermann", parent=kv_entry_2)
+
+    kk = doc.add_text(label=DocItemLabel.KV_VALUE, text="", parent=kv_entry_2)
+    opt_1 = doc.add_inline_group(parent=kk)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="", parent=opt_1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Klark ", parent=opt_1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Kent", parent=opt_1, formatting=Formatting(bold=True))
+    doc.add_text(label=DocItemLabel.KV_HINT, text="Select this if you are a Superman fan", parent=opt_1)
+
+    doc.add_text(label=DocItemLabel.KV_VALUE, text="", parent=kv_entry_2)
+
+    ser = DoclangDocSerializer(
+        doc=doc,
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/kv.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
