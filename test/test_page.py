@@ -2,9 +2,10 @@ import math
 
 import numpy as np
 import pytest
+from pydantic import AnyUrl
 
 from docling_core.types.doc import CoordOrigin
-from docling_core.types.doc.page import BoundingRectangle
+from docling_core.types.doc.page import BoundingRectangle, PdfHyperlink
 
 SQRT_2 = math.sqrt(2)
 
@@ -210,3 +211,59 @@ R_315_TL = BoundingRectangle(
 def test_bounding_rectangle_angle(rectangle: BoundingRectangle, expected_angle: float, expected_angle_360: int):
     assert pytest.approx(rectangle.angle, abs=1e-6) == expected_angle
     assert pytest.approx(rectangle.angle_360, abs=1e-6) == expected_angle_360
+
+
+# -- PdfHyperlink URI validation tests --
+
+RECT = BoundingRectangle(
+    r_x0=0,
+    r_y0=0,
+    r_x1=1,
+    r_y1=0,
+    r_x2=1,
+    r_y2=1,
+    r_x3=0,
+    r_y3=1,
+    coord_origin=CoordOrigin.TOPLEFT,
+)
+
+
+class TestPdfHyperlinkUri:
+    """PdfHyperlink.uri should accept any URI form found in real PDFs."""
+
+    def test_absolute_url_parsed_as_anyurl(self):
+        h = PdfHyperlink(rect=RECT, uri="https://example.com/page")
+        assert isinstance(h.uri, AnyUrl)
+        assert h.uri.scheme == "https"
+        assert h.uri.host == "example.com"
+
+    def test_mailto_parsed_as_anyurl(self):
+        h = PdfHyperlink(rect=RECT, uri="mailto:user@example.com")
+        assert isinstance(h.uri, AnyUrl)
+        assert h.uri.scheme == "mailto"
+
+    def test_relative_path_falls_back_to_str(self):
+        h = PdfHyperlink(
+            rect=RECT,
+            uri="/wiki/pages/internal-document-link",
+        )
+        assert isinstance(h.uri, str)
+        assert h.uri == "/wiki/pages/internal-document-link"
+
+    def test_fragment_only_falls_back_to_str(self):
+        h = PdfHyperlink(rect=RECT, uri="#internal-bookmark")
+        assert isinstance(h.uri, str)
+        assert h.uri == "#internal-bookmark"
+
+    def test_relative_path_falls_back_to_str_dotdot(self):
+        h = PdfHyperlink(rect=RECT, uri="../relative/path.html")
+        assert isinstance(h.uri, str)
+        assert h.uri == "../relative/path.html"
+
+    def test_none_uri(self):
+        h = PdfHyperlink(rect=RECT, uri=None)
+        assert h.uri is None
+
+    def test_omitted_uri(self):
+        h = PdfHyperlink(rect=RECT)
+        assert h.uri is None

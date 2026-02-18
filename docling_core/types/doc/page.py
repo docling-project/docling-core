@@ -29,6 +29,7 @@ from pydantic import (
     Field,
     FieldSerializationInfo,
     field_serializer,
+    field_validator,
     model_validator,
 )
 
@@ -361,10 +362,26 @@ class PdfWidget(OrderedElement):
 
 class PdfHyperlink(OrderedElement):
     rect: BoundingRectangle
-    uri: Optional[AnyUrl] = None
+    uri: Optional[Union[AnyUrl, str]] = None
 
     widget_text: Optional[str] = None
     widget_description: Optional[str] = None
+
+    @field_validator("uri", mode="before")
+    @classmethod
+    def parse_uri(cls, v: Any) -> Union[AnyUrl, str, None]:
+        """Parse URI with AnyUrl for structured metadata, falling back to str.
+
+        PDF hyperlinks may contain relative paths, internal bookmarks, or other
+        URI forms that are not valid absolute URLs. These should not cause
+        validation failures during document parsing.
+        """
+        if v is None:
+            return v
+        try:
+            return AnyUrl(v)
+        except Exception:
+            return str(v)
 
 
 class BitmapResource(OrderedElement):
