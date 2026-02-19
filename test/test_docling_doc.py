@@ -542,9 +542,16 @@ def test_docitems():
                 text="E=mc^2",
             )
             verify(dc, obj)
-        elif dc is KeyValueKey or dc is KeyValueValue or dc is KeyValueMap:
+        elif dc is KeyValueMap:
             obj = dc(
                 self_ref="#",
+            )
+            verify(dc, obj)
+        elif dc is KeyValueKey or dc is KeyValueValue:
+            obj = dc(
+                self_ref="#",
+                orig="whatever",
+                text="whatever",
             )
             verify(dc, obj)
         elif dc is KeyValueHeading:

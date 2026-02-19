@@ -1,0 +1,44 @@
+<doclang version="1.0.0">
+  <kv_map>
+    <text>
+      <kv_entry>
+        <kv_key>
+          <floating_group class="picture"></floating_group>
+        </kv_key>
+        <kv_value class="read_only">+123-456-7890</kv_value>
+      </kv_entry>
+    </text>
+    <text>
+      <kv_entry>
+        <kv_key>
+          <floating_group class="picture"></floating_group>
+        </kv_key>
+        <kv_value class="read_only">hello@example.com</kv_value>
+      </kv_entry>
+    </text>
+  </kv_map>
+  <kv_map>
+    <text>
+      <kv_entry>
+        <kv_key>
+          <content>Invoice No: </content>
+        </kv_key>
+        <kv_value class="read_only">222</kv_value>
+      </kv_entry>
+    </text>
+    <text>
+      <kv_entry>
+        <kv_key>
+          <content>Date: </content>
+        </kv_key>
+        <kv_value class="read_only">02 May, 2021</kv_value>
+      </kv_entry>
+    </text>
+  </kv_map>
+  <kv_map>
+    <kv_entry>
+      <kv_key>Administrator</kv_key>
+      <kv_value class="read_only">John Doe</kv_value>
+    </kv_entry>
+  </kv_map>
+</doclang>

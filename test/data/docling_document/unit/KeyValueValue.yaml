@@ -1,7 +1,12 @@
 children: []
 content_layer: body
+formatting: null
+hyperlink: null
+kind: read_only
 label: kv_value
 meta: null
+orig: whatever
 parent: null
 prov: []
 self_ref: '#'
+text: whatever

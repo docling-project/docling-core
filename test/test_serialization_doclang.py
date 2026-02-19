@@ -33,6 +33,7 @@ from docling_core.types.doc import (
     TabularChartMetaField,
 )
 from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.document import ImageRef
 from test.test_serialization import verify
 
 
@@ -746,35 +747,220 @@ def test_chart():
 
 def test_kv():
     doc = DoclingDocument(name="")
-    kv_map = doc.add_key_value_map()
+    kvm = doc.add_key_value_map()
 
-    doc.add_kv_heading(text="First form section", parent=kv_map)
+    doc.add_kv_heading(text="KV heading", parent=kvm)
 
-    kv_entry_1 = doc.add_kv_entry(parent=kv_map)
-    doc.add_text(label=DocItemLabel.KV_KEY, text="number", parent=kv_entry_1)
-    doc.add_text(label=DocItemLabel.KV_VALUE, text="1", parent=kv_entry_1)
+    kve = doc.add_kv_entry(parent=kvm)
+    doc.add_kv_key(text="simple key", parent=kve)
+    doc.add_kv_value(text="simple value", parent=kve)
 
-    doc.add_kv_heading(level=2, text="Second form section", parent=kv_map)
+    doc.add_kv_heading(level=2, text="KV sub-heading", parent=kvm)
 
-    kv_entry_2 = doc.add_kv_entry(parent=kv_map)
-    doc.add_text(label=DocItemLabel.KV_KEY, text="name", parent=kv_entry_2)
+    # # inlined key-value pair
+    # txt = doc.add_text(label=DocItemLabel.TEXT, text="", parent=kvm)
+    # kve = doc.add_kv_entry(parent=txt)
+    # doc.add_kv_key(text="my inline key0: ", parent=kve)
+    # doc.add_kv_value(text="my inline value0", parent=kve, kind="fillable")
 
-    doc.add_text(label=DocItemLabel.KV_VALUE, text="John Doe", parent=kv_entry_2)
-    doc.add_text(label=DocItemLabel.KV_VALUE, text="Max Mustermann", parent=kv_entry_2)
+    # inlined key-value pair (outer is <text>...</text>)
+    # TODO: possibly support outer bounding box
+    inl = doc.add_inline_group(parent=kvm)
+    kve = doc.add_kv_entry(parent=inl)
+    doc.add_kv_key(text="my inline key1: ", parent=kve)
+    doc.add_kv_value(text="my inline value1", parent=kve, kind="fillable")
 
-    kk = doc.add_text(label=DocItemLabel.KV_VALUE, text="", parent=kv_entry_2)
-    opt_1 = doc.add_inline_group(parent=kk)
-    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="", parent=opt_1)
-    doc.add_text(label=DocItemLabel.TEXT, text="Klark ", parent=opt_1)
-    doc.add_text(label=DocItemLabel.TEXT, text="Kent", parent=opt_1, formatting=Formatting(bold=True))
-    doc.add_text(label=DocItemLabel.KV_HINT, text="Select this if you are a Superman fan", parent=opt_1)
+    # inlined key-value pair (outer is <kv_entry>...</kv_entry>)
+    # TODO: possibly support outer bounding box
+    kve = doc.add_kv_entry(parent=kvm)
+    inl = doc.add_inline_group(parent=kve)
+    doc.add_kv_key(text="my inline key2: ", parent=inl)
+    doc.add_kv_value(text="my inline value2", parent=inl, kind="fillable")
 
-    doc.add_text(label=DocItemLabel.KV_VALUE, text="", parent=kv_entry_2)
+    kve = doc.add_kv_entry(parent=kvm)
+    doc.add_kv_key(text="name", parent=kve)
+    doc.add_kv_value(text="John Doe", parent=kve, kind="fillable")
+    doc.add_kv_value(text="Max Mustermann", parent=kve, kind="fillable")
+
+    kk = doc.add_kv_value(text="", parent=kve, kind="fillable")
+    opt_vis = doc.add_inline_group(parent=kk)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="", parent=opt_vis)
+    doc.add_text(label=DocItemLabel.TEXT, text="Clark ", parent=opt_vis)
+    doc.add_text(label=DocItemLabel.TEXT, text="Kent", parent=opt_vis, formatting=Formatting(bold=True))
+    doc.add_text(label=DocItemLabel.KV_HINT, text="Select this if you are a Superman fan", parent=opt_vis)
+
+    doc.add_kv_value(text="", parent=kve)
+
+    # inlined form inputs
+    # TODO: add support for outer bounding box
+    inl = doc.add_inline_group(parent=kve)
+
+    doc.add_text(label=DocItemLabel.TEXT, text="My first input ", parent=inl)
+    doc.add_kv_value(text="", parent=inl, kind="fillable")
+    doc.add_text(label=DocItemLabel.TEXT, text=" and my second input ", parent=inl)
+    doc.add_kv_value(text="m", parent=inl, kind="fillable")
+
+    kv_entry_3 = doc.add_kv_entry(parent=kvm)
+    doc.add_kv_key(text="I am in the country as a: ", parent=kv_entry_3)
+
+    vis = doc.add_kv_value(text="", parent=kv_entry_3, kind="fillable")
+    opt_vis = doc.add_inline_group(parent=vis)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="Visitor", parent=opt_vis)
+
+    std = doc.add_kv_value(text="", parent=kv_entry_3, kind="fillable")
+    opt_std = doc.add_inline_group(parent=std)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text=" Student", parent=opt_std)
+
+    oth = doc.add_kv_value(text="", parent=kv_entry_3, kind="fillable")
+    opt_oth = doc.add_inline_group(parent=oth)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="Other (Specify)", parent=opt_oth)
+
+    doc.add_kv_value(text="", parent=kv_entry_3, kind="fillable")
+
+    doc.add_text(label=DocItemLabel.TEXT, text="Some final stuff.")
+    doc.add_text(label=DocItemLabel.TEXT, text="The end.")
 
     ser = DoclangDocSerializer(
         doc=doc,
+        params=DoclangParams(
+            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
+            # pretty_indentation=None,
+            # escape_mode=EscapeMode.CDATA_ALWAYS,
+            # image_mode=ImageRefMode.PLACEHOLDER,
+        ),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/kv.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+
+def test_kv_invoice():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    prov = None
+    image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+
+    # first key-value map
+    kvm = doc.add_key_value_map()
+
+    # inlined key-value pair
+    inl_outer = doc.add_inline_group(parent=kvm)  # TODO currently this is needed
+    kve = doc.add_kv_entry(parent=inl_outer)
+    kvk = doc.add_kv_key(text="", parent=kve)
+    inl_inner = doc.add_inline_group(parent=kvk)  # TODO currently this is needed
+    doc.add_picture(
+        parent=inl_inner,
+        image=ImageRef(
+            mimetype="image/png",
+            uri=image_uri,
+            dpi=300,
+            size=Size(width=100, height=100),
+        ),
+    )
+    doc.add_kv_value(text="+123-456-7890", parent=kve)
+
+
+    # another inlined key-value pair
+    inl_outer = doc.add_inline_group(parent=kvm)
+    kve = doc.add_kv_entry(parent=inl_outer)
+    kvk = doc.add_kv_key(text="", parent=kve)
+    inl_inner = doc.add_inline_group(parent=kvk)  # TODO currently this is needed
+    doc.add_picture(
+        parent=inl_inner,
+        image=ImageRef(
+            mimetype="image/png",
+            uri=image_uri,
+            dpi=300,
+            size=Size(width=100, height=100),
+        ),
+    )
+    doc.add_kv_value(text="hello@example.com", parent=kve)
+
+    # second key-value map
+    kvm = doc.add_key_value_map()
+
+    # inlined key-value pair
+    inl_outer = doc.add_inline_group(parent=kvm)
+    kve = doc.add_kv_entry(parent=inl_outer)
+    doc.add_kv_key(text="Invoice No: ", parent=kve)
+    doc.add_kv_value(text="222", parent=kve)
+
+    # another inlined key-value pair
+    inl_outer = doc.add_inline_group(parent=kvm)
+    kve = doc.add_kv_entry(parent=inl_outer)
+    doc.add_kv_key(text="Date: ", parent=kve)
+    doc.add_kv_value(text="02 May, 2021", parent=kve)
+
+    # a last key-value map
+    kvm = doc.add_key_value_map()
+    kve = doc.add_kv_entry(parent=kvm)
+    doc.add_kv_key(text="Administrator", parent=kve, prov=prov)
+    doc.add_kv_value(text="John Doe", parent=kve, prov=prov)
+
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(
+            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
+            # pretty_indentation=None,
+            # escape_mode=EscapeMode.CDATA_ALWAYS,
+            # image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/kv_invoice.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+
+
+def test_kv_advanced_inline():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    prov = None
+    image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+
+    # first key-value map
+    kvm = doc.add_key_value_map()
+
+    # inlined key-value pair
+    inl_outer = doc.add_inline_group(parent=kvm)  # TODO currently this is needed
+    doc.add_text(label=DocItemLabel.TEXT, text="This certificate applies to ", parent=inl_outer)
+
+    kve = doc.add_kv_entry(parent=inl_outer)
+    doc.add_kv_value(text="", parent=kve, kind="fillable")
+    doc.add_text(label=DocItemLabel.TEXT, text=" percent of Buyer's purchases from ", parent=inl_outer)
+
+    kve = doc.add_kv_entry(parent=inl_outer)
+    doc.add_kv_value(text="", parent=kve, kind="fillable")
+    doc.add_text(label=DocItemLabel.TEXT, text=" (name, address, and employer idenficiation number of seller) as follows (complete as applicable): ", parent=inl_outer)
+
+    kve = doc.add_kv_entry(parent=inl_outer)
+    doc.add_kv_value(text="", parent=kve, kind="fillable")
+    doc.add_text(label=DocItemLabel.TEXT, text=".", parent=inl_outer)
+
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(
+            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
+            # pretty_indentation=None,
+            # escape_mode=EscapeMode.CDATA_ALWAYS,
+            # image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/kv_advanced_inline.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)

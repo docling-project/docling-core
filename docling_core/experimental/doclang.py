@@ -63,7 +63,13 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
-from docling_core.types.doc.document import FormulaItem, GroupItem, KeyValueEntry, KeyValueMap, RichTableCell
+from docling_core.types.doc.document import (
+    FormulaItem,
+    GroupItem,
+    KeyValueHeading,
+    KeyValueValue,
+    RichTableCell,
+)
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -366,12 +372,12 @@ class DoclangToken(str, Enum):
     LIST_TEXT = "list_text"
     CHECKBOX = "checkbox"
     OTSL = "otsl"  # this will take care of the structure in the table.
-    KV_MAP = "form"
-    KV_ENTRY = "form_item"
-    KV_KEY = "key"
-    KV_VALUE = "value"
-    KV_HEADING = "form_heading"
-    KV_HINT = "hint"
+    KV_MAP = "kv_map"
+    KV_ENTRY = "kv_entry"
+    KV_KEY = "kv_key"
+    KV_VALUE = "kv_value"
+    KV_HEADING = "kv_heading"
+    KV_HINT = "kv_hint"
 
     # Grouping
     SECTION = "section"
@@ -1499,6 +1505,10 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             }.get(item.label)
         ):
             wrap_open_token = f"<{tok.value}>"
+            if isinstance(item, KeyValueValue):
+                wrap_open_token = f'<{tok.value} class="{item.kind}">'
+            elif isinstance(item, KeyValueHeading):
+                wrap_open_token = f'<{tok.value} level="{item.level}">'
         elif isinstance(item, TextItem) and (
             item.label
             in [  # FIXME: Catch all ...
@@ -1987,9 +1997,10 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize unsupported nodes by concatenating their textual parts."""
+        delim = _get_delim(params=DoclangParams(**kwargs))
         if isinstance(item, ListGroup | InlineGroup):
             parts = doc_serializer.get_parts(item=item, **kwargs)
-            text_res = "\n".join([p.text for p in parts if p.text])
+            text_res = delim.join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
         elif isinstance(item, DocItem | GroupItem) and (
             tok := {
@@ -1998,7 +2009,7 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
             }.get(item.label)
         ):
             parts = doc_serializer.get_parts(item=item, **kwargs)
-            text_res = "\n".join([p.text for p in parts if p.text])
+            text_res = delim.join([p.text for p in parts if p.text])
             text_res = _wrap(text=text_res, wrap_tag=tok.value)
             return create_ser_result(text=text_res, span_source=parts)
         return create_ser_result()

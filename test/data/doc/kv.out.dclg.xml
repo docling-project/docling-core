@@ -1,22 +1,64 @@
 <doclang version="1.0.0">
-  <form>
-    <form_heading>First form section</form_heading>
-    <form_item>
-      <key>number</key>
-      <value>1</value>
-    </form_item>
-    <form_heading>Second form section</form_heading>
-    <form_item>
-      <key>name</key>
-      <value>John Doe</value>
-      <value>Max Mustermann</value>
-      <value>
+  <kv_map>
+    <kv_heading level="1">KV heading</kv_heading>
+    <kv_entry>
+      <kv_key>simple key</kv_key>
+      <kv_value class="read_only">simple value</kv_value>
+    </kv_entry>
+    <kv_heading level="2">KV sub-heading</kv_heading>
+    <text>
+      <kv_entry>
+        <kv_key>
+          <content>my inline key1: </content>
+        </kv_key>
+        <kv_value class="fillable">my inline value1</kv_value>
+      </kv_entry>
+    </text>
+    <kv_entry>
+      <text>
+        <kv_key>
+          <content>my inline key2: </content>
+        </kv_key>
+        <kv_value class="fillable">my inline value2</kv_value>
+      </text>
+    </kv_entry>
+    <kv_entry>
+      <kv_key>name</kv_key>
+      <kv_value class="fillable">John Doe</kv_value>
+      <kv_value class="fillable">Max Mustermann</kv_value>
+      <kv_value class="fillable">
         <checkbox class="unselected"/>
-        <content>Klark </content>
+        <content>Clark </content>
         <bold>Kent</bold>
-        <hint>Select this if you are a Superman fan</hint>
-      </value>
-      <value></value>
-    </form_item>
-  </form>
+        <kv_hint>Select this if you are a Superman fan</kv_hint>
+      </kv_value>
+      <kv_value class="read_only"></kv_value>
+      <text>
+        <content>My first input </content>
+        <kv_value class="fillable"></kv_value>
+        <content> and my second input </content>
+        <kv_value class="fillable">m</kv_value>
+      </text>
+    </kv_entry>
+    <kv_entry>
+      <kv_key>
+        <content>I am in the country as a: </content>
+      </kv_key>
+      <kv_value class="fillable">
+        <checkbox class="unselected"/>
+        Visitor
+      </kv_value>
+      <kv_value class="fillable">
+        <checkbox class="unselected"/>
+        <content> Student</content>
+      </kv_value>
+      <kv_value class="fillable">
+        <checkbox class="unselected"/>
+        Other (Specify)
+      </kv_value>
+      <kv_value class="fillable"></kv_value>
+    </kv_entry>
+  </kv_map>
+  <text>Some final stuff.</text>
+  <text>The end.</text>
 </doclang>
