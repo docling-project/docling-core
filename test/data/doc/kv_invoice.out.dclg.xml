@@ -1,21 +1,17 @@
 <doclang version="1.0.0">
   <kv_map>
-    <text>
-      <kv_entry>
-        <kv_key>
-          <floating_group class="picture"></floating_group>
-        </kv_key>
-        <kv_value class="read_only">+123-456-7890</kv_value>
-      </kv_entry>
-    </text>
-    <text>
-      <kv_entry>
-        <kv_key>
-          <floating_group class="picture"></floating_group>
-        </kv_key>
-        <kv_value class="read_only">hello@example.com</kv_value>
-      </kv_entry>
-    </text>
+    <kv_entry>
+      <kv_key>
+        <floating_group class="picture"></floating_group>
+      </kv_key>
+      <kv_value class="read_only">+123-456-7890</kv_value>
+    </kv_entry>
+    <kv_entry>
+      <kv_key>
+        <floating_group class="picture"></floating_group>
+      </kv_key>
+      <kv_value class="read_only">hello@example.com</kv_value>
+    </kv_entry>
   </kv_map>
   <kv_map>
     <text>

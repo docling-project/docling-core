@@ -851,8 +851,7 @@ def test_kv_invoice():
     kvm = doc.add_key_value_map()
 
     # inlined key-value pair
-    inl_outer = doc.add_inline_group(parent=kvm)  # TODO currently this is needed
-    kve = doc.add_kv_entry(parent=inl_outer)
+    kve = doc.add_kv_entry(parent=kvm)
     kvk = doc.add_kv_key(text="", parent=kve)
     inl_inner = doc.add_inline_group(parent=kvk)  # TODO currently this is needed
     doc.add_picture(
@@ -868,8 +867,7 @@ def test_kv_invoice():
 
 
     # another inlined key-value pair
-    inl_outer = doc.add_inline_group(parent=kvm)
-    kve = doc.add_kv_entry(parent=inl_outer)
+    kve = doc.add_kv_entry(parent=kvm)
     kvk = doc.add_kv_key(text="", parent=kve)
     inl_inner = doc.add_inline_group(parent=kvk)  # TODO currently this is needed
     doc.add_picture(
