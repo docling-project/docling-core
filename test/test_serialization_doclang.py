@@ -33,7 +33,7 @@ from docling_core.types.doc import (
     TabularChartMetaField,
 )
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import ImageRef
+from docling_core.types.doc.document import ImageRef, RichTableCell, TableCell
 from test.test_serialization import verify
 
 
@@ -963,4 +963,68 @@ def test_kv_advanced_inline():
     ser_res = ser.serialize()
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/kv_advanced_inline.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+def test_kv_form_with_table():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    prov = None
+    image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+
+    # first key-value map
+    kvm = doc.add_key_value_map()
+
+    # table
+
+    table_vals = [
+        ["Description of property", "Cost or other basis, plus improvements and expense of sale", "Gain or loss"],
+        [""  ,                      "gain",                                                       "150,997"],
+        ["",                        "loss",                                                       "114,676"],
+    ]
+    num_rows = len(table_vals)
+    num_cols = len(table_vals[0])
+    table = doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols), parent=kvm)
+
+    for i in range(num_rows):
+        for j in range(num_cols):
+            if i == 0:  # headers
+                cell = TableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text=table_vals[i][j],
+                    column_header=True,
+                )
+            else:
+                kve = doc.add_kv_entry(parent=table)
+                doc.add_kv_value(text=table_vals[i][j], parent=kve, kind="fillable")
+                cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text="",
+                    ref=kve.get_ref(),
+                )
+            doc.add_table_cell(table_item=table, cell=cell)
+
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(
+            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
+            # pretty_indentation=None,
+            # escape_mode=EscapeMode.CDATA_ALWAYS,
+            # image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+
+    exp_file = Path("./test/data/doc/kv_form_with_table.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
