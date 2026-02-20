@@ -207,8 +207,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 pieces.append(text)
                 text_part = " ".join(pieces)
             else:
-                num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
-                text_part = f"{num_hashes * '#'} {text}"
+                text_part = self._format_heading(text, item)
         elif isinstance(item, CodeItem):
             if params.format_code_blocks:
                 # inline items and all hyperlinks: use single backticks
@@ -252,6 +251,15 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 hyperlink=item.hyperlink,
             )
         return create_ser_result(text=text, span_source=res_parts)
+
+    def _format_heading(
+        self,
+        text: str,
+        item: Union[TitleItem, SectionHeaderItem],
+    ) -> str:
+        """Format a heading/title item. Override to customize heading representation."""
+        num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
+        return f"{num_hashes * '#'} {text}"
 
 
 class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
