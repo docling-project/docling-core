@@ -1138,9 +1138,16 @@ def test_kv_migration():
     )
     doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=doc.body)
 
+    exp_yaml = Path("./test/data/doc/kv_pre_migration.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(filename=exp_yaml)
+    else:
+        exp_doc = DoclingDocument.load_from_yaml(filename=exp_yaml)
+        assert doc == exp_doc
+
     doc._migrate_forms_to_kvmaps()
 
-    exp_yaml = Path("./test/data/doc/kv_migration.out.yaml")
+    exp_yaml = Path("./test/data/doc/kv_post_migration.out.yaml")
     if GEN_TEST_DATA:
         doc.save_as_yaml(filename=exp_yaml)
     else:

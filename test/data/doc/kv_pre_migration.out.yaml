@@ -1,0 +1,154 @@
+body:
+  children:
+  - $ref: '#/texts/0'
+  - $ref: '#/key_value_items/0'
+  - $ref: '#/texts/1'
+  - $ref: '#/form_items/0'
+  - $ref: '#/texts/2'
+  content_layer: body
+  label: unspecified
+  name: _root_
+  self_ref: '#/body'
+form_items:
+- captions: []
+  children: []
+  content_layer: body
+  footnotes: []
+  graph:
+    cells:
+    - cell_id: 0
+      label: key
+      orig: Color
+      text: Color
+    - cell_id: 1
+      label: value
+      orig: Orange
+      text: Orange
+    - cell_id: 2
+      label: value
+      orig: Black
+      text: Black
+    - cell_id: 3
+      label: value
+      orig: White
+      text: White
+    links:
+    - label: to_value
+      source_cell_id: 0
+      target_cell_id: 1
+    - label: to_value
+      source_cell_id: 0
+      target_cell_id: 2
+    - label: to_value
+      source_cell_id: 0
+      target_cell_id: 3
+    - label: to_key
+      source_cell_id: 3
+      target_cell_id: 0
+  label: form
+  parent:
+    $ref: '#/body'
+  prov: []
+  references: []
+  self_ref: '#/form_items/0'
+furniture:
+  children: []
+  content_layer: furniture
+  label: unspecified
+  name: _root_
+  self_ref: '#/furniture'
+groups: []
+key_value_items:
+- captions: []
+  children: []
+  content_layer: body
+  footnotes: []
+  graph:
+    cells:
+    - cell_id: 0
+      label: key
+      orig: Common name
+      text: Common name
+    - cell_id: 1
+      label: value
+      orig: Duck
+      text: Duck
+    - cell_id: 2
+      label: key
+      orig: Anatoidea
+      text: Anatoidea
+    - cell_id: 3
+      label: value
+      orig: Anatidae
+      text: Anatidae
+    - cell_id: 4
+      label: key
+      orig: Distribution package
+      text: Distribution package
+    - cell_id: 5
+      label: value
+      orig: docling
+      text: docling
+    - cell_id: 6
+      label: value
+      orig: docling-core
+      text: docling-core
+    links:
+    - label: to_value
+      source_cell_id: 0
+      target_cell_id: 1
+    - label: to_key
+      source_cell_id: 1
+      target_cell_id: 0
+    - label: to_child
+      source_cell_id: 2
+      target_cell_id: 3
+    - label: to_parent
+      source_cell_id: 3
+      target_cell_id: 2
+    - label: to_value
+      source_cell_id: 4
+      target_cell_id: 5
+    - label: to_value
+      source_cell_id: 4
+      target_cell_id: 6
+  label: key_value_region
+  parent:
+    $ref: '#/body'
+  prov: []
+  references: []
+  self_ref: '#/key_value_items/0'
+name: ''
+pages: {}
+pictures: []
+schema_name: DoclingDocument
+tables: []
+texts:
+- children: []
+  content_layer: body
+  label: text
+  orig: Hello, world!
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/0'
+  text: Hello, world!
+- children: []
+  content_layer: body
+  label: text
+  orig: Some more text...
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/1'
+  text: Some more text...
+- children: []
+  content_layer: body
+  label: text
+  orig: The end.
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/texts/2'
+  text: The end.
+version: 1.9.0
