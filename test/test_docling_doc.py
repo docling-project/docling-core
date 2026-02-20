@@ -1545,6 +1545,84 @@ def test_concatenate():
             exp_html_data = f.read()
         assert html_data == exp_html_data
 
+
+def test_concatenate_shifts_graph_cell_pages_for_keyvalue_and_form():
+    def _make_graph(page_no: int, value_text: str) -> GraphData:
+        return GraphData(
+            cells=[
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=1,
+                    text="k",
+                    orig="k",
+                    prov=ProvenanceItem(
+                        page_no=page_no,
+                        charspan=(0, 1),
+                        bbox=BoundingBox(
+                            l=10,
+                            t=40,
+                            r=30,
+                            b=10,
+                            coord_origin=CoordOrigin.BOTTOMLEFT,
+                        ),
+                    ),
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=2,
+                    text=value_text,
+                    orig=value_text,
+                    prov=ProvenanceItem(
+                        page_no=page_no,
+                        charspan=(0, len(value_text)),
+                        bbox=BoundingBox(
+                            l=35,
+                            t=40,
+                            r=80,
+                            b=10,
+                            coord_origin=CoordOrigin.BOTTOMLEFT,
+                        ),
+                    ),
+                ),
+            ],
+            links=[
+                GraphLink(
+                    label=GraphLinkLabel.TO_VALUE,
+                    source_cell_id=1,
+                    target_cell_id=2,
+                )
+            ],
+        )
+
+    def _make_doc(name: str, value_text: str) -> DoclingDocument:
+        doc = DoclingDocument(name=name)
+        doc.add_page(page_no=1, size=Size(width=100, height=100))
+        doc.add_key_values(graph=_make_graph(page_no=1, value_text=value_text))
+        doc.add_form(graph=_make_graph(page_no=1, value_text=f"{value_text}-form"))
+        return doc
+
+    doc1 = _make_doc(name="doc1", value_text="v1")
+    doc2 = _make_doc(name="doc2", value_text="v2")
+
+    merged = DoclingDocument.concatenate(docs=[doc1, doc2])
+
+    assert sorted(merged.pages.keys()) == [1, 2]
+    assert len(merged.key_value_items) == 2
+    assert len(merged.form_items) == 2
+
+    kv_item_pages = [
+        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov})
+        for item in merged.key_value_items
+    ]
+    form_item_pages = [
+        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov})
+        for item in merged.form_items
+    ]
+
+    assert kv_item_pages == [[1], [2]]
+    assert form_item_pages == [[1], [2]]
+
+
 def test_export_markdown_compact_tables():
     """Test compact_tables parameter for markdown export."""
     doc = DoclingDocument(name="Compact Table Test")

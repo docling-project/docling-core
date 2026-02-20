@@ -6214,9 +6214,12 @@ class DoclingDocument(BaseModel):
 
                     if isinstance(new_item, DocItem):
                         # update page numbers
-                        # NOTE other prov sources (e.g. GraphCell) currently not covered
                         for prov in new_item.prov:
                             prov.page_no += page_delta
+                        if isinstance(new_item, KeyValueItem | FormItem):
+                            for graph_cell in new_item.graph.cells:
+                                if graph_cell.prov is not None:
+                                    graph_cell.prov.page_no += page_delta
 
                     if item.parent:
                         # set item's parent
@@ -6248,9 +6251,9 @@ class DoclingDocument(BaseModel):
 
                             # update rich table cells references:
                             if isinstance(parent_item, TableItem):
-                                for cell in parent_item.data.table_cells:
-                                    if isinstance(cell, RichTableCell) and cell.ref.cref == item.self_ref:
-                                        cell.ref.cref = new_cref
+                                for table_cell in parent_item.data.table_cells:
+                                    if isinstance(table_cell, RichTableCell) and table_cell.ref.cref == item.self_ref:
+                                        table_cell.ref.cref = new_cref
                                         break
 
                         elif num_components == 2 and path_components[1] == "body":
