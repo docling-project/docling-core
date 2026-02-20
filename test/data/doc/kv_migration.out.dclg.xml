@@ -1,0 +1,24 @@
+<doclang version="1.0.0">
+  <text>Hello, world!</text>
+  <kv_map>
+    <kv_entry>
+      <kv_key>Common name</kv_key>
+      <kv_value class="read_only">Duck</kv_value>
+    </kv_entry>
+    <kv_entry>
+      <kv_key>Distribution package</kv_key>
+      <kv_value class="read_only">docling</kv_value>
+      <kv_value class="read_only">docling-core</kv_value>
+    </kv_entry>
+  </kv_map>
+  <text>Some more text...</text>
+  <kv_map>
+    <kv_entry>
+      <kv_key>Color</kv_key>
+      <kv_value class="read_only">Orange</kv_value>
+      <kv_value class="read_only">Black</kv_value>
+      <kv_value class="read_only">White</kv_value>
+    </kv_entry>
+  </kv_map>
+  <text>The end.</text>
+</doclang>

@@ -12,6 +12,7 @@ import sys
 import typing
 import warnings
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
@@ -2610,8 +2611,20 @@ class DoclingDocument(BaseModel):
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
-    groups: list[Union[ListGroup, InlineGroup, GroupItem]] = []
-    texts: list[Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]] = []
+    groups: list[Union[ListGroup, InlineGroup, KeyValueEntry, GroupItem]] = []
+    texts: list[
+        Union[
+            TitleItem,
+            SectionHeaderItem,
+            ListItem,
+            CodeItem,
+            FormulaItem,
+            KeyValueHeading,
+            KeyValueKey,
+            KeyValueValue,
+            TextItem,
+        ]
+    ] = []
     pictures: list[PictureItem] = []
     tables: list[TableItem] = []
     key_value_items: list[KeyValueItem] = []
@@ -2646,6 +2659,44 @@ class DoclingDocument(BaseModel):
                 ]:
                     item["content_layer"] = "furniture"
         return data
+
+    def _migrate_forms_to_kvmaps(self) -> Self:
+        """Migrate the forms field to key value maps."""
+
+        to_delete: list[NodeItem] = []
+
+        for item, _ in self.iterate_items():
+            if isinstance(item, FormItem | KeyValueItem):
+                to_delete.append(item)
+
+                visited: set[str] = set()
+                outgoing_links: dict[int, list[int]] = {}
+
+                kvm = KeyValueMap(self_ref="#")
+                self.insert_item_after_sibling(new_item=kvm, sibling=item)
+
+                for link in item.graph.links:
+                    if link.label == GraphLinkLabel.TO_VALUE:
+                        key_cell = item.graph.cells[link.source_cell_id]
+                        value_cell = item.graph.cells[link.target_cell_id]
+                    elif link.label == GraphLinkLabel.TO_KEY:
+                        value_cell = item.graph.cells[link.source_cell_id]
+                        key_cell = item.graph.cells[link.target_cell_id]
+
+                    # check if we have already seen this key-value pair
+                    if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
+                        visited.add(key_val_id)
+                        outgoing_links.setdefault(key_cell.cell_id, []).append(value_cell.cell_id)
+
+                for key_cell_id, value_cell_ids in outgoing_links.items():
+                    kve = self.add_kv_entry(parent=kvm)
+                    self.add_kv_key(text=item.graph.cells[key_cell_id].text, parent=kve)
+                    for value_cell_id in value_cell_ids:
+                        self.add_kv_value(text=item.graph.cells[value_cell_id].text, parent=kve)
+
+        self.delete_items(node_items=to_delete)
+
+        return self
 
     # ---------------------------
     # Public Manipulation methods

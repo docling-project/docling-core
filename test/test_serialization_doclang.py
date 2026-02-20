@@ -33,8 +33,10 @@ from docling_core.types.doc import (
     TabularChartMetaField,
 )
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import ImageRef, RichTableCell, TableCell
+from docling_core.types.doc.document import GraphCell, GraphData, GraphLink, ImageRef, RichTableCell, TableCell
+from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
 from test.test_serialization import verify
+from test.test_data_gen_flag import GEN_TEST_DATA
 
 
 def add_texts_section(doc: DoclingDocument):
@@ -1025,4 +1027,128 @@ def test_kv_form_with_table():
     ser_txt = ser_res.text
 
     exp_file = Path("./test/data/doc/kv_form_with_table.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_kv_migration():
+    doc = DoclingDocument(name="")
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello, world!")
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                # both TO_VALUE & TO_KEY links:
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=0,
+                    text="Common name",
+                    orig="Common name",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=1,
+                    text="Duck",
+                    orig="Duck",
+                ),
+
+                # TO_PARENT & TO_CHILD links:
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=2,
+                    text="Anatoidea",
+                    orig="Anatoidea",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=3,
+                    text="Anatidae",
+                    orig="Anatidae",
+                ),
+
+                # multiple TO_VALUE links:
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=4,
+                    text="Distribution package",
+                    orig="Distribution package",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=5,
+                    text="docling",
+                    orig="docling",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=6,
+                    text="docling-core",
+                    orig="docling-core",
+                ),
+            ],
+            links=[
+                GraphLink(
+                    label=GraphLinkLabel.TO_VALUE,
+                    source_cell_id=0,
+                    target_cell_id=1,
+                ),
+                GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=2, target_cell_id=3),
+                GraphLink(label=GraphLinkLabel.TO_PARENT, source_cell_id=3, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=4, target_cell_id=5),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=4, target_cell_id=6),
+            ],
+        ),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Some more text...", parent=doc.body)
+    doc.add_form(
+        graph=GraphData(
+            cells=[
+                # both TO_VALUE & TO_KEY links:
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=0,
+                    text="Color",
+                    orig="Color",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=1,
+                    text="Orange",
+                    orig="Orange",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=2,
+                    text="Black",
+                    orig="Black",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=3,
+                    text="White",
+                    orig="White",
+                ),
+            ],
+            links=[
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=3),
+                GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=3, target_cell_id=0),
+            ],
+        ),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=doc.body)
+
+    doc._migrate_forms_to_kvmaps()
+
+    exp_yaml = Path("./test/data/doc/kv_migration.out.yaml")
+    if GEN_TEST_DATA:
+        doc.save_as_yaml(filename=exp_yaml)
+    else:
+        exp_doc = DoclingDocument.load_from_yaml(filename=exp_yaml)
+        assert doc == exp_doc
+
+    ser = DoclangDocSerializer(doc=doc, params=DoclangParams())
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/kv_migration.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
