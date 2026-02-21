@@ -350,6 +350,23 @@ class PdfTextCell(TextCell):
         return data
 
 
+class PdfWidget(OrderedElement):
+    rect: BoundingRectangle
+
+    widget_text: Optional[str] = None
+    widget_description: Optional[str] = None
+    widget_field_name: Optional[str] = None
+    widget_field_type: Optional[str] = None
+
+
+class PdfHyperlink(OrderedElement):
+    rect: BoundingRectangle
+    uri: Optional[AnyUrl] = None
+
+    widget_text: Optional[str] = None
+    widget_description: Optional[str] = None
+
+
 class BitmapResource(OrderedElement):
     """Model representing a bitmap resource with positioning and URI information."""
 
@@ -547,6 +564,9 @@ class SegmentedPage(BaseModel):
     has_lines: bool = False
 
     image: Optional[ImageRef] = None
+
+    widgets: list[PdfWidget] = []
+    hyperlinks: list[PdfHyperlink] = []
 
     @model_validator(mode="after")
     def validate_page(self) -> "SegmentedPage":
@@ -775,6 +795,14 @@ class SegmentedPdfPage(SegmentedPage):
         annotations_outline: str = "white",
         annotations_color: str = "green",
         annotations_alpha: float = 0.5,
+        draw_widgets: bool = True,
+        widgets_outline: str = "blue",
+        widgets_fill: str = "blue",
+        widgets_alpha: float = 0.3,
+        draw_hyperlinks: bool = True,
+        hyperlinks_outline: str = "orange",
+        hyperlinks_fill: str = "orange",
+        hyperlinks_alpha: float = 0.3,
         draw_crop_box: bool = True,
         cropbox_outline: str = "red",
         cropbox_width: int = 3,
@@ -812,6 +840,14 @@ class SegmentedPdfPage(SegmentedPage):
             annotations_outline: Outline color for annotations
             annotations_color: Fill color for annotations
             annotations_alpha: Alpha value for annotations
+            draw_widgets: Whether to draw PDF widgets
+            widgets_outline: Outline color for widgets
+            widgets_fill: Fill color for widgets
+            widgets_alpha: Alpha value for widgets
+            draw_hyperlinks: Whether to draw PDF hyperlinks
+            hyperlinks_outline: Outline color for hyperlinks
+            hyperlinks_fill: Fill color for hyperlinks
+            hyperlinks_alpha: Alpha value for hyperlinks
             draw_crop_box: Whether to draw crop box
             cropbox_outline: Color for crop box outline
             cropbox_width: Width for crop box outline
@@ -827,6 +863,8 @@ class SegmentedPdfPage(SegmentedPage):
             bitmap_resources_alpha,
             shape_alpha,
             annotations_alpha,
+            widgets_alpha,
+            hyperlinks_alpha,
             cropbox_alpha,
         ]:
             if _ < 0 or 1.0 < _:
@@ -860,6 +898,24 @@ class SegmentedPdfPage(SegmentedPage):
                 shape_color=shape_color,
                 shape_alpha=shape_alpha,
                 shape_width=shape_width,
+            )
+
+        if draw_widgets:
+            draw = self._render_widgets(
+                draw=draw,
+                page_height=page_height,
+                widgets_fill=widgets_fill,
+                widgets_outline=widgets_outline,
+                widgets_alpha=widgets_alpha,
+            )
+
+        if draw_hyperlinks:
+            draw = self._render_hyperlinks(
+                draw=draw,
+                page_height=page_height,
+                hyperlinks_fill=hyperlinks_fill,
+                hyperlinks_outline=hyperlinks_outline,
+                hyperlinks_alpha=hyperlinks_alpha,
             )
 
         if draw_cells_text:
@@ -989,6 +1045,64 @@ class SegmentedPdfPage(SegmentedPage):
         # Draw each rectangle by connecting its four points
         for page_cell in self.iterate_cells(unit_type=cell_unit):
             poly = page_cell.rect.to_top_left_origin(page_height=page_height).to_polygon()
+            draw.polygon(poly, outline=outline, fill=fill)
+
+        return draw
+
+    def _render_widgets(
+        self,
+        draw: ImageDraw.ImageDraw,
+        page_height: float,
+        widgets_fill: str,
+        widgets_outline: str,
+        widgets_alpha: float,
+    ) -> ImageDraw.ImageDraw:
+        """Render PDF widgets on the page.
+
+        Args:
+            draw: PIL ImageDraw object
+            page_height: Height of the page
+            widgets_fill: Fill color for widgets
+            widgets_outline: Outline color for widgets
+            widgets_alpha: Alpha value for widgets
+
+        Returns:
+            Updated ImageDraw object
+        """
+        fill = self._get_rgba(name=widgets_fill, alpha=widgets_alpha)
+        outline = self._get_rgba(name=widgets_outline, alpha=widgets_alpha)
+
+        for widget in self.widgets:
+            poly = widget.rect.to_top_left_origin(page_height=page_height).to_polygon()
+            draw.polygon(poly, outline=outline, fill=fill)
+
+        return draw
+
+    def _render_hyperlinks(
+        self,
+        draw: ImageDraw.ImageDraw,
+        page_height: float,
+        hyperlinks_fill: str,
+        hyperlinks_outline: str,
+        hyperlinks_alpha: float,
+    ) -> ImageDraw.ImageDraw:
+        """Render PDF hyperlinks on the page.
+
+        Args:
+            draw: PIL ImageDraw object
+            page_height: Height of the page
+            hyperlinks_fill: Fill color for hyperlinks
+            hyperlinks_outline: Outline color for hyperlinks
+            hyperlinks_alpha: Alpha value for hyperlinks
+
+        Returns:
+            Updated ImageDraw object
+        """
+        fill = self._get_rgba(name=hyperlinks_fill, alpha=hyperlinks_alpha)
+        outline = self._get_rgba(name=hyperlinks_outline, alpha=hyperlinks_alpha)
+
+        for hyperlink in self.hyperlinks:
+            poly = hyperlink.rect.to_top_left_origin(page_height=page_height).to_polygon()
             draw.polygon(poly, outline=outline, fill=fill)
 
         return draw

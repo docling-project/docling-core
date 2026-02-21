@@ -20,7 +20,7 @@ from docling_core.transforms.serializer.base import (
     BaseTableSerializer,
     SerializationResult,
 )
-from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.transforms.serializer.common import DocSerializer, create_ser_result
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
@@ -152,7 +152,11 @@ class HierarchicalChunker(BaseChunker):
         visited: set[str] = set()
         ser_res = create_ser_result()
         excluded_refs = my_doc_ser.get_excluded_refs(**kwargs)
-        for item, level in dl_doc.iterate_items(with_groups=True):
+        traverse_pictures = my_doc_ser.params.traverse_pictures if isinstance(my_doc_ser, DocSerializer) else False
+        for item, level in dl_doc.iterate_items(
+            with_groups=True,
+            traverse_pictures=traverse_pictures,
+        ):
             if item.self_ref in excluded_refs:
                 continue
             if isinstance(item, TitleItem | SectionHeaderItem):
