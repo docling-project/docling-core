@@ -1987,31 +1987,45 @@ def test_docitem_comments_delete_updates_refs():
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
 
-def test_add_node_items_updates_captions():
-    """ Verifies that copying a TableItem updates its caption reference """
+def test_add_node_items_updates_all_pointers():
+    """
+    Verifies that copying an item updates its references, footnotes, and comments to point to the newly assigned indices in the destination document.
+    """
+    # set source document
     src_doc = DoclingDocument(name="source")
 
-    caption = src_doc.add_text(
-        label=DocItemLabel.CAPTION, 
-        text="Source Caption"
-    )
+    # create the items that will be pointed to and attach them
+    ref_text = src_doc.add_text(label=DocItemLabel.REFERENCE, text="[1] Source Reference")
+    foot_text = src_doc.add_text(label=DocItemLabel.FOOTNOTE, text="* Source Footnote")
 
     table = src_doc.add_table(data=TableData(num_rows=1, num_cols=1))
-    table.captions = [caption.get_ref()]
+    table.references = [ref_text.get_ref()]
+    table.footnotes = [foot_text.get_ref()]
+    src_doc.add_comment(text="Source Comment", targets=[table])
 
     dest_doc = DoclingDocument(name="dest")
-    dest_doc.add_text(label=DocItemLabel.TEXT, text="Padding Text")
+
+    # pad the destination so the indices are forced to shift
+    pad_text = dest_doc.add_text(label=DocItemLabel.TEXT, text="Padding Text")
+    dest_doc.add_comment(text="Padding Comment", targets=[pad_text])
+
     dest_doc.add_node_items(node_items=[table], doc=src_doc)
-
     new_table = dest_doc.tables[0]
-    assert len(new_table.captions) == 1
 
-    # the new caption should be at index 1 not index 0.
-    expected_ref = "#/texts/1"
-    actual_ref = new_table.captions[0].cref
+    # references
+    assert len(new_table.references) == 1
+    resolved_ref = new_table.references[0].resolve(dest_doc)
+    assert resolved_ref is not None, "Reference pointer is broken!"
+    assert resolved_ref.text == "[1] Source Reference"
 
-    assert actual_ref == expected_ref, f"Expected caption ref {expected_ref}, but got {actual_ref}"
+    # footnotes
+    assert len(new_table.footnotes) == 1
+    resolved_foot = new_table.footnotes[0].resolve(dest_doc)
+    assert resolved_foot is not None, "Footnote pointer is broken!"
+    assert resolved_foot.text == "* Source Footnote"
 
-    resolved_cap = new_table.captions[0].resolve(dest_doc)
-    assert resolved_cap is not None
-    assert resolved_cap.text == "Source Caption"
+    # comments
+    assert len(new_table.comments) == 1
+    resolved_comment = new_table.comments[0].resolve(dest_doc)
+    assert resolved_comment is not None, "Comment pointer is broken!"
+    assert resolved_comment.text == "Source Comment"
