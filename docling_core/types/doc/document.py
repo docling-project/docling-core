@@ -65,7 +65,6 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
-from docling_core.types.doc.webvtt import WebVTTCueIdentifier, WebVTTCueSpanStartTag, WebVTTCueSpanStartTagAnnotated
 
 _logger = logging.getLogger(__name__)
 
@@ -5258,6 +5257,68 @@ class DoclingDocument(BaseModel):
         ser_res = serializer.serialize()
 
         return ser_res.text
+
+    def export_to_vtt(
+        self,
+        included_content_layers: set[ContentLayer] | None = None,
+        omit_hours_if_zero: bool = False,
+        omit_voice_end: bool = False,
+    ) -> str:
+        """Serializes the Docling document to WebVTT format.
+
+        Args:
+            included_content_layers: The content layers to serializes. If ommitted, the `DEFAULT_CONTENT_LAYERS` will
+                be serialized.
+            omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
+            omit_voice_end: If True and cue blocks have a WebVTT cue voice span as the only component, omit the voice
+                end tag for brevity.
+
+        Returns:
+            A string representation of the Docling document in WebVTT format.
+        """
+
+        from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
+
+        my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
+
+        params = WebVTTParams(layers=my_layers, omit_hours_if_zero=omit_hours_if_zero, omit_voice_end=omit_voice_end)
+
+        serializer = WebVTTDocSerializer(
+            doc=self,
+            params=params,
+        )
+        ser_res = serializer.serialize()
+
+        return ser_res.text
+
+    def save_as_vtt(
+        self,
+        filename: str | Path,
+        included_content_layers: set[ContentLayer] | None = None,
+        omit_hours_if_zero: bool = False,
+        omit_voice_end: bool = True,
+    ) -> None:
+        """Saves the Docling document to a file in WebVTT format.
+
+        Args:
+            filename: The path to the WebVTT file.
+            included_content_layers: The content layers to serializes. If ommitted, the `DEFAULT_CONTENT_LAYERS` will
+                be serialized.
+            omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
+            omit_voice_end: If True and cue blocks have a WebVTT cue voice span as the only component, omit the voice
+                end tag for brevity.
+        """
+        if isinstance(filename, str):
+            filename = Path(filename)
+
+        vtt_out = self.export_to_vtt(
+            included_content_layers=included_content_layers,
+            omit_hours_if_zero=omit_hours_if_zero,
+            omit_voice_end=omit_voice_end,
+        )
+
+        with open(filename, "w", encoding="utf-8") as fw:
+            fw.write(vtt_out)
 
     @staticmethod
     def load_from_doctags(  # noqa: C901

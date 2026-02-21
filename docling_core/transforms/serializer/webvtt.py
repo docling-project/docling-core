@@ -3,9 +3,9 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any, get_args
+from typing import Annotated, Any, get_args
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl, BaseModel, Field
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -120,6 +120,18 @@ class WebVTTParams(CommonParams):
     """Serialization parameters for the Web Video Text Tracks (WebVTT) format."""
 
     layers: set[ContentLayer] = {ContentLayer.BODY}
+    omit_hours_if_zero: Annotated[bool, Field(description="If True, omit hours when they are 0 in the timings.")] = (
+        False
+    )
+    omit_voice_end: Annotated[
+        bool,
+        Field(
+            description=(
+                "If True and cue blocks have a WebVTT cue voice span as the only component, omit the voice end tag for"
+                " brevity."
+            )
+        ),
+    ] = False
 
 
 class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
@@ -343,7 +355,7 @@ class WebVTTDocSerializer(DocSerializer):
     meta_serializer: BaseMetaSerializer | None = _WebVTTMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = _WebVTTAnnotationSerializer()
 
-    params: CommonParams = CommonParams()
+    params: WebVTTParams = WebVTTParams()
 
     @override
     def requires_page_break(self) -> bool:
@@ -481,7 +493,9 @@ class WebVTTDocSerializer(DocSerializer):
             cue_blocks.append(WebVTTCueBlock.parse(text))
 
         webvtt_file = WebVTTFile(title=title, cue_blocks=cue_blocks)
-        content = str(webvtt_file)
+        content = webvtt_file.format(
+            omit_hours_if_zero=self.params.omit_hours_if_zero, omit_voice_end=self.params.omit_voice_end
+        )
         return create_ser_result(text=content, span_source=parts)
 
     def post_process(
