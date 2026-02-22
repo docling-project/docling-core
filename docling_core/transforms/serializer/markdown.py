@@ -69,6 +69,38 @@ from docling_core.types.doc.document import (
 )
 
 
+def _cell_content_has_table(item: Any, doc: "DoclingDocument") -> bool:
+    """Return True if *item* is, or has a descendant that is, a TableItem.
+
+    Used by MarkdownTableSerializer to decide whether a RichTableCell's
+    content should be serialized or replaced with plain text.  Markdown
+    table cells cannot contain nested block-level tables, so when the
+    rich content includes one we fall back to the precomputed col.text
+    rather than producing pipe-heavy output that breaks the outer table.
+    """
+    if isinstance(item, TableItem):
+        return True
+    for child_ref in getattr(item, "children", []):
+        if _cell_content_has_table(child_ref.resolve(doc=doc), doc):
+            return True
+    return False
+
+
+def _mark_subtree_visited(item: Any, doc: "DoclingDocument", visited: set[str]) -> None:
+    """Recursively add *item* and all its descendants to *visited*.
+
+    When a RichTableCell's content is skipped (because it contains a nested
+    table), the content is never passed through the normal serialize() path
+    that would mark items visited.  Calling this instead keeps the visited
+    set consistent so the document serializer does not emit those items a
+    second time at the top level.
+    """
+    if (ref := getattr(item, "self_ref", None)) is not None:
+        visited.add(ref)
+    for child_ref in getattr(item, "children", []):
+        _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
+
+
 class OrigListItemMarkerMode(str, Enum):
     """Display mode for original list item marker."""
 
@@ -419,19 +451,33 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 if ann_res.text:
                     res_parts.append(ann_res)
 
-            rows = [
-                [
-                    # make sure that md tables are not broken due to newline or pipe chars in the text
-                    # TODO: escape pipe characters also in RichTableCell once nested tables are properly handled
-                    (
-                        doc_serializer.serialize(item=col.ref.resolve(doc=doc), **kwargs).text.replace("\n", " ")
-                        if isinstance(col, RichTableCell)
-                        else col.text.replace("\n", " ").replace("|", "&#124;")
+            rows = []
+            for row in item.data.grid:
+                rendered_row = []
+                for col in row:
+                    if isinstance(col, RichTableCell):
+                        ref_item = col.ref.resolve(doc=doc)
+                        if _cell_content_has_table(ref_item, doc):
+                            # Markdown table cells cannot contain nested block-level
+                            # tables. Fall back to the precomputed plain-text content
+                            # to avoid pipe-heavy output that breaks the outer table.
+                            # Mark the skipped subtree as visited so the document
+                            # serializer does not emit those items again at top level.
+                            visited: set[str] = kwargs.get("visited") or set()
+                            _mark_subtree_visited(ref_item, doc, visited)
+                            cell_text = col.text or ""
+                        else:
+                            cell_text = doc_serializer.serialize(
+                                item=ref_item, **kwargs
+                            ).text
+                    else:
+                        cell_text = col.text or ""
+                    # Newlines and pipes must be escaped in every cell so the
+                    # markdown table stays valid.
+                    rendered_row.append(
+                        cell_text.replace("\n", " ").replace("|", "&#124;")
                     )
-                    for col in row
-                ]
-                for row in item.data.grid
-            ]
+                rows.append(rendered_row)
             if len(rows) > 0:
                 try:
                     table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")

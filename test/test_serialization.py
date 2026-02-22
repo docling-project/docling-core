@@ -1,5 +1,6 @@
 """Test serialization."""
 
+import threading
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,7 @@ from docling_core.types.doc.document import (
     DoclingDocument,
     PictureItem,
     RefItem,
+    RichTableCell,
     TableCell,
     TableData,
     TextItem,
@@ -352,6 +354,92 @@ def test_md_pipe_in_table():
     )
     ser = doc.export_to_markdown()
     assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
+
+
+def _build_nested_rich_table_doc(depth: int) -> DoclingDocument:
+    """Build a document with `depth` levels of nested RichTableCell tables.
+
+    Each level is a 1×2 table whose first cell is a RichTableCell referencing
+    the next-level table, and whose second cell is a plain TableCell.
+    This is the structure produced by the HTML backend for Wikipedia clade tables.
+    """
+    doc = DoclingDocument(name="nested_tables")
+
+    def _add_level(parent, remaining: int):
+        table = doc.add_table(data=TableData(num_rows=1, num_cols=2), parent=parent)
+        if remaining > 0:
+            nested = _add_level(table, remaining - 1)
+            rich_cell: TableCell = RichTableCell(
+                ref=nested.get_ref(),
+                text="rich",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            )
+        else:
+            rich_cell = TableCell(
+                text="leaf",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            )
+        doc.add_table_cell(table, rich_cell)
+        doc.add_table_cell(
+            table,
+            TableCell(
+                text="plain",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+            ),
+        )
+        return table
+
+    _add_level(doc.body, depth)
+    return doc
+
+
+def test_md_nested_rich_table_no_hang():
+    """Regression: export_to_markdown() must not hang on nested RichTableCells.
+
+    When a RichTableCell's content contains a nested table, MarkdownTableSerializer
+    must detect the nesting via _cell_content_has_table() and fall back to col.text
+    instead of calling doc_serializer.serialize() recursively. Without this check,
+    every level of nesting re-enters the table serializer, causing exponential string
+    growth (tabulate/wcswidth on ever-growing strings) and an indefinite hang.
+
+    To verify the fix is in place: remove the _cell_content_has_table() check from
+    MarkdownTableSerializer.serialize() — this test will then time out.
+    """
+    doc = _build_nested_rich_table_doc(depth=5)
+
+    result: list[str] = []
+
+    def _run() -> None:
+        result.append(doc.export_to_markdown())
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    t.join(timeout=5.0)
+
+    assert not t.is_alive(), (
+        "export_to_markdown() hung on a document with nested RichTableCells. "
+        "The _cell_content_has_table() check in MarkdownTableSerializer may have been removed."
+    )
+    assert result, "export_to_markdown() produced no output"
+
+    # The outer table must be a valid 2-column markdown table.
+    # Without the pipe-escaping fix, inner-table pipes would leak into the outer
+    # table and produce dozens of phantom columns.
+    table_rows = [line for line in result[0].splitlines() if line.startswith("|")]
+    assert table_rows, "Expected at least one markdown table row in output"
+    col_counts = {line.count("|") - 1 for line in table_rows}
+    assert col_counts == {2}, (
+        f"Outer table must have exactly 2 columns throughout; got column counts: {col_counts}"
+    )
 
 
 def test_md_compact_table():
