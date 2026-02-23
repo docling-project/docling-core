@@ -1,3 +1,11 @@
+## [v2.65.2](https://github.com/docling-project/docling-core/releases/tag/v2.65.2) - 2026-02-23
+
+### Fix
+
+* Accept relative URIs in PdfHyperlink without validation failure ([#520](https://github.com/docling-project/docling-core/issues/520)) ([`6032c7c`](https://github.com/docling-project/docling-core/commit/6032c7c175036755e18aedbfa4f88d8e29704c02))
+* Shift KV/Form graph cell page numbers during DoclingDocument.concatenate ([#521](https://github.com/docling-project/docling-core/issues/521)) ([`6a04db7`](https://github.com/docling-project/docling-core/commit/6a04db77aa880a9c4e1fb7cec3b29f55c8cfed85))
+* **chunker:** Propagate 'traverse_pictures' parameter to chunker ([#518](https://github.com/docling-project/docling-core/issues/518)) ([`a3b6e3f`](https://github.com/docling-project/docling-core/commit/a3b6e3fb892e34ef0f1e637171d6ca18e6f05803))
+
 ## [v2.65.1](https://github.com/docling-project/docling-core/releases/tag/v2.65.1) - 2026-02-13
 
 ### Fix
