@@ -64,10 +64,10 @@ from docling_core.types.doc import (
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.document import (
+    FieldHeading,
+    FieldValue,
     FormulaItem,
     GroupItem,
-    KeyValueHeading,
-    KeyValueValue,
     RichTableCell,
 )
 from docling_core.types.doc.labels import (
@@ -372,12 +372,12 @@ class DoclangToken(str, Enum):
     LIST_TEXT = "list_text"
     CHECKBOX = "checkbox"
     OTSL = "otsl"  # this will take care of the structure in the table.
-    KV_MAP = "form"
-    KV_ENTRY = "form_item"
-    KV_KEY = "key"
-    KV_VALUE = "value"
-    KV_HEADING = "form_heading"
-    KV_HINT = "hint"
+    FIELD_REGION = "field_region"
+    FIELD_ITEM = "field_item"
+    FIELD_KEY = "key"
+    FIELD_VALUE = "value"
+    FIELD_HEADING = "field_heading"
+    FIELD_HINT = "hint"
 
     # Grouping
     SECTION = "section"
@@ -479,7 +479,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.CENTISECOND: {DoclangAttributeKey.VALUE},
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL},
         # DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL},
-        DoclangToken.KV_HEADING: {DoclangAttributeKey.LEVEL},
+        DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.CHECKBOX: {DoclangAttributeKey.CLASS},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL},
         DoclangToken.LIST: {DoclangAttributeKey.ORDERED},
@@ -545,7 +545,7 @@ class DoclangVocabulary(BaseModel):
         # Levels (N ≥ 1)
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
         # DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
-        DoclangToken.KV_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
+        DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL: (1, 6)},
         # Continuation markers (id length constraints)
         DoclangToken.THREAD: {DoclangAttributeKey.ID: (1, 10)},
@@ -611,10 +611,10 @@ class DoclangVocabulary(BaseModel):
         # DoclangToken.FORM_HEADING: DoclangCategory.SEMANTIC,
         # DoclangToken.FORM_TEXT: DoclangCategory.SEMANTIC,
         # DoclangToken.HINT: DoclangCategory.SEMANTIC,
-        DoclangToken.KV_MAP: DoclangCategory.SEMANTIC,
-        DoclangToken.KV_ENTRY: DoclangCategory.SEMANTIC,
-        DoclangToken.KV_HEADING: DoclangCategory.SEMANTIC,
-        DoclangToken.KV_HINT: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_REGION: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_ITEM: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_HEADING: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_HINT: DoclangCategory.SEMANTIC,
         DoclangToken.FORMULA: DoclangCategory.SEMANTIC,
         DoclangToken.CODE: DoclangCategory.SEMANTIC,
         DoclangToken.LIST_TEXT: DoclangCategory.SEMANTIC,
@@ -648,8 +648,8 @@ class DoclangVocabulary(BaseModel):
         # DoclangToken.KEY: DoclangCategory.STRUCTURAL,
         DoclangToken.IMPLICIT_KEY: DoclangCategory.STRUCTURAL,
         # DoclangToken.VALUE: DoclangCategory.STRUCTURAL,
-        DoclangToken.KV_KEY: DoclangCategory.STRUCTURAL,
-        DoclangToken.KV_VALUE: DoclangCategory.STRUCTURAL,
+        DoclangToken.FIELD_KEY: DoclangCategory.STRUCTURAL,
+        DoclangToken.FIELD_VALUE: DoclangCategory.STRUCTURAL,
         # Continuation
         DoclangToken.THREAD: DoclangCategory.CONTINUATION,
         DoclangToken.H_THREAD: DoclangCategory.CONTINUATION,
@@ -1498,16 +1498,16 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             )
         elif isinstance(item, TextItem) and (
             tok := {
-                DocItemLabel.KV_KEY: DoclangToken.KV_KEY,
-                DocItemLabel.KV_VALUE: DoclangToken.KV_VALUE,
-                DocItemLabel.KV_HEADING: DoclangToken.KV_HEADING,
-                DocItemLabel.KV_HINT: DoclangToken.KV_HINT,
+                DocItemLabel.FIELD_KEY: DoclangToken.FIELD_KEY,
+                DocItemLabel.FIELD_VALUE: DoclangToken.FIELD_VALUE,
+                DocItemLabel.FIELD_HEADING: DoclangToken.FIELD_HEADING,
+                DocItemLabel.FIELD_HINT: DoclangToken.FIELD_HINT,
             }.get(item.label)
         ):
             wrap_open_token = f"<{tok.value}>"
-            if isinstance(item, KeyValueValue):
+            if isinstance(item, FieldValue):
                 wrap_open_token = f'<{tok.value} class="{item.kind}">'
-            elif isinstance(item, KeyValueHeading):
+            elif isinstance(item, FieldHeading):
                 wrap_open_token = f'<{tok.value} level="{item.level}">'
         elif isinstance(item, TextItem) and (
             item.label
@@ -2004,8 +2004,8 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
             return create_ser_result(text=text_res, span_source=parts)
         elif isinstance(item, DocItem | GroupItem) and (
             tok := {
-                DocItemLabel.KV_MAP: DoclangToken.KV_MAP,
-                GroupLabel.KV_ENTRY: DoclangToken.KV_ENTRY,
+                DocItemLabel.FIELD_REGION: DoclangToken.FIELD_REGION,
+                GroupLabel.FIELD_ITEM: DoclangToken.FIELD_ITEM,
             }.get(item.label)
         ):
             parts = doc_serializer.get_parts(item=item, **kwargs)

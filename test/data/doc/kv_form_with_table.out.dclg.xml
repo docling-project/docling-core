@@ -1,5 +1,5 @@
 <doclang version="1.0.0">
-  <form>
+  <field_region>
     <floating_group class="table">
       <otsl>
         <ched/>
@@ -10,32 +10,32 @@
         Gain or loss
         <nl/>
         <fcel/>
-        <form_item>
+        <field_item>
           <value class="fillable"></value>
-        </form_item>
+        </field_item>
         <fcel/>
-        <form_item>
+        <field_item>
           <value class="fillable">gain</value>
-        </form_item>
+        </field_item>
         <fcel/>
-        <form_item>
+        <field_item>
           <value class="fillable">150,997</value>
-        </form_item>
+        </field_item>
         <nl/>
         <fcel/>
-        <form_item>
+        <field_item>
           <value class="fillable"></value>
-        </form_item>
+        </field_item>
         <fcel/>
-        <form_item>
+        <field_item>
           <value class="fillable">loss</value>
-        </form_item>
+        </field_item>
         <fcel/>
-        <form_item>
+        <field_item>
           <value class="fillable">114,676</value>
-        </form_item>
+        </field_item>
         <nl/>
       </otsl>
     </floating_group>
-  </form>
+  </field_region>
 </doclang>

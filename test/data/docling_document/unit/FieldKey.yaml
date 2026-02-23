@@ -2,8 +2,7 @@ children: []
 content_layer: body
 formatting: null
 hyperlink: null
-kind: read_only
-label: kv_value
+label: field_key
 meta: null
 orig: whatever
 parent: null

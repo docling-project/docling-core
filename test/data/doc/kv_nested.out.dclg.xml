@@ -1,19 +1,19 @@
 <doclang version="1.0.0">
-  <form>
-    <form_item>
+  <field_region>
+    <field_item>
       <key>A</key>
       <value class="read_only">
-        <form>
-          <form_item>
+        <field_region>
+          <field_item>
             <key>AA</key>
             <value class="read_only">AAA</value>
-          </form_item>
-          <form_item>
+          </field_item>
+          <field_item>
             <key>AB</key>
             <value class="read_only">ABA</value>
-          </form_item>
-        </form>
+          </field_item>
+        </field_region>
       </value>
-    </form_item>
-  </form>
+    </field_item>
+  </field_region>
 </doclang>

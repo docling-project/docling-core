@@ -1,14 +1,32 @@
 body:
   children:
   - $ref: '#/texts/0'
-  - $ref: '#/key_value_maps/0'
+  - $ref: '#/field_regions/0'
   - $ref: '#/texts/1'
-  - $ref: '#/key_value_maps/1'
+  - $ref: '#/field_regions/1'
   - $ref: '#/texts/2'
   content_layer: body
   label: unspecified
   name: _root_
   self_ref: '#/body'
+field_regions:
+- children:
+  - $ref: '#/groups/0'
+  - $ref: '#/groups/1'
+  content_layer: body
+  label: field_region
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/field_regions/0'
+- children:
+  - $ref: '#/groups/2'
+  content_layer: body
+  label: field_region
+  parent:
+    $ref: '#/body'
+  prov: []
+  self_ref: '#/field_regions/1'
 form_items: []
 furniture:
   children: []
@@ -21,20 +39,20 @@ groups:
   - $ref: '#/texts/3'
   - $ref: '#/texts/4'
   content_layer: body
-  label: kv_entry
+  label: field_item
   name: group
   parent:
-    $ref: '#/key_value_maps/0'
+    $ref: '#/field_regions/0'
   self_ref: '#/groups/0'
 - children:
   - $ref: '#/texts/5'
   - $ref: '#/texts/6'
   - $ref: '#/texts/7'
   content_layer: body
-  label: kv_entry
+  label: field_item
   name: group
   parent:
-    $ref: '#/key_value_maps/0'
+    $ref: '#/field_regions/0'
   self_ref: '#/groups/1'
 - children:
   - $ref: '#/texts/8'
@@ -42,30 +60,12 @@ groups:
   - $ref: '#/texts/10'
   - $ref: '#/texts/11'
   content_layer: body
-  label: kv_entry
+  label: field_item
   name: group
   parent:
-    $ref: '#/key_value_maps/1'
+    $ref: '#/field_regions/1'
   self_ref: '#/groups/2'
 key_value_items: []
-key_value_maps:
-- children:
-  - $ref: '#/groups/0'
-  - $ref: '#/groups/1'
-  content_layer: body
-  label: kv_map
-  parent:
-    $ref: '#/body'
-  prov: []
-  self_ref: '#/key_value_maps/0'
-- children:
-  - $ref: '#/groups/2'
-  content_layer: body
-  label: kv_map
-  parent:
-    $ref: '#/body'
-  prov: []
-  self_ref: '#/key_value_maps/1'
 name: ''
 pages: {}
 pictures: []
@@ -101,7 +101,7 @@ texts:
   text: The end.
 - children: []
   content_layer: body
-  label: kv_key
+  label: field_key
   orig: Common name
   parent:
     $ref: '#/groups/0'
@@ -111,7 +111,7 @@ texts:
 - children: []
   content_layer: body
   kind: read_only
-  label: kv_value
+  label: field_value
   orig: Duck
   parent:
     $ref: '#/groups/0'
@@ -120,7 +120,7 @@ texts:
   text: Duck
 - children: []
   content_layer: body
-  label: kv_key
+  label: field_key
   orig: Distribution package
   parent:
     $ref: '#/groups/1'
@@ -130,7 +130,7 @@ texts:
 - children: []
   content_layer: body
   kind: read_only
-  label: kv_value
+  label: field_value
   orig: docling
   parent:
     $ref: '#/groups/1'
@@ -140,7 +140,7 @@ texts:
 - children: []
   content_layer: body
   kind: read_only
-  label: kv_value
+  label: field_value
   orig: docling-core
   parent:
     $ref: '#/groups/1'
@@ -149,7 +149,7 @@ texts:
   text: docling-core
 - children: []
   content_layer: body
-  label: kv_key
+  label: field_key
   orig: Color
   parent:
     $ref: '#/groups/2'
@@ -159,7 +159,7 @@ texts:
 - children: []
   content_layer: body
   kind: read_only
-  label: kv_value
+  label: field_value
   orig: Orange
   parent:
     $ref: '#/groups/2'
@@ -169,7 +169,7 @@ texts:
 - children: []
   content_layer: body
   kind: read_only
-  label: kv_value
+  label: field_value
   orig: Black
   parent:
     $ref: '#/groups/2'
@@ -179,7 +179,7 @@ texts:
 - children: []
   content_layer: body
   kind: read_only
-  label: kv_value
+  label: field_value
   orig: White
   parent:
     $ref: '#/groups/2'

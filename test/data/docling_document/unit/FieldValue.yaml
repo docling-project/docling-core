@@ -2,8 +2,8 @@ children: []
 content_layer: body
 formatting: null
 hyperlink: null
-label: kv_heading
-level: 2
+kind: read_only
+label: field_value
 meta: null
 orig: whatever
 parent: null

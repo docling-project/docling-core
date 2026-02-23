@@ -1,28 +1,28 @@
 <doclang version="1.0.0">
-  <form>
-    <form_heading level="1">KV heading</form_heading>
-    <form_item>
+  <field_region>
+    <field_heading level="1">KV heading</field_heading>
+    <field_item>
       <key>simple key</key>
       <value class="read_only">simple value</value>
-    </form_item>
-    <form_heading level="2">KV sub-heading</form_heading>
+    </field_item>
+    <field_heading level="2">KV sub-heading</field_heading>
     <text>
-      <form_item>
+      <field_item>
         <key>
           <content>my inline key1: </content>
         </key>
         <value class="fillable">my inline value1</value>
-      </form_item>
+      </field_item>
     </text>
-    <form_item>
+    <field_item>
       <text>
         <key>
           <content>my inline key2: </content>
         </key>
         <value class="fillable">my inline value2</value>
       </text>
-    </form_item>
-    <form_item>
+    </field_item>
+    <field_item>
       <key>name</key>
       <value class="fillable">John Doe</value>
       <value class="fillable">Max Mustermann</value>
@@ -39,8 +39,8 @@
         <content> and my second input </content>
         <value class="fillable">m</value>
       </text>
-    </form_item>
-    <form_item>
+    </field_item>
+    <field_item>
       <key>
         <content>I am in the country as a: </content>
       </key>
@@ -57,8 +57,8 @@
         Other (Specify)
       </value>
       <value class="fillable"></value>
-    </form_item>
-  </form>
+    </field_item>
+  </field_region>
   <text>Some final stuff.</text>
   <text>The end.</text>
 </doclang>

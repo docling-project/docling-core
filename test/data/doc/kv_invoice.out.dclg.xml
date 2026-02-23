@@ -1,40 +1,40 @@
 <doclang version="1.0.0">
-  <form>
-    <form_item>
+  <field_region>
+    <field_item>
       <key>
         <floating_group class="picture"></floating_group>
       </key>
       <value class="read_only">+123-456-7890</value>
-    </form_item>
-    <form_item>
+    </field_item>
+    <field_item>
       <key>
         <floating_group class="picture"></floating_group>
       </key>
       <value class="read_only">hello@example.com</value>
-    </form_item>
-  </form>
-  <form>
+    </field_item>
+  </field_region>
+  <field_region>
     <text>
-      <form_item>
+      <field_item>
         <key>
           <content>Invoice No: </content>
         </key>
         <value class="read_only">222</value>
-      </form_item>
+      </field_item>
     </text>
     <text>
-      <form_item>
+      <field_item>
         <key>
           <content>Date: </content>
         </key>
         <value class="read_only">02 May, 2021</value>
-      </form_item>
+      </field_item>
     </text>
-  </form>
-  <form>
-    <form_item>
+  </field_region>
+  <field_region>
+    <field_item>
       <key>Administrator</key>
       <value class="read_only">John Doe</value>
-    </form_item>
-  </form>
+    </field_item>
+  </field_region>
 </doclang>
