@@ -1,0 +1,19 @@
+<doclang version="1.0.0">
+  <field_region>
+    <field_item>
+      <key>A</key>
+      <value class="read_only">
+        <field_region>
+          <field_item>
+            <key>AA</key>
+            <value class="read_only">AAA</value>
+          </field_item>
+          <field_item>
+            <key>AB</key>
+            <value class="read_only">ABA</value>
+          </field_item>
+        </field_region>
+      </value>
+    </field_item>
+  </field_region>
+</doclang>

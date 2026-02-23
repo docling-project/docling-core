@@ -12,6 +12,7 @@ import sys
 import typing
 import warnings
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
@@ -91,6 +92,10 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.PAGE_FOOTER,
     DocItemLabel.KEY_VALUE_REGION,
     DocItemLabel.EMPTY_VALUE,
+    DocItemLabel.FIELD_KEY,
+    DocItemLabel.FIELD_VALUE,
+    DocItemLabel.FIELD_HEADING,
+    DocItemLabel.FIELD_HINT,
 }
 
 DOCUMENT_TOKENS_EXPORT_LABELS = DEFAULT_EXPORT_LABELS.copy()
@@ -1684,6 +1689,10 @@ class TextItem(DocItem):
         DocItemLabel.REFERENCE,
         DocItemLabel.TEXT,
         DocItemLabel.EMPTY_VALUE,
+        DocItemLabel.FIELD_KEY,
+        DocItemLabel.FIELD_VALUE,
+        DocItemLabel.FIELD_HINT,
+        DocItemLabel.FIELD_HEADING,
     ]
 
     orig: str  # untreated representation
@@ -2533,6 +2542,28 @@ class FormItem(FloatingItem):
     graph: GraphData
 
 
+class FieldHeading(TextItem):
+    label: typing.Literal[DocItemLabel.FIELD_HEADING] = DocItemLabel.FIELD_HEADING
+    level: LevelNumber = 1
+
+
+class FieldItem(GroupItem):
+    label: typing.Literal[GroupLabel.FIELD_ITEM] = GroupLabel.FIELD_ITEM
+
+
+class FieldRegionItem(DocItem):
+    label: typing.Literal[DocItemLabel.FIELD_REGION] = DocItemLabel.FIELD_REGION
+
+
+class FieldKey(TextItem):
+    label: typing.Literal[DocItemLabel.FIELD_KEY] = DocItemLabel.FIELD_KEY
+
+
+class FieldValue(TextItem):
+    label: typing.Literal[DocItemLabel.FIELD_VALUE] = DocItemLabel.FIELD_VALUE
+    kind: typing.Literal["read_only", "fillable", "filled", "partially_filled"] = "read_only"
+
+
 ContentItem = Annotated[
     Union[
         TextItem,
@@ -2544,6 +2575,7 @@ ContentItem = Annotated[
         PictureItem,
         TableItem,
         KeyValueItem,
+        FieldRegionItem,
     ],
     Field(discriminator="label"),
 ]
@@ -2579,14 +2611,38 @@ class DoclingDocument(BaseModel):
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
-    groups: list[Union[ListGroup, InlineGroup, GroupItem]] = []
-    texts: list[Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]] = []
+    groups: list[Union[ListGroup, InlineGroup, FieldItem, GroupItem]] = []
+    texts: list[
+        Union[
+            TitleItem,
+            SectionHeaderItem,
+            ListItem,
+            CodeItem,
+            FormulaItem,
+            FieldHeading,
+            FieldKey,
+            FieldValue,
+            TextItem,
+        ]
+    ] = []
     pictures: list[PictureItem] = []
     tables: list[TableItem] = []
     key_value_items: list[KeyValueItem] = []
     form_items: list[FormItem] = []
+    field_regions: list[FieldRegionItem] = []
 
     pages: dict[int, PageItem] = {}  # empty as default
+
+    @model_serializer(mode="wrap")
+    def _custom_pydantic_serialize(self, handler: SerializerFunctionWrapHandler) -> dict:
+        dumped = handler(self)
+
+        # suppress serializing certain fields when empty:
+        for field in {"field_regions"}:
+            if dumped.get(field) == []:
+                del dumped[field]
+
+        return dumped
 
     @model_validator(mode="before")
     @classmethod
@@ -2603,6 +2659,44 @@ class DoclingDocument(BaseModel):
                 ]:
                     item["content_layer"] = "furniture"
         return data
+
+    def _migrate_forms_to_field_regions(self) -> Self:
+        """Migrate the forms field to field regions."""
+
+        to_delete: list[NodeItem] = []
+
+        for item, _ in self.iterate_items():
+            if isinstance(item, FormItem | KeyValueItem):
+                to_delete.append(item)
+
+                visited: set[str] = set()
+                outgoing_links: dict[int, list[int]] = {}
+
+                kvm = FieldRegionItem(self_ref="#")
+                self.insert_item_after_sibling(new_item=kvm, sibling=item)
+
+                for link in item.graph.links:
+                    if link.label == GraphLinkLabel.TO_VALUE:
+                        key_cell = item.graph.cells[link.source_cell_id]
+                        value_cell = item.graph.cells[link.target_cell_id]
+                    elif link.label == GraphLinkLabel.TO_KEY:
+                        value_cell = item.graph.cells[link.source_cell_id]
+                        key_cell = item.graph.cells[link.target_cell_id]
+
+                    # check if we have already seen this key-value pair
+                    if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
+                        visited.add(key_val_id)
+                        outgoing_links.setdefault(key_cell.cell_id, []).append(value_cell.cell_id)
+
+                for key_cell_id, value_cell_ids in outgoing_links.items():
+                    kve = self.add_field_item(parent=kvm)
+                    self.add_field_key(text=item.graph.cells[key_cell_id].text, parent=kve)
+                    for value_cell_id in value_cell_ids:
+                        self.add_field_value(text=item.graph.cells[value_cell_id].text, parent=kve)
+
+        self.delete_items(node_items=to_delete)
+
+        return self
 
     # ---------------------------
     # Public Manipulation methods
@@ -2750,6 +2844,17 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.form_items.append(item)
+
+        elif isinstance(item, FieldRegionItem):
+            item_label = "field_regions"
+            item_index = len(self.field_regions)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.field_regions.append(item)
 
         elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
@@ -3151,6 +3256,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         *,
         source: Optional[SourceType] = None,
+        **kwargs: Any,
     ):
         """add_text.
 
@@ -3189,12 +3295,12 @@ class DoclingDocument(BaseModel):
             return self.add_heading(
                 text=text,
                 orig=orig,
-                # NOTE: we do not / cannot pass the level here, lossy path..
                 prov=prov,
                 parent=parent,
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                **kwargs,
             )
 
         elif label in [DocItemLabel.CODE]:
@@ -3216,6 +3322,39 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+            )
+        elif label in [DocItemLabel.FIELD_HEADING]:
+            return self.add_field_heading(
+                text=text,
+                orig=orig,
+                prov=prov,
+                parent=parent,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                **kwargs,
+            )
+        elif label in [DocItemLabel.FIELD_KEY]:
+            return self.add_field_key(
+                text=text,
+                orig=orig,
+                prov=prov,
+                parent=parent,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                **kwargs,
+            )
+        elif label in [DocItemLabel.FIELD_VALUE]:
+            return self.add_field_value(
+                text=text,
+                orig=orig,
+                prov=prov,
+                parent=parent,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                **kwargs,
             )
 
         else:
@@ -3617,6 +3756,202 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return form_item
+
+    def add_field_region(
+        self,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+    ) -> FieldRegionItem:
+        """add_field_region.
+
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        key_value_index = len(self.field_regions)
+        cref = f"#/field_regions/{key_value_index}"
+
+        kv_item = FieldRegionItem(
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if prov:
+            kv_item.prov.append(prov)
+
+        self.field_regions.append(kv_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return kv_item
+
+    def add_field_heading(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        level: LevelNumber = 1,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        """add_kv_heading.
+
+        :param label: DocItemLabel:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param level: LevelNumber:  (Default value = 1)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        item = FieldHeading(
+            level=level,
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.texts.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
+
+    def add_field_item(
+        self,
+        name: Optional[str] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+    ) -> FieldItem:
+        """add_kv_entry."""
+        _parent = parent or self.body
+        cref = f"#/groups/{len(self.groups)}"
+        group = FieldItem(self_ref=cref, parent=_parent.get_ref())
+        if name is not None:
+            group.name = name
+        if content_layer:
+            group.content_layer = content_layer
+
+        self.groups.append(group)
+        _parent.children.append(RefItem(cref=cref))
+        return group
+
+    def add_field_key(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        """add_field_key.
+
+        :param label: DocItemLabel:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param level: LevelNumber:  (Default value = 1)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        item = FieldKey(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.texts.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
+
+    def add_field_value(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        kind: Optional[typing.Literal["read_only", "fillable"]] = "read_only",
+    ):
+        """add_field_value.
+
+        :param label: DocItemLabel:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param level: LevelNumber:  (Default value = 1)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        :param kind: Optional[typing.Literal["read_only", "fillable", "fillable_with_hint"]]:  (Default value = "read_only")
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        item = FieldValue(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            formatting=formatting,
+            hyperlink=hyperlink,
+            kind=kind,
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.texts.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
 
     # ---------------------------
     # Node Item Insertion Methods
@@ -5288,6 +5623,7 @@ class DoclingDocument(BaseModel):
             "footnote": DocItemLabel.FOOTNOTE,
             "code": DocItemLabel.CODE,
             "key_value_region": DocItemLabel.KEY_VALUE_REGION,
+            "key_value_map": DocItemLabel.FIELD_REGION,
         }
 
         doc = DoclingDocument(name=document_name)
@@ -6163,6 +6499,7 @@ class DoclingDocument(BaseModel):
         tables: list[TableItem] = []
         key_value_items: list[KeyValueItem] = []
         form_items: list[FormItem] = []
+        key_value_maps: list[FieldRegionItem] = []
 
         pages: dict[int, PageItem] = {}
 
@@ -6307,6 +6644,7 @@ class DoclingDocument(BaseModel):
         self.tables = doc_index.tables
         self.key_value_items = doc_index.key_value_items
         self.form_items = doc_index.form_items
+        self.field_regions = doc_index.key_value_maps
         self.pages = doc_index.pages
         self.name = doc_index.get_name()
 

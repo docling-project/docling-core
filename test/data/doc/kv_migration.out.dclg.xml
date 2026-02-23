@@ -1,0 +1,24 @@
+<doclang version="1.0.0">
+  <text>Hello, world!</text>
+  <field_region>
+    <field_item>
+      <key>Common name</key>
+      <value class="read_only">Duck</value>
+    </field_item>
+    <field_item>
+      <key>Distribution package</key>
+      <value class="read_only">docling</value>
+      <value class="read_only">docling-core</value>
+    </field_item>
+  </field_region>
+  <text>Some more text...</text>
+  <field_region>
+    <field_item>
+      <key>Color</key>
+      <value class="read_only">Orange</value>
+      <value class="read_only">Black</value>
+      <value class="read_only">White</value>
+    </field_item>
+  </field_region>
+  <text>The end.</text>
+</doclang>

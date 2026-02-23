@@ -1,0 +1,19 @@
+<doclang version="1.0.0">
+  <field_region>
+    <text>
+      <content>This certificate applies to </content>
+      <field_item>
+        <value class="fillable"></value>
+      </field_item>
+      <content><![CDATA[ percent of Buyer's purchases from ]]></content>
+      <field_item>
+        <value class="fillable"></value>
+      </field_item>
+      <content> (name, address, and employer idenficiation number of seller) as follows (complete as applicable): </content>
+      <field_item>
+        <value class="fillable"></value>
+      </field_item>
+.
+    </text>
+  </field_region>
+</doclang>

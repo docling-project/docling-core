@@ -1,0 +1,40 @@
+<doclang version="1.0.0">
+  <field_region>
+    <field_item>
+      <key>
+        <floating_group class="picture"></floating_group>
+      </key>
+      <value class="read_only">+123-456-7890</value>
+    </field_item>
+    <field_item>
+      <key>
+        <floating_group class="picture"></floating_group>
+      </key>
+      <value class="read_only">hello@example.com</value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <text>
+      <field_item>
+        <key>
+          <content>Invoice No: </content>
+        </key>
+        <value class="read_only">222</value>
+      </field_item>
+    </text>
+    <text>
+      <field_item>
+        <key>
+          <content>Date: </content>
+        </key>
+        <value class="read_only">02 May, 2021</value>
+      </field_item>
+    </text>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>Administrator</key>
+      <value class="read_only">John Doe</value>
+    </field_item>
+  </field_region>
+</doclang>

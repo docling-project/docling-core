@@ -63,10 +63,17 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
-from docling_core.types.doc.document import FormulaItem, RichTableCell
+from docling_core.types.doc.document import (
+    FieldHeading,
+    FieldValue,
+    FormulaItem,
+    GroupItem,
+    RichTableCell,
+)
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
+    GroupLabel,
     PictureClassificationLabel,
 )
 
@@ -355,16 +362,22 @@ class DoclangToken(str, Enum):
     PAGE_FOOTER = "page_footer"
     WATERMARK = "watermark"
     PICTURE = "picture"
-    FORM = "form"
-    FORM_ITEM = "form_item"
-    FORM_HEADING = "form_heading"
+    # FORM = "form"
+    # FORM_ITEM = "form_item"
+    # FORM_HEADING = "form_heading"
     FORM_TEXT = "form_text"
-    HINT = "hint"
+    # HINT = "hint"
     FORMULA = "formula"
     CODE = "code"
     LIST_TEXT = "list_text"
     CHECKBOX = "checkbox"
     OTSL = "otsl"  # this will take care of the structure in the table.
+    FIELD_REGION = "field_region"
+    FIELD_ITEM = "field_item"
+    FIELD_KEY = "key"
+    FIELD_VALUE = "value"
+    FIELD_HEADING = "field_heading"
+    FIELD_HINT = "hint"
 
     # Grouping
     SECTION = "section"
@@ -398,9 +411,9 @@ class DoclangToken(str, Enum):
     XCEL = "xcel"
     NL = "nl"
     # -- Forms
-    KEY = "key"
+    # KEY = "key"
     IMPLICIT_KEY = "implicit_key"
-    VALUE = "value"
+    # VALUE = "value"
 
     # Continuation
     THREAD = "thread"
@@ -465,7 +478,8 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.SECOND: {DoclangAttributeKey.VALUE},
         DoclangToken.CENTISECOND: {DoclangAttributeKey.VALUE},
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL},
-        DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL},
+        # DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL},
+        DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.CHECKBOX: {DoclangAttributeKey.CLASS},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL},
         DoclangToken.LIST: {DoclangAttributeKey.ORDERED},
@@ -530,7 +544,8 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.CENTISECOND: {DoclangAttributeKey.VALUE: (0, 99)},
         # Levels (N ≥ 1)
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
-        DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
+        # DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
+        DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL: (1, 6)},
         # Continuation markers (id length constraints)
         DoclangToken.THREAD: {DoclangAttributeKey.ID: (1, 10)},
@@ -591,11 +606,15 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.PAGE_FOOTER: DoclangCategory.SEMANTIC,
         DoclangToken.WATERMARK: DoclangCategory.SEMANTIC,
         DoclangToken.PICTURE: DoclangCategory.SEMANTIC,
-        DoclangToken.FORM: DoclangCategory.SEMANTIC,
-        DoclangToken.FORM_ITEM: DoclangCategory.SEMANTIC,
-        DoclangToken.FORM_HEADING: DoclangCategory.SEMANTIC,
-        DoclangToken.FORM_TEXT: DoclangCategory.SEMANTIC,
-        DoclangToken.HINT: DoclangCategory.SEMANTIC,
+        # DoclangToken.FORM: DoclangCategory.SEMANTIC,
+        # DoclangToken.FORM_ITEM: DoclangCategory.SEMANTIC,
+        # DoclangToken.FORM_HEADING: DoclangCategory.SEMANTIC,
+        # DoclangToken.FORM_TEXT: DoclangCategory.SEMANTIC,
+        # DoclangToken.HINT: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_REGION: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_ITEM: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_HEADING: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_HINT: DoclangCategory.SEMANTIC,
         DoclangToken.FORMULA: DoclangCategory.SEMANTIC,
         DoclangToken.CODE: DoclangCategory.SEMANTIC,
         DoclangToken.LIST_TEXT: DoclangCategory.SEMANTIC,
@@ -626,9 +645,11 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.UCEL: DoclangCategory.STRUCTURAL,
         DoclangToken.XCEL: DoclangCategory.STRUCTURAL,
         DoclangToken.NL: DoclangCategory.STRUCTURAL,
-        DoclangToken.KEY: DoclangCategory.STRUCTURAL,
+        # DoclangToken.KEY: DoclangCategory.STRUCTURAL,
         DoclangToken.IMPLICIT_KEY: DoclangCategory.STRUCTURAL,
-        DoclangToken.VALUE: DoclangCategory.STRUCTURAL,
+        # DoclangToken.VALUE: DoclangCategory.STRUCTURAL,
+        DoclangToken.FIELD_KEY: DoclangCategory.STRUCTURAL,
+        DoclangToken.FIELD_VALUE: DoclangCategory.STRUCTURAL,
         # Continuation
         DoclangToken.THREAD: DoclangCategory.CONTINUATION,
         DoclangToken.H_THREAD: DoclangCategory.CONTINUATION,
@@ -1454,6 +1475,7 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         #   free of type-based special casing.
         wrap_open_token: Optional[str]
         selected_token: str = ""
+        tok: DoclangToken | None = None
         if isinstance(item, SectionHeaderItem):
             wrap_open_token = DoclangVocabulary.create_heading_token(level=item.level)
         elif isinstance(item, ListItem):
@@ -1474,6 +1496,19 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             selected_token = DoclangVocabulary.create_checkbox_token(
                 selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
             )
+        elif isinstance(item, TextItem) and (
+            tok := {
+                DocItemLabel.FIELD_KEY: DoclangToken.FIELD_KEY,
+                DocItemLabel.FIELD_VALUE: DoclangToken.FIELD_VALUE,
+                DocItemLabel.FIELD_HEADING: DoclangToken.FIELD_HEADING,
+                DocItemLabel.FIELD_HINT: DoclangToken.FIELD_HINT,
+            }.get(item.label)
+        ):
+            wrap_open_token = f"<{tok.value}>"
+            if isinstance(item, FieldValue):
+                wrap_open_token = f'<{tok.value} class="{item.kind}">'
+            elif isinstance(item, FieldHeading):
+                wrap_open_token = f'<{tok.value} level="{item.level}">'
         elif isinstance(item, TextItem) and (
             item.label
             in [  # FIXME: Catch all ...
@@ -1962,9 +1997,20 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize unsupported nodes by concatenating their textual parts."""
+        delim = _get_delim(params=DoclangParams(**kwargs))
         if isinstance(item, ListGroup | InlineGroup):
             parts = doc_serializer.get_parts(item=item, **kwargs)
-            text_res = "\n".join([p.text for p in parts if p.text])
+            text_res = delim.join([p.text for p in parts if p.text])
+            return create_ser_result(text=text_res, span_source=parts)
+        elif isinstance(item, DocItem | GroupItem) and (
+            tok := {
+                DocItemLabel.FIELD_REGION: DoclangToken.FIELD_REGION,
+                GroupLabel.FIELD_ITEM: DoclangToken.FIELD_ITEM,
+            }.get(item.label)
+        ):
+            parts = doc_serializer.get_parts(item=item, **kwargs)
+            text_res = delim.join([p.text for p in parts if p.text])
+            text_res = _wrap(text=text_res, wrap_tag=tok.value)
             return create_ser_result(text=text_res, span_source=parts)
         return create_ser_result()
 
@@ -1982,6 +2028,15 @@ class DoclangKeyValueSerializer(BaseKeyValueSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Return an empty result for key/value items."""
+        # parts = []
+        # for child in item.graph.cells:
+        #     parts.append(create_ser_result(text=f"<{child.label.value}>{child.text}</{child.label.value}>"))
+        #     if child.item_ref:
+        #         item_ref = child.item_ref.resolve(doc)
+        #         if isinstance(item_ref, TextItem):
+        #             parts.extend(doc_serializer.get_parts(item=item_ref, **kwargs))
+        # stuff = "".join([p.text for p in parts if p.text])
+        # return create_ser_result(text=f"<kv_region>{stuff}</kv_region>", span_source=item)
         return create_ser_result()
 
 
