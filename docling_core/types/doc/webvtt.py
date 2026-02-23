@@ -644,6 +644,8 @@ class WebVTTFile(BaseModel):
         raw_blocks = re.split(r"\n\s*\n", body.strip())
         cues: list[WebVTTCueBlock] = []
         for block in raw_blocks:
+            if not block.strip():
+                continue
             try:
                 cues.append(WebVTTCueBlock.parse(block))
             except ValueError as e:
