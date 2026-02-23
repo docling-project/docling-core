@@ -1,19 +1,19 @@
 <doclang version="1.0.0">
-  <kv_map>
+  <form>
     <text>
       <content>This certificate applies to </content>
-      <kv_entry>
-        <kv_value class="fillable"></kv_value>
-      </kv_entry>
+      <form_item>
+        <value class="fillable"></value>
+      </form_item>
       <content><![CDATA[ percent of Buyer's purchases from ]]></content>
-      <kv_entry>
-        <kv_value class="fillable"></kv_value>
-      </kv_entry>
+      <form_item>
+        <value class="fillable"></value>
+      </form_item>
       <content> (name, address, and employer idenficiation number of seller) as follows (complete as applicable): </content>
-      <kv_entry>
-        <kv_value class="fillable"></kv_value>
-      </kv_entry>
+      <form_item>
+        <value class="fillable"></value>
+      </form_item>
 .
     </text>
-  </kv_map>
+  </form>
 </doclang>

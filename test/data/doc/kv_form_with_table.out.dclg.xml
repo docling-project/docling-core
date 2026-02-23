@@ -1,5 +1,5 @@
 <doclang version="1.0.0">
-  <kv_map>
+  <form>
     <floating_group class="table">
       <otsl>
         <ched/>
@@ -10,32 +10,32 @@
         Gain or loss
         <nl/>
         <fcel/>
-        <kv_entry>
-          <kv_value class="fillable"></kv_value>
-        </kv_entry>
+        <form_item>
+          <value class="fillable"></value>
+        </form_item>
         <fcel/>
-        <kv_entry>
-          <kv_value class="fillable">gain</kv_value>
-        </kv_entry>
+        <form_item>
+          <value class="fillable">gain</value>
+        </form_item>
         <fcel/>
-        <kv_entry>
-          <kv_value class="fillable">150,997</kv_value>
-        </kv_entry>
+        <form_item>
+          <value class="fillable">150,997</value>
+        </form_item>
         <nl/>
         <fcel/>
-        <kv_entry>
-          <kv_value class="fillable"></kv_value>
-        </kv_entry>
+        <form_item>
+          <value class="fillable"></value>
+        </form_item>
         <fcel/>
-        <kv_entry>
-          <kv_value class="fillable">loss</kv_value>
-        </kv_entry>
+        <form_item>
+          <value class="fillable">loss</value>
+        </form_item>
         <fcel/>
-        <kv_entry>
-          <kv_value class="fillable">114,676</kv_value>
-        </kv_entry>
+        <form_item>
+          <value class="fillable">114,676</value>
+        </form_item>
         <nl/>
       </otsl>
     </floating_group>
-  </kv_map>
+  </form>
 </doclang>

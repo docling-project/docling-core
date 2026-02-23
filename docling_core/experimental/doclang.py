@@ -372,12 +372,12 @@ class DoclangToken(str, Enum):
     LIST_TEXT = "list_text"
     CHECKBOX = "checkbox"
     OTSL = "otsl"  # this will take care of the structure in the table.
-    KV_MAP = "kv_map"
-    KV_ENTRY = "kv_entry"
-    KV_KEY = "kv_key"
-    KV_VALUE = "kv_value"
-    KV_HEADING = "kv_heading"
-    KV_HINT = "kv_hint"
+    KV_MAP = "form"
+    KV_ENTRY = "form_item"
+    KV_KEY = "key"
+    KV_VALUE = "value"
+    KV_HEADING = "form_heading"
+    KV_HINT = "hint"
 
     # Grouping
     SECTION = "section"

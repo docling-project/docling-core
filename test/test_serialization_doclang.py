@@ -965,6 +965,47 @@ def test_kv_advanced_inline():
     exp_file = Path("./test/data/doc/kv_advanced_inline.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
+def test_kv_nested():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    prov = None
+    image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+
+    # first key-value map
+    kvm = doc.add_key_value_map()
+
+    kve = doc.add_kv_entry(parent=kvm)
+    doc.add_kv_key(text="A", parent=kve)
+    v = doc.add_kv_value(text="hi", parent=kve)
+    inline = doc.add_inline_group(parent=v)
+    kvm_inner = doc.add_key_value_map(parent=inline)
+    kve_inner = doc.add_kv_entry(parent=kvm_inner)
+    doc.add_kv_key(text="AA", parent=kve_inner)
+    doc.add_kv_value(text="AAA", parent=kve_inner)
+    kve_inner = doc.add_kv_entry(parent=kvm_inner)
+    doc.add_kv_key(text="AB", parent=kve_inner)
+    doc.add_kv_value(text="ABA", parent=kve_inner)
+
+
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(
+            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
+            # pretty_indentation=None,
+            # escape_mode=EscapeMode.CDATA_ALWAYS,
+            # image_mode=ImageRefMode.PLACEHOLDER,
+        ),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/kv_nested.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
 def test_kv_form_with_table():
     doc = DoclingDocument(name="")
     doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
