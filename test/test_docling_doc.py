@@ -49,6 +49,7 @@ from docling_core.types.doc import (
     TitleItem,
 )
 from docling_core.types.doc.document import CURRENT_VERSION, PageItem
+from docling_core.types.doc.webvtt import WebVTTFile
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -689,6 +690,14 @@ def _test_export_methods(doc: DoclingDocument, filename: str, page_break_placeho
             # print(dt_pages_pred)
             _verify_regression_test(dt_pages_pred, filename=filename, ext="pages.dt")
 
+    # Test WebVTT export ...
+    # Note: Documents without TrackSource will result in empty WebVTT, but this is valid
+    vtt_pred = doc.export_to_vtt()
+    _verify_regression_test(vtt_pred, filename=filename, ext="vtt")
+    parsed = WebVTTFile.parse(vtt_pred)
+    assert isinstance(parsed, WebVTTFile)
+    assert not parsed.cue_blocks
+
     # Test Tables export ...
     for table in doc.tables:
         table.export_to_markdown()
@@ -1113,6 +1122,13 @@ def test_save_to_disk(sample_doc):
         artifacts_dir=image_dir,
         image_mode=ImageRefMode.REFERENCED,
     )
+    _verify_saved_output(filename=filename, paths=paths)
+
+    ### WebVTT
+    # Note: Documents without TrackSource will result in empty WebVTT, but this is valid
+
+    filename = test_dir / "constructed_doc.vtt"
+    sample_doc.save_as_vtt(filename=filename)
     _verify_saved_output(filename=filename, paths=paths)
 
     assert True
@@ -1967,6 +1983,31 @@ def test_meta_migration_warnings():
         _ = doc.pictures[0].annotations
     with pytest.warns(DeprecationWarning):
         _ = doc.tables[0].annotations
+
+
+@pytest.mark.parametrize(
+    "example_num",
+    [1, 2, 3, 4, 5],
+)
+def test_webvtt_export(example_num):
+    """Test WebVTT export with example files that contain TrackSource data."""
+    json_file = Path(f"test/data/doc/webvtt_example_{example_num:02d}.json")
+    gt_vtt_file = json_file.with_suffix(".gt.vtt")
+
+    # Load the document
+    doc = DoclingDocument.load_from_json(json_file)
+
+    # Export to WebVTT
+    vtt_output = doc.export_to_vtt()
+
+    # Verify against ground truth
+    if GEN_TEST_DATA:
+        with open(gt_vtt_file, "w", encoding="utf-8") as fw:
+            fw.write(f"{vtt_output}\n")
+    else:
+        with open(gt_vtt_file, encoding="utf-8") as fr:
+            gt_vtt = fr.read().rstrip()
+        assert vtt_output == gt_vtt, f"WebVTT output does not match ground truth for example {example_num:02d}"
 
 
 def test_docitem_comments_field():
