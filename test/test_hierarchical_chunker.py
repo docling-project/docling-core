@@ -6,10 +6,10 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
     DocChunk,
+    TripletTableSerializer,
 )
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc.document import DoclingDocument, PictureItem, TextItem
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc import DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -152,3 +152,30 @@ def test_traverse_pictures():
         f"With traverse_pictures=True, more doc_items should be included in chunks. "
         f"Got {total_items_traverse} vs {total_items_default}"
     )
+
+
+def test_triplet_table_serializer_single_column():
+    """Test TripletTableSerializer with a single-column table."""
+
+    # Create a document with a single-column table
+    doc = DoclingDocument(name="test_single_column")
+    table_data = TableData(num_cols=1)
+    table_data.add_row(["Country"])  # Header row
+    table_data.add_row(["Italy"])
+    table_data.add_row(["Canada"])
+    table_data.add_row(["Switzerland"])
+    doc.add_table(data=table_data)
+
+    serializer = ChunkingDocSerializer(doc=doc)
+    table_serializer = TripletTableSerializer()
+    table_item = next(iter(doc.iterate_items()))[0]
+
+    result = table_serializer.serialize(
+        item=table_item,
+        doc_serializer=serializer,
+        doc=doc,
+    )
+
+    expected = "Country = Italy. Country = Canada. Country = Switzerland"
+    assert result.text == expected, f"Expected '{expected}', got '{result.text}'"
+

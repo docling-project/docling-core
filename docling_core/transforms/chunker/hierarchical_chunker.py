@@ -66,24 +66,35 @@ class TripletTableSerializer(BaseTableSerializer):
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             table_df = item.export_to_dataframe(doc)
-            if table_df.shape[0] >= 1 and table_df.shape[1] >= 2:
-                # copy header as first row and shift all rows by one
-                table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
-                table_df.index = table_df.index + 1
-                table_df = table_df.sort_index()
+            if table_df.shape[0] >= 1 and table_df.shape[1] >= 1:
+                # Handle single-column tables
+                if table_df.shape[1] == 1:
+                    # For single-column tables, use first row as column name
+                    # and remaining rows as values
+                    col_name = str(table_df.iloc[0, 0]).strip()
+                    values = [str(val).strip() for val in table_df.iloc[1:, 0].to_list()]
+                    table_text_parts = [f"{col_name} = {val}" for val in values]
+                    table_text = ". ".join(table_text_parts)
+                    parts.append(create_ser_result(text=table_text, span_source=item))
+                else:
+                    # For multi-column tables
+                    # copy header as first row and shift all rows by one
+                    table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
+                    table_df.index = table_df.index + 1
+                    table_df = table_df.sort_index()
 
-                rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
-                cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
+                    rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
+                    cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
 
-                nrows = table_df.shape[0]
-                ncols = table_df.shape[1]
-                table_text_parts = [
-                    f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
-                    for i in range(1, nrows)
-                    for j in range(1, ncols)
-                ]
-                table_text = ". ".join(table_text_parts)
-                parts.append(create_ser_result(text=table_text, span_source=item))
+                    nrows = table_df.shape[0]
+                    ncols = table_df.shape[1]
+                    table_text_parts = [
+                        f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
+                        for i in range(1, nrows)
+                        for j in range(1, ncols)
+                    ]
+                    table_text = ". ".join(table_text_parts)
+                    parts.append(create_ser_result(text=table_text, span_source=item))
 
         text_res = "\n\n".join([r.text for r in parts])
 
