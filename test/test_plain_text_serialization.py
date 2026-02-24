@@ -47,6 +47,15 @@ def test_plain_text_no_hyperlink_syntax(sample_doc):
     assert "](" not in result
 
 
+def test_plain_text_deprecated_delim(sample_doc, caplog):
+    """Passing a custom delim emits a deprecation warning and is ignored."""
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        sample_doc.export_to_text(delim="\n")
+    assert "delim" in caplog.text
+
+
 def test_plain_text_from_json():
     """Serializing a real document from JSON produces clean plain text."""
     src = Path("./test/data/doc/activities.json")
