@@ -16,13 +16,12 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownTableSerializer,
     OrigListItemMarkerMode,
 )
-from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer
+from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DescriptionAnnotation,
     DoclingDocument,
-    PictureItem,
     RefItem,
     TableCell,
     TableData,
@@ -652,21 +651,45 @@ def test_html_inline_and_formatting():
 # WebVTT tests
 # ===============================
 
-
 @pytest.mark.parametrize(
-    "file_name",
-    [
-        "webvtt_example_01",
-        "webvtt_example_02",
-        "webvtt_example_03",
-        "webvtt_example_04",
-        "webvtt_example_05",
-    ],
+    "example_num",
+    [1, 2, 3, 4, 5],
 )
-def test_webvtt(file_name):
-    src = Path(f"./test/data/doc/{file_name}.json")
+def test_webvtt(example_num):
+    src = Path(f"test/data/doc/webvtt_example_{example_num:02d}.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = WebVTTDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.vtt"), actual=actual)
+
+
+def test_webvtt_params():
+    """Test WebVTT serialization with WebVTTParams."""
+    src = Path("./test/data/doc/webvtt_example_01.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    # Test with omit_hours_if_zero=True
+    ser = WebVTTDocSerializer(doc=doc, params=WebVTTParams(omit_hours_if_zero=True))
+    actual = ser.serialize().text
+    assert "00:11.000 --> 00:13.000" in actual
+
+    # Test with omit_voice_end=True
+    ser = WebVTTDocSerializer(doc=doc, params=WebVTTParams(omit_voice_end=True))
+    actual = ser.serialize().text
+    assert "</v>" not in actual
+
+    # Test with both parameters enabled
+    ser = WebVTTDocSerializer(
+        doc=doc,
+        params=WebVTTParams(omit_hours_if_zero=True, omit_voice_end=True)
+    )
+    actual = ser.serialize().text
+
+    assert "00:11.000 --> 00:13.000" in actual
+    assert "</v>" not in actual
+
+    ser_default = WebVTTDocSerializer(doc=doc, params=WebVTTParams())
+    actual_default = ser_default.serialize().text
+    assert len(actual) <= len(actual_default) or actual != actual_default
+
