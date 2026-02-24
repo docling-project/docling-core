@@ -65,7 +65,7 @@ class TripletTableSerializer(BaseTableSerializer):
             parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            table_df = item.export_to_dataframe(
+            table_df = item._export_to_dataframe_with_options(
                 doc,
                 doc_serializer=doc_serializer,
                 **kwargs,

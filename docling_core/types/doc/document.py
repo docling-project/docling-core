@@ -2172,12 +2172,18 @@ class TableItem(FloatingItem):
 
             return self
 
-    def export_to_dataframe(
+    def export_to_dataframe(self, doc: Optional["DoclingDocument"] = None) -> pd.DataFrame:
+        """Export the table as a Pandas DataFrame."""
+
+        return self._export_to_dataframe_with_options(doc=doc)
+
+    def _export_to_dataframe_with_options(
         self,
         doc: Optional["DoclingDocument"] = None,
         **kwargs: Any,
     ) -> pd.DataFrame:
-        """Export the table as a Pandas DataFrame."""
+        """Export the table as a Pandas DataFrame with contextual named arguments."""
+
         if doc is None:
             _logger.warning("Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated.")
 
