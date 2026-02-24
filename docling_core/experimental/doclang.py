@@ -1011,6 +1011,9 @@ class DoclangParams(CommonParams):
     pretty_indentation: Optional[str] = 2 * " "  # None means minimized serialization, "" means no indentation
 
     preserve_empty_non_selfclosing: bool = True
+    # When True, text items that produce no content (no text, no location) are
+    # completely omitted rather than emitting an empty open/close tag pair.
+    suppress_empty_elements: bool = False
     # XML compliance: escape special characters in text content
     escape_mode: EscapeMode = EscapeMode.CDATA_WHEN_NEEDED
     content_wrapping_mode: WrapMode = WrapMode.WRAP_WHEN_NEEDED
@@ -1544,7 +1547,8 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
 
         text_res = "".join(parts)
         if wrap_open_token is not None and not (is_inline_scope and item.label == DocItemLabel.TEXT):
-            text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
+            if text_res or not params.suppress_empty_elements:
+                text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
         return create_ser_result(text=text_res, span_source=item)
 
 
@@ -1723,6 +1727,8 @@ class DoclangPictureSerializer(BasePictureSerializer):
         # Compose final structure for picture group:
         # <floating_group class="picture"> [<caption>] <picture>...</picture> [<footnote>...] </floating_group>
         composed_inner = f"{caption_text}{picture_text}{footnote_text}"
+        if not composed_inner and params.suppress_empty_elements:
+            return create_ser_result()
         text_res = f"{open_token}{composed_inner}{close_token}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -1881,6 +1887,8 @@ class DoclangTableSerializer(BaseTableSerializer):
                 res_parts.append(ftn_res)
 
         composed_inner = f"{caption_text}{otsl_payload}{footnote_text}"
+        if not composed_inner and params.suppress_empty_elements:
+            return create_ser_result()
         text_res = f"{open_token}{composed_inner}{close_token}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -1945,7 +1953,8 @@ class DoclangInlineSerializer(BaseInlineSerializer):
 
         if item.parent is None or not isinstance(item.parent.resolve(doc), TextItem):
             # if "unwrapped", wrap in <text>...</text>
-            text_res = _wrap(text=text_res, wrap_tag=DoclangToken.TEXT.value)
+            if text_res or not params.suppress_empty_elements:
+                text_res = _wrap(text=text_res, wrap_tag=DoclangToken.TEXT.value)
         return create_ser_result(text=text_res, span_source=parts)
 
 
