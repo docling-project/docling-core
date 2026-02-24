@@ -644,6 +644,8 @@ class WebVTTFile(BaseModel):
         raw_blocks = re.split(r"\n\s*\n", body.strip())
         cues: list[WebVTTCueBlock] = []
         for block in raw_blocks:
+            if not block.strip():
+                continue
             try:
                 cues.append(WebVTTCueBlock.parse(block))
             except ValueError as e:
@@ -663,11 +665,13 @@ class WebVTTFile(BaseModel):
         """Return the number of cue blocks."""
         return len(self.cue_blocks)
 
-    def format(self, omit_hours_if_zero: bool = False) -> str:
+    def format(self, omit_hours_if_zero: bool = False, omit_voice_end: bool = False) -> str:
         """Format the WebVTT file as a string.
 
         Args:
             omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
+            omit_voice_end: If True and cue blocks have a WebVTT cue voice span as
+                the only component, omit the voice end tag for brevity.
 
         Returns:
             Formatted WebVTT file string.
@@ -681,7 +685,7 @@ class WebVTTFile(BaseModel):
 
         for cue_block in self.cue_blocks:
             parts.append("\n")
-            parts.append(cue_block.format(omit_hours_if_zero=omit_hours_if_zero))
+            parts.append(cue_block.format(omit_hours_if_zero=omit_hours_if_zero, omit_voice_end=omit_voice_end))
 
         # Remove the trailing newline from the last cue block
         return "".join(parts).rstrip("\n")

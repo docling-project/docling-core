@@ -187,7 +187,7 @@ def test_vtt_cue_commponents() -> None:
 def test_webvttcueblock_parse() -> None:
     """Test the method parse of _WebVTTCueBlock class."""
     raw: str = (
-        "04:02.500 --> 04:05.000\n" "J’ai commencé le basket à l'âge de 13, 14 ans\n"
+        "04:02.500 --> 04:05.000\n" "J’ai commencé le basket à l'âge de 13, 14 ans\n"  # noqa: RUF001
     )
     block: WebVTTCueBlock = WebVTTCueBlock.parse(raw)
     assert str(block.timings) == "04:02.500 --> 04:05.000"
@@ -196,7 +196,7 @@ def test_webvttcueblock_parse() -> None:
     assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
     assert (
         block.payload[0].component.text
-        == "J’ai commencé le basket à l'âge de 13, 14 ans"
+        == "J’ai commencé le basket à l'âge de 13, 14 ans"  # noqa: RUF001
     )
     assert raw == str(block)
 
