@@ -8,11 +8,21 @@
     <field_item>
       <key>Distribution package</key>
       <value class="read_only">docling</value>
-      <value class="read_only">docling-core</value>
+      <value class="read_only">
+        <location value="5"/>
+        <location value="492"/>
+        <location value="15"/>
+        <location value="502"/>
+        docling-core
+      </value>
     </field_item>
   </field_region>
   <text>Some more text...</text>
   <field_region>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <field_item>
       <key>Color</key>
       <value class="read_only">Orange</value>

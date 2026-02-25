@@ -1,5 +1,9 @@
 <doclang version="1.0.0">
   <field_region>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <field_item>
       <key>A</key>
       <value class="read_only">

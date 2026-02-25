@@ -65,6 +65,8 @@ from docling_core.types.doc import (
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.document import (
     FieldHeading,
+    FieldItem,
+    FieldRegionItem,
     FieldValue,
     FormulaItem,
     GroupItem,
@@ -362,11 +364,6 @@ class DoclangToken(str, Enum):
     PAGE_FOOTER = "page_footer"
     WATERMARK = "watermark"
     PICTURE = "picture"
-    # FORM = "form"
-    # FORM_ITEM = "form_item"
-    # FORM_HEADING = "form_heading"
-    FORM_TEXT = "form_text"
-    # HINT = "hint"
     FORMULA = "formula"
     CODE = "code"
     LIST_TEXT = "list_text"
@@ -410,10 +407,6 @@ class DoclangToken(str, Enum):
     UCEL = "ucel"
     XCEL = "xcel"
     NL = "nl"
-    # -- Forms
-    # KEY = "key"
-    IMPLICIT_KEY = "implicit_key"
-    # VALUE = "value"
 
     # Continuation
     THREAD = "thread"
@@ -606,11 +599,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.PAGE_FOOTER: DoclangCategory.SEMANTIC,
         DoclangToken.WATERMARK: DoclangCategory.SEMANTIC,
         DoclangToken.PICTURE: DoclangCategory.SEMANTIC,
-        # DoclangToken.FORM: DoclangCategory.SEMANTIC,
-        # DoclangToken.FORM_ITEM: DoclangCategory.SEMANTIC,
-        # DoclangToken.FORM_HEADING: DoclangCategory.SEMANTIC,
-        # DoclangToken.FORM_TEXT: DoclangCategory.SEMANTIC,
-        # DoclangToken.HINT: DoclangCategory.SEMANTIC,
         DoclangToken.FIELD_REGION: DoclangCategory.SEMANTIC,
         DoclangToken.FIELD_ITEM: DoclangCategory.SEMANTIC,
         DoclangToken.FIELD_HEADING: DoclangCategory.SEMANTIC,
@@ -645,9 +633,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.UCEL: DoclangCategory.STRUCTURAL,
         DoclangToken.XCEL: DoclangCategory.STRUCTURAL,
         DoclangToken.NL: DoclangCategory.STRUCTURAL,
-        # DoclangToken.KEY: DoclangCategory.STRUCTURAL,
-        DoclangToken.IMPLICIT_KEY: DoclangCategory.STRUCTURAL,
-        # DoclangToken.VALUE: DoclangCategory.STRUCTURAL,
         DoclangToken.FIELD_KEY: DoclangCategory.STRUCTURAL,
         DoclangToken.FIELD_VALUE: DoclangCategory.STRUCTURAL,
         # Continuation
@@ -1997,19 +1982,22 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize unsupported nodes by concatenating their textual parts."""
+        params = DoclangParams(**kwargs)
         delim = _get_delim(params=DoclangParams(**kwargs))
         if isinstance(item, ListGroup | InlineGroup):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = delim.join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
-        elif isinstance(item, DocItem | GroupItem) and (
-            tok := {
-                DocItemLabel.FIELD_REGION: DoclangToken.FIELD_REGION,
-                GroupLabel.FIELD_ITEM: DoclangToken.FIELD_ITEM,
-            }.get(item.label)
-        ):
-            parts = doc_serializer.get_parts(item=item, **kwargs)
+        elif isinstance(item, FieldRegionItem | FieldItem):
+            parts = []
+            # add any location tokens for FieldRegionItem
+            if (is_fri := isinstance(item, FieldRegionItem)) and params.add_location:
+                loc_str = _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
+                if loc_str:
+                    parts.append(create_ser_result(text=loc_str, span_source=item))
+            parts.extend(doc_serializer.get_parts(item=item, **kwargs))
             text_res = delim.join([p.text for p in parts if p.text])
+            tok = DoclangToken.FIELD_REGION if is_fri else DoclangToken.FIELD_ITEM
             text_res = _wrap(text=text_res, wrap_tag=tok.value)
             return create_ser_result(text=text_res, span_source=parts)
         return create_ser_result()
@@ -2028,15 +2016,6 @@ class DoclangKeyValueSerializer(BaseKeyValueSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Return an empty result for key/value items."""
-        # parts = []
-        # for child in item.graph.cells:
-        #     parts.append(create_ser_result(text=f"<{child.label.value}>{child.text}</{child.label.value}>"))
-        #     if child.item_ref:
-        #         item_ref = child.item_ref.resolve(doc)
-        #         if isinstance(item_ref, TextItem):
-        #             parts.extend(doc_serializer.get_parts(item=item_ref, **kwargs))
-        # stuff = "".join([p.text for p in parts if p.text])
-        # return create_ser_result(text=f"<kv_region>{stuff}</kv_region>", span_source=item)
         return create_ser_result()
 
 

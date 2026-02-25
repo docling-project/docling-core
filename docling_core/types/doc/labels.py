@@ -36,17 +36,9 @@ class DocItemLabel(str, Enum):
 
     FIELD_REGION = "field_region"
     FIELD_HEADING = "field_heading"
-    # KV_ENTRY = "kv_entry"
     FIELD_KEY = "field_key"
     FIELD_VALUE = "field_value"
     FIELD_HINT = "field_hint"
-    # KV_MARKER = "kv_marker"
-    # KV_OPTION_RADIO_SELECTED = "kv_option_radio_selected"
-    # KV_OPTION_RADIO_UNSELECTED = "kv_option_radio_unselected"
-    # KV_OPTION_CHECKBOX_SELECTED = "kv_option_checkbox_selected"
-    # KV_OPTION_CHECKBOX_UNSELECTED = "kv_option_checkbox_unselected"
-    # KV_OPTION_DROPDOWN_SELECTED = "kv_option_dropdown_selected"
-    # KV_OPTION_DROPDOWN_UNSELECTED = "kv_option_dropdown_unselected"
 
     def __str__(self):
         """Get string value."""

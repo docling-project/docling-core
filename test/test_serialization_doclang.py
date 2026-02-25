@@ -846,11 +846,11 @@ def test_kv_invoice():
         bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
         charspan=(0, 2),
     )
-    prov = None
+    # prov = None
     image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
 
     # first key-value map
-    kvm = doc.add_field_region()
+    kvm = doc.add_field_region(prov=prov)
 
     # inlined key-value pair
     kve = doc.add_field_item(parent=kvm)
@@ -973,11 +973,11 @@ def test_kv_nested():
         bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
         charspan=(0, 2),
     )
-    prov = None
+    # prov = None
     image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
 
     # first key-value map
-    kvm = doc.add_field_region()
+    kvm = doc.add_field_region(prov=prov)
 
     kve = doc.add_field_item(parent=kvm)
     doc.add_field_key(text="A", parent=kve)
@@ -1073,6 +1073,12 @@ def test_kv_form_with_table():
 
 def test_kv_migration():
     doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
     doc.add_text(label=DocItemLabel.TEXT, text="Hello, world!")
     doc.add_key_values(
         graph=GraphData(
@@ -1123,6 +1129,7 @@ def test_kv_migration():
                     cell_id=6,
                     text="docling-core",
                     orig="docling-core",
+                    prov=prov,
                 ),
             ],
             links=[
@@ -1176,23 +1183,24 @@ def test_kv_migration():
                 GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=3, target_cell_id=0),
             ],
         ),
+        prov=prov,
     )
     doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=doc.body)
 
-    exp_yaml = Path("./test/data/doc/kv_pre_migration.out.yaml")
+    exp_json = Path("./test/data/doc/kv_pre_migration.out.json")
     if GEN_TEST_DATA:
-        doc.save_as_yaml(filename=exp_yaml)
+        doc.save_as_json(filename=exp_json)
     else:
-        exp_doc = DoclingDocument.load_from_yaml(filename=exp_yaml)
+        exp_doc = DoclingDocument.load_from_json(filename=exp_json)
         assert doc == exp_doc
 
     doc._migrate_forms_to_field_regions()
 
-    exp_yaml = Path("./test/data/doc/kv_post_migration.out.yaml")
+    exp_json = Path("./test/data/doc/kv_post_migration.out.json")
     if GEN_TEST_DATA:
-        doc.save_as_yaml(filename=exp_yaml)
+        doc.save_as_json(filename=exp_json)
     else:
-        exp_doc = DoclingDocument.load_from_yaml(filename=exp_yaml)
+        exp_doc = DoclingDocument.load_from_json(filename=exp_json)
         assert doc == exp_doc
 
     ser = DoclangDocSerializer(doc=doc, params=DoclangParams())

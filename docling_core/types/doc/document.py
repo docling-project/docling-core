@@ -2672,7 +2672,14 @@ class DoclingDocument(BaseModel):
                 visited: set[str] = set()
                 outgoing_links: dict[int, list[int]] = {}
 
-                kvm = FieldRegionItem(self_ref="#")
+                kvm = FieldRegionItem(
+                    self_ref="#",
+                    prov=item.prov,
+                    content_layer=item.content_layer,
+                    meta=item.meta,
+                    comments=item.comments,
+                    source=item.source,
+                )
                 self.insert_item_after_sibling(new_item=kvm, sibling=item)
 
                 for link in item.graph.links:
@@ -2690,9 +2697,19 @@ class DoclingDocument(BaseModel):
 
                 for key_cell_id, value_cell_ids in outgoing_links.items():
                     kve = self.add_field_item(parent=kvm)
-                    self.add_field_key(text=item.graph.cells[key_cell_id].text, parent=kve)
+                    key_cell = item.graph.cells[key_cell_id]
+                    self.add_field_key(
+                        text=key_cell.text,
+                        parent=kve,
+                        prov=key_cell.prov,
+                    )
                     for value_cell_id in value_cell_ids:
-                        self.add_field_value(text=item.graph.cells[value_cell_id].text, parent=kve)
+                        value_cell = item.graph.cells[value_cell_id]
+                        self.add_field_value(
+                            text=value_cell.text,
+                            parent=kve,
+                            prov=value_cell.prov,
+                        )
 
         self.delete_items(node_items=to_delete)
 

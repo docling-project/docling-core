@@ -1,5 +1,9 @@
 <doclang version="1.0.0">
   <field_region>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <field_item>
       <key>
         <floating_group class="picture"></floating_group>
@@ -33,8 +37,20 @@
   </field_region>
   <field_region>
     <field_item>
-      <key>Administrator</key>
-      <value class="read_only">John Doe</value>
+      <key>
+        <location value="5"/>
+        <location value="492"/>
+        <location value="15"/>
+        <location value="502"/>
+        Administrator
+      </key>
+      <value class="read_only">
+        <location value="5"/>
+        <location value="492"/>
+        <location value="15"/>
+        <location value="502"/>
+        John Doe
+      </value>
     </field_item>
   </field_region>
 </doclang>
