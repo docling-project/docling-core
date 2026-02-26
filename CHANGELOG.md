@@ -1,3 +1,14 @@
+## [v2.66.0](https://github.com/docling-project/docling-core/releases/tag/v2.66.0) - 2026-02-26
+
+### Feature
+
+* Add WebVTT export and save functionality ([#523](https://github.com/docling-project/docling-core/issues/523)) ([`b8ef7ba`](https://github.com/docling-project/docling-core/commit/b8ef7bad1b7281aca0cc4b8534da62f487da6c8b))
+
+### Fix
+
+* Rich table triplet serialization ([#425](https://github.com/docling-project/docling-core/issues/425)) ([`c566268`](https://github.com/docling-project/docling-core/commit/c566268e0a3f681de0e3394446b54edaecf53b4a))
+* Support single-column table default serialization ([#526](https://github.com/docling-project/docling-core/issues/526)) ([`73b0757`](https://github.com/docling-project/docling-core/commit/73b07572cf7fbcf8b011c0280dc4b5281243350b))
+
 ## [v2.65.2](https://github.com/docling-project/docling-core/releases/tag/v2.65.2) - 2026-02-23
 
 ### Fix
