@@ -16,6 +16,7 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownParams,
     MarkdownTableSerializer,
     OrigListItemMarkerMode,
+    _cell_content_has_table,
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
@@ -354,6 +355,25 @@ def test_md_pipe_in_table():
     )
     ser = doc.export_to_markdown()
     assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
+
+
+def test_cell_content_has_table_detects_descendant_table():
+    """Ensure nested tables are detected through non-table parent nodes."""
+    doc = DoclingDocument(name="descendant_table")
+    wrapper = doc.add_group()
+    nested_table = doc.add_table(data=TableData(num_rows=1, num_cols=1), parent=wrapper)
+    doc.add_table_cell(
+        nested_table,
+        TableCell(
+            text="inner",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        ),
+    )
+
+    assert _cell_content_has_table(wrapper, doc)
 
 
 def _build_nested_rich_table_doc(depth: int) -> DoclingDocument:
