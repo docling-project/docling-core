@@ -4571,6 +4571,30 @@ class DoclingDocument(BaseModel):
         for item in node_items:
             item_copy = item.model_copy(deep=True)
 
+            # handle DocItem pointers (comments)
+            if isinstance(item, DocItem):
+                if item.comments:
+                    if isinstance(item_copy, DocItem):
+                        item_copy.comments = self._copy_and_reindex_refs(item.comments, doc=doc, parent_ref=parent_ref)
+
+            # handling new references for floating items
+            if isinstance(item, FloatingItem):
+                if item.captions:
+                    if isinstance(item_copy, FloatingItem):
+                        item_copy.captions = self._copy_and_reindex_refs(item.captions, doc=doc, parent_ref=parent_ref)
+
+                if item.footnotes:
+                    if isinstance(item_copy, FloatingItem):
+                        item_copy.footnotes = self._copy_and_reindex_refs(
+                            item.footnotes, doc=doc, parent_ref=parent_ref
+                        )
+
+                if item.references:
+                    if isinstance(item_copy, FloatingItem):
+                        item_copy.references = self._copy_and_reindex_refs(
+                            item.references, doc=doc, parent_ref=parent_ref
+                        )
+
             self._append_item(item=item_copy, parent_ref=parent_ref)
 
             if item_copy.children:
@@ -4585,6 +4609,31 @@ class DoclingDocument(BaseModel):
             new_ref = item_copy.get_ref()
             new_refs.append(new_ref)
 
+        return new_refs
+
+    def _copy_and_reindex_refs(self, ref_list: list[Any], doc: "DoclingDocument", parent_ref: RefItem) -> list[Any]:
+        """Helper to copy referenced items and return their new indices
+
+        :param ref_list: list[Any]: The list of references (e.g., captions, footnotes, comments) to be copied
+        :param doc: "DoclingDocument": The document from which the NodeItems are taken
+        :param parent_ref: RefItem: The reference of the parent item in the current document where copies will be appended to
+
+        :returns: list[Any]: A new list of references pointing to the newly appended items in the current document
+        """
+        if not ref_list:
+            return []
+
+        new_refs = []
+        for ref in ref_list:
+            resolved_item = ref.resolve(doc)
+            if resolved_item:
+                ref_copy = resolved_item.model_copy(deep=True)
+                self._append_item(item=ref_copy, parent_ref=parent_ref)
+
+                new_ref_pointer = ref.model_copy(deep=True)
+                new_ref_pointer.cref = ref_copy.get_ref().cref
+
+                new_refs.append(new_ref_pointer)
         return new_refs
 
     def num_pages(self):
