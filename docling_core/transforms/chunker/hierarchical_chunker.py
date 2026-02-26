@@ -65,7 +65,11 @@ class TripletTableSerializer(BaseTableSerializer):
             parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            table_df = item.export_to_dataframe(doc)
+            table_df = item._export_to_dataframe_with_options(
+                doc,
+                doc_serializer=doc_serializer,
+                **kwargs,
+            )
             if table_df.shape[0] >= 1 and table_df.shape[1] >= 1:
                 # Handle single-column tables
                 if table_df.shape[1] == 1:
