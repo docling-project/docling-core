@@ -416,7 +416,7 @@ def test_shadowed_headings_wout_content():
 def test_chunk_with_duplicat_table_header():
     """Test that table headers are repeated when a table is split across chunks."""
     INPUT_FILE = "test/data/chunker/0_inp_dl_doc.json"
-    EXPECTED_OUT_FILE = "test/data/chunker/0c_out_chunks.json"
+    EXPECTED_OUT_FILE = "test/data/chunker/0d_out_chunks.json"
     
     with open(INPUT_FILE, encoding="utf-8") as f:
         data_json = f.read()
