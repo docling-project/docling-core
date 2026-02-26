@@ -1535,10 +1535,14 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
             or (not isinstance(item, CodeItem | FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
         ):
-            # Check if we should serialize a single inline group child instead of text
-            if len(item.children) > 0 and isinstance((first_child := item.children[0].resolve(doc)), InlineGroup):
-                ser_res = doc_serializer.serialize(item=first_child, visited=my_visited, **kwargs)
-                text_part = ser_res.text
+            if item.children and not item.text:
+                sub_parts = [
+                    doc_serializer.serialize(item=child_item, visited=my_visited, **kwargs).text
+                    for child_ref in item.children
+                    # special case: nested lists are serialized as siblings, not children
+                    if not (isinstance(child_item := child_ref.resolve(doc), ListGroup) and isinstance(item, ListItem))
+                ]
+                text_part = _get_delim(params=params).join(sub_parts)
             else:
                 text_part = _escape_text(item.text, params)
                 text_part = doc_serializer.post_process(

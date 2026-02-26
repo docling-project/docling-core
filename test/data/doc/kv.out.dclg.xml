@@ -15,14 +15,6 @@
       </field_item>
     </text>
     <field_item>
-      <text>
-        <key>
-          <content>my inline key2: </content>
-        </key>
-        <value class="fillable">my inline value2</value>
-      </text>
-    </field_item>
-    <field_item>
       <key>name</key>
       <value class="fillable">John Doe</value>
       <value class="fillable">Max Mustermann</value>

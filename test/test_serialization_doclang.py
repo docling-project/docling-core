@@ -657,6 +657,17 @@ def test_content_wrapping_mode_always():
     exp_file = Path("./test/data/doc/wrapping_always.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
+def test_default_mode():
+    doc = DoclingDocument(name="test")
+    add_texts_section(doc)
+    add_list_section(doc)
+
+    ser = DoclangDocSerializer(doc=doc)
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/default_mode.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
 def test_vlm_mode():
     doc = DoclingDocument(name="test")
     add_texts_section(doc)
@@ -759,12 +770,6 @@ def test_kv():
 
     doc.add_field_heading(level=2, text="KV sub-heading", parent=kvm)
 
-    # # inlined key-value pair
-    # txt = doc.add_text(label=DocItemLabel.TEXT, text="", parent=kvm)
-    # kve = doc.add_kv_entry(parent=txt)
-    # doc.add_kv_key(text="my inline key0: ", parent=kve)
-    # doc.add_kv_value(text="my inline value0", parent=kve, kind="fillable")
-
     # inlined key-value pair (outer is <text>...</text>)
     # TODO: possibly support outer bounding box
     inl = doc.add_inline_group(parent=kvm)
@@ -772,12 +777,12 @@ def test_kv():
     doc.add_field_key(text="my inline key1: ", parent=kve)
     doc.add_field_value(text="my inline value1", parent=kve, kind="fillable")
 
-    # inlined key-value pair (outer is <kv_entry>...</kv_entry>)
-    # TODO: possibly support outer bounding box
-    kve = doc.add_field_item(parent=kvm)
-    inl = doc.add_inline_group(parent=kve)
-    doc.add_field_key(text="my inline key2: ", parent=inl)
-    doc.add_field_value(text="my inline value2", parent=inl, kind="fillable")
+    # # inlined key-value pair (outer is <kv_entry>...</kv_entry>)
+    # # TODO: possibly support outer bounding box
+    # kve = doc.add_field_item(parent=kvm)
+    # inl = doc.add_inline_group(parent=kve)
+    # doc.add_field_key(text="my inline key2: ", parent=inl)
+    # doc.add_field_value(text="my inline value2", parent=inl, kind="fillable")
 
     kve = doc.add_field_item(parent=kvm)
     doc.add_field_key(text="name", parent=kve)
@@ -855,9 +860,8 @@ def test_kv_invoice():
     # inlined key-value pair
     kve = doc.add_field_item(parent=kvm)
     kvk = doc.add_field_key(text="", parent=kve)
-    inl_inner = doc.add_inline_group(parent=kvk)  # TODO currently this is needed
     doc.add_picture(
-        parent=inl_inner,
+        parent=kvk,
         image=ImageRef(
             mimetype="image/png",
             uri=image_uri,
@@ -871,9 +875,8 @@ def test_kv_invoice():
     # another inlined key-value pair
     kve = doc.add_field_item(parent=kvm)
     kvk = doc.add_field_key(text="", parent=kve)
-    inl_inner = doc.add_inline_group(parent=kvk)  # TODO currently this is needed
     doc.add_picture(
-        parent=inl_inner,
+        parent=kvk,
         image=ImageRef(
             mimetype="image/png",
             uri=image_uri,
@@ -936,7 +939,7 @@ def test_kv_advanced_inline():
     kvm = doc.add_field_region()
 
     # inlined key-value pair
-    inl_outer = doc.add_inline_group(parent=kvm)  # TODO currently this is needed
+    inl_outer = doc.add_inline_group(parent=kvm)
     doc.add_text(label=DocItemLabel.TEXT, text="This certificate applies to ", parent=inl_outer)
 
     kve = doc.add_field_item(parent=inl_outer)
@@ -981,9 +984,8 @@ def test_kv_nested():
 
     kve = doc.add_field_item(parent=kvm)
     doc.add_field_key(text="A", parent=kve)
-    v = doc.add_field_value(text="hi", parent=kve)
-    inline = doc.add_inline_group(parent=v)
-    kvm_inner = doc.add_field_region(parent=inline)
+    kvv = doc.add_field_value(text="", parent=kve)
+    kvm_inner = doc.add_field_region(parent=kvv)
     kve_inner = doc.add_field_item(parent=kvm_inner)
     doc.add_field_key(text="AA", parent=kve_inner)
     doc.add_field_value(text="AAA", parent=kve_inner)
