@@ -11,9 +11,9 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
 )
-from docling_core.transforms.serializer.base import BaseDocSerializer
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
-from docling_core.types.doc.document import SectionHeaderItem, TitleItem, TableItem
+from docling_core.transforms.serializer.base import BaseDocSerializer
+from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
 
 try:
     import semchunk
@@ -34,7 +34,6 @@ from docling_core.transforms.chunker import (
     HierarchicalChunker,
 )
 from docling_core.transforms.serializer.base import (
-    BaseDocSerializer,
     BaseSerializerProvider,
 )
 from docling_core.types import DoclingDocument
@@ -218,7 +217,7 @@ class HybridChunker(BaseChunker):
     def _split_using_plain_text(
         self,
         doc_chunk: DocChunk,
-        doc_serializer: ChunkingDocSerializer,
+        doc_serializer: BaseDocSerializer,
     ) -> list[DocChunk]:
         lengths = self._doc_chunk_length(doc_chunk)
         if lengths.total_len <= self.max_tokens:
@@ -243,10 +242,11 @@ class HybridChunker(BaseChunker):
             chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
             return chunks
 
-    def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: ChunkingDocSerializer) -> list[str]:
+    def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
         segments = []
         if (
             self.duplicate_table_header
+            and isinstance(doc_serializer, ChunkingDocSerializer)
             and len(doc_chunk.meta.doc_items) == 1
             and isinstance(doc_chunk.meta.doc_items[0], TableItem)
         ):

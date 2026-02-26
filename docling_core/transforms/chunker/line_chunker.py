@@ -1,20 +1,19 @@
 import warnings
-from typing import Any, Tuple, Optional
-
 from collections.abc import Iterator
+from typing import Any, Optional
 
 from pydantic import ConfigDict, Field
 
-from docling_core.types import DoclingDocument
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, DocChunk, DocMeta
-from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
-from docling_core.transforms.chunker.hybrid_chunker import _get_default_tokenizer
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
 )
+from docling_core.transforms.chunker.hybrid_chunker import _get_default_tokenizer
+from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.serializer.base import (
     BaseSerializerProvider,
 )
+from docling_core.types import DoclingDocument
 
 
 class LineBasedTokenChunker(BaseChunker):
@@ -132,7 +131,7 @@ class LineBasedTokenChunker(BaseChunker):
         text: str,
         token_limit: int,
         prefer_word_boundary: bool = True,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """
         Split `text` into (head, tail) where `head` has at most `token_limit` tokens,
         and `tail` is the remainder. Uses binary search on character indices to minimize
@@ -151,7 +150,7 @@ class LineBasedTokenChunker(BaseChunker):
 
         Returns
         -------
-        (head, tail) : Tuple[str, str]
+        (head, tail) : tuple[str, str]
             `head` contains at most `token_limit` tokens, `tail` is the remaining suffix.
             If `token_limit <= 0`, returns ("", text).
         """
