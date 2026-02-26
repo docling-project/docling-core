@@ -82,15 +82,15 @@ class BaseTableSerializer(ABC):
         self,
         *,
         table_text: str,
-                **kwargs: Any,
+        **kwargs: Any,
     ) -> tuple[list[str], list[str]]:
         """Get header lines and body lines from the table.
-        
+
         Returns:
             A tuple of (header_lines, body_lines) where header_lines is a list
             of strings representing table headers and body_lines is a list of
             strings representing table body rows.
-            
+
         Default implementation returns empty header lines and all content in body lines.
         """
         # default: empty headers, all content in body

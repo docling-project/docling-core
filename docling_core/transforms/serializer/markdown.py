@@ -356,29 +356,28 @@ class MarkdownTableSerializer(BaseTableSerializer):
         self,
         *,
         table_text: str,
-        
         **kwargs: Any,
     ) -> tuple[list[str], list[str]]:
         """Get header lines and body lines from the markdown table.
-        
+
         Returns:
             A tuple of (header_lines, body_lines) where header_lines contains
             the header row and separator row, and body_lines contains the data rows.
         """
-                
+
         lines = [line for line in table_text.split("\n") if line.strip()]
-        
+
         if len(lines) < 2:
             # Not enough lines for a proper markdown table (need at least header + separator)
             return [], lines
-        
+
         # In markdown tables:
         # Line 0: Header row
         # Line 1: Separator row (with dashes)
         # Lines 2+: Body rows
         header_lines = lines[:2]
         body_lines = lines[2:]
-        
+
         return header_lines, body_lines
 
     @staticmethod

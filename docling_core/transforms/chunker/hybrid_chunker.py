@@ -39,6 +39,7 @@ from docling_core.transforms.serializer.base import (
 )
 from docling_core.types import DoclingDocument
 
+
 def _get_default_tokenizer():
     from docling_core.transforms.chunker.tokenizer.huggingface import (
         HuggingFaceTokenizer,
@@ -216,9 +217,8 @@ class HybridChunker(BaseChunker):
 
     def _split_using_plain_text(
         self,
-        doc_chunk: DocChunk, 
-        doc_serializer:ChunkingDocSerializer,
-        
+        doc_chunk: DocChunk,
+        doc_serializer: ChunkingDocSerializer,
     ) -> list[DocChunk]:
         lengths = self._doc_chunk_length(doc_chunk)
         if lengths.total_len <= self.max_tokens:
@@ -227,7 +227,7 @@ class HybridChunker(BaseChunker):
             # How much room is there for text after subtracting out the headers and
             # captions:
             available_length = self.max_tokens - lengths.other_len
-        
+
             if available_length <= 0:
                 warnings.warn(
                     "Headers and captions for this chunk are longer than the total "
@@ -238,30 +238,32 @@ class HybridChunker(BaseChunker):
                 new_chunk.meta.captions = None
                 new_chunk.meta.headings = None
                 return self._split_using_plain_text(doc_chunk=new_chunk, doc_serializer=doc_serializer)
-                      
-            segments = self.segment(doc_chunk,available_length,doc_serializer)
+
+            segments = self.segment(doc_chunk, available_length, doc_serializer)
             chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
             return chunks
 
-    def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer:ChunkingDocSerializer) -> list[str]:
+    def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: ChunkingDocSerializer) -> list[str]:
         segments = []
-        if self.duplicate_table_header and len(doc_chunk.meta.doc_items) == 1 and isinstance(doc_chunk.meta.doc_items[0], TableItem):
-            
+        if (
+            self.duplicate_table_header
+            and len(doc_chunk.meta.doc_items) == 1
+            and isinstance(doc_chunk.meta.doc_items[0], TableItem)
+        ):
             header_lines, body_lines = doc_serializer.table_serializer.get_header_and_body_lines(
-                table_text=doc_chunk.text)
+                table_text=doc_chunk.text
+            )
             from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
+
             line_chunker = LineBasedTokenChunker(
-                tokenizer=self.tokenizer,
-                max_tokens=available_length,
-                prefix="\n".join(header_lines)
+                tokenizer=self.tokenizer, max_tokens=available_length, prefix="\n".join(header_lines)
             )
             segments = line_chunker.chunk_text(lines=body_lines)
         else:
             sem_chunker = semchunk.chunkerify(self.tokenizer.get_tokenizer(), chunk_size=available_length)
-            segments= sem_chunker.chunk(doc_chunk.text)
-        return segments    
+            segments = sem_chunker.chunk(doc_chunk.text)
+        return segments
 
-    
     def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]):
         output_chunks = []
         window_start = 0
@@ -269,7 +271,7 @@ class HybridChunker(BaseChunker):
         num_chunks = len(chunks)
         while window_end < num_chunks:
             chunk = chunks[window_end]
-            headings = chunk.meta.headings 
+            headings = chunk.meta.headings
             ready_to_append = False
             if window_start == window_end:
                 current_headings = headings

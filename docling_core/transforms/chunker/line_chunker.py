@@ -13,7 +13,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
 )
 from docling_core.transforms.serializer.base import (
-     BaseSerializerProvider,
+    BaseSerializerProvider,
 )
 
 
@@ -27,19 +27,19 @@ class LineBasedTokenChunker(BaseChunker):
             resolved from the tokenizer
         prefix: a text that should appear at the beginning of each chunks, default is an empty string
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
     tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
     prefix: str = ""
     prefix_len: int = Field(default=0, init=False)
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
-    
+
     @property
     def max_tokens(self) -> int:
         """Get maximum number of tokens allowed."""
         return self.tokenizer.get_max_tokens()
-    
+
     def model_post_init(self, __context) -> None:
-        
         self.prefix_len = self.tokenizer.count_tokens(self.prefix)
         if self.prefix_len >= self.max_tokens:
             warnings.warn(
@@ -47,7 +47,6 @@ class LineBasedTokenChunker(BaseChunker):
             )
             self.prefix = ""
             self.prefix_len = 0
-        
 
     def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
         """Chunk the provided document using line-based token-aware chunking.
@@ -59,16 +58,16 @@ class LineBasedTokenChunker(BaseChunker):
             Iterator[BaseChunk]: iterator over extracted chunks
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
-        
+
         # Serialize the entire document to get the text
         ser_res = my_doc_ser.serialize()
-        
+
         if not ser_res.text:
             return
-        
+
         # Use chunk_text to split the text into chunks
-        text_chunks = self.chunk_text(lines = ser_res.text.splitlines(True))
-        
+        text_chunks = self.chunk_text(lines=ser_res.text.splitlines(True))
+
         # Yield DocChunk objects for each text chunk
         for chunk_text in text_chunks:
             yield DocChunk(
@@ -109,10 +108,7 @@ class LineBasedTokenChunker(BaseChunker):
 
                 # Remaining is too large even for an empty chunk → split it.
                 # Split off the first segment that fits into current.
-                take, remaining = self.split_by_token_limit(
-                    remaining,
-                    available
-                )
+                take, remaining = self.split_by_token_limit(remaining, available)
 
                 # Add the taken part
                 current += "\n" + take
@@ -131,7 +127,6 @@ class LineBasedTokenChunker(BaseChunker):
 
         return chunks
 
-
     def split_by_token_limit(
         self,
         text: str,
@@ -142,7 +137,7 @@ class LineBasedTokenChunker(BaseChunker):
         Split `text` into (head, tail) where `head` has at most `token_limit` tokens,
         and `tail` is the remainder. Uses binary search on character indices to minimize
         calls to `count_tokens`.
-    
+
         Parameters
         ----------
         text : str
@@ -190,10 +185,10 @@ class LineBasedTokenChunker(BaseChunker):
         # Optionally adjust to a previous whitespace boundary without violating the limit
         if prefer_word_boundary:
             # Search backwards from best_idx to find whitespace; keep within token limit.
-               
-            last_space_index= text[:best_idx].rfind(" ")
+
+            last_space_index = text[:best_idx].rfind(" ")
             if last_space_index > 0:
                 best_idx = last_space_index
-                
+
         head, tail = text[:best_idx], text[best_idx:]
         return head, tail
