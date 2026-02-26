@@ -467,16 +467,12 @@ class MarkdownTableSerializer(BaseTableSerializer):
                             _mark_subtree_visited(ref_item, doc, visited)
                             cell_text = col.text or ""
                         else:
-                            cell_text = doc_serializer.serialize(
-                                item=ref_item, **kwargs
-                            ).text
+                            cell_text = doc_serializer.serialize(item=ref_item, **kwargs).text
                     else:
                         cell_text = col.text or ""
                     # Newlines and pipes must be escaped in every cell so the
                     # markdown table stays valid.
-                    rendered_row.append(
-                        cell_text.replace("\n", " ").replace("|", "&#124;")
-                    )
+                    rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
                 rows.append(rendered_row)
             if len(rows) > 0:
                 try:
