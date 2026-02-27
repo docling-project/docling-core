@@ -1691,9 +1691,7 @@ class TextItem(DocItem):
         DocItemLabel.TEXT,
         DocItemLabel.EMPTY_VALUE,
         DocItemLabel.FIELD_KEY,
-        DocItemLabel.FIELD_VALUE,
         DocItemLabel.FIELD_HINT,
-        DocItemLabel.FIELD_HEADING,
         DocItemLabel.MARKER,
     ]
 
@@ -2549,7 +2547,7 @@ class FieldRegionItem(DocItem):
 
 
 class FieldHeadingItem(TextItem):
-    label: typing.Literal[DocItemLabel.FIELD_HEADING] = DocItemLabel.FIELD_HEADING
+    label: typing.Literal[DocItemLabel.FIELD_HEADING] = DocItemLabel.FIELD_HEADING  # type: ignore[assignment]
     level: LevelNumber = 1
 
 
@@ -2557,21 +2555,9 @@ class FieldItem(GroupItem):
     label: typing.Literal[GroupLabel.FIELD_ITEM] = GroupLabel.FIELD_ITEM
 
 
-class FieldKeyItem(TextItem):
-    label: typing.Literal[DocItemLabel.FIELD_KEY] = DocItemLabel.FIELD_KEY
-
-
 class FieldValueItem(TextItem):
-    label: typing.Literal[DocItemLabel.FIELD_VALUE] = DocItemLabel.FIELD_VALUE
-    kind: typing.Literal["read_only", "fillable", "filled", "partially_filled"] = "read_only"
-
-
-class FieldHintItem(TextItem):
-    label: typing.Literal[DocItemLabel.FIELD_HINT] = DocItemLabel.FIELD_HINT
-
-
-class MarkerItem(TextItem):
-    label: typing.Literal[DocItemLabel.MARKER] = DocItemLabel.MARKER
+    label: typing.Literal[DocItemLabel.FIELD_VALUE] = DocItemLabel.FIELD_VALUE  # type: ignore[assignment]
+    kind: typing.Literal["read_only", "fillable"] = "read_only"
 
 
 ContentItem = Annotated[
@@ -2630,10 +2616,7 @@ class DoclingDocument(BaseModel):
             CodeItem,
             FormulaItem,
             FieldHeadingItem,
-            FieldKeyItem,
             FieldValueItem,
-            FieldHintItem,
-            MarkerItem,
             TextItem,
         ]
     ] = []
@@ -3363,17 +3346,6 @@ class DoclingDocument(BaseModel):
                 hyperlink=hyperlink,
                 **kwargs,
             )
-        elif label in [DocItemLabel.FIELD_KEY]:
-            return self.add_field_key(
-                text=text,
-                orig=orig,
-                prov=prov,
-                parent=parent,
-                content_layer=content_layer,
-                formatting=formatting,
-                hyperlink=hyperlink,
-                **kwargs,
-            )
         elif label in [DocItemLabel.FIELD_VALUE]:
             return self.add_field_value(
                 text=text,
@@ -3904,30 +3876,16 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         """
-        if not parent:
-            parent = self.body
-
-        if not orig:
-            orig = text
-
-        text_index = len(self.texts)
-        cref = f"#/texts/{text_index}"
-        item = FieldKeyItem(
+        item = self.add_text(
+            label=DocItemLabel.FIELD_KEY,
             text=text,
             orig=orig,
-            self_ref=cref,
-            parent=parent.get_ref(),
+            prov=prov,
+            parent=parent,
+            content_layer=content_layer,
             formatting=formatting,
             hyperlink=hyperlink,
         )
-        if prov:
-            item.prov.append(prov)
-        if content_layer:
-            item.content_layer = content_layer
-
-        self.texts.append(item)
-        parent.children.append(RefItem(cref=cref))
-
         return item
 
     def add_field_value(
@@ -4001,30 +3959,16 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         """
-        if not parent:
-            parent = self.body
-
-        if not orig:
-            orig = text
-
-        text_index = len(self.texts)
-        cref = f"#/texts/{text_index}"
-        item = FieldHintItem(
+        item = self.add_text(
+            label=DocItemLabel.FIELD_HINT,
             text=text,
             orig=orig,
-            self_ref=cref,
-            parent=parent.get_ref(),
+            prov=prov,
+            parent=parent,
+            content_layer=content_layer,
             formatting=formatting,
             hyperlink=hyperlink,
         )
-        if prov:
-            item.prov.append(prov)
-        if content_layer:
-            item.content_layer = content_layer
-
-        self.texts.append(item)
-        parent.children.append(RefItem(cref=cref))
-
         return item
 
     def add_marker(
@@ -4047,30 +3991,16 @@ class DoclingDocument(BaseModel):
         :param formatting: Optional[Formatting]:  (Default value = None)
         :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
         """
-        if not parent:
-            parent = self.body
-
-        if not orig:
-            orig = text
-
-        text_index = len(self.texts)
-        cref = f"#/texts/{text_index}"
-        item = MarkerItem(
+        item = self.add_text(
+            label=DocItemLabel.MARKER,
             text=text,
             orig=orig,
-            self_ref=cref,
-            parent=parent.get_ref(),
+            prov=prov,
+            parent=parent,
+            content_layer=content_layer,
             formatting=formatting,
             hyperlink=hyperlink,
         )
-        if prov:
-            item.prov.append(prov)
-        if content_layer:
-            item.content_layer = content_layer
-
-        self.texts.append(item)
-        parent.children.append(RefItem(cref=cref))
-
         return item
 
     # ---------------------------
