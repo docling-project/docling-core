@@ -3535,7 +3535,7 @@
             "field_value",
             "field_hint",
             "field_heading",
-            "field_marker"
+            "marker"
           ],
           "title": "Label",
           "type": "string"

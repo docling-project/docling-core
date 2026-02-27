@@ -1487,7 +1487,7 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                 DocItemLabel.FIELD_VALUE: DoclangToken.FIELD_VALUE,
                 DocItemLabel.FIELD_HEADING: DoclangToken.FIELD_HEADING,
                 DocItemLabel.FIELD_HINT: DoclangToken.FIELD_HINT,
-                DocItemLabel.FIELD_MARKER: DoclangToken.MARKER,
+                DocItemLabel.MARKER: DoclangToken.MARKER,
             }.get(item.label)
         ):
             wrap_open_token = f"<{tok.value}>"

@@ -39,7 +39,7 @@ class DocItemLabel(str, Enum):
     FIELD_KEY = "field_key"
     FIELD_VALUE = "field_value"
     FIELD_HINT = "field_hint"
-    FIELD_MARKER = "field_marker"
+    MARKER = "marker"
 
     def __str__(self):
         """Get string value."""
