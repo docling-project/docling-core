@@ -56,18 +56,25 @@ class _PictureClassificationToken(str, Enum):
     LINE_CHART = "<line_chart>"
     FLOW_CHART = "<flow_chart>"
     SCATTER_CHART = "<scatter_chart>"
+    SCATTER_PLOT = "<scatter_plot>"
+    BOX_PLOT = "<box_plot>"
     HEATMAP = "<heatmap>"
     REMOTE_SENSING = "<remote_sensing>"
     INFOGRAPHIC = "<infographic>"
     DECORATION = "<decoration>"
     ILLUSTRATION = "<illustration>"
+    TABLE = "<table>"
 
     NATURAL_IMAGE = "<natural_image>"
+    PHOTOGRAPH = "<photograph>"
+    FULL_PAGE_IMAGE = "<full_page_image>"
+    PAGE_THUMBNAIL = "<page_thumbnail>"
     PERSON = "<person>"
 
     # Chemistry
     MOLECULAR_STRUCTURE = "<chemistry_molecular_structure>"
     MARKUSH_STRUCTURE = "<chemistry_markush_structure>"
+    CHEMISTRY_STRUCTURE = "<chemistry_structure>"
 
     # Company
     ICON = "<icon>"
@@ -77,15 +84,25 @@ class _PictureClassificationToken(str, Enum):
     QR_CODE = "<qr_code>"
     BAR_CODE = "<bar_code>"
     SCREENSHOT = "<screenshot>"
+    SCREENSHOT_FROM_COMPUTER = "<screenshot_from_computer>"
+    SCREENSHOT_FROM_MANUAL = "<screenshot_from_manual>"
     UI_ELEMENT = "<ui_element>"
 
     # Geology/Geography
     GEOGRAPHIC_MAP = "<map>"
+    GEOGRAPHICAL_MAP = "<geographical_map>"
+    TOPOGRAPHICAL_MAP = "<topographical_map>"
     STRATIGRAPHIC_CHART = "<stratigraphic_chart>"
 
     # Engineering
     CAD_DRAWING = "<cad_drawing>"
+    ENGINEERING_DRAWING = "<engineering_drawing>"
     ELECTRICAL_DIAGRAM = "<electrical_diagram>"
+
+    # Other specific
+    MUSIC = "<music>"
+    CALENDAR = "<calendar>"
+    CROSSWORD_PUZZLE = "<crossword_puzzle>"
 
 
 class _CodeLanguageToken(str, Enum):
