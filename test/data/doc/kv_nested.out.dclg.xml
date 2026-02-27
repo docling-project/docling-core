@@ -9,12 +9,19 @@
       <value class="read_only">
         <field_region>
           <field_item>
+            <marker>1.</marker>
             <key>AA</key>
+            <hint>Some explanation for key AA</hint>
             <value class="read_only">AAA</value>
+            <hint>Some explanation for value AAA</hint>
+            <value class="read_only">AAB</value>
+            <hint>Some explanation for value AAB</hint>
           </field_item>
           <field_item>
+            <marker>2.</marker>
             <key>AB</key>
             <value class="read_only">ABA</value>
+            <value class="read_only">ABB</value>
           </field_item>
         </field_region>
       </value>

@@ -987,12 +987,18 @@ def test_kv_nested():
     kvv = doc.add_field_value(text="", parent=kve)
     kvm_inner = doc.add_field_region(parent=kvv)
     kve_inner = doc.add_field_item(parent=kvm_inner)
+    doc.add_text(label=DocItemLabel.FIELD_MARKER, text="1.", parent=kve_inner)
     doc.add_field_key(text="AA", parent=kve_inner)
+    doc.add_text(label=DocItemLabel.FIELD_HINT, text="Some explanation for key AA", parent=kve_inner)
     doc.add_field_value(text="AAA", parent=kve_inner)
+    doc.add_text(label=DocItemLabel.FIELD_HINT, text="Some explanation for value AAA", parent=kve_inner)
+    doc.add_field_value(text="AAB", parent=kve_inner)
+    doc.add_text(label=DocItemLabel.FIELD_HINT, text="Some explanation for value AAB", parent=kve_inner)
     kve_inner = doc.add_field_item(parent=kvm_inner)
+    doc.add_text(label=DocItemLabel.FIELD_MARKER, text="2.", parent=kve_inner)
     doc.add_field_key(text="AB", parent=kve_inner)
     doc.add_field_value(text="ABA", parent=kve_inner)
-
+    doc.add_field_value(text="ABB", parent=kve_inner)
 
     ser = DoclangDocSerializer(
         doc=doc,

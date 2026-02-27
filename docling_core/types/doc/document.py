@@ -72,7 +72,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.9.0"
+CURRENT_VERSION: Final = "1.9.0"  # FIXME: bump to 1.10.0
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -96,6 +96,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.FIELD_VALUE,
     DocItemLabel.FIELD_HEADING,
     DocItemLabel.FIELD_HINT,
+    DocItemLabel.FIELD_MARKER,
 }
 
 DOCUMENT_TOKENS_EXPORT_LABELS = DEFAULT_EXPORT_LABELS.copy()
@@ -1693,6 +1694,7 @@ class TextItem(DocItem):
         DocItemLabel.FIELD_VALUE,
         DocItemLabel.FIELD_HINT,
         DocItemLabel.FIELD_HEADING,
+        DocItemLabel.FIELD_MARKER,
     ]
 
     orig: str  # untreated representation
