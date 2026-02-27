@@ -963,7 +963,8 @@ class HTMLDocSerializer(DocSerializer):
             html_content = "\n".join([p.text for p in parts if p.text])
             next_page: Optional[int] = None
             prev_full_match_end = 0
-            pages = {}
+            pages: dict[int, str] = {}
+
             for full_match, prev_page, next_page in self._get_page_breaks(html_content):
                 this_match_start = html_content.find(full_match)
                 pages[prev_page] = html_content[prev_full_match_end:this_match_start]
@@ -975,6 +976,17 @@ class HTMLDocSerializer(DocSerializer):
             elif applicable_pages is not None and len(applicable_pages) == 1:
                 pages[applicable_pages[0]] = html_content
 
+            # Determine pages to render from doc.pages (includes failed pages
+            # added by docling's _add_failed_pages_to_document)
+            if self.params.pages is not None:
+                pages_to_render = sorted(self.params.pages)
+            elif self.doc.pages:
+                pages_to_render = sorted(self.doc.pages.keys())
+            elif applicable_pages:
+                pages_to_render = sorted(applicable_pages)
+            else:
+                pages_to_render = []
+
             html_parts.append("<table>")
             html_parts.append("<tbody>")
 
@@ -982,43 +994,36 @@ class HTMLDocSerializer(DocSerializer):
             if visualizer:
                 vized_pages_dict = visualizer.get_visualization(doc=self.doc)
 
-            for page_no, page in pages.items():
-                if isinstance(page_no, int):
-                    if applicable_pages is not None and page_no not in applicable_pages:
-                        continue
-                    page_img = self.doc.pages[page_no].image
-                    vized_page = vized_pages_dict.get(page_no)
+            for page_no in pages_to_render:
+                page_content = pages.get(page_no, "")
+                page_img = self.doc.pages[page_no].image
+                vized_page = vized_pages_dict.get(page_no)
 
-                    html_parts.append("<tr>")
+                html_parts.append("<tr>")
+                html_parts.append("<td>")
 
-                    html_parts.append("<td>")
-
-                    if vized_page:
-                        html_parts.append(_serialize_page_img(page_img=vized_page))
-                    # short-cut: we already have the image in base64
-                    elif (
-                        (page_img is not None)
-                        and isinstance(page_img, ImageRef)
-                        and isinstance(page_img.uri, AnyUrl)
-                        and page_img.uri.scheme == "data"
-                    ):
-                        img_text = f'<img src="{page_img.uri}">'
-                        html_parts.append(f"<figure>{img_text}</figure>")
-
-                    elif (page_img is not None) and (page_img._pil is not None):
-                        html_parts.append(_serialize_page_img(page_img=page_img._pil))
-                    else:
-                        html_parts.append("<figure>no page-image found</figure>")
-
-                    html_parts.append("</td>")
-
-                    html_parts.append("<td>")
-                    html_parts.append(f"<div class='page'>\n{page}\n</div>")
-                    html_parts.append("</td>")
-
-                    html_parts.append("</tr>")
+                if vized_page:
+                    html_parts.append(_serialize_page_img(page_img=vized_page))
+                elif (
+                    (page_img is not None)
+                    and isinstance(page_img, ImageRef)
+                    and isinstance(page_img.uri, AnyUrl)
+                    and page_img.uri.scheme == "data"
+                ):
+                    img_text = f'<img src="{page_img.uri}">'
+                    html_parts.append(f"<figure>{img_text}</figure>")
+                elif (page_img is not None) and (page_img._pil is not None):
+                    html_parts.append(_serialize_page_img(page_img=page_img._pil))
                 else:
-                    raise ValueError("We need page-indices to leverage `split_page_view`")
+                    html_parts.append("<figure>no page-image found</figure>")
+
+                html_parts.append("</td>")
+
+                html_parts.append("<td>")
+                html_parts.append(f"<div class='page'>\n{page_content}\n</div>")
+                html_parts.append("</td>")
+
+                html_parts.append("</tr>")
 
             html_parts.append("</tbody>")
             html_parts.append("</table>")
