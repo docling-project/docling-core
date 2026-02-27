@@ -63,6 +63,7 @@ class _PictureClassificationToken(str, Enum):
     ILLUSTRATION = "<illustration>"
 
     NATURAL_IMAGE = "<natural_image>"
+    PHOTOGRAPH = "<photograph>"
     PERSON = "<person>"
 
     # Chemistry
@@ -81,6 +82,7 @@ class _PictureClassificationToken(str, Enum):
 
     # Geology/Geography
     GEOGRAPHIC_MAP = "<map>"
+    GEOGRAPHICAL_MAP = "<geographical_map>"
     STRATIGRAPHIC_CHART = "<stratigraphic_chart>"
 
     # Engineering

@@ -110,6 +110,7 @@ class PictureClassificationLabel(str, Enum):
     REMOTE_SENSING = "remote_sensing"
 
     NATURAL_IMAGE = "natural_image"
+    PHOTOGRAPH = "photograph"
 
     # Chemistry
     MOLECULAR_STRUCTURE = "chemistry_molecular_structure"
@@ -126,6 +127,7 @@ class PictureClassificationLabel(str, Enum):
 
     # Geology/Geography
     GEOGRAPHIC_MAP = "map"
+    GEOGRAPHICAL_MAP = "geographical_map"
     STRATIGRAPHIC_CHART = "stratigraphic_chart"
 
     # Engineering
