@@ -69,6 +69,74 @@ from docling_core.types.doc.document import (
 )
 
 
+def _cell_content_has_table(item: Any, doc: "DoclingDocument") -> bool:
+    """Return True if *item* is, or has a descendant that is, a TableItem.
+
+    Used by MarkdownTableSerializer to decide whether a RichTableCell's
+    content should be serialized recursively or flattened into plain text.
+    Markdown table cells cannot contain nested block-level tables, so when
+    the rich content includes one we collect text via
+    ``_collect_subtree_text`` rather than producing pipe-heavy output that
+    breaks the outer table.
+    """
+    if isinstance(item, TableItem):
+        return True
+    for child_ref in getattr(item, "children", []):
+        if _cell_content_has_table(child_ref.resolve(doc=doc), doc):
+            return True
+    return False
+
+
+def _mark_subtree_visited(item: Any, doc: "DoclingDocument", visited: set[str]) -> None:
+    """Recursively add *item* and all its descendants to *visited*.
+
+    When a RichTableCell's content is skipped (because it contains a nested
+    table), the content is never passed through the normal serialize() path
+    that would mark items visited.  Calling this instead keeps the visited
+    set consistent so the document serializer does not emit those items a
+    second time at the top level.
+    """
+    if (ref := getattr(item, "self_ref", None)) is not None:
+        visited.add(ref)
+    for child_ref in getattr(item, "children", []):
+        _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
+
+
+def _collect_subtree_text(item: Any, doc: "DoclingDocument") -> str:
+    """Collect all text from *item*'s subtree, flattening nested tables.
+
+    When a RichTableCell contains a nested TableItem the markdown serializer
+    cannot render it as a table inside the outer cell (no markdown spec
+    supports nested tables).  This helper walks the subtree and returns a
+    space-joined string of every piece of text it finds so that the content
+    is preserved in a flat, readable form.
+
+    For TableItems the text is pulled from ``data.grid`` cells directly;
+    children are *not* recursed into because they duplicate the grid content
+    for RichTableCells.  For all other items, ``.text`` is collected and
+    children are visited recursively.
+    """
+    parts: list[str] = []
+
+    if isinstance(item, TableItem):
+        for row in item.data.grid:
+            for cell in row:
+                if cell.text:
+                    parts.append(cell.text)
+        return " ".join(parts)
+
+    if isinstance(item, DocItem) and item.text:
+        parts.append(item.text)
+
+    for child_ref in getattr(item, "children", []):
+        child = child_ref.resolve(doc=doc)
+        child_text = _collect_subtree_text(child, doc)
+        if child_text:
+            parts.append(child_text)
+
+    return " ".join(parts)
+
+
 class OrigListItemMarkerMode(str, Enum):
     """Display mode for original list item marker."""
 
@@ -419,19 +487,30 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 if ann_res.text:
                     res_parts.append(ann_res)
 
-            rows = [
-                [
-                    # make sure that md tables are not broken due to newline or pipe chars in the text
-                    # TODO: escape pipe characters also in RichTableCell once nested tables are properly handled
-                    (
-                        doc_serializer.serialize(item=col.ref.resolve(doc=doc), **kwargs).text.replace("\n", " ")
-                        if isinstance(col, RichTableCell)
-                        else col.text.replace("\n", " ").replace("|", "&#124;")
-                    )
-                    for col in row
-                ]
-                for row in item.data.grid
-            ]
+            rows = []
+            for row in item.data.grid:
+                rendered_row = []
+                for col in row:
+                    if isinstance(col, RichTableCell):
+                        ref_item = col.ref.resolve(doc=doc)
+                        if _cell_content_has_table(ref_item, doc):
+                            # Markdown table cells cannot contain nested block-level
+                            # tables.  Collect all text from the subtree in flat form
+                            # so the content is preserved without pipe-heavy output
+                            # that would break the outer table.  Mark the skipped
+                            # subtree as visited so the document serializer does not
+                            # emit those items again at top level.
+                            visited: set[str] = kwargs.get("visited") or set()
+                            _mark_subtree_visited(ref_item, doc, visited)
+                            cell_text = _collect_subtree_text(ref_item, doc) or col.text or ""
+                        else:
+                            cell_text = doc_serializer.serialize(item=ref_item, **kwargs).text
+                    else:
+                        cell_text = col.text or ""
+                    # Newlines and pipes must be escaped in every cell so the
+                    # markdown table stays valid.
+                    rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
+                rows.append(rendered_row)
             if len(rows) > 0:
                 try:
                     table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")
