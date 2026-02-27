@@ -551,7 +551,7 @@
       "title": "DocumentOrigin",
       "type": "object"
     },
-    "FieldHeading": {
+    "FieldHeadingItem": {
       "additionalProperties": false,
       "properties": {
         "self_ref": {
@@ -684,7 +684,136 @@
         "orig",
         "text"
       ],
-      "title": "FieldHeading",
+      "title": "FieldHeadingItem",
+      "type": "object"
+    },
+    "FieldHintItem": {
+      "additionalProperties": false,
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "const": "field_hint",
+          "default": "field_hint",
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
+        "orig": {
+          "title": "Orig",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "formatting": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Formatting"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hyperlink": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hyperlink"
+        }
+      },
+      "required": [
+        "self_ref",
+        "orig",
+        "text"
+      ],
+      "title": "FieldHintItem",
       "type": "object"
     },
     "FieldItem": {
@@ -747,7 +876,7 @@
       "title": "FieldItem",
       "type": "object"
     },
-    "FieldKey": {
+    "FieldKeyItem": {
       "additionalProperties": false,
       "properties": {
         "self_ref": {
@@ -873,7 +1002,7 @@
         "orig",
         "text"
       ],
-      "title": "FieldKey",
+      "title": "FieldKeyItem",
       "type": "object"
     },
     "FieldRegionItem": {
@@ -966,7 +1095,7 @@
       "title": "FieldRegionItem",
       "type": "object"
     },
-    "FieldValue": {
+    "FieldValueItem": {
       "additionalProperties": false,
       "properties": {
         "self_ref": {
@@ -1103,7 +1232,7 @@
         "orig",
         "text"
       ],
-      "title": "FieldValue",
+      "title": "FieldValueItem",
       "type": "object"
     },
     "FineRef": {
@@ -2088,6 +2217,135 @@
         "text"
       ],
       "title": "ListItem",
+      "type": "object"
+    },
+    "MarkerItem": {
+      "additionalProperties": false,
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "const": "marker",
+          "default": "marker",
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
+        "orig": {
+          "title": "Orig",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "formatting": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Formatting"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hyperlink": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hyperlink"
+        }
+      },
+      "required": [
+        "self_ref",
+        "orig",
+        "text"
+      ],
+      "title": "MarkerItem",
       "type": "object"
     },
     "MiscAnnotation": {
@@ -3922,13 +4180,19 @@
             "$ref": "#/$defs/FormulaItem"
           },
           {
-            "$ref": "#/$defs/FieldHeading"
+            "$ref": "#/$defs/FieldHeadingItem"
           },
           {
-            "$ref": "#/$defs/FieldKey"
+            "$ref": "#/$defs/FieldKeyItem"
           },
           {
-            "$ref": "#/$defs/FieldValue"
+            "$ref": "#/$defs/FieldValueItem"
+          },
+          {
+            "$ref": "#/$defs/FieldHintItem"
+          },
+          {
+            "$ref": "#/$defs/MarkerItem"
           },
           {
             "$ref": "#/$defs/TextItem"

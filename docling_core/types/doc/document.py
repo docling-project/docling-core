@@ -2544,7 +2544,11 @@ class FormItem(FloatingItem):
     graph: GraphData
 
 
-class FieldHeading(TextItem):
+class FieldRegionItem(DocItem):
+    label: typing.Literal[DocItemLabel.FIELD_REGION] = DocItemLabel.FIELD_REGION
+
+
+class FieldHeadingItem(TextItem):
     label: typing.Literal[DocItemLabel.FIELD_HEADING] = DocItemLabel.FIELD_HEADING
     level: LevelNumber = 1
 
@@ -2553,17 +2557,21 @@ class FieldItem(GroupItem):
     label: typing.Literal[GroupLabel.FIELD_ITEM] = GroupLabel.FIELD_ITEM
 
 
-class FieldRegionItem(DocItem):
-    label: typing.Literal[DocItemLabel.FIELD_REGION] = DocItemLabel.FIELD_REGION
-
-
-class FieldKey(TextItem):
+class FieldKeyItem(TextItem):
     label: typing.Literal[DocItemLabel.FIELD_KEY] = DocItemLabel.FIELD_KEY
 
 
-class FieldValue(TextItem):
+class FieldValueItem(TextItem):
     label: typing.Literal[DocItemLabel.FIELD_VALUE] = DocItemLabel.FIELD_VALUE
     kind: typing.Literal["read_only", "fillable", "filled", "partially_filled"] = "read_only"
+
+
+class FieldHintItem(TextItem):
+    label: typing.Literal[DocItemLabel.FIELD_HINT] = DocItemLabel.FIELD_HINT
+
+
+class MarkerItem(TextItem):
+    label: typing.Literal[DocItemLabel.MARKER] = DocItemLabel.MARKER
 
 
 ContentItem = Annotated[
@@ -2621,9 +2629,11 @@ class DoclingDocument(BaseModel):
             ListItem,
             CodeItem,
             FormulaItem,
-            FieldHeading,
-            FieldKey,
-            FieldValue,
+            FieldHeadingItem,
+            FieldKeyItem,
+            FieldValueItem,
+            FieldHintItem,
+            MarkerItem,
             TextItem,
         ]
     ] = []
@@ -3835,7 +3845,7 @@ class DoclingDocument(BaseModel):
 
         text_index = len(self.texts)
         cref = f"#/texts/{text_index}"
-        item = FieldHeading(
+        item = FieldHeadingItem(
             level=level,
             text=text,
             orig=orig,
@@ -3888,7 +3898,6 @@ class DoclingDocument(BaseModel):
         :param label: DocItemLabel:
         :param text: str:
         :param orig: Optional[str]:  (Default value = None)
-        :param level: LevelNumber:  (Default value = 1)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[NodeItem]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
@@ -3903,7 +3912,7 @@ class DoclingDocument(BaseModel):
 
         text_index = len(self.texts)
         cref = f"#/texts/{text_index}"
-        item = FieldKey(
+        item = FieldKeyItem(
             text=text,
             orig=orig,
             self_ref=cref,
@@ -3953,7 +3962,7 @@ class DoclingDocument(BaseModel):
 
         text_index = len(self.texts)
         cref = f"#/texts/{text_index}"
-        item = FieldValue(
+        item = FieldValueItem(
             text=text,
             orig=orig,
             self_ref=cref,
@@ -3961,6 +3970,98 @@ class DoclingDocument(BaseModel):
             formatting=formatting,
             hyperlink=hyperlink,
             kind=kind,
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.texts.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
+
+    def add_field_hint(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        """add_field_hint.
+
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        item = FieldHintItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.texts.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
+
+    def add_marker(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        """add_marker.
+
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        item = MarkerItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            formatting=formatting,
+            hyperlink=hyperlink,
         )
         if prov:
             item.prov.append(prov)

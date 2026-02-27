@@ -48,7 +48,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import CURRENT_VERSION, FieldHeading, FieldKey, FieldRegionItem, FieldValue, PageItem
+from docling_core.types.doc.document import CURRENT_VERSION, FieldHeadingItem, FieldHintItem, FieldKeyItem, FieldRegionItem, FieldValueItem, MarkerItem, PageItem
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -547,14 +547,22 @@ def test_docitems():
                 self_ref="#",
             )
             verify(dc, obj)
-        elif dc is FieldKey or dc is FieldValue:
+        elif dc is FieldKeyItem or dc is FieldHintItem or dc is MarkerItem:
             obj = dc(
                 self_ref="#",
                 orig="whatever",
                 text="whatever",
             )
             verify(dc, obj)
-        elif dc is FieldHeading:
+        elif dc is FieldValueItem:
+            obj = dc(
+                self_ref="#",
+                orig="whatever",
+                text="whatever",
+                kind="fillable",
+            )
+            verify(dc, obj)
+        elif dc is FieldHeadingItem:
             obj = dc(
                 text="whatever",
                 orig="whatever",

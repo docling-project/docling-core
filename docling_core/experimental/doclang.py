@@ -64,10 +64,10 @@ from docling_core.types.doc import (
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.document import (
-    FieldHeading,
+    FieldHeadingItem,
     FieldItem,
     FieldRegionItem,
-    FieldValue,
+    FieldValueItem,
     FormulaItem,
     GroupItem,
     RichTableCell,
@@ -1491,9 +1491,9 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             }.get(item.label)
         ):
             wrap_open_token = f"<{tok.value}>"
-            if isinstance(item, FieldValue):
+            if isinstance(item, FieldValueItem):
                 wrap_open_token = f'<{tok.value} class="{item.kind}">'
-            elif isinstance(item, FieldHeading):
+            elif isinstance(item, FieldHeadingItem):
                 wrap_open_token = f'<{tok.value} level="{item.level}">'
         elif isinstance(item, TextItem) and (
             item.label
