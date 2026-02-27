@@ -73,10 +73,11 @@ def _cell_content_has_table(item: Any, doc: "DoclingDocument") -> bool:
     """Return True if *item* is, or has a descendant that is, a TableItem.
 
     Used by MarkdownTableSerializer to decide whether a RichTableCell's
-    content should be serialized or replaced with plain text.  Markdown
-    table cells cannot contain nested block-level tables, so when the
-    rich content includes one we fall back to the precomputed col.text
-    rather than producing pipe-heavy output that breaks the outer table.
+    content should be serialized recursively or flattened into plain text.
+    Markdown table cells cannot contain nested block-level tables, so when
+    the rich content includes one we collect text via
+    ``_collect_subtree_text`` rather than producing pipe-heavy output that
+    breaks the outer table.
     """
     if isinstance(item, TableItem):
         return True
@@ -99,6 +100,41 @@ def _mark_subtree_visited(item: Any, doc: "DoclingDocument", visited: set[str]) 
         visited.add(ref)
     for child_ref in getattr(item, "children", []):
         _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
+
+
+def _collect_subtree_text(item: Any, doc: "DoclingDocument") -> str:
+    """Collect all text from *item*'s subtree, flattening nested tables.
+
+    When a RichTableCell contains a nested TableItem the markdown serializer
+    cannot render it as a table inside the outer cell (no markdown spec
+    supports nested tables).  This helper walks the subtree and returns a
+    space-joined string of every piece of text it finds so that the content
+    is preserved in a flat, readable form.
+
+    For TableItems the text is pulled from ``data.grid`` cells directly;
+    children are *not* recursed into because they duplicate the grid content
+    for RichTableCells.  For all other items, ``.text`` is collected and
+    children are visited recursively.
+    """
+    parts: list[str] = []
+
+    if isinstance(item, TableItem):
+        for row in item.data.grid:
+            for cell in row:
+                if cell.text:
+                    parts.append(cell.text)
+        return " ".join(parts)
+
+    if isinstance(item, DocItem) and item.text:
+        parts.append(item.text)
+
+    for child_ref in getattr(item, "children", []):
+        child = child_ref.resolve(doc=doc)
+        child_text = _collect_subtree_text(child, doc)
+        if child_text:
+            parts.append(child_text)
+
+    return " ".join(parts)
 
 
 class OrigListItemMarkerMode(str, Enum):
@@ -459,13 +495,14 @@ class MarkdownTableSerializer(BaseTableSerializer):
                         ref_item = col.ref.resolve(doc=doc)
                         if _cell_content_has_table(ref_item, doc):
                             # Markdown table cells cannot contain nested block-level
-                            # tables. Fall back to the precomputed plain-text content
-                            # to avoid pipe-heavy output that breaks the outer table.
-                            # Mark the skipped subtree as visited so the document
-                            # serializer does not emit those items again at top level.
+                            # tables.  Collect all text from the subtree in flat form
+                            # so the content is preserved without pipe-heavy output
+                            # that would break the outer table.  Mark the skipped
+                            # subtree as visited so the document serializer does not
+                            # emit those items again at top level.
                             visited: set[str] = kwargs.get("visited") or set()
                             _mark_subtree_visited(ref_item, doc, visited)
-                            cell_text = col.text or ""
+                            cell_text = _collect_subtree_text(ref_item, doc) or col.text or ""
                         else:
                             cell_text = doc_serializer.serialize(item=ref_item, **kwargs).text
                     else:
