@@ -5409,9 +5409,15 @@ class DoclingDocument(BaseModel):
                 PictureClassificationLabel.LINE_CHART,
                 PictureClassificationLabel.FLOW_CHART,
                 PictureClassificationLabel.SCATTER_CHART,
+                PictureClassificationLabel.SCATTER_PLOT,
+                PictureClassificationLabel.BOX_PLOT,
                 PictureClassificationLabel.HEATMAP,
+                PictureClassificationLabel.TABLE,
                 # Images
                 PictureClassificationLabel.NATURAL_IMAGE,
+                PictureClassificationLabel.PHOTOGRAPH,
+                PictureClassificationLabel.FULL_PAGE_IMAGE,
+                PictureClassificationLabel.PAGE_THUMBNAIL,
                 PictureClassificationLabel.REMOTE_SENSING,
                 # Company/Document elements
                 PictureClassificationLabel.ICON,
@@ -5421,12 +5427,23 @@ class DoclingDocument(BaseModel):
                 PictureClassificationLabel.QR_CODE,
                 PictureClassificationLabel.BAR_CODE,
                 PictureClassificationLabel.SCREENSHOT,
+                PictureClassificationLabel.SCREENSHOT_FROM_COMPUTER,
+                PictureClassificationLabel.SCREENSHOT_FROM_MANUAL,
                 # Chemistry
                 PictureClassificationLabel.MOLECULAR_STRUCTURE,
                 PictureClassificationLabel.MARKUSH_STRUCTURE,
+                PictureClassificationLabel.CHEMISTRY_STRUCTURE,
+                # Geology/Geography
+                PictureClassificationLabel.GEOGRAPHICAL_MAP,
+                PictureClassificationLabel.TOPOGRAPHICAL_MAP,
+                # Engineering
+                PictureClassificationLabel.ENGINEERING_DRAWING,
                 # Other
                 PictureClassificationLabel.OTHER,
                 PictureClassificationLabel.PICTURE_GROUP,
+                PictureClassificationLabel.MUSIC,
+                PictureClassificationLabel.CALENDAR,
+                PictureClassificationLabel.CROSSWORD_PUZZLE,
                 # Legacy SmolDocling labels
                 "line",
                 "dot_line",
