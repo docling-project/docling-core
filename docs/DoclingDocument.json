@@ -2367,6 +2367,18 @@
           "title": "Fillable",
           "type": "boolean"
         },
+        "page_no": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page No"
+        },
         "ref": {
           "$ref": "#/$defs/RefItem"
         }
@@ -2659,6 +2671,18 @@
           "default": false,
           "title": "Fillable",
           "type": "boolean"
+        },
+        "page_no": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page No"
         }
       },
       "required": [
