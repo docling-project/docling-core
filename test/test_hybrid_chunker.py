@@ -412,3 +412,78 @@ def test_shadowed_headings_wout_content():
             act_data=act_data,
             exp_path_str=setup.exp,
         )
+
+
+def test_section_header_with_content():
+    """Test that SECTION_HEADER items with substantial content are chunked.
+
+    This reproduces a bug where HybridChunker skips SECTION_HEADER items that
+    contain content, which is common in legal documents where the section number
+    and content are combined (e.g., "## 1 This Agreement...").
+
+    Expected: All content sections should be chunked, including those labeled
+    as SECTION_HEADER.
+    Actual (bug): SECTION_HEADER items are skipped even when they contain content.
+    """
+    doc = DoclingDocument(name="test_legal_doc")
+
+    # Title
+    doc.add_text(
+        label=DocItemLabel.TITLE,
+        text="MUTUAL NON-DISCLOSURE AGREEMENT",
+    )
+
+    # Section 1: SECTION_HEADER with content (should chunk - currently doesn't)
+    doc.add_text(
+        label=DocItemLabel.SECTION_HEADER,
+        text="1 This Agreement is entered into by and between Company A and Company B. Each party agrees to the following terms and conditions. This section contains substantial content that should definitely be chunked.",
+    )
+
+    # Section 2: Header only (ok to skip)
+    doc.add_text(
+        label=DocItemLabel.SECTION_HEADER,
+        text="2 Purpose",
+    )
+
+    # Section 3: SECTION_HEADER with content (should chunk - currently doesn't)
+    doc.add_text(
+        label=DocItemLabel.SECTION_HEADER,
+        text="3 The Parties wish to explore a business opportunity. Discloser may disclose confidential information to Recipient. This is another substantial content section that should be chunked.",
+    )
+
+    # Section 4: Header only (ok to skip)
+    doc.add_text(
+        label=DocItemLabel.SECTION_HEADER,
+        text="4 Confidential Information",
+    )
+
+    # Section 6: PARAGRAPH with content (this DOES get chunked)
+    doc.add_text(
+        label=DocItemLabel.PARAGRAPH,
+        text="Recipient shall not use any Confidential Information for any purpose except to evaluate and engage in discussions concerning the Opportunity. Recipient shall not disclose information to third parties without consent.",
+    )
+
+    # Chunk the document
+    chunker = HybridChunker()
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    # Define expected content sections (ones with substantial text)
+    content_sections = {
+        "Section 1": "This Agreement is entered into",
+        "Section 3": "The Parties wish to explore",
+        "Section 6": "Recipient shall not use",
+    }
+
+    # Check which sections are present in chunks
+    missing_sections = []
+    for section_name, text_snippet in content_sections.items():
+        found = any(text_snippet in chunk.text for chunk in chunks)
+        if not found:
+            missing_sections.append(section_name)
+
+    # Assert all content sections are chunked
+    assert len(missing_sections) == 0, (
+        f"HybridChunker failed to chunk sections with SECTION_HEADER label: {missing_sections}. "
+        f"Created only {len(chunks)} chunks from {len(content_sections)} content sections. "
+        "SECTION_HEADER items with substantial content should be chunked, not skipped."
+    )
