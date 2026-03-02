@@ -125,7 +125,7 @@ def _collect_subtree_text(item: Any, doc: "DoclingDocument") -> str:
                     parts.append(cell.text)
         return " ".join(parts)
 
-    if isinstance(item, DocItem) and item.text:
+    if isinstance(item, TextItem) and item.text:
         parts.append(item.text)
 
     for child_ref in getattr(item, "children", []):
