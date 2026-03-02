@@ -41,6 +41,48 @@
             }
         },
         {
+            "text": "# Docling Technical Report",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/1",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "title",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 212.59,
+                                    "t": 566.64,
+                                    "r": 399.412,
+                                    "b": 551.163,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    24
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "Version 1.0",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -722,6 +764,49 @@
             }
         },
         {
+            "text": "## 3 Processing pipeline",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/25",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 108.0,
+                                    "t": 297.598,
+                                    "r": 223.69,
+                                    "b": 286.85,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    21
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "3 Processing pipeline"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "Docling implements a linear pipeline of operations, which execute sequentially on each given document (see Fig. 1). Each document is first parsed by a PDF backend, which retrieves the programmatic text tokens, consisting of string content and its coordinates on the page, and also renders a bitmap image of each page to support downstream operations. Then, the standard model pipeline applies a sequence of AI models independently on every page in the document to extract features and content, such as layout and table structures. Finally, the results from all pages are aggregated and passed through a post-processing stage, which augments metadata, detects the document language, infers reading-order and eventually assembles a typed document object which can be serialized to JSON or Markdown.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -1104,6 +1189,51 @@
             }
         },
         {
+            "text": "#### Layout Analysis Model",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/51",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 108.0,
+                                    "t": 313.718,
+                                    "r": 206.281,
+                                    "b": 304.762,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    21
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "3 Processing pipeline",
+                    "3.2 AI models",
+                    "Layout Analysis Model"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "Our layout analysis model is an object-detector which predicts the bounding-boxes and classes of various elements on the image of a given page. Its architecture is derived from RT-DETR [16] and re-trained on DocLayNet [13], our popular human-annotated dataset for document-layout analysis, among other proprietary datasets. For inference, our implementation relies on the onnxruntime [5].",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -1185,6 +1315,51 @@
                     "3 Processing pipeline",
                     "3.2 AI models",
                     "Layout Analysis Model"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "#### Table Structure Recognition",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/54",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 108.0,
+                                    "t": 175.058,
+                                    "r": 228.109,
+                                    "b": 166.10199999999998,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    27
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "3 Processing pipeline",
+                    "3.2 AI models",
+                    "Table Structure Recognition"
                 ],
                 "origin": {
                     "mimetype": "application/pdf",
@@ -1793,6 +1968,49 @@
             }
         },
         {
+            "text": "## 6 Future work and contributions",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/75",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 5,
+                                "bbox": {
+                                    "l": 108.0,
+                                    "t": 346.788,
+                                    "r": 283.777,
+                                    "b": 336.03999999999996,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    31
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "6 Future work and contributions"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "Docling is designed to allow easy extension of the model library and pipelines. In the future, we plan to extend Docling with several more models, such as a figure-classifier model, an equationrecognition model, a code-recognition model and more. This will help improve the quality of conversion for specific types of content, as well as augment extracted document metadata with additional information. Further investment into testing and optimizing GPU acceleration as well as improving the Docling-native PDF backend are on our roadmap, too.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -2392,6 +2610,92 @@
                 "headings": [
                     "Docling Technical Report",
                     "Appendix"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "## DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/101",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 7,
+                                "bbox": {
+                                    "l": 144.399,
+                                    "t": 669.683,
+                                    "r": 291.944,
+                                    "b": 654.054,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    71
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "## DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/102",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 7,
+                                "bbox": {
+                                    "l": 329.602,
+                                    "t": 667.291,
+                                    "r": 520.785,
+                                    "b": 662.718,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    71
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis"
                 ],
                 "origin": {
                     "mimetype": "application/pdf",
@@ -3209,6 +3513,49 @@
                 "headings": [
                     "Docling Technical Report",
                     "KEYWORDS"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "## ACM Reference Format:",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/127",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 7,
+                                "bbox": {
+                                    "l": 329.602,
+                                    "t": 458.56899999999996,
+                                    "r": 388.248,
+                                    "b": 453.99499999999995,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    21
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "ACM Reference Format:"
                 ],
                 "origin": {
                     "mimetype": "application/pdf",
@@ -5376,6 +5723,49 @@
             }
         },
         {
+            "text": "## Baselines for Object Detection",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/522",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 8,
+                                "bbox": {
+                                    "l": 235.911,
+                                    "t": 377.122,
+                                    "r": 299.556,
+                                    "b": 370.865,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    30
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "Baselines for Object Detection"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
             "text": "In Table 2, we present baseline experiments (given in mAP) on Mask R-CNN [12], Faster R-CNN [11], and YOLOv5 [13]. Both training and evaluation were performed on RGB images with dimensions of 1025 \u00d7 1025 pixels. For training, we only used one annotation in case of redundantly annotated pages. As one can observe, the variation in mAP between the models is rather low, but overall between 6 and 10% lower than the mAP computed from the pairwise human annotations on triple-annotated pages. This gives a good indication that the DocLayNet dataset poses a worthwhile challenge for the research community to close the gap between human recognition and ML approaches. It is interesting to see that Mask R-CNN and Faster R-CNN produce very comparable mAP scores, indicating that pixel-based image segmentation derived from bounding-boxes does not help to obtain better predictions. On the other hand, the more recent Yolov5x model does very well and even out-performs humans on selected labels such as Text , Table and Picture . This is not entirely surprising, as Text , Table and Picture are abundant and the most visually distinctive in a document.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
@@ -5445,6 +5835,49 @@
                                 "charspan": [
                                     0,
                                     21
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Docling Technical Report",
+                    "Baselines for Object Detection"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 14981478401387673002,
+                    "filename": "2408.09869v3.pdf"
+                }
+            }
+        },
+        {
+            "text": "## Baselines for Object Detection",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/525",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": [
+                            {
+                                "page_no": 8,
+                                "bbox": {
+                                    "l": 367.0,
+                                    "t": 328.0,
+                                    "r": 434.3333333333333,
+                                    "b": 321.33333333333337,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    30
                                 ]
                             }
                         ]
