@@ -1,14 +1,15 @@
 import warnings
 from collections.abc import Iterator
-from typing import Any, Optional
+from functools import cached_property
+from typing import Annotated, Any, Optional
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, computed_field
 
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, DocChunk, DocMeta
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
 )
-from docling_core.transforms.chunker.hybrid_chunker import _get_default_tokenizer
+from docling_core.transforms.chunker.base import _get_default_tokenizer
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.serializer.base import (
     BaseSerializerProvider,
@@ -17,35 +18,65 @@ from docling_core.types import DoclingDocument
 
 
 class LineBasedTokenChunker(BaseChunker):
-    r"""Chunker doing tokenization-aware chunking of document text. Chunk contains full lines.
-
-    Args:
-        tokenizer: The tokenizer to use; either instantiated object or name or path of
-            respective pretrained model
-        max_tokens: The maximum number of tokens per chunk. If not set, limit is
-            resolved from the tokenizer
-        prefix: a text that should appear at the beginning of each chunks, default is an empty string
+    r"""Tokenization-aware chunker that preserves line boundaries.
+    
+    This chunker serializes the document content into text and attempts to keep lines
+    intact within chunks. It only splits a line if it exceeds the maximum token limit on
+    its own. This is particularly useful for structured content like tables, code, or logs
+    where line boundaries are semantically important.
     """
-
+        
+    
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
-    prefix: str = ""
-    prefix_len: int = Field(default=0, init=False)
-    serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
+    
+    tokenizer: Annotated[
+        BaseTokenizer,
+        Field(
+            default_factory=_get_default_tokenizer,
+            description="The tokenizer to use; either instantiated object or name or path of respective pretrained model"
+        )
+    ]
+    
+    prefix: Annotated[
+        str,
+        Field(
+            default="",
+            description="Text that appears at the beginning of each chunk. Useful for adding context like table headers"
+        )
+    ]
+    
+    serializer_provider: Annotated[
+        BaseSerializerProvider,
+        Field(
+            default_factory=ChunkingSerializerProvider,
+            description="Provider for document serialization during chunking"
+        )
+    ]
 
-    @property
-    def max_tokens(self) -> int:
-        """Get maximum number of tokens allowed."""
-        return self.tokenizer.get_max_tokens()
 
-    def model_post_init(self, __context) -> None:
-        self.prefix_len = self.tokenizer.count_tokens(self.prefix)
-        if self.prefix_len >= self.max_tokens:
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    def prefix_len(self) -> int:
+        """Cached token count of the prefix, computed during initialization."""
+        token_count = self.tokenizer.count_tokens(self.prefix)
+        if token_count >= self.max_tokens:
             warnings.warn(
                 f"Chunks prefix: {self.prefix} is too long for chunk size {self.max_tokens} and will be ignored"
             )
+            return 0
+        return token_count
+
+    @property
+    def max_tokens(self) -> int:
+        """Get maximum number of tokens allowed in a chunk. If not set, limit is resolved from the tokenizer."""
+        return self.tokenizer.get_max_tokens()
+
+    def model_post_init(self, __context) -> None:
+        # Trigger computation of prefix_len to validate prefix length
+        _ = self.prefix_len
+        if self.prefix_len == 0 and self.prefix:
+            # If prefix_len is 0 but prefix exists, it means prefix was too long
             self.prefix = ""
-            self.prefix_len = 0
 
     def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
         """Chunk the provided document using line-based token-aware chunking.

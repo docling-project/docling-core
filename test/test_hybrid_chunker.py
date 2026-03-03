@@ -439,7 +439,7 @@ def test_chunk_with_duplicat_table_header():
             max_tokens=250,
         ),
         merge_peers=True,
-        duplicate_table_header=True,
+        repeat_table_header=True,
         serializer_provider=MarkdownSerializerProvider(),
     )
     # Create table serializer to serialize individual tables

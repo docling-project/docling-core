@@ -12,6 +12,14 @@ from docling_core.types.doc import DoclingDocument as DLDocument
 
 DFLT_DELIM = "\n"
 
+def _get_default_tokenizer():
+    from docling_core.transforms.chunker.tokenizer.huggingface import (
+        HuggingFaceTokenizer,
+    )
+
+    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+
 
 class BaseMeta(BaseModel):
     """Chunk metadata base class."""

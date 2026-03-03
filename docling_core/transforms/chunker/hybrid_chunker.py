@@ -11,6 +11,8 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
 )
+from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
+from docling_core.transforms.chunker.base import _get_default_tokenizer
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.serializer.base import BaseDocSerializer
 from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
@@ -39,13 +41,6 @@ from docling_core.transforms.serializer.base import (
 from docling_core.types import DoclingDocument
 
 
-def _get_default_tokenizer():
-    from docling_core.transforms.chunker.tokenizer.huggingface import (
-        HuggingFaceTokenizer,
-    )
-
-    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
 
 class HybridChunker(BaseChunker):
     r"""Chunker doing tokenization-aware refinements on top of document layout chunking.
@@ -55,6 +50,7 @@ class HybridChunker(BaseChunker):
             respective pretrained model
         max_tokens: The maximum number of tokens per chunk. If not set, limit is
             resolved from the tokenizer
+        repeat_table_headers: Whether to repeat a table header if the table is chunked    
         merge_peers: Whether to merge undersized chunks sharing same relevant metadata
         always_emit_headings: Whether to emit headings even for empty sections
     """
@@ -62,7 +58,7 @@ class HybridChunker(BaseChunker):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
-    duplicate_table_header: bool = True
+    repeat_table_header: bool = True
     merge_peers: bool = True
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
@@ -245,7 +241,7 @@ class HybridChunker(BaseChunker):
     def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
         segments = []
         if (
-            self.duplicate_table_header
+            self.repeat_table_header
             and isinstance(doc_serializer, ChunkingDocSerializer)
             and len(doc_chunk.meta.doc_items) == 1
             and isinstance(doc_chunk.meta.doc_items[0], TableItem)
@@ -253,8 +249,7 @@ class HybridChunker(BaseChunker):
             header_lines, body_lines = doc_serializer.table_serializer.get_header_and_body_lines(
                 table_text=doc_chunk.text
             )
-            from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
-
+            
             line_chunker = LineBasedTokenChunker(
                 tokenizer=self.tokenizer, max_tokens=available_length, prefix="\n".join(header_lines)
             )
