@@ -17,14 +17,13 @@ from docling_core.types import DoclingDocument
 
 
 class LineBasedTokenChunker(BaseChunker):
-    r"""Chunker doing tokenization-aware chunking of document text. Chunk contains full lines.
-
-    Args:
-        tokenizer: The tokenizer to use; either instantiated object or name or path of
-            respective pretrained model
-        max_tokens: The maximum number of tokens per chunk. If not set, limit is
-            resolved from the tokenizer
-        prefix: a text that should appear at the beginning of each chunks, default is an empty string
+    """Tokenization-aware chunker that preserves line boundaries.
+    
+    This chunker serializes the document content into text and attempts to keep lines
+    intact within chunks. It only splits a line if it exceeds the maximum token limit on
+    its own. This is particularly useful for structured content like tables, code, or logs
+    where line boundaries are semantically important.
+    """
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
