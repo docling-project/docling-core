@@ -7,12 +7,12 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
+from docling_core.transforms.chunker.base import _get_default_tokenizer
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
 )
 from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
-from docling_core.transforms.chunker.base import _get_default_tokenizer
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.serializer.base import BaseDocSerializer
 from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
@@ -41,7 +41,6 @@ from docling_core.transforms.serializer.base import (
 from docling_core.types import DoclingDocument
 
 
-
 class HybridChunker(BaseChunker):
     r"""Chunker doing tokenization-aware refinements on top of document layout chunking.
 
@@ -50,7 +49,7 @@ class HybridChunker(BaseChunker):
             respective pretrained model
         max_tokens: The maximum number of tokens per chunk. If not set, limit is
             resolved from the tokenizer
-        repeat_table_headers: Whether to repeat a table header if the table is chunked    
+        repeat_table_headers: Whether to repeat a table header if the table is chunked
         merge_peers: Whether to merge undersized chunks sharing same relevant metadata
         always_emit_headings: Whether to emit headings even for empty sections
     """
@@ -249,9 +248,12 @@ class HybridChunker(BaseChunker):
             header_lines, body_lines = doc_serializer.table_serializer.get_header_and_body_lines(
                 table_text=doc_chunk.text
             )
-            
+
             line_chunker = LineBasedTokenChunker(
-                tokenizer=self.tokenizer, max_tokens=available_length, prefix="\n".join(header_lines)
+                tokenizer=self.tokenizer,
+                max_tokens=available_length,
+                prefix="\n".join(header_lines),
+                serializer_provider=self.serializer_provider,
             )
             segments = line_chunker.chunk_text(lines=body_lines)
         else:

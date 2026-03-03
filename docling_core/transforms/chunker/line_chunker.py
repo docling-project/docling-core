@@ -6,10 +6,10 @@ from typing import Annotated, Any, Optional
 from pydantic import ConfigDict, Field, computed_field
 
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, DocChunk, DocMeta
+from docling_core.transforms.chunker.base import _get_default_tokenizer
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
 )
-from docling_core.transforms.chunker.base import _get_default_tokenizer
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.serializer.base import (
     BaseSerializerProvider,
@@ -18,41 +18,39 @@ from docling_core.types import DoclingDocument
 
 
 class LineBasedTokenChunker(BaseChunker):
-    r"""Tokenization-aware chunker that preserves line boundaries.
-    
+    """Tokenization-aware chunker that preserves line boundaries.
+
     This chunker serializes the document content into text and attempts to keep lines
     intact within chunks. It only splits a line if it exceeds the maximum token limit on
     its own. This is particularly useful for structured content like tables, code, or logs
     where line boundaries are semantically important.
     """
-        
-    
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    
+
     tokenizer: Annotated[
         BaseTokenizer,
         Field(
             default_factory=_get_default_tokenizer,
-            description="The tokenizer to use; either instantiated object or name or path of respective pretrained model"
-        )
+            description="The tokenizer to use; either instantiated object or name or path of respective pretrained model",
+        ),
     ]
-    
+
     prefix: Annotated[
         str,
         Field(
             default="",
-            description="Text that appears at the beginning of each chunk. Useful for adding context like table headers"
-        )
+            description="Text that appears at the beginning of each chunk. Useful for adding context like table headers",
+        ),
     ]
-    
+
     serializer_provider: Annotated[
         BaseSerializerProvider,
         Field(
             default_factory=ChunkingSerializerProvider,
-            description="Provider for document serialization during chunking"
-        )
+            description="Provider for document serialization during chunking",
+        ),
     ]
-
 
     @computed_field  # type: ignore[misc]
     @cached_property
@@ -194,7 +192,7 @@ class LineBasedTokenChunker(BaseChunker):
 
         # Binary search over character indices [0, len(text)]
         lo, hi = 0, len(text)
-        best_idx: Optional[int] = None
+        best_idx: int | None = None
 
         while lo <= hi:
             mid = (lo + hi) // 2
@@ -217,7 +215,7 @@ class LineBasedTokenChunker(BaseChunker):
             # Search backwards from best_idx to find whitespace; keep within token limit.
 
             last_space_index = text[:best_idx].rfind(" ")
-            if last_space_index > 0:
+            if last_space_index >= 0:
                 best_idx = last_space_index
 
         head, tail = text[:best_idx], text[best_idx:]

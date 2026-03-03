@@ -36,7 +36,7 @@ def test_chunk_text_with_prefix():
         ),
         prefix=prefix,
     )
-    
+
     lines = ["Line 1\n", "Line 2\n", "Line 3"]
     chunks = chunker.chunk_text(lines)
 
