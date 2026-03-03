@@ -69,47 +69,40 @@ from docling_core.types.doc.document import (
 )
 
 
-def _cell_content_has_table(item: Any, doc: "DoclingDocument") -> bool:
-    """Return True if *item* is, or has a descendant that is, a TableItem.
-
-    Used by MarkdownTableSerializer to decide whether a RichTableCell's
-    content should be serialized recursively or flattened into plain text.
-    Markdown table cells cannot contain nested block-level tables, so when
-    the rich content includes one we collect text via
-    ``_collect_subtree_text`` rather than producing pipe-heavy output that
-    breaks the outer table.
-    """
+def _cell_content_has_table(item: NodeItem, doc: DoclingDocument) -> bool:
+    """Return True if *item* is, or has a descendant that is, a TableItem."""
     if isinstance(item, TableItem):
         return True
-    for child_ref in getattr(item, "children", []):
-        if _cell_content_has_table(child_ref.resolve(doc=doc), doc):
-            return True
+    elif isinstance(item, NodeItem):
+        for child_ref in item.children:
+            if _cell_content_has_table(child_ref.resolve(doc=doc), doc):
+                return True
     return False
 
 
-def _mark_subtree_visited(item: Any, doc: "DoclingDocument", visited: set[str]) -> None:
+def _mark_subtree_visited(
+    item: NodeItem,
+    doc: DoclingDocument,
+    visited: set[str],
+) -> None:
     """Recursively add *item* and all its descendants to *visited*.
 
-    When a RichTableCell's content is skipped (because it contains a nested
-    table), the content is never passed through the normal serialize() path
-    that would mark items visited.  Calling this instead keeps the visited
-    set consistent so the document serializer does not emit those items a
-    second time at the top level.
+    When a nested table inside a RichTableCell is flattened, its items are
+    never passed through the normal serialize() path that would mark them
+    visited.  Calling this keeps the visited set consistent so the document
+    serializer does not emit those items again at the top level.
     """
-    if (ref := getattr(item, "self_ref", None)) is not None:
-        visited.add(ref)
-    for child_ref in getattr(item, "children", []):
-        _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
+    if isinstance(item, NodeItem):
+        visited.add(item.self_ref)
+        for child_ref in item.children:
+            _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
 
 
-def _collect_subtree_text(item: Any, doc: "DoclingDocument") -> str:
+def _collect_subtree_text(item: NodeItem, doc: DoclingDocument) -> str:
     """Collect all text from *item*'s subtree, flattening nested tables.
 
-    When a RichTableCell contains a nested TableItem the markdown serializer
-    cannot render it as a table inside the outer cell (no markdown spec
-    supports nested tables).  This helper walks the subtree and returns a
-    space-joined string of every piece of text it finds so that the content
-    is preserved in a flat, readable form.
+    Returns a space-joined string of every piece of text found so that the
+    content of a nested table is preserved in a flat, readable form.
 
     For TableItems the text is pulled from ``data.grid`` cells directly;
     children are *not* recursed into because they duplicate the grid content
@@ -128,11 +121,12 @@ def _collect_subtree_text(item: Any, doc: "DoclingDocument") -> str:
     if isinstance(item, TextItem) and item.text:
         parts.append(item.text)
 
-    for child_ref in getattr(item, "children", []):
-        child = child_ref.resolve(doc=doc)
-        child_text = _collect_subtree_text(child, doc)
-        if child_text:
-            parts.append(child_text)
+    if isinstance(item, NodeItem):
+        for child_ref in item.children:
+            child = child_ref.resolve(doc=doc)
+            child_text = _collect_subtree_text(child, doc)
+            if child_text:
+                parts.append(child_text)
 
     return " ".join(parts)
 
@@ -468,6 +462,14 @@ class MarkdownTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        if kwargs.get("_nested_in_table"):
+            visited: set[str] = kwargs.get("visited") or set()
+            _mark_subtree_visited(item, doc, visited)
+            return create_ser_result(
+                text=_collect_subtree_text(item, doc),
+                span_source=item,
+            )
+
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
 
@@ -493,18 +495,11 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 for col in row:
                     if isinstance(col, RichTableCell):
                         ref_item = col.ref.resolve(doc=doc)
-                        if _cell_content_has_table(ref_item, doc):
-                            # Markdown table cells cannot contain nested block-level
-                            # tables.  Collect all text from the subtree in flat form
-                            # so the content is preserved without pipe-heavy output
-                            # that would break the outer table.  Mark the skipped
-                            # subtree as visited so the document serializer does not
-                            # emit those items again at top level.
-                            visited: set[str] = kwargs.get("visited") or set()
-                            _mark_subtree_visited(ref_item, doc, visited)
-                            cell_text = _collect_subtree_text(ref_item, doc) or col.text or ""
-                        else:
-                            cell_text = doc_serializer.serialize(item=ref_item, **kwargs).text
+                        inner_kwargs = {**kwargs, "_nested_in_table": True}
+                        cell_text = doc_serializer.serialize(
+                            item=ref_item,
+                            **inner_kwargs,
+                        ).text
                     else:
                         cell_text = col.text or ""
                     # Newlines and pipes must be escaped in every cell so the
