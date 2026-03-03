@@ -2551,8 +2551,8 @@ class FieldHeadingItem(TextItem):
     level: LevelNumber = 1
 
 
-class FieldItem(GroupItem):
-    label: typing.Literal[GroupLabel.FIELD_ITEM] = GroupLabel.FIELD_ITEM
+class FieldItem(DocItem):
+    label: typing.Literal[DocItemLabel.FIELD_ITEM] = DocItemLabel.FIELD_ITEM
 
 
 class FieldValueItem(TextItem):
@@ -2572,6 +2572,7 @@ ContentItem = Annotated[
         TableItem,
         KeyValueItem,
         FieldRegionItem,
+        FieldItem,
     ],
     Field(discriminator="label"),
 ]
@@ -2607,7 +2608,7 @@ class DoclingDocument(BaseModel):
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
-    groups: list[Union[ListGroup, InlineGroup, FieldItem, GroupItem]] = []
+    groups: list[Union[ListGroup, InlineGroup, GroupItem]] = []
     texts: list[
         Union[
             TitleItem,
@@ -2625,6 +2626,7 @@ class DoclingDocument(BaseModel):
     key_value_items: list[KeyValueItem] = []
     form_items: list[FormItem] = []
     field_regions: list[FieldRegionItem] = []
+    field_items: list[FieldItem] = []
 
     pages: dict[int, PageItem] = {}  # empty as default
 
@@ -2633,7 +2635,7 @@ class DoclingDocument(BaseModel):
         dumped = handler(self)
 
         # suppress serializing certain fields when empty:
-        for field in {"field_regions"}:
+        for field in {"field_regions", "field_items"}:
             if dumped.get(field) == []:
                 del dumped[field]
 
@@ -2867,6 +2869,17 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.field_regions.append(item)
+
+        elif isinstance(item, FieldItem):
+            item_label = "field_items"
+            item_index = len(self.field_items)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.field_items.append(item)
 
         elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
@@ -3838,22 +3851,25 @@ class DoclingDocument(BaseModel):
 
     def add_field_item(
         self,
-        name: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
     ) -> FieldItem:
         """add_kv_entry."""
         _parent = parent or self.body
-        cref = f"#/groups/{len(self.groups)}"
-        group = FieldItem(self_ref=cref, parent=_parent.get_ref())
-        if name is not None:
-            group.name = name
+        cref = f"#/field_items/{len(self.field_items)}"
+        item = FieldItem(
+            self_ref=cref,
+            parent=_parent.get_ref(),
+        )
+        if prov:
+            item.prov.append(prov)
         if content_layer:
-            group.content_layer = content_layer
+            item.content_layer = content_layer
 
-        self.groups.append(group)
+        self.field_items.append(item)
         _parent.children.append(RefItem(cref=cref))
-        return group
+        return item
 
     def add_field_key(
         self,
@@ -6549,7 +6565,8 @@ class DoclingDocument(BaseModel):
         tables: list[TableItem] = []
         key_value_items: list[KeyValueItem] = []
         form_items: list[FormItem] = []
-        key_value_maps: list[FieldRegionItem] = []
+        field_regions: list[FieldRegionItem] = []
+        field_items: list[FieldItem] = []
 
         pages: dict[int, PageItem] = {}
 
@@ -6691,7 +6708,8 @@ class DoclingDocument(BaseModel):
         self.tables = doc_index.tables
         self.key_value_items = doc_index.key_value_items
         self.form_items = doc_index.form_items
-        self.field_regions = doc_index.key_value_maps
+        self.field_regions = doc_index.field_regions
+        self.field_items = doc_index.field_items
         self.pages = doc_index.pages
         self.name = doc_index.get_name()
 

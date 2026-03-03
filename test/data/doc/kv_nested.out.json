@@ -13,19 +13,7 @@
     "self_ref": "#/body",
     "children": [
       {
-        "$ref": "#/texts/0"
-      },
-      {
         "$ref": "#/field_regions/0"
-      },
-      {
-        "$ref": "#/texts/1"
-      },
-      {
-        "$ref": "#/field_regions/1"
-      },
-      {
-        "$ref": "#/texts/2"
       }
     ],
     "content_layer": "body",
@@ -37,63 +25,67 @@
     {
       "self_ref": "#/texts/0",
       "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [],
-      "orig": "Hello, world!",
-      "text": "Hello, world!"
-    },
-    {
-      "self_ref": "#/texts/1",
-      "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [],
-      "orig": "Some more text...",
-      "text": "Some more text..."
-    },
-    {
-      "self_ref": "#/texts/2",
-      "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [],
-      "orig": "The end.",
-      "text": "The end."
-    },
-    {
-      "self_ref": "#/texts/3",
-      "parent": {
         "$ref": "#/field_items/0"
       },
       "children": [],
       "content_layer": "body",
       "label": "field_key",
       "prov": [],
-      "orig": "Common name",
-      "text": "Common name"
+      "orig": "A",
+      "text": "A"
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "marker",
+      "prov": [],
+      "orig": "1.",
+      "text": "1."
+    },
+    {
+      "self_ref": "#/texts/3",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "AA",
+      "text": "AA"
     },
     {
       "self_ref": "#/texts/4",
       "parent": {
-        "$ref": "#/field_items/0"
+        "$ref": "#/field_items/1"
       },
       "children": [],
       "content_layer": "body",
-      "label": "field_value",
+      "label": "field_hint",
       "prov": [],
-      "orig": "Duck",
-      "text": "Duck",
-      "kind": "read_only"
+      "orig": "Some explanation for key AA",
+      "text": "Some explanation for key AA"
     },
     {
       "self_ref": "#/texts/5",
@@ -102,10 +94,11 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "field_key",
+      "label": "field_value",
       "prov": [],
-      "orig": "Distribution package",
-      "text": "Distribution package"
+      "orig": "AAA",
+      "text": "AAA",
+      "kind": "read_only"
     },
     {
       "self_ref": "#/texts/6",
@@ -114,11 +107,10 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "field_value",
+      "label": "field_hint",
       "prov": [],
-      "orig": "docling",
-      "text": "docling",
-      "kind": "read_only"
+      "orig": "Some explanation for value AAA",
+      "text": "Some explanation for value AAA"
     },
     {
       "self_ref": "#/texts/7",
@@ -128,37 +120,22 @@
       "children": [],
       "content_layer": "body",
       "label": "field_value",
-      "prov": [
-        {
-          "page_no": 1,
-          "bbox": {
-            "l": 1.0,
-            "t": 4.0,
-            "r": 3.0,
-            "b": 2.0,
-            "coord_origin": "BOTTOMLEFT"
-          },
-          "charspan": [
-            0,
-            2
-          ]
-        }
-      ],
-      "orig": "docling-core",
-      "text": "docling-core",
+      "prov": [],
+      "orig": "AAB",
+      "text": "AAB",
       "kind": "read_only"
     },
     {
       "self_ref": "#/texts/8",
       "parent": {
-        "$ref": "#/field_items/2"
+        "$ref": "#/field_items/1"
       },
       "children": [],
       "content_layer": "body",
-      "label": "field_key",
+      "label": "field_hint",
       "prov": [],
-      "orig": "Color",
-      "text": "Color"
+      "orig": "Some explanation for value AAB",
+      "text": "Some explanation for value AAB"
     },
     {
       "self_ref": "#/texts/9",
@@ -167,11 +144,10 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "field_value",
+      "label": "marker",
       "prov": [],
-      "orig": "Orange",
-      "text": "Orange",
-      "kind": "read_only"
+      "orig": "2.",
+      "text": "2."
     },
     {
       "self_ref": "#/texts/10",
@@ -180,11 +156,10 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "field_value",
+      "label": "field_key",
       "prov": [],
-      "orig": "Black",
-      "text": "Black",
-      "kind": "read_only"
+      "orig": "AB",
+      "text": "AB"
     },
     {
       "self_ref": "#/texts/11",
@@ -195,8 +170,21 @@
       "content_layer": "body",
       "label": "field_value",
       "prov": [],
-      "orig": "White",
-      "text": "White",
+      "orig": "ABA",
+      "text": "ABA",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/12",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "ABB",
+      "text": "ABB",
       "kind": "read_only"
     }
   ],
@@ -213,23 +201,6 @@
       "children": [
         {
           "$ref": "#/field_items/0"
-        },
-        {
-          "$ref": "#/field_items/1"
-        }
-      ],
-      "content_layer": "body",
-      "label": "field_region",
-      "prov": []
-    },
-    {
-      "self_ref": "#/field_regions/1",
-      "parent": {
-        "$ref": "#/body"
-      },
-      "children": [
-        {
-          "$ref": "#/field_items/2"
         }
       ],
       "content_layer": "body",
@@ -250,6 +221,23 @@
           ]
         }
       ]
+    },
+    {
+      "self_ref": "#/field_regions/1",
+      "parent": {
+        "$ref": "#/texts/1"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/1"
+        },
+        {
+          "$ref": "#/field_items/2"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
     }
   ],
   "field_items": [
@@ -260,10 +248,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/3"
+          "$ref": "#/texts/0"
         },
         {
-          "$ref": "#/texts/4"
+          "$ref": "#/texts/1"
         }
       ],
       "content_layer": "body",
@@ -273,9 +261,18 @@
     {
       "self_ref": "#/field_items/1",
       "parent": {
-        "$ref": "#/field_regions/0"
+        "$ref": "#/field_regions/1"
       },
       "children": [
+        {
+          "$ref": "#/texts/2"
+        },
+        {
+          "$ref": "#/texts/3"
+        },
+        {
+          "$ref": "#/texts/4"
+        },
         {
           "$ref": "#/texts/5"
         },
@@ -284,6 +281,9 @@
         },
         {
           "$ref": "#/texts/7"
+        },
+        {
+          "$ref": "#/texts/8"
         }
       ],
       "content_layer": "body",
@@ -297,9 +297,6 @@
       },
       "children": [
         {
-          "$ref": "#/texts/8"
-        },
-        {
           "$ref": "#/texts/9"
         },
         {
@@ -307,6 +304,9 @@
         },
         {
           "$ref": "#/texts/11"
+        },
+        {
+          "$ref": "#/texts/12"
         }
       ],
       "content_layer": "body",

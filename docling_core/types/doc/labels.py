@@ -36,6 +36,7 @@ class DocItemLabel(str, Enum):
 
     FIELD_REGION = "field_region"
     FIELD_HEADING = "field_heading"
+    FIELD_ITEM = "field_item"
     FIELD_KEY = "field_key"
     FIELD_VALUE = "field_value"
     FIELD_HINT = "field_hint"
@@ -92,7 +93,6 @@ class GroupLabel(str, Enum):
     COMMENT_SECTION = "comment_section"
     INLINE = "inline"
     PICTURE_AREA = "picture_area"
-    FIELD_ITEM = "field_item"
 
     def __str__(self):
         """Get string value."""

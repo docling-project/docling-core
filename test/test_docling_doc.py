@@ -48,7 +48,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import CURRENT_VERSION, FieldHeadingItem, FieldRegionItem, FieldValueItem, PageItem
+from docling_core.types.doc.document import CURRENT_VERSION, FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem, PageItem
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -543,6 +543,11 @@ def test_docitems():
             )
             verify(dc, obj)
         elif dc is FieldRegionItem:
+            obj = dc(
+                self_ref="#",
+            )
+            verify(dc, obj)
+        elif dc is FieldItem:
             obj = dc(
                 self_ref="#",
             )

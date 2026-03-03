@@ -758,6 +758,14 @@ def test_chart():
     exp_file = Path("./test/data/doc/barchart.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
+
+def _verify_doc(doc: DoclingDocument, exp_json: Path):
+    if GEN_TEST_DATA:
+        doc.save_as_json(filename=exp_json)
+    else:
+        exp_doc = DoclingDocument.load_from_json(filename=exp_json)
+        assert doc == exp_doc
+
 def test_kv():
     doc = DoclingDocument(name="")
     kvm = doc.add_field_region()
@@ -826,6 +834,9 @@ def test_kv():
 
     doc.add_text(label=DocItemLabel.TEXT, text="Some final stuff.")
     doc.add_text(label=DocItemLabel.TEXT, text="The end.")
+
+    exp_json = Path("./test/data/doc/kv.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
 
     ser = DoclangDocSerializer(
         doc=doc,
@@ -907,6 +918,9 @@ def test_kv_invoice():
     doc.add_field_key(text="Administrator", parent=kve, prov=prov)
     doc.add_field_value(text="John Doe", parent=kve, prov=prov)
 
+    exp_json = Path("./test/data/doc/kv_invoice.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
     ser = DoclangDocSerializer(
         doc=doc,
         params=DoclangParams(
@@ -954,6 +968,9 @@ def test_kv_advanced_inline():
     doc.add_field_value(text="", parent=kve, kind="fillable")
     doc.add_text(label=DocItemLabel.TEXT, text=".", parent=inl_outer)
 
+    exp_json = Path("./test/data/doc/kv_advanced_inline.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
     ser = DoclangDocSerializer(
         doc=doc,
         params=DoclangParams(
@@ -999,6 +1016,9 @@ def test_kv_nested():
     doc.add_field_key(text="AB", parent=kve_inner)
     doc.add_field_value(text="ABA", parent=kve_inner)
     doc.add_field_value(text="ABB", parent=kve_inner)
+
+    exp_json = Path("./test/data/doc/kv_nested.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
 
     ser = DoclangDocSerializer(
         doc=doc,
@@ -1062,6 +1082,9 @@ def test_kv_form_with_table():
                     ref=kve.get_ref(),
                 )
             doc.add_table_cell(table_item=table, cell=cell)
+
+    exp_json = Path("./test/data/doc/kv_form_with_table.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
 
     ser = DoclangDocSerializer(
         doc=doc,
@@ -1196,20 +1219,12 @@ def test_kv_migration():
     doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=doc.body)
 
     exp_json = Path("./test/data/doc/kv_pre_migration.out.json")
-    if GEN_TEST_DATA:
-        doc.save_as_json(filename=exp_json)
-    else:
-        exp_doc = DoclingDocument.load_from_json(filename=exp_json)
-        assert doc == exp_doc
+    _verify_doc(doc=doc, exp_json=exp_json)
 
     doc._migrate_forms_to_field_regions()
 
     exp_json = Path("./test/data/doc/kv_post_migration.out.json")
-    if GEN_TEST_DATA:
-        doc.save_as_json(filename=exp_json)
-    else:
-        exp_doc = DoclingDocument.load_from_json(filename=exp_json)
-        assert doc == exp_doc
+    _verify_doc(doc=doc, exp_json=exp_json)
 
     ser = DoclangDocSerializer(doc=doc, params=DoclangParams())
     ser_res = ser.serialize()
