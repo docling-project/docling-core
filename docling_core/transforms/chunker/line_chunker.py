@@ -28,8 +28,17 @@ class LineBasedTokenChunker(BaseChunker):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
-    prefix: str = ""
-    prefix_len: int = Field(default=0, init=False)
+    prefix: Annotated[
+        str,
+        Field(
+            description="Text that appears at the beginning of each chunk. Useful for adding context like table headers"
+        ),
+    ] = ""
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    _prefix_len(self) -> int:
+       // add computation here
+       pass
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
 
     @property
@@ -162,7 +171,7 @@ class LineBasedTokenChunker(BaseChunker):
 
         # Binary search over character indices [0, len(text)]
         lo, hi = 0, len(text)
-        best_idx: Optional[int] = None
+        best_idx: int | None = None
 
         while lo <= hi:
             mid = (lo + hi) // 2
@@ -185,7 +194,7 @@ class LineBasedTokenChunker(BaseChunker):
             # Search backwards from best_idx to find whitespace; keep within token limit.
 
             last_space_index = text[:best_idx].rfind(" ")
-            if last_space_index > 0:
+            if last_space_index >= 0:
                 best_idx = last_space_index
 
         head, tail = text[:best_idx], text[best_idx:]
