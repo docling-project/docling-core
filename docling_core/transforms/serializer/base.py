@@ -78,6 +78,35 @@ class BaseTableSerializer(ABC):
         """Serializes the passed item."""
         ...
 
+    def get_header_and_body_lines(
+        self,
+        *,
+        table_text: str,
+        **kwargs: Any,
+    ) -> tuple[list[str], list[str]]:
+        """Get header lines and body lines from the table.
+
+        Splits a serialized table into header and body sections. This is useful
+        for repeating headers when a table spans multiple chunks.
+
+        Args:
+            table_text: The serialized table text to split.
+
+        Returns:
+            A tuple of (header_lines, body_lines) where header_lines is a list
+            of strings representing table headers and body_lines is a list of
+            strings representing table body rows.
+
+        Note:
+            Default implementation returns empty header lines and all content
+            in body lines. Subclasses should override to provide format-specific
+            splitting logic.
+        """
+        # default: empty headers, all content in body
+        header_lines: list[str] = []
+        body_lines = [line for line in table_text.split("\n") if line.strip()]
+        return header_lines, body_lines
+
 
 class BasePictureSerializer(ABC):
     """Base class for picture item serializers."""
