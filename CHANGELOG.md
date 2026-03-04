@@ -1,3 +1,9 @@
+## [v2.67.0](https://github.com/docling-project/docling-core/releases/tag/v2.67.0) - 2026-03-04
+
+### Feature
+
+* Table aware chunking ([#527](https://github.com/docling-project/docling-core/issues/527)) ([`ea359bc`](https://github.com/docling-project/docling-core/commit/ea359bcc63e0cc25d323374a234e13142adf9110))
+
 ## [v2.66.0](https://github.com/docling-project/docling-core/releases/tag/v2.66.0) - 2026-02-26
 
 ### Feature
