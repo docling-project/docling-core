@@ -1,16 +1,16 @@
 import warnings
 from collections.abc import Iterator
 from functools import cached_property
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from pydantic import ConfigDict, Field, computed_field
 
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, DocChunk, DocMeta
-from docling_core.transforms.chunker.base import _get_default_tokenizer
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
 )
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
+from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 from docling_core.transforms.serializer.base import (
     BaseSerializerProvider,
 )
@@ -31,7 +31,7 @@ class LineBasedTokenChunker(BaseChunker):
     tokenizer: Annotated[
         BaseTokenizer,
         Field(
-            default_factory=_get_default_tokenizer,
+            default_factory=get_default_tokenizer,
             description="The tokenizer to use; either instantiated object or name or path of respective pretrained model",
         ),
     ]

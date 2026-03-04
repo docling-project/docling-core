@@ -7,13 +7,13 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
-from docling_core.transforms.chunker.base import _get_default_tokenizer
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
 )
 from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
+from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 from docling_core.transforms.serializer.base import BaseDocSerializer
 from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
 
@@ -56,7 +56,7 @@ class HybridChunker(BaseChunker):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
+    tokenizer: BaseTokenizer = Field(default_factory=get_default_tokenizer)
     repeat_table_header: bool = True
     merge_peers: bool = True
 
@@ -90,7 +90,7 @@ class HybridChunker(BaseChunker):
                         max_tokens=max_tokens,
                     )
                 elif tokenizer is None or isinstance(tokenizer, PreTrainedTokenizerBase):
-                    kwargs = {"tokenizer": tokenizer or _get_default_tokenizer().tokenizer}
+                    kwargs = {"tokenizer": tokenizer or get_default_tokenizer().tokenizer}
                     if max_tokens is not None:
                         kwargs["max_tokens"] = max_tokens
                     data["tokenizer"] = HuggingFaceTokenizer(**kwargs)
