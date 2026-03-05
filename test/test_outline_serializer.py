@@ -9,11 +9,6 @@ from docling_core.types.doc import DoclingDocument
 
 
 def test_outline_serializer_basic():
-    # src = Path("test/data/doc/2408.09869.json")
-    # src = Path("test/data/doc/2501.17887v1.json")
-    # src = Path("test/data/doc/2106.09680v1.json")
-    # src = Path("test/data/doc/2408.09869v3_enriched.json")
-
     for src in [
         Path("test/data/doc/2501.17887v1.json"),
         Path("test/data/doc/2106.09680v1.json"),
