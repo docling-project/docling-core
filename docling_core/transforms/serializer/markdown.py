@@ -69,6 +69,68 @@ from docling_core.types.doc.document import (
 )
 
 
+def _cell_content_has_table(item: NodeItem, doc: DoclingDocument) -> bool:
+    """Return True if *item* is, or has a descendant that is, a TableItem."""
+    if isinstance(item, TableItem):
+        return True
+    elif isinstance(item, NodeItem):
+        for child_ref in item.children:
+            if _cell_content_has_table(child_ref.resolve(doc=doc), doc):
+                return True
+    return False
+
+
+def _mark_subtree_visited(
+    item: NodeItem,
+    doc: DoclingDocument,
+    visited: set[str],
+) -> None:
+    """Recursively add *item* and all its descendants to *visited*.
+
+    When a nested table inside a RichTableCell is flattened, its items are
+    never passed through the normal serialize() path that would mark them
+    visited.  Calling this keeps the visited set consistent so the document
+    serializer does not emit those items again at the top level.
+    """
+    if isinstance(item, NodeItem):
+        visited.add(item.self_ref)
+        for child_ref in item.children:
+            _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
+
+
+def _collect_subtree_text(item: NodeItem, doc: DoclingDocument) -> str:
+    """Collect all text from *item*'s subtree, flattening nested tables.
+
+    Returns a space-joined string of every piece of text found so that the
+    content of a nested table is preserved in a flat, readable form.
+
+    For TableItems the text is pulled from ``data.grid`` cells directly;
+    children are *not* recursed into because they duplicate the grid content
+    for RichTableCells.  For all other items, ``.text`` is collected and
+    children are visited recursively.
+    """
+    parts: list[str] = []
+
+    if isinstance(item, TableItem):
+        for row in item.data.grid:
+            for cell in row:
+                if cell.text:
+                    parts.append(cell.text)
+        return " ".join(parts)
+
+    if isinstance(item, TextItem) and item.text:
+        parts.append(item.text)
+
+    if isinstance(item, NodeItem):
+        for child_ref in item.children:
+            child = child_ref.resolve(doc=doc)
+            child_text = _collect_subtree_text(child, doc)
+            if child_text:
+                parts.append(child_text)
+
+    return " ".join(parts)
+
+
 class OrigListItemMarkerMode(str, Enum):
     """Display mode for original list item marker."""
 
@@ -429,6 +491,14 @@ class MarkdownTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        if kwargs.get("_nested_in_table"):
+            visited: set[str] = kwargs.get("visited") or set()
+            _mark_subtree_visited(item, doc, visited)
+            return create_ser_result(
+                text=_collect_subtree_text(item, doc),
+                span_source=item,
+            )
+
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
 
@@ -448,19 +518,23 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 if ann_res.text:
                     res_parts.append(ann_res)
 
-            rows = [
-                [
-                    # make sure that md tables are not broken due to newline or pipe chars in the text
-                    # TODO: escape pipe characters also in RichTableCell once nested tables are properly handled
-                    (
-                        doc_serializer.serialize(item=col.ref.resolve(doc=doc), **kwargs).text.replace("\n", " ")
-                        if isinstance(col, RichTableCell)
-                        else col.text.replace("\n", " ").replace("|", "&#124;")
-                    )
-                    for col in row
-                ]
-                for row in item.data.grid
-            ]
+            rows = []
+            for row in item.data.grid:
+                rendered_row = []
+                for col in row:
+                    if isinstance(col, RichTableCell):
+                        ref_item = col.ref.resolve(doc=doc)
+                        inner_kwargs = {**kwargs, "_nested_in_table": True}
+                        cell_text = doc_serializer.serialize(
+                            item=ref_item,
+                            **inner_kwargs,
+                        ).text
+                    else:
+                        cell_text = col.text or ""
+                    # Newlines and pipes must be escaped in every cell so the
+                    # markdown table stays valid.
+                    rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
+                rows.append(rendered_row)
             if len(rows) > 0:
                 try:
                     table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")
