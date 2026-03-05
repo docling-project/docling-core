@@ -456,10 +456,7 @@ def test_chunk_with_duplicat_table_header():
     
 
     chunks = list(chunker.chunk(dl_doc=dl_doc))
- #   for chunk in chunks:
- #       print(chunk, file=open("output.txt", "a", encoding="utf-8"))
- #       print("+"*50, file=open("output.txt", "a", encoding="utf-8"))
-    
+     
     # Verify we got chunks
     assert len(chunks) > 0, "Expected at least one chunk from the input document"
     
