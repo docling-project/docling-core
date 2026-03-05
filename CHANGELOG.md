@@ -1,3 +1,9 @@
+## [v2.67.1](https://github.com/docling-project/docling-core/releases/tag/v2.67.1) - 2026-03-05
+
+### Fix
+
+* Prevent hang in export_to_markdown() on nested RichTableCells ([#525](https://github.com/docling-project/docling-core/issues/525)) ([`2debe08`](https://github.com/docling-project/docling-core/commit/2debe0836fb0365e36d2b6e5b0e1c409c85f6ecb))
+
 ## [v2.67.0](https://github.com/docling-project/docling-core/releases/tag/v2.67.0) - 2026-03-04
 
 ### Feature
