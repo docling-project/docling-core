@@ -8,6 +8,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     DocChunk,
     TripletTableSerializer,
 )
+from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
 
@@ -179,3 +180,27 @@ def test_triplet_table_serializer_single_column():
     expected = "Country = Italy. Country = Canada. Country = Switzerland"
     assert result.text == expected, f"Expected '{expected}', got '{result.text}'"
 
+def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
+    doc = rich_table_doc
+
+    class MySerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            return HTMLDocSerializer(
+                doc=doc,
+                table_serializer=TripletTableSerializer(),
+            )
+
+    chunker = HierarchicalChunker(
+        merge_list_items=True,
+        serializer_provider=MySerializerProvider(),
+    )
+
+    chunks = chunker.chunk(dl_doc=doc)
+    act_data = dict(
+        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
+    )
+
+    _process(
+        act_data=act_data,
+        exp_path_str="test/data/chunker/0c_out_chunks.json",
+    )
