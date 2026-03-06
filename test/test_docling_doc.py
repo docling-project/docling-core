@@ -49,6 +49,7 @@ from docling_core.types.doc import (
     TitleItem,
 )
 from docling_core.types.doc.document import CURRENT_VERSION, PageItem
+from docling_core.types.doc.webvtt import WebVTTFile
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -689,6 +690,14 @@ def _test_export_methods(doc: DoclingDocument, filename: str, page_break_placeho
             # print(dt_pages_pred)
             _verify_regression_test(dt_pages_pred, filename=filename, ext="pages.dt")
 
+    # Test WebVTT export ...
+    # Note: Documents without TrackSource will result in empty WebVTT, but this is valid
+    vtt_pred = doc.export_to_vtt()
+    _verify_regression_test(vtt_pred, filename=filename, ext="vtt")
+    parsed = WebVTTFile.parse(vtt_pred)
+    assert isinstance(parsed, WebVTTFile)
+    assert not parsed.cue_blocks
+
     # Test Tables export ...
     for table in doc.tables:
         table.export_to_markdown()
@@ -1113,6 +1122,13 @@ def test_save_to_disk(sample_doc):
         artifacts_dir=image_dir,
         image_mode=ImageRefMode.REFERENCED,
     )
+    _verify_saved_output(filename=filename, paths=paths)
+
+    ### WebVTT
+    # Note: Documents without TrackSource will result in empty WebVTT, but this is valid
+
+    filename = test_dir / "constructed_doc.vtt"
+    sample_doc.save_as_vtt(filename=filename)
     _verify_saved_output(filename=filename, paths=paths)
 
     assert True
@@ -1545,6 +1561,84 @@ def test_concatenate():
             exp_html_data = f.read()
         assert html_data == exp_html_data
 
+
+def test_concatenate_shifts_graph_cell_pages_for_keyvalue_and_form():
+    def _make_graph(page_no: int, value_text: str) -> GraphData:
+        return GraphData(
+            cells=[
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=1,
+                    text="k",
+                    orig="k",
+                    prov=ProvenanceItem(
+                        page_no=page_no,
+                        charspan=(0, 1),
+                        bbox=BoundingBox(
+                            l=10,
+                            t=40,
+                            r=30,
+                            b=10,
+                            coord_origin=CoordOrigin.BOTTOMLEFT,
+                        ),
+                    ),
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=2,
+                    text=value_text,
+                    orig=value_text,
+                    prov=ProvenanceItem(
+                        page_no=page_no,
+                        charspan=(0, len(value_text)),
+                        bbox=BoundingBox(
+                            l=35,
+                            t=40,
+                            r=80,
+                            b=10,
+                            coord_origin=CoordOrigin.BOTTOMLEFT,
+                        ),
+                    ),
+                ),
+            ],
+            links=[
+                GraphLink(
+                    label=GraphLinkLabel.TO_VALUE,
+                    source_cell_id=1,
+                    target_cell_id=2,
+                )
+            ],
+        )
+
+    def _make_doc(name: str, value_text: str) -> DoclingDocument:
+        doc = DoclingDocument(name=name)
+        doc.add_page(page_no=1, size=Size(width=100, height=100))
+        doc.add_key_values(graph=_make_graph(page_no=1, value_text=value_text))
+        doc.add_form(graph=_make_graph(page_no=1, value_text=f"{value_text}-form"))
+        return doc
+
+    doc1 = _make_doc(name="doc1", value_text="v1")
+    doc2 = _make_doc(name="doc2", value_text="v2")
+
+    merged = DoclingDocument.concatenate(docs=[doc1, doc2])
+
+    assert sorted(merged.pages.keys()) == [1, 2]
+    assert len(merged.key_value_items) == 2
+    assert len(merged.form_items) == 2
+
+    kv_item_pages = [
+        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov})
+        for item in merged.key_value_items
+    ]
+    form_item_pages = [
+        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov})
+        for item in merged.form_items
+    ]
+
+    assert kv_item_pages == [[1], [2]]
+    assert form_item_pages == [[1], [2]]
+
+
 def test_export_markdown_compact_tables():
     """Test compact_tables parameter for markdown export."""
     doc = DoclingDocument(name="Compact Table Test")
@@ -1889,6 +1983,31 @@ def test_meta_migration_warnings():
         _ = doc.pictures[0].annotations
     with pytest.warns(DeprecationWarning):
         _ = doc.tables[0].annotations
+
+
+@pytest.mark.parametrize(
+    "example_num",
+    [1, 2, 3, 4, 5],
+)
+def test_webvtt_export(example_num):
+    """Test WebVTT export with example files that contain TrackSource data."""
+    json_file = Path(f"test/data/doc/webvtt_example_{example_num:02d}.json")
+    gt_vtt_file = json_file.with_suffix(".gt.vtt")
+
+    # Load the document
+    doc = DoclingDocument.load_from_json(json_file)
+
+    # Export to WebVTT
+    vtt_output = doc.export_to_vtt()
+
+    # Verify against ground truth
+    if GEN_TEST_DATA:
+        with open(gt_vtt_file, "w", encoding="utf-8") as fw:
+            fw.write(f"{vtt_output}\n")
+    else:
+        with open(gt_vtt_file, encoding="utf-8") as fr:
+            gt_vtt = fr.read().rstrip()
+        assert vtt_output == gt_vtt, f"WebVTT output does not match ground truth for example {example_num:02d}"
 
 
 def test_docitem_comments_field():

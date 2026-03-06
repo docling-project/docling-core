@@ -1,5 +1,6 @@
 """Test serialization."""
 
+import threading
 from pathlib import Path
 
 import pytest
@@ -15,15 +16,16 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownParams,
     MarkdownTableSerializer,
     OrigListItemMarkerMode,
+    _cell_content_has_table,
 )
-from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer
+from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DescriptionAnnotation,
     DoclingDocument,
-    PictureItem,
     RefItem,
+    RichTableCell,
     TableCell,
     TableData,
     TextItem,
@@ -336,6 +338,7 @@ def test_md_single_row_table():
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
 
+
 def test_md_pipe_in_table():
     doc = DoclingDocument(name="Pipe in Table")
     table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
@@ -348,10 +351,108 @@ def test_md_pipe_in_table():
             start_col_offset_idx=0,
             end_col_offset_idx=1,
             text="Fruits | Veggies",
-        )
+        ),
     )
     ser = doc.export_to_markdown()
     assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
+
+
+def test_cell_content_has_table_detects_descendant_table():
+    """Ensure nested tables are detected through non-table parent nodes."""
+    doc = DoclingDocument(name="descendant_table")
+    wrapper = doc.add_group()
+    nested_table = doc.add_table(data=TableData(num_rows=1, num_cols=1), parent=wrapper)
+    doc.add_table_cell(
+        nested_table,
+        TableCell(
+            text="inner",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        ),
+    )
+
+    assert _cell_content_has_table(wrapper, doc)
+
+
+def _build_nested_rich_table_doc(depth: int) -> DoclingDocument:
+    """Build a document with `depth` levels of nested RichTableCell tables.
+
+    Each level is a 1x2 table whose first cell is a RichTableCell referencing
+    the next-level table, and whose second cell is a plain TableCell.
+    This is the structure produced by the HTML backend for Wikipedia clade tables.
+    """
+    doc = DoclingDocument(name="nested_tables")
+
+    def _add_level(parent, remaining: int):
+        table = doc.add_table(data=TableData(num_rows=1, num_cols=2), parent=parent)
+        if remaining > 0:
+            nested = _add_level(table, remaining - 1)
+            rich_cell: TableCell = RichTableCell(
+                ref=nested.get_ref(),
+                text="rich",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            )
+        else:
+            rich_cell = TableCell(
+                text="leaf",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            )
+        doc.add_table_cell(table, rich_cell)
+        doc.add_table_cell(
+            table,
+            TableCell(
+                text="plain",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+            ),
+        )
+        return table
+
+    _add_level(doc.body, depth)
+    return doc
+
+
+def test_md_nested_rich_table_no_hang():
+    """Regression: export_to_markdown() must not hang on nested RichTableCells.
+
+    When a RichTableCell's content contains a nested table, the
+    ``_nested_in_table`` flag passed through kwargs causes
+    MarkdownTableSerializer to flatten the inner table instead of
+    re-entering the full table serializer recursively.  Without this
+    guard every level of nesting re-enters the table serializer, causing
+    exponential string growth and an indefinite hang.
+    """
+    doc = _build_nested_rich_table_doc(depth=5)
+
+    result: list[str] = []
+
+    def _run() -> None:
+        result.append(doc.export_to_markdown())
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    t.join(timeout=5.0)
+
+    assert not t.is_alive(), "export_to_markdown() hung on a document with nested RichTableCells."
+    assert result, "export_to_markdown() produced no output"
+
+    # The outer table must be a valid 2-column markdown table.
+    # Without the pipe-escaping fix, inner-table pipes would leak into the outer
+    # table and produce dozens of phantom columns.
+    table_rows = [line for line in result[0].splitlines() if line.startswith("|")]
+    assert table_rows, "Expected at least one markdown table row in output"
+    col_counts = {line.count("|") - 1 for line in table_rows}
+    assert col_counts == {2}, f"Outer table must have exactly 2 columns throughout; got column counts: {col_counts}"
 
 
 def test_md_compact_table():
@@ -652,21 +753,45 @@ def test_html_inline_and_formatting():
 # WebVTT tests
 # ===============================
 
-
 @pytest.mark.parametrize(
-    "file_name",
-    [
-        "webvtt_example_01",
-        "webvtt_example_02",
-        "webvtt_example_03",
-        "webvtt_example_04",
-        "webvtt_example_05",
-    ],
+    "example_num",
+    [1, 2, 3, 4, 5],
 )
-def test_webvtt(file_name):
-    src = Path(f"./test/data/doc/{file_name}.json")
+def test_webvtt(example_num):
+    src = Path(f"test/data/doc/webvtt_example_{example_num:02d}.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = WebVTTDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.vtt"), actual=actual)
+
+
+def test_webvtt_params():
+    """Test WebVTT serialization with WebVTTParams."""
+    src = Path("./test/data/doc/webvtt_example_01.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    # Test with omit_hours_if_zero=True
+    ser = WebVTTDocSerializer(doc=doc, params=WebVTTParams(omit_hours_if_zero=True))
+    actual = ser.serialize().text
+    assert "00:11.000 --> 00:13.000" in actual
+
+    # Test with omit_voice_end=True
+    ser = WebVTTDocSerializer(doc=doc, params=WebVTTParams(omit_voice_end=True))
+    actual = ser.serialize().text
+    assert "</v>" not in actual
+
+    # Test with both parameters enabled
+    ser = WebVTTDocSerializer(
+        doc=doc,
+        params=WebVTTParams(omit_hours_if_zero=True, omit_voice_end=True)
+    )
+    actual = ser.serialize().text
+
+    assert "00:11.000 --> 00:13.000" in actual
+    assert "</v>" not in actual
+
+    ser_default = WebVTTDocSerializer(doc=doc, params=WebVTTParams())
+    actual_default = ser_default.serialize().text
+    assert len(actual) <= len(actual_default) or actual != actual_default
+

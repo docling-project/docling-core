@@ -1222,3 +1222,14 @@ def test_rich_table_cells():
     doc = _deserialize(dt)
     dt2 = _serialize(doc)
     assert dt2.strip() == dt.strip()
+
+
+def test_picture_tabular_chart_content_cdata_cells():
+    """Deserializer must extract text from <content><![CDATA[...]]></content> in OTSL cells."""
+    doclang = """<doclang version="1.0.0"><floating_group class="picture"><picture><location value="0"/><location value="0"/><location value="511"/><location value="511"/><otsl><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></otsl></picture></floating_group></doclang>"""
+    doc = _deserialize(doclang)
+    first_cell_text = doc.pictures[0].meta.tabular_chart.chart_data.grid[0][0].text
+    assert first_cell_text == "Characteristic"
+    assert doc.pictures[0].meta.tabular_chart.chart_data.grid[0][1].text == "Player expenses in million U.S. dollars"
+    assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][0].text == "19/20"
+    assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][1].text == "111"

@@ -1,3 +1,53 @@
+## [v2.67.1](https://github.com/docling-project/docling-core/releases/tag/v2.67.1) - 2026-03-05
+
+### Fix
+
+* Prevent hang in export_to_markdown() on nested RichTableCells ([#525](https://github.com/docling-project/docling-core/issues/525)) ([`2debe08`](https://github.com/docling-project/docling-core/commit/2debe0836fb0365e36d2b6e5b0e1c409c85f6ecb))
+
+## [v2.67.0](https://github.com/docling-project/docling-core/releases/tag/v2.67.0) - 2026-03-04
+
+### Feature
+
+* Table aware chunking ([#527](https://github.com/docling-project/docling-core/issues/527)) ([`ea359bc`](https://github.com/docling-project/docling-core/commit/ea359bcc63e0cc25d323374a234e13142adf9110))
+
+## [v2.66.0](https://github.com/docling-project/docling-core/releases/tag/v2.66.0) - 2026-02-26
+
+### Feature
+
+* Add WebVTT export and save functionality ([#523](https://github.com/docling-project/docling-core/issues/523)) ([`b8ef7ba`](https://github.com/docling-project/docling-core/commit/b8ef7bad1b7281aca0cc4b8534da62f487da6c8b))
+
+### Fix
+
+* Rich table triplet serialization ([#425](https://github.com/docling-project/docling-core/issues/425)) ([`c566268`](https://github.com/docling-project/docling-core/commit/c566268e0a3f681de0e3394446b54edaecf53b4a))
+* Support single-column table default serialization ([#526](https://github.com/docling-project/docling-core/issues/526)) ([`73b0757`](https://github.com/docling-project/docling-core/commit/73b07572cf7fbcf8b011c0280dc4b5281243350b))
+
+## [v2.65.2](https://github.com/docling-project/docling-core/releases/tag/v2.65.2) - 2026-02-23
+
+### Fix
+
+* Accept relative URIs in PdfHyperlink without validation failure ([#520](https://github.com/docling-project/docling-core/issues/520)) ([`6032c7c`](https://github.com/docling-project/docling-core/commit/6032c7c175036755e18aedbfa4f88d8e29704c02))
+* Shift KV/Form graph cell page numbers during DoclingDocument.concatenate ([#521](https://github.com/docling-project/docling-core/issues/521)) ([`6a04db7`](https://github.com/docling-project/docling-core/commit/6a04db77aa880a9c4e1fb7cec3b29f55c8cfed85))
+* **chunker:** Propagate 'traverse_pictures' parameter to chunker ([#518](https://github.com/docling-project/docling-core/issues/518)) ([`a3b6e3f`](https://github.com/docling-project/docling-core/commit/a3b6e3fb892e34ef0f1e637171d6ca18e6f05803))
+
+## [v2.65.1](https://github.com/docling-project/docling-core/releases/tag/v2.65.1) - 2026-02-13
+
+### Fix
+
+* Add pdf page widget and hyperlink ([#516](https://github.com/docling-project/docling-core/issues/516)) ([`a63685e`](https://github.com/docling-project/docling-core/commit/a63685e827182462a35700b8bd128a2225227d13))
+
+## [v2.65.0](https://github.com/docling-project/docling-core/releases/tag/v2.65.0) - 2026-02-13
+
+### Feature
+
+* Add hyperlinks and widgets ([#515](https://github.com/docling-project/docling-core/issues/515)) ([`4e47259`](https://github.com/docling-project/docling-core/commit/4e472592ed9aebbd8b86c7091a2dedd7f515bd5a))
+
+### Fix
+
+* **Doclang:** Fix table cell `content` deserialization ([#512](https://github.com/docling-project/docling-core/issues/512)) ([`9ba605d`](https://github.com/docling-project/docling-core/commit/9ba605d225c2eb9c2d27c8729053436770d7a6ae))
+* **Doclang:** Align image mode, defaulting to placeholder ([#506](https://github.com/docling-project/docling-core/issues/506)) ([`aec74d4`](https://github.com/docling-project/docling-core/commit/aec74d4eb070cce02ad961c28a6e37e8de8d4982))
+* Fix document re-indexing ([#510](https://github.com/docling-project/docling-core/issues/510)) ([`1d969d4`](https://github.com/docling-project/docling-core/commit/1d969d4e378450d6802c39222b1f1c79e8d004ee))
+* Switch XML parsing ([#509](https://github.com/docling-project/docling-core/issues/509)) ([`2793dda`](https://github.com/docling-project/docling-core/commit/2793dda9d7a3062a84fdedc8ffb466179a5e9cb7))
+
 ## [v2.64.0](https://github.com/docling-project/docling-core/releases/tag/v2.64.0) - 2026-02-09
 
 ### Feature

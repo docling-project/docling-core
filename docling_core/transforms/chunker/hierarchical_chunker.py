@@ -20,7 +20,7 @@ from docling_core.transforms.serializer.base import (
     BaseTableSerializer,
     SerializationResult,
 )
-from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.transforms.serializer.common import DocSerializer, create_ser_result
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
@@ -65,25 +65,40 @@ class TripletTableSerializer(BaseTableSerializer):
             parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            table_df = item.export_to_dataframe(doc)
-            if table_df.shape[0] >= 1 and table_df.shape[1] >= 2:
-                # copy header as first row and shift all rows by one
-                table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
-                table_df.index = table_df.index + 1
-                table_df = table_df.sort_index()
+            table_df = item._export_to_dataframe_with_options(
+                doc,
+                doc_serializer=doc_serializer,
+                **kwargs,
+            )
+            if table_df.shape[0] >= 1 and table_df.shape[1] >= 1:
+                # Handle single-column tables
+                if table_df.shape[1] == 1:
+                    # For single-column tables, use first row as column name
+                    # and remaining rows as values
+                    col_name = str(table_df.iloc[0, 0]).strip()
+                    values = [str(val).strip() for val in table_df.iloc[1:, 0].to_list()]
+                    table_text_parts = [f"{col_name} = {val}" for val in values]
+                    table_text = ". ".join(table_text_parts)
+                    parts.append(create_ser_result(text=table_text, span_source=item))
+                else:
+                    # For multi-column tables
+                    # copy header as first row and shift all rows by one
+                    table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
+                    table_df.index = table_df.index + 1
+                    table_df = table_df.sort_index()
 
-                rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
-                cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
+                    rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
+                    cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
 
-                nrows = table_df.shape[0]
-                ncols = table_df.shape[1]
-                table_text_parts = [
-                    f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
-                    for i in range(1, nrows)
-                    for j in range(1, ncols)
-                ]
-                table_text = ". ".join(table_text_parts)
-                parts.append(create_ser_result(text=table_text, span_source=item))
+                    nrows = table_df.shape[0]
+                    ncols = table_df.shape[1]
+                    table_text_parts = [
+                        f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
+                        for i in range(1, nrows)
+                        for j in range(1, ncols)
+                    ]
+                    table_text = ". ".join(table_text_parts)
+                    parts.append(create_ser_result(text=table_text, span_source=item))
 
         text_res = "\n\n".join([r.text for r in parts])
 
@@ -152,7 +167,11 @@ class HierarchicalChunker(BaseChunker):
         visited: set[str] = set()
         ser_res = create_ser_result()
         excluded_refs = my_doc_ser.get_excluded_refs(**kwargs)
-        for item, level in dl_doc.iterate_items(with_groups=True):
+        traverse_pictures = my_doc_ser.params.traverse_pictures if isinstance(my_doc_ser, DocSerializer) else False
+        for item, level in dl_doc.iterate_items(
+            with_groups=True,
+            traverse_pictures=traverse_pictures,
+        ):
             if item.self_ref in excluded_refs:
                 continue
             if isinstance(item, TitleItem | SectionHeaderItem):

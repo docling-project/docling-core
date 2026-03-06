@@ -65,7 +65,6 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
-from docling_core.types.doc.webvtt import WebVTTCueIdentifier, WebVTTCueSpanStartTag, WebVTTCueSpanStartTagAnnotated
 
 _logger = logging.getLogger(__name__)
 
@@ -2175,6 +2174,16 @@ class TableItem(FloatingItem):
 
     def export_to_dataframe(self, doc: Optional["DoclingDocument"] = None) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
+
+        return self._export_to_dataframe_with_options(doc=doc)
+
+    def _export_to_dataframe_with_options(
+        self,
+        doc: Optional["DoclingDocument"] = None,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Export the table as a Pandas DataFrame with contextual named arguments."""
+
         if doc is None:
             _logger.warning("Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated.")
 
@@ -2204,13 +2213,13 @@ class TableItem(FloatingItem):
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(self.data.grid[i]):
-                    col_name = cell._get_text(doc=doc)
+                    col_name = cell._get_text(doc=doc, **kwargs)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
         # Create table data
-        table_data = [[cell._get_text(doc=doc) for cell in row] for row in self.data.grid[num_headers:]]
+        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in self.data.grid[num_headers:]]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)
@@ -5109,21 +5118,64 @@ class DoclingDocument(BaseModel):
         self,
         delim: str = "\n\n",
         from_element: int = 0,
-        to_element: int = 1000000,
+        to_element: int = sys.maxsize,
         labels: Optional[set[DocItemLabel]] = None,
+        page_no: Optional[int] = None,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        page_break_placeholder: Optional[str] = None,
     ) -> str:
-        """export_to_text."""
-        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
+        """Export to plain text.
 
-        return self.export_to_markdown(
-            delim=delim,
-            from_element=from_element,
-            to_element=to_element,
-            labels=my_labels,
-            strict_text=True,
-            escape_underscores=False,
-            image_placeholder="",
+        Produces clean plain text without any Markdown decoration. Heading
+        markers (``#``), bold/italic markers, and hyperlink syntax are all
+        stripped. List bullets (``-``), ordered list numbers, and table-cell
+        separators (``|``) are preserved as they aid readability.
+
+        :param delim: Deprecated.
+        :type delim: str = "\\n\\n"
+        :param from_element: Body slicing start index (inclusive). (Default value = 0).
+        :type from_element: int = 0
+        :param to_element: Body slicing stop index (exclusive). (Default value = maxint).
+        :type to_element: int = sys.maxsize
+        :param labels: The set of document labels to include in the export. None falls
+            back to the system-defined default.
+        :type labels: Optional[set[DocItemLabel]] = None
+        :param page_no: If set, only content from this page is exported.
+        :type page_no: Optional[int] = None
+        :param included_content_layers: The set of layers to include. None falls back
+            to the system-defined default.
+        :type included_content_layers: Optional[set[ContentLayer]] = None
+        :param page_break_placeholder: String inserted at page boundaries. None means
+            no page-break marker is emitted.
+        :type page_break_placeholder: Optional[str] = None
+        :returns: The exported plain-text representation.
+        :rtype: str
+        """
+        from docling_core.transforms.serializer.plain_text import (
+            PlainTextDocSerializer,
+            PlainTextParams,
         )
+
+        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
+        my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
+
+        if delim != "\n\n":
+            _logger.warning(
+                "Parameter `delim` has been deprecated and will be ignored.",
+            )
+
+        serializer = PlainTextDocSerializer(
+            doc=self,
+            params=PlainTextParams(
+                labels=my_labels,
+                layers=my_layers,
+                pages={page_no} if page_no is not None else None,
+                start_idx=from_element,
+                stop_idx=to_element,
+                page_break_placeholder=page_break_placeholder,
+            ),
+        )
+        return serializer.serialize().text
 
     def save_as_html(
         self,
@@ -5258,6 +5310,68 @@ class DoclingDocument(BaseModel):
         ser_res = serializer.serialize()
 
         return ser_res.text
+
+    def export_to_vtt(
+        self,
+        included_content_layers: set[ContentLayer] | None = None,
+        omit_hours_if_zero: bool = False,
+        omit_voice_end: bool = False,
+    ) -> str:
+        """Serializes the Docling document to WebVTT format.
+
+        Args:
+            included_content_layers: The content layers to serializes. If ommitted, the `DEFAULT_CONTENT_LAYERS` will
+                be serialized.
+            omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
+            omit_voice_end: If True and cue blocks have a WebVTT cue voice span as the only component, omit the voice
+                end tag for brevity.
+
+        Returns:
+            A string representation of the Docling document in WebVTT format.
+        """
+
+        from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
+
+        my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
+
+        params = WebVTTParams(layers=my_layers, omit_hours_if_zero=omit_hours_if_zero, omit_voice_end=omit_voice_end)
+
+        serializer = WebVTTDocSerializer(
+            doc=self,
+            params=params,
+        )
+        ser_res = serializer.serialize()
+
+        return ser_res.text
+
+    def save_as_vtt(
+        self,
+        filename: str | Path,
+        included_content_layers: set[ContentLayer] | None = None,
+        omit_hours_if_zero: bool = False,
+        omit_voice_end: bool = True,
+    ) -> None:
+        """Saves the Docling document to a file in WebVTT format.
+
+        Args:
+            filename: The path to the WebVTT file.
+            included_content_layers: The content layers to serializes. If ommitted, the `DEFAULT_CONTENT_LAYERS` will
+                be serialized.
+            omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
+            omit_voice_end: If True and cue blocks have a WebVTT cue voice span as the only component, omit the voice
+                end tag for brevity.
+        """
+        if isinstance(filename, str):
+            filename = Path(filename)
+
+        vtt_out = self.export_to_vtt(
+            included_content_layers=included_content_layers,
+            omit_hours_if_zero=omit_hours_if_zero,
+            omit_voice_end=omit_voice_end,
+        )
+
+        with open(filename, "w", encoding="utf-8") as fw:
+            fw.write(vtt_out)
 
     @staticmethod
     def load_from_doctags(  # noqa: C901
@@ -6185,6 +6299,10 @@ class DoclingDocument(BaseModel):
 
             self._names.append(doc.name)
 
+            # record starting indices so post-processing only touches new items
+            post_processing_keys = ["texts", "pictures", "tables", "key_value_items", "form_items"]
+            start_indices = {k: len(self.get_item_list(k)) for k in post_processing_keys}
+
             # collect items in traversal order
             for item, _ in doc._iterate_items_with_stack(
                 with_groups=True,
@@ -6210,9 +6328,12 @@ class DoclingDocument(BaseModel):
 
                     if isinstance(new_item, DocItem):
                         # update page numbers
-                        # NOTE other prov sources (e.g. GraphCell) currently not covered
                         for prov in new_item.prov:
                             prov.page_no += page_delta
+                        if isinstance(new_item, KeyValueItem | FormItem):
+                            for graph_cell in new_item.graph.cells:
+                                if graph_cell.prov is not None:
+                                    graph_cell.prov.page_no += page_delta
 
                     if item.parent:
                         # set item's parent
@@ -6242,18 +6363,11 @@ class DoclingDocument(BaseModel):
                             parent_index = int(parent_index_str)
                             parent_item = self.get_item_list(parent_key)[parent_index]
 
-                            # update captions field (not possible in iterate_items order):
-                            if isinstance(parent_item, FloatingItem):
-                                for cap_it, cap in enumerate(parent_item.captions):
-                                    if cap.cref == item.self_ref:
-                                        parent_item.captions[cap_it] = RefItem(cref=new_cref)
-                                        break
-
                             # update rich table cells references:
                             if isinstance(parent_item, TableItem):
-                                for cell in parent_item.data.table_cells:
-                                    if isinstance(cell, RichTableCell) and cell.ref.cref == item.self_ref:
-                                        cell.ref.cref = new_cref
+                                for table_cell in parent_item.data.table_cells:
+                                    if isinstance(table_cell, RichTableCell) and table_cell.ref.cref == item.self_ref:
+                                        table_cell.ref.cref = new_cref
                                         break
 
                         elif num_components == 2 and path_components[1] == "body":
@@ -6261,6 +6375,26 @@ class DoclingDocument(BaseModel):
                         else:
                             raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
                         parent_item.children.append(RefItem(cref=new_cref))
+
+            # rewrite FloatingItem explicit refs starting from start_indices to avoid corrupting items from prior calls
+            for key in post_processing_keys:
+                for idx_item in self.get_item_list(key)[start_indices[key] :]:
+                    if isinstance(idx_item, FloatingItem):
+                        idx_item.captions = [
+                            RefItem(cref=orig_ref_to_new_ref[cap.cref])
+                            for cap in idx_item.captions
+                            if cap.cref in orig_ref_to_new_ref
+                        ]
+                        idx_item.references = [
+                            RefItem(cref=orig_ref_to_new_ref[ref.cref])
+                            for ref in idx_item.references
+                            if ref.cref in orig_ref_to_new_ref
+                        ]
+                        idx_item.footnotes = [
+                            RefItem(cref=orig_ref_to_new_ref[fn.cref])
+                            for fn in idx_item.footnotes
+                            if fn.cref in orig_ref_to_new_ref
+                        ]
 
             # update pages
             new_max_page = None
