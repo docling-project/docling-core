@@ -138,6 +138,16 @@ class LineBasedTokenChunker(BaseChunker):
                 # Split off the first segment that fits into current.
                 take, remaining = self.split_by_token_limit(remaining, available)
 
+                # Zero-progress detection: if take is empty, force character-level split
+                if not take:
+                    # Fallback: take at least one character to ensure progress
+                    if remaining:
+                        take = remaining[0]
+                        remaining = remaining[1:]
+                    else:
+                        # Should not happen, but break to prevent infinite loop
+                        break
+
                 # Add the taken part
                 current += "\n" + take
                 current_len += self.tokenizer.count_tokens(take)
@@ -213,9 +223,9 @@ class LineBasedTokenChunker(BaseChunker):
         # Optionally adjust to a previous whitespace boundary without violating the limit
         if prefer_word_boundary:
             # Search backwards from best_idx to find whitespace; keep within token limit.
-
+            # Only snap back if it produces a non-empty head (last_space_index > 0)
             last_space_index = text[:best_idx].rfind(" ")
-            if last_space_index >= 0:
+            if last_space_index > 0:
                 best_idx = last_space_index
 
         head, tail = text[:best_idx], text[best_idx:]
