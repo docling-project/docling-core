@@ -155,3 +155,17 @@ def test_doctags_inline():
         exp_file=exp,
         actual=deser_doc.export_to_dict(),
     )
+
+
+def test_doctags_handle_defect_bbox():
+
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
+        [Path("test/data/doc/defect_bbox_page.dt")], None
+    )
+
+    doc = DoclingDocument.load_from_doctags(doctags_doc)
+    exp = "test/data/doc/defect_bbox_page.dt.json"
+    verify(
+        exp_file=exp,
+        actual=doc.export_to_dict(),
+    )
