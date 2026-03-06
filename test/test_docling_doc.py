@@ -2105,3 +2105,46 @@ def test_docitem_comments_delete_updates_refs():
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
+
+def test_add_node_items_updates_all_pointers():
+    """
+    Verifies that copying an item updates its references, footnotes, and comments to point to the newly assigned indices in the destination document.
+    """
+    # set source document
+    src_doc = DoclingDocument(name="source")
+
+    # create the items that will be pointed to and attach them
+    ref_text = src_doc.add_text(label=DocItemLabel.REFERENCE, text="[1] Source Reference")
+    foot_text = src_doc.add_text(label=DocItemLabel.FOOTNOTE, text="* Source Footnote")
+
+    table = src_doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    table.references = [ref_text.get_ref()]
+    table.footnotes = [foot_text.get_ref()]
+    src_doc.add_comment(text="Source Comment", targets=[table])
+
+    dest_doc = DoclingDocument(name="dest")
+
+    # pad the destination so the indices are forced to shift
+    pad_text = dest_doc.add_text(label=DocItemLabel.TEXT, text="Padding Text")
+    dest_doc.add_comment(text="Padding Comment", targets=[pad_text])
+
+    dest_doc.add_node_items(node_items=[table], doc=src_doc)
+    new_table = dest_doc.tables[0]
+
+    # references
+    assert len(new_table.references) == 1
+    resolved_ref = new_table.references[0].resolve(dest_doc)
+    assert resolved_ref is not None, "Reference pointer is broken!"
+    assert resolved_ref.text == "[1] Source Reference"
+
+    # footnotes
+    assert len(new_table.footnotes) == 1
+    resolved_foot = new_table.footnotes[0].resolve(dest_doc)
+    assert resolved_foot is not None, "Footnote pointer is broken!"
+    assert resolved_foot.text == "* Source Footnote"
+
+    # comments
+    assert len(new_table.comments) == 1
+    resolved_comment = new_table.comments[0].resolve(dest_doc)
+    assert resolved_comment is not None, "Comment pointer is broken!"
+    assert resolved_comment.text == "Source Comment"
