@@ -2657,8 +2657,30 @@ class DoclingDocument(BaseModel):
                     item["content_layer"] = "furniture"
         return data
 
-    def _migrate_forms_to_field_regions(self) -> Self:
+    def _migrate_forms_to_field_regions(self) -> None:
         """Migrate the forms field to field regions."""
+
+        has_single_kv_item = len(self.key_value_items) == 1
+        last_item_is_kv_item = False
+        found_last_kv_item = False
+        if has_single_kv_item:
+            for item, _ in self.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers=set(ContentLayer),
+            ):
+                if found_last_kv_item:
+                    last_item_is_kv_item = False
+                    break
+                elif item == self.key_value_items[0]:
+                    found_last_kv_item = True
+                    last_item_is_kv_item = True
+
+        is_annot_case = has_single_kv_item and last_item_is_kv_item
+        if is_annot_case:
+            self._migrate_annot_forms_to_field_regions(self.key_value_items[0])
+            self._post_migration_cleanup()
+            return
 
         to_delete: list[NodeItem] = []
 
@@ -2710,7 +2732,272 @@ class DoclingDocument(BaseModel):
 
         self.delete_items(node_items=to_delete)
 
-        return self
+    class _KVMigrData(BaseModel):
+        value_crefs: list[str] = []
+        key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")
+        value_cells: list[GraphCell] = []
+
+    def _serialize_bbox(self, bbox: BoundingBox) -> str:
+        return f"{bbox.l},{bbox.t},{bbox.r},{bbox.b},{bbox.coord_origin.value}"
+
+    def _deserialize_bbox(self, bbox_str: str) -> BoundingBox:
+        l, t, r, b, coord_origin = bbox_str.split(",")
+        return BoundingBox(l=float(l), t=float(t), r=float(r), b=float(b), coord_origin=CoordOrigin(coord_origin))
+
+    def _bboxes_match(self, bbox1: BoundingBox, bbox2: BoundingBox, iou_threshold: float = 0.01) -> bool:
+        if bbox1.coord_origin != bbox2.coord_origin:
+            return False  # TODO: can normalize and compare but needs page size
+        return bbox1.intersection_over_union(other=bbox2, eps=0.0) > iou_threshold
+
+    def _build_bbox_index(self, kvi: KeyValueItem) -> dict[str, Optional[NodeItem]]:
+        visited: set[str] = set()
+        bbox_index: dict[str, NodeItem | None] = {}
+        text_index: dict[str, str | None] = {}
+        for link in kvi.graph.links:
+            if link.label not in {GraphLinkLabel.TO_VALUE, GraphLinkLabel.TO_KEY}:
+                continue
+            key_cell = (
+                kvi.graph.cells[link.source_cell_id]
+                if link.label == GraphLinkLabel.TO_VALUE
+                else kvi.graph.cells[link.target_cell_id]
+            )
+            value_cell = (
+                kvi.graph.cells[link.target_cell_id]
+                if link.label == GraphLinkLabel.TO_VALUE
+                else kvi.graph.cells[link.source_cell_id]
+            )
+            # check if we have already seen this key-value pair
+            if (
+                key_cell.prov
+                and value_cell.prov
+                and (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited
+            ):
+                visited.add(key_val_id)
+
+                for item, _ in self.iterate_items(
+                    with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+                ):
+                    if isinstance(item, DocItem) and item.prov:
+                        if self._bboxes_match(item.prov[0].bbox, key_cell.prov.bbox):
+                            serialized_bbox = self._serialize_bbox(key_cell.prov.bbox)
+                            bbox_index[serialized_bbox] = item
+                            text_index[key_cell.text] = (
+                                item.self_ref + "|" + (item.text if isinstance(item, TextItem) else "")
+                            )
+                        if self._bboxes_match(item.prov[0].bbox, value_cell.prov.bbox):
+                            serialized_bbox = self._serialize_bbox(value_cell.prov.bbox)
+                            bbox_index[serialized_bbox] = item
+                            text_index[value_cell.text] = (
+                                item.self_ref + "|" + (item.text if isinstance(item, TextItem) else "")
+                            )
+        return bbox_index
+
+    def _find_node_by_bbox(self, bbox: BoundingBox, bbox_index: dict[str, NodeItem | None]) -> NodeItem | None:
+        val = bbox_index.get(self._serialize_bbox(bbox))
+        if val is not None:
+            pass
+        return val
+
+    def _build_kv_migration_index(self, kvi: KeyValueItem) -> dict[str, "_KVMigrData"]:
+        outgoing_links: dict[str, DoclingDocument._KVMigrData] = {}
+        visited: set[str] = set()
+        bbox_index = self._build_bbox_index(kvi)
+
+        for link in kvi.graph.links:
+            key_cell = (
+                kvi.graph.cells[link.source_cell_id]
+                if link.label == GraphLinkLabel.TO_VALUE
+                else kvi.graph.cells[link.target_cell_id]
+            )
+            value_cell = (
+                kvi.graph.cells[link.target_cell_id]
+                if link.label == GraphLinkLabel.TO_VALUE
+                else kvi.graph.cells[link.source_cell_id]
+            )
+            # check if we have already seen this key-value pair
+            if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
+                key_item_ref = key_cell.item_ref or (
+                    node.get_ref()
+                    if key_cell.prov and (node := self._find_node_by_bbox(key_cell.prov.bbox, bbox_index))
+                    else None
+                )
+                val_item_ref = value_cell.item_ref or (
+                    node.get_ref()
+                    if value_cell.prov and (node := self._find_node_by_bbox(value_cell.prov.bbox, bbox_index))
+                    else None
+                )
+                if key_item_ref and val_item_ref:
+                    visited.add(key_val_id)
+
+                    migr_data = outgoing_links.setdefault(key_item_ref.cref, DoclingDocument._KVMigrData())
+                    migr_data.value_crefs.append(val_item_ref.cref)
+                    migr_data.key_cell = key_cell
+                    migr_data.value_cells.append(value_cell)
+
+        return outgoing_links
+
+    def _migrate_annot_forms_to_field_regions(self, kvi: KeyValueItem) -> None:
+        to_delete: list[NodeItem] = [kvi]
+        outgoing_links = self._build_kv_migration_index(kvi)
+        for key_cref, migr_data_item in outgoing_links.items():
+            key_item = RefItem(cref=key_cref).resolve(doc=self)
+            key_prov = (
+                migr_data_item.key_cell.prov
+                if migr_data_item.key_cell.prov
+                else (key_item.prov[0] if key_item.prov else None)
+            )
+            fri = FieldRegionItem(self_ref="#")
+            if isinstance(key_item, ListItem):
+                key_item.text = ""  # captured in the field key / field value
+                key_item.prov = []  # captured in the field item
+                self.append_child_item(child=fri, parent=key_item)
+            else:
+                self.insert_item_after_sibling(new_item=fri, sibling=key_item)
+
+            fi = self.add_field_item(parent=fri)
+            if isinstance(key_item, TextItem):
+                self.add_field_key(text=migr_data_item.key_cell.text or key_item.text, parent=fi, prov=key_prov)
+            elif isinstance(key_item, PictureItem):
+                fk = self.add_field_key(text=migr_data_item.key_cell.text, parent=fi, prov=key_prov)
+                self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
+            else:
+                continue  # TODO: handle other key item types
+
+            all_same_bbox = True
+
+            for idx, value_cref in enumerate(migr_data_item.value_crefs):
+                value_item: NodeItem = RefItem(cref=value_cref).resolve(doc=self)
+                if value_item != key_item:
+                    all_same_bbox = False
+                # giving priority to the provenance from the graph cells
+                value_prov = migr_data_item.value_cells[idx].prov or (
+                    value_item.prov[0] if isinstance(value_item, DocItem) and value_item.prov else None
+                )
+                if isinstance(value_item, TextItem):
+                    # giving priority to the text from the graph cells
+                    value_text = migr_data_item.value_cells[idx].text or value_item.text
+                    if value_item.label in {DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED}:
+                        fv = self.add_field_value(text="", parent=fi)
+                        new_text_item = value_item.model_copy(deep=True)
+                        new_text_item.prov = [value_prov] if value_prov else []
+                        new_text_item.text = value_text
+                        self.append_child_item(child=new_text_item, parent=fv)
+                    else:
+                        fv = self.add_field_value(text=value_text, parent=fi, prov=value_prov)
+                        if value_item.label == DocItemLabel.EMPTY_VALUE:
+                            fv.kind = "fillable"
+                elif isinstance(value_item, PictureItem):
+                    fv = self.add_field_value(text=migr_data_item.value_cells[idx].text, parent=fi, prov=value_prov)
+                    self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
+                else:
+                    continue  # TODO: handle other value item types
+                if value_item not in to_delete and not isinstance(value_item, ListItem):
+                    to_delete.append(value_item)
+            if key_item not in to_delete and not isinstance(key_item, ListItem):
+                to_delete.append(key_item)
+
+            # if both key and value cell were mapped to the same item, that item's bbox can be used for FieldItem
+            if migr_data_item.value_crefs and all_same_bbox and key_item.prov:
+                fi.prov = key_item.prov
+                key_item.prov = []
+
+        self.delete_items(node_items=to_delete)
+
+    def _has_field_region_ancestor(self, item: NodeItem) -> bool:
+        while item.parent is not None:
+            item = item.parent.resolve(doc=self)
+            if isinstance(item, FieldRegionItem):
+                return True
+        return False
+
+    def _post_migration_cleanup(self) -> None:
+        # replace kv-associated form items with field region items
+        to_shift_up: list[NodeItem] = []
+        to_replace_with_fri: list[FormItem] = []
+        for fri in self.field_regions:
+            form_ancestor: FormItem | None = None
+            curr: NodeItem = fri
+            while True:
+                if isinstance(curr, FormItem):
+                    form_ancestor = curr
+                    break
+                elif curr.parent is None:
+                    break
+                curr = curr.parent.resolve(doc=self)
+            if form_ancestor is not None:
+                to_shift_up.append(fri)
+                if form_ancestor not in to_replace_with_fri:
+                    to_replace_with_fri.append(form_ancestor)
+        for form_item in to_replace_with_fri:
+            self._shift_down(
+                old_subroot=form_item,
+                new_subroot=FieldRegionItem(
+                    self_ref="#",
+                    prov=form_item.prov,
+                    content_layer=form_item.content_layer,
+                    meta=form_item.meta,
+                    comments=form_item.comments,
+                    source=form_item.source,
+                ),
+            )
+            self._shift_up(old_subroot=form_item)
+        for node in to_shift_up:
+            self._shift_up(old_subroot=node)
+
+        # handle any remaining (just value-associated) form items:
+        value_groups: list[tuple[NodeItem, list[TextItem]]] = []  # tracking consecutive non-migrated values
+        for outer, _ in self.iterate_items(
+            with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+        ):
+            if isinstance(outer, DocItem | GroupItem) and outer.label in {GroupLabel.FORM_AREA, DocItemLabel.FORM}:
+                prev_is_value = False
+                prev_level = -1
+                for inner, level in self.iterate_items(
+                    root=outer, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+                ):
+                    if (
+                        isinstance(inner, TextItem)
+                        and inner.label
+                        in [DocItemLabel.EMPTY_VALUE, DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED]
+                        and not (inner.parent and isinstance(inner.parent.resolve(doc=self), FieldValueItem))
+                    ):
+                        if prev_is_value and level == prev_level:
+                            a, b = value_groups[-1]
+                            value_groups[-1] = a, b + [inner]
+                        else:
+                            value_groups.append((outer, [inner]))
+                        prev_is_value = True
+                    else:
+                        prev_is_value = False
+                    prev_level = level
+
+        already_shifted: list[NodeItem] = []
+        for outer, vg in value_groups:
+            if outer not in already_shifted:
+                already_shifted.append(outer)
+                if not self._has_field_region_ancestor(item=outer):
+                    fri = FieldRegionItem(self_ref="#")
+                    if isinstance(outer, DocItem):
+                        fri.prov = outer.prov
+                    self._shift_down(old_subroot=outer, new_subroot=fri)
+                self._shift_up(old_subroot=outer)
+
+            fi = FieldItem(self_ref="#")
+            self.insert_item_before_sibling(new_item=fi, sibling=vg[0])
+            for value_item in vg:
+                fv = FieldValueItem(self_ref="#", orig="", text="")
+                self._shift_down(old_subroot=value_item, new_subroot=fv)
+                self._move_subtree(old_subroot=fv, new_subroot=fi)
+
+        # handle any remaining form areas:
+        to_shift_up = []
+        for outer, _ in self.iterate_items(
+            with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+        ):
+            if isinstance(outer, GroupItem) and outer.label == GroupLabel.FORM_AREA:
+                to_shift_up.append(outer)
+        for node in to_shift_up:
+            self._shift_up(old_subroot=node)
 
     # ---------------------------
     # Public Manipulation methods
@@ -3099,6 +3386,62 @@ class DoclingDocument(BaseModel):
         for i, child_ref in enumerate(node.children):
             node = child_ref.resolve(self)
             self._update_breadth_first_with_lookup(node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup)
+
+    def _shift_up(self, *, old_subroot: NodeItem) -> None:
+        """Move a subtree up in the document tree, removing the old subroot.
+
+        :param old_subroot: The root of the subtree to move up (NodeItem should be part of the document tree)
+        :return: None
+        """
+        if old_subroot.parent is None:
+            raise ValueError("Can not shift up the root")
+
+        # use old subroot's parent as new subroot
+        new_subroot: NodeItem = old_subroot.parent.resolve(doc=self)
+
+        old_subr_idx = new_subroot.children.index(old_subroot.get_ref())
+        for i, child_ref in enumerate(old_subroot.children):
+            # link new subroot => children (right after the old subroot)
+            new_subroot.children.insert(old_subr_idx + i + 1, child_ref)
+
+            # link children => new subroot
+            child: NodeItem = child_ref.resolve(doc=self)
+            child.parent = new_subroot.get_ref()
+
+        # unlink old subroot its parent
+        new_subroot.children.remove(old_subroot.get_ref())
+
+    def _shift_down(self, *, old_subroot: NodeItem, new_subroot: NodeItem) -> None:
+        """Move a subtree down in the document tree, introducing a new subroot.
+
+        :param old_subroot: The subtree to move down (NodeItem must be part of the document tree)
+        :param new_subroot: The new subroot to introduce (NodeItem must not be part of the document tree)
+        :return: None
+        """
+        if old_subroot.parent is None:
+            raise ValueError("Can not shift down the root")
+
+        self.insert_item_before_sibling(new_item=new_subroot, sibling=old_subroot)
+
+        self._move_subtree(old_subroot=old_subroot, new_subroot=new_subroot)
+
+    def _move_subtree(self, *, old_subroot: NodeItem, new_subroot: NodeItem, pos: int | None = None) -> None:
+        """Move a subtree to a new parent."""
+        if old_subroot.parent is None:
+            raise ValueError("Can not move the root")
+
+        # link new subroot => old subroot
+        if pos is not None:
+            new_subroot.children.insert(pos, old_subroot.get_ref())
+        else:
+            new_subroot.children.append(old_subroot.get_ref())
+
+        # unlink old subroot from its previous parent
+        previous_parent: NodeItem = old_subroot.parent.resolve(doc=self)
+        previous_parent.children.remove(old_subroot.get_ref())
+
+        # link old subroot => new subroot
+        old_subroot.parent = new_subroot.get_ref()
 
     ###################################
     # TODO: refactor add* methods below
