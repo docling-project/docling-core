@@ -306,3 +306,120 @@ def test_chunk_document_with_long_content():
         assert chunk.text.startswith(prefix)
         token_count = chunker.tokenizer.count_tokens(chunk.text)
         assert token_count <= MAX_TOKENS
+
+
+def test_infinite_loop_regression_long_unbreakable_token():
+    """
+    Regression test for infinite loop bug when processing text with a long
+    unbreakable token sequence preceded by a space.
+    
+    This test reproduces the issue where LineBasedTokenChunker.chunk_text()
+    would enter an infinite loop when the prefer_word_boundary logic in
+    split_by_token_limit() snapped best_idx back to 0, producing an empty
+    head and returning the tail unchanged.
+    
+    The fix ensures:
+    1. split_by_token_limit only snaps to word boundary if it produces non-empty head
+    2. chunk_text detects zero-progress and forces character-level splitting as fallback
+    """
+    chunker = LineBasedTokenChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+    )
+
+    # Create text with leading space followed by long unbreakable token
+    long_word = 'a' * 200
+    text = 'Header ' + long_word + ' Footer\n'
+    token_count = chunker.tokenizer.count_tokens(text)
+    assert token_count <= MAX_TOKENS
+    
+    # This should complete without hanging
+    result = chunker.chunk_text(lines=[text])
+    
+    assert len(result) == 1
+    assert result[0] == text
+
+
+def test_split_by_token_limit_leading_space_regression():
+    """
+    Test that split_by_token_limit handles text with leading space correctly.
+    
+    Previously, when text started with a space followed by unbreakable content,
+    the word boundary snap-back could produce an empty head, causing infinite loops.
+    """
+    chunker = LineBasedTokenChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+    )
+    
+    # Text with leading space then long unbreakable sequence
+    text = " " + "a" * 200
+    
+    # Split with small token limit
+    head, tail = chunker.split_by_token_limit(text, token_limit=10, prefer_word_boundary=True)
+    
+    # Head should not be empty (must make progress)
+    assert len(head) > 0, "split_by_token_limit must make progress and return non-empty head"
+    
+    # Tail should be shorter than original
+    assert len(tail) < len(text), "split_by_token_limit must consume some input"
+    
+    # Verify head + tail reconstructs original
+    assert head + tail == text
+    
+    # Verify head respects token limit
+    head_tokens = chunker.tokenizer.count_tokens(head)
+    assert head_tokens <= 10
+
+
+def test_character_level_fallback_on_zero_available():
+    """
+    Test that chunk_text uses character-level fallback when available space is 0.
+    
+    This test demonstrates a real scenario where the fallback is needed:
+    1. Current chunk is exactly at max_tokens (available = 0)
+    2. Remaining text is too long to fit in a fresh chunk (exceeds max_tokens)
+    3. split_by_token_limit is called with token_limit=0
+    4. It returns ("", text) in split_by_token_limit of line_chunker.py
+    5. The fallback takes 1 character to ensure progress
+    """
+    # Use a very small max_tokens to make it easier to create the scenario
+    chunker = LineBasedTokenChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=10,  # Small limit
+        ),
+    )
+
+    # First line: 8 tokens (leaves room for 2 more)
+    first_line = "word " * 8
+    
+    # Second line: more than 10 tokens (so it can't fit in a fresh chunk)
+    second_line = "x" * 100
+    
+    # Verify second line is indeed > max_tokens
+    second_line_tokens = chunker.tokenizer.count_tokens(second_line)
+    assert second_line_tokens > 10, f"Second line must exceed max_tokens for test to work: {second_line_tokens} <= 10"
+    
+    lines = [first_line, second_line]
+    result = chunker.chunk_text(lines=lines)
+    
+    # Verify we got multiple chunks (the long second line should be split)
+    assert len(result) > 1, f"Should have multiple chunks, got {len(result)}"
+    
+    # Verify each chunk respects token limit (allow small overflow due to newline addition)
+    for i, chunk in enumerate(result):
+        token_count = chunker.tokenizer.count_tokens(chunk)
+        assert token_count <= 10, f"Chunk {i} exceeds token limit: {token_count} > 10"
+    
+    # Verify all content is preserved
+    combined = ''.join(result)
+    # First line should be in first chunk
+    assert first_line in result[0], "First line should be in first chunk"
+    # Second line should be split across remaining chunks
+    combined_without_newlines = combined.replace('\n', '')
+    assert second_line in combined_without_newlines, "Second line should be preserved (possibly split)"
