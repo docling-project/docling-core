@@ -12,6 +12,7 @@ from xml.etree.ElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
 import latex2mathml.converter
+from bs4 import BeautifulSoup
 from PIL.Image import Image
 from pydantic import AnyUrl, BaseModel, Field
 from typing_extensions import override
@@ -385,6 +386,67 @@ class HTMLTableSerializer(BaseTableSerializer):
         text_res = f"<table>{text_res}</table>" if text_res else ""
 
         return create_ser_result(text=text_res, span_source=res_parts)
+
+    @override
+    def get_header_and_body_lines(
+        self,
+        *,
+        table_text: str,
+        **kwargs: Any,
+    ) -> tuple[list[str], list[str]]:
+        """Get header lines and body lines from the HTML table.
+
+
+        Returns:
+            A tuple of (header_lines, body_lines) where a row is considered a header row
+            if it contains at least one non-empty <th> cell and all <td> cells are empty.           rows with header cells and body_lines contains rows with data cells.
+        """
+        # Find the position of the first <tr> and last </tr>
+        first_tr_pos = table_text.find("<tr")
+        last_tr_end_pos = table_text.rfind("</tr>")
+
+        if first_tr_pos == -1 or last_tr_end_pos == -1:
+            raise ValueError("No table rows found in the provided content")
+
+        # Adjust last_tr_end_pos to include the closing tag
+        last_tr_end_pos += len("</tr>")
+
+        # Split the content
+        header_content = table_text[:first_tr_pos].strip()
+        rows_content = table_text[first_tr_pos:last_tr_end_pos]
+        footer_content = table_text[last_tr_end_pos:].strip()
+
+        headings_list = []
+        if header_content:
+            headings_list.append(header_content)
+        data_list = []
+
+        # Parse rows_content with BeautifulSoup
+        soup = BeautifulSoup(rows_content, "html.parser")
+        rows = soup.find_all("tr")
+
+        for i, row in enumerate(rows):
+            # Check for non-empty <th> tags (header cells)
+            th_cells = row.find_all("th")
+            has_nonempty_th = any(cell.get_text(strip=True) for cell in th_cells)
+
+            # Check for non-empty <td> tags (data cells)
+            td_cells = row.find_all("td")
+            all_td_empty = all(not cell.get_text(strip=True) for cell in td_cells)
+
+            row_str = str(row)
+            if th_cells and has_nonempty_th and all_td_empty:
+                # This is a heading row
+                if row_str:
+                    headings_list.append(row_str)
+            else:
+                data_list = [str(r) for r in rows[i:] if str(r)]
+                break  # Stop looking for headers once we hit data rows
+
+        if footer_content:
+            data_list.append(footer_content)
+
+        return headings_list, data_list
 
 
 class HTMLPictureSerializer(BasePictureSerializer):
