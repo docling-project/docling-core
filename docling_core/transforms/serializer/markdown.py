@@ -1,15 +1,11 @@
-#
-# Copyright IBM Corp. 2024 - 2025
-# SPDX-License-Identifier: MIT
-#
-
 """Define classes for Markdown serialization."""
+
 import html
 import re
 import textwrap
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import tabulate
@@ -73,6 +69,68 @@ from docling_core.types.doc.document import (
 )
 
 
+def _cell_content_has_table(item: NodeItem, doc: DoclingDocument) -> bool:
+    """Return True if *item* is, or has a descendant that is, a TableItem."""
+    if isinstance(item, TableItem):
+        return True
+    elif isinstance(item, NodeItem):
+        for child_ref in item.children:
+            if _cell_content_has_table(child_ref.resolve(doc=doc), doc):
+                return True
+    return False
+
+
+def _mark_subtree_visited(
+    item: NodeItem,
+    doc: DoclingDocument,
+    visited: set[str],
+) -> None:
+    """Recursively add *item* and all its descendants to *visited*.
+
+    When a nested table inside a RichTableCell is flattened, its items are
+    never passed through the normal serialize() path that would mark them
+    visited.  Calling this keeps the visited set consistent so the document
+    serializer does not emit those items again at the top level.
+    """
+    if isinstance(item, NodeItem):
+        visited.add(item.self_ref)
+        for child_ref in item.children:
+            _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
+
+
+def _collect_subtree_text(item: NodeItem, doc: DoclingDocument) -> str:
+    """Collect all text from *item*'s subtree, flattening nested tables.
+
+    Returns a space-joined string of every piece of text found so that the
+    content of a nested table is preserved in a flat, readable form.
+
+    For TableItems the text is pulled from ``data.grid`` cells directly;
+    children are *not* recursed into because they duplicate the grid content
+    for RichTableCells.  For all other items, ``.text`` is collected and
+    children are visited recursively.
+    """
+    parts: list[str] = []
+
+    if isinstance(item, TableItem):
+        for row in item.data.grid:
+            for cell in row:
+                if cell.text:
+                    parts.append(cell.text)
+        return " ".join(parts)
+
+    if isinstance(item, TextItem) and item.text:
+        parts.append(item.text)
+
+    if isinstance(item, NodeItem):
+        for child_ref in item.children:
+            child = child_ref.resolve(doc=doc)
+            child_text = _collect_subtree_text(child, doc)
+            if child_text:
+                parts.append(child_text)
+
+    return " ".join(parts)
+
+
 class OrigListItemMarkerMode(str, Enum):
     """Display mode for original list item marker."""
 
@@ -110,6 +168,16 @@ class MarkdownParams(CommonParams):
         default=True,
         description="Whether to wrap code items in markdown code block formatting (```). ",
     )
+    compact_tables: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether to use compact table format without column padding. "
+                "When False (default), tables use padded columns for better visual formatting. "
+                "When True, tables use minimal whitespace, which is better for large tables and downstream processing."
+            )
+        ),
+    ] = False
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -149,7 +217,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text = f"- [x] {text}"
         if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
             text = f"- [ ] {text}"
-        if isinstance(item, (ListItem, TitleItem, SectionHeaderItem)):
+        if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
                 text = doc_serializer.post_process(
@@ -163,28 +231,22 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
             if isinstance(item, ListItem):
                 pieces: list[str] = []
-                case_auto = (
-                    params.orig_list_item_marker_mode == OrigListItemMarkerMode.AUTO
-                    and bool(re.search(r"[a-zA-Z0-9]", item.marker))
+                case_auto = params.orig_list_item_marker_mode == OrigListItemMarkerMode.AUTO and bool(
+                    re.search(r"[a-zA-Z0-9]", item.marker)
                 )
                 case_already_valid = (
                     params.ensure_valid_list_item_marker
-                    and params.orig_list_item_marker_mode
-                    != OrigListItemMarkerMode.NEVER
-                    and (
-                        item.marker in ["-", "*", "+"]
-                        or re.fullmatch(r"\d+\.", item.marker)
-                    )
+                    and params.orig_list_item_marker_mode != OrigListItemMarkerMode.NEVER
+                    and (item.marker in ["-", "*", "+"] or re.fullmatch(r"\d+\.", item.marker))
                 )
 
                 # wrap with outer marker (if applicable)
                 if params.ensure_valid_list_item_marker and not case_already_valid:
-                    assert item.parent and isinstance(
-                        (list_group := item.parent.resolve(doc)), ListGroup
-                    )
+                    assert item.parent
+                    list_group = item.parent.resolve(doc)
+                    assert isinstance(list_group, ListGroup)
                     if list_group.first_item_is_enumerated(doc) and (
-                        params.orig_list_item_marker_mode != OrigListItemMarkerMode.AUTO
-                        or not item.marker
+                        params.orig_list_item_marker_mode != OrigListItemMarkerMode.AUTO or not item.marker
                     ):
                         pos = -1
                         for i, child in enumerate(list_group.children):
@@ -207,11 +269,12 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 pieces.append(text)
                 text_part = " ".join(pieces)
             else:
-                num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
-                text_part = f"{num_hashes * '#'} {text}"
+                text_part = self._format_heading(text, item)
         elif isinstance(item, CodeItem):
             if params.format_code_blocks:
-                text_part = f"`{text}`" if is_inline_scope else f"```\n{text}\n```"
+                # inline items and all hyperlinks: use single backticks
+                bt = is_inline_scope or (params.include_hyperlinks and item.hyperlink)
+                text_part = f"`{text}`" if bt else f"```\n{text}\n```"
             else:
                 text_part = text
             escape_html = False
@@ -251,6 +314,15 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             )
         return create_ser_result(text=text, span_source=res_parts)
 
+    def _format_heading(
+        self,
+        text: str,
+        item: Union[TitleItem, SectionHeaderItem],
+    ) -> str:
+        """Format a heading/title item. Override to customize heading representation."""
+        num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
+        return f"{num_hashes * '#'} {text}"
+
 
 class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
     """Markdown-specific meta serializer."""
@@ -269,21 +341,11 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
             text="\n\n".join(
                 [
                     tmp
-                    for key in (
-                        list(item.meta.__class__.model_fields)
-                        + list(item.meta.get_custom_part())
-                    )
+                    for key in (list(item.meta.__class__.model_fields) + list(item.meta.get_custom_part()))
                     if (
-                        (
-                            params.allowed_meta_names is None
-                            or key in params.allowed_meta_names
-                        )
+                        (params.allowed_meta_names is None or key in params.allowed_meta_names)
                         and (key not in params.blocked_meta_names)
-                        and (
-                            tmp := self._serialize_meta_field(
-                                item.meta, key, params.mark_meta
-                            )
-                        )
+                        and (tmp := self._serialize_meta_field(item.meta, key, params.mark_meta))
                     )
                 ]
                 if item.meta
@@ -293,9 +355,7 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
             # NOTE for now using an empty span source for GroupItems
         )
 
-    def _serialize_meta_field(
-        self, meta: BaseMeta, name: str, mark_meta: bool
-    ) -> Optional[str]:
+    def _serialize_meta_field(self, meta: BaseMeta, name: str, mark_meta: bool) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
@@ -317,9 +377,7 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                 txt = tmp
             else:
                 return None
-            return (
-                f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt
-            )
+            return f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt
         else:
             return None
 
@@ -342,20 +400,12 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         for ann in item.get_annotations():
             if isinstance(
                 ann,
-                (
-                    PictureClassificationData,
-                    DescriptionAnnotation,
-                    PictureMoleculeData,
-                ),
+                PictureClassificationData | DescriptionAnnotation | PictureMoleculeData,
             ):
                 if ann_text := _get_annotation_text(ann):
                     ann_res = create_ser_result(
                         text=(
-                            (
-                                f'<!--<annotation kind="{ann.kind}">-->'
-                                f"{ann_text}"
-                                f"<!--<annotation/>-->"
-                            )
+                            (f'<!--<annotation kind="{ann.kind}">-->{ann_text}<!--<annotation/>-->')
                             if params.mark_annotations
                             else ann_text
                         ),
@@ -372,6 +422,74 @@ class MarkdownTableSerializer(BaseTableSerializer):
     """Markdown-specific table item serializer."""
 
     @override
+    def get_header_and_body_lines(
+        self,
+        *,
+        table_text: str,
+        **kwargs: Any,
+    ) -> tuple[list[str], list[str]]:
+        """Get header lines and body lines from the markdown table.
+
+        Returns:
+            A tuple of (header_lines, body_lines) where header_lines contains
+            the header row and separator row, and body_lines contains the data rows.
+        """
+
+        lines = [line for line in table_text.split("\n") if line.strip()]
+
+        if len(lines) < 2:
+            # Not enough lines for a proper markdown table (need at least header + separator)
+            return [], lines
+
+        # In markdown tables:
+        # Line 0: Header row
+        # Line 1: Separator row (with dashes)
+        # Lines 2+: Body rows
+        header_lines = lines[:2]
+        body_lines = lines[2:]
+
+        return header_lines, body_lines
+
+    @staticmethod
+    def _compact_table(table_text: str) -> str:
+        """Remove padding from a markdown table.
+
+        Args:
+            table_text: Padded markdown table string
+
+        Returns:
+            Compact markdown table string
+        """
+        lines = table_text.split("\n")
+        compact_lines = []
+
+        for i, line in enumerate(lines):
+            if not line:
+                continue
+
+            parts = line.split("|")[1:-1]
+
+            # For separator line (second line), preserve alignment marks
+            if i == 1:
+                compact_parts = []
+                for part in parts:
+                    p = part.strip()
+                    if p.startswith(":") and p.endswith(":"):
+                        compact_parts.append(":-:")
+                    elif p.startswith(":"):
+                        compact_parts.append(":-")
+                    elif p.endswith(":"):
+                        compact_parts.append("-:")
+                    else:
+                        compact_parts.append("-")
+            else:
+                compact_parts = [part.strip() for part in parts]
+
+            compact_lines.append("| " + " | ".join(compact_parts) + " |")
+
+        return "\n".join(compact_lines)
+
+    @override
     def serialize(
         self,
         *,
@@ -381,6 +499,14 @@ class MarkdownTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
+        if kwargs.get("_nested_in_table"):
+            visited: set[str] = kwargs.get("visited") or set()
+            _mark_subtree_visited(item, doc, visited)
+            return create_ser_result(
+                text=_collect_subtree_text(item, doc),
+                span_source=item,
+            )
+
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
 
@@ -392,9 +518,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-
             if _should_use_legacy_annotations(params=params, item=item):
-
                 ann_res = doc_serializer.serialize_annotations(
                     item=item,
                     **kwargs,
@@ -402,21 +526,23 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 if ann_res.text:
                     res_parts.append(ann_res)
 
-            rows = [
-                [
-                    # make sure that md tables are not broken
-                    # due to newline chars in the text
-                    (
-                        doc_serializer.serialize(
-                            item=col.ref.resolve(doc=doc), **kwargs
+            rows = []
+            for row in item.data.grid:
+                rendered_row = []
+                for col in row:
+                    if isinstance(col, RichTableCell):
+                        ref_item = col.ref.resolve(doc=doc)
+                        inner_kwargs = {**kwargs, "_nested_in_table": True}
+                        cell_text = doc_serializer.serialize(
+                            item=ref_item,
+                            **inner_kwargs,
                         ).text
-                        if isinstance(col, RichTableCell)
-                        else col.text
-                    ).replace("\n", " ")
-                    for col in row
-                ]
-                for row in item.data.grid
-            ]
+                    else:
+                        cell_text = col.text or ""
+                    # Newlines and pipes must be escaped in every cell so the
+                    # markdown table stays valid.
+                    rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
+                rows.append(rendered_row)
             if len(rows) > 0:
                 try:
                     table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")
@@ -427,6 +553,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
                         tablefmt="github",
                         disable_numparse=True,
                     )
+
+                if params.compact_tables:
+                    table_text = self._compact_table(table_text)
             else:
                 table_text = ""
             if table_text:
@@ -485,21 +614,13 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             kind=PictureTabularChartData.model_fields["kind"].default,
         ):
             # Check if picture has attached PictureTabularChartData
-            tabular_chart_annotations = [
-                ann
-                for ann in item.annotations
-                if isinstance(ann, PictureTabularChartData)
-            ]
+            tabular_chart_annotations = [ann for ann in item.annotations if isinstance(ann, PictureTabularChartData)]
             if len(tabular_chart_annotations) > 0:
                 temp_doc = DoclingDocument(name="temp")
-                temp_table = temp_doc.add_table(
-                    data=tabular_chart_annotations[0].chart_data
-                )
+                temp_table = temp_doc.add_table(data=tabular_chart_annotations[0].chart_data)
                 md_table_content = temp_table.export_to_markdown(temp_doc)
                 if len(md_table_content) > 0:
-                    res_parts.append(
-                        create_ser_result(text=md_table_content, span_source=item)
-                    )
+                    res_parts.append(create_ser_result(text=md_table_content, span_source=item))
         text_res = "\n\n".join([r.text for r in res_parts if r.text])
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -513,9 +634,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         error_response = (
-            "<!-- 🖼️❌ Image not available. "
-            "Please use `PdfPipelineOptions(generate_picture_images=True)`"
-            " -->"
+            "<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate_picture_images=True)` -->"
         )
         if image_mode == ImageRefMode.PLACEHOLDER:
             text_res = image_placeholder
@@ -545,7 +664,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             ):
                 text_res = image_placeholder
             else:
-                text_res = f"![Image]({str(item.image.uri)})"
+                text_res = f"![Image]({item.image.uri!s})"
         else:
             text_res = image_placeholder
 
@@ -741,7 +860,7 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ):
         """Apply Markdown-specific hyperlink serialization."""
-        return f"[{text}]({str(hyperlink)})"
+        return f"[{text}]({hyperlink!s})"
 
     @classmethod
     def _escape_underscores(cls, text: str):

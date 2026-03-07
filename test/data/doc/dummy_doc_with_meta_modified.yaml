@@ -112,7 +112,7 @@ pictures:
     $ref: '#/body'
   prov:
   - bbox:
-      b: 623.4
+      b: 582.4
       coord_origin: TOPLEFT
       l: 456.3
       r: 702.5
@@ -283,4 +283,4 @@ texts:
   self_ref: '#/texts/3'
   text: 'Figure 1: Four examples of complex page layouts across different document
     categories'
-version: 1.8.0
+version: 1.9.0

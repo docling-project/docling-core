@@ -1,8 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Define the main types."""
 
 from docling_core.types.doc.document import DoclingDocument

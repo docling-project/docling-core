@@ -2,7 +2,8 @@ import glob
 import json
 import os
 import pathlib
-from typing import List, Optional
+import sys
+from typing import Optional
 
 import git
 import pytest
@@ -34,10 +35,10 @@ def create_documents_from_repository(
     repo_url: str,
     language: CodeLanguageLabel,
     commit_id: Optional[str] = None,
-) -> List[DoclingDocument]:
+) -> list[DoclingDocument]:
     """Build DoclingDocument objects from a local checkout, one per code file."""
 
-    documents: List[DoclingDocument] = []
+    documents: list[DoclingDocument] = []
     if commit_id is None:
         commit_id = get_latest_commit_id(file_dir)
 
@@ -53,16 +54,9 @@ def create_documents_from_repository(
 
     all_files = []
     for extension in all_extensions:
-        all_files.extend(
-            [
-                f
-                for f in sorted(
-                    glob.glob(f"{file_dir}/**/*{extension}", recursive=True)
-                )
-            ]
-        )
+        all_files.extend([f for f in sorted(glob.glob(f"{file_dir}/**/*{extension}", recursive=True))])
 
-    all_files = sorted(list(set(all_files)))
+    all_files = sorted(set(all_files))
 
     for file_path in all_files:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -72,11 +66,7 @@ def create_documents_from_repository(
 
         origin = DocumentOrigin(
             filename=file_relative,
-            uri=(
-                f"{repo_url}/blob/{commit_id}/{file_relative}"
-                if commit_id
-                else f"{repo_url}/{file_relative}"
-            ),
+            uri=(f"{repo_url}/blob/{commit_id}/{file_relative}" if commit_id else f"{repo_url}/{file_relative}"),
             mimetype="text/plain",
             binary_hash=_create_hash(file_content),
         )
@@ -97,41 +87,31 @@ REPO_SPECS = [
         "Java",
         "/test/data/chunker_repo/repos/acmeair",
         "https://github.com/acmeair/acmeair",
-        lambda: HierarchicalChunker(
-            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
-        ),
+        lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
     (
         "TypeScript",
         "/test/data/chunker_repo/repos/outline",
         "https://github.com/outline/outline",
-        lambda: HierarchicalChunker(
-            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
-        ),
+        lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
     (
         "JavaScript",
         "/test/data/chunker_repo/repos/jquery",
         "https://github.com/jquery/jquery",
-        lambda: HierarchicalChunker(
-            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
-        ),
+        lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
     (
         "Python",
         "/test/data/chunker_repo/repos/docling",
         "https://github.com/docling-project/docling",
-        lambda: HierarchicalChunker(
-            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
-        ),
+        lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
     (
         "C",
         "/test/data/chunker_repo/repos/json-c",
         "https://github.com/json-c/json-c",
-        lambda: HierarchicalChunker(
-            code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)
-        ),
+        lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
 ]
 
@@ -151,6 +131,9 @@ def _dump_or_assert(act_data: dict, out_path: pathlib.Path):
 @pytest.mark.parametrize("name,local_path,repo_url,chunker_factory", REPO_SPECS)
 def test_function_chunkers_repo(name, local_path, repo_url, chunker_factory):
 
+    if name == "Java" and sys.version_info < (3, 10):
+        pytest.skip("Skipping Java tests on python < 3.10.")
+
     local_path_full = os.getcwd() + local_path
 
     if not os.path.isdir(local_path_full):
@@ -162,11 +145,7 @@ def test_function_chunkers_repo(name, local_path, repo_url, chunker_factory):
         language=CodeLanguageLabel(name),
         commit_id="abc123def456",
     )
-    docs = [
-        doc
-        for doc in docs
-        if any(text.label == DocItemLabel.CODE and text.text for text in doc.texts)
-    ]
+    docs = [doc for doc in docs if any(text.label == DocItemLabel.CODE and text.text for text in doc.texts)]
     if not docs:
         pytest.skip(f"No documents found in {local_path_full} for {name}.")
 

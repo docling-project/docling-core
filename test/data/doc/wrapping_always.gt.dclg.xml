@@ -1,0 +1,52 @@
+<doclang version="1.0.0">
+  <text>
+    <content>simple</content>
+  </text>
+  <text>
+    <content>  leading</content>
+  </text>
+  <text>
+    <content>trailing  </content>
+  </text>
+  <text>
+    <content><![CDATA[< special]]></content>
+  </text>
+  <text>
+    <content><![CDATA[  leading and < special]]></content>
+  </text>
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    <content>w/prov simple</content>
+  </text>
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    <content>  w/prov leading</content>
+  </text>
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    <content>w/prov trailing  </content>
+  </text>
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    <content><![CDATA[w/prov < special]]></content>
+  </text>
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    <content><![CDATA[  w/prov leading and < special]]></content>
+  </text>
+</doclang>

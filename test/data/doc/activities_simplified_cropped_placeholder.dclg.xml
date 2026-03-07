@@ -1,0 +1,13 @@
+<doclang version="1.0.0">
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Other</classification>
+      </meta>
+      <location value="43"/>
+      <location value="117"/>
+      <location value="172"/>
+      <location value="208"/>
+    </picture>
+  </floating_group>
+</doclang>

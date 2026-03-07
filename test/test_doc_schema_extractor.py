@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Test the pydantic models in module data_types.ccs."""
+
 import json
 
 from pydantic import ValidationError
@@ -24,7 +20,7 @@ def test_ccs_document_update():
             doc = CCSDocument.model_validate(raw_doc)
 
             if doc.description.abstract:
-                assert False, f"Abstract should not be present"
+                assert False, "Abstract should not be present"
 
     except ValidationError as e:
         print(f"Validation error in file {filename}:\n{e.json()}")

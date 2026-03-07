@@ -1,20 +1,19 @@
 """Utility functions and classes for code language detection and processing."""
 
-from typing import List, Optional
+import logging
+import sys
+from typing import Optional
 
-import tree_sitter_c as ts_c
-import tree_sitter_java as ts_java
-import tree_sitter_javascript as ts_js
-import tree_sitter_python as ts_python
-import tree_sitter_typescript as ts_ts
 from tree_sitter import Language as Lang
 from tree_sitter import Node, Tree
 
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.types.doc.labels import CodeLanguageLabel
 
+_logger = logging.getLogger(__name__)
 
-def _get_file_extensions(language: CodeLanguageLabel) -> List[str]:
+
+def _get_file_extensions(language: CodeLanguageLabel) -> list[str]:
     """Get the file extensions associated with a language."""
     extensions_map = {
         CodeLanguageLabel.PYTHON: [".py"],
@@ -28,13 +27,27 @@ def _get_file_extensions(language: CodeLanguageLabel) -> List[str]:
 
 def _get_tree_sitter_language(language: CodeLanguageLabel):
     """Get the tree-sitter language object for a language."""
+    import tree_sitter_c as ts_c
+    import tree_sitter_javascript as ts_js
+    import tree_sitter_python as ts_python
+    import tree_sitter_typescript as ts_ts
+
     language_map = {
         CodeLanguageLabel.PYTHON: lambda: Lang(ts_python.language()),
         CodeLanguageLabel.TYPESCRIPT: lambda: Lang(ts_ts.language_typescript()),
-        CodeLanguageLabel.JAVA: lambda: Lang(ts_java.language()),
         CodeLanguageLabel.JAVASCRIPT: lambda: Lang(ts_js.language()),
         CodeLanguageLabel.C: lambda: Lang(ts_c.language()),
     }
+    try:
+        import tree_sitter_java_orchard as ts_java
+
+        language_map[CodeLanguageLabel.JAVA] = lambda: Lang(ts_java.language())
+    except ImportError:
+        _logger.warning(
+            "Code chunking for Java cannot be enabled because tree-sitter-java-orchard is missing. "
+            "Please installed it via `pip install tree-sitter-java-orchard`."
+        )
+
     factory = language_map.get(language)
     return factory() if factory else None
 
@@ -98,9 +111,7 @@ def _get_function_name(language: CodeLanguageLabel, node: Node) -> Optional[str]
         return None
 
 
-def _is_collectable_function(
-    language: CodeLanguageLabel, node: Node, constructor_name: str
-) -> bool:
+def _is_collectable_function(language: CodeLanguageLabel, node: Node, constructor_name: str) -> bool:
     """Check if a function should be collected for chunking."""
     if language == CodeLanguageLabel.C:
         return True
@@ -117,9 +128,7 @@ def _get_default_tokenizer() -> "BaseTokenizer":
         HuggingFaceTokenizer,
     )
 
-    return HuggingFaceTokenizer.from_pretrained(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
 def _has_child(node: Node, child_name: str) -> bool:
@@ -127,7 +136,7 @@ def _has_child(node: Node, child_name: str) -> bool:
     return bool(node and node.child_by_field_name(child_name))
 
 
-def _get_children(node: Node, child_types: List[str]) -> List[Node]:
+def _get_children(node: Node, child_types: list[str]) -> list[Node]:
     """Get all children of a node that match the specified types."""
     if not node.children:
         return []
@@ -147,6 +156,21 @@ def _to_str(node: Node) -> str:
 def _query_tree(language, tree: Tree, query: str):
     """Query a tree-sitter tree with the given query string."""
     if not language:
-        return []
-    q = language.query(query)
-    return q.captures(tree.root_node)
+        return {}
+    from tree_sitter import Query, QueryCursor
+
+    q = Query(language, query)
+    cursor = QueryCursor(q)
+    matches = list(cursor.matches(tree.root_node))
+
+    # Combine all captures from all matches into a single dict
+    # Old API returned: {"capture_name": [node1, node2, ...]}
+    # New API returns: [(pattern_idx, {"capture_name": [node1, ...]}), ...]
+    combined_captures: dict[str, list[Node]] = {}
+    for _, captures_dict in matches:
+        for capture_name, nodes in captures_dict.items():
+            if capture_name not in combined_captures:
+                combined_captures[capture_name] = []
+            combined_captures[capture_name].extend(nodes)
+
+    return combined_captures

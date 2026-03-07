@@ -1,14 +1,14 @@
-"""Key‑value visualizer overlaying key/value cells and their links on page images.
+"""Key-value visualizer overlaying key/value cells and their links on page images.
 
 This module complements :py:class:`layout_visualizer.LayoutVisualizer` by drawing
-*key* and *value* cells plus the directed links between them.  It can be stacked
-on top of any other :py:class:`BaseVisualizer` – e.g. first draw the general
-layout, then add the key‑value layer.
+*key* and *value* cells plus the directed links between them.  It can be stacked
+on top of any other :py:class:`BaseVisualizer` - e.g. first draw the general
+layout, then add the key-value layer.
 """
 
-from copy import deepcopy
 from typing import Optional, Union
 
+from PIL import Image as PILImage
 from PIL import ImageDraw, ImageFont
 from PIL.Image import Image
 from PIL.ImageFont import FreeTypeFont
@@ -16,20 +16,24 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.visualizer.base import BaseVisualizer
-from docling_core.types.doc.document import ContentLayer, DoclingDocument
-from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
+from docling_core.types.doc import (
+    ContentLayer,
+    DoclingDocument,
+    GraphCellLabel,
+    GraphLinkLabel,
+)
 
 # ---------------------------------------------------------------------------
 # Helper functions / constants
 # ---------------------------------------------------------------------------
 
-# Semi‑transparent RGBA colours for key / value cells and their connecting link
+# Semi-transparent RGBA colours for key / value cells and their connecting link
 _KEY_FILL = (0, 170, 0, 70)  # greenish
 _VALUE_FILL = (0, 0, 200, 70)  # bluish
 _LINK_COLOUR = (255, 0, 0, 255)  # red line (solid)
 
 _LABEL_TXT_COLOUR = (0, 0, 0, 255)
-_LABEL_BG_COLOUR = (255, 255, 255, 180)  # semi‑transparent white
+_LABEL_BG_COLOUR = (255, 255, 255, 180)  # semi-transparent white
 
 
 class KeyValueVisualizer(BaseVisualizer):
@@ -40,7 +44,7 @@ class KeyValueVisualizer(BaseVisualizer):
 
         show_label: bool = True  # draw cell text close to bbox
         show_cell_id: bool = False  # annotate each rectangle with its cell_id
-        content_layers: set[ContentLayer] = {cl for cl in ContentLayer}
+        content_layers: set[ContentLayer] = set(ContentLayer)
 
     base_visualizer: Optional[BaseVisualizer] = None
     params: Params = Params()
@@ -62,8 +66,12 @@ class KeyValueVisualizer(BaseVisualizer):
         scale_x: float,
         scale_y: float,
     ) -> None:
-        """Draw every key‑value graph that has cells on *page_no* onto *image*."""
-        draw = ImageDraw.Draw(image, "RGBA")
+        """Draw every key-value graph that has cells on *page_no* onto *image*."""
+        # Create transparent overlay for proper alpha compositing
+        overlay = PILImage.new("RGBA", image.size, (255, 255, 255, 0))
+        overlay_draw = ImageDraw.Draw(overlay)
+        main_draw = ImageDraw.Draw(image)
+
         # Choose a small truetype font if available, otherwise default bitmap font
         font: Union[ImageFont.ImageFont, FreeTypeFont]
         try:
@@ -81,9 +89,7 @@ class KeyValueVisualizer(BaseVisualizer):
                 if cell.prov is None or cell.prov.page_no != page_no:
                     continue  # skip cells not on this page or without bbox
 
-                tl_bbox = cell.prov.bbox.to_top_left_origin(
-                    page_height=doc.pages[page_no].size.height
-                )
+                tl_bbox = cell.prov.bbox.to_top_left_origin(page_height=doc.pages[page_no].size.height)
                 x0, y0, x1, y1 = tl_bbox.as_tuple()
                 x0 *= scale_x
                 x1 *= scale_x
@@ -91,10 +97,18 @@ class KeyValueVisualizer(BaseVisualizer):
                 y1 *= scale_y
                 fill_rgba = self._cell_fill(cell.label)
 
-                draw.rectangle(
+                # Draw fill on overlay (for transparency)
+                overlay_draw.rectangle(
+                    [(x0, y0), (x1, y1)],
+                    outline=None,
+                    fill=fill_rgba,
+                )
+
+                # Draw outline on main image
+                main_draw.rectangle(
                     [(x0, y0), (x1, y1)],
                     outline=fill_rgba[:-1] + (255,),
-                    fill=fill_rgba,
+                    fill=None,
                 )
 
                 if self.params.show_label:
@@ -104,20 +118,32 @@ class KeyValueVisualizer(BaseVisualizer):
                     txt_parts.append(cell.text)
                     label_text = " | ".join(txt_parts)
 
-                    tbx = draw.textbbox((x0, y0), label_text, font=font)
+                    tbx = overlay_draw.textbbox((x0, y0), label_text, font=font)
                     pad = 2
-                    draw.rectangle(
+
+                    # Draw label background on overlay (for transparency)
+                    overlay_draw.rectangle(
                         [(tbx[0] - pad, tbx[1] - pad), (tbx[2] + pad, tbx[3] + pad)],
                         fill=_LABEL_BG_COLOUR,
                     )
-                    draw.text((x0, y0), label_text, font=font, fill=_LABEL_TXT_COLOUR)
+                    # Draw text on overlay
+                    overlay_draw.text((x0, y0), label_text, font=font, fill=_LABEL_TXT_COLOUR)
+
+        # Alpha composite the overlay onto the image
+        composited = PILImage.alpha_composite(image.convert("RGBA"), overlay)
+        image.paste(composited.convert(image.mode))
+
+        # Draw links on top (after compositing, so they appear on top)
+        link_draw = ImageDraw.Draw(image)
+        for kv_item in doc.key_value_items:
+            cell_dict = {cell.cell_id: cell for cell in kv_item.graph.cells}
 
             # ------------------------------------------------------------------
             # Then draw links (after rectangles so they appear on top)
             # ------------------------------------------------------------------
             for link in kv_item.graph.links:
                 if link.label != GraphLinkLabel.TO_VALUE:
-                    # Future‑proof: ignore other link types silently
+                    # Future-proof: ignore other link types silently
                     continue
 
                 src_cell = cell_dict.get(link.source_cell_id)
@@ -133,18 +159,16 @@ class KeyValueVisualizer(BaseVisualizer):
                     continue  # only draw if both ends are on this page
 
                 def _centre(bbox):
-                    tl = bbox.to_top_left_origin(
-                        page_height=doc.pages[page_no].size.height
-                    )
+                    tl = bbox.to_top_left_origin(page_height=doc.pages[page_no].size.height)
                     l, t, r, b = tl.as_tuple()
                     return ((l + r) / 2 * scale_x, (t + b) / 2 * scale_y)
 
                 src_xy = _centre(src_cell.prov.bbox)
                 tgt_xy = _centre(tgt_cell.prov.bbox)
 
-                draw.line([src_xy, tgt_xy], fill=_LINK_COLOUR, width=2)
+                link_draw.line([src_xy, tgt_xy], fill=_LINK_COLOUR, width=2)
 
-                # draw a small arrow‑head by rendering a short orthogonal line
+                # draw a small arrow-head by rendering a short orthogonal line
                 # segment; exact geometry is not critical for visual inspection
                 arrow_len = 6
                 dx = tgt_xy[0] - src_xy[0]
@@ -162,12 +186,10 @@ class KeyValueVisualizer(BaseVisualizer):
                     tgt_xy[0] - ux * arrow_len + px * arrow_len / 2,
                     tgt_xy[1] - uy * arrow_len + py * arrow_len / 2,
                 )
-                draw.polygon(
-                    [tgt_xy, head_base_left, head_base_right], fill=_LINK_COLOUR
-                )
+                link_draw.polygon([tgt_xy, head_base_left, head_base_right], fill=_LINK_COLOUR)
 
     # ---------------------------------------------------------------------
-    # Public API – BaseVisualizer implementation
+    # Public API - BaseVisualizer implementation
     # ---------------------------------------------------------------------
 
     @override
@@ -178,17 +200,15 @@ class KeyValueVisualizer(BaseVisualizer):
         included_content_layers: Optional[set[ContentLayer]] = None,
         **kwargs,
     ) -> dict[Optional[int], Image]:
-        """Return page‑wise images with key/value overlay (incl. base layer)."""
+        """Return page-wise images with key/value overlay (incl. base layer)."""
         base_images = (
-            self.base_visualizer.get_visualization(
-                doc=doc, included_content_layers=included_content_layers, **kwargs
-            )
+            self.base_visualizer.get_visualization(doc=doc, included_content_layers=included_content_layers, **kwargs)
             if self.base_visualizer
             else None
         )
 
         if included_content_layers is None:
-            included_content_layers = {cl for cl in ContentLayer}
+            included_content_layers = set(ContentLayer)
 
         images: dict[Optional[int], Image] = {}
 
@@ -198,10 +218,10 @@ class KeyValueVisualizer(BaseVisualizer):
             if base_img is None:
                 if page.image is None or (pil_img := page.image.pil_image) is None:
                     raise RuntimeError("Cannot visualize document without page images")
-                base_img = deepcopy(pil_img)
+                base_img = pil_img.copy()
             images[page_nr] = base_img
 
-        # Overlay key‑value content
+        # Overlay key-value content
         for page_nr, img in images.items():  # type: ignore
             assert isinstance(page_nr, int)
             scale_x = img.width / doc.pages[page_nr].size.width

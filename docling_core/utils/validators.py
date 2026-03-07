@@ -1,14 +1,11 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Module for custom type validators."""
+
 import json
 import logging
+from collections.abc import Hashable
 from datetime import datetime
 from importlib import resources
-from typing import Hashable, TypeVar
+from typing import TypeVar
 
 import jsonschema
 from pydantic_core import PydanticCustomError
@@ -36,11 +33,7 @@ def validate_raw_schema(file_: dict) -> tuple[bool, str]:
     """Validate a RAW file."""
     logger.debug("validate RAW schema ... ")
 
-    schema_txt = (
-        resources.files("docling_core")
-        .joinpath("resources/schemas/legacy_doc/RAW.json")
-        .read_text("utf-8")
-    )
+    schema_txt = resources.files("docling_core").joinpath("resources/schemas/legacy_doc/RAW.json").read_text("utf-8")
     schema = json.loads(schema_txt)
 
     return validate_schema(file_, schema)
@@ -50,11 +43,7 @@ def validate_ann_schema(file_: dict) -> tuple[bool, str]:
     """Validate an annotated (ANN) file."""
     logger.debug("validate ANN schema ... ")
 
-    schema_txt = (
-        resources.files("docling_core")
-        .joinpath("resources/schemas/legacy_doc/ANN.json")
-        .read_text("utf-8")
-    )
+    schema_txt = resources.files("docling_core").joinpath("resources/schemas/legacy_doc/ANN.json").read_text("utf-8")
     schema = json.loads(schema_txt)
 
     return validate_schema(file_, schema)
@@ -65,9 +54,7 @@ def validate_ocr_schema(file_: dict) -> tuple[bool, str]:
     logger.debug("validate OCR schema ... ")
 
     schema_txt = (
-        resources.files("docling_core")
-        .joinpath("resources/schemas/legacy_doc/OCR-output.json")
-        .read_text("utf-8")
+        resources.files("docling_core").joinpath("resources/schemas/legacy_doc/OCR-output.json").read_text("utf-8")
     )
     schema = json.loads(schema_txt)
 

@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Test the methods in module search.json_schema_to_search_mapper."""
+
 import json
 import os
 
@@ -45,22 +41,20 @@ def test_json_schema_to_search_mapper_0():
 
     assert index_def is not None
 
-    filename = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "data/json_schemas/document-ref.json")
-    )
+    filename = os.path.abspath(os.path.join(os.path.dirname(__file__), "data/json_schemas/document-ref.json"))
     index_ref = _load(filename)
 
     diff = jsondiff.diff(index_ref, index_def)
     # print(json.dumps(index_def, indent=2))
-    assert (
-        index_def == index_ref
-    ), f"Error in search mappings of ExportedCCSDocument. Difference:\n{json.dumps(diff, indent=2)}"
+    assert index_def == index_ref, (
+        f"Error in search mappings of ExportedCCSDocument. Difference:\n{json.dumps(diff, indent=2)}"
+    )
 
 
 def test_json_schema_to_search_mapper_1():
     """Test the class JsonSchemaToSearchMapper."""
     s = Record.model_json_schema()
-    print(json.dumps(s, indent=2))
+    # print(json.dumps(s, indent=2))
 
     _meta = {
         "aliases": [".production", "ccc"],
@@ -94,13 +88,9 @@ def test_json_schema_to_search_mapper_1():
 
     assert index_def is not None
 
-    filename = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "data/json_schemas/dbrecord-ref.json")
-    )
+    filename = os.path.abspath(os.path.join(os.path.dirname(__file__), "data/json_schemas/dbrecord-ref.json"))
     index_ref = _load(filename)
 
     diff = jsondiff.diff(index_ref, index_def)
     # print(json.dumps(index_def, indent=2))
-    assert (
-        index_def == index_ref
-    ), f"Error in search mappings of Record. Difference:\n{json.dumps(diff, indent=2)}"
+    assert index_def == index_ref, f"Error in search mappings of Record. Difference:\n{json.dumps(diff, indent=2)}"

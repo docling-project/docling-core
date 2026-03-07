@@ -1,9 +1,5 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Models and methods to define the metadata fields in database index mappings."""
+
 from pathlib import Path
 from typing import Generic, Optional, TypeVar
 
@@ -82,12 +78,8 @@ class Meta(AliasModel, Generic[ClassificationT, DomainT], extra="forbid"):
         """Validate that the docling-core library is always set in version field."""
         docling_core = [item for item in v if item.name == "docling-core"]
         if not docling_core:
-            raise ValueError(
-                "the version should include at least a valid docling-core package"
-            )
+            raise ValueError("the version should include at least a valid docling-core package")
         elif len(docling_core) > 1:
-            raise ValueError(
-                "the version must not include more than 1 docling-core package"
-            )
+            raise ValueError("the version must not include more than 1 docling-core package")
         else:
             return v

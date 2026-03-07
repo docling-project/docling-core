@@ -1,0 +1,140 @@
+{
+  "pages": [
+    {
+      "pageNumber": 1,
+      "width": 600.0,
+      "height": 800.0,
+      "words": []
+    }
+  ],
+  "tables": [
+    {
+      "rowCount": 3,
+      "columnCount": 3,
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            20.0,
+            80.0,
+            300.0,
+            80.0,
+            300.0,
+            200.0,
+            20.0,
+            200.0
+          ]
+        }
+      ],
+      "cells": [
+        {
+          "content": "Product",
+          "rowIndex": 0,
+          "columnIndex": 0,
+          "rowSpan": 2,
+          "colSpan": 1
+        },
+        {
+          "content": "Years",
+          "rowIndex": 0,
+          "columnIndex": 1,
+          "rowSpan": 1,
+          "colSpan": 2
+        },
+        {
+          "content": "2016",
+          "rowIndex": 1,
+          "columnIndex": 1,
+          "rowSpan": 1,
+          "colSpan": 1
+        },
+        {
+          "content": "2017",
+          "rowIndex": 1,
+          "columnIndex": 2,
+          "rowSpan": 1,
+          "colSpan": 1
+        },
+        {
+          "content": "Apple",
+          "rowIndex": 2,
+          "columnIndex": 0,
+          "rowSpan": 1,
+          "colSpan": 1
+        },
+        {
+          "content": "49823",
+          "rowIndex": 2,
+          "columnIndex": 1,
+          "rowSpan": 1,
+          "colSpan": 1
+        },
+        {
+          "content": "695944",
+          "rowIndex": 2,
+          "columnIndex": 2,
+          "rowSpan": 1,
+          "colSpan": 1
+        }
+      ]
+    }
+  ],
+  "figures": [
+    {
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            320.0,
+            80.0,
+            500.0,
+            80.0,
+            500.0,
+            220.0,
+            320.0,
+            220.0
+          ]
+        }
+      ]
+    }
+  ],
+  "paragraphs": [
+    {
+      "content": "Title of the Document",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            10.0,
+            10.0,
+            200.0,
+            10.0,
+            200.0,
+            40.0,
+            10.0,
+            40.0
+          ]
+        }
+      ],
+      "role": "title"
+    },
+    {
+      "content": "Author 1\nAffiliation 1",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            10.0,
+            10.0,
+            200.0,
+            10.0,
+            200.0,
+            40.0,
+            10.0,
+            40.0
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,170 @@
+{
+    "root": [
+        {
+            "text": "",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    },
+                    {
+                        "self_ref": "#/texts/1",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    }
+                ],
+                "headings": [
+                    "Section 1",
+                    "Section 1.1"
+                ]
+            }
+        },
+        {
+            "text": "",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    },
+                    {
+                        "self_ref": "#/texts/2",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    }
+                ],
+                "headings": [
+                    "Section 1",
+                    "Section 1.2"
+                ]
+            }
+        },
+        {
+            "text": "",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/3",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    },
+                    {
+                        "self_ref": "#/texts/4",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    },
+                    {
+                        "self_ref": "#/texts/5",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    }
+                ],
+                "headings": [
+                    "Section 2",
+                    "Section 2.1",
+                    "Section 2.1.1"
+                ]
+            }
+        },
+        {
+            "text": "Foo",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/8",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": []
+                    }
+                ],
+                "headings": [
+                    "Section 3",
+                    "Section 3.1"
+                ]
+            }
+        },
+        {
+            "text": "",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/9",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    },
+                    {
+                        "self_ref": "#/texts/10",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "section_header",
+                        "prov": []
+                    }
+                ],
+                "headings": [
+                    "Section 4",
+                    "Section 4.1"
+                ]
+            }
+        }
+    ]
+}

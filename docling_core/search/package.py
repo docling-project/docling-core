@@ -1,16 +1,10 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Models and methods to define a package model."""
 
 import importlib.metadata
 import re
-from typing import Final
+from typing import Annotated, Final
 
 from pydantic import BaseModel, StrictStr, StringConstraints
-from typing_extensions import Annotated
 
 VERSION_PATTERN: Final = (
     r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
@@ -27,8 +21,8 @@ class Package(BaseModel, extra="forbid"):
     """
 
     name: StrictStr = "docling-core"
-    version: Annotated[str, StringConstraints(strict=True, pattern=VERSION_PATTERN)] = (
-        importlib.metadata.version("docling-core")
+    version: Annotated[str, StringConstraints(strict=True, pattern=VERSION_PATTERN)] = importlib.metadata.version(
+        "docling-core"
     )
 
     def __hash__(self):

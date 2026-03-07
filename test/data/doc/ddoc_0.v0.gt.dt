@@ -1,0 +1,237 @@
+<doctag>
+  <version>1.0.0</version>
+  <text>
+    <loc_168/>
+    <loc_23/>
+    <loc_346/>
+    <loc_30/>
+    ndbinfo_select_all - Select From ndbinfo Tables
+  </text>
+  <otsl>
+    <loc_91/>
+    <loc_46/>
+    <loc_470/>
+    <loc_77/>
+    <rhed/>
+    Default Value
+    <fcel/>
+    1
+    <nl/>
+    <rhed/>
+    Minimum Value
+    <fcel/>
+    0
+    <nl/>
+    <rhed/>
+    Maximum Value
+    <fcel/>
+    MAX_INT
+    <nl/>
+  </otsl>
+  <text>
+    <loc_91/>
+    <loc_85/>
+    <loc_467/>
+    <loc_91/>
+    This option sets the number of times to execute the select. Use  --delay  to set the time between loops.
+  </text>
+  <unordered_list>
+    <list_item>
+      <loc_84/>
+      <loc_99/>
+      <loc_185/>
+      <loc_105/>
+      • --ndb-connectstring
+    </list_item>
+  </unordered_list>
+  <otsl>
+    <loc_91/>
+    <loc_118/>
+    <loc_471/>
+    <loc_150/>
+    <rhed/>
+    Command-Line Format
+    <fcel/>
+    --ndb-connectstring=connection-string
+    <nl/>
+    <rhed/>
+    Type
+    <fcel/>
+    String
+    <nl/>
+    <rhed/>
+    Default Value
+    <fcel/>
+    [none]
+    <nl/>
+  </otsl>
+  <text>
+    <loc_92/>
+    <loc_158/>
+    <loc_467/>
+    <loc_172/>
+    Set connect string for connecting to ndb_mgmd. Syntax: &quot;[nodeid=id;][host=]hostname[:port]&quot;. Overrides entries in NDB_CONNECTSTRING and my.cnf.
+  </text>
+  <unordered_list>
+    <list_item>
+      <loc_84/>
+      <loc_180/>
+      <loc_165/>
+      <loc_185/>
+      • --ndb-mgmd-host
+    </list_item>
+  </unordered_list>
+  <otsl>
+    <loc_91/>
+    <loc_198/>
+    <loc_471/>
+    <loc_230/>
+    <rhed/>
+    Command-Line Format
+    <fcel/>
+    --ndb-mgmd-host=connection-string
+    <nl/>
+    <rhed/>
+    Type
+    <fcel/>
+    String
+    <nl/>
+    <rhed/>
+    Default Value
+    <fcel/>
+    [none]
+    <nl/>
+  </otsl>
+  <text>
+    <loc_91/>
+    <loc_238/>
+    <loc_221/>
+    <loc_245/>
+    Same as  --ndb-connectstring .
+  </text>
+  <unordered_list>
+    <list_item>
+      <loc_83/>
+      <loc_253/>
+      <loc_150/>
+      <loc_257/>
+      • --ndb-nodeid
+    </list_item>
+  </unordered_list>
+  <otsl>
+    <loc_91/>
+    <loc_271/>
+    <loc_471/>
+    <loc_303/>
+    <rhed/>
+    Command-Line Format
+    <fcel/>
+    --ndb-nodeid=#
+    <nl/>
+    <rhed/>
+    Type
+    <fcel/>
+    Integer
+    <nl/>
+    <rhed/>
+    Default Value
+    <fcel/>
+    [none]
+    <nl/>
+  </otsl>
+  <text>
+    <loc_92/>
+    <loc_311/>
+    <loc_347/>
+    <loc_318/>
+    Set node ID for this node, overriding any ID set by --ndb-connectstring.
+  </text>
+  <unordered_list>
+    <list_item>
+      <loc_84/>
+      <loc_326/>
+      <loc_239/>
+      <loc_331/>
+      • --ndb-optimized-node-selection
+    </list_item>
+  </unordered_list>
+  <otsl>
+    <loc_91/>
+    <loc_344/>
+    <loc_472/>
+    <loc_355/>
+    <rhed/>
+    Command-Line Format
+    <fcel/>
+    --ndb-optimized-node-selection
+    <nl/>
+  </otsl>
+  <text>
+    <loc_91/>
+    <loc_363/>
+    <loc_450/>
+    <loc_377/>
+    Enable optimizations for selection of nodes for transactions. Enabled by default; use  --skip-ndb- optimized-node-selection  to disable.
+  </text>
+  <unordered_list>
+    <list_item>
+      <loc_83/>
+      <loc_385/>
+      <loc_154/>
+      <loc_390/>
+      • --no-defaults
+    </list_item>
+  </unordered_list>
+  <otsl>
+    <loc_91/>
+    <loc_404/>
+    <loc_471/>
+    <loc_415/>
+    <rhed/>
+    Command-Line Format
+    <fcel/>
+    --no-defaults
+    <nl/>
+  </otsl>
+  <text>
+    <loc_92/>
+    <loc_422/>
+    <loc_334/>
+    <loc_429/>
+    Do not read default options from any option file other than login file.
+  </text>
+  <unordered_list>
+    <list_item>
+      <loc_84/>
+      <loc_437/>
+      <loc_169/>
+      <loc_443/>
+      • --print-defaults
+    </list_item>
+  </unordered_list>
+  <otsl>
+    <loc_92/>
+    <loc_456/>
+    <loc_471/>
+    <loc_467/>
+    <rhed/>
+    Command-Line Format
+    <fcel/>
+    --print-defaults
+    <nl/>
+  </otsl>
+  <text>
+    <loc_92/>
+    <loc_474/>
+    <loc_223/>
+    <loc_481/>
+    Print program argument list and exit.
+  </text>
+  <text>
+    <loc_452/>
+    <loc_471/>
+    <loc_470/>
+    <loc_475/>
+    4253
+  </text>
+</doctag>

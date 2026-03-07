@@ -1,8 +1,3 @@
-#
-# Copyright IBM Corp. 2024 - 2024
-# SPDX-License-Identifier: MIT
-#
-
 """Package for models defined by the Document type."""
 
 from .base import BoundingBox, CoordOrigin, ImageRefMode, Size
@@ -51,6 +46,7 @@ from .document import (
     PictureClassificationClass,
     PictureClassificationData,
     PictureClassificationMetaField,
+    PictureClassificationPrediction,
     PictureDataType,
     PictureItem,
     PictureLineChartData,
@@ -65,13 +61,16 @@ from .document import (
     RichTableCell,
     Script,
     SectionHeaderItem,
+    SourceType,
     SummaryMetaField,
+    TableAnnotationType,
     TableCell,
     TableData,
     TableItem,
     TabularChartMetaField,
     TextItem,
     TitleItem,
+    TrackSource,
     UnorderedList,
 )
 from .labels import (
