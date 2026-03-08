@@ -44,6 +44,11 @@ class LineBasedTokenChunker(BaseChunker):
         ),
     ]
 
+    omit_prefix_on_overflow: Annotated[
+        bool,
+        Field(default=False, description="When True, omit prefix for lines that would overflow with it. "),
+    ]
+
     serializer_provider: Annotated[
         BaseSerializerProvider,
         Field(
@@ -254,6 +259,18 @@ class LineBasedTokenChunker(BaseChunker):
                     # loop continues to retry fitting `remaining`
                     continue
 
+                # Check if omitting prefix would allow the line to fit
+                # (only if line itself is not larger than max_tokens)
+                if self.omit_prefix_on_overflow and line_tokens <= self.max_tokens and self.prefix_len > 0:
+                    # Omit prefix for this line to make it fit
+                    # Only append current if it contains more than just the prefix
+                    if current and current != self.prefix:
+                        chunks.append(current)
+                    current = ""
+                    current_len = 0
+                    # loop continues to retry fitting `remaining` without prefix
+                    continue
+
                 # Remaining is too large even for an empty chunk → split it.
                 # Split off the first segment that fits into current.
                 take, remaining = self.split_by_token_limit(remaining, available)
@@ -274,8 +291,10 @@ class LineBasedTokenChunker(BaseChunker):
 
                 # flush the current chunk (full)
                 chunks.append(current)
-                # Only add prefix to new chunks if it fits (prefix_len > 0)
-                if self.prefix_len > 0:
+
+                # Determine whether to add prefix to the next chunk
+                # If omit_prefix_on_overflow is True, don't add prefix for overflow chunks
+                if self.prefix_len > 0 and not self.omit_prefix_on_overflow:
                     current = self.prefix
                     current_len = self.prefix_len
                 else:
