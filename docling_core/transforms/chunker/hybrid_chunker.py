@@ -3,7 +3,7 @@
 import warnings
 from collections.abc import Iterable, Iterator
 from functools import cached_property
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
@@ -258,7 +258,8 @@ class HybridChunker(BaseChunker):
             segments = line_chunker.chunk_text(lines=body_lines)
         else:
             sem_chunker = semchunk.chunkerify(self.tokenizer.get_tokenizer(), chunk_size=available_length)
-            segments = sem_chunker.chunk(doc_chunk.text)
+            sem_segments = sem_chunker(doc_chunk.text)
+            segments = cast(list[str], sem_segments)
         return segments
 
     def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]):
