@@ -60,15 +60,27 @@ def test_chunk_text_long_prefix_warning(default_tokenizer):
     # Create a very long prefix that exceeds max_tokens
     long_prefix = "This is a very long prefix " * 50
 
-    with pytest.warns(UserWarning, match="too long for chunk size"):
+    with pytest.warns(UserWarning, match="too long.*will be split into multiple chunks"):
         chunker = LineBasedTokenChunker(
             tokenizer=default_tokenizer,
             prefix=long_prefix,
         )
 
-    # Prefix should be reset to empty string
-    assert chunker.prefix == ""
-    assert chunker.prefix_len == 0
+    # Prefix should be kept but split into chunks
+    assert chunker.prefix == long_prefix
+    assert chunker.prefix_len == 0  # Returns 0 when prefix is too large
+    assert len(chunker.prefix_chunks) > 1  # Should be split into multiple chunks
+    
+    # Test that chunking works with large prefix
+    lines = ["Line 1", "Line 2", "Line 3"]
+    chunks = chunker.chunk_text(lines)
+    
+    # First chunk(s) should contain the prefix chunks
+    assert len(chunks) > 0
+    # The prefix chunks should be at the beginning
+    for i, prefix_chunk in enumerate(chunker.prefix_chunks):
+        if i < len(chunks):
+            assert prefix_chunk in chunks[i]
 
 
 def test_chunk_text_single_long_line(default_tokenizer):

@@ -54,13 +54,38 @@ class LineBasedTokenChunker(BaseChunker):
 
     @computed_field  # type: ignore[misc]
     @cached_property
-    def prefix_len(self) -> int:
-        """Cached token count of the prefix, computed during initialization."""
+    def prefix_chunks(self) -> list[str]:
+        """Cached list of prefix chunks, computed during initialization.
+
+        If the prefix is larger than max_tokens, it will be split into multiple chunks.
+        """
+        if not self.prefix:
+            return []
+
         token_count = self.tokenizer.count_tokens(self.prefix)
         if token_count >= self.max_tokens:
             warnings.warn(
-                f"Chunks prefix: {self.prefix} is too long for chunk size {self.max_tokens} and will be ignored"
+                f"Chunks prefix is too long ({token_count} tokens) for chunk size {self.max_tokens}. "
+                f"It will be split into multiple chunks and only included in the first chunk(s). "
+                f"Consider increasing max_tokens to accommodate the full prefix in each chunk."
             )
+            # Split the prefix into chunks using the generalized chunking logic
+            return self._chunk_text_by_tokens(self.prefix, max_tokens=self.max_tokens)
+
+        return [self.prefix]
+
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    def prefix_len(self) -> int:
+        """Cached token count of the prefix that fits in a single chunk.
+
+        Returns 0 if prefix needs to be split into multiple chunks.
+        """
+        if not self.prefix:
+            return 0
+
+        token_count = self.tokenizer.count_tokens(self.prefix)
+        if token_count >= self.max_tokens:
             return 0
         return token_count
 
@@ -70,11 +95,8 @@ class LineBasedTokenChunker(BaseChunker):
         return self.tokenizer.get_max_tokens()
 
     def model_post_init(self, __context) -> None:
-        # Trigger computation of prefix_len to validate prefix length
-        _ = self.prefix_len
-        if self.prefix_len == 0 and self.prefix:
-            # If prefix_len is 0 but prefix exists, it means prefix was too long
-            self.prefix = ""
+        # Trigger computation of prefix_chunks to validate prefix length
+        _ = self.prefix_chunks
 
     def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
         """Chunk the provided document using line-based token-aware chunking.
@@ -107,10 +129,103 @@ class LineBasedTokenChunker(BaseChunker):
                 ),
             )
 
+    def _chunk_text_by_tokens(self, text: str, max_tokens: int) -> list[str]:
+        """Generalized function to chunk text by token limit.
+
+        This function splits text into chunks where each chunk respects the token limit.
+        It attempts to split on line boundaries first, then falls back to splitting
+        within lines if necessary.
+
+        Parameters
+        ----------
+        text : str
+            The text to chunk.
+        max_tokens : int
+            Maximum number of tokens per chunk.
+
+        Returns
+        -------
+        list[str]
+            List of text chunks, each respecting the token limit.
+        """
+        if not text:
+            return []
+
+        chunks = []
+        lines = text.splitlines(True)
+        current = ""
+        current_len = 0
+
+        for line in lines:
+            remaining = line
+
+            while True:
+                line_tokens = self.tokenizer.count_tokens(remaining)
+                available = max_tokens - current_len
+
+                # If the remaining part fits entirely into current chunk → append and stop
+                if line_tokens <= available:
+                    current += remaining
+                    current_len += line_tokens
+                    break
+
+                # Remaining does NOT fit into current chunk.
+                # If it CAN fit into a fresh chunk → flush current and start new one.
+                if line_tokens <= max_tokens:
+                    if current:
+                        chunks.append(current)
+                    current = ""
+                    current_len = 0
+                    # loop continues to retry fitting `remaining`
+                    continue
+
+                # Remaining is too large even for an empty chunk → split it.
+                # Split off the first segment that fits into current.
+                take, remaining = self.split_by_token_limit(remaining, available)
+
+                # Zero-progress detection: if take is empty, force character-level split
+                if not take:
+                    # Fallback: take at least one character to ensure progress
+                    if remaining:
+                        take = remaining[0]
+                        remaining = remaining[1:]
+                    else:
+                        # Should not happen, but break to prevent infinite loop
+                        break
+
+                # Add the taken part
+                if current:
+                    current += "\n" + take
+                else:
+                    current = take
+                current_len = self.tokenizer.count_tokens(current)
+
+                # flush the current chunk (full)
+                if current:
+                    chunks.append(current)
+                current = ""
+                current_len = 0
+
+        # push final chunk if non-empty
+        if current:
+            chunks.append(current)
+
+        return chunks
+
     def chunk_text(self, lines: list[str]) -> list[str]:
         chunks = []
-        current = self.prefix
-        current_len = self.prefix_len
+
+        # Handle prefix chunks - add them first if prefix is too large
+        if self.prefix_chunks and self.prefix_len == 0:
+            # Prefix is too large, add prefix chunks first
+            chunks.extend(self.prefix_chunks)
+            # Continue with regular chunking without prefix
+            current = ""
+            current_len = 0
+        else:
+            # Normal case: prefix fits in a single chunk or no prefix
+            current = self.prefix
+            current_len = self.prefix_len
 
         for line in lines:
             remaining = line
@@ -129,8 +244,13 @@ class LineBasedTokenChunker(BaseChunker):
                 # If it CAN fit into a fresh chunk → flush current and start new one.
                 if line_tokens + self.prefix_len <= self.max_tokens:
                     chunks.append(current)
-                    current = self.prefix
-                    current_len = self.prefix_len
+                    # Only add prefix to new chunks if it fits (prefix_len > 0)
+                    if self.prefix_len > 0:
+                        current = self.prefix
+                        current_len = self.prefix_len
+                    else:
+                        current = ""
+                        current_len = 0
                     # loop continues to retry fitting `remaining`
                     continue
 
@@ -154,13 +274,19 @@ class LineBasedTokenChunker(BaseChunker):
 
                 # flush the current chunk (full)
                 chunks.append(current)
-                current = self.prefix
-                current_len = self.prefix_len
+                # Only add prefix to new chunks if it fits (prefix_len > 0)
+                if self.prefix_len > 0:
+                    current = self.prefix
+                    current_len = self.prefix_len
+                else:
+                    current = ""
+                    current_len = 0
 
             # end while for this line
 
         # push final chunk if non-empty
-        if current != self.prefix:
+        # Check against both empty string and prefix (for when prefix fits)
+        if current and (self.prefix_len == 0 or current != self.prefix):
             chunks.append(current)
 
         return chunks
