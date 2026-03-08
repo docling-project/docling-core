@@ -615,3 +615,95 @@ def test_omit_prefix_on_overflow_false_with_line_splitting(default_tokenizer):
         # All chunks should have the prefix when omit_prefix_on_overflow=False
         assert chunk.startswith(prefix), f"Chunk {i} should have prefix with omit_prefix_on_overflow=False"
 
+def test_omit_prefix_on_overflow_warning(default_tokenizer):
+    """Test that a warning is issued once when prefix is actually omitted."""
+    prefix = "PREFIX: "
+    
+    # Create chunker with omit_prefix_on_overflow=True
+    chunker = LineBasedTokenChunker(
+        tokenizer=default_tokenizer,
+        prefix=prefix,
+        omit_prefix_on_overflow=True,
+    )
+    
+    # Create a line that fits without prefix but not with prefix
+    line = "word " * (MAX_TOKENS - 1)
+    line_tokens = chunker.tokenizer.count_tokens(line)
+    
+    # Verify test setup
+    assert line_tokens <= MAX_TOKENS
+    assert line_tokens + chunker.prefix_len > MAX_TOKENS
+    
+    # Should warn once when prefix is omitted
+    with pytest.warns(UserWarning, match="Prefix omitted for at least one line"):
+        lines = [line, line, line]  # Multiple lines that would cause omission
+        chunks = chunker.chunk_text(lines)
+    
+    # Verify chunks were created
+    assert len(chunks) > 0
+
+
+def test_omit_prefix_on_overflow_no_warning_when_not_omitted(default_tokenizer):
+    """Test that no warning is issued when prefix is never omitted."""
+    prefix = "PREFIX: "
+    
+    # Create chunker with omit_prefix_on_overflow=True
+    chunker = LineBasedTokenChunker(
+        tokenizer=default_tokenizer,
+        prefix=prefix,
+        omit_prefix_on_overflow=True,
+    )
+    
+    # Create lines that fit with prefix (no omission needed)
+    small_line = "Small line\n"
+    
+    # Should NOT warn since prefix is never omitted
+    import warnings as warnings_module
+    with warnings_module.catch_warnings(record=True) as warning_list:
+        warnings_module.simplefilter("always")
+        lines = [small_line, small_line, small_line]
+        chunks = chunker.chunk_text(lines)
+        
+        # Filter for UserWarnings about prefix omission
+        prefix_warnings = [w for w in warning_list if "Prefix omitted" in str(w.message)]
+    
+    # Verify no prefix omission warnings were issued
+    assert len(prefix_warnings) == 0
+    
+    # Verify chunks were created with prefix
+    assert len(chunks) > 0
+    for chunk in chunks:
+        assert chunk.startswith(prefix)
+
+
+def test_omit_prefix_on_overflow_warning_on_split_line(default_tokenizer):
+    """Test that warning is issued when prefix is omitted for overflow chunks from split lines."""
+    prefix = "PREFIX: "
+    
+    # Create chunker with omit_prefix_on_overflow=True
+    chunker = LineBasedTokenChunker(
+        tokenizer=default_tokenizer,
+        prefix=prefix,
+        omit_prefix_on_overflow=True,
+    )
+    
+    # Create a line that's too long even without prefix (will be split)
+    long_line = "word " * (MAX_TOKENS * 2)
+    line_tokens = chunker.tokenizer.count_tokens(long_line)
+    
+    # Verify line is too large even without prefix
+    assert line_tokens > MAX_TOKENS
+    
+    # Should warn once when prefix is omitted for overflow chunks
+    with pytest.warns(UserWarning, match="Prefix omitted for at least one line"):
+        lines = [long_line]
+        chunks = chunker.chunk_text(lines)
+    
+    # Verify line was split into multiple chunks
+    assert len(chunks) > 1
+    
+    # With omit_prefix_on_overflow=True, overflow chunks should NOT have prefix
+    # (first chunk may or may not have prefix depending on initial state)
+    for i in range(1, len(chunks)):
+        assert not chunks[i].startswith(prefix), f"Overflow chunk {i} should not have prefix"
+

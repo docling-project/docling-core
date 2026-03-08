@@ -102,6 +102,8 @@ class LineBasedTokenChunker(BaseChunker):
     def model_post_init(self, __context) -> None:
         # Trigger computation of prefix_chunks to validate prefix length
         _ = self.prefix_chunks
+        # Track whether we've warned about prefix omission
+        self._prefix_omitted_warned = False
 
     def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
         """Chunk the provided document using line-based token-aware chunking.
@@ -262,6 +264,17 @@ class LineBasedTokenChunker(BaseChunker):
                 # Check if omitting prefix would allow the line to fit
                 # (only if line itself is not larger than max_tokens)
                 if self.omit_prefix_on_overflow and line_tokens <= self.max_tokens and self.prefix_len > 0:
+                    # Warn once when prefix is actually omitted
+                    if not self._prefix_omitted_warned:
+                        warnings.warn(
+                            f"Prefix omitted for at least one line due to omit_prefix_on_overflow=True. "
+                            f"Line would overflow with prefix ({self.prefix_len} tokens) but fits without it "
+                            f"within max_tokens ({self.max_tokens}). This may result in inconsistent chunk formatting.",
+                            UserWarning,
+                            stacklevel=4,
+                        )
+                        self._prefix_omitted_warned = True
+
                     # Omit prefix for this line to make it fit
                     # Only append current if it contains more than just the prefix
                     if current and current != self.prefix:
@@ -298,6 +311,16 @@ class LineBasedTokenChunker(BaseChunker):
                     current = self.prefix
                     current_len = self.prefix_len
                 else:
+                    # Warn once when prefix is omitted for overflow chunks
+                    if self.omit_prefix_on_overflow and self.prefix_len > 0 and not self._prefix_omitted_warned:
+                        warnings.warn(
+                            f"Prefix omitted for at least one line due to omit_prefix_on_overflow=True. "
+                            f"Line would overflow with prefix ({self.prefix_len} tokens) but fits without it "
+                            f"within max_tokens ({self.max_tokens}). This may result in inconsistent chunk formatting.",
+                            UserWarning,
+                            stacklevel=4,
+                        )
+                        self._prefix_omitted_warned = True
                     current = ""
                     current_len = 0
 
