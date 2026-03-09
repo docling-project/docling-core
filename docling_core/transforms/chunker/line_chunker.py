@@ -74,8 +74,14 @@ class LineBasedTokenChunker(BaseChunker):
                 f"It will be split into multiple chunks and only included in the first chunk(s). "
                 f"Consider increasing max_tokens to accommodate the full prefix in each chunk."
             )
-            # Split the prefix into chunks using the generalized chunking logic
-            return self._chunk_text_by_tokens(self.prefix, max_tokens=self.max_tokens)
+            # Split the prefix into chunks using a temporary chunker with no prefix
+            temp_chunker = LineBasedTokenChunker(
+                tokenizer=self.tokenizer,
+                prefix="",
+                omit_prefix_on_overflow=False,
+                serializer_provider=self.serializer_provider,
+            )
+            return temp_chunker.chunk_text([self.prefix])
 
         return [self.prefix]
 
@@ -135,89 +141,6 @@ class LineBasedTokenChunker(BaseChunker):
                     origin=dl_doc.origin,
                 ),
             )
-
-    def _chunk_text_by_tokens(self, text: str, max_tokens: int) -> list[str]:
-        """Generalized function to chunk text by token limit.
-
-        This function splits text into chunks where each chunk respects the token limit.
-        It attempts to split on line boundaries first, then falls back to splitting
-        within lines if necessary.
-
-        Parameters
-        ----------
-        text : str
-            The text to chunk.
-        max_tokens : int
-            Maximum number of tokens per chunk.
-
-        Returns
-        -------
-        list[str]
-            List of text chunks, each respecting the token limit.
-        """
-        if not text:
-            return []
-
-        chunks = []
-        lines = text.splitlines(True)
-        current = ""
-        current_len = 0
-
-        for line in lines:
-            remaining = line
-
-            while True:
-                line_tokens = self.tokenizer.count_tokens(remaining)
-                available = max_tokens - current_len
-
-                # If the remaining part fits entirely into current chunk → append and stop
-                if line_tokens <= available:
-                    current += remaining
-                    current_len += line_tokens
-                    break
-
-                # Remaining does NOT fit into current chunk.
-                # If it CAN fit into a fresh chunk → flush current and start new one.
-                if line_tokens <= max_tokens:
-                    if current:
-                        chunks.append(current)
-                    current = ""
-                    current_len = 0
-                    # loop continues to retry fitting `remaining`
-                    continue
-
-                # Remaining is too large even for an empty chunk → split it.
-                # Split off the first segment that fits into current.
-                take, remaining = self.split_by_token_limit(remaining, available)
-
-                # Zero-progress detection: if take is empty, force character-level split
-                if not take:
-                    # Fallback: take at least one character to ensure progress
-                    if remaining:
-                        take = remaining[0]
-                        remaining = remaining[1:]
-                    else:
-                        # Should not happen, but break to prevent infinite loop
-                        break
-
-                # Add the taken part
-                if current:
-                    current += "\n" + take
-                else:
-                    current = take
-                current_len = self.tokenizer.count_tokens(current)
-
-                # flush the current chunk (full)
-                if current:
-                    chunks.append(current)
-                current = ""
-                current_len = 0
-
-        # push final chunk if non-empty
-        if current:
-            chunks.append(current)
-
-        return chunks
 
     def chunk_text(self, lines: list[str]) -> list[str]:
         chunks = []
