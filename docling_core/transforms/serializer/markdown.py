@@ -191,6 +191,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
+        in_table_cell: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
@@ -269,7 +270,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 pieces.append(text)
                 text_part = " ".join(pieces)
             else:
-                text_part = self._format_heading(text, item)
+                text_part = self._format_heading(text, item, in_table_cell=in_table_cell)
         elif isinstance(item, CodeItem):
             if params.format_code_blocks:
                 # inline items and all hyperlinks: use single backticks
@@ -318,8 +319,13 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         self,
         text: str,
         item: Union[TitleItem, SectionHeaderItem],
+        in_table_cell: bool = False,
     ) -> str:
         """Format a heading/title item. Override to customize heading representation."""
+        # According to markdown specs, headings are not allowed inside tables
+        # Convert to plain text when in table cell
+        if in_table_cell:
+            return text
         num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
         return f"{num_hashes * '#'} {text}"
 
@@ -532,7 +538,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 for col in row:
                     if isinstance(col, RichTableCell):
                         ref_item = col.ref.resolve(doc=doc)
-                        inner_kwargs = {**kwargs, "_nested_in_table": True}
+                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
                         cell_text = doc_serializer.serialize(
                             item=ref_item,
                             **inner_kwargs,
