@@ -1,3 +1,9 @@
+## [v2.69.0](https://github.com/docling-project/docling-core/releases/tag/v2.69.0) - 2026-03-09
+
+### Feature
+
+* Loosen dependency version constraints ([#534](https://github.com/docling-project/docling-core/issues/534)) ([`4eb0d20`](https://github.com/docling-project/docling-core/commit/4eb0d20d0455952e55f6639b0ca96a7a448453f0))
+
 ## [v2.68.0](https://github.com/docling-project/docling-core/releases/tag/v2.68.0) - 2026-03-07
 
 ### Feature
