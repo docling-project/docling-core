@@ -153,9 +153,23 @@ class LineBasedTokenChunker(BaseChunker):
             current = ""
             current_len = 0
         else:
-            # Normal case: prefix fits in a single chunk or no prefix
-            current = self.prefix
-            current_len = self.prefix_len
+            # Check if first line would overflow with prefix when omit_prefix_on_overflow=True
+            # If yes, add prefix as a standalone chunk first to ensure it's visible
+            if self.omit_prefix_on_overflow and self.prefix_len > 0 and lines:
+                first_line_tokens = self.tokenizer.count_tokens(lines[0])
+                # If first line would overflow with prefix, add prefix as standalone chunk
+                if first_line_tokens + self.prefix_len > self.max_tokens:
+                    chunks.append(self.prefix)
+                    current = ""
+                    current_len = 0
+                else:
+                    # First line fits with prefix, use normal flow
+                    current = self.prefix
+                    current_len = self.prefix_len
+            else:
+                # Normal case: prefix fits in a single chunk or no prefix
+                current = self.prefix
+                current_len = self.prefix_len
 
         for line in lines:
             remaining = line
