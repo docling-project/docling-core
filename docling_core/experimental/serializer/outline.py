@@ -71,22 +71,33 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     if isinstance(item, ListItem):
         return ""
 
-    prepend = _default_prepend(item)
-    if isinstance(item, TitleItem | SectionHeaderItem):
-        # MarkdownDocSerializer requires a doc instance; pass through current doc
-        _md_serializer = MarkdownDocSerializer(doc=doc)
-        _serializer = MarkdownTextSerializer()
+    params = OutlineParams(**kwargs)
 
-        res = _serializer.serialize(item=item, doc_serializer=_md_serializer, doc=doc, **kwargs)
-        prepend = res.text
+    # Build the text parts list
+    text_parts = []
 
-    summary = ""
+    # Only include prepend (actual text content) if include_non_meta is True
+    if params.include_non_meta:
+        prepend = _default_prepend(item)
+        if isinstance(item, TitleItem | SectionHeaderItem):
+            # MarkdownDocSerializer requires a doc instance; pass through current doc
+            _md_serializer = MarkdownDocSerializer(doc=doc)
+            _serializer = MarkdownTextSerializer()
+
+            res = _serializer.serialize(item=item, doc_serializer=_md_serializer, doc=doc, **kwargs)
+            prepend = res.text
+        text_parts.append(prepend)
+
+    # Always include reference (structure)
+    reference = _default_outline_node(item)
+    text_parts.append(reference)
+
+    # Always include summary (metadata) if available
     if item.meta and item.meta.summary:
         summary = _default_summary(item.meta.summary.text)
+        text_parts.append(summary)
 
-    reference = _default_outline_node(item)
-
-    text = " ".join([prepend, reference, summary])
+    text = " ".join(text_parts)
 
     return text.strip()
 
@@ -126,8 +137,14 @@ class _OutlineTextSerializer(BaseTextSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the passed item."""
-
-        text = _default_text(item=item, doc=doc, **kwargs)
+        # Pass the original params from doc_serializer to respect include_non_meta
+        # Remove include_non_meta from kwargs if present (it was overridden to True)
+        # and use the original value from doc_serializer.params
+        kwargs_copy = {k: v for k, v in kwargs.items() if k != "include_non_meta"}
+        include_non_meta = (
+            doc_serializer.params.include_non_meta if isinstance(doc_serializer, MarkdownDocSerializer) else True
+        )
+        text = _default_text(item=item, doc=doc, include_non_meta=include_non_meta, **kwargs_copy)
         return create_ser_result(text=text)
 
 
@@ -297,3 +314,30 @@ class OutlineDocSerializer(MarkdownDocSerializer):
     meta_serializer: BaseMetaSerializer = _OutlineMetaSerializer()
 
     params: OutlineParams = OutlineParams()
+
+    @override
+    def get_parts(
+        self,
+        item: NodeItem | None = None,
+        *,
+        traverse_pictures: bool = False,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: set[str] | None = None,
+        **kwargs: Any,
+    ) -> list[SerializationResult]:
+        """Get serialization parts for the document.
+
+        Override to ensure outline items are always processed regardless of
+        include_non_meta setting. The _default_text function will handle
+        what content to include based on include_non_meta.
+        """
+        kwargs_with_meta = {**kwargs, "include_non_meta": True}
+        return super().get_parts(
+            item=item,
+            traverse_pictures=traverse_pictures,
+            list_level=list_level,
+            is_inline_scope=is_inline_scope,
+            visited=visited,
+            **kwargs_with_meta,
+        )
