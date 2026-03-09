@@ -166,7 +166,7 @@
             }
         },
         {
-            "text": "IBM was founded in 1911 as the Computing-Tabulating-Recording Company (CTR), a holding company of manufacturers of record-keeping and measuring systems. It was renamed \"International Business Machines\" in 1924 and soon became the leading manufacturer of punch-card tabulating systems. During the 1960s and 1970s, the",
+            "text": "IBM was founded in 1911 as the Computing-Tabulating-Recording Company (CTR), a holding company of manufacturers of record-keeping and measuring systems. It was renamed \"International Business Machines\" in 1924 and soon became the leading manufacturer of punch-card tabulating systems.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -208,7 +208,7 @@
             }
         },
         {
-            "text": "IBM mainframe, exemplified by the System/360, was the world's dominant computing platform, with the company producing 80 percent of computers in the U.S. and 70 percent of computers worldwide.[11]",
+            "text": "During the 1960s and 1970s, the IBM mainframe, exemplified by the System/360, was the world's dominant computing platform, with the company producing 80 percent of computers in the U.S. and 70 percent of computers worldwide.[11]",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -250,7 +250,7 @@
             }
         },
         {
-            "text": "IBM debuted in the microcomputer market in 1981 with the IBM Personal Computer, - its DOS software provided by Microsoft, - which became the basis for the majority of personal computers to the present day.[12] The company later also found success in the portable space with the ThinkPad. Since the 1990s,",
+            "text": "IBM debuted in the microcomputer market in 1981 with the IBM Personal Computer, - its DOS software provided by Microsoft, - which became the basis for the majority of personal computers to the present day.[12] The company later also found success in the portable space with the ThinkPad.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -292,7 +292,7 @@
             }
         },
         {
-            "text": "IBM has concentrated on computer services, software, supercomputers, and scientific research; it sold its microcomputer division to Lenovo in 2005. IBM continues to develop mainframes, and its supercomputers have consistently ranked among the most powerful in the world in the 21st century.",
+            "text": "Since the 1990s, IBM has concentrated on computer services, software, supercomputers, and scientific research; it sold its microcomputer division to Lenovo in 2005.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -334,7 +334,49 @@
             }
         },
         {
-            "text": "As one of the world's oldest and largest technology companies, IBM has been responsible for several technological innovations, including the automated teller machine (ATM), dynamic random-access memory (DRAM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database, the SQL programming",
+            "text": "IBM continues to develop mainframes, and its supercomputers have consistently ranked among the most powerful in the world in the 21st century.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/6",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 35.3751106262207,
+                                    "t": 440.14801025390625,
+                                    "r": 575.099365234375,
+                                    "b": 340.7760009765625,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    595
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "As one of the world's oldest and largest technology companies, IBM has been responsible for several technological innovations, including the automated teller machine (ATM), dynamic random-access memory (DRAM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database,",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -376,7 +418,7 @@
             }
         },
         {
-            "text": "language, and the UPC barcode. The company has made inroads in advanced computer chips, quantum computing, artificial intelligence, and data infrastructure.[13][14][15] IBM employees and alumni have won various recognitions for their scientific research and inventions, including six Nobel Prizes and six Turing",
+            "text": "the SQL programming language, and the UPC barcode.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -418,7 +460,7 @@
             }
         },
         {
-            "text": "Awards.[16]",
+            "text": "The company has made inroads in advanced computer chips, quantum computing, artificial intelligence, and data infrastructure.[13][14][15] IBM employees and alumni have won various recognitions for their scientific research and inventions, including six Nobel Prizes and six Turing Awards.[16]",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -503,7 +545,7 @@
             }
         },
         {
-            "text": "IBM originated with several technological innovations developed and commercialized in the late 19th century. Julius E. Pitrap patented the computing scale in 1885;[17] Alexander Dey invented the dial recorder (1888);[18] Herman Hollerith patented the Electric Tabulating Machine",
+            "text": "IBM originated with several technological innovations developed and commercialized in the late 19th century. Julius E.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -547,7 +589,7 @@
             }
         },
         {
-            "text": "(1889);[19] and Willard Bundy invented a time clock to record workers' arrival and departure times on a paper tape (1889).[20] On June 16, 1911, their four companies were amalgamated in New York State by Charles Ranlett Flint forming a fifth company,",
+            "text": "Pitrap patented the computing scale in 1885;[17] Alexander Dey invented the dial recorder (1888);[18] Herman Hollerith patented the Electric Tabulating Machine (1889);[19]",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -591,7 +633,7 @@
             }
         },
         {
-            "text": "the Computing-Tabulating-Recording Company (CTR) based in Endicott, New York.[1][21] The five companies had 1,300 employees and oiices and plants in Endicott and Binghamton, New York; Dayton, Ohio; Detroit,",
+            "text": "and Willard Bundy invented a time clock to record workers' arrival and departure times on a paper tape (1889).[20] On June 16,",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -635,7 +677,7 @@
             }
         },
         {
-            "text": "Michigan; Washington, D.C.; and Toronto, Canada.[22]",
+            "text": "1911, their four companies were amalgamated in New York State by Charles Ranlett Flint forming a fifth company, the Computing-Tabulating-Recording Company (CTR) based in Endicott,",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -679,7 +721,95 @@
             }
         },
         {
-            "text": "Collectively, the companies manufactured a wide array of machinery for sale and lease, ranging from commercial scales and industrial time recorders, meat and cheese slicers, to tabulators and punched cards. Thomas J. Watson, Sr., fired from the National Cash Register Company by John Henry Patterson,",
+            "text": "New York.[1][21] The five companies had 1,300 employees and oiices and plants in Endicott and Binghamton, New York;",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/11",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 34.930843353271484,
+                                    "t": 715.427978515625,
+                                    "r": 578.233154296875,
+                                    "b": 581.9760131835938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    789
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "Dayton, Ohio; Detroit, Michigan; Washington, D.C.; and Toronto, Canada.[22]",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/11",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 34.930843353271484,
+                                    "t": 715.427978515625,
+                                    "r": 578.233154296875,
+                                    "b": 581.9760131835938,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    789
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "Collectively, the companies manufactured a wide array of machinery for sale and lease, ranging from commercial scales and industrial time recorders, meat and cheese slicers, to tabulators and punched cards. Thomas J.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -723,7 +853,7 @@
             }
         },
         {
-            "text": "called on Flint and, in 1914, was oiered a position at CTR.[23] Watson joined CTR as general manager and then, 11 months later, was made President when antitrust cases relating to his time at NCR were resolved.[24] Having learned",
+            "text": "Watson, Sr., fired from the National Cash Register Company by John Henry Patterson, called on Flint and, in 1914, was oiered a position at CTR.[23] Watson joined CTR as general manager and then, 11 months later,",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -767,7 +897,7 @@
             }
         },
         {
-            "text": "Patterson's pioneering business practices, Watson proceeded to put the stamp of NCR onto CTR's companies.[23]:105 He implemented sales conventions, \"generous sales incentives, a focus on customer service, an insistence on well-groomed, dark-suited salesmen and had",
+            "text": "was made President when antitrust cases relating to his time at NCR were resolved.[24] Having learned Patterson's pioneering business practices, Watson proceeded to put the stamp of NCR onto CTR's companies.[23]:105 He implemented sales conventions,",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -811,7 +941,7 @@
             }
         },
         {
-            "text": "an evangelical fervor for instilling company pride and loyalty in every worker\".[25][26] His favorite slogan, \"THINK\", became a mantra for each company's employees.[25] During Watson's first four years, revenues reached $9 million",
+            "text": "\"generous sales incentives, a focus on customer service, an insistence on well-groomed, dark-suited salesmen and had an evangelical fervor for instilling company pride and loyalty in every worker\".[25][26] His favorite slogan, \"THINK\",",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -855,7 +985,7 @@
             }
         },
         {
-            "text": "($158 million today) and the company's operations expanded to Europe, South America, Asia and Australia.[25] Watson never liked the clumsy hyphenated name \"ComputingTabulating-Recording Company\" and chose to replace it with the more expansive title \"International Business",
+            "text": "became a mantra for each company's employees.[25] During Watson's first four years, revenues reached $9 million ($158 million today) and the company's operations expanded to Europe, South America,",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -899,7 +1029,139 @@
             }
         },
         {
-            "text": "Machines\" which had previously been used as the name of CTR's Canadian Division;[27] the name was changed on February 14, 1924.[28] By 1933, most of the subsidiaries had been merged into one company, IBM.",
+            "text": "Asia and Australia.[25]",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "Watson never liked the clumsy hyphenated name \"ComputingTabulating-Recording Company\" and chose to replace it with the more expansive title \"International Business Machines\" which had previously been used as the name of CTR's Canadian Division;[27]",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "the name was changed on February 14,",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/12",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 2,
+                                "bbox": {
+                                    "l": 35.189144134521484,
+                                    "t": 561.5880126953125,
+                                    "r": 575.9761352539062,
+                                    "b": 292.5360107421875,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    1504
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "IBM",
+                    "History",
+                    "1910s-1950s"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 15535403176419637685,
+                    "filename": "wiki.pdf"
+                }
+            }
+        },
+        {
+            "text": "1924.[28] By 1933, most of the subsidiaries had been merged into one company, IBM.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",

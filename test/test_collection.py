@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from docling_core.types import Generic, Record
 from docling_core.types.legacy_doc.document import ExportedCCSDocument as Document
 
-GENERATE = False
+from .test_data_gen_flag import GEN_TEST_DATA
 
 
 def test_generic():
@@ -64,7 +64,7 @@ def test_table_export_to_tokens():
                     out = table.export_to_document_tokens(page_w=pagedims[page][0], page_h=pagedims[page][1])
 
                     fname = f"{filename}_table_{i}.dt.txt"
-                    if GENERATE:
+                    if GEN_TEST_DATA:
                         print(f"writing {fname}")
                         with open(fname, "w", encoding="utf-8") as gold_obj:
                             gold_obj.write(out)
@@ -84,7 +84,7 @@ def test_table_export_to_tokens():
                     out = table.export_to_document_tokens(add_table_location=False, add_cell_location=False)
 
                     fname = f"{filename}_table_{i}.dt.txt"
-                    if GENERATE:
+                    if GEN_TEST_DATA:
                         print(f"writing {fname}")
                         with open(fname, "w", encoding="utf-8") as gold_obj:
                             gold_obj.write(out)
@@ -106,7 +106,7 @@ def test_document_export_to_md():
 
     md = doc.export_to_markdown()
 
-    if GENERATE:
+    if GEN_TEST_DATA:
         with open("test/data/legacy_doc/doc-export.md", "w", encoding="utf-8") as gold_obj:
             gold_obj.write(md)
 
@@ -124,7 +124,7 @@ def test_document_export_to_tokens():
     doc = Document.model_validate_json(src_data)
     xml = doc.export_to_document_tokens(delim=True)
 
-    if GENERATE:
+    if GEN_TEST_DATA:
         with open("test/data/legacy_doc/doc-export.dt.txt", "w", encoding="utf-8") as gold_obj:
             gold_obj.write(xml)
 
