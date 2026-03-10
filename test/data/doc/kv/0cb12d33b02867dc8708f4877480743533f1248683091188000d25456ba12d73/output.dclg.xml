@@ -1,0 +1,296 @@
+<doclang version="1.0.0">
+  <text>
+    <location value="61"/>
+    <location value="27"/>
+    <location value="76"/>
+    <location value="33"/>
+    (19)
+  </text>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Logo</classification>
+      </meta>
+      <location value="80"/>
+      <location value="26"/>
+      <location value="167"/>
+      <location value="57"/>
+    </picture>
+  </floating_group>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Bar code</classification>
+      </meta>
+      <location value="332"/>
+      <location value="26"/>
+      <location value="462"/>
+      <location value="41"/>
+    </picture>
+  </floating_group>
+  <list ordered="false">
+    <list_text>
+      <location value="312"/>
+      <location value="48"/>
+      <location value="461"/>
+      <location value="57"/>
+      (11) EP 3 800 018 A1
+    </list_text>
+    <list_text>
+      <location value="61"/>
+      <location value="63"/>
+      <location value="355"/>
+      <location value="72"/>
+      (12) EUROPÄISCHE PATENTANMELDUNG
+    </list_text>
+    <list_text>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="80"/>
+            <location value="82"/>
+            <location value="153"/>
+            <location value="87"/>
+            Veröffentlichungstag:
+          </key>
+          <value class="read_only">
+            <location value="81"/>
+            <location value="89"/>
+            <location value="196"/>
+            <location value="94"/>
+            07.04.2021 Patentblatt 2021/14
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="80"/>
+            <location value="103"/>
+            <location value="142"/>
+            <location value="108"/>
+            Anmeldenummer:
+          </key>
+          <value class="read_only">
+            <location value="143"/>
+            <location value="103"/>
+            <location value="184"/>
+            <location value="108"/>
+            19200966.0
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="80"/>
+            <location value="117"/>
+            <location value="124"/>
+            <location value="123"/>
+            Anmeldetag:
+          </key>
+          <value class="read_only">
+            <location value="125"/>
+            <location value="118"/>
+            <location value="164"/>
+            <location value="122"/>
+            02.10.2019
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="287"/>
+            <location value="82"/>
+            <location value="308"/>
+            <location value="86"/>
+            Int Cl.:
+          </key>
+          <value class="read_only">
+            <location value="286"/>
+            <location value="88"/>
+            <location value="435"/>
+            <location value="106"/>
+            B26D 1/16 (2006.01) B26D 1/18 (2006.01) B26D 5/00 (2006.01) B26D 7/26 (2006.01) B23Q 17/09 (2006.01)
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="80"/>
+            <location value="176"/>
+            <location value="185"/>
+            <location value="182"/>
+            Benannte Validierungsstaaten:
+          </key>
+          <value class="read_only">
+            <location value="80"/>
+            <location value="140"/>
+            <location value="255"/>
+            <location value="160"/>
+            AL AT BE BG CH CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU LV MC MK MT NL NO PL PT RO RS SE SI SK SM TR
+          </value>
+          <value class="read_only">
+            <location value="80"/>
+            <location value="169"/>
+            <location value="105"/>
+            <location value="174"/>
+            BA ME
+          </value>
+          <value class="read_only">
+            <location value="81"/>
+            <location value="183"/>
+            <location value="132"/>
+            <location value="188"/>
+            KH MA MD TN
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="80"/>
+            <location value="198"/>
+            <location value="116"/>
+            <location value="203"/>
+            Anmelder:
+          </key>
+          <value class="read_only">
+            <location value="81"/>
+            <location value="198"/>
+            <location value="238"/>
+            <location value="218"/>
+<![CDATA[Anmelder: Dienes Werke für Maschinenteile GmbH & Co. KG 51491 Overath (DE)]]>          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="81"/>
+            <location value="227"/>
+            <location value="109"/>
+            <location value="231"/>
+            Erfinder:
+          </key>
+          <value class="read_only">
+            <location value="80"/>
+            <location value="233"/>
+            <location value="139"/>
+            <location value="247"/>
+            Thielen, Rolf 50733 Köln (DE)
+          </value>
+          <value class="read_only">
+            <location value="287"/>
+            <location value="134"/>
+            <location value="345"/>
+            <location value="146"/>
+            Klöcker, Gerd 51061 Köln (DE)
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="61"/>
+      <location value="256"/>
+      <location value="313"/>
+      <location value="263"/>
+      (54) SENSORVORRICHTUNG FÜR EINEN MESSERHALTER
+    </list_text>
+    <list_text>
+      <location value="60"/>
+      <location value="273"/>
+      <location value="250"/>
+      <location value="335"/>
+      (57) Die vorliegende Erfindung betrifft eine Sensor- vorrichtung (4) für einen Messerhalter (1), umfassend - einen Grundkörper (6) zur Befestigung der Sensorvor- richtung (4) an einem Messerhalter (1), - mindestens einen an dem Grundkörper (6) befestigten Sensor (7) zur Erfassung einer Größe und - einen an dem Grundkörper (6) befestigten Sender (8) zur kabellosen Übertragung der von dem Sensor (7) er- fassten Größe.
+    </list_text>
+    <list_text>
+      <location value="279"/>
+      <location value="133"/>
+      <location value="345"/>
+      <location value="146"/>
+      - Klöcker, Gerd 51061 Köln (DE)
+    </list_text>
+    <list_text>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="267"/>
+            <location value="198"/>
+            <location value="317"/>
+            <location value="203"/>
+            Bemerkungen:
+          </key>
+          <value class="read_only">
+            <location value="286"/>
+            <location value="155"/>
+            <location value="412"/>
+            <location value="189"/>
+<![CDATA[Vertreter: Feucker, Max Martin et al Becker & Müller Patentanwälte Turmstraße 22 40878 Ratingen (DE)]]>          </value>
+          <value class="read_only">
+            <location value="286"/>
+            <location value="205"/>
+            <location value="459"/>
+            <location value="217"/>
+            Geänderte Patentansprüche gemäss Regel 137(2) EPÜ.
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+  </list>
+  <floating_group class="picture">
+    <caption>
+      <location value="409"/>
+      <location value="450"/>
+      <location value="436"/>
+      <location value="458"/>
+      Fig.1
+    </caption>
+    <picture>
+      <meta>
+        <classification>Illustration</classification>
+      </meta>
+      <location value="286"/>
+      <location value="286"/>
+      <location value="450"/>
+      <location value="458"/>
+    </picture>
+  </floating_group>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="220"/>
+        <location value="491"/>
+        <location value="304"/>
+        <location value="495"/>
+        Printed by Jouve, 75001 PARIS (FR)
+      </key>
+      <value class="fillable">
+        <location value="201"/>
+        <location value="482"/>
+        <location value="323"/>
+        <location value="488"/>
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="34"/>
+    <location value="412"/>
+    <location value="45"/>
+    <location value="484"/>
+    EP3800018A1
+  </text>
+</doclang>

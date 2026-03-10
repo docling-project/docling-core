@@ -1,0 +1,384 @@
+<doclang version="1.0.0">
+  <field_region>
+    <location value="48"/>
+    <location value="12"/>
+    <location value="477"/>
+    <location value="484"/>
+    <heading level="1">
+      <location value="142"/>
+      <location value="12"/>
+      <location value="304"/>
+      <location value="18"/>
+      INTERNATIONAL SEARCH REPORT
+    </heading>
+    <field_item>
+      <key>
+        <location value="335"/>
+        <location value="18"/>
+        <location value="413"/>
+        <location value="22"/>
+        International application No
+      </key>
+      <value class="read_only">
+        <location value="339"/>
+        <location value="27"/>
+        <location value="420"/>
+        <location value="32"/>
+        PCT/US2020/024355
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="53"/>
+      <location value="37"/>
+      <location value="179"/>
+      <location value="40"/>
+      A. CLASSIFICATION OF SUBJECT MATTER
+    </heading>
+    <text>
+      <location value="55"/>
+      <location value="42"/>
+      <location value="71"/>
+      <location value="47"/>
+      INV.
+    </text>
+    <text>
+      <location value="85"/>
+      <location value="42"/>
+      <location value="132"/>
+      <location value="46"/>
+      G06F3/0481
+    </text>
+    <text>
+      <location value="157"/>
+      <location value="42"/>
+      <location value="205"/>
+      <location value="46"/>
+      G06F3/0482
+    </text>
+    <text>
+      <location value="230"/>
+      <location value="41"/>
+      <location value="277"/>
+      <location value="46"/>
+      G06F3/0486
+    </text>
+    <text>
+      <location value="302"/>
+      <location value="41"/>
+      <location value="349"/>
+      <location value="46"/>
+      G06F3/0488
+    </text>
+    <text>
+      <location value="374"/>
+      <location value="42"/>
+      <location value="417"/>
+      <location value="46"/>
+      G06Q10/10
+    </text>
+    <text>
+      <location value="54"/>
+      <location value="49"/>
+      <location value="71"/>
+      <location value="53"/>
+      ADD .
+    </text>
+    <text>
+      <location value="78"/>
+      <location value="49"/>
+      <location value="449"/>
+      <location value="62"/>
+      DD.
+    </text>
+    <text>
+      <location value="53"/>
+      <location value="64"/>
+      <location value="301"/>
+      <location value="69"/>
+      According to International Patent Classification (IPC) or to both national classification and IPC
+    </text>
+    <heading level="2">
+      <location value="54"/>
+      <location value="73"/>
+      <location value="118"/>
+      <location value="77"/>
+      B. FIELDS SEARCHED
+    </heading>
+    <text>
+      <location value="54"/>
+      <location value="80"/>
+      <location value="297"/>
+      <location value="84"/>
+      Minimum documentation searched (classification system followed by classification symbols)
+    </text>
+    <text>
+      <location value="54"/>
+      <location value="86"/>
+      <location value="73"/>
+      <location value="90"/>
+      G06F
+    </text>
+    <text>
+      <location value="85"/>
+      <location value="86"/>
+      <location value="104"/>
+      <location value="90"/>
+      G06Q
+    </text>
+    <text>
+      <location value="54"/>
+      <location value="106"/>
+      <location value="400"/>
+      <location value="110"/>
+      Documentation searched other than minimum documentation to the extent that such documents are included in the fields searched
+    </text>
+    <text>
+      <location value="57"/>
+      <location value="112"/>
+      <location value="391"/>
+      <location value="122"/>
+    </text>
+    <text>
+      <location value="54"/>
+      <location value="126"/>
+      <location value="390"/>
+      <location value="131"/>
+      Electronic data base consulted during the international search (name of data base and , where practicable, search terms used)
+    </text>
+    <text>
+      <location value="55"/>
+      <location value="137"/>
+      <location value="166"/>
+      <location value="141"/>
+      EPO-Internal , WPI Data
+    </text>
+    <heading level="2">
+      <location value="54"/>
+      <location value="168"/>
+      <location value="195"/>
+      <location value="171"/>
+      C. DOCUMENTS CONSIDERED TO BE RELEVANT
+    </heading>
+    <floating_group class="table">
+      <otsl>
+        <location value="48"/>
+        <location value="172"/>
+        <location value="477"/>
+        <location value="342"/>
+        <ched/>
+        Category*
+        <ched/>
+        Citation of document, with indication, where appropriate, of the relevant passages
+        <ched/>
+        Relevant to claim No.
+        <nl/>
+        <fcel/>
+        x
+        <fcel/>
+        US 2019/026000 A1 (LIPMAN KEITH [US]) 24 January 2019 (2019-01-24) paragraph [0249] - paragraph [0250]; figures 1,2,28-30 paragraph [0038] ------
+        <fcel/>
+        1-15
+        <nl/>
+      </otsl>
+    </floating_group>
+    <location value="52"/>
+    <location value="345"/>
+    <location value="227"/>
+    <location value="355"/>
+    <checkbox class="unselected"/>
+    Further documents are listed in the continuation of Box O.
+    <text>
+      <location value="53"/>
+      <location value="359"/>
+      <location value="164"/>
+      <location value="363"/>
+      * Special categories of cited documents :
+    </text>
+    <text>
+      <location value="54"/>
+      <location value="369"/>
+      <location value="248"/>
+      <location value="378"/>
+<![CDATA["A" document defining the general state of the art which is not considered to be of particular relevance]]>    </text>
+    <text>
+      <location value="53"/>
+      <location value="380"/>
+      <location value="247"/>
+      <location value="389"/>
+<![CDATA[E " earlier application or patent but published on or after the international filing date]]>    </text>
+    <text>
+      <location value="54"/>
+      <location value="390"/>
+      <location value="239"/>
+      <location value="403"/>
+<![CDATA["L" document which may throw doubts on priority claim(s) or which is cited to establish the publication date of another citation or other special reason (as specified)]]>    </text>
+    <text>
+      <location value="54"/>
+      <location value="404"/>
+      <location value="236"/>
+      <location value="412"/>
+<![CDATA["O" document referring to an oral disclosure , use , exhibition or other means]]>    </text>
+    <text>
+      <location value="53"/>
+      <location value="415"/>
+      <location value="246"/>
+      <location value="424"/>
+<![CDATA["P"ocument published prior to the international filing date but later than the priority date claimed]]>    </text>
+    <field_item>
+      <key>
+        <location value="54"/>
+        <location value="428"/>
+        <location value="201"/>
+        <location value="432"/>
+        Date of the actual completion of the international search
+      </key>
+      <value class="read_only">
+        <location value="80"/>
+        <location value="442"/>
+        <location value="141"/>
+        <location value="447"/>
+        19 June 2020
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="54"/>
+        <location value="455"/>
+        <location value="155"/>
+        <location value="459"/>
+        Name and mailing address of the ISA/
+      </key>
+      <value class="read_only">
+        <location value="97"/>
+        <location value="461"/>
+        <location value="224"/>
+        <location value="465"/>
+        European Patent Office, P.B. 5818 Patentlaan 2
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="99"/>
+        <location value="465"/>
+        <location value="110"/>
+        <location value="469"/>
+        NL-
+      </key>
+      <value class="read_only">
+        <location value="111"/>
+        <location value="465"/>
+        <location value="157"/>
+        <location value="469"/>
+        2280 HV Rijswijk
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="97"/>
+        <location value="470"/>
+        <location value="107"/>
+        <location value="473"/>
+        Tel.
+      </key>
+      <value class="read_only">
+        <location value="109"/>
+        <location value="470"/>
+        <location value="160"/>
+        <location value="474"/>
+        (+31-70) 340-2040,
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="97"/>
+        <location value="474"/>
+        <location value="109"/>
+        <location value="478"/>
+        Fax:
+      </key>
+      <value class="read_only">
+        <location value="110"/>
+        <location value="474"/>
+        <location value="160"/>
+        <location value="479"/>
+        : (+31-70) 340-3016
+      </value>
+    </field_item>
+    <location value="273"/>
+    <location value="345"/>
+    <location value="358"/>
+    <location value="354"/>
+    <checkbox class="selected"/>
+    X See patent family annex.
+    <text>
+      <location value="269"/>
+      <location value="363"/>
+      <location value="458"/>
+      <location value="376"/>
+<![CDATA["T" later document published after the international filing date or priority]]>    </text>
+    <text>
+      <location value="269"/>
+      <location value="382"/>
+      <location value="455"/>
+      <location value="395"/>
+<![CDATA["X" document of particular relevance; the claimed invention cannot be considered novel or cannot be considered to involve an inventive step when the document is taken alone]]>    </text>
+    <text>
+      <location value="268"/>
+      <location value="396"/>
+      <location value="465"/>
+      <location value="413"/>
+<![CDATA["Y" doocument of particular relevance; the claimed invention cannot be considered to involve an inventive step when the doocument is combined with one or more other such documents, such combination being obvious to a person skilled in the art]]>    </text>
+    <text>
+      <location value="268"/>
+      <location value="419"/>
+      <location value="398"/>
+      <location value="424"/>
+<![CDATA["&" document member of the same patent family]]>    </text>
+    <field_item>
+      <key>
+        <location value="281"/>
+        <location value="428"/>
+        <location value="408"/>
+        <location value="433"/>
+        Date of mailing of the international search report
+      </key>
+      <value class="read_only">
+        <location value="296"/>
+        <location value="442"/>
+        <location value="348"/>
+        <location value="449"/>
+        01/07/2020
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="280"/>
+        <location value="454"/>
+        <location value="328"/>
+        <location value="458"/>
+        Authorized officer
+      </key>
+      <value class="read_only">
+        <location value="297"/>
+        <location value="471"/>
+        <location value="374"/>
+        <location value="478"/>
+        Falco,Gabriele
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="49"/>
+    <location value="486"/>
+    <location value="156"/>
+    <location value="489"/>
+    Form PCT/ISA/210 (second sheet) (April 2005)
+  </text>
+  <text>
+    <location value="30"/>
+    <location value="471"/>
+    <location value="34"/>
+    <location value="476"/>
+    2
+  </text>
+</doclang>

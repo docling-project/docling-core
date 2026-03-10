@@ -1102,7 +1102,7 @@ def test_kv_form_with_table():
     verify(exp_file=exp_file, actual=ser_txt)
 
 
-def test_kv_migration():
+def test_kv_migration_self_contained_scenario():
     doc = DoclingDocument(name="")
     doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
     prov = ProvenanceItem(
@@ -1231,3 +1231,41 @@ def test_kv_migration():
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/kv_migration.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+
+def test_kv_migration_annot_scenario():
+    kv_dir = Path("./test/data/doc/kv")
+    for subdir in sorted(kv_dir.iterdir()):
+        if not subdir.is_dir():
+            continue
+        input_json = subdir / "input.json"
+        if not input_json.exists():
+            continue
+        doc = DoclingDocument.load_from_json(input_json)
+        if GEN_TEST_DATA:
+            modes = {
+                # "ro": "reading_order",
+                "kv": "key_value",
+            }
+            for mode_kw in modes:
+                pages = doc.get_visualization(viz_mode=modes[mode_kw])
+                for page_no, page in pages.items():
+                    page.save(str(subdir / f"input_{mode_kw}_p{page_no}.png"))
+        doc._migrate_forms_to_field_regions()
+        doc._normalize_references()
+        exp_json = subdir / "output.json"
+        _verify_doc(doc=doc, exp_json=exp_json)
+        ser = DoclangDocSerializer(doc=doc, params=DoclangParams())
+        ser_res = ser.serialize()
+        ser_txt = ser_res.text
+        exp_file = subdir / "output.dclg.xml"
+        verify(exp_file=exp_file, actual=ser_txt)
+
+        if GEN_TEST_DATA:
+            modes = {
+                # "ro": "reading_order",
+                "kv": "key_value",
+            }
+            for mode_kw in modes:
+                pages = doc.get_visualization(viz_mode=modes[mode_kw])
+                for page_no, page in pages.items():
+                    page.save(str(subdir / f"output_{mode_kw}_p{page_no}.png"))

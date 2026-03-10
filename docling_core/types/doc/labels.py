@@ -74,6 +74,12 @@ class DocItemLabel(str, Enum):
             DocItemLabel.HANDWRITTEN_TEXT: (204, 255, 204),
             DocItemLabel.EMPTY_VALUE: (220, 220, 220),
             DocItemLabel.FIELD_REGION: (183, 65, 14),
+            DocItemLabel.FIELD_HEADING: (200, 80, 30),
+            DocItemLabel.FIELD_ITEM: (183, 100, 40),
+            DocItemLabel.FIELD_KEY: (160, 70, 80),
+            DocItemLabel.FIELD_VALUE: (135, 80, 20),
+            DocItemLabel.FIELD_HINT: (190, 120, 90),
+            DocItemLabel.MARKER: (205, 85, 120),
         }
         return color_map.get(label, (0, 0, 0))
 
