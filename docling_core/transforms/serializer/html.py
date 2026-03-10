@@ -396,10 +396,9 @@ class HTMLTableSerializer(BaseTableSerializer):
     ) -> tuple[list[str], list[str]]:
         """Get header lines and body lines from the HTML table.
 
-
         Returns:
-            A tuple of (header_lines, body_lines) where a row is considered a header row
-            if it contains at least one non-empty <th> cell and all <td> cells are empty.           rows with header cells and body_lines contains rows with data cells.
+            A tuple of (header_lines, body_lines) where a row is considered a header row if it contains at least one
+                non-empty <th> cell and all <td> cells are empty.
         """
         # Find the position of the first <tr> and last </tr>
         first_tr_pos = table_text.find("<tr")
