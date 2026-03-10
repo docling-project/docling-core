@@ -406,7 +406,8 @@ class HTMLTableSerializer(BaseTableSerializer):
         last_tr_end_pos = table_text.rfind("</tr>")
 
         if first_tr_pos == -1 or last_tr_end_pos == -1:
-            raise ValueError("No table rows found in the provided content")
+            _logger.warning("No table rows found in the provided content")
+            return [], []
 
         # Adjust last_tr_end_pos to include the closing tag
         last_tr_end_pos += len("</tr>")
@@ -422,26 +423,30 @@ class HTMLTableSerializer(BaseTableSerializer):
         data_list = []
 
         # Parse rows_content with BeautifulSoup
-        soup = BeautifulSoup(rows_content, "html.parser")
-        rows = soup.find_all("tr")
+        try:
+            soup = BeautifulSoup(rows_content, "html.parser")
+            rows = soup.find_all("tr")
 
-        for i, row in enumerate(rows):
-            # Check for non-empty <th> tags (header cells)
-            th_cells = row.find_all("th")
-            has_nonempty_th = any(cell.get_text(strip=True) for cell in th_cells)
+            for i, row in enumerate(rows):
+                # Check for non-empty <th> tags (header cells)
+                th_cells = row.find_all("th")
+                has_nonempty_th = any(cell.get_text(strip=True) for cell in th_cells)
 
-            # Check for non-empty <td> tags (data cells)
-            td_cells = row.find_all("td")
-            all_td_empty = all(not cell.get_text(strip=True) for cell in td_cells)
+                # Check for non-empty <td> tags (data cells)
+                td_cells = row.find_all("td")
+                all_td_empty = all(not cell.get_text(strip=True) for cell in td_cells)
 
-            row_str = str(row)
-            if th_cells and has_nonempty_th and all_td_empty:
-                # This is a heading row
-                if row_str:
-                    headings_list.append(row_str)
-            else:
-                data_list = [str(r) for r in rows[i:] if str(r)]
-                break  # Stop looking for headers once we hit data rows
+                row_str = str(row)
+                if th_cells and has_nonempty_th and all_td_empty:
+                    # This is a heading row
+                    if row_str:
+                        headings_list.append(row_str)
+                else:
+                    data_list = [str(r) for r in rows[i:] if str(r)]
+                    break  # Stop looking for headers once we hit data rows
+        except Exception:
+            data_list = [r + "</tr>" for r in rows_content.split("</tr>") if not r.strip()]
+            _logger.warning("Could not parse html table")
 
         if footer_content:
             data_list.append(footer_content)
