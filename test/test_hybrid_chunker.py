@@ -414,7 +414,7 @@ def test_shadowed_headings_wout_content():
             exp_path_str=setup.exp,
         )
 
-def test_chunk_with_duplicat_table_header():
+def test_chunk_with_repeat_table_header():
     """Test that table headers are repeated when a table is split across chunks."""
     INPUT_FILE = "test/data/chunker/0_inp_dl_doc.json"
     EXPECTED_OUT_FILE = "test/data/chunker/0d_out_chunks.json"
