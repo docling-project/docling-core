@@ -16,39 +16,44 @@
             "num_tokens": 46
         },
         {
-            "text": "IBM was founded in 1911 as the Computing-Tabulating-Recording Company (CTR), a holding company of manufacturers of record-keeping and measuring systems. It was renamed \"International Business Machines\" in 1924 and soon became the leading manufacturer of punch-card tabulating systems. During the 1960s and 1970s, the",
-            "ser_text": "IBM\nIBM was founded in 1911 as the Computing-Tabulating-Recording Company (CTR), a holding company of manufacturers of record-keeping and measuring systems. It was renamed \"International Business Machines\" in 1924 and soon became the leading manufacturer of punch-card tabulating systems. During the 1960s and 1970s, the",
-            "num_tokens": 64
+            "text": "IBM was founded in 1911 as the Computing-Tabulating-Recording Company (CTR), a holding company of manufacturers of record-keeping and measuring systems. It was renamed \"International Business Machines\" in 1924 and soon became the leading manufacturer of punch-card tabulating systems.",
+            "ser_text": "IBM\nIBM was founded in 1911 as the Computing-Tabulating-Recording Company (CTR), a holding company of manufacturers of record-keeping and measuring systems. It was renamed \"International Business Machines\" in 1924 and soon became the leading manufacturer of punch-card tabulating systems.",
+            "num_tokens": 57
         },
         {
-            "text": "IBM mainframe, exemplified by the System/360, was the world's dominant computing platform, with the company producing 80 percent of computers in the U.S. and 70 percent of computers worldwide.[11]",
-            "ser_text": "IBM\nIBM mainframe, exemplified by the System/360, was the world's dominant computing platform, with the company producing 80 percent of computers in the U.S. and 70 percent of computers worldwide.[11]",
-            "num_tokens": 45
+            "text": "During the 1960s and 1970s, the IBM mainframe, exemplified by the System/360, was the world's dominant computing platform, with the company producing 80 percent of computers in the U.S. and 70 percent of computers worldwide.[11]",
+            "ser_text": "IBM\nDuring the 1960s and 1970s, the IBM mainframe, exemplified by the System/360, was the world's dominant computing platform, with the company producing 80 percent of computers in the U.S. and 70 percent of computers worldwide.[11]",
+            "num_tokens": 52
         },
         {
-            "text": "IBM debuted in the microcomputer market in 1981 with the IBM Personal Computer, - its DOS software provided by Microsoft, - which became the basis for the majority of personal computers to the present day.[12] The company later also found success in the portable space with the ThinkPad. Since the 1990s,",
-            "ser_text": "IBM\nIBM debuted in the microcomputer market in 1981 with the IBM Personal Computer, - its DOS software provided by Microsoft, - which became the basis for the majority of personal computers to the present day.[12] The company later also found success in the portable space with the ThinkPad. Since the 1990s,",
-            "num_tokens": 64
+            "text": "IBM debuted in the microcomputer market in 1981 with the IBM Personal Computer, - its DOS software provided by Microsoft, - which became the basis for the majority of personal computers to the present day.[12] The company later also found success in the portable space with the ThinkPad.",
+            "ser_text": "IBM\nIBM debuted in the microcomputer market in 1981 with the IBM Personal Computer, - its DOS software provided by Microsoft, - which became the basis for the majority of personal computers to the present day.[12] The company later also found success in the portable space with the ThinkPad.",
+            "num_tokens": 60
         },
         {
-            "text": "IBM has concentrated on computer services, software, supercomputers, and scientific research; it sold its microcomputer division to Lenovo in 2005. IBM continues to develop mainframes, and its supercomputers have consistently ranked among the most powerful in the world in the 21st century.",
-            "ser_text": "IBM\nIBM has concentrated on computer services, software, supercomputers, and scientific research; it sold its microcomputer division to Lenovo in 2005. IBM continues to develop mainframes, and its supercomputers have consistently ranked among the most powerful in the world in the 21st century.",
-            "num_tokens": 62
+            "text": "Since the 1990s, IBM has concentrated on computer services, software, supercomputers, and scientific research; it sold its microcomputer division to Lenovo in 2005.",
+            "ser_text": "IBM\nSince the 1990s, IBM has concentrated on computer services, software, supercomputers, and scientific research; it sold its microcomputer division to Lenovo in 2005.",
+            "num_tokens": 37
         },
         {
-            "text": "As one of the world's oldest and largest technology companies, IBM has been responsible for several technological innovations, including the automated teller machine (ATM), dynamic random-access memory (DRAM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database, the SQL programming",
-            "ser_text": "IBM\nAs one of the world's oldest and largest technology companies, IBM has been responsible for several technological innovations, including the automated teller machine (ATM), dynamic random-access memory (DRAM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database, the SQL programming",
-            "num_tokens": 63
+            "text": "IBM continues to develop mainframes, and its supercomputers have consistently ranked among the most powerful in the world in the 21st century.",
+            "ser_text": "IBM\nIBM continues to develop mainframes, and its supercomputers have consistently ranked among the most powerful in the world in the 21st century.",
+            "num_tokens": 30
         },
         {
-            "text": "language, and the UPC barcode. The company has made inroads in advanced computer chips, quantum computing, artificial intelligence, and data infrastructure.[13][14][15] IBM employees and alumni have won various recognitions for their scientific research and inventions, including six Nobel Prizes and six Turing",
-            "ser_text": "IBM\nlanguage, and the UPC barcode. The company has made inroads in advanced computer chips, quantum computing, artificial intelligence, and data infrastructure.[13][14][15] IBM employees and alumni have won various recognitions for their scientific research and inventions, including six Nobel Prizes and six Turing",
-            "num_tokens": 64
+            "text": "As one of the world's oldest and largest technology companies, IBM has been responsible for several technological innovations, including the automated teller machine (ATM), dynamic random-access memory (DRAM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database,",
+            "ser_text": "IBM\nAs one of the world's oldest and largest technology companies, IBM has been responsible for several technological innovations, including the automated teller machine (ATM), dynamic random-access memory (DRAM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database,",
+            "num_tokens": 60
         },
         {
-            "text": "Awards.[16]",
-            "ser_text": "IBM\nAwards.[16]",
-            "num_tokens": 6
+            "text": "the SQL programming language, and the UPC barcode.",
+            "ser_text": "IBM\nthe SQL programming language, and the UPC barcode.",
+            "num_tokens": 13
+        },
+        {
+            "text": "The company has made inroads in advanced computer chips, quantum computing, artificial intelligence, and data infrastructure.[13][14][15] IBM employees and alumni have won various recognitions for their scientific research and inventions, including six Nobel Prizes and six Turing Awards.[16]",
+            "ser_text": "IBM\nThe company has made inroads in advanced computer chips, quantum computing, artificial intelligence, and data infrastructure.[13][14][15] IBM employees and alumni have won various recognitions for their scientific research and inventions, including six Nobel Prizes and six Turing Awards.[16]",
+            "num_tokens": 60
         },
         {
             "text": "This is the history.",
@@ -56,54 +61,64 @@
             "num_tokens": 7
         },
         {
-            "text": "IBM originated with several technological innovations developed and commercialized in the late 19th century. Julius E. Pitrap patented the computing scale in 1885;[17] Alexander Dey invented the dial recorder (1888);[18] Herman Hollerith patented the Electric Tabulating Machine",
-            "ser_text": "IBM\nHistory\n1910s-1950s\nIBM originated with several technological innovations developed and commercialized in the late 19th century. Julius E. Pitrap patented the computing scale in 1885;[17] Alexander Dey invented the dial recorder (1888);[18] Herman Hollerith patented the Electric Tabulating Machine",
-            "num_tokens": 61
+            "text": "IBM originated with several technological innovations developed and commercialized in the late 19th century. Julius E.",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nIBM originated with several technological innovations developed and commercialized in the late 19th century. Julius E.",
+            "num_tokens": 24
         },
         {
-            "text": "(1889);[19] and Willard Bundy invented a time clock to record workers' arrival and departure times on a paper tape (1889).[20] On June 16, 1911, their four companies were amalgamated in New York State by Charles Ranlett Flint forming a fifth company,",
-            "ser_text": "IBM\nHistory\n1910s-1950s\n(1889);[19] and Willard Bundy invented a time clock to record workers' arrival and departure times on a paper tape (1889).[20] On June 16, 1911, their four companies were amalgamated in New York State by Charles Ranlett Flint forming a fifth company,",
-            "num_tokens": 64
+            "text": "Pitrap patented the computing scale in 1885;[17] Alexander Dey invented the dial recorder (1888);[18] Herman Hollerith patented the Electric Tabulating Machine (1889);[19]",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nPitrap patented the computing scale in 1885;[17] Alexander Dey invented the dial recorder (1888);[18] Herman Hollerith patented the Electric Tabulating Machine (1889);[19]",
+            "num_tokens": 49
         },
         {
-            "text": "the Computing-Tabulating-Recording Company (CTR) based in Endicott, New York.[1][21] The five companies had 1,300 employees and oiices and plants in Endicott and Binghamton, New York; Dayton, Ohio; Detroit,",
-            "ser_text": "IBM\nHistory\n1910s-1950s\nthe Computing-Tabulating-Recording Company (CTR) based in Endicott, New York.[1][21] The five companies had 1,300 employees and oiices and plants in Endicott and Binghamton, New York; Dayton, Ohio; Detroit,",
-            "num_tokens": 63
+            "text": "and Willard Bundy invented a time clock to record workers' arrival and departure times on a paper tape (1889).[20] On June 16,",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nand Willard Bundy invented a time clock to record workers' arrival and departure times on a paper tape (1889).[20] On June 16,",
+            "num_tokens": 36
         },
         {
-            "text": "Michigan; Washington, D.C.; and Toronto, Canada.[22]",
-            "ser_text": "IBM\nHistory\n1910s-1950s\nMichigan; Washington, D.C.; and Toronto, Canada.[22]",
-            "num_tokens": 22
+            "text": "1911, their four companies were amalgamated in New York State by Charles Ranlett Flint forming a fifth company, the Computing-Tabulating-Recording Company (CTR) based in Endicott,",
+            "ser_text": "IBM\nHistory\n1910s-1950s\n1911, their four companies were amalgamated in New York State by Charles Ranlett Flint forming a fifth company, the Computing-Tabulating-Recording Company (CTR) based in Endicott,",
+            "num_tokens": 44
         },
         {
-            "text": "Collectively, the companies manufactured a wide array of machinery for sale and lease, ranging from commercial scales and industrial time recorders, meat and cheese slicers, to tabulators and punched cards. Thomas J. Watson, Sr., fired from the National Cash Register Company by John Henry Patterson,",
-            "ser_text": "IBM\nHistory\n1910s-1950s\nCollectively, the companies manufactured a wide array of machinery for sale and lease, ranging from commercial scales and industrial time recorders, meat and cheese slicers, to tabulators and punched cards. Thomas J. Watson, Sr., fired from the National Cash Register Company by John Henry Patterson,",
-            "num_tokens": 64
-        },
-        {
-            "text": "called on Flint and, in 1914, was oiered a position at CTR.[23] Watson joined CTR as general manager and then, 11 months later, was made President when antitrust cases relating to his time at NCR were resolved.[24] Having learned",
-            "ser_text": "IBM\nHistory\n1910s-1950s\ncalled on Flint and, in 1914, was oiered a position at CTR.[23] Watson joined CTR as general manager and then, 11 months later, was made President when antitrust cases relating to his time at NCR were resolved.[24] Having learned",
+            "text": "New York.[1][21] The five companies had 1,300 employees and oiices and plants in Endicott and Binghamton, New York;\nDayton, Ohio; Detroit, Michigan; Washington, D.C.; and Toronto, Canada.[22]",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nNew York.[1][21] The five companies had 1,300 employees and oiices and plants in Endicott and Binghamton, New York;\nDayton, Ohio; Detroit, Michigan; Washington, D.C.; and Toronto, Canada.[22]",
             "num_tokens": 62
         },
         {
-            "text": "Patterson's pioneering business practices, Watson proceeded to put the stamp of NCR onto CTR's companies.[23]:105 He implemented sales conventions, \"generous sales incentives, a focus on customer service, an insistence on well-groomed, dark-suited salesmen and had",
-            "ser_text": "IBM\nHistory\n1910s-1950s\nPatterson's pioneering business practices, Watson proceeded to put the stamp of NCR onto CTR's companies.[23]:105 He implemented sales conventions, \"generous sales incentives, a focus on customer service, an insistence on well-groomed, dark-suited salesmen and had",
-            "num_tokens": 64
+            "text": "Collectively, the companies manufactured a wide array of machinery for sale and lease, ranging from commercial scales and industrial time recorders, meat and cheese slicers, to tabulators and punched cards. Thomas J.",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nCollectively, the companies manufactured a wide array of machinery for sale and lease, ranging from commercial scales and industrial time recorders, meat and cheese slicers, to tabulators and punched cards. Thomas J.",
+            "num_tokens": 47
         },
         {
-            "text": "an evangelical fervor for instilling company pride and loyalty in every worker\".[25][26] His favorite slogan, \"THINK\", became a mantra for each company's employees.[25] During Watson's first four years, revenues reached $9 million",
-            "ser_text": "IBM\nHistory\n1910s-1950s\nan evangelical fervor for instilling company pride and loyalty in every worker\".[25][26] His favorite slogan, \"THINK\", became a mantra for each company's employees.[25] During Watson's first four years, revenues reached $9 million",
+            "text": "Watson, Sr., fired from the National Cash Register Company by John Henry Patterson, called on Flint and, in 1914, was oiered a position at CTR.[23] Watson joined CTR as general manager and then, 11 months later,",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nWatson, Sr., fired from the National Cash Register Company by John Henry Patterson, called on Flint and, in 1914, was oiered a position at CTR.[23] Watson joined CTR as general manager and then, 11 months later,",
+            "num_tokens": 57
+        },
+        {
+            "text": "was made President when antitrust cases relating to his time at NCR were resolved.[24] Having learned Patterson's pioneering business practices, Watson proceeded to put the stamp of NCR onto CTR's companies.[23]:105 He implemented sales conventions,",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nwas made President when antitrust cases relating to his time at NCR were resolved.[24] Having learned Patterson's pioneering business practices, Watson proceeded to put the stamp of NCR onto CTR's companies.[23]:105 He implemented sales conventions,",
+            "num_tokens": 60
+        },
+        {
+            "text": "\"generous sales incentives, a focus on customer service, an insistence on well-groomed, dark-suited salesmen and had an evangelical fervor for instilling company pride and loyalty in every worker\".[25][26] His favorite slogan, \"THINK\",",
+            "ser_text": "IBM\nHistory\n1910s-1950s\n\"generous sales incentives, a focus on customer service, an insistence on well-groomed, dark-suited salesmen and had an evangelical fervor for instilling company pride and loyalty in every worker\".[25][26] His favorite slogan, \"THINK\",",
             "num_tokens": 63
         },
         {
-            "text": "($158 million today) and the company's operations expanded to Europe, South America, Asia and Australia.[25] Watson never liked the clumsy hyphenated name \"ComputingTabulating-Recording Company\" and chose to replace it with the more expansive title \"International Business",
-            "ser_text": "IBM\nHistory\n1910s-1950s\n($158 million today) and the company's operations expanded to Europe, South America, Asia and Australia.[25] Watson never liked the clumsy hyphenated name \"ComputingTabulating-Recording Company\" and chose to replace it with the more expansive title \"International Business",
-            "num_tokens": 63
+            "text": "became a mantra for each company's employees.[25] During Watson's first four years, revenues reached $9 million ($158 million today) and the company's operations expanded to Europe, South America,\nAsia and Australia.[25]",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nbecame a mantra for each company's employees.[25] During Watson's first four years, revenues reached $9 million ($158 million today) and the company's operations expanded to Europe, South America,\nAsia and Australia.[25]",
+            "num_tokens": 57
         },
         {
-            "text": "Machines\" which had previously been used as the name of CTR's Canadian Division;[27] the name was changed on February 14, 1924.[28] By 1933, most of the subsidiaries had been merged into one company, IBM.",
-            "ser_text": "IBM\nHistory\n1910s-1950s\nMachines\" which had previously been used as the name of CTR's Canadian Division;[27] the name was changed on February 14, 1924.[28] By 1933, most of the subsidiaries had been merged into one company, IBM.",
-            "num_tokens": 55
+            "text": "Watson never liked the clumsy hyphenated name \"ComputingTabulating-Recording Company\" and chose to replace it with the more expansive title \"International Business Machines\" which had previously been used as the name of CTR's Canadian Division;[27]",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nWatson never liked the clumsy hyphenated name \"ComputingTabulating-Recording Company\" and chose to replace it with the more expansive title \"International Business Machines\" which had previously been used as the name of CTR's Canadian Division;[27]",
+            "num_tokens": 58
+        },
+        {
+            "text": "the name was changed on February 14,\n1924.[28] By 1933, most of the subsidiaries had been merged into one company, IBM.",
+            "ser_text": "IBM\nHistory\n1910s-1950s\nthe name was changed on February 14,\n1924.[28] By 1933, most of the subsidiaries had been merged into one company, IBM.",
+            "num_tokens": 34
         },
         {
             "text": "In 1961, IBM developed the SABRE reservation system for American Airlines and introduced the highly successful Selectric typewriter.",

@@ -2,7 +2,7 @@
 
 import json
 from os import PathLike
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from huggingface_hub import hf_hub_download
 from pydantic import ConfigDict, model_validator
@@ -58,7 +58,7 @@ class HuggingFaceTokenizer(BaseTokenizer):
         **kwargs,
     ) -> Self:
         """Create tokenizer from model name."""
-        my_kwargs = {
+        my_kwargs: dict[str, Any] = {
             "tokenizer": AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name, **kwargs),
         }
         if max_tokens is not None:

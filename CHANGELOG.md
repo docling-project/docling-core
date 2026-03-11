@@ -1,3 +1,19 @@
+## [v2.69.0](https://github.com/docling-project/docling-core/releases/tag/v2.69.0) - 2026-03-09
+
+### Feature
+
+* Loosen dependency version constraints ([#534](https://github.com/docling-project/docling-core/issues/534)) ([`4eb0d20`](https://github.com/docling-project/docling-core/commit/4eb0d20d0455952e55f6639b0ca96a7a448453f0))
+
+## [v2.68.0](https://github.com/docling-project/docling-core/releases/tag/v2.68.0) - 2026-03-07
+
+### Feature
+
+* Add plain-text serializer ([#522](https://github.com/docling-project/docling-core/issues/522)) ([`e363c95`](https://github.com/docling-project/docling-core/commit/e363c951d8b67b67a23e7bd4a7d92969a7875a33))
+
+### Fix
+
+* Prevent infinite loop in LineBasedTokenChunker with unbreakable tokens ([#533](https://github.com/docling-project/docling-core/issues/533)) ([`a661bb1`](https://github.com/docling-project/docling-core/commit/a661bb10cb46a7b8ce338773e6e95e558b96d669))
+
 ## [v2.67.1](https://github.com/docling-project/docling-core/releases/tag/v2.67.1) - 2026-03-05
 
 ### Fix
