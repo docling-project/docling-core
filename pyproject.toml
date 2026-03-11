@@ -50,7 +50,7 @@ dependencies = [
     'typer (>=0.12.5,<0.25.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
     "defusedxml (>=0.7.1, <0.8.0)",
-    "bs4>=0.0.2",
+    "beautifulsoup4 (>=4.12.3,<5.0.0)",
 ]
 
 [project.urls]
