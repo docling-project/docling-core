@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.65.2"  # DO NOT EDIT, updated automatically
+version = "2.69.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -42,12 +42,12 @@ dependencies = [
     'jsonschema (>=4.16.0,<5.0.0)',
     'pydantic (>=2.6.0,<3.0.0,!=2.10.0,!=2.10.1,!=2.10.2)',
     'jsonref (>=1.1.0,<2.0.0)',
-    'tabulate (>=0.9.0,<0.10.0)',
-    'pandas (>=2.1.4,<3.0.0)',
+    'tabulate (>=0.9.0,<0.11.0)',
+    'pandas (>=2.1.4,<4.0.0)',
     'pillow (>=10.0.0,<13.0.0)',
     'pyyaml (>=5.1,<7.0.0)',
     'typing-extensions (>=4.12.2,<5.0.0)',
-    'typer (>=0.12.5,<0.22.0)',
+    'typer (>=0.12.5,<0.25.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
     "defusedxml (>=0.7.1, <0.8.0)",
 ]
@@ -67,7 +67,7 @@ docling-view = "docling_core.cli.view:app"
 [project.optional-dependencies]
 chunking = [
     # common:
-    'semchunk (>=2.2.0,<3.0.0)',
+    'semchunk (>=2.2.0,<4.0.0)',
     'tree-sitter (>=0.25.0,<0.27.0)',
     'tree-sitter-python >=0.23.6',
     'tree-sitter-c >=0.23.4',
@@ -75,11 +75,11 @@ chunking = [
     'tree-sitter-typescript >=0.23.2',
 
     # specific:
-    'transformers (>=4.34.0,<5.0.0)',
+    'transformers (>=4.34.0,<6.0.0)',
 ]
 chunking-openai = [
     # common:
-    'semchunk (>=2.2.0,<3.0.0)',
+    'semchunk (>=2.2.0,<4.0.0)',
     'tree-sitter (>=0.25.0,<0.27.0)',
     'tree-sitter-python >=0.23.6',
     'tree-sitter-c >=0.23.4',
@@ -93,7 +93,6 @@ examples = [
     "datasets>=4.0.0",
     "matplotlib>=3.7.0",
     "openpyxl>=3.1.5",
-    "pandas>=2.3.3",
 ]
 
 [dependency-groups]
@@ -118,6 +117,10 @@ dev = [
     'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
     "ruff>=0.14.11",
     "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
+]
+constraints = [
+    'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
+    'pandas (>=2.1.4,<4.0.0); python_version >= "3.11"',
 ]
 
 [tool.uv]

@@ -142,15 +142,15 @@ Additionally, the results show that OTSL has an advantage over HTML when applied
 
 Table 2. TSR and cell detection results compared between OTSL and HTML on the PubTabNet [22], FinTabNet [21] and PubTables-1M [14] data sets using Table-Former [9] (with enc=6, dec=6, heads=8).
 
-| Data set     | Language   | TEDs   | TEDs    | TEDs   | mAP(0.75)   | Inference time (secs)   |
+| Data set     | Language   | TEDs   | TEDs    | TEDs   |   mAP(0.75) |   Inference time (secs) |
 |--------------|------------|--------|---------|--------|-------------|-------------------------|
 |              |            | simple | complex | all    |             |                         |
-| PubTabNet    | OTSL       | 0.965  | 0.934   | 0.955  | 0.88        | 2.73                    |
-|              | HTML       | 0.969  | 0.927   | 0.955  | 0.857       | 5.39                    |
-| FinTabNet    | OTSL       | 0.955  | 0.961   | 0.959  | 0.862       | 1.85                    |
-|              | HTML       | 0.917  | 0.922   | 0.92   | 0.722       | 3.26                    |
-| PubTables-1M | OTSL       | 0.987  | 0.964   | 0.977  | 0.896       | 1.79                    |
-|              | HTML       | 0.983  | 0.944   | 0.966  | 0.889       | 3.26                    |
+| PubTabNet    | OTSL       | 0.965  | 0.934   | 0.955  |       0.88  |                    2.73 |
+|              | HTML       | 0.969  | 0.927   | 0.955  |       0.857 |                    5.39 |
+| FinTabNet    | OTSL       | 0.955  | 0.961   | 0.959  |       0.862 |                    1.85 |
+|              | HTML       | 0.917  | 0.922   | 0.92   |       0.722 |                    3.26 |
+| PubTables-1M | OTSL       | 0.987  | 0.964   | 0.977  |       0.896 |                    1.79 |
+|              | HTML       | 0.983  | 0.944   | 0.966  |       0.889 |                    3.26 |
 
 ## 5.3 Qualitative Results
 

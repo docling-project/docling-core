@@ -2174,6 +2174,16 @@ class TableItem(FloatingItem):
 
     def export_to_dataframe(self, doc: Optional["DoclingDocument"] = None) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
+
+        return self._export_to_dataframe_with_options(doc=doc)
+
+    def _export_to_dataframe_with_options(
+        self,
+        doc: Optional["DoclingDocument"] = None,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Export the table as a Pandas DataFrame with contextual named arguments."""
+
         if doc is None:
             _logger.warning("Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated.")
 
@@ -2203,13 +2213,13 @@ class TableItem(FloatingItem):
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(self.data.grid[i]):
-                    col_name = cell._get_text(doc=doc)
+                    col_name = cell._get_text(doc=doc, **kwargs)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
         # Create table data
-        table_data = [[cell._get_text(doc=doc) for cell in row] for row in self.data.grid[num_headers:]]
+        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in self.data.grid[num_headers:]]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)
@@ -5108,21 +5118,64 @@ class DoclingDocument(BaseModel):
         self,
         delim: str = "\n\n",
         from_element: int = 0,
-        to_element: int = 1000000,
+        to_element: int = sys.maxsize,
         labels: Optional[set[DocItemLabel]] = None,
+        page_no: Optional[int] = None,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        page_break_placeholder: Optional[str] = None,
     ) -> str:
-        """export_to_text."""
-        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
+        """Export to plain text.
 
-        return self.export_to_markdown(
-            delim=delim,
-            from_element=from_element,
-            to_element=to_element,
-            labels=my_labels,
-            strict_text=True,
-            escape_underscores=False,
-            image_placeholder="",
+        Produces clean plain text without any Markdown decoration. Heading
+        markers (``#``), bold/italic markers, and hyperlink syntax are all
+        stripped. List bullets (``-``), ordered list numbers, and table-cell
+        separators (``|``) are preserved as they aid readability.
+
+        :param delim: Deprecated.
+        :type delim: str = "\\n\\n"
+        :param from_element: Body slicing start index (inclusive). (Default value = 0).
+        :type from_element: int = 0
+        :param to_element: Body slicing stop index (exclusive). (Default value = maxint).
+        :type to_element: int = sys.maxsize
+        :param labels: The set of document labels to include in the export. None falls
+            back to the system-defined default.
+        :type labels: Optional[set[DocItemLabel]] = None
+        :param page_no: If set, only content from this page is exported.
+        :type page_no: Optional[int] = None
+        :param included_content_layers: The set of layers to include. None falls back
+            to the system-defined default.
+        :type included_content_layers: Optional[set[ContentLayer]] = None
+        :param page_break_placeholder: String inserted at page boundaries. None means
+            no page-break marker is emitted.
+        :type page_break_placeholder: Optional[str] = None
+        :returns: The exported plain-text representation.
+        :rtype: str
+        """
+        from docling_core.transforms.serializer.plain_text import (
+            PlainTextDocSerializer,
+            PlainTextParams,
         )
+
+        my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
+        my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
+
+        if delim != "\n\n":
+            _logger.warning(
+                "Parameter `delim` has been deprecated and will be ignored.",
+            )
+
+        serializer = PlainTextDocSerializer(
+            doc=self,
+            params=PlainTextParams(
+                labels=my_labels,
+                layers=my_layers,
+                pages={page_no} if page_no is not None else None,
+                start_idx=from_element,
+                stop_idx=to_element,
+                page_break_placeholder=page_break_placeholder,
+            ),
+        )
+        return serializer.serialize().text
 
     def save_as_html(
         self,
