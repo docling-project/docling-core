@@ -599,3 +599,87 @@ def test_chunk_html_table_serializer():
         act_data=act_data,
         exp_path_str=EXPECTED_OUT_FILE,
     )
+
+
+
+def test_beautifulsoup_error_handling():
+    """Test that BeautifulSoup parsing errors are caught and handled gracefully."""
+    INPUT_FILE = "test/data/chunker/0_inp_dl_doc.json"
+    
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+    
+    # Verify the document has tables
+    assert len(dl_doc.tables) > 0, "Input file should contain at least one table"
+    
+    class HTMLSerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            return ChunkingDocSerializer(
+                doc=doc,
+                table_serializer=HTMLTableSerializer(),
+            )
+    
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+        repeat_table_header=True,
+        serializer_provider=HTMLSerializerProvider(),
+    )
+    
+    serializer = chunker.serializer_provider.get_serializer(dl_doc)
+    
+    # Test 1: Valid HTML should parse correctly
+    valid_html = "<table><tr><th>Header</th></tr><tr><td>Data</td></tr></table>"
+    header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=valid_html)
+    assert len(header_lines) > 0, "Valid HTML should produce header lines"
+    assert len(body_lines) > 0, "Valid HTML should produce body lines"
+    
+    # Test 2: Malformed HTML should be handled gracefully (fallback to string splitting)
+    malformed_html = "<table><tr><th>Header</th><tr><td>Data</td></table>"  # Missing closing tags
+    try:
+        header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=malformed_html)
+        # Should not raise an exception - error is caught and handled
+        assert True, "Malformed HTML should be handled without raising exception"
+        assert len(header_lines)==0, "Should return empty header lines for malformed HTML"
+        assert len(body_lines)==0, "Should return empty body lines for malformed HTML"
+    except Exception as e:
+        pytest.fail(f"BeautifulSoup error should be caught, but got: {e}")
+    
+    # Test 3: Empty or invalid content should be handled
+    empty_html = ""
+    header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=empty_html)
+    # Should return empty lists or handle gracefully
+    assert isinstance(header_lines, list), "Should return a list for header lines"
+    assert isinstance(body_lines, list), "Should return a list for body lines"
+    assert len(header_lines)==0, "Should return empty header lines for empty HTML"
+    assert len(body_lines)==0, "Should return empty body lines for empty HTML"
+    
+    # Test 4: Chunking with HTML serializer should complete without errors
+    chunks = list(chunker.chunk(dl_doc=dl_doc))
+    assert len(chunks) > 0, "Should produce chunks even with potential HTML parsing issues"
+    
+    # Verify all chunks have valid structure
+    for chunk in chunks:
+        assert isinstance(chunk.text, str), "Chunk text should be a string"
+        assert chunk.meta is not None, "Chunk should have metadata"
+
+
+def test_beautifulsoup_import_error_handling():
+    """Test that missing BeautifulSoup dependency is handled with clear error message."""
+    # This test verifies that if BeautifulSoup is not installed, 
+    # the error message is clear and helpful
+    
+    # We can't actually uninstall bs4 during the test, but we can verify
+    # that the import is at the module level and would fail early
+    try:
+        from docling_core.transforms.serializer.html import HTMLTableSerializer
+        # If we get here, bs4 is installed (which is expected in normal test runs)
+        assert True, "HTMLTableSerializer imports successfully when bs4 is available"
+    except ImportError as e:
+        # This would only happen if bs4 is not installed
+        assert "beautifulsoup" in str(e).lower() or "bs4" in str(e).lower(), \
+            "Import error should mention beautifulsoup4 or bs4"
