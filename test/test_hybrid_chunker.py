@@ -602,8 +602,8 @@ def test_chunk_html_table_serializer():
 
 
 
-def test_beautifulsoup_error_handling():
-    """Test that BeautifulSoup parsing errors are caught and handled gracefully."""
+def test_html_parser_error_handling():
+    """Test that HTML parsing errors are caught and handled gracefully."""
     INPUT_FILE = "test/data/chunker/0_inp_dl_doc.json"
     
     with open(INPUT_FILE, encoding="utf-8") as f:
@@ -647,7 +647,7 @@ def test_beautifulsoup_error_handling():
         assert len(header_lines)==0, "Should return empty header lines for malformed HTML"
         assert len(body_lines)==0, "Should return empty body lines for malformed HTML"
     except Exception as e:
-        pytest.fail(f"BeautifulSoup error should be caught, but got: {e}")
+        pytest.fail(f"HTML parsing error should be caught, but got: {e}")
     
     # Test 3: Empty or invalid content should be handled
     empty_html = ""
@@ -666,20 +666,3 @@ def test_beautifulsoup_error_handling():
     for chunk in chunks:
         assert isinstance(chunk.text, str), "Chunk text should be a string"
         assert chunk.meta is not None, "Chunk should have metadata"
-
-
-def test_beautifulsoup_import_error_handling():
-    """Test that missing BeautifulSoup dependency is handled with clear error message."""
-    # This test verifies that if BeautifulSoup is not installed, 
-    # the error message is clear and helpful
-    
-    # We can't actually uninstall bs4 during the test, but we can verify
-    # that the import is at the module level and would fail early
-    try:
-        from docling_core.transforms.serializer.html import HTMLTableSerializer
-        # If we get here, bs4 is installed (which is expected in normal test runs)
-        assert True, "HTMLTableSerializer imports successfully when bs4 is available"
-    except ImportError as e:
-        # This would only happen if bs4 is not installed
-        assert "beautifulsoup" in str(e).lower() or "bs4" in str(e).lower(), \
-            "Import error should mention beautifulsoup4 or bs4"

@@ -4,6 +4,7 @@ import base64
 import html
 import logging
 from enum import Enum
+from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -12,7 +13,6 @@ from xml.etree.ElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
 import latex2mathml.converter
-from bs4 import BeautifulSoup
 from PIL.Image import Image
 from pydantic import AnyUrl, BaseModel, Field
 from typing_extensions import override
@@ -314,6 +314,42 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         return None
 
 
+class _SimpleHTMLTableParser(HTMLParser):
+    """Simple HTML parser to extract table rows and cells without external dependencies."""
+
+    def __init__(self):
+        super().__init__()
+        self.rows = []
+        self.current_row = None
+        self.current_cell = None
+        self.current_cell_tag = None
+        self.cell_content = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "tr":
+            self.current_row = {"th_cells": [], "td_cells": [], "html": ""}
+        elif tag in ("th", "td") and self.current_row is not None:
+            self.current_cell_tag = tag
+            self.cell_content = []
+
+    def handle_endtag(self, tag):
+        if tag == "tr" and self.current_row is not None:
+            self.rows.append(self.current_row)
+            self.current_row = None
+        elif tag in ("th", "td") and self.current_row is not None:
+            cell_text = "".join(self.cell_content).strip()
+            if tag == "th":
+                self.current_row["th_cells"].append(cell_text)
+            else:
+                self.current_row["td_cells"].append(cell_text)
+            self.current_cell_tag = None
+            self.cell_content = []
+
+    def handle_data(self, data):
+        if self.current_cell_tag is not None:
+            self.cell_content.append(data)
+
+
 class HTMLTableSerializer(BaseTableSerializer):
     """HTML-specific table item serializer."""
 
@@ -421,30 +457,57 @@ class HTMLTableSerializer(BaseTableSerializer):
             headings_list.append(header_content)
         data_list = []
 
-        # Parse rows_content with BeautifulSoup
+        # Parse rows_content with built-in HTML parser
         try:
-            soup = BeautifulSoup(rows_content, "html.parser")
-            rows = soup.find_all("tr")
+            parser = _SimpleHTMLTableParser()
+            parser.feed(rows_content)
 
-            for i, row in enumerate(rows):
+            for i, row_data in enumerate(parser.rows):
                 # Check for non-empty <th> tags (header cells)
-                th_cells = row.find_all("th")
-                has_nonempty_th = any(cell.get_text(strip=True) for cell in th_cells)
+                has_nonempty_th = any(row_data["th_cells"])
 
                 # Check for non-empty <td> tags (data cells)
-                td_cells = row.find_all("td")
-                all_td_empty = all(not cell.get_text(strip=True) for cell in td_cells)
+                all_td_empty = all(not cell for cell in row_data["td_cells"])
 
-                row_str = str(row)
-                if th_cells and has_nonempty_th and all_td_empty:
+                # Extract the original row HTML from rows_content
+                # Find the i-th <tr> tag
+                row_start = rows_content.find("<tr", 0)
+                for _ in range(i):
+                    row_start = rows_content.find("<tr", row_start + 1)
+                    if row_start == -1:
+                        break
+
+                if row_start != -1:
+                    row_end = rows_content.find("</tr>", row_start)
+                    if row_end != -1:
+                        row_str = rows_content[row_start : row_end + 5]  # +5 for "</tr>"
+                    else:
+                        row_str = ""
+                else:
+                    row_str = ""
+
+                if row_data["th_cells"] and has_nonempty_th and all_td_empty:
                     # This is a heading row
                     if row_str:
                         headings_list.append(row_str)
                 else:
-                    data_list = [str(r) for r in rows[i:] if str(r)]
+                    # Collect remaining rows as data
+                    remaining_start = row_start if row_start != -1 else 0
+                    remaining_rows = []
+                    temp_start = remaining_start
+                    while True:
+                        tr_pos = rows_content.find("<tr", temp_start)
+                        if tr_pos == -1:
+                            break
+                        tr_end = rows_content.find("</tr>", tr_pos)
+                        if tr_end == -1:
+                            break
+                        remaining_rows.append(rows_content[tr_pos : tr_end + 5])
+                        temp_start = tr_end + 5
+                    data_list = remaining_rows
                     break  # Stop looking for headers once we hit data rows
         except Exception:
-            data_list = [r + "</tr>" for r in rows_content.split("</tr>") if not r.strip()]
+            data_list = [r + "</tr>" for r in rows_content.split("</tr>") if r.strip()]
             _logger.warning("Could not parse html table")
 
         if footer_content:
