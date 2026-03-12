@@ -25,25 +25,12 @@ class LineBasedTokenChunker(BaseChunker):
     its own. This is particularly useful for structured content like tables, code, or logs
     where line boundaries are semantically important.
 
-    Parameters:
-        tokenizer: The tokenizer to use for counting tokens. Can be an instantiated
-            tokenizer object or a model name/path for a pretrained model.
-
-        prefix: Optional text that appears at the beginning of each chunk. This is
-            useful for adding context like table headers, column names, or metadata
-            that should be repeated in each chunk for standalone readability.
-
-        omit_prefix_on_overflow: Controls prefix behavior when a line is too large
-            to fit with the prefix but would fit without it. When False (default),
-            the line will be split across multiple chunks, each including the prefix.
-            When True, the prefix is omitted for that specific line/chunk to prevent
-            splitting, which preserves line integrity but may result in inconsistent
-            chunk formatting. This is particularly useful when individual lines are
-            close to the token limit and splitting them would break their semantic
-            meaning (e.g., table rows, code lines, log entries).
-
-        serializer_provider: Provider for document serialization during chunking.
-            Defaults to ChunkingSerializerProvider.
+    The chunker supports adding a repeated prefix to each chunk, which can be useful for
+    keeping context like headers or metadata, while also offering flexibility when unusually
+    long lines appear. If a line is too large to fit alongside the prefix, the chunker
+    can either split the line across multiple prefixed chunks to maintain a consistent
+    format, or temporarily drop the prefix for that line to preserve the line's
+    integrity.
 
     Note:
         If the prefix itself exceeds max_tokens, it will be split into multiple
