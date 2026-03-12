@@ -48,7 +48,8 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import CURRENT_VERSION, FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem, PageItem
+from docling_core.types.doc.document import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
+from docling_core.types.doc.document import CURRENT_VERSION, PageItem
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
