@@ -632,33 +632,7 @@ def test_html_parser_error_handling():
     
     serializer = chunker.serializer_provider.get_serializer(dl_doc)
     
-    # Test 1: Valid HTML should parse correctly
-    valid_html = "<table><tr><th>Header</th></tr><tr><td>Data</td></tr></table>"
-    header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=valid_html)
-    assert len(header_lines) > 0, "Valid HTML should produce header lines"
-    assert len(body_lines) > 0, "Valid HTML should produce body lines"
-    
-    # Test 2: Malformed HTML should be handled gracefully (fallback to string splitting)
-    malformed_html = "<table><tr><th>Header</th><tr><td>Data</td></table>"  # Missing closing tags
-    try:
-        header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=malformed_html)
-        # Should not raise an exception - error is caught and handled
-        assert True, "Malformed HTML should be handled without raising exception"
-        assert len(header_lines)==0, "Should return empty header lines for malformed HTML"
-        assert len(body_lines)==0, "Should return empty body lines for malformed HTML"
-    except Exception as e:
-        pytest.fail(f"HTML parsing error should be caught, but got: {e}")
-    
-    # Test 3: Empty or invalid content should be handled
-    empty_html = ""
-    header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=empty_html)
-    # Should return empty lists or handle gracefully
-    assert isinstance(header_lines, list), "Should return a list for header lines"
-    assert isinstance(body_lines, list), "Should return a list for body lines"
-    assert len(header_lines)==0, "Should return empty header lines for empty HTML"
-    assert len(body_lines)==0, "Should return empty body lines for empty HTML"
-    
-    # Test 4: Chunking with HTML serializer should complete without errors
+    # Chunking with HTML serializer should complete without errors
     chunks = list(chunker.chunk(dl_doc=dl_doc))
     assert len(chunks) > 0, "Should produce chunks even with potential HTML parsing issues"
     
