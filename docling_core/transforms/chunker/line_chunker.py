@@ -24,6 +24,37 @@ class LineBasedTokenChunker(BaseChunker):
     intact within chunks. It only splits a line if it exceeds the maximum token limit on
     its own. This is particularly useful for structured content like tables, code, or logs
     where line boundaries are semantically important.
+
+    Example:
+        Basic usage with a prefix (e.g., table headers):
+
+        >>> chunker = LineBasedTokenChunker(
+        ...     tokenizer=my_tokenizer,
+        ...     prefix="| Name | Age |\\n|------|-----|\\n",
+        ...     omit_prefix_on_overflow=False
+        ... )
+        >>> lines = [
+        ...     "| Alice | 30 |\\n",
+        ...     "| Bob | 25 |\\n",
+        ...     "| Charlie | 35 |\\n"
+        ... ]
+        >>> chunks = chunker.chunk_text(lines)
+        # Each chunk starts with the prefix (table header), followed by data rows
+        # that fit within max_tokens
+
+        With omit_prefix_on_overflow=True:
+        When a line is too large to fit with the prefix but would fit without it,
+        the prefix is omitted for that specific chunk. This prevents data loss when
+        individual lines are close to the token limit.
+
+        >>> chunker = LineBasedTokenChunker(
+        ...     tokenizer=my_tokenizer,
+        ...     prefix="| Name | Age | Very Long Header Column |\\n",
+        ...     omit_prefix_on_overflow=True
+        ... )
+        >>> lines = ["| Alice with a very long name | 30 | Some data |\\n"]
+        # If the line + prefix exceeds max_tokens but the line alone fits,
+        # the chunk will contain just the line without the prefix
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
