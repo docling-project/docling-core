@@ -1221,7 +1221,7 @@ def test_kv_migration_self_contained_scenario():
     exp_json = Path("./test/data/doc/kv_pre_migration.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    doc._migrate_forms_to_field_regions()
+    doc._migrate_to_field_regions()
 
     exp_json = Path("./test/data/doc/kv_post_migration.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
@@ -1250,8 +1250,7 @@ def test_kv_migration_annot_scenario():
                 pages = doc.get_visualization(viz_mode=modes[mode_kw])
                 for page_no, page in pages.items():
                     page.save(str(subdir / f"input_{mode_kw}_p{page_no}.png"))
-        doc._migrate_forms_to_field_regions()
-        doc._normalize_references()
+        doc._migrate_to_field_regions()
         exp_json = subdir / "output.json"
         _verify_doc(doc=doc, exp_json=exp_json)
         ser = DoclangDocSerializer(doc=doc, params=DoclangParams())

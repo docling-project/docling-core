@@ -471,7 +471,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.SECOND: {DoclangAttributeKey.VALUE},
         DoclangToken.CENTISECOND: {DoclangAttributeKey.VALUE},
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL},
-        # DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.CHECKBOX: {DoclangAttributeKey.CLASS},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL},
@@ -537,7 +536,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.CENTISECOND: {DoclangAttributeKey.VALUE: (0, 99)},
         # Levels (N ≥ 1)
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
-        # DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
         DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL: (1, 6)},
         # Continuation markers (id length constraints)

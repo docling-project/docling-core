@@ -19,13 +19,13 @@
         "$ref": "#/field_regions/0"
       },
       {
-        "$ref": "#/texts/1"
+        "$ref": "#/texts/6"
       },
       {
         "$ref": "#/field_regions/1"
       },
       {
-        "$ref": "#/texts/2"
+        "$ref": "#/texts/11"
       }
     ],
     "content_layer": "body",
@@ -49,30 +49,6 @@
     {
       "self_ref": "#/texts/1",
       "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [],
-      "orig": "Some more text...",
-      "text": "Some more text..."
-    },
-    {
-      "self_ref": "#/texts/2",
-      "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [],
-      "orig": "The end.",
-      "text": "The end."
-    },
-    {
-      "self_ref": "#/texts/3",
-      "parent": {
         "$ref": "#/field_items/0"
       },
       "children": [],
@@ -83,7 +59,7 @@
       "text": "Common name"
     },
     {
-      "self_ref": "#/texts/4",
+      "self_ref": "#/texts/2",
       "parent": {
         "$ref": "#/field_items/0"
       },
@@ -96,7 +72,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/5",
+      "self_ref": "#/texts/3",
       "parent": {
         "$ref": "#/field_items/1"
       },
@@ -108,7 +84,7 @@
       "text": "Distribution package"
     },
     {
-      "self_ref": "#/texts/6",
+      "self_ref": "#/texts/4",
       "parent": {
         "$ref": "#/field_items/1"
       },
@@ -121,7 +97,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/7",
+      "self_ref": "#/texts/5",
       "parent": {
         "$ref": "#/field_items/1"
       },
@@ -149,7 +125,19 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/8",
+      "self_ref": "#/texts/6",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "Some more text...",
+      "text": "Some more text..."
+    },
+    {
+      "self_ref": "#/texts/7",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -161,7 +149,7 @@
       "text": "Color"
     },
     {
-      "self_ref": "#/texts/9",
+      "self_ref": "#/texts/8",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -174,7 +162,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/10",
+      "self_ref": "#/texts/9",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -187,7 +175,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/11",
+      "self_ref": "#/texts/10",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -198,6 +186,18 @@
       "orig": "White",
       "text": "White",
       "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/11",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "The end.",
+      "text": "The end."
     }
   ],
   "pictures": [],
@@ -260,10 +260,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/3"
+          "$ref": "#/texts/1"
         },
         {
-          "$ref": "#/texts/4"
+          "$ref": "#/texts/2"
         }
       ],
       "content_layer": "body",
@@ -277,13 +277,13 @@
       },
       "children": [
         {
+          "$ref": "#/texts/3"
+        },
+        {
+          "$ref": "#/texts/4"
+        },
+        {
           "$ref": "#/texts/5"
-        },
-        {
-          "$ref": "#/texts/6"
-        },
-        {
-          "$ref": "#/texts/7"
         }
       ],
       "content_layer": "body",
@@ -297,6 +297,9 @@
       },
       "children": [
         {
+          "$ref": "#/texts/7"
+        },
+        {
           "$ref": "#/texts/8"
         },
         {
@@ -304,9 +307,6 @@
         },
         {
           "$ref": "#/texts/10"
-        },
-        {
-          "$ref": "#/texts/11"
         }
       ],
       "content_layer": "body",

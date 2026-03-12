@@ -2657,9 +2657,7 @@ class DoclingDocument(BaseModel):
                     item["content_layer"] = "furniture"
         return data
 
-    def _migrate_forms_to_field_regions(self) -> None:
-        """Migrate the forms field to field regions."""
-
+    def _migrate_to_field_regions(self) -> None:
         has_single_kv_item = len(self.key_value_items) == 1
         last_item_is_kv_item = False
         found_last_kv_item = False
@@ -2680,57 +2678,58 @@ class DoclingDocument(BaseModel):
         if is_annot_case:
             self._migrate_annot_forms_to_field_regions(self.key_value_items[0])
             self._post_migration_cleanup()
-            return
+        else:
+            to_delete: list[NodeItem] = []
 
-        to_delete: list[NodeItem] = []
+            for item, _ in self.iterate_items():
+                if isinstance(item, FormItem | KeyValueItem):
+                    to_delete.append(item)
 
-        for item, _ in self.iterate_items():
-            if isinstance(item, FormItem | KeyValueItem):
-                to_delete.append(item)
+                    visited: set[str] = set()
+                    outgoing_links: dict[int, list[int]] = {}
 
-                visited: set[str] = set()
-                outgoing_links: dict[int, list[int]] = {}
-
-                kvm = FieldRegionItem(
-                    self_ref="#",
-                    prov=item.prov,
-                    content_layer=item.content_layer,
-                    meta=item.meta,
-                    comments=item.comments,
-                    source=item.source,
-                )
-                self.insert_item_after_sibling(new_item=kvm, sibling=item)
-
-                for link in item.graph.links:
-                    if link.label == GraphLinkLabel.TO_VALUE:
-                        key_cell = item.graph.cells[link.source_cell_id]
-                        value_cell = item.graph.cells[link.target_cell_id]
-                    elif link.label == GraphLinkLabel.TO_KEY:
-                        value_cell = item.graph.cells[link.source_cell_id]
-                        key_cell = item.graph.cells[link.target_cell_id]
-
-                    # check if we have already seen this key-value pair
-                    if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
-                        visited.add(key_val_id)
-                        outgoing_links.setdefault(key_cell.cell_id, []).append(value_cell.cell_id)
-
-                for key_cell_id, value_cell_ids in outgoing_links.items():
-                    kve = self.add_field_item(parent=kvm)
-                    key_cell = item.graph.cells[key_cell_id]
-                    self.add_field_key(
-                        text=key_cell.text,
-                        parent=kve,
-                        prov=key_cell.prov,
+                    kvm = FieldRegionItem(
+                        self_ref="#",
+                        prov=item.prov,
+                        content_layer=item.content_layer,
+                        meta=item.meta,
+                        comments=item.comments,
+                        source=item.source,
                     )
-                    for value_cell_id in value_cell_ids:
-                        value_cell = item.graph.cells[value_cell_id]
-                        self.add_field_value(
-                            text=value_cell.text,
-                            parent=kve,
-                            prov=value_cell.prov,
-                        )
+                    self.insert_item_after_sibling(new_item=kvm, sibling=item)
 
-        self.delete_items(node_items=to_delete)
+                    for link in item.graph.links:
+                        if link.label == GraphLinkLabel.TO_VALUE:
+                            key_cell = item.graph.cells[link.source_cell_id]
+                            value_cell = item.graph.cells[link.target_cell_id]
+                        elif link.label == GraphLinkLabel.TO_KEY:
+                            value_cell = item.graph.cells[link.source_cell_id]
+                            key_cell = item.graph.cells[link.target_cell_id]
+
+                        # check if we have already seen this key-value pair
+                        if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
+                            visited.add(key_val_id)
+                            outgoing_links.setdefault(key_cell.cell_id, []).append(value_cell.cell_id)
+
+                    for key_cell_id, value_cell_ids in outgoing_links.items():
+                        kve = self.add_field_item(parent=kvm)
+                        key_cell = item.graph.cells[key_cell_id]
+                        self.add_field_key(
+                            text=key_cell.text,
+                            parent=kve,
+                            prov=key_cell.prov,
+                        )
+                        for value_cell_id in value_cell_ids:
+                            value_cell = item.graph.cells[value_cell_id]
+                            self.add_field_value(
+                                text=value_cell.text,
+                                parent=kve,
+                                prov=value_cell.prov,
+                            )
+
+            self.delete_items(node_items=to_delete)
+
+        self._normalize_references()
 
     class _KVMigrData(BaseModel):
         value_crefs: list[str] = []
