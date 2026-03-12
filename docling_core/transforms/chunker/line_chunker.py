@@ -25,36 +25,29 @@ class LineBasedTokenChunker(BaseChunker):
     its own. This is particularly useful for structured content like tables, code, or logs
     where line boundaries are semantically important.
 
-    Example:
-        Basic usage with a prefix (e.g., table headers):
+    Parameters:
+        tokenizer: The tokenizer to use for counting tokens. Can be an instantiated
+            tokenizer object or a model name/path for a pretrained model.
 
-        >>> chunker = LineBasedTokenChunker(
-        ...     tokenizer=my_tokenizer,
-        ...     prefix="| Name | Age |\\n|------|-----|\\n",
-        ...     omit_prefix_on_overflow=False
-        ... )
-        >>> lines = [
-        ...     "| Alice | 30 |\\n",
-        ...     "| Bob | 25 |\\n",
-        ...     "| Charlie | 35 |\\n"
-        ... ]
-        >>> chunks = chunker.chunk_text(lines)
-        # Each chunk starts with the prefix (table header), followed by data rows
-        # that fit within max_tokens
+        prefix: Optional text that appears at the beginning of each chunk. This is
+            useful for adding context like table headers, column names, or metadata
+            that should be repeated in each chunk for standalone readability.
 
-        With omit_prefix_on_overflow=True:
-        When a line is too large to fit with the prefix but would fit without it,
-        the prefix is omitted for that specific chunk. This prevents data loss when
-        individual lines are close to the token limit.
+        omit_prefix_on_overflow: Controls prefix behavior when a line is too large
+            to fit with the prefix but would fit without it. When False (default),
+            the line will be split across multiple chunks, each including the prefix.
+            When True, the prefix is omitted for that specific line/chunk to prevent
+            splitting, which preserves line integrity but may result in inconsistent
+            chunk formatting. This is particularly useful when individual lines are
+            close to the token limit and splitting them would break their semantic
+            meaning (e.g., table rows, code lines, log entries).
 
-        >>> chunker = LineBasedTokenChunker(
-        ...     tokenizer=my_tokenizer,
-        ...     prefix="| Name | Age | Very Long Header Column |\\n",
-        ...     omit_prefix_on_overflow=True
-        ... )
-        >>> lines = ["| Alice with a very long name | 30 | Some data |\\n"]
-        # If the line + prefix exceeds max_tokens but the line alone fits,
-        # the chunk will contain just the line without the prefix
+        serializer_provider: Provider for document serialization during chunking.
+            Defaults to ChunkingSerializerProvider.
+
+    Note:
+        If the prefix itself exceeds max_tokens, it will be split into multiple
+        standalone chunks and only included at the beginning of the output.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
