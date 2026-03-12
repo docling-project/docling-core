@@ -44,6 +44,10 @@
       (12) EUROPÄISCHE PATENTANMELDUNG
     </list_text>
     <list_text>
+      <location value="61"/>
+      <location value="81"/>
+      <location value="196"/>
+      <location value="94"/>
       <field_region>
         <field_item>
           <key>
@@ -64,6 +68,10 @@
       </field_region>
     </list_text>
     <list_text>
+      <location value="61"/>
+      <location value="103"/>
+      <location value="184"/>
+      <location value="109"/>
       <field_region>
         <field_item>
           <key>
@@ -84,6 +92,10 @@
       </field_region>
     </list_text>
     <list_text>
+      <location value="61"/>
+      <location value="117"/>
+      <location value="164"/>
+      <location value="123"/>
       <field_region>
         <field_item>
           <key>
@@ -104,6 +116,10 @@
       </field_region>
     </list_text>
     <list_text>
+      <location value="267"/>
+      <location value="81"/>
+      <location value="435"/>
+      <location value="107"/>
       <field_region>
         <field_item>
           <key>
@@ -124,14 +140,18 @@
       </field_region>
     </list_text>
     <list_text>
+      <location value="61"/>
+      <location value="133"/>
+      <location value="255"/>
+      <location value="189"/>
       <field_region>
         <field_item>
           <key>
             <location value="80"/>
-            <location value="176"/>
-            <location value="185"/>
-            <location value="182"/>
-            Benannte Validierungsstaaten:
+            <location value="133"/>
+            <location value="172"/>
+            <location value="139"/>
+            Benannte Vertragsstaaten:
           </key>
           <value class="read_only">
             <location value="80"/>
@@ -140,6 +160,15 @@
             <location value="160"/>
             AL AT BE BG CH CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU LV MC MK MT NL NO PL PT RO RS SE SI SK SM TR
           </value>
+        </field_item>
+        <field_item>
+          <key>
+            <location value="80"/>
+            <location value="162"/>
+            <location value="188"/>
+            <location value="168"/>
+            Benannte Erstreckungsstaaten:
+          </key>
           <value class="read_only">
             <location value="80"/>
             <location value="169"/>
@@ -147,6 +176,15 @@
             <location value="174"/>
             BA ME
           </value>
+        </field_item>
+        <field_item>
+          <key>
+            <location value="80"/>
+            <location value="176"/>
+            <location value="185"/>
+            <location value="182"/>
+            Benannte Validierungsstaaten:
+          </key>
           <value class="read_only">
             <location value="81"/>
             <location value="183"/>
@@ -158,6 +196,10 @@
       </field_region>
     </list_text>
     <list_text>
+      <location value="61"/>
+      <location value="198"/>
+      <location value="239"/>
+      <location value="218"/>
       <field_region>
         <field_item>
           <key>
@@ -177,6 +219,10 @@
       </field_region>
     </list_text>
     <list_text>
+      <location value="61"/>
+      <location value="226"/>
+      <location value="139"/>
+      <location value="247"/>
       <field_region>
         <field_item>
           <key>
@@ -225,7 +271,26 @@
       - Klöcker, Gerd 51061 Köln (DE)
     </list_text>
     <list_text>
+      <location value="267"/>
+      <location value="155"/>
+      <location value="459"/>
+      <location value="217"/>
       <field_region>
+        <field_item>
+          <key>
+            <location value="286"/>
+            <location value="155"/>
+            <location value="318"/>
+            <location value="160"/>
+            Vertreter:
+          </key>
+          <value class="read_only">
+            <location value="286"/>
+            <location value="155"/>
+            <location value="412"/>
+            <location value="189"/>
+<![CDATA[Vertreter: Feucker, Max Martin et al Becker & Müller Patentanwälte Turmstraße 22 40878 Ratingen (DE)]]>          </value>
+        </field_item>
         <field_item>
           <key>
             <location value="267"/>
@@ -234,12 +299,6 @@
             <location value="203"/>
             Bemerkungen:
           </key>
-          <value class="read_only">
-            <location value="286"/>
-            <location value="155"/>
-            <location value="412"/>
-            <location value="189"/>
-<![CDATA[Vertreter: Feucker, Max Martin et al Becker & Müller Patentanwälte Turmstraße 22 40878 Ratingen (DE)]]>          </value>
           <value class="read_only">
             <location value="286"/>
             <location value="205"/>

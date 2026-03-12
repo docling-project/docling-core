@@ -2798,8 +2798,8 @@ class DoclingDocument(BaseModel):
             pass
         return val
 
-    def _build_kv_migration_index(self, kvi: KeyValueItem) -> dict[str, "_KVMigrData"]:
-        outgoing_links: dict[str, DoclingDocument._KVMigrData] = {}
+    def _build_kv_migration_index(self, kvi: KeyValueItem) -> dict[str, dict[int, "DoclingDocument._KVMigrData"]]:
+        outgoing_links: dict[str, dict[int, DoclingDocument._KVMigrData]] = {}
         visited: set[str] = set()
         bbox_index = self._build_bbox_index(kvi)
 
@@ -2829,77 +2829,108 @@ class DoclingDocument(BaseModel):
                 if key_item_ref and val_item_ref:
                     visited.add(key_val_id)
 
-                    migr_data = outgoing_links.setdefault(key_item_ref.cref, DoclingDocument._KVMigrData())
-                    migr_data.value_crefs.append(val_item_ref.cref)
-                    migr_data.key_cell = key_cell
-                    migr_data.value_cells.append(value_cell)
+                    migr_data = outgoing_links.setdefault(key_item_ref.cref, {})
+                    migr_data.setdefault(key_cell.cell_id, DoclingDocument._KVMigrData())
+                    migr_data[key_cell.cell_id].value_crefs.append(val_item_ref.cref)
+                    migr_data[key_cell.cell_id].key_cell = key_cell
+                    migr_data[key_cell.cell_id].value_cells.append(value_cell)
 
         return outgoing_links
+
+    def _eq_prov(self, prov1: ProvenanceItem, prov2: ProvenanceItem) -> bool:
+        """Compare provenances while tolerating charspan discrepancies."""
+        return prov1.bbox == prov2.bbox and prov1.page_no == prov2.page_no
 
     def _migrate_annot_forms_to_field_regions(self, kvi: KeyValueItem) -> None:
         to_delete: list[NodeItem] = [kvi]
         outgoing_links = self._build_kv_migration_index(kvi)
-        for key_cref, migr_data_item in outgoing_links.items():
-            key_item = RefItem(cref=key_cref).resolve(doc=self)
-            key_prov = (
-                migr_data_item.key_cell.prov
-                if migr_data_item.key_cell.prov
-                else (key_item.prov[0] if key_item.prov else None)
-            )
+
+        for key_cref, key_cell_dict in outgoing_links.items():
+            existing_key_item = RefItem(cref=key_cref).resolve(doc=self)
             fri = FieldRegionItem(self_ref="#")
-            if isinstance(key_item, ListItem):
-                key_item.text = ""  # captured in the field key / field value
-                key_item.prov = []  # captured in the field item
-                self.append_child_item(child=fri, parent=key_item)
+
+            if ex_key_item_is_li := isinstance(existing_key_item, ListItem):
+                self.append_child_item(child=fri, parent=existing_key_item)
             else:
-                self.insert_item_after_sibling(new_item=fri, sibling=key_item)
+                self._shift_down(old_subroot=existing_key_item, new_subroot=fri)
 
-            fi = self.add_field_item(parent=fri)
-            if isinstance(key_item, TextItem):
-                self.add_field_key(text=migr_data_item.key_cell.text or key_item.text, parent=fi, prov=key_prov)
-            elif isinstance(key_item, PictureItem):
-                fk = self.add_field_key(text=migr_data_item.key_cell.text, parent=fi, prov=key_prov)
-                self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
-            else:
-                continue  # TODO: handle other key item types
+            for _, migr_data_item in key_cell_dict.items():
+                reuse_existing_key_item = False
 
-            all_same_bbox = True
-
-            for idx, value_cref in enumerate(migr_data_item.value_crefs):
-                value_item: NodeItem = RefItem(cref=value_cref).resolve(doc=self)
-                if value_item != key_item:
-                    all_same_bbox = False
-                # giving priority to the provenance from the graph cells
-                value_prov = migr_data_item.value_cells[idx].prov or (
-                    value_item.prov[0] if isinstance(value_item, DocItem) and value_item.prov else None
+                cell_and_ex_key_item_bbox_equal = (
+                    migr_data_item.key_cell.prov
+                    and isinstance(existing_key_item, DocItem)
+                    and existing_key_item.prov
+                    and self._eq_prov(migr_data_item.key_cell.prov, existing_key_item.prov[0])
                 )
-                if isinstance(value_item, TextItem):
-                    # giving priority to the text from the graph cells
-                    value_text = migr_data_item.value_cells[idx].text or value_item.text
-                    if value_item.label in {DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED}:
-                        fv = self.add_field_value(text="", parent=fi)
-                        new_text_item = value_item.model_copy(deep=True)
-                        new_text_item.prov = [value_prov] if value_prov else []
-                        new_text_item.text = value_text
-                        self.append_child_item(child=new_text_item, parent=fv)
-                    else:
-                        fv = self.add_field_value(text=value_text, parent=fi, prov=value_prov)
-                        if value_item.label == DocItemLabel.EMPTY_VALUE:
-                            fv.kind = "fillable"
-                elif isinstance(value_item, PictureItem):
-                    fv = self.add_field_value(text=migr_data_item.value_cells[idx].text, parent=fi, prov=value_prov)
-                    self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
-                else:
-                    continue  # TODO: handle other value item types
-                if value_item not in to_delete and not isinstance(value_item, ListItem):
-                    to_delete.append(value_item)
-            if key_item not in to_delete and not isinstance(key_item, ListItem):
-                to_delete.append(key_item)
 
-            # if both key and value cell were mapped to the same item, that item's bbox can be used for FieldItem
-            if migr_data_item.value_crefs and all_same_bbox and key_item.prov:
-                fi.prov = key_item.prov
-                key_item.prov = []
+                if len(key_cell_dict) == 1 and (
+                    migr_data_item.key_cell.prov is None or cell_and_ex_key_item_bbox_equal
+                ):
+                    reuse_existing_key_item = True
+
+                key_prov = (
+                    migr_data_item.key_cell.prov
+                    if migr_data_item.key_cell.prov
+                    else (existing_key_item.prov[0] if existing_key_item.prov else None)
+                )
+
+                if reuse_existing_key_item:
+                    key_item = existing_key_item
+                else:  # case where single key_cref maps to multiple key cells
+                    if isinstance(existing_key_item, TextItem):
+                        existing_key_item.text = ""
+                    key_item = self.add_text(  # temporary item
+                        label=DocItemLabel.TEXT,
+                        text=migr_data_item.key_cell.text,
+                        parent=existing_key_item,
+                        prov=key_prov,
+                    )
+
+                fi = self.add_field_item(parent=fri)
+                if isinstance(key_item, TextItem):
+                    self.add_field_key(text=migr_data_item.key_cell.text or key_item.text, parent=fi, prov=key_prov)
+                    if isinstance(key_item, ListItem):
+                        key_item.text = ""
+                        if cell_and_ex_key_item_bbox_equal:
+                            key_item.prov = []
+                elif isinstance(key_item, PictureItem):
+                    fk = self.add_field_key(text=migr_data_item.key_cell.text, parent=fi, prov=key_prov)
+                    self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
+                else:
+                    continue  # TODO: handle other key item types
+
+                for idx, value_cref in enumerate(migr_data_item.value_crefs):
+                    value_item: NodeItem = RefItem(cref=value_cref).resolve(doc=self)
+                    # giving priority to the provenance from the graph cells
+                    value_prov = migr_data_item.value_cells[idx].prov or (
+                        value_item.prov[0] if isinstance(value_item, DocItem) and value_item.prov else None
+                    )
+                    if isinstance(value_item, TextItem):
+                        # giving priority to the text from the graph cells
+                        value_text = migr_data_item.value_cells[idx].text or value_item.text
+                        if value_item.label in {DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED}:
+                            fv = self.add_field_value(text="", parent=fi)
+                            new_text_item = value_item.model_copy(deep=True)
+                            new_text_item.prov = [value_prov] if value_prov else []
+                            new_text_item.text = value_text
+                            self.append_child_item(child=new_text_item, parent=fv)
+                        else:
+                            fv = self.add_field_value(text=value_text, parent=fi, prov=value_prov)
+                            if value_item.label == DocItemLabel.EMPTY_VALUE:
+                                fv.kind = "fillable"
+                    elif isinstance(value_item, PictureItem):
+                        fv = self.add_field_value(text=migr_data_item.value_cells[idx].text, parent=fi, prov=value_prov)
+                        self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
+                    else:
+                        continue  # TODO: handle other value item types
+                    if value_item not in to_delete and not isinstance(value_item, ListItem):
+                        to_delete.append(value_item)
+                if key_item not in to_delete and not isinstance(key_item, ListItem):
+                    to_delete.append(key_item)
+
+                if existing_key_item.prov and not cell_and_ex_key_item_bbox_equal and not ex_key_item_is_li:
+                    fi.prov = existing_key_item.prov
 
         self.delete_items(node_items=to_delete)
 

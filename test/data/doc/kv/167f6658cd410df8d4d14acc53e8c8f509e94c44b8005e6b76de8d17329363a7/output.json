@@ -196,7 +196,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 665.940456,
+            "t": 1489.6854720000001,
+            "r": 1072.179936,
+            "b": 1463.828256,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            32
+          ]
+        }
+      ],
       "orig": "(10)  Patent No.:  US  6,482,565 Bl",
       "text": "",
       "enumerated": false,
@@ -269,7 +284,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 665.142408,
+            "t": 1459.145952,
+            "r": 1069.045272,
+            "b": 1435.442976,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            34
+          ]
+        }
+      ],
       "orig": "(45)  Date of Patent:  Nov.  19, 2002",
       "text": "",
       "enumerated": false,
@@ -371,7 +401,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 171.138456,
+            "t": 1292.466384,
+            "r": 590.3964,
+            "b": 1213.999776,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            129
+          ]
+        }
+      ],
       "orig": "(75)  Inventors:  Jae Chang Jung;  Keun Kyu Kong;  Myoung Soo Kim;  Hyoung Gi Kim;  Hyeong Soo  Kim;  Ki Ho  Baik,  all  of  Kyoungki-do  (KR)",
       "text": "",
       "enumerated": false,
@@ -447,7 +492,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 172.827576,
+            "t": 1194.971184,
+            "r": 586.150344,
+            "b": 1155.965184,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            60
+          ]
+        }
+      ],
       "orig": "(73)  Assignee:  Hyundai Electronics Industries Co.,  Ltd.  (KR)",
       "text": "",
       "enumerated": false,
@@ -575,7 +635,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 174.025872,
+            "t": 1052.802432,
+            "r": 388.38743999999997,
+            "b": 1035.327744,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            26
+          ]
+        }
+      ],
       "orig": "(21)  Appl.  No.:  09/448,964",
       "text": "",
       "enumerated": false,
@@ -648,7 +723,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 172.011168,
+            "t": 1020.446064,
+            "r": 411.327648,
+            "b": 1003.547952,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
       "orig": "(22)  Filed:  Nov. 24,  1999",
       "text": "",
       "enumerated": false,
@@ -754,7 +844,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 173.639088,
+            "t": 911.592,
+            "r": 606.009744,
+            "b": 890.3157120000001,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
       "orig": "(51)  Int.  Cl.7  ................................................  G03F 7/004",
       "text": "",
       "enumerated": false,
@@ -827,7 +932,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 174.57422400000002,
+            "t": 886.884768,
+            "r": 606.27168,
+            "b": 850.0029119999999,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            101
+          ]
+        }
+      ],
       "orig": "(52)  U.S.  Cl.  ....................  430/270.1;  430/325;  526/266;  526/320;  526/271;  549/347;  549/369;  549/430",
       "text": "",
       "enumerated": false,
@@ -900,7 +1020,22 @@
       ],
       "content_layer": "body",
       "label": "list_item",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 174.31963199999998,
+            "t": 845.250912,
+            "r": 605.307168,
+            "b": 808.369056,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            54
+          ]
+        }
+      ],
       "orig": "(58)  Field of Search  ..............................  430/270.1,  325;  549/347, 369, 430;  526/266, 320, 271",
       "text": "",
       "enumerated": false,
