@@ -40110,7 +40110,13 @@
         }
       ],
       "content_layer": "body",
-      "meta": null,
+      "meta": {
+        "summary": {
+          "confidence": null,
+          "created_by": null,
+          "text": "Docling processes 225 pages faster with the pypdfium backend (up to 2.45 pages/second on Apple M3 Max) than the native backend (up to 1.34 pages/second), while also using significantly less memory (2.42-2.56 GB vs 6.16-6.20 GB), with performance scaling effectively from 4 to 16 threads on both tested systems."
+        }
+      },
       "label": "table",
       "prov": [
         {

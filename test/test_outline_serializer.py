@@ -8,9 +8,10 @@ from docling_core.experimental.serializer.outline import (
     OutlineParams,
 )
 from docling_core.types.doc import DoclingDocument
+from docling_core.types.doc.labels import DocItemLabel
 
 
-def test_outline_serializer_mode_table_of_contents():
+def test_outline_serializer_mode_toc():
     """Test TABLE_OF_CONTENTS mode only includes titles and section headers."""
     doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
     exp_path = doc_path.with_suffix(".toc.gt.md")
@@ -43,6 +44,25 @@ def test_outline_serializer_mode_table_of_contents():
     with open(exp_path) as f:
         expected = f.read()
     assert result.text == expected, "Unexpected TOC serialization "
+
+
+def test_outline_serializer_mode_toc_custom():
+    """Test TABLE_OF_CONTENTS mode with custom item labels."""
+    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    exp_path = doc_path.with_suffix(".custom.gt.md")
+
+    doc = DoclingDocument.load_from_json(filename=doc_path)
+
+    # params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS)
+    params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, labels={DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER, DocItemLabel.TABLE})
+    ser = OutlineDocSerializer(doc=doc, params=params)
+    result = ser.serialize()
+
+    assert isinstance(result.text, str)
+    assert len(result.text) > 0
+    with open(exp_path) as f:
+        expected = f.read()
+    assert result.text == expected, "Unexpected outline serialization "
 
 
 def test_outline_serializer_mode_outline():

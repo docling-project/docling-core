@@ -6,9 +6,9 @@ document outline or a table of contents derived from a Docling document.
 
 import json
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
@@ -42,7 +42,6 @@ from docling_core.types.doc import (
     KeyValueItem,
     ListGroup,
     ListItem,
-    MetaFieldName,
     NodeItem,
     PictureItem,
     SectionHeaderItem,
@@ -142,14 +141,23 @@ class OutlineParams(MarkdownParams):
     Inherits MarkdownParams to retain Markdown behaviors (escaping, links, etc.).
     """
 
-    mode: OutlineMode = OutlineMode.OUTLINE
-    format: OutlineFormat = OutlineFormat.MARKDOWN
+    mode: Annotated[
+        OutlineMode,
+        Field(
+            description="Display mode: 'outline' includes all document elements, 'table_of_contents' shows only titles and section headers"
+        ),
+    ] = OutlineMode.OUTLINE
+    format: Annotated[
+        OutlineFormat,
+        Field(description="Output format: 'markdown' for human-readable text, 'json' for structured data"),
+    ] = OutlineFormat.MARKDOWN
 
     @model_validator(mode="after")
     def adjust_allowed_labels(self) -> Self:
         """Adjust the allowed labels based on the selected mode."""
         if self.mode == OutlineMode.TABLE_OF_CONTENTS:
-            self.labels = {DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER}
+            if "labels" not in self.model_fields_set:
+                self.labels = {DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER}
         return self
 
 
