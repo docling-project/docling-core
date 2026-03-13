@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Any
 
 from docling_core.experimental.serializer.outline import (
     OutlineDocSerializer,
@@ -25,11 +24,10 @@ def test_outline_serializer_mode_toc():
 
     assert isinstance(result.text, str)
     assert len(result.text) > 0
-    assert "[reference=#/texts/" in result.text
+    assert "\\[ref=#/texts/" in result.text
 
-    reference_count = result.text.count("[reference=")
+    reference_count = result.text.count("\\[ref=")
     assert reference_count > 0, "TABLE_OF_CONTENTS mode should include section headers"
-    assert "(summary=" in result.text, "Summaries should be included when include_non_meta=True"
 
     with open(exp_path) as f:
         expected = f.read()
@@ -79,7 +77,7 @@ def test_outline_serializer_mode_outline():
 
     assert isinstance(result.text, str)
     assert len(result.text) > 0
-    reference_count_outline = result.text.count("[reference=")
+    reference_count_outline = result.text.count("\\[ref=")
     with open(exp_path) as f:
         expected = f.read()
     assert result.text == expected, "Unexpected outline serialization "
@@ -88,7 +86,7 @@ def test_outline_serializer_mode_outline():
     params_toc = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS)
     ser_toc = OutlineDocSerializer(doc=doc, params=params_toc)
     result_toc = ser_toc.serialize()
-    reference_count_toc = result_toc.text.count("[reference=")
+    reference_count_toc = result_toc.text.count("\\[ref=")
     assert reference_count_outline > reference_count_toc, (
         f"OUTLINE mode should include more items ({reference_count_outline}) "
         f"than TABLE_OF_CONTENTS mode ({reference_count_toc})"
@@ -117,8 +115,7 @@ def test_outline_serializer_include_non_meta_false():
         "Outline should show structure (references) and metadata (summaries) "
         "even when include_non_meta=False"
     )
-    assert "[reference=" in result.text, "Should include references"
-    assert "(summary=" in result.text, "Should include summaries"
+    assert "\\[ref=" in result.text, "Should include references"
 
     with open(exp_path) as f:
         expected = f.read()

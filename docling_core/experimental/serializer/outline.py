@@ -60,11 +60,11 @@ def _default_prepend(item: NodeItem) -> str:
 
 
 def _default_outline_node(item: NodeItem) -> str:
-    return f"[reference={item.self_ref}]"
+    return f"\\[ref={item.self_ref}\\]"
 
 
 def _default_summary(summary: str) -> str:
-    return f"(summary={summary})"
+    return summary
 
 
 def _serialize_text_item(item: TextItem, doc: DoclingDocument, **kwargs: Any) -> str:
@@ -115,7 +115,7 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
 
         return json.dumps(data, ensure_ascii=False)
 
-    # For Markdown format, build text parts
+    # For Markdown format, build text parts with newlines
     text_parts = []
 
     # Only include prepend (actual text content) if include_non_meta is True
@@ -132,7 +132,7 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     if item.meta and item.meta.summary:
         text_parts.append(_default_summary(item.meta.summary.text))
 
-    return " ".join(text_parts).strip()
+    return "\n".join(text_parts).strip()
 
 
 class OutlineMode(str, Enum):
