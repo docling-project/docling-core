@@ -838,17 +838,7 @@ def test_kv():
     exp_json = Path("./test/data/doc/kv.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser = DoclangDocSerializer(
-        doc=doc,
-        params=DoclangParams(
-            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
-            # pretty_indentation=None,
-            # escape_mode=EscapeMode.CDATA_ALWAYS,
-            # image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    ser_res = ser.serialize()
-    ser_txt = ser_res.text
+    ser_txt = doc.export_to_doclang()
     exp_file = Path("./test/data/doc/kv.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
@@ -921,17 +911,7 @@ def test_kv_invoice():
     exp_json = Path("./test/data/doc/kv_invoice.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser = DoclangDocSerializer(
-        doc=doc,
-        params=DoclangParams(
-            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
-            # pretty_indentation=None,
-            # escape_mode=EscapeMode.CDATA_ALWAYS,
-            # image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    ser_res = ser.serialize()
-    ser_txt = ser_res.text
+    ser_txt = doc.export_to_doclang()
     exp_file = Path("./test/data/doc/kv_invoice.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
@@ -971,17 +951,7 @@ def test_kv_advanced_inline():
     exp_json = Path("./test/data/doc/kv_advanced_inline.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser = DoclangDocSerializer(
-        doc=doc,
-        params=DoclangParams(
-            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
-            # pretty_indentation=None,
-            # escape_mode=EscapeMode.CDATA_ALWAYS,
-            # image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    ser_res = ser.serialize()
-    ser_txt = ser_res.text
+    ser_txt = doc.export_to_doclang()
     exp_file = Path("./test/data/doc/kv_advanced_inline.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
@@ -1020,17 +990,7 @@ def test_kv_nested():
     exp_json = Path("./test/data/doc/kv_nested.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser = DoclangDocSerializer(
-        doc=doc,
-        params=DoclangParams(
-            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
-            # pretty_indentation=None,
-            # escape_mode=EscapeMode.CDATA_ALWAYS,
-            # image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    ser_res = ser.serialize()
-    ser_txt = ser_res.text
+    ser_txt = doc.export_to_doclang()
     exp_file = Path("./test/data/doc/kv_nested.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
@@ -1086,17 +1046,7 @@ def test_kv_form_with_table():
     exp_json = Path("./test/data/doc/kv_form_with_table.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser = DoclangDocSerializer(
-        doc=doc,
-        params=DoclangParams(
-            # content_wrapping_mode=WrapMode.WRAP_ALWAYS,
-            # pretty_indentation=None,
-            # escape_mode=EscapeMode.CDATA_ALWAYS,
-            # image_mode=ImageRefMode.PLACEHOLDER,
-        ),
-    )
-    ser_res = ser.serialize()
-    ser_txt = ser_res.text
+    ser_txt = doc.export_to_doclang()
 
     exp_file = Path("./test/data/doc/kv_form_with_table.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
@@ -1226,9 +1176,7 @@ def test_kv_migration_self_contained_scenario():
     exp_json = Path("./test/data/doc/kv_post_migration.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser = DoclangDocSerializer(doc=doc, params=DoclangParams())
-    ser_res = ser.serialize()
-    ser_txt = ser_res.text
+    ser_txt = doc.export_to_doclang()
     exp_file = Path("./test/data/doc/kv_migration.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
@@ -1253,10 +1201,18 @@ def test_kv_migration_annot_scenario():
         doc._migrate_to_field_regions()
         exp_json = subdir / "output.json"
         _verify_doc(doc=doc, exp_json=exp_json)
-        ser = DoclangDocSerializer(doc=doc, params=DoclangParams())
-        ser_res = ser.serialize()
-        ser_txt = ser_res.text
+        ser_txt = doc.export_to_doclang()
         exp_file = subdir / "output.dclg.xml"
+        verify(exp_file=exp_file, actual=ser_txt)
+
+        ser = DoclangDocSerializer(
+            doc=doc,
+            params=DoclangParams(
+                add_content=False,
+            ),
+        )
+        ser_txt = ser.serialize().text
+        exp_file = subdir / "output_no_content.dclg.xml"
         verify(exp_file=exp_file, actual=ser_txt)
 
         if GEN_TEST_DATA:

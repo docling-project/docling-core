@@ -1,0 +1,504 @@
+<doclang version="1.0.0">
+  <floating_group class="picture">
+    <picture>
+      <location value="255"/>
+      <location value="3"/>
+      <location value="448"/>
+      <location value="24"/>
+    </picture>
+  </floating_group>
+  <list ordered="false">
+    <list_text>
+      <location value="73"/>
+      <location value="29"/>
+      <location value="223"/>
+      <location value="48"/>
+    </list_text>
+    <list_text>
+      <location value="279"/>
+      <location value="30"/>
+      <location value="448"/>
+      <location value="39"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="295"/>
+            <location value="31"/>
+            <location value="344"/>
+            <location value="37"/>
+          </key>
+          <value class="read_only">
+            <location value="365"/>
+            <location value="31"/>
+            <location value="448"/>
+            <location value="39"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="278"/>
+      <location value="40"/>
+      <location value="447"/>
+      <location value="48"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="295"/>
+            <location value="41"/>
+            <location value="360"/>
+            <location value="47"/>
+          </key>
+          <value class="read_only">
+            <location value="390"/>
+            <location value="41"/>
+            <location value="447"/>
+            <location value="48"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+  </list>
+  <list ordered="false">
+    <list_text>
+      <location value="73"/>
+      <location value="69"/>
+      <location value="225"/>
+      <location value="87"/>
+    </list_text>
+    <list_text>
+      <location value="72"/>
+      <location value="94"/>
+      <location value="247"/>
+      <location value="120"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="94"/>
+            <location value="123"/>
+            <location value="100"/>
+          </key>
+          <value class="read_only">
+            <location value="127"/>
+            <location value="94"/>
+            <location value="247"/>
+            <location value="119"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="72"/>
+      <location value="126"/>
+      <location value="245"/>
+      <location value="138"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="145"/>
+            <location value="114"/>
+            <location value="149"/>
+          </key>
+          <value class="read_only">
+            <location value="128"/>
+            <location value="145"/>
+            <location value="253"/>
+            <location value="163"/>
+          </value>
+        </field_item>
+      </field_region>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="126"/>
+            <location value="122"/>
+            <location value="132"/>
+          </key>
+          <value class="read_only">
+            <location value="128"/>
+            <location value="126"/>
+            <location value="245"/>
+            <location value="138"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="172"/>
+      <location value="162"/>
+      <location value="177"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="172"/>
+            <location value="125"/>
+            <location value="177"/>
+          </key>
+          <value class="read_only">
+            <location value="128"/>
+            <location value="172"/>
+            <location value="162"/>
+            <location value="177"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="72"/>
+      <location value="182"/>
+      <location value="172"/>
+      <location value="188"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="182"/>
+            <location value="111"/>
+            <location value="187"/>
+          </key>
+          <value class="read_only">
+            <location value="128"/>
+            <location value="182"/>
+            <location value="172"/>
+            <location value="187"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="192"/>
+      <location value="219"/>
+      <location value="198"/>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="217"/>
+      <location value="253"/>
+      <location value="224"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="218"/>
+            <location value="120"/>
+            <location value="223"/>
+          </key>
+          <value class="read_only">
+            <location value="216"/>
+            <location value="218"/>
+            <location value="254"/>
+            <location value="223"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="225"/>
+      <location value="254"/>
+      <location value="237"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="225"/>
+            <location value="118"/>
+            <location value="230"/>
+          </key>
+          <value class="read_only">
+            <location value="112"/>
+            <location value="226"/>
+            <location value="253"/>
+            <location value="237"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="239"/>
+      <location value="253"/>
+      <location value="251"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="239"/>
+            <location value="143"/>
+            <location value="243"/>
+          </key>
+          <value class="read_only">
+            <location value="137"/>
+            <location value="239"/>
+            <location value="253"/>
+            <location value="250"/>
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="257"/>
+      <location value="191"/>
+      <location value="264"/>
+    </list_text>
+    <list_text>
+      <location value="268"/>
+      <location value="174"/>
+      <location value="449"/>
+      <location value="186"/>
+    </list_text>
+  </list>
+  <floating_group class="table">
+    <otsl>
+      <location value="77"/>
+      <location value="202"/>
+      <location value="253"/>
+      <location value="213"/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+    </otsl>
+  </floating_group>
+  <heading level="2">
+    <location value="117"/>
+    <location value="268"/>
+    <location value="209"/>
+    <location value="272"/>
+  </heading>
+  <heading level="2">
+    <location value="107"/>
+    <location value="311"/>
+    <location value="219"/>
+    <location value="316"/>
+  </heading>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="123"/>
+        <location value="372"/>
+        <location value="204"/>
+        <location value="376"/>
+      </key>
+      <value class="read_only">
+        <location value="73"/>
+        <location value="382"/>
+        <location value="253"/>
+        <location value="446"/>
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="268"/>
+    <location value="69"/>
+    <location value="449"/>
+    <location value="88"/>
+  </text>
+  <text>
+    <location value="269"/>
+    <location value="90"/>
+    <location value="448"/>
+    <location value="96"/>
+  </text>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="269"/>
+        <location value="98"/>
+        <location value="338"/>
+        <location value="103"/>
+      </key>
+      <value class="read_only">
+        <location value="342"/>
+        <location value="99"/>
+        <location value="428"/>
+        <location value="103"/>
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="269"/>
+        <location value="107"/>
+        <location value="338"/>
+        <location value="111"/>
+      </key>
+      <value class="read_only">
+        <location value="341"/>
+        <location value="107"/>
+        <location value="428"/>
+        <location value="111"/>
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="269"/>
+        <location value="115"/>
+        <location value="338"/>
+        <location value="119"/>
+      </key>
+      <value class="read_only">
+        <location value="269"/>
+        <location value="115"/>
+        <location value="449"/>
+        <location value="126"/>
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="268"/>
+    <location value="129"/>
+    <location value="450"/>
+    <location value="148"/>
+  </text>
+  <footnote>
+    <location value="269"/>
+    <location value="154"/>
+    <location value="330"/>
+    <location value="159"/>
+  </footnote>
+  <text>
+    <location value="267"/>
+    <location value="168"/>
+    <location value="396"/>
+    <location value="173"/>
+  </text>
+  <floating_group class="table">
+    <otsl>
+      <location value="88"/>
+      <location value="278"/>
+      <location value="254"/>
+      <location value="307"/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+    </otsl>
+  </floating_group>
+  <floating_group class="table">
+    <otsl>
+      <location value="72"/>
+      <location value="321"/>
+      <location value="189"/>
+      <location value="367"/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <ecel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <ecel/>
+      <fcel/>
+      <nl/>
+    </otsl>
+  </floating_group>
+  <heading level="2">
+    <location value="338"/>
+    <location value="191"/>
+    <location value="379"/>
+    <location value="196"/>
+  </heading>
+  <text>
+    <location value="268"/>
+    <location value="202"/>
+    <location value="449"/>
+    <location value="259"/>
+  </text>
+  <floating_group class="picture">
+    <picture>
+      <location value="285"/>
+      <location value="268"/>
+      <location value="450"/>
+      <location value="328"/>
+    </picture>
+  </floating_group>
+  <text>
+    <location value="276"/>
+    <location value="342"/>
+    <location value="449"/>
+    <location value="425"/>
+  </text>
+  <text>
+    <location value="312"/>
+    <location value="440"/>
+    <location value="406"/>
+    <location value="446"/>
+  </text>
+  <text>
+    <location value="268"/>
+    <location value="191"/>
+    <location value="281"/>
+    <location value="197"/>
+  </text>
+</doclang>

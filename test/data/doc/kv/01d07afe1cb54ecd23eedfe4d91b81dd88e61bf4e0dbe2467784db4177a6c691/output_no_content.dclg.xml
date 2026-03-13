@@ -1,0 +1,24 @@
+<doclang version="1.0.0">
+  <floating_group class="table">
+    <otsl>
+      <location value="67"/>
+      <location value="40"/>
+      <location value="451"/>
+      <location value="473"/>
+      <fcel/>
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="420"/>
+    <location value="484"/>
+    <location value="438"/>
+    <location value="490"/>
+  </text>
+  <text>
+    <location value="446"/>
+    <location value="483"/>
+    <location value="461"/>
+    <location value="489"/>
+  </text>
+</doclang>

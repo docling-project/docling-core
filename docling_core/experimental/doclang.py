@@ -7,7 +7,10 @@ from enum import Enum
 from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
 from xml.dom.minidom import Element, Node, Text
+from xml.etree.ElementTree import Element as ETElement
+from xml.etree.ElementTree import tostring
 
+from defusedxml.ElementTree import fromstring
 from defusedxml.minidom import parseString
 from pydantic import BaseModel, PrivateAttr
 from typing_extensions import override
@@ -1007,7 +1010,9 @@ class DoclangParams(CommonParams):
 
     add_page_break: bool = True
 
-    # types of content to serialize:
+    add_content: bool = True
+
+    # types of content to serialize (only relevant if show_content is True):
     content_types: set[ContentType] = _DEFAULT_CONTENT_TYPES
 
     # Doclang formatting
@@ -2140,6 +2145,49 @@ class DoclangDocSerializer(DocSerializer):
             parts.append(f'<default_resolution width="{self.params.xsize}" height="{self.params.ysize}"/>')
         return _wrap(text="".join(parts), wrap_tag=DoclangToken.HEAD.value) if parts else ""
 
+    def _is_content_tag(self, tag: str) -> bool:
+        return tag in {DoclangToken.CONTENT.value, DoclangToken.META.value}
+
+    def _remove_content_subtrees(self, element: ETElement) -> None:
+        """Remove any child that is a regarded as content element and its entire subtree."""
+        to_remove = []
+        for child in element:
+            if self._is_content_tag(child.tag):
+                to_remove.append(child)
+            else:
+                self._remove_content_subtrees(child)
+        for child in to_remove:
+            element.remove(child)
+
+    def _strip_text_from_element(self, element: ETElement) -> None:
+        """Remove all text content and whitespace from element."""
+        element.text = None
+        for child in element:
+            self._strip_text_from_element(child)
+            child.tail = None
+
+    def _filter_out_all_content(self, text: str) -> str:
+        root = fromstring(text)
+        self._remove_content_subtrees(root)
+        self._strip_text_from_element(root)
+        out = tostring(root, encoding="unicode", method="xml", short_empty_elements=True)
+        return out
+
+    def _serialize_body(self, **kwargs) -> SerializationResult:
+        """Serialize the document body."""
+
+        # intercept from DoclangDocSerializer to update param kwargs:
+        my_delta = {}
+        if not self.params.add_content:
+            # in this case filtering is done by XML-based post-processing
+            params = self.params.model_copy(deep=True)
+            params.content_types = set(ContentType)
+            my_delta = params.model_dump()
+        my_kwargs = {**kwargs, **my_delta}
+        subparts = self.get_parts(**my_kwargs)
+        res = self.serialize_doc(parts=subparts, **my_kwargs)
+        return res
+
     @override
     def serialize_doc(
         self,
@@ -2165,6 +2213,10 @@ class DoclangDocSerializer(DocSerializer):
                 text_res = text_res.replace(full_match, page_sep)
 
         text_res = f"{open_token}{head}{text_res}{close_token}"
+
+        if not self.params.add_content:
+            # do XML-based post-filtering
+            text_res = self._filter_out_all_content(text_res)
 
         if self.params.pretty_indentation is not None:
             try:

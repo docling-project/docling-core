@@ -6033,6 +6033,16 @@ class DoclingDocument(BaseModel):
 
         return ser_res.text
 
+    def export_to_doclang(self) -> str:
+        """Export to Doclang."""
+        from docling_core.experimental.doclang import DoclangDocSerializer, DoclangParams
+
+        serializer = DoclangDocSerializer(
+            doc=self,
+            params=DoclangParams(),
+        )
+        return serializer.serialize().text
+
     @staticmethod
     def load_from_doctags(  # noqa: C901
         doctag_document: DocTagsDocument, document_name: str = "Document"
