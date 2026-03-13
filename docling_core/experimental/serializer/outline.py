@@ -4,6 +4,7 @@ This module provides a Markdown-focused serializer that emits a compact
 document outline or a table of contents derived from a Docling document.
 """
 
+import json
 from enum import Enum
 from typing import Any
 
@@ -73,7 +74,26 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
 
     params = OutlineParams(**kwargs)
 
-    # Build the text parts list
+    # For JSON format, return a JSON string representation
+    if params.format == OutlineFormat.JSON:
+        data: dict[str, Any] = {
+            "ref": item.self_ref,
+        }
+
+        # Add title if include_non_meta is True
+        if params.include_non_meta and isinstance(item, TitleItem | SectionHeaderItem):
+            _md_serializer = MarkdownDocSerializer(doc=doc)
+            _serializer = MarkdownTextSerializer()
+            res = _serializer.serialize(item=item, doc_serializer=_md_serializer, doc=doc, **kwargs)
+            data["title"] = res.text.strip()
+
+        # Always include summary if available
+        if item.meta and item.meta.summary:
+            data["summary"] = item.meta.summary.text
+
+        return json.dumps(data, ensure_ascii=False)
+
+    # For Markdown format, build text parts
     text_parts = []
 
     # Only include prepend (actual text content) if include_non_meta is True
@@ -109,6 +129,13 @@ class OutlineMode(str, Enum):
     TABLE_OF_CONTENTS = "table_of_contents"
 
 
+class OutlineFormat(str, Enum):
+    """Output format for outline serialization."""
+
+    MARKDOWN = "markdown"
+    JSON = "json"
+
+
 class OutlineParams(MarkdownParams):
     """Markdown-specific serialization parameters for outline.
 
@@ -116,6 +143,7 @@ class OutlineParams(MarkdownParams):
     """
 
     mode: OutlineMode = OutlineMode.OUTLINE
+    format: OutlineFormat = OutlineFormat.MARKDOWN
 
     @model_validator(mode="after")
     def adjust_allowed_labels(self) -> Self:
@@ -314,6 +342,38 @@ class OutlineDocSerializer(MarkdownDocSerializer):
     meta_serializer: BaseMetaSerializer = _OutlineMetaSerializer()
 
     params: OutlineParams = OutlineParams()
+
+    @override
+    def serialize_doc(
+        self,
+        *,
+        parts: list[SerializationResult],
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a document out of its parts.
+
+        For JSON format, combines individual JSON objects into a JSON array.
+        For Markdown format, uses the default behavior.
+        """
+        params = self.params.merge_with_patch(patch=kwargs)
+
+        if params.format == OutlineFormat.JSON:
+            # Parse each part as JSON and combine into an array
+            json_objects = []
+            for part in parts:
+                if part.text:
+                    try:
+                        json_objects.append(json.loads(part.text))
+                    except json.JSONDecodeError:
+                        # Skip invalid JSON
+                        pass
+
+            # Return the array as a JSON string
+            text_res = json.dumps(json_objects, ensure_ascii=False, indent=2)
+            return create_ser_result(text=text_res, span_source=parts)
+        else:
+            # Use default Markdown behavior
+            return super().serialize_doc(parts=parts, **kwargs)
 
     @override
     def get_parts(
