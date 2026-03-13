@@ -4,6 +4,7 @@ import base64
 import html
 import logging
 from enum import Enum
+from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -313,6 +314,42 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         return None
 
 
+class _SimpleHTMLTableParser(HTMLParser):
+    """Simple HTML parser to extract table rows and cells without external dependencies."""
+
+    def __init__(self):
+        super().__init__()
+        self.rows = []
+        self.current_row = None
+        self.current_cell = None
+        self.current_cell_tag = None
+        self.cell_content = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "tr":
+            self.current_row = {"th_cells": [], "td_cells": [], "html": ""}
+        elif tag in ("th", "td") and self.current_row is not None:
+            self.current_cell_tag = tag
+            self.cell_content = []
+
+    def handle_endtag(self, tag):
+        if tag == "tr" and self.current_row is not None:
+            self.rows.append(self.current_row)
+            self.current_row = None
+        elif tag in ("th", "td") and self.current_row is not None:
+            cell_text = "".join(self.cell_content).strip()
+            if tag == "th":
+                self.current_row["th_cells"].append(cell_text)
+            else:
+                self.current_row["td_cells"].append(cell_text)
+            self.current_cell_tag = None
+            self.cell_content = []
+
+    def handle_data(self, data):
+        if self.current_cell_tag is not None:
+            self.cell_content.append(data)
+
+
 class HTMLTableSerializer(BaseTableSerializer):
     """HTML-specific table item serializer."""
 
@@ -385,6 +422,98 @@ class HTMLTableSerializer(BaseTableSerializer):
         text_res = f"<table>{text_res}</table>" if text_res else ""
 
         return create_ser_result(text=text_res, span_source=res_parts)
+
+    @override
+    def get_header_and_body_lines(
+        self,
+        *,
+        table_text: str,
+        **kwargs: Any,
+    ) -> tuple[list[str], list[str]]:
+        """Get header lines and body lines from the HTML table.
+
+        Returns:
+            A tuple of (header_lines, body_lines) where a row is considered a header row if it contains at least one
+                non-empty <th> cell and all <td> cells are empty.
+        """
+        # Find the position of the first <tr> and last </tr>
+        first_tr_pos = table_text.find("<tr")
+        last_tr_end_pos = table_text.rfind("</tr>")
+
+        if first_tr_pos == -1 or last_tr_end_pos == -1:
+            _logger.warning("No table rows found in the provided content")
+            return [], []
+
+        # Adjust last_tr_end_pos to include the closing tag
+        last_tr_end_pos += len("</tr>")
+
+        # Split the content
+        header_content = table_text[:first_tr_pos].strip()
+        rows_content = table_text[first_tr_pos:last_tr_end_pos]
+        footer_content = table_text[last_tr_end_pos:].strip()
+
+        headings_list = []
+        if header_content:
+            headings_list.append(header_content)
+        data_list = []
+
+        # Parse rows_content with built-in HTML parser
+        try:
+            parser = _SimpleHTMLTableParser()
+            parser.feed(rows_content)
+
+            for i, row_data in enumerate(parser.rows):
+                # Check for non-empty <th> tags (header cells)
+                has_nonempty_th = any(row_data["th_cells"])
+
+                # Check for non-empty <td> tags (data cells)
+                all_td_empty = all(not cell for cell in row_data["td_cells"])
+
+                # Extract the original row HTML from rows_content
+                # Find the i-th <tr> tag
+                row_start = rows_content.find("<tr", 0)
+                for _ in range(i):
+                    row_start = rows_content.find("<tr", row_start + 1)
+                    if row_start == -1:
+                        break
+
+                if row_start != -1:
+                    row_end = rows_content.find("</tr>", row_start)
+                    if row_end != -1:
+                        row_str = rows_content[row_start : row_end + 5]  # +5 for "</tr>"
+                    else:
+                        row_str = ""
+                else:
+                    row_str = ""
+
+                if row_data["th_cells"] and has_nonempty_th and all_td_empty:
+                    # This is a heading row
+                    if row_str:
+                        headings_list.append(row_str)
+                else:
+                    # Collect remaining rows as data
+                    remaining_start = row_start if row_start != -1 else 0
+                    remaining_rows = []
+                    temp_start = remaining_start
+                    while True:
+                        tr_pos = rows_content.find("<tr", temp_start)
+                        if tr_pos == -1:
+                            break
+                        tr_end = rows_content.find("</tr>", tr_pos)
+                        if tr_end == -1:
+                            break
+                        remaining_rows.append(rows_content[tr_pos : tr_end + 5])
+                        temp_start = tr_end + 5
+                    data_list = remaining_rows
+                    break  # Stop looking for headers once we hit data rows
+        except Exception:
+            data_list = [r + "</tr>" for r in rows_content.split("</tr>") if r.strip()]
+            _logger.warning("Could not parse html table")
+
+        if footer_content:
+            data_list.append(footer_content)
+
+        return headings_list, data_list
 
 
 class HTMLPictureSerializer(BasePictureSerializer):
