@@ -883,7 +883,13 @@
       },
       "children": [],
       "content_layer": "body",
-      "meta": null,
+      "meta": {
+        "summary": {
+          "confidence": null,
+          "created_by": null,
+          "text": "Docling is a lightweight, MIT‑licensed open‑source package that converts PDF documents into structured formats. It leverages state‑of‑the‑art AI models—DocLayNet for layout analysis and TableFormer for table structure recognition—to achieve high accuracy while running efficiently on commodity hardware with minimal resources. The modular code interface makes it straightforward to extend the tool or integrate new models and features."
+        }
+      },
       "label": "section_header",
       "prov": [
         {

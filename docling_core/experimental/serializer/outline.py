@@ -67,11 +67,33 @@ def _default_summary(summary: str) -> str:
     return f"(summary={summary})"
 
 
+def _serialize_text_item(item: TextItem, doc: DoclingDocument, **kwargs: Any) -> str:
+    """Serialize a text item using Markdown serializers.
+
+    Args:
+        item: The text item (e.g., title or section header item) to serialize
+        doc: The document containing the item
+        **kwargs: Additional serialization parameters
+
+    Returns:
+        The serialized title text, stripped of leading/trailing whitespace
+    """
+    md_serializer = MarkdownDocSerializer(doc=doc)
+    text_serializer = MarkdownTextSerializer()
+    result = text_serializer.serialize(item=item, doc_serializer=md_serializer, doc=doc, **kwargs)
+    return result.text.strip()
+
+
 def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     if isinstance(item, ListItem):
         return ""
 
     params = OutlineParams(**kwargs)
+
+    # Extract title text once if needed
+    title_text: str | None = None
+    if params.include_non_meta and isinstance(item, TitleItem | SectionHeaderItem):
+        title_text = _serialize_text_item(item, doc, **kwargs)
 
     # For JSON format, return a JSON string representation
     if params.format == OutlineFormat.JSON:
@@ -79,12 +101,9 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
             "ref": item.self_ref,
         }
 
-        # Add title if include_non_meta is True
-        if params.include_non_meta and isinstance(item, TitleItem | SectionHeaderItem):
-            _md_serializer = MarkdownDocSerializer(doc=doc)
-            _serializer = MarkdownTextSerializer()
-            res = _serializer.serialize(item=item, doc_serializer=_md_serializer, doc=doc, **kwargs)
-            data["title"] = res.text.strip()
+        # Add title if available
+        if title_text is not None:
+            data["title"] = title_text
 
         # Always include summary if available
         if item.meta and item.meta.summary:
@@ -97,28 +116,19 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
 
     # Only include prepend (actual text content) if include_non_meta is True
     if params.include_non_meta:
-        prepend = _default_prepend(item)
-        if isinstance(item, TitleItem | SectionHeaderItem):
-            # MarkdownDocSerializer requires a doc instance; pass through current doc
-            _md_serializer = MarkdownDocSerializer(doc=doc)
-            _serializer = MarkdownTextSerializer()
-
-            res = _serializer.serialize(item=item, doc_serializer=_md_serializer, doc=doc, **kwargs)
-            prepend = res.text
-        text_parts.append(prepend)
+        if title_text is not None:
+            text_parts.append(title_text)
+        else:
+            text_parts.append(_default_prepend(item))
 
     # Always include reference (structure)
-    reference = _default_outline_node(item)
-    text_parts.append(reference)
+    text_parts.append(_default_outline_node(item))
 
     # Always include summary (metadata) if available
     if item.meta and item.meta.summary:
-        summary = _default_summary(item.meta.summary.text)
-        text_parts.append(summary)
+        text_parts.append(_default_summary(item.meta.summary.text))
 
-    text = " ".join(text_parts)
-
-    return text.strip()
+    return " ".join(text_parts).strip()
 
 
 class OutlineMode(str, Enum):
