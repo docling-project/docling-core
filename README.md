@@ -72,6 +72,17 @@ different use cases.
 - [Hybrid chunking example](https://docling-project.github.io/docling/examples/hybrid_chunking/)
 - [Advanced chunking and serialization](https://docling-project.github.io/docling/examples/advanced_chunking_and_serialization/)
 
+### Profiling
+
+The Profiling API enables extraction of comprehensive statistics from DoclingDocument objects,
+both for individual documents and collections. It provides metrics on document structure
+(pages, tables, pictures, text items) along with statistical distributions (deciles, histograms)
+and visualization capabilities for analyzing document collections at scale.
+
+👉 More details:
+- [Document profiling example](./examples/document_profiling.py)
+- [Collection statistics visualization](./examples/visualize_collection_stats.py)
+
 ## Contributing
 
 Please read [Contributing to Docling Core](./CONTRIBUTING.md) for details.
