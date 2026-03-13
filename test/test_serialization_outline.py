@@ -164,8 +164,9 @@ def test_outline_serializer_json_format():
     # Check first item structure
     first_item = data[0]
     assert isinstance(first_item, dict)
-    assert first_item.keys() == {"ref", "title", "summary"}
+    assert first_item.keys() == {"ref", "title", "summary", "level"}
     assert first_item["ref"].startswith("#/texts/")
+    assert isinstance(first_item["level"], int)
 
     # When include_non_meta=True, titles should be present
     # (at least for some items that have text)
@@ -188,8 +189,9 @@ def test_outline_serializer_json_format():
     result = ser.serialize()
     data = json.loads(result.text)
     first_item = data[0]
-    assert first_item.keys() == {"ref", "title", "summary", "mellea__original_char_count"}
+    assert first_item.keys() == {"ref", "title", "summary", "level", "mellea__original_char_count"}
     assert first_item["mellea__original_char_count"] == 809
+    assert isinstance(first_item["level"], int)
 
 
 def test_outline_serializer_json_format_without_non_meta():
@@ -223,3 +225,92 @@ def test_outline_serializer_json_format_without_non_meta():
         if "summary" in item:
             assert isinstance(item["summary"], str)
 
+
+
+
+def test_outline_serializer_itxt_format():
+    """Test ITXT format output for TABLE_OF_CONTENTS mode."""
+    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    exp_path = doc_path.with_suffix(".mtoc.gt.itxt")
+
+    doc = DoclingDocument.load_from_json(filename=doc_path)
+
+    # Test with include_non_meta=True (includes titles)
+    params = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.ITXT
+    )
+    ser = OutlineDocSerializer(doc=doc, params=params)
+    result = ser.serialize()
+
+    assert isinstance(result.text, str)
+    assert len(result.text) > 0
+
+    # Verify structure - should be indented text lines
+    lines = result.text.split("\n")
+    assert len(lines) > 0
+
+    # Check first line structure (level 1, no indentation)
+    first_line = lines[0]
+    assert first_line.startswith("[ref=")
+    assert "[" in first_line and "]" in first_line
+
+    # Verify against ground truth file
+    with open(exp_path) as f:
+        expected = f.read()
+    assert result.text == expected, "Serialized ITXT should match expected output"
+
+    # Hierarchical document with extra fields
+    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    exp_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.toc.gt.itxt")
+
+    doc = DoclingDocument.load_from_json(filename=doc_path)
+    ser = OutlineDocSerializer(doc=doc, params=params)
+    result = ser.serialize()
+
+    lines = result.text.split("\n")
+    assert len(lines) > 0
+
+    # Check that we have indented lines (level 2+)
+    has_indented = any(line.startswith("   ") for line in lines)
+    assert has_indented, "Should have indented lines for hierarchical structure"
+
+    # Verify against ground truth file
+    with open(exp_path) as f:
+        expected = f.read()
+    assert result.text == expected, "Hierarchical ITXT should match expected output"
+
+
+def test_outline_serializer_itxt_format_without_non_meta():
+    """Test ITXT format output without non-meta content."""
+    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+
+    doc = DoclingDocument.load_from_json(filename=doc_path)
+
+    # Test with include_non_meta=False (no titles, only refs and summaries)
+    params = OutlineParams(
+        include_non_meta=False,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.ITXT
+    )
+    ser = OutlineDocSerializer(doc=doc, params=params)
+    result = ser.serialize()
+
+    assert isinstance(result.text, str)
+    assert len(result.text) > 0
+
+    # Verify structure - should be indented text lines
+    lines = result.text.split("\n")
+    assert len(lines) > 0
+
+    # Check that no titles are present when include_non_meta=False
+    # (titles appear in brackets like [Title Text])
+    for line in lines:
+        if line.strip():  # Skip empty lines
+            assert "[ref=" in line, "Each line should have a ref"
+            # Count brackets - should have ref brackets but no title brackets when include_non_meta=False
+            # Format without title: [ref=...] summary
+            # Format with title: [ref=...] [Title] summary
+            bracket_count = line.count("[")
+            assert bracket_count == 1, f"Should only have ref bracket when include_non_meta=False, got {bracket_count} in: {line}"
