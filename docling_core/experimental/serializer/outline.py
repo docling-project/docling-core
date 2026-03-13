@@ -31,6 +31,7 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownParams,
     MarkdownTextSerializer,
 )
+from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import (
     BaseMeta,
     DocItem,
@@ -50,6 +51,20 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
+from docling_core.types.doc.document import _ExtraAllowingModel
+
+
+class OutlineItemData(_ExtraAllowingModel):
+    """Data model for outline item JSON representation.
+
+    Allows extra fields for custom metadata from SummaryMetaField.
+    """
+
+    ref: Annotated[
+        str, Field(pattern=_JSON_POINTER_REGEX, description="JSON pointer reference to the item in the document")
+    ]
+    title: Annotated[str | None, Field(description="Title or heading text of the item")] = None
+    summary: Annotated[str | None, Field(description="Summary text of the item")] = None
 
 
 def _default_prepend(item: NodeItem) -> str:
@@ -97,23 +112,18 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
 
     # For JSON format, return a JSON string representation
     if params.format == OutlineFormat.JSON:
-        data: dict[str, Any] = {
+        data_dict: dict[str, Any] = {
             "ref": item.self_ref,
+            "title": title_text,
+            "summary": item.meta.summary.text if item.meta and item.meta.summary else None,
         }
+        if item.meta and item.meta.summary:
+            extra_dict: dict[str, Any] = item.meta.summary.get_custom_part()
+            if extra_dict:
+                data_dict.update(extra_dict)
+        outline_data = OutlineItemData(**data_dict)
 
-        # Add title/heading if available
-        if title_text is not None:
-            data["title"] = title_text
-
-        # Include summary and extra fields if available
-        if item.meta:
-            if item.meta.summary:
-                data["summary"] = item.meta.summary.text
-                extra_dict: dict[str, Any] = item.meta.summary.get_custom_part()
-                if extra_dict:
-                    data = data | extra_dict
-
-        return json.dumps(data, ensure_ascii=False)
+        return json.dumps(outline_data.model_dump(exclude_none=True), ensure_ascii=False)
 
     # For Markdown format, build text parts with newlines
     text_parts = []
