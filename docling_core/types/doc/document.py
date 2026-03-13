@@ -6033,16 +6033,6 @@ class DoclingDocument(BaseModel):
 
         return ser_res.text
 
-    def export_to_doclang(self) -> str:
-        """Export to Doclang."""
-        from docling_core.experimental.doclang import DoclangDocSerializer, DoclangParams
-
-        serializer = DoclangDocSerializer(
-            doc=self,
-            params=DoclangParams(),
-        )
-        return serializer.serialize().text
-
     @staticmethod
     def load_from_doctags(  # noqa: C901
         doctag_document: DocTagsDocument, document_name: str = "Document"
@@ -6700,6 +6690,27 @@ class DoclingDocument(BaseModel):
         )
         ser_res = serializer.serialize()
         return ser_res.text
+
+    def export_to_doclang(
+        self,
+    ) -> str:
+        """Export to Doclang."""
+        from docling_core.experimental.doclang import DoclangDocSerializer, DoclangParams
+
+        serializer = DoclangDocSerializer(
+            doc=self,
+            params=DoclangParams(),
+        )
+        return serializer.serialize().text
+
+    def save_as_doclang(
+        self,
+        filename: Union[str, Path],
+    ) -> None:
+        """Save the document as Doclang."""
+        out = self.export_to_doclang()
+        with open(filename, "w", encoding="utf-8") as fw:
+            fw.write(f"{out}\n")
 
     def _export_to_indented_text(
         self,
