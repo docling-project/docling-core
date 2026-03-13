@@ -1,0 +1,647 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.9.0",
+  "name": "",
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/field_regions/0"
+      },
+      {
+        "$ref": "#/texts/27"
+      },
+      {
+        "$ref": "#/texts/28"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [
+    {
+      "self_ref": "#/groups/0",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/1"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/1",
+      "parent": {
+        "$ref": "#/texts/9"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/10"
+        },
+        {
+          "$ref": "#/texts/11"
+        },
+        {
+          "$ref": "#/texts/12"
+        },
+        {
+          "$ref": "#/texts/13"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/2",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/15"
+        },
+        {
+          "$ref": "#/texts/16"
+        },
+        {
+          "$ref": "#/texts/17"
+        },
+        {
+          "$ref": "#/texts/18"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/3",
+      "parent": {
+        "$ref": "#/texts/20"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/21"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/4",
+      "parent": {
+        "$ref": "#/texts/22"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/23"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/5",
+      "parent": {
+        "$ref": "#/texts/24"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/25"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    }
+  ],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_heading",
+      "prov": [],
+      "orig": "KV heading",
+      "text": "KV heading",
+      "level": 1
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "simple key",
+      "text": "simple key"
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "simple value",
+      "text": "simple value",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/3",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_heading",
+      "prov": [],
+      "orig": "KV sub-heading",
+      "text": "KV sub-heading",
+      "level": 2
+    },
+    {
+      "self_ref": "#/texts/4",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "my inline key1: ",
+      "text": "my inline key1: "
+    },
+    {
+      "self_ref": "#/texts/5",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "my inline value1",
+      "text": "my inline value1",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/6",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "name",
+      "text": "name"
+    },
+    {
+      "self_ref": "#/texts/7",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "John Doe",
+      "text": "John Doe",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/8",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "Max Mustermann",
+      "text": "Max Mustermann",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/9",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/10",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/11",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "Clark ",
+      "text": "Clark "
+    },
+    {
+      "self_ref": "#/texts/12",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "Kent",
+      "text": "Kent",
+      "formatting": {
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "strikethrough": false,
+        "script": "baseline"
+      }
+    },
+    {
+      "self_ref": "#/texts/13",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_hint",
+      "prov": [],
+      "orig": "Select this if you are a Superman fan",
+      "text": "Select this if you are a Superman fan"
+    },
+    {
+      "self_ref": "#/texts/14",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/15",
+      "parent": {
+        "$ref": "#/groups/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "My first input ",
+      "text": "My first input "
+    },
+    {
+      "self_ref": "#/texts/16",
+      "parent": {
+        "$ref": "#/groups/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/17",
+      "parent": {
+        "$ref": "#/groups/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": " and my second input ",
+      "text": " and my second input "
+    },
+    {
+      "self_ref": "#/texts/18",
+      "parent": {
+        "$ref": "#/groups/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "m",
+      "text": "m",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/19",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "I am in the country as a: ",
+      "text": "I am in the country as a: "
+    },
+    {
+      "self_ref": "#/texts/20",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/3"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/21",
+      "parent": {
+        "$ref": "#/groups/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "Visitor",
+      "text": "Visitor"
+    },
+    {
+      "self_ref": "#/texts/22",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/4"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/23",
+      "parent": {
+        "$ref": "#/groups/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": " Student",
+      "text": " Student"
+    },
+    {
+      "self_ref": "#/texts/24",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/5"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/25",
+      "parent": {
+        "$ref": "#/groups/5"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "Other (Specify)",
+      "text": "Other (Specify)"
+    },
+    {
+      "self_ref": "#/texts/26",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/27",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "Some final stuff.",
+      "text": "Some final stuff."
+    },
+    {
+      "self_ref": "#/texts/28",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "The end.",
+      "text": "The end."
+    }
+  ],
+  "pictures": [],
+  "tables": [],
+  "key_value_items": [],
+  "form_items": [],
+  "field_regions": [
+    {
+      "self_ref": "#/field_regions/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/0"
+        },
+        {
+          "$ref": "#/field_items/0"
+        },
+        {
+          "$ref": "#/texts/3"
+        },
+        {
+          "$ref": "#/groups/0"
+        },
+        {
+          "$ref": "#/field_items/2"
+        },
+        {
+          "$ref": "#/field_items/3"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    }
+  ],
+  "field_items": [
+    {
+      "self_ref": "#/field_items/0",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/1"
+        },
+        {
+          "$ref": "#/texts/2"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/1",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/4"
+        },
+        {
+          "$ref": "#/texts/5"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/2",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/6"
+        },
+        {
+          "$ref": "#/texts/7"
+        },
+        {
+          "$ref": "#/texts/8"
+        },
+        {
+          "$ref": "#/texts/9"
+        },
+        {
+          "$ref": "#/texts/14"
+        },
+        {
+          "$ref": "#/groups/2"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/3",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/19"
+        },
+        {
+          "$ref": "#/texts/20"
+        },
+        {
+          "$ref": "#/texts/22"
+        },
+        {
+          "$ref": "#/texts/24"
+        },
+        {
+          "$ref": "#/texts/26"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    }
+  ],
+  "pages": {}
+}

@@ -12,6 +12,7 @@ import sys
 import typing
 import warnings
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
@@ -70,7 +71,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
-CURRENT_VERSION: Final = "1.9.0"
+CURRENT_VERSION: Final = "1.10.0"
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -90,6 +91,11 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.PAGE_FOOTER,
     DocItemLabel.KEY_VALUE_REGION,
     DocItemLabel.EMPTY_VALUE,
+    DocItemLabel.FIELD_KEY,
+    DocItemLabel.FIELD_VALUE,
+    DocItemLabel.FIELD_HEADING,
+    DocItemLabel.FIELD_HINT,
+    DocItemLabel.MARKER,
 }
 
 DOCUMENT_TOKENS_EXPORT_LABELS = DEFAULT_EXPORT_LABELS.copy()
@@ -1683,6 +1689,9 @@ class TextItem(DocItem):
         DocItemLabel.REFERENCE,
         DocItemLabel.TEXT,
         DocItemLabel.EMPTY_VALUE,
+        DocItemLabel.FIELD_KEY,
+        DocItemLabel.FIELD_HINT,
+        DocItemLabel.MARKER,
     ]
 
     orig: str  # untreated representation
@@ -2542,6 +2551,24 @@ class FormItem(FloatingItem):
     graph: GraphData
 
 
+class FieldRegionItem(DocItem):
+    label: typing.Literal[DocItemLabel.FIELD_REGION] = DocItemLabel.FIELD_REGION
+
+
+class FieldHeadingItem(TextItem):
+    label: typing.Literal[DocItemLabel.FIELD_HEADING] = DocItemLabel.FIELD_HEADING  # type: ignore[assignment]
+    level: LevelNumber = 1
+
+
+class FieldItem(DocItem):
+    label: typing.Literal[DocItemLabel.FIELD_ITEM] = DocItemLabel.FIELD_ITEM
+
+
+class FieldValueItem(TextItem):
+    label: typing.Literal[DocItemLabel.FIELD_VALUE] = DocItemLabel.FIELD_VALUE  # type: ignore[assignment]
+    kind: typing.Literal["read_only", "fillable"] = "read_only"
+
+
 ContentItem = Annotated[
     Union[
         TextItem,
@@ -2553,6 +2580,8 @@ ContentItem = Annotated[
         PictureItem,
         TableItem,
         KeyValueItem,
+        FieldRegionItem,
+        FieldItem,
     ],
     Field(discriminator="label"),
 ]
@@ -2589,13 +2618,37 @@ class DoclingDocument(BaseModel):
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
     groups: list[Union[ListGroup, InlineGroup, GroupItem]] = []
-    texts: list[Union[TitleItem, SectionHeaderItem, ListItem, CodeItem, FormulaItem, TextItem]] = []
+    texts: list[
+        Union[
+            TitleItem,
+            SectionHeaderItem,
+            ListItem,
+            CodeItem,
+            FormulaItem,
+            FieldHeadingItem,
+            FieldValueItem,
+            TextItem,
+        ]
+    ] = []
     pictures: list[PictureItem] = []
     tables: list[TableItem] = []
     key_value_items: list[KeyValueItem] = []
     form_items: list[FormItem] = []
+    field_regions: list[FieldRegionItem] = []
+    field_items: list[FieldItem] = []
 
     pages: dict[int, PageItem] = {}  # empty as default
+
+    @model_serializer(mode="wrap")
+    def _custom_pydantic_serialize(self, handler: SerializerFunctionWrapHandler) -> dict:
+        dumped = handler(self)
+
+        # suppress serializing certain fields when empty:
+        for field in {"field_regions", "field_items"}:
+            if dumped.get(field) == []:
+                del dumped[field]
+
+        return dumped
 
     @model_validator(mode="before")
     @classmethod
@@ -2612,6 +2665,378 @@ class DoclingDocument(BaseModel):
                 ]:
                     item["content_layer"] = "furniture"
         return data
+
+    def _migrate_to_field_regions(self) -> None:
+        has_single_kv_item = len(self.key_value_items) == 1
+        last_item_is_kv_item = False
+        found_last_kv_item = False
+        if has_single_kv_item:
+            for item, _ in self.iterate_items(
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers=set(ContentLayer),
+            ):
+                if found_last_kv_item:
+                    last_item_is_kv_item = False
+                    break
+                elif item == self.key_value_items[0]:
+                    found_last_kv_item = True
+                    last_item_is_kv_item = True
+
+        is_annot_case = has_single_kv_item and last_item_is_kv_item
+        if is_annot_case:
+            self._migrate_annot_forms_to_field_regions(self.key_value_items[0])
+            self._post_migration_cleanup()
+        else:
+            to_delete: list[NodeItem] = []
+
+            for item, _ in self.iterate_items():
+                if isinstance(item, FormItem | KeyValueItem):
+                    to_delete.append(item)
+
+                    visited: set[str] = set()
+                    outgoing_links: dict[int, list[int]] = {}
+
+                    kvm = FieldRegionItem(
+                        self_ref="#",
+                        prov=item.prov,
+                        content_layer=item.content_layer,
+                        meta=item.meta,
+                        comments=item.comments,
+                        source=item.source,
+                    )
+                    self.insert_item_after_sibling(new_item=kvm, sibling=item)
+
+                    for link in item.graph.links:
+                        if link.label == GraphLinkLabel.TO_VALUE:
+                            key_cell = item.graph.cells[link.source_cell_id]
+                            value_cell = item.graph.cells[link.target_cell_id]
+                        elif link.label == GraphLinkLabel.TO_KEY:
+                            value_cell = item.graph.cells[link.source_cell_id]
+                            key_cell = item.graph.cells[link.target_cell_id]
+
+                        # check if we have already seen this key-value pair
+                        if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
+                            visited.add(key_val_id)
+                            outgoing_links.setdefault(key_cell.cell_id, []).append(value_cell.cell_id)
+
+                    for key_cell_id, value_cell_ids in outgoing_links.items():
+                        kve = self.add_field_item(parent=kvm)
+                        key_cell = item.graph.cells[key_cell_id]
+                        self.add_field_key(
+                            text=key_cell.text,
+                            parent=kve,
+                            prov=key_cell.prov,
+                        )
+                        for value_cell_id in value_cell_ids:
+                            value_cell = item.graph.cells[value_cell_id]
+                            self.add_field_value(
+                                text=value_cell.text,
+                                parent=kve,
+                                prov=value_cell.prov,
+                            )
+
+            self.delete_items(node_items=to_delete)
+
+        self._normalize_references()
+
+    class _KVMigrData(BaseModel):
+        value_crefs: list[str] = []
+        key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")
+        value_cells: list[GraphCell] = []
+
+    def _serialize_bbox(self, bbox: BoundingBox) -> str:
+        return f"{bbox.l},{bbox.t},{bbox.r},{bbox.b},{bbox.coord_origin.value}"
+
+    def _deserialize_bbox(self, bbox_str: str) -> BoundingBox:
+        l, t, r, b, coord_origin = bbox_str.split(",")
+        return BoundingBox(l=float(l), t=float(t), r=float(r), b=float(b), coord_origin=CoordOrigin(coord_origin))
+
+    def _bboxes_match(self, bbox1: BoundingBox, bbox2: BoundingBox, iou_threshold: float = 0.01) -> bool:
+        if bbox1.coord_origin != bbox2.coord_origin:
+            return False  # TODO: can normalize and compare but needs page size
+        return bbox1.intersection_over_union(other=bbox2, eps=0.0) > iou_threshold
+
+    def _build_bbox_index(self, kvi: KeyValueItem) -> dict[str, Optional[NodeItem]]:
+        visited: set[str] = set()
+        bbox_index: dict[str, NodeItem | None] = {}
+        text_index: dict[str, str | None] = {}
+        for link in kvi.graph.links:
+            if link.label not in {GraphLinkLabel.TO_VALUE, GraphLinkLabel.TO_KEY}:
+                continue
+            key_cell = (
+                kvi.graph.cells[link.source_cell_id]
+                if link.label == GraphLinkLabel.TO_VALUE
+                else kvi.graph.cells[link.target_cell_id]
+            )
+            value_cell = (
+                kvi.graph.cells[link.target_cell_id]
+                if link.label == GraphLinkLabel.TO_VALUE
+                else kvi.graph.cells[link.source_cell_id]
+            )
+            # check if we have already seen this key-value pair
+            if (
+                key_cell.prov
+                and value_cell.prov
+                and (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited
+            ):
+                visited.add(key_val_id)
+
+                for item, _ in self.iterate_items(
+                    with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+                ):
+                    if isinstance(item, DocItem) and item.prov:
+                        if self._bboxes_match(item.prov[0].bbox, key_cell.prov.bbox):
+                            serialized_bbox = self._serialize_bbox(key_cell.prov.bbox)
+                            bbox_index[serialized_bbox] = item
+                            text_index[key_cell.text] = (
+                                item.self_ref + "|" + (item.text if isinstance(item, TextItem) else "")
+                            )
+                        if self._bboxes_match(item.prov[0].bbox, value_cell.prov.bbox):
+                            serialized_bbox = self._serialize_bbox(value_cell.prov.bbox)
+                            bbox_index[serialized_bbox] = item
+                            text_index[value_cell.text] = (
+                                item.self_ref + "|" + (item.text if isinstance(item, TextItem) else "")
+                            )
+        return bbox_index
+
+    def _find_node_by_bbox(self, bbox: BoundingBox, bbox_index: dict[str, NodeItem | None]) -> NodeItem | None:
+        val = bbox_index.get(self._serialize_bbox(bbox))
+        if val is not None:
+            pass
+        return val
+
+    def _build_kv_migration_index(self, kvi: KeyValueItem) -> dict[str, dict[int, "DoclingDocument._KVMigrData"]]:
+        outgoing_links: dict[str, dict[int, DoclingDocument._KVMigrData]] = {}
+        visited: set[str] = set()
+        bbox_index = self._build_bbox_index(kvi)
+
+        for link in kvi.graph.links:
+            key_cell = (
+                kvi.graph.cells[link.source_cell_id]
+                if link.label == GraphLinkLabel.TO_VALUE
+                else kvi.graph.cells[link.target_cell_id]
+            )
+            value_cell = (
+                kvi.graph.cells[link.target_cell_id]
+                if link.label == GraphLinkLabel.TO_VALUE
+                else kvi.graph.cells[link.source_cell_id]
+            )
+            # check if we have already seen this key-value pair
+            if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
+                key_item_ref = key_cell.item_ref or (
+                    node.get_ref()
+                    if key_cell.prov and (node := self._find_node_by_bbox(key_cell.prov.bbox, bbox_index))
+                    else None
+                )
+                val_item_ref = value_cell.item_ref or (
+                    node.get_ref()
+                    if value_cell.prov and (node := self._find_node_by_bbox(value_cell.prov.bbox, bbox_index))
+                    else None
+                )
+                if key_item_ref and val_item_ref:
+                    visited.add(key_val_id)
+
+                    migr_data = outgoing_links.setdefault(key_item_ref.cref, {})
+                    migr_data.setdefault(key_cell.cell_id, DoclingDocument._KVMigrData())
+                    migr_data[key_cell.cell_id].value_crefs.append(val_item_ref.cref)
+                    migr_data[key_cell.cell_id].key_cell = key_cell
+                    migr_data[key_cell.cell_id].value_cells.append(value_cell)
+
+        return outgoing_links
+
+    def _eq_prov(self, prov1: ProvenanceItem, prov2: ProvenanceItem) -> bool:
+        """Compare provenances while tolerating charspan discrepancies."""
+        return prov1.bbox == prov2.bbox and prov1.page_no == prov2.page_no
+
+    def _migrate_annot_forms_to_field_regions(self, kvi: KeyValueItem) -> None:
+        to_delete: list[NodeItem] = [kvi]
+        outgoing_links = self._build_kv_migration_index(kvi)
+
+        for key_cref, key_cell_dict in outgoing_links.items():
+            existing_key_item = RefItem(cref=key_cref).resolve(doc=self)
+            fri = FieldRegionItem(self_ref="#")
+
+            if ex_key_item_is_li := isinstance(existing_key_item, ListItem):
+                self.append_child_item(child=fri, parent=existing_key_item)
+            else:
+                self._shift_down(old_subroot=existing_key_item, new_subroot=fri)
+
+            for _, migr_data_item in key_cell_dict.items():
+                reuse_existing_key_item = False
+
+                cell_and_ex_key_item_bbox_equal = (
+                    migr_data_item.key_cell.prov
+                    and isinstance(existing_key_item, DocItem)
+                    and existing_key_item.prov
+                    and self._eq_prov(migr_data_item.key_cell.prov, existing_key_item.prov[0])
+                )
+
+                if len(key_cell_dict) == 1 and (
+                    migr_data_item.key_cell.prov is None or cell_and_ex_key_item_bbox_equal
+                ):
+                    reuse_existing_key_item = True
+
+                key_prov = (
+                    migr_data_item.key_cell.prov
+                    if migr_data_item.key_cell.prov
+                    else (existing_key_item.prov[0] if existing_key_item.prov else None)
+                )
+
+                if reuse_existing_key_item:
+                    key_item = existing_key_item
+                else:  # case where single key_cref maps to multiple key cells
+                    if isinstance(existing_key_item, TextItem):
+                        existing_key_item.text = ""
+                    key_item = self.add_text(  # temporary item
+                        label=DocItemLabel.TEXT,
+                        text=migr_data_item.key_cell.text,
+                        parent=existing_key_item,
+                        prov=key_prov,
+                    )
+
+                fi = self.add_field_item(parent=fri)
+                if isinstance(key_item, TextItem):
+                    self.add_field_key(text=migr_data_item.key_cell.text or key_item.text, parent=fi, prov=key_prov)
+                    if isinstance(key_item, ListItem):
+                        key_item.text = ""
+                        if cell_and_ex_key_item_bbox_equal:
+                            key_item.prov = []
+                elif isinstance(key_item, PictureItem):
+                    fk = self.add_field_key(text=migr_data_item.key_cell.text, parent=fi, prov=key_prov)
+                    self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
+                else:
+                    continue  # TODO: handle other key item types
+
+                for idx, value_cref in enumerate(migr_data_item.value_crefs):
+                    value_item: NodeItem = RefItem(cref=value_cref).resolve(doc=self)
+                    # giving priority to the provenance from the graph cells
+                    value_prov = migr_data_item.value_cells[idx].prov or (
+                        value_item.prov[0] if isinstance(value_item, DocItem) and value_item.prov else None
+                    )
+                    if isinstance(value_item, TextItem):
+                        # giving priority to the text from the graph cells
+                        value_text = migr_data_item.value_cells[idx].text or value_item.text
+                        if value_item.label in {DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED}:
+                            fv = self.add_field_value(text="", parent=fi)
+                            new_text_item = value_item.model_copy(deep=True)
+                            new_text_item.prov = [value_prov] if value_prov else []
+                            new_text_item.text = value_text
+                            self.append_child_item(child=new_text_item, parent=fv)
+                        else:
+                            fv = self.add_field_value(text=value_text, parent=fi, prov=value_prov)
+                            if value_item.label == DocItemLabel.EMPTY_VALUE:
+                                fv.kind = "fillable"
+                    elif isinstance(value_item, PictureItem):
+                        fv = self.add_field_value(text=migr_data_item.value_cells[idx].text, parent=fi, prov=value_prov)
+                        self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
+                    else:
+                        continue  # TODO: handle other value item types
+                    if value_item not in to_delete and not isinstance(value_item, ListItem):
+                        to_delete.append(value_item)
+                if key_item not in to_delete and not isinstance(key_item, ListItem):
+                    to_delete.append(key_item)
+
+                if existing_key_item.prov and not cell_and_ex_key_item_bbox_equal and not ex_key_item_is_li:
+                    fi.prov = existing_key_item.prov
+
+        self.delete_items(node_items=to_delete)
+
+    def _has_field_region_ancestor(self, item: NodeItem) -> bool:
+        while item.parent is not None:
+            item = item.parent.resolve(doc=self)
+            if isinstance(item, FieldRegionItem):
+                return True
+        return False
+
+    def _post_migration_cleanup(self) -> None:
+        # replace kv-associated form items with field region items
+        to_shift_up: list[NodeItem] = []
+        to_replace_with_fri: list[FormItem] = []
+        for fri in self.field_regions:
+            form_ancestor: FormItem | None = None
+            curr: NodeItem = fri
+            while True:
+                if isinstance(curr, FormItem):
+                    form_ancestor = curr
+                    break
+                elif curr.parent is None:
+                    break
+                curr = curr.parent.resolve(doc=self)
+            if form_ancestor is not None:
+                to_shift_up.append(fri)
+                if form_ancestor not in to_replace_with_fri:
+                    to_replace_with_fri.append(form_ancestor)
+        for form_item in to_replace_with_fri:
+            self._shift_down(
+                old_subroot=form_item,
+                new_subroot=FieldRegionItem(
+                    self_ref="#",
+                    prov=form_item.prov,
+                    content_layer=form_item.content_layer,
+                    meta=form_item.meta,
+                    comments=form_item.comments,
+                    source=form_item.source,
+                ),
+            )
+            self._shift_up(old_subroot=form_item)
+        for node in to_shift_up:
+            self._shift_up(old_subroot=node)
+
+        # handle any remaining (just value-associated) form items:
+        value_groups: list[tuple[NodeItem, list[TextItem]]] = []  # tracking consecutive non-migrated values
+        for outer, _ in self.iterate_items(
+            with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+        ):
+            if isinstance(outer, DocItem | GroupItem) and outer.label in {GroupLabel.FORM_AREA, DocItemLabel.FORM}:
+                prev_is_value = False
+                prev_level = -1
+                for inner, level in self.iterate_items(
+                    root=outer, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+                ):
+                    if (
+                        isinstance(inner, TextItem)
+                        and inner.label
+                        in [DocItemLabel.EMPTY_VALUE, DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED]
+                        and not (inner.parent and isinstance(inner.parent.resolve(doc=self), FieldValueItem))
+                    ):
+                        if prev_is_value and level == prev_level:
+                            a, b = value_groups[-1]
+                            value_groups[-1] = a, b + [inner]
+                        else:
+                            value_groups.append((outer, [inner]))
+                        prev_is_value = True
+                    else:
+                        prev_is_value = False
+                    prev_level = level
+
+        already_shifted: list[NodeItem] = []
+        for outer, vg in value_groups:
+            if outer not in already_shifted:
+                already_shifted.append(outer)
+                if not self._has_field_region_ancestor(item=outer):
+                    fri = FieldRegionItem(self_ref="#")
+                    if isinstance(outer, DocItem):
+                        fri.prov = outer.prov
+                    self._shift_down(old_subroot=outer, new_subroot=fri)
+                self._shift_up(old_subroot=outer)
+
+            fi = FieldItem(self_ref="#")
+            self.insert_item_before_sibling(new_item=fi, sibling=vg[0])
+            for value_item in vg:
+                fv = FieldValueItem(self_ref="#", orig="", text="")
+                self._shift_down(old_subroot=value_item, new_subroot=fv)
+                self._move_subtree(old_subroot=fv, new_subroot=fi)
+
+        # handle any remaining form areas:
+        to_shift_up = []
+        for outer, _ in self.iterate_items(
+            with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+        ):
+            if isinstance(outer, GroupItem) and outer.label == GroupLabel.FORM_AREA:
+                to_shift_up.append(outer)
+        for node in to_shift_up:
+            self._shift_up(old_subroot=node)
 
     # ---------------------------
     # Public Manipulation methods
@@ -2759,6 +3184,28 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.form_items.append(item)
+
+        elif isinstance(item, FieldRegionItem):
+            item_label = "field_regions"
+            item_index = len(self.field_regions)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.field_regions.append(item)
+
+        elif isinstance(item, FieldItem):
+            item_label = "field_items"
+            item_index = len(self.field_items)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.field_items.append(item)
 
         elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
@@ -2979,6 +3426,62 @@ class DoclingDocument(BaseModel):
             node = child_ref.resolve(self)
             self._update_breadth_first_with_lookup(node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup)
 
+    def _shift_up(self, *, old_subroot: NodeItem) -> None:
+        """Move a subtree up in the document tree, removing the old subroot.
+
+        :param old_subroot: The root of the subtree to move up (NodeItem should be part of the document tree)
+        :return: None
+        """
+        if old_subroot.parent is None:
+            raise ValueError("Can not shift up the root")
+
+        # use old subroot's parent as new subroot
+        new_subroot: NodeItem = old_subroot.parent.resolve(doc=self)
+
+        old_subr_idx = new_subroot.children.index(old_subroot.get_ref())
+        for i, child_ref in enumerate(old_subroot.children):
+            # link new subroot => children (right after the old subroot)
+            new_subroot.children.insert(old_subr_idx + i + 1, child_ref)
+
+            # link children => new subroot
+            child: NodeItem = child_ref.resolve(doc=self)
+            child.parent = new_subroot.get_ref()
+
+        # unlink old subroot its parent
+        new_subroot.children.remove(old_subroot.get_ref())
+
+    def _shift_down(self, *, old_subroot: NodeItem, new_subroot: NodeItem) -> None:
+        """Move a subtree down in the document tree, introducing a new subroot.
+
+        :param old_subroot: The subtree to move down (NodeItem must be part of the document tree)
+        :param new_subroot: The new subroot to introduce (NodeItem must not be part of the document tree)
+        :return: None
+        """
+        if old_subroot.parent is None:
+            raise ValueError("Can not shift down the root")
+
+        self.insert_item_before_sibling(new_item=new_subroot, sibling=old_subroot)
+
+        self._move_subtree(old_subroot=old_subroot, new_subroot=new_subroot)
+
+    def _move_subtree(self, *, old_subroot: NodeItem, new_subroot: NodeItem, pos: int | None = None) -> None:
+        """Move a subtree to a new parent."""
+        if old_subroot.parent is None:
+            raise ValueError("Can not move the root")
+
+        # link new subroot => old subroot
+        if pos is not None:
+            new_subroot.children.insert(pos, old_subroot.get_ref())
+        else:
+            new_subroot.children.append(old_subroot.get_ref())
+
+        # unlink old subroot from its previous parent
+        previous_parent: NodeItem = old_subroot.parent.resolve(doc=self)
+        previous_parent.children.remove(old_subroot.get_ref())
+
+        # link old subroot => new subroot
+        old_subroot.parent = new_subroot.get_ref()
+
     ###################################
     # TODO: refactor add* methods below
     ###################################
@@ -3160,6 +3663,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         *,
         source: Optional[SourceType] = None,
+        **kwargs: Any,
     ):
         """add_text.
 
@@ -3198,12 +3702,12 @@ class DoclingDocument(BaseModel):
             return self.add_heading(
                 text=text,
                 orig=orig,
-                # NOTE: we do not / cannot pass the level here, lossy path..
                 prov=prov,
                 parent=parent,
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                **kwargs,
             )
 
         elif label in [DocItemLabel.CODE]:
@@ -3225,6 +3729,28 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+            )
+        elif label in [DocItemLabel.FIELD_HEADING]:
+            return self.add_field_heading(
+                text=text,
+                orig=orig,
+                prov=prov,
+                parent=parent,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                **kwargs,
+            )
+        elif label in [DocItemLabel.FIELD_VALUE]:
+            return self.add_field_value(
+                text=text,
+                orig=orig,
+                prov=prov,
+                parent=parent,
+                content_layer=content_layer,
+                formatting=formatting,
+                hyperlink=hyperlink,
+                **kwargs,
             )
 
         else:
@@ -3626,6 +4152,254 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return form_item
+
+    def add_field_region(
+        self,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+    ) -> FieldRegionItem:
+        """add_field_region.
+
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        key_value_index = len(self.field_regions)
+        cref = f"#/field_regions/{key_value_index}"
+
+        kv_item = FieldRegionItem(
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if prov:
+            kv_item.prov.append(prov)
+
+        self.field_regions.append(kv_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return kv_item
+
+    def add_field_heading(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        level: LevelNumber = 1,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        """add_kv_heading.
+
+        :param label: DocItemLabel:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param level: LevelNumber:  (Default value = 1)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        item = FieldHeadingItem(
+            level=level,
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.texts.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
+
+    def add_field_item(
+        self,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+    ) -> FieldItem:
+        """add_kv_entry."""
+        _parent = parent or self.body
+        cref = f"#/field_items/{len(self.field_items)}"
+        item = FieldItem(
+            self_ref=cref,
+            parent=_parent.get_ref(),
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.field_items.append(item)
+        _parent.children.append(RefItem(cref=cref))
+        return item
+
+    def add_field_key(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        """add_field_key.
+
+        :param label: DocItemLabel:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        """
+        item = self.add_text(
+            label=DocItemLabel.FIELD_KEY,
+            text=text,
+            orig=orig,
+            prov=prov,
+            parent=parent,
+            content_layer=content_layer,
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+        return item
+
+    def add_field_value(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        kind: Optional[typing.Literal["read_only", "fillable"]] = "read_only",
+    ):
+        """add_field_value.
+
+        :param label: DocItemLabel:
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param level: LevelNumber:  (Default value = 1)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        :param kind: Optional[typing.Literal["read_only", "fillable", "fillable_with_hint"]]:  (Default value = "read_only")
+        """
+        if not parent:
+            parent = self.body
+
+        if not orig:
+            orig = text
+
+        text_index = len(self.texts)
+        cref = f"#/texts/{text_index}"
+        item = FieldValueItem(
+            text=text,
+            orig=orig,
+            self_ref=cref,
+            parent=parent.get_ref(),
+            formatting=formatting,
+            hyperlink=hyperlink,
+            kind=kind,
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.texts.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
+
+    def add_field_hint(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        """add_field_hint.
+
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        """
+        item = self.add_text(
+            label=DocItemLabel.FIELD_HINT,
+            text=text,
+            orig=orig,
+            prov=prov,
+            parent=parent,
+            content_layer=content_layer,
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+        return item
+
+    def add_marker(
+        self,
+        text: str,
+        orig: Optional[str] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+    ):
+        """add_marker.
+
+        :param text: str:
+        :param orig: Optional[str]:  (Default value = None)
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param formatting: Optional[Formatting]:  (Default value = None)
+        :param hyperlink: Optional[Union[AnyUrl, Path]]:  (Default value = None)
+        """
+        item = self.add_text(
+            label=DocItemLabel.MARKER,
+            text=text,
+            orig=orig,
+            prov=prov,
+            parent=parent,
+            content_layer=content_layer,
+            formatting=formatting,
+            hyperlink=hyperlink,
+        )
+        return item
 
     # ---------------------------
     # Node Item Insertion Methods
@@ -5402,6 +6176,7 @@ class DoclingDocument(BaseModel):
             "footnote": DocItemLabel.FOOTNOTE,
             "code": DocItemLabel.CODE,
             "key_value_region": DocItemLabel.KEY_VALUE_REGION,
+            "key_value_map": DocItemLabel.FIELD_REGION,
         }
 
         doc = DoclingDocument(name=document_name)
@@ -6030,6 +6805,27 @@ class DoclingDocument(BaseModel):
         ser_res = serializer.serialize()
         return ser_res.text
 
+    def export_to_doclang(
+        self,
+    ) -> str:
+        """Export to Doclang."""
+        from docling_core.experimental.doclang import DoclangDocSerializer, DoclangParams
+
+        serializer = DoclangDocSerializer(
+            doc=self,
+            params=DoclangParams(),
+        )
+        return serializer.serialize().text
+
+    def save_as_doclang(
+        self,
+        filename: Union[str, Path],
+    ) -> None:
+        """Save the document as Doclang."""
+        out = self.export_to_doclang()
+        with open(filename, "w", encoding="utf-8") as fw:
+            fw.write(f"{out}\n")
+
     def _export_to_indented_text(
         self,
         indent="  ",
@@ -6277,6 +7073,8 @@ class DoclingDocument(BaseModel):
         tables: list[TableItem] = []
         key_value_items: list[KeyValueItem] = []
         form_items: list[FormItem] = []
+        field_regions: list[FieldRegionItem] = []
+        field_items: list[FieldItem] = []
 
         pages: dict[int, PageItem] = {}
 
@@ -6421,6 +7219,8 @@ class DoclingDocument(BaseModel):
         self.tables = doc_index.tables
         self.key_value_items = doc_index.key_value_items
         self.form_items = doc_index.form_items
+        self.field_regions = doc_index.field_regions
+        self.field_items = doc_index.field_items
         self.pages = doc_index.pages
         self.name = doc_index.get_name()
 

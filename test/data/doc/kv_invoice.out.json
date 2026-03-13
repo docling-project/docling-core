@@ -1,0 +1,436 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.9.0",
+  "name": "",
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/field_regions/0"
+      },
+      {
+        "$ref": "#/field_regions/1"
+      },
+      {
+        "$ref": "#/field_regions/2"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [
+    {
+      "self_ref": "#/groups/0",
+      "parent": {
+        "$ref": "#/field_regions/1"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/2"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/1",
+      "parent": {
+        "$ref": "#/field_regions/1"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/3"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    }
+  ],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [
+        {
+          "$ref": "#/pictures/0"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "+123-456-7890",
+      "text": "+123-456-7890",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [
+        {
+          "$ref": "#/pictures/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/3",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "hello@example.com",
+      "text": "hello@example.com",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/4",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "Invoice No: ",
+      "text": "Invoice No: "
+    },
+    {
+      "self_ref": "#/texts/5",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "222",
+      "text": "222",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/6",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [],
+      "orig": "Date: ",
+      "text": "Date: "
+    },
+    {
+      "self_ref": "#/texts/7",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [],
+      "orig": "02 May, 2021",
+      "text": "02 May, 2021",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/8",
+      "parent": {
+        "$ref": "#/field_items/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 1.0,
+            "t": 4.0,
+            "r": 3.0,
+            "b": 2.0,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            2
+          ]
+        }
+      ],
+      "orig": "Administrator",
+      "text": "Administrator"
+    },
+    {
+      "self_ref": "#/texts/9",
+      "parent": {
+        "$ref": "#/field_items/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 1.0,
+            "t": 4.0,
+            "r": 3.0,
+            "b": 2.0,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            2
+          ]
+        }
+      ],
+      "orig": "John Doe",
+      "text": "John Doe",
+      "kind": "read_only"
+    }
+  ],
+  "pictures": [
+    {
+      "self_ref": "#/pictures/0",
+      "parent": {
+        "$ref": "#/texts/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "image": {
+        "mimetype": "image/png",
+        "dpi": 300,
+        "size": {
+          "width": 100.0,
+          "height": 100.0
+        },
+        "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+      },
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/1",
+      "parent": {
+        "$ref": "#/texts/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "picture",
+      "prov": [],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "image": {
+        "mimetype": "image/png",
+        "dpi": 300,
+        "size": {
+          "width": 100.0,
+          "height": 100.0
+        },
+        "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+      },
+      "annotations": []
+    }
+  ],
+  "tables": [],
+  "key_value_items": [],
+  "form_items": [],
+  "field_regions": [
+    {
+      "self_ref": "#/field_regions/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/0"
+        },
+        {
+          "$ref": "#/field_items/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 1.0,
+            "t": 4.0,
+            "r": 3.0,
+            "b": 2.0,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "self_ref": "#/field_regions/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/0"
+        },
+        {
+          "$ref": "#/groups/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/2",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/4"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    }
+  ],
+  "field_items": [
+    {
+      "self_ref": "#/field_items/0",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/0"
+        },
+        {
+          "$ref": "#/texts/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/1",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/2"
+        },
+        {
+          "$ref": "#/texts/3"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/2",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/4"
+        },
+        {
+          "$ref": "#/texts/5"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/3",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/6"
+        },
+        {
+          "$ref": "#/texts/7"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/4",
+      "parent": {
+        "$ref": "#/field_regions/2"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/8"
+        },
+        {
+          "$ref": "#/texts/9"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    }
+  ],
+  "pages": {
+    "1": {
+      "size": {
+        "width": 100.0,
+        "height": 100.0
+      },
+      "page_no": 1
+    }
+  }
+}

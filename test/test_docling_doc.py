@@ -48,6 +48,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
+from docling_core.types.doc.document import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
 from docling_core.types.doc.document import CURRENT_VERSION, PageItem
 from docling_core.types.doc.webvtt import WebVTTFile
 
@@ -541,6 +542,33 @@ def test_docitems():
                 self_ref="#",
                 orig="whatever",
                 text="E=mc^2",
+            )
+            verify(dc, obj)
+        elif dc is FieldRegionItem:
+            obj = dc(
+                self_ref="#",
+            )
+            verify(dc, obj)
+        elif dc is FieldItem:
+            obj = dc(
+                self_ref="#",
+            )
+            verify(dc, obj)
+        elif dc is FieldValueItem:
+            obj = dc(
+                self_ref="#",
+                orig="whatever",
+                text="whatever",
+                kind="fillable",
+            )
+            verify(dc, obj)
+        elif dc is FieldHeadingItem:
+            obj = dc(
+                text="whatever",
+                orig="whatever",
+                label=DocItemLabel.FIELD_HEADING,
+                self_ref="#",
+                level=2,
             )
             verify(dc, obj)
         elif dc is GraphData:  # we skip this on purpose

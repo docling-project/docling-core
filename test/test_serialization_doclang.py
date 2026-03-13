@@ -33,7 +33,10 @@ from docling_core.types.doc import (
     TabularChartMetaField,
 )
 from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.document import GraphCell, GraphData, GraphLink, ImageRef, RichTableCell, TableCell
+from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
 from test.test_serialization import verify
+from test.test_data_gen_flag import GEN_TEST_DATA
 
 
 def add_texts_section(doc: DoclingDocument):
@@ -654,6 +657,17 @@ def test_content_wrapping_mode_always():
     exp_file = Path("./test/data/doc/wrapping_always.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
+def test_default_mode():
+    doc = DoclingDocument(name="test")
+    add_texts_section(doc)
+    add_list_section(doc)
+
+    ser = DoclangDocSerializer(doc=doc)
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/default_mode.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
 def test_vlm_mode():
     doc = DoclingDocument(name="test")
     add_texts_section(doc)
@@ -743,3 +757,470 @@ def test_chart():
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/barchart.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+
+
+def _verify_doc(doc: DoclingDocument, exp_json: Path):
+    if GEN_TEST_DATA:
+        doc.save_as_json(filename=exp_json)
+    else:
+        exp_doc = DoclingDocument.load_from_json(filename=exp_json)
+        assert doc == exp_doc
+
+def test_kv():
+    doc = DoclingDocument(name="")
+    kvm = doc.add_field_region()
+
+    doc.add_field_heading(text="KV heading", parent=kvm)
+
+    kve = doc.add_field_item(parent=kvm)
+    doc.add_field_key(text="simple key", parent=kve)
+    doc.add_field_value(text="simple value", parent=kve)
+
+    doc.add_field_heading(level=2, text="KV sub-heading", parent=kvm)
+
+    # inlined key-value pair (outer is <text>...</text>)
+    # TODO: possibly support outer bounding box
+    inl = doc.add_inline_group(parent=kvm)
+    kve = doc.add_field_item(parent=inl)
+    doc.add_field_key(text="my inline key1: ", parent=kve)
+    doc.add_field_value(text="my inline value1", parent=kve, kind="fillable")
+
+    # # inlined key-value pair (outer is <kv_entry>...</kv_entry>)
+    # # TODO: possibly support outer bounding box
+    # kve = doc.add_field_item(parent=kvm)
+    # inl = doc.add_inline_group(parent=kve)
+    # doc.add_field_key(text="my inline key2: ", parent=inl)
+    # doc.add_field_value(text="my inline value2", parent=inl, kind="fillable")
+
+    kve = doc.add_field_item(parent=kvm)
+    doc.add_field_key(text="name", parent=kve)
+    doc.add_field_value(text="John Doe", parent=kve, kind="fillable")
+    doc.add_field_value(text="Max Mustermann", parent=kve, kind="fillable")
+
+    kk = doc.add_field_value(text="", parent=kve, kind="fillable")
+    opt_vis = doc.add_inline_group(parent=kk)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="", parent=opt_vis)
+    doc.add_text(label=DocItemLabel.TEXT, text="Clark ", parent=opt_vis)
+    doc.add_text(label=DocItemLabel.TEXT, text="Kent", parent=opt_vis, formatting=Formatting(bold=True))
+    doc.add_field_hint(text="Select this if you are a Superman fan", parent=opt_vis)
+
+    doc.add_field_value(text="", parent=kve)
+
+    # inlined form inputs
+    # TODO: add support for outer bounding box
+    inl = doc.add_inline_group(parent=kve)
+
+    doc.add_text(label=DocItemLabel.TEXT, text="My first input ", parent=inl)
+    doc.add_field_value(text="", parent=inl, kind="fillable")
+    doc.add_text(label=DocItemLabel.TEXT, text=" and my second input ", parent=inl)
+    doc.add_field_value(text="m", parent=inl, kind="fillable")
+
+    kv_entry_3 = doc.add_field_item(parent=kvm)
+    doc.add_field_key(text="I am in the country as a: ", parent=kv_entry_3)
+
+    vis = doc.add_field_value(text="", parent=kv_entry_3, kind="fillable")
+    opt_vis = doc.add_inline_group(parent=vis)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="Visitor", parent=opt_vis)
+
+    std = doc.add_field_value(text="", parent=kv_entry_3, kind="fillable")
+    opt_std = doc.add_inline_group(parent=std)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text=" Student", parent=opt_std)
+
+    oth = doc.add_field_value(text="", parent=kv_entry_3, kind="fillable")
+    opt_oth = doc.add_inline_group(parent=oth)
+    doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="Other (Specify)", parent=opt_oth)
+
+    doc.add_field_value(text="", parent=kv_entry_3, kind="fillable")
+
+    doc.add_text(label=DocItemLabel.TEXT, text="Some final stuff.")
+    doc.add_text(label=DocItemLabel.TEXT, text="The end.")
+
+    exp_json = Path("./test/data/doc/kv.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
+    ser_txt = doc.export_to_doclang()
+    exp_file = Path("./test/data/doc/kv.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+
+def test_kv_invoice():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    # prov = None
+    image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+
+    # first key-value map
+    kvm = doc.add_field_region(prov=prov)
+
+    # inlined key-value pair
+    kve = doc.add_field_item(parent=kvm)
+    kvk = doc.add_field_key(text="", parent=kve)
+    doc.add_picture(
+        parent=kvk,
+        image=ImageRef(
+            mimetype="image/png",
+            uri=image_uri,
+            dpi=300,
+            size=Size(width=100, height=100),
+        ),
+    )
+    doc.add_field_value(text="+123-456-7890", parent=kve)
+
+
+    # another inlined key-value pair
+    kve = doc.add_field_item(parent=kvm)
+    kvk = doc.add_field_key(text="", parent=kve)
+    doc.add_picture(
+        parent=kvk,
+        image=ImageRef(
+            mimetype="image/png",
+            uri=image_uri,
+            dpi=300,
+            size=Size(width=100, height=100),
+        ),
+    )
+    doc.add_field_value(text="hello@example.com", parent=kve)
+
+    # second key-value map
+    kvm = doc.add_field_region()
+
+    # inlined key-value pair
+    inl_outer = doc.add_inline_group(parent=kvm)
+    kve = doc.add_field_item(parent=inl_outer)
+    doc.add_field_key(text="Invoice No: ", parent=kve)
+    doc.add_field_value(text="222", parent=kve)
+
+    # another inlined key-value pair
+    inl_outer = doc.add_inline_group(parent=kvm)
+    kve = doc.add_field_item(parent=inl_outer)
+    doc.add_field_key(text="Date: ", parent=kve)
+    doc.add_field_value(text="02 May, 2021", parent=kve)
+
+    # a last key-value map
+    kvm = doc.add_field_region()
+    kve = doc.add_field_item(parent=kvm)
+    doc.add_field_key(text="Administrator", parent=kve, prov=prov)
+    doc.add_field_value(text="John Doe", parent=kve, prov=prov)
+
+    exp_json = Path("./test/data/doc/kv_invoice.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
+    ser_txt = doc.export_to_doclang()
+    exp_file = Path("./test/data/doc/kv_invoice.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+
+
+def test_kv_advanced_inline():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    prov = None
+    image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+
+    # first key-value map
+    kvm = doc.add_field_region()
+
+    # inlined key-value pair
+    inl_outer = doc.add_inline_group(parent=kvm)
+    doc.add_text(label=DocItemLabel.TEXT, text="This certificate applies to ", parent=inl_outer)
+
+    kve = doc.add_field_item(parent=inl_outer)
+    doc.add_field_value(text="", parent=kve, kind="fillable")
+    doc.add_text(label=DocItemLabel.TEXT, text=" percent of Buyer's purchases from ", parent=inl_outer)
+
+    kve = doc.add_field_item(parent=inl_outer)
+    doc.add_field_value(text="", parent=kve, kind="fillable")
+    doc.add_text(label=DocItemLabel.TEXT, text=" (name, address, and employer idenficiation number of seller) as follows (complete as applicable): ", parent=inl_outer)
+
+    kve = doc.add_field_item(parent=inl_outer)
+    doc.add_field_value(text="", parent=kve, kind="fillable")
+    doc.add_text(label=DocItemLabel.TEXT, text=".", parent=inl_outer)
+
+    exp_json = Path("./test/data/doc/kv_advanced_inline.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
+    ser_txt = doc.export_to_doclang()
+    exp_file = Path("./test/data/doc/kv_advanced_inline.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+def test_kv_nested():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    # prov = None
+    image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+
+    # first key-value map
+    kvm = doc.add_field_region(prov=prov)
+
+    kve = doc.add_field_item(parent=kvm)
+    doc.add_field_key(text="A", parent=kve)
+    kvv = doc.add_field_value(text="", parent=kve)
+    kvm_inner = doc.add_field_region(parent=kvv)
+    kve_inner = doc.add_field_item(parent=kvm_inner)
+    doc.add_marker(text="1.", parent=kve_inner)
+    doc.add_field_key(text="AA", parent=kve_inner)
+    doc.add_field_hint(text="Some explanation for key AA", parent=kve_inner)
+    doc.add_field_value(text="AAA", parent=kve_inner)
+    doc.add_field_hint(text="Some explanation for value AAA", parent=kve_inner)
+    doc.add_field_value(text="AAB", parent=kve_inner)
+    doc.add_field_hint(text="Some explanation for value AAB", parent=kve_inner)
+    kve_inner = doc.add_field_item(parent=kvm_inner)
+    doc.add_marker(text="2.", parent=kve_inner)
+    doc.add_field_key(text="AB", parent=kve_inner)
+    doc.add_field_value(text="ABA", parent=kve_inner)
+    doc.add_field_value(text="ABB", parent=kve_inner)
+
+    exp_json = Path("./test/data/doc/kv_nested.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
+    ser_txt = doc.export_to_doclang()
+    exp_file = Path("./test/data/doc/kv_nested.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+def test_kv_form_with_table():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    prov = None
+    image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
+
+    # first key-value map
+    kvm = doc.add_field_region()
+
+    # table
+
+    table_vals = [
+        ["Description of property", "Cost or other basis, plus improvements and expense of sale", "Gain or loss"],
+        [""  ,                      "gain",                                                       "150,997"],
+        ["",                        "loss",                                                       "114,676"],
+    ]
+    num_rows = len(table_vals)
+    num_cols = len(table_vals[0])
+    table = doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols), parent=kvm)
+
+    for i in range(num_rows):
+        for j in range(num_cols):
+            if i == 0:  # headers
+                cell = TableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text=table_vals[i][j],
+                    column_header=True,
+                )
+            else:
+                kve = doc.add_field_item(parent=table)
+                doc.add_field_value(text=table_vals[i][j], parent=kve, kind="fillable")
+                cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text="",
+                    ref=kve.get_ref(),
+                )
+            doc.add_table_cell(table_item=table, cell=cell)
+
+    exp_json = Path("./test/data/doc/kv_form_with_table.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
+    ser_txt = doc.export_to_doclang()
+
+    exp_file = Path("./test/data/doc/kv_form_with_table.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_kv_migration_self_contained_scenario():
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello, world!")
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                # both TO_VALUE & TO_KEY links:
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=0,
+                    text="Common name",
+                    orig="Common name",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=1,
+                    text="Duck",
+                    orig="Duck",
+                ),
+
+                # TO_PARENT & TO_CHILD links:
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=2,
+                    text="Anatoidea",
+                    orig="Anatoidea",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=3,
+                    text="Anatidae",
+                    orig="Anatidae",
+                ),
+
+                # multiple TO_VALUE links:
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=4,
+                    text="Distribution package",
+                    orig="Distribution package",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=5,
+                    text="docling",
+                    orig="docling",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=6,
+                    text="docling-core",
+                    orig="docling-core",
+                    prov=prov,
+                ),
+            ],
+            links=[
+                GraphLink(
+                    label=GraphLinkLabel.TO_VALUE,
+                    source_cell_id=0,
+                    target_cell_id=1,
+                ),
+                GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=2, target_cell_id=3),
+                GraphLink(label=GraphLinkLabel.TO_PARENT, source_cell_id=3, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=4, target_cell_id=5),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=4, target_cell_id=6),
+            ],
+        ),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Some more text...", parent=doc.body)
+    doc.add_form(
+        graph=GraphData(
+            cells=[
+                # both TO_VALUE & TO_KEY links:
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=0,
+                    text="Color",
+                    orig="Color",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=1,
+                    text="Orange",
+                    orig="Orange",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=2,
+                    text="Black",
+                    orig="Black",
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=3,
+                    text="White",
+                    orig="White",
+                ),
+            ],
+            links=[
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=3),
+                GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=3, target_cell_id=0),
+            ],
+        ),
+        prov=prov,
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="The end.", parent=doc.body)
+
+    exp_json = Path("./test/data/doc/kv_pre_migration.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
+    doc._migrate_to_field_regions()
+
+    exp_json = Path("./test/data/doc/kv_post_migration.out.json")
+    _verify_doc(doc=doc, exp_json=exp_json)
+
+    ser_txt = doc.export_to_doclang()
+    exp_file = Path("./test/data/doc/kv_migration.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+def test_kv_migration_annot_scenario():
+    kv_dir = Path("./test/data/doc/kv")
+    for subdir in sorted(kv_dir.iterdir()):
+        if not subdir.is_dir():
+            continue
+        input_json = subdir / "input.json"
+        if not input_json.exists():
+            continue
+        doc = DoclingDocument.load_from_json(input_json)
+        if GEN_TEST_DATA:
+            modes = {
+                # "ro": "reading_order",
+                "kv": "key_value",
+            }
+            for mode_kw in modes:
+                pages = doc.get_visualization(viz_mode=modes[mode_kw])
+                for page_no, page in pages.items():
+                    page.save(str(subdir / f"input_{mode_kw}_p{page_no}.png"))
+        doc._migrate_to_field_regions()
+        exp_json = subdir / "output.json"
+        _verify_doc(doc=doc, exp_json=exp_json)
+        ser_txt = doc.export_to_doclang()
+        exp_file = subdir / "output.dclg.xml"
+        verify(exp_file=exp_file, actual=ser_txt)
+
+        ser = DoclangDocSerializer(
+            doc=doc,
+            params=DoclangParams(
+                add_content=False,
+            ),
+        )
+        ser_txt = ser.serialize().text
+        exp_file = subdir / "output_no_content.dclg.xml"
+        verify(exp_file=exp_file, actual=ser_txt)
+
+        if GEN_TEST_DATA:
+            modes = {
+                # "ro": "reading_order",
+                "kv": "key_value",
+            }
+            for mode_kw in modes:
+                pages = doc.get_visualization(viz_mode=modes[mode_kw])
+                for page_no, page in pages.items():
+                    page.save(str(subdir / f"output_{mode_kw}_p{page_no}.png"))

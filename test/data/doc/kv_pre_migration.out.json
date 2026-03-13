@@ -1,0 +1,272 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.9.0",
+  "name": "",
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/texts/0"
+      },
+      {
+        "$ref": "#/key_value_items/0"
+      },
+      {
+        "$ref": "#/texts/1"
+      },
+      {
+        "$ref": "#/form_items/0"
+      },
+      {
+        "$ref": "#/texts/2"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "Hello, world!",
+      "text": "Hello, world!"
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "Some more text...",
+      "text": "Some more text..."
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "The end.",
+      "text": "The end."
+    }
+  ],
+  "pictures": [],
+  "tables": [],
+  "key_value_items": [
+    {
+      "self_ref": "#/key_value_items/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "key_value_region",
+      "prov": [],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "graph": {
+        "cells": [
+          {
+            "label": "key",
+            "cell_id": 0,
+            "text": "Common name",
+            "orig": "Common name"
+          },
+          {
+            "label": "value",
+            "cell_id": 1,
+            "text": "Duck",
+            "orig": "Duck"
+          },
+          {
+            "label": "key",
+            "cell_id": 2,
+            "text": "Anatoidea",
+            "orig": "Anatoidea"
+          },
+          {
+            "label": "value",
+            "cell_id": 3,
+            "text": "Anatidae",
+            "orig": "Anatidae"
+          },
+          {
+            "label": "key",
+            "cell_id": 4,
+            "text": "Distribution package",
+            "orig": "Distribution package"
+          },
+          {
+            "label": "value",
+            "cell_id": 5,
+            "text": "docling",
+            "orig": "docling"
+          },
+          {
+            "label": "value",
+            "cell_id": 6,
+            "text": "docling-core",
+            "orig": "docling-core",
+            "prov": {
+              "page_no": 1,
+              "bbox": {
+                "l": 1.0,
+                "t": 4.0,
+                "r": 3.0,
+                "b": 2.0,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                2
+              ]
+            }
+          }
+        ],
+        "links": [
+          {
+            "label": "to_value",
+            "source_cell_id": 0,
+            "target_cell_id": 1
+          },
+          {
+            "label": "to_key",
+            "source_cell_id": 1,
+            "target_cell_id": 0
+          },
+          {
+            "label": "to_child",
+            "source_cell_id": 2,
+            "target_cell_id": 3
+          },
+          {
+            "label": "to_parent",
+            "source_cell_id": 3,
+            "target_cell_id": 2
+          },
+          {
+            "label": "to_value",
+            "source_cell_id": 4,
+            "target_cell_id": 5
+          },
+          {
+            "label": "to_value",
+            "source_cell_id": 4,
+            "target_cell_id": 6
+          }
+        ]
+      }
+    }
+  ],
+  "form_items": [
+    {
+      "self_ref": "#/form_items/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "form",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 1.0,
+            "t": 4.0,
+            "r": 3.0,
+            "b": 2.0,
+            "coord_origin": "BOTTOMLEFT"
+          },
+          "charspan": [
+            0,
+            2
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "graph": {
+        "cells": [
+          {
+            "label": "key",
+            "cell_id": 0,
+            "text": "Color",
+            "orig": "Color"
+          },
+          {
+            "label": "value",
+            "cell_id": 1,
+            "text": "Orange",
+            "orig": "Orange"
+          },
+          {
+            "label": "value",
+            "cell_id": 2,
+            "text": "Black",
+            "orig": "Black"
+          },
+          {
+            "label": "value",
+            "cell_id": 3,
+            "text": "White",
+            "orig": "White"
+          }
+        ],
+        "links": [
+          {
+            "label": "to_value",
+            "source_cell_id": 0,
+            "target_cell_id": 1
+          },
+          {
+            "label": "to_value",
+            "source_cell_id": 0,
+            "target_cell_id": 2
+          },
+          {
+            "label": "to_value",
+            "source_cell_id": 0,
+            "target_cell_id": 3
+          },
+          {
+            "label": "to_key",
+            "source_cell_id": 3,
+            "target_cell_id": 0
+          }
+        ]
+      }
+    }
+  ],
+  "pages": {
+    "1": {
+      "size": {
+        "width": 100.0,
+        "height": 100.0
+      },
+      "page_no": 1
+    }
+  }
+}
