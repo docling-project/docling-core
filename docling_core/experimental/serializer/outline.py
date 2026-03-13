@@ -90,10 +90,10 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
 
     params = OutlineParams(**kwargs)
 
-    # Extract title text once if needed
+    # Extract title/heading text once if needed
     title_text: str | None = None
     if params.include_non_meta and isinstance(item, TitleItem | SectionHeaderItem):
-        title_text = _serialize_text_item(item, doc, **kwargs)
+        title_text = item.text if params.format == OutlineFormat.JSON else _serialize_text_item(item, doc, **kwargs)
 
     # For JSON format, return a JSON string representation
     if params.format == OutlineFormat.JSON:
@@ -101,13 +101,17 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
             "ref": item.self_ref,
         }
 
-        # Add title if available
+        # Add title/heading if available
         if title_text is not None:
             data["title"] = title_text
 
-        # Always include summary if available
-        if item.meta and item.meta.summary:
-            data["summary"] = item.meta.summary.text
+        # Include summary and extra fields if available
+        if item.meta:
+            if item.meta.summary:
+                data["summary"] = item.meta.summary.text
+                extra_dict: dict[str, Any] = item.meta.summary.get_custom_part()
+                if extra_dict:
+                    data = data | extra_dict
 
         return json.dumps(data, ensure_ascii=False)
 

@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any
 
 from docling_core.experimental.serializer.outline import (
     OutlineDocSerializer,
@@ -165,7 +166,8 @@ def test_outline_serializer_json_format():
 
     # Check first item structure
     first_item = data[0]
-    assert "ref" in first_item
+    assert isinstance(first_item, dict)
+    assert first_item.keys() == {"ref", "title", "summary"}
     assert first_item["ref"].startswith("#/texts/")
 
     # When include_non_meta=True, titles should be present
@@ -181,6 +183,16 @@ def test_outline_serializer_json_format():
     with open(exp_path) as f:
         expected = json.load(f)
     assert json.loads(result.text) == expected, "Serialized text should match expected output"
+
+    # Hierarchical document with extra fields
+    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    doc = DoclingDocument.load_from_json(filename=doc_path)
+    ser = OutlineDocSerializer(doc=doc, params=params)
+    result = ser.serialize()
+    data = json.loads(result.text)
+    first_item = data[0]
+    assert first_item.keys() == {"ref", "title", "summary", "mellea__original_char_count"}
+    assert first_item["mellea__original_char_count"] == 809
 
 
 def test_outline_serializer_json_format_without_non_meta():
