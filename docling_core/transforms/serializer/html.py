@@ -1283,11 +1283,11 @@ class HTMLDocSerializer(DocSerializer):
                 head_parts.append(f"<style>\n{params.css_styles}\n</style>")
         elif self.params.output_style == HTMLOutputStyle.SPLIT_PAGE:
             head_parts.append(_get_css_for_split_page())
-            if self._has_visible_footnotes():
+            if self.has_visible_footnotes():
                 head_parts.append(_get_css_for_footnotes())
         elif self.params.output_style == HTMLOutputStyle.SINGLE_COLUMN:
             head_parts.append(_get_css_for_single_column())
-            if self._has_visible_footnotes():
+            if self.has_visible_footnotes():
                 head_parts.append(_get_css_for_footnotes())
         else:
             raise ValueError(f"unknown output-style: {self.params.output_style}")
@@ -1302,24 +1302,6 @@ class HTMLDocSerializer(DocSerializer):
     def _get_default_css(self) -> str:
         """Return default CSS styles for the HTML document."""
         return _get_css_with_no_styling()
-
-    def _has_visible_footnotes(self) -> bool:
-        """Whether the serialized output includes floating-item footnotes."""
-        if DocItemLabel.FOOTNOTE not in self.params.labels:
-            return False
-
-        excluded_refs = self.get_excluded_refs()
-        for items in (self.doc.tables, self.doc.pictures):
-            for item in items:
-                if item.self_ref in excluded_refs:
-                    continue
-
-                for footnote_ref in item.footnotes:
-                    if isinstance(it := footnote_ref.resolve(self.doc), TextItem):
-                        if it.self_ref not in excluded_refs:
-                            return True
-
-        return False
 
     @override
     def requires_page_break(self):

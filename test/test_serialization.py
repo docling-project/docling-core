@@ -771,6 +771,19 @@ def test_html_footnotes_preserve_formatting_and_hyperlinks():
     assert '<div class="footnotes"' in actual
     assert '<a href="https://example.com"><strong>bold link</strong></a>' in actual
 
+
+def test_html_hidden_footnotes_do_not_inject_footnote_css():
+    doc = _build_table_with_footnote_doc(footnote_text="hidden footnote")
+
+    actual = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(labels=_DEFAULT_LABELS - {DocItemLabel.FOOTNOTE}),
+    ).serialize().text
+
+    assert '<div class="footnotes"' not in actual
+    assert ".footnotes {" not in actual
+
+
 def test_html_charts():
     src = Path("./test/data/doc/barchart.json")
     doc = DoclingDocument.load_from_json(src)
