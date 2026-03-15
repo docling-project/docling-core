@@ -52,6 +52,7 @@ from docling_core.types.doc import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    RefItem,
     Script,
     TableAnnotationType,
     TableItem,
@@ -315,6 +316,29 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             }
             self._excluded_refs_cache[params_json] = refs
         return refs
+
+    def _serialize_referenced_text_items(
+        self,
+        refs: Iterable[RefItem],
+        **kwargs: Any,
+    ) -> list[SerializationResult]:
+        """Serialize referenced text items while bypassing the top-level skip path."""
+        excluded_refs = self.get_excluded_refs(**kwargs)
+        results: list[SerializationResult] = []
+
+        for ref in refs:
+            if isinstance(it := ref.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
+                results.append(
+                    self.text_serializer.serialize(
+                        item=it,
+                        doc_serializer=self,
+                        doc=self.doc,
+                        is_inline_scope=True,
+                        **kwargs,
+                    )
+                )
+
+        return results
 
     @abstractmethod
     def serialize_doc(
@@ -621,18 +645,12 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> SerializationResult:
         """Serialize the item's footnotes."""
         params = self.params.merge_with_patch(patch=kwargs)
-        results: list[SerializationResult] = []
         if DocItemLabel.FOOTNOTE in params.labels:
-            results = [
-                create_ser_result(text=it.text, span_source=it)
-                for ftn in item.footnotes
-                if isinstance(it := ftn.resolve(self.doc), TextItem)
-                and it.self_ref not in self.get_excluded_refs(**kwargs)
-            ]
-            # FIXME: using the caption_delimiter for now ...
+            results = self._serialize_referenced_text_items(item.footnotes, **kwargs)
+            # Plain-text serializers keep floating-item metadata compact.
             text_res = params.caption_delim.join([r.text for r in results])
-            text_res = self.post_process(text=text_res)
         else:
+            results = []
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
 

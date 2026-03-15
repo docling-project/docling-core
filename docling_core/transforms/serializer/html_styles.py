@@ -1,14 +1,42 @@
 """HTML styles for different export modes."""
 
 
+def _wrap_style(css: str, *, trailing_newline: bool = False) -> str:
+    """Wrap CSS in a style tag."""
+    suffix = "\n" if trailing_newline else ""
+    return f"<style>{css}</style>{suffix}"
+
+
 def _get_css_with_no_styling() -> str:
     """Return default CSS styles for the HTML document."""
-    return "<style></style>"
+    return _wrap_style("")
+
+
+_FOOTNOTE_CSS = """
+    .footnotes {
+        margin-top: 0.65em;
+        padding-top: 0.45em;
+        border-top: 1px solid #ddd;
+        color: #666;
+        font-size: 0.95em;
+        line-height: 1.5;
+        text-align: left;
+    }
+    .footnote + .footnote {
+        margin-top: 0.35em;
+    }
+"""
+
+
+def _get_css_for_footnotes() -> str:
+    """Return CSS styles for floating-item footnotes."""
+    return _wrap_style(_FOOTNOTE_CSS)
 
 
 def _get_css_for_split_page() -> str:
     """Return default CSS styles for the HTML document."""
-    return """<style>
+    return _wrap_style(
+        """
     html {
         background-color: #e1e1e1;
         font-family: Arial, sans-serif;
@@ -87,13 +115,15 @@ def _get_css_for_split_page() -> str:
         word-wrap: break-word;
         /*overflow-wrap: break-word;*/
     }
-</style>
-"""
+""",
+        trailing_newline=True,
+    )
 
 
 def _get_css_for_single_column() -> str:
     """Return CSS styles for the single-column HTML document."""
-    return """<style>
+    return _wrap_style(
+        """
     html {
         background-color: #f5f5f5;
         font-family: Arial, sans-serif;
@@ -209,4 +239,5 @@ def _get_css_for_single_column() -> str:
         color: #666;
         margin-top: 0.5em;
     }
-</style>"""
+"""
+    )

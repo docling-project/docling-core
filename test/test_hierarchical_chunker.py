@@ -180,6 +180,31 @@ def test_triplet_table_serializer_single_column():
     expected = "Country = Italy. Country = Canada. Country = Switzerland"
     assert result.text == expected, f"Expected '{expected}', got '{result.text}'"
 
+
+def test_triplet_table_serializer_includes_footnotes():
+    """Regression: table footnotes must be preserved in chunking serialization."""
+
+    doc = DoclingDocument(name="table_footnotes")
+    table_data = TableData(num_cols=1)
+    table_data.add_row(["Country"])
+    table_data.add_row(["Italy"])
+    doc.add_table(data=table_data)
+
+    table_item = next(iter(doc.iterate_items()))[0]
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Country footnote")
+    table_item.footnotes.append(footnote.get_ref())
+
+    serializer = ChunkingDocSerializer(doc=doc)
+    result = TripletTableSerializer().serialize(
+        item=table_item,
+        doc_serializer=serializer,
+        doc=doc,
+    )
+
+    assert result.text == "Country = Italy\n\nCountry footnote"
+    assert result.text.count("Country footnote") == 1
+
+
 def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
     doc = rich_table_doc
 
