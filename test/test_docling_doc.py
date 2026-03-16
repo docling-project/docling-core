@@ -1852,6 +1852,41 @@ def test_invalid_rich_table_doc():
     with pytest.raises(ValueError):
         DoclingDocument.validate_document(doc)
 
+def test_invalid_single_linked_rich_table_doc():
+    doc = DoclingDocument(name="")
+    table_item = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    rich_item = doc.add_text(
+        text="rich item",
+        label=DocItemLabel.TEXT,
+        parent=table_item,
+    )
+    for i in range(table_item.data.num_rows):
+        for j in range(table_item.data.num_cols):
+            if i == 1 and j == 1:
+                table_cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item.get_ref(),
+                )
+            else:
+                table_cell = TableCell(
+                    text=f"cell {i},{j}",
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                )
+            doc.add_table_cell(table_item=table_item, cell=table_cell)
+
+    # delete child reference from table item
+    del(table_item.children[0])
+
+    # ensure validate_document() raises:
+    with pytest.raises(ValueError):
+        DoclingDocument.validate_document(doc)
+
 
 def test_rich_table_item_insertion_normalization():
     doc = DoclingDocument(name="")
