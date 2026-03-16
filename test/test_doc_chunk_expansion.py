@@ -1,6 +1,5 @@
 """Tests for DocChunk expansion methods."""
 
-from ast import Or
 import re
 
 import pytest
@@ -19,25 +18,6 @@ from docling_core.types.doc.document import TableData
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
 MAX_TOKENS = 64
 INPUT_FILE = "test/data/chunker/2_inp_dl_doc.json"
-
-
-def text_contains_ignoring_whitespace(haystack: str, needle: str) -> bool:
-    """
-    Check if needle text is contained in haystack, ignoring whitespace differences.
-    
-    Normalizes both strings by removing all whitespace characters.
-    
-    Args:
-        haystack: The text to search in
-        needle: The text to search for
-        
-    Returns:
-        True if needle is found in haystack (ignoring whitespace), False otherwise
-    """
-    # Remove all whitespace
-    haystack_normalized = re.sub(r'\s+', '', haystack)
-    needle_normalized = re.sub(r'\s+', '', needle)
-    return needle_normalized in haystack_normalized
 
 
 @pytest.fixture
@@ -216,7 +196,7 @@ class TestExpandToObject:
         assert len(expanded_chunk.text.strip()) > 0, "Expanded chunk should have text"
         
         # Expanded chunk text should contain original chunk text (or be a superset)
-        assert text_contains_ignoring_whitespace(expanded_chunk.text, needle=original_chunk.text), (
+        assert original_chunk.text in expanded_chunk.text, (
             f"Expanded chunk should contain of original chunk text. "
             f"original {original_chunk.text}"
             f"expanded: {expanded_chunk.text}"
