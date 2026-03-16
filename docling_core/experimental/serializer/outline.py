@@ -102,7 +102,7 @@ def _serialize_text_item(item: TextItem, doc: DoclingDocument, **kwargs: Any) ->
     return result.text.strip()
 
 
-def _format_indented_text_line(item: dict[str, Any], indent_size: int = 3, max_summary_length: int = 100) -> str:
+def _format_indented_text_line(item: dict[str, Any], indent_size: int = 2, max_summary_length: int = 100) -> str:
     """Format a single item as an indented text line.
 
     Args:
