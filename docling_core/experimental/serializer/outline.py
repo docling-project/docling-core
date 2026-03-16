@@ -114,7 +114,7 @@ def _format_indented_text_line(item: dict[str, Any], indent_size: int = 3, max_s
         Formatted line with indentation based on level
     """
     level = item.get("level", 1)
-    indent = " " * (indent_size * (level - 1))
+    indent = " " * (indent_size * level)
 
     ref = item.get("ref", "")
     title = item.get("title", "")
@@ -482,6 +482,23 @@ class OutlineDocSerializer(MarkdownDocSerializer):
         if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
             # Parse each part as JSON and combine into an array
             json_objects = []
+
+            # Add document-level metadata as the first item if it exists
+            if self.doc.meta and self.doc.meta.summary:
+                doc_meta_dict: dict[str, Any] = {
+                    "ref": "#/body",
+                    "summary": self.doc.meta.summary.text,
+                    "level": 0,  # Level 0 so document items are indented relative to it
+                }
+                # Only include title if include_non_meta is True
+                if params.include_non_meta:
+                    doc_meta_dict["title"] = self.doc.name
+                # Add extra custom fields from document-level summary metadata
+                extra_dict: dict[str, Any] = self.doc.meta.summary.get_custom_part()
+                if extra_dict:
+                    doc_meta_dict.update(extra_dict)
+                json_objects.append(doc_meta_dict)
+
             for part in parts:
                 if part.text:
                     try:
@@ -502,8 +519,26 @@ class OutlineDocSerializer(MarkdownDocSerializer):
 
             return create_ser_result(text=text_res, span_source=parts)
         else:
-            # Use default Markdown behavior
-            return super().serialize_doc(parts=parts, **kwargs)
+            # Markdown format - add document-level metadata at the beginning
+            doc_meta_parts = []
+            if self.doc.meta and self.doc.meta.summary:
+                # Only include title heading if include_non_meta is True
+                if params.include_non_meta:
+                    doc_meta_parts.append(f"# {self.doc.name}")
+                doc_meta_parts.append("\\[ref=#/body\\]")
+                doc_meta_parts.append(self.doc.meta.summary.text)
+                # Don't add empty line - parent class will add separators
+
+            # Combine document metadata with item parts
+            if doc_meta_parts:
+                doc_meta_text = "\n".join(doc_meta_parts)
+                doc_meta_result = create_ser_result(text=doc_meta_text)
+                all_parts = [doc_meta_result] + parts
+            else:
+                all_parts = parts
+
+            # Use default Markdown behavior with all parts
+            return super().serialize_doc(parts=all_parts, **kwargs)
 
     @override
     def get_parts(
