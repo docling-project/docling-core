@@ -123,7 +123,7 @@ class DocChunk(BaseChunk):
             if isinstance(top_object, ListGroup | InlineGroup | DocItem):
                 try:
                     ser_res = serializer.serialize(item=top_object)
-                    content += ser_res.text + " "
+                    content += ser_res.text + "\n"
                     doc_items.append(top_object)
 
                 except Exception as e:
@@ -131,8 +131,6 @@ class DocChunk(BaseChunk):
         if len(content.strip()) == 0:
             _logger.warning(f"expansion of {self} did not yield any text")
             return self
-
-        # fix me: update meta.headings
 
         meta = copy(self.meta)
         meta.doc_items = doc_items
@@ -148,10 +146,16 @@ class DocChunk(BaseChunk):
             _logger.warning(f"cannot expand to page the following chunk: {self}")
             return self
 
-        ser_params.pages = page_ids
-        pages_content = serializer.serialize().text
+        ser_params.pages = set(page_ids)
+        ser_res = serializer.serialize()
 
+        # Extract doc_items from serialization result
+        expanded_doc_items = ser_res.get_unique_doc_items()
+
+        # Update metadata
+        meta = copy(self.meta)
+        meta.doc_items = expanded_doc_items
         return DocChunk(
-            text=pages_content,
-            meta=self.meta,
+            text=ser_res.text,
+            meta=meta,
         )
