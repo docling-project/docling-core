@@ -50,6 +50,7 @@ dependencies = [
     'typer (>=0.12.5,<0.25.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
     "defusedxml (>=0.7.1, <0.8.0)",
+    "protobuf>=4.25.0",
 ]
 
 [project.urls]
@@ -117,6 +118,7 @@ dev = [
     'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
     "ruff>=0.14.11",
     "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
+    "grpcio-tools>=1.60.0",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
@@ -132,7 +134,7 @@ include = ["docling_core*"]
 namespaces = true
 
 [tool.setuptools.package-data]
-"*" = ["*.json"]
+"*" = ["*.json", "*.py"]
 
 [tool.ruff]
 target-version = "py310"
