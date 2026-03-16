@@ -5373,9 +5373,12 @@ class DoclingDocument(BaseModel):
                 return False
 
         if isinstance(root, TableItem):
+            root_children_crefs = {child.cref for child in root.children}
             for cell in root.data.table_cells:
                 if isinstance(cell, RichTableCell) and (
-                    (par_ref := cell.ref.resolve(self).parent) is None or par_ref.resolve(self) != root
+                    (par_ref := cell.ref.resolve(self).parent) is None
+                    or par_ref.resolve(self) != root
+                    or cell.ref.cref not in root_children_crefs
                 ):
                     return False
 
