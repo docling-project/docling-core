@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "name": "167f6658cd410df8d4d14acc53e8c8f509e94c44b8005e6b76de8d17329363a7",
   "furniture": {
     "self_ref": "#/furniture",

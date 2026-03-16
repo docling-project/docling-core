@@ -51,4 +51,4 @@ texts:
   prov: []
   self_ref: '#/texts/2'
   text: '[John Reviewer]: This is a reviewer comment.'
-version: 1.9.0
+version: 1.10.0
