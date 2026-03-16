@@ -124,6 +124,7 @@ class DocChunk(BaseChunk):
                 try:
                     ser_res = serializer.serialize(item=top_object)
                     content += ser_res.text + "\n"
+                    # Extract doc_items from serialization result
                     doc_items.append(top_object)
 
                 except Exception as e:
@@ -136,7 +137,7 @@ class DocChunk(BaseChunk):
         meta.doc_items = doc_items
         return DocChunk(
             text=content,
-            meta=self.meta,
+            meta=meta,
         )
 
     def expand_to_page(self, doc: DoclingDocument, serializer: BaseDocSerializer) -> DocChunk | None:
