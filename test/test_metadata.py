@@ -142,7 +142,7 @@ def test_md_ser_default():
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(actual)
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = f.read()
         assert actual == expected
 
@@ -183,7 +183,7 @@ def test_md_ser_allowed_meta_names():
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(actual)
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = f.read()
         assert actual == expected
 
@@ -224,7 +224,7 @@ def test_md_ser_without_non_meta():
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(actual)
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = f.read()
         assert actual == expected
 
@@ -276,6 +276,29 @@ def test_ser_custom_meta_serializer():
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(actual)
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = f.read()
         assert actual == expected
+
+
+def test_document_level_metadata() -> None:
+    """Test that document-level metadata can be loaded and accessed."""
+    src = Path("test/data/doc/dummy_doc_with_meta.yaml")
+    doc = DoclingDocument.load_from_yaml(filename=src)
+
+    # Verify document-level metadata exists
+    assert doc.meta is not None
+    assert doc.meta.summary is not None
+    assert doc.meta.summary.text == "This is a document-level summary describing the entire document."
+    assert doc.meta.summary.confidence == 0.98
+
+    # Verify custom metadata fields at document level
+    custom_part = doc.meta.get_custom_part()
+    assert custom_part["my_corp__doc_category"] == "technical_report"
+    assert custom_part["my_corp__doc_version"] == "1.0"
+
+    # Verify that item-level metadata still works alongside document-level metadata
+    first_text = doc.texts[1]  # The title item
+    assert first_text.meta is not None
+    assert first_text.meta.summary is not None
+    assert first_text.meta.summary.text == "This is a title."

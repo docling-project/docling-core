@@ -18,6 +18,12 @@ furniture:
   self_ref: '#/furniture'
 groups: []
 key_value_items: []
+meta:
+  my_corp__doc_category: technical_report
+  my_corp__doc_version: '1.0'
+  summary:
+    confidence: 0.98
+    text: This is a document-level summary describing the entire document.
 name: dummy_doc
 origin:
   binary_hash: 7954723514066505909

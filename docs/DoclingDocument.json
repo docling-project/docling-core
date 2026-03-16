@@ -3752,6 +3752,18 @@
       ],
       "default": null
     },
+    "meta": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BaseMeta"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Metadata for the document, such as summaries or other custom metadata fields."
+    },
     "furniture": {
       "$ref": "#/$defs/GroupItem",
       "default": {
