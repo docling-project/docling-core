@@ -26,6 +26,7 @@ from docling_core.types.doc import (
 )
 
 from .test_data_gen_flag import GEN_TEST_DATA
+from .test_utils import assert_or_generate_ground_truth
 
 
 class CustomCoordinates(BaseModel):
@@ -143,13 +144,7 @@ def test_md_ser_default(doc_with_group_with_metadata: DoclingDocument):
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_default.md")
-    if GEN_TEST_DATA:
-        with open(exp_file, "w", encoding="utf-8") as f:
-            f.write(actual)
-    else:
-        with open(exp_file, encoding="utf-8") as f:
-            expected = f.read()
-        assert actual == expected
+    assert_or_generate_ground_truth(actual, exp_file)
 
 
 def test_md_ser_marked(doc_with_group_with_metadata: DoclingDocument):
@@ -182,13 +177,7 @@ def test_md_ser_allowed_meta_names(doc_with_group_with_metadata: DoclingDocument
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_allowed_meta_names.md")
-    if GEN_TEST_DATA:
-        with open(exp_file, "w", encoding="utf-8") as f:
-            f.write(actual)
-    else:
-        with open(exp_file, encoding="utf-8") as f:
-            expected = f.read()
-        assert actual == expected
+    assert_or_generate_ground_truth(actual, exp_file)
 
 
 def test_md_ser_blocked_meta_names(doc_with_group_with_metadata: DoclingDocument):
@@ -203,13 +192,7 @@ def test_md_ser_blocked_meta_names(doc_with_group_with_metadata: DoclingDocument
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_blocked_meta_names.md")
-    if GEN_TEST_DATA:
-        with open(exp_file, "w", encoding="utf-8") as f:
-            f.write(actual)
-    else:
-        with open(exp_file, "r", encoding="utf-8") as f:
-            expected = f.read()
-        assert actual == expected
+    assert_or_generate_ground_truth(actual, exp_file)
 
 
 def test_md_ser_without_non_meta(doc_with_group_with_metadata: DoclingDocument):
@@ -221,13 +204,7 @@ def test_md_ser_without_non_meta(doc_with_group_with_metadata: DoclingDocument):
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_without_non_meta.md")
-    if GEN_TEST_DATA:
-        with open(exp_file, "w", encoding="utf-8") as f:
-            f.write(actual)
-    else:
-        with open(exp_file, encoding="utf-8") as f:
-            expected = f.read()
-        assert actual == expected
+    assert_or_generate_ground_truth(actual, exp_file)
 
 
 def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocument):
@@ -271,13 +248,7 @@ def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocumen
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_summaries.md")
-    if GEN_TEST_DATA:
-        with open(exp_file, "w", encoding="utf-8") as f:
-            f.write(actual)
-    else:
-        with open(exp_file, encoding="utf-8") as f:
-            expected = f.read()
-        assert actual == expected
+    assert_or_generate_ground_truth(actual, exp_file)
 
 
 def test_document_level_metadata(dummy_doc_with_meta: DoclingDocument) -> None:

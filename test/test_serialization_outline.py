@@ -10,6 +10,8 @@ from docling_core.experimental.serializer.outline import (
 from docling_core.types.doc import DoclingDocument
 from docling_core.types.doc.labels import DocItemLabel
 
+from .test_utils import assert_or_generate_ground_truth
+
 
 def test_outline_serializer_mode_toc():
     """Test TABLE_OF_CONTENTS mode only includes titles and section headers."""
@@ -29,9 +31,7 @@ def test_outline_serializer_mode_toc():
     reference_count = result.text.count("\\[ref=")
     assert reference_count > 0, "TABLE_OF_CONTENTS mode should include section headers"
 
-    with open(exp_path) as f:
-        expected = f.read()
-    assert result.text == expected, "Unexpected TOC serialization "
+    assert_or_generate_ground_truth(result.text, exp_path, "Unexpected TOC serialization")
 
     # with heading hierachy
     doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
@@ -40,9 +40,8 @@ def test_outline_serializer_mode_toc():
     doc = DoclingDocument.load_from_json(filename=doc_path)
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
-    with open(exp_path) as f:
-        expected = f.read()
-    assert result.text == expected, "Unexpected TOC serialization "
+
+    assert_or_generate_ground_truth(result.text, exp_path, "Unexpected TOC serialization")
 
 
 def test_outline_serializer_mode_toc_custom():
@@ -59,9 +58,8 @@ def test_outline_serializer_mode_toc_custom():
 
     assert isinstance(result.text, str)
     assert len(result.text) > 0
-    with open(exp_path) as f:
-        expected = f.read()
-    assert result.text == expected, "Unexpected outline serialization "
+
+    assert_or_generate_ground_truth(result.text, exp_path, "Unexpected outline serialization")
 
 
 def test_outline_serializer_mode_outline():
@@ -78,9 +76,8 @@ def test_outline_serializer_mode_outline():
     assert isinstance(result.text, str)
     assert len(result.text) > 0
     reference_count_outline = result.text.count("\\[ref=")
-    with open(exp_path) as f:
-        expected = f.read()
-    assert result.text == expected, "Unexpected outline serialization "
+
+    assert_or_generate_ground_truth(result.text, exp_path, "Unexpected outline serialization")
 
     # Compare with TABLE_OF_CONTENTS mode
     params_toc = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS)
@@ -117,9 +114,7 @@ def test_outline_serializer_include_non_meta_false():
     )
     assert "\\[ref=" in result.text, "Should include references"
 
-    with open(exp_path) as f:
-        expected = f.read()
-    assert result.text == expected, "Serialized text should match expected output"
+    assert_or_generate_ground_truth(result.text, exp_path)
 
 
 def test_outline_serializer_empty_document():
@@ -183,12 +178,13 @@ def test_outline_serializer_json_format():
         if "summary" in item:
             assert isinstance(item["summary"], str)
             assert len(item["summary"]) > 0
-    with open(exp_path) as f:
-        expected = json.load(f)
-    assert json.loads(result.text) == expected, "Serialized text should match expected output"
+
+    assert_or_generate_ground_truth(result.text, exp_path, is_json=True)
 
     # Hierarchical document with extra fields
     doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    exp_path_hier = doc_path.with_suffix(".mtoc.gt.json")
+
     doc = DoclingDocument.load_from_json(filename=doc_path)
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
@@ -199,6 +195,8 @@ def test_outline_serializer_json_format():
     assert first_item.keys() == {"ref", "title", "summary", "level", "mellea__original_char_count"}
     assert first_item["mellea__original_char_count"] == 382  # Document-level summary char count
     assert isinstance(first_item["level"], int)
+
+    assert_or_generate_ground_truth(result.text, exp_path_hier, is_json=True)
 
 
 def test_outline_serializer_json_format_without_non_meta():
@@ -264,13 +262,11 @@ def test_outline_serializer_itxt_format():
     assert "[" in first_line and "]" in first_line
 
     # Verify against ground truth file
-    with open(exp_path) as f:
-        expected = f.read()
-    assert result.text == expected, "Serialized ITXT should match expected output"
+    assert_or_generate_ground_truth(result.text, exp_path, "Serialized ITXT should match expected output")
 
     # Hierarchical document with extra fields
     doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
-    exp_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.toc.gt.itxt")
+    exp_path_hier = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.toc.gt.itxt")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
     ser = OutlineDocSerializer(doc=doc, params=params)
@@ -284,9 +280,7 @@ def test_outline_serializer_itxt_format():
     assert has_indented, "Should have indented lines for hierarchical structure"
 
     # Verify against ground truth file
-    with open(exp_path) as f:
-        expected = f.read()
-    assert result.text == expected, "Hierarchical ITXT should match expected output"
+    assert_or_generate_ground_truth(result.text, exp_path_hier, "Hierarchical ITXT should match expected output")
 
 
 def test_outline_serializer_itxt_format_without_non_meta():
