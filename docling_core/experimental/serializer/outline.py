@@ -188,8 +188,8 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
         else:
             text_parts.append(_default_prepend(item))
 
-    # Always include reference (structure)
-    text_parts.append(_default_outline_node(item))
+    # Always include reference (structure). Add two trailing spaces for Markdown line break.
+    text_parts.append(_default_outline_node(item) + "  ")
 
     # Always include summary (metadata) if available
     if item.meta and item.meta.summary:
@@ -525,7 +525,7 @@ class OutlineDocSerializer(MarkdownDocSerializer):
                 # Only include title heading if include_non_meta is True
                 if params.include_non_meta:
                     doc_meta_parts.append(f"# {self.doc.name}")
-                doc_meta_parts.append("\\[ref=#/body\\]")
+                doc_meta_parts.append("\\[ref=#/body\\]  ")
                 doc_meta_parts.append(self.doc.meta.summary.text)
                 # Don't add empty line - parent class will add separators
 
