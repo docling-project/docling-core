@@ -1,3 +1,10 @@
+## [v2.70.1](https://github.com/docling-project/docling-core/releases/tag/v2.70.1) - 2026-03-17
+
+### Fix
+
+* **markdown:** Remove assert statements to support Python optimization mode ([#548](https://github.com/docling-project/docling-core/issues/548)) ([`0a3b278`](https://github.com/docling-project/docling-core/commit/0a3b2787e04259d8f2be4813b289aa1fe0aaa734))
+* Improve rich table cell validation ([#550](https://github.com/docling-project/docling-core/issues/550)) ([`c57e50a`](https://github.com/docling-project/docling-core/commit/c57e50ac43e977ce86a78bd6d8ca5db9d17c503f))
+
 ## [v2.70.0](https://github.com/docling-project/docling-core/releases/tag/v2.70.0) - 2026-03-13
 
 ### Feature
