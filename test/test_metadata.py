@@ -252,15 +252,15 @@ def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocumen
 
 
 def test_document_level_metadata(dummy_doc_with_meta: DoclingDocument) -> None:
-    """Test that document-level metadata can be loaded and accessed."""
+    """Test that document-level metadata can be loaded and accessed through 'body' field."""
     # Verify document-level metadata exists
-    assert dummy_doc_with_meta.meta is not None
-    assert dummy_doc_with_meta.meta.summary is not None
-    assert dummy_doc_with_meta.meta.summary.text == "This is a document-level summary describing the entire document."
-    assert dummy_doc_with_meta.meta.summary.confidence == 0.98
+    assert dummy_doc_with_meta.body.meta is not None
+    assert dummy_doc_with_meta.body.meta.summary is not None
+    assert dummy_doc_with_meta.body.meta.summary.text == "This is a document-level summary describing the entire document."
+    assert dummy_doc_with_meta.body.meta.summary.confidence == 0.98
 
     # Verify custom metadata fields at document level
-    custom_part = dummy_doc_with_meta.meta.get_custom_part()
+    custom_part = dummy_doc_with_meta.body.meta.get_custom_part()
     assert custom_part["my_corp__doc_category"] == "technical_report"
     assert custom_part["my_corp__doc_version"] == "1.0"
 

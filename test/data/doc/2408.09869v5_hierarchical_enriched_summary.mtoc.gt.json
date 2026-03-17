@@ -1,9 +1,9 @@
 [
   {
     "ref": "#/body",
+    "title": "2408.09869v5",
     "summary": "Docling is a free, MIT‑licensed Python library that converts PDFs into richly structured JSON or Markdown by running on commodity hardware. It combines state‑of‑the‑art AI models (DocLayNet for layout analysis and TableFormer for table structure) with optional OCR, delivers fast, accurate results locally, and exposes an extensible pipeline so users can add new models or features.",
     "level": 0,
-    "title": "2408.09869v5",
     "mellea__original_char_count": 382
   },
   {

@@ -2609,10 +2609,6 @@ class DoclingDocument(BaseModel):
         # This is optional, e.g. a DoclingDocument could also be entirely
         # generated from synthetic data.
     )
-    meta: Annotated[
-        BaseMeta | None,
-        Field(description="Metadata for the document, such as summaries or other custom metadata fields."),
-    ] = None
 
     furniture: Annotated[GroupItem, Field(deprecated=True)] = GroupItem(
         name="_root_",

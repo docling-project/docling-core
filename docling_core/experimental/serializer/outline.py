@@ -480,25 +480,24 @@ class OutlineDocSerializer(MarkdownDocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
 
         if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
-            # Parse each part as JSON and combine into an array
             json_objects = []
 
-            # Add document-level metadata as the first item if it exists
-            if self.doc.meta and self.doc.meta.summary:
-                doc_meta_dict: dict[str, Any] = {
-                    "ref": "#/body",
-                    "summary": self.doc.meta.summary.text,
-                    "level": 0,  # Level 0 so document items are indented relative to it
+            # Add body-level summary if present
+            if self.doc.body.meta and self.doc.body.meta.summary:
+                body_data: dict[str, Any] = {
+                    "ref": self.doc.body.self_ref,
+                    "title": self.doc.name if params.include_non_meta else None,
+                    "summary": self.doc.body.meta.summary.text,
+                    "level": 0,
                 }
-                # Only include title if include_non_meta is True
-                if params.include_non_meta:
-                    doc_meta_dict["title"] = self.doc.name
-                # Add extra custom fields from document-level summary metadata
-                extra_dict: dict[str, Any] = self.doc.meta.summary.get_custom_part()
+                extra_dict: dict[str, Any] = self.doc.body.meta.summary.get_custom_part()
                 if extra_dict:
-                    doc_meta_dict.update(extra_dict)
-                json_objects.append(doc_meta_dict)
+                    body_data.update(extra_dict)
 
+                outline_data = OutlineItemData(**body_data)
+                json_objects.append(outline_data.model_dump(exclude_none=True))
+
+            # Add all the other parts
             for part in parts:
                 if part.text:
                     try:
@@ -507,10 +506,9 @@ class OutlineDocSerializer(MarkdownDocSerializer):
                         # Skip invalid JSON
                         pass
 
-            # Return the array in the requested format
             if params.format == OutlineFormat.JSON:
                 text_res = json.dumps(json_objects, ensure_ascii=False, indent=2)
-            else:  # ITXT - format as indented text
+            else:
                 lines = [
                     _format_indented_text_line(item, max_summary_length=params.itxt_max_summary_length)
                     for item in json_objects
@@ -519,23 +517,21 @@ class OutlineDocSerializer(MarkdownDocSerializer):
 
             return create_ser_result(text=text_res, span_source=parts)
         else:
-            # Markdown format - add document-level metadata at the beginning
-            doc_meta_parts = []
-            if self.doc.meta and self.doc.meta.summary:
-                # Only include title heading if include_non_meta is True
-                if params.include_non_meta:
-                    doc_meta_parts.append(f"# {self.doc.name}")
-                doc_meta_parts.append("\\[ref=#/body\\]  ")
-                doc_meta_parts.append(self.doc.meta.summary.text)
-                # Don't add empty line - parent class will add separators
+            all_parts = []
 
-            # Combine document metadata with item parts
-            if doc_meta_parts:
-                doc_meta_text = "\n".join(doc_meta_parts)
-                doc_meta_result = create_ser_result(text=doc_meta_text)
-                all_parts = [doc_meta_result] + parts
-            else:
-                all_parts = parts
+            # Add body-level summary if present
+            if self.doc.body.meta and self.doc.body.meta.summary:
+                body_text_parts = []
+
+                if params.include_non_meta:
+                    body_text_parts.append(f"# {self.doc.name}")
+                # Add reference with two trailing spaces for Markdown line break
+                body_text_parts.append(f"\\[ref={self.doc.body.self_ref}\\]  ")
+                body_text_parts.append(_default_summary(self.doc.body.meta.summary.text))
+                body_text = "\n".join(body_text_parts).strip()
+                all_parts.append(create_ser_result(text=body_text))
+
+            all_parts.extend(parts)
 
             # Use default Markdown behavior with all parts
             return super().serialize_doc(parts=all_parts, **kwargs)
