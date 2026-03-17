@@ -6,6 +6,12 @@ body:
   - $ref: '#/tables/0'
   content_layer: body
   label: unspecified
+  meta:
+    my_corp__doc_category: technical_report
+    my_corp__doc_version: '1.0'
+    summary:
+      confidence: 0.98
+      text: This is a document-level summary describing the entire document.
   name: _root_
   self_ref: '#/body'
 form_items: []
@@ -283,4 +289,4 @@ texts:
   self_ref: '#/texts/3'
   text: 'Figure 1: Four examples of complex page layouts across different document
     categories'
-version: 1.9.0
+version: 1.10.0

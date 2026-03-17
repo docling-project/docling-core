@@ -102,7 +102,7 @@ def _serialize_text_item(item: TextItem, doc: DoclingDocument, **kwargs: Any) ->
     return result.text.strip()
 
 
-def _format_indented_text_line(item: dict[str, Any], indent_size: int = 3, max_summary_length: int = 100) -> str:
+def _format_indented_text_line(item: dict[str, Any], indent_size: int = 2, max_summary_length: int = 100) -> str:
     """Format a single item as an indented text line.
 
     Args:
@@ -114,7 +114,7 @@ def _format_indented_text_line(item: dict[str, Any], indent_size: int = 3, max_s
         Formatted line with indentation based on level
     """
     level = item.get("level", 1)
-    indent = " " * (indent_size * (level - 1))
+    indent = " " * (indent_size * level)
 
     ref = item.get("ref", "")
     title = item.get("title", "")
@@ -188,8 +188,8 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
         else:
             text_parts.append(_default_prepend(item))
 
-    # Always include reference (structure)
-    text_parts.append(_default_outline_node(item))
+    # Always include reference (structure). Add two trailing spaces for Markdown line break.
+    text_parts.append(_default_outline_node(item) + "  ")
 
     # Always include summary (metadata) if available
     if item.meta and item.meta.summary:
@@ -480,8 +480,24 @@ class OutlineDocSerializer(MarkdownDocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
 
         if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
-            # Parse each part as JSON and combine into an array
             json_objects = []
+
+            # Add body-level summary if present
+            if self.doc.body.meta and self.doc.body.meta.summary:
+                body_data: dict[str, Any] = {
+                    "ref": self.doc.body.self_ref,
+                    "title": self.doc.name if params.include_non_meta else None,
+                    "summary": self.doc.body.meta.summary.text,
+                    "level": 0,
+                }
+                extra_dict: dict[str, Any] = self.doc.body.meta.summary.get_custom_part()
+                if extra_dict:
+                    body_data.update(extra_dict)
+
+                outline_data = OutlineItemData(**body_data)
+                json_objects.append(outline_data.model_dump(exclude_none=True))
+
+            # Add all the other parts
             for part in parts:
                 if part.text:
                     try:
@@ -490,10 +506,9 @@ class OutlineDocSerializer(MarkdownDocSerializer):
                         # Skip invalid JSON
                         pass
 
-            # Return the array in the requested format
             if params.format == OutlineFormat.JSON:
                 text_res = json.dumps(json_objects, ensure_ascii=False, indent=2)
-            else:  # ITXT - format as indented text
+            else:
                 lines = [
                     _format_indented_text_line(item, max_summary_length=params.itxt_max_summary_length)
                     for item in json_objects
@@ -502,8 +517,24 @@ class OutlineDocSerializer(MarkdownDocSerializer):
 
             return create_ser_result(text=text_res, span_source=parts)
         else:
-            # Use default Markdown behavior
-            return super().serialize_doc(parts=parts, **kwargs)
+            all_parts = []
+
+            # Add body-level summary if present
+            if self.doc.body.meta and self.doc.body.meta.summary:
+                body_text_parts = []
+
+                if params.include_non_meta:
+                    body_text_parts.append(f"# {self.doc.name}")
+                # Add reference with two trailing spaces for Markdown line break
+                body_text_parts.append(f"\\[ref={self.doc.body.self_ref}\\]  ")
+                body_text_parts.append(_default_summary(self.doc.body.meta.summary.text))
+                body_text = "\n".join(body_text_parts).strip()
+                all_parts.append(create_ser_result(text=body_text))
+
+            all_parts.extend(parts)
+
+            # Use default Markdown behavior with all parts
+            return super().serialize_doc(parts=all_parts, **kwargs)
 
     @override
     def get_parts(
