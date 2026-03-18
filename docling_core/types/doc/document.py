@@ -2748,14 +2748,6 @@ class DoclingDocument(BaseModel):
     def _serialize_prov(self, prov: ProvenanceItem) -> str:
         return f"{prov.page_no},{prov.bbox.l},{prov.bbox.t},{prov.bbox.r},{prov.bbox.b},{prov.bbox.coord_origin.value}"
 
-    def _deserialize_prov(self, prov_str: str) -> ProvenanceItem:
-        page_no, l, t, r, b, coord_origin = prov_str.split(",")
-        return ProvenanceItem(
-            page_no=int(page_no),
-            bbox=BoundingBox(l=float(l), t=float(t), r=float(r), b=float(b), coord_origin=CoordOrigin(coord_origin)),
-            charspan=(0, 0),
-        )
-
     def _provs_match(self, prov1: ProvenanceItem, prov2: ProvenanceItem, iou_threshold: float = 0.01) -> bool:
         if prov1.page_no != prov2.page_no or prov1.bbox.coord_origin != prov2.bbox.coord_origin:
             return False  # TODO: can normalize and compare but needs page size
