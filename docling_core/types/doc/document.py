@@ -4991,6 +4991,7 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         mark_annotations: bool = False,
         compact_tables: bool = False,
+        traverse_pictures: bool = False,
         *,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
         allowed_meta_names: Optional[set[str]] = None,
@@ -5043,6 +5044,11 @@ class DoclingDocument(BaseModel):
         :type mark_annotations: bool = False
         :param compact_tables: bool: Whether to use compact table format without column padding. (Default value = False).
         :type compact_tables: bool = False
+        :param traverse_pictures: bool: Whether to traverse into picture items and
+            serialize their text children. Must be set to True for scanned/image-based
+            PDFs processed with full-page OCR, where the layout model places all OCR
+            text as children of a top-level PictureItem. (Default value = False).
+        :type traverse_pictures: bool = False
         :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
         :type use_legacy_annotations: Optional[bool] = None
         :param mark_meta: bool: Whether to mark meta in the export
@@ -5090,6 +5096,7 @@ class DoclingDocument(BaseModel):
                 blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
                 compact_tables=compact_tables,
+                traverse_pictures=traverse_pictures,
             ),
         )
         ser_res = serializer.serialize()
@@ -5111,8 +5118,16 @@ class DoclingDocument(BaseModel):
         from_element: int = 0,
         to_element: int = 1000000,
         labels: Optional[set[DocItemLabel]] = None,
+        traverse_pictures: bool = False,
     ) -> str:
-        """export_to_text."""
+        """Export to plain text.
+
+        :param traverse_pictures: bool: Whether to traverse into picture items and
+            include their text children. Must be set to True for scanned/image-based
+            PDFs processed with full-page OCR, where the layout model places all OCR
+            text as children of a top-level PictureItem. (Default value = False).
+        :type traverse_pictures: bool = False
+        """
         my_labels = labels if labels is not None else DOCUMENT_TOKENS_EXPORT_LABELS
 
         return self.export_to_markdown(
@@ -5123,6 +5138,7 @@ class DoclingDocument(BaseModel):
             strict_text=True,
             escape_underscores=False,
             image_placeholder="",
+            traverse_pictures=traverse_pictures,
         )
 
     def save_as_html(
