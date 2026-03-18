@@ -2894,11 +2894,13 @@ class DoclingDocument(BaseModel):
                         parent=existing_key_item,
                         prov=key_prov,
                     )
+                skip_ki_deletion = key_item in to_delete
 
                 fi = self.add_field_item(parent=fri)
                 if isinstance(key_item, TextItem):
                     self.add_field_key(text=migr_data_item.key_cell.text or key_item.text, parent=fi, prov=key_prov)
                     if isinstance(key_item, ListItem):
+                        skip_ki_deletion = True
                         key_item.text = ""
                         if cell_and_ex_key_item_bbox_equal:
                             key_item.prov = []
@@ -2914,6 +2916,7 @@ class DoclingDocument(BaseModel):
                     value_prov = migr_data_item.value_cells[idx].prov or (
                         value_item.prov[0] if isinstance(value_item, DocItem) and value_item.prov else None
                     )
+                    skip_vi_deletion = value_item in to_delete
                     if isinstance(value_item, TextItem):
                         # giving priority to the text from the graph cells
                         value_text = migr_data_item.value_cells[idx].text or value_item.text
@@ -2927,14 +2930,21 @@ class DoclingDocument(BaseModel):
                             fv = self.add_field_value(text=value_text, parent=fi, prov=value_prov)
                             if value_item.label == DocItemLabel.EMPTY_VALUE:
                                 fv.kind = "fillable"
+
+                        if isinstance(value_item, ListItem):
+                            skip_vi_deletion = True
                     elif isinstance(value_item, PictureItem):
                         fv = self.add_field_value(text=migr_data_item.value_cells[idx].text, parent=fi, prov=value_prov)
-                        self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
+                        if not value_item.children:
+                            self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
+                        else:
+                            skip_vi_deletion = True
                     else:
                         continue  # TODO: handle other value item types
-                    if value_item not in to_delete and not isinstance(value_item, ListItem):
+
+                    if not skip_vi_deletion:
                         to_delete.append(value_item)
-                if key_item not in to_delete and not isinstance(key_item, ListItem):
+                if not skip_ki_deletion:
                     to_delete.append(key_item)
 
                 if existing_key_item.prov and not cell_and_ex_key_item_bbox_equal and not ex_key_item_is_li:
