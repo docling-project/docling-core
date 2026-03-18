@@ -30,11 +30,11 @@ This is the caption of table 1.
 
 This is the caption of figure 1.
 
-<!-- image -->
+<!-- image_0 -->
 
 This is the caption of figure 2.
 
-<!-- image -->
+<!-- image_1 -->
 
 ■ item 1 of list
 

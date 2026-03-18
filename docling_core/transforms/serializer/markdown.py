@@ -147,7 +147,7 @@ class MarkdownParams(CommonParams):
 
     layers: set[ContentLayer] = {ContentLayer.BODY}
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
-    image_placeholder: str = "<!-- image -->"
+    image_placeholder: str = "<!-- image_{index} -->"
     enable_chart_tables: bool = True
     indent: int = 4
     wrap_width: Optional[PositiveInt] = None
@@ -641,8 +641,10 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         error_response = (
             "<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate_picture_images=True)` -->"
         )
+        pic_idx = item.self_ref.rsplit("/", 1)[-1]
+        resolved_placeholder = image_placeholder.replace("{index}", pic_idx)
         if image_mode == ImageRefMode.PLACEHOLDER:
-            text_res = image_placeholder
+            text_res = resolved_placeholder
         elif image_mode == ImageRefMode.EMBEDDED:
             # short-cut: we already have the image in base64
             if (
@@ -667,11 +669,11 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             if not isinstance(item.image, ImageRef) or (
                 isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
             ):
-                text_res = image_placeholder
+                text_res = resolved_placeholder
             else:
                 text_res = f"![Image]({item.image.uri!s})"
         else:
-            text_res = image_placeholder
+            text_res = resolved_placeholder
 
         return create_ser_result(text=text_res, span_source=item)
 
