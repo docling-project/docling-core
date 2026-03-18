@@ -2902,7 +2902,10 @@ class DoclingDocument(BaseModel):
                             key_item.prov = []
                 elif isinstance(key_item, PictureItem):
                     fk = self.add_field_key(text=migr_data_item.key_cell.text, parent=fi, prov=key_prov)
-                    self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
+                    if not key_item.children:
+                        self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
+                    else:
+                        skip_ki_deletion = True
                 else:
                     continue  # TODO: handle other key item types
 
@@ -2917,11 +2920,14 @@ class DoclingDocument(BaseModel):
                         # giving priority to the text from the graph cells
                         value_text = migr_data_item.value_cells[idx].text or value_item.text
                         if value_item.label in {DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED}:
-                            fv = self.add_field_value(text="", parent=fi)
-                            new_text_item = value_item.model_copy(deep=True)
-                            new_text_item.prov = [value_prov] if value_prov else []
-                            new_text_item.text = value_text
-                            self.append_child_item(child=new_text_item, parent=fv)
+                            if not value_item.children:
+                                fv = self.add_field_value(text="", parent=fi)
+                                new_text_item = value_item.model_copy(deep=True)
+                                new_text_item.prov = [value_prov] if value_prov else []
+                                new_text_item.text = value_text
+                                self.append_child_item(child=new_text_item, parent=fv)
+                            else:
+                                skip_vi_deletion = True
                         else:
                             fv = self.add_field_value(text=value_text, parent=fi, prov=value_prov)
                             if value_item.label == DocItemLabel.EMPTY_VALUE:
