@@ -1,6 +1,7 @@
 [
   {
     "ref": "#/body",
+    "item": "section_header",
     "title": "2408.09869v5",
     "summary": "Docling is a free, MIT‑licensed Python library that converts PDFs into richly structured JSON or Markdown by running on commodity hardware. It combines state‑of‑the‑art AI models (DocLayNet for layout analysis and TableFormer for table structure) with optional OCR, delivers fast, accurate results locally, and exposes an extensible pipeline so users can add new models or features.",
     "level": 0,
@@ -8,6 +9,7 @@
   },
   {
     "ref": "#/texts/1",
+    "item": "section_header",
     "title": "Docling Technical Report",
     "summary": "Docling is a lightweight, MIT‑licensed open‑source package that converts PDF documents into structured formats. It leverages state‑of‑the‑art AI models—DocLayNet for layout analysis and TableFormer for table structure recognition—to achieve high accuracy while running efficiently on commodity hardware with minimal resources. The modular code interface makes it straightforward to extend the tool or integrate new models and features.",
     "level": 1,
@@ -15,6 +17,7 @@
   },
   {
     "ref": "#/texts/2",
+    "item": "section_header",
     "title": "Version 1.0",
     "summary": "Version 1.0 lists the contributors—Christoph Auer, Maksym Lysak, Ahmed Nassar, Michele Dolfi, Nikolaos Livathinos, Panos Vagenas, Cesar Berrospi, Ramis Matteo Omenetti, Fabian Lindlbauer, Kasper Dinkla, Lokesh Mishra, Yusik Kim, Shubham Gupta, Rafael Teixeira de Lima, Valery Weber, Lucas Morin, Ingmar Meijer, Viktor Kuropiatnyk and Peter W. J. Staar.  \nThey are affiliated with the AI4K Group at IBM Research Rüschlikon in Switzerland.",
     "level": 2,
@@ -22,6 +25,7 @@
   },
   {
     "ref": "#/texts/5",
+    "item": "section_header",
     "title": "Abstract",
     "summary": "Docling is a lightweight, MIT‑licensed open‑source tool that converts PDF documents into structured formats using advanced AI models. It leverages DocLayNet for layout analysis and TableFormer for table structure recognition, achieving efficient performance on commodity hardware with a modest resource footprint. The package’s code interface is designed for easy extensibility, allowing users to add new features and models seamlessly.",
     "level": 2,
@@ -29,6 +33,7 @@
   },
   {
     "ref": "#/texts/7",
+    "item": "section_header",
     "title": "1 Introduction",
     "summary": "PDFs are hard to parse because they’re optimized for printing rather than structure, making open‑source extraction tools lag behind commercial solutions even as LLMs make content extraction more valuable. Docling fills this gap with a lightweight Python library that uses advanced layout and table recognition models to convert PDFs into fast JSON or Markdown, recover metadata, figures, tables, and optionally apply OCR. It supports both high‑throughput batch processing and interactive use, and can leverage GPU/MPS accelerators for efficiency.",
     "level": 2,
@@ -36,6 +41,7 @@
   },
   {
     "ref": "#/texts/19",
+    "item": "section_header",
     "title": "2 Getting Started",
     "summary": "Docling can be installed from PyPI and includes all model assets that are automatically downloaded to a Hugging Face cache on first use (or pre‑installed if desired). It offers simple APIs for converting PDFs from files, URLs or binary streams into JSON or Markdown—both single documents and batches—while allowing optional configuration of pipeline features such as OCR or table recognition, input size limits, and CPU thread budgets. A Dockerfile is also provided for containerized deployment, and further examples are available in the GitHub repository.",
     "level": 2,
@@ -43,6 +49,7 @@
   },
   {
     "ref": "#/texts/25",
+    "item": "section_header",
     "title": "3 Processing pipeline",
     "summary": "Docling parses PDFs to obtain text tokens and page images, then runs a customizable sequence of AI models—currently an RT‑DETR‑derived layout detector and the TableFormer table recognizer—to annotate each page; the outputs are aggregated and post‑processed to infer metadata, language, reading order, and assemble a structured document object that can be exported as JSON or Markdown. The PDF backend is open‑source (docling‑parse using qpdf) with an optional pypdfium fallback, supports optional OCR via EasyOCR, and allows community extensions through a BaseModelPipeline abstraction.",
     "level": 2,
@@ -50,6 +57,7 @@
   },
   {
     "ref": "#/texts/27",
+    "item": "section_header",
     "title": "3.1 PDF backends",
     "summary": "Docling’s PDF backend interface is designed to (a) extract all text along with its geometric coordinates and (b) render each page exactly as it would appear in a viewer. Existing Python libraries failed to meet these needs—pymupdf was limited by restrictive licensing, while pypdfium and PyPDF suffered from slow performance or merged‑cell quality issues. To address this, Docling offers multiple backends: a custom parser built on the low‑level qpdf library (in the separate docling-parse package) as the default, with an optional pypdfium backend for cases where font‑encoding problems arise.",
     "level": 3,
@@ -57,6 +65,7 @@
   },
   {
     "ref": "#/texts/49",
+    "item": "section_header",
     "title": "3.2 AI models",
     "summary": "Docling opens two powerful AI models—an RT‑DETR‑derived layout analyzer that predicts page element boxes and a TableFormer vision‑transformer that reconstructs complex table structures—both pretrained on HuggingFace and run via ONNX runtime or PyTorch. The pipeline processes 72 dpi page images in sub‑second CPU time, post‑processes overlapping detections into coherent units, feeds detected tables to TableFormer for row/column structure recovery (2–6 s per table), and optionally runs EasyOCR on high‑resolution scans (≈30 s/page). The project invites community contributions to add faster OCR backends and further extend the open‑source ecosystem.",
     "level": 3,
@@ -64,6 +73,7 @@
   },
   {
     "ref": "#/texts/51",
+    "item": "section_header",
     "title": "Layout Analysis Model",
     "summary": "The layout analysis model is an RT‑DETR–based object detector trained on DocLayNet and proprietary data, producing bounding boxes and classes for page elements. It runs with ONNX Runtime on a single CPU at 72 dpi, achieving sub‑second latency; the predictions are filtered to remove overlaps and then aligned with PDF text tokens to assemble coherent units such as paragraphs, titles, lists, captions, figures, or tables.",
     "level": 3,
@@ -71,6 +81,7 @@
   },
   {
     "ref": "#/texts/54",
+    "item": "section_header",
     "title": "Table Structure Recognition",
     "summary": "TableFormer is a vision‑transformer model that predicts the logical row and column structure of tables, classifying cells as column headers, row headers or body while handling missing borders, empty cells, spans, hierarchy, and alignment issues. In Docling it receives cropped table images and their extracted text, then maps its predictions back to the original PDF cells to avoid costly re‑transcription; processing typically takes 2–6 seconds per table on a standard CPU.",
     "level": 3,
@@ -78,6 +89,7 @@
   },
   {
     "ref": "#/texts/58",
+    "item": "section_header",
     "title": "OCR",
     "summary": "Docling optionally supports OCR, currently using the EasyOCR library on 216‑dpi images to capture fine print in scanned PDFs or bitmap pages. While EasyOCR provides reasonable transcription quality, it can be slow—upwards of 30 seconds per page on CPU. The project invites open‑source contributors to add additional OCR backends and improve performance.",
     "level": 3,
@@ -85,6 +97,7 @@
   },
   {
     "ref": "#/texts/61",
+    "item": "section_header",
     "title": "3.3 Assembly",
     "summary": "Docling aggregates page‑level predictions into a structured document object defined by the docling-core package. A post‑processing model enriches this object—detecting language, correcting reading order, linking figures to captions, and labeling metadata such as title, authors, and references. The enriched document can then be exported as JSON or converted to Markdown.",
     "level": 3,
@@ -92,6 +105,7 @@
   },
   {
     "ref": "#/texts/63",
+    "item": "section_header",
     "title": "3.4 Extensibility",
     "summary": "Docling lets users extend its central model pipeline—between parsing and output assembly—by subclassing `BaseModelPipeline` or cloning the default, enabling full customization of model chains, replacement/addition of models, and new configuration parameters; a custom pipeline class can be passed to the main conversion functions.  \nModel implementations must implement `__call__`, accepting an iterator over page objects and returning an augmented iterator with added predictions.  \nWe invite community contributions of additional or alternative models and improvements.",
     "level": 3,
@@ -99,6 +113,7 @@
   },
   {
     "ref": "#/texts/66",
+    "item": "section_header",
     "title": "4 Performance",
     "summary": "Docling was benchmarked on a 225‑page mix of arXiv papers and IBM Redbooks using default settings, two PDF backends (native and pypdfium), and thread budgets of 4 and 16 on an Apple M3 Max and an Intel Xeon E5‑2690. The native backend takes 177–375 s (1.27–0.60 pages/s) while consuming ~6 GB, whereas the pypdfium backend cuts runtime to 92–239 s (2.18–1.57 pages/s) and memory to 2.5–2.4 GB, but may sacrifice table‑structure quality; performance improves with more threads on both systems. GPU acceleration for the AI models is under development and may become available when CUDA is detected by ONNXRuntime/torch.",
     "level": 2,
@@ -106,6 +121,7 @@
   },
   {
     "ref": "#/texts/73",
+    "item": "section_header",
     "title": "5 Applications",
     "summary": "Docling’s high‑quality, richly structured conversion supports a wide range of downstream tasks such as enterprise search, passage retrieval, classification and knowledge extraction that can treat tables, figures, sections, and references separately. Its open‑source “quackling” package enables document‑native vector embedding and chunking for retrieval‑augmented generation (RAG), integrating smoothly with LLM frameworks like LlamaIndex. Because it’s fast, stable, and inexpensive, Docling is ideal for building document‑derived datasets—especially with its powerful table recognition—for automated knowledge‑base construction and large‑scale multimodal training via IBM’s data prep kit.",
     "level": 2,
@@ -113,6 +129,7 @@
   },
   {
     "ref": "#/texts/75",
+    "item": "section_header",
     "title": "6 Future work and contributions",
     "summary": "Docling is designed for easy extension of its model library and pipelines, with plans to add new models such as a figure‑classifier, equation‑recognition, code‑recognition, and others to improve conversion quality and enrich metadata extraction. Future work also targets better GPU acceleration, testing, and an improved Docling‑native PDF backend. The project welcomes community contributions under the MIT license and encourages citing this technical report when using Docling.",
     "level": 2,
@@ -120,6 +137,7 @@
   },
   {
     "ref": "#/texts/78",
+    "item": "section_header",
     "title": "References",
     "summary": "The references compile a set of open‑source tools—EasyOCR for multilingual OCR, PyTorch 2 and ONNX Runtime for accelerated inference, and PDF libraries such as qpdf, PyMuPDF, pypdf, and PyPDFium2—that underpin document processing pipelines. They also point to large annotated datasets (Doclaynet, Patcid) and transformer‑based models (Tableformer, LlamaIndex) tailored to layout analysis and table structure recognition. Recent research highlighted includes optimized table tokenization, ESG KPI extraction from tables via large language models, and a performance comparison of DETR versus YOLO for real‑time object detection.",
     "level": 2,
@@ -127,6 +145,7 @@
   },
   {
     "ref": "#/texts/98",
+    "item": "section_header",
     "title": "Appendix",
     "summary": "The appendix presents Docling’s Markdown and JSON outputs while highlighting that PDF document conversion remains hard because layouts, languages, and formats vary so widely that a single ML model cannot easily generalise. To build a reliable benchmark, the authors introduced pixel‑accurate “snapping” boxes for text segments, rejected un‑annotatable pages, and achieved human mAP scores of 84–94 % across classes, which serve as an unbiased baseline. Baseline object‑detection models (Mask R‑CNN, Faster R‑CNN, YOLOv5x6) trained on DocLayNet reach mAPs of 68–88 %, with performance plateauing once ~80 % of the dataset is used, indicating that further data alone will not markedly improve results.",
     "level": 2,
@@ -134,6 +153,7 @@
   },
   {
     "ref": "#/texts/699",
+    "item": "section_header",
     "title": "5 EXPERIMENTS",
     "summary": "DocLayNet evaluates object‑detection baselines (Mask R‑CNN, Faster R‑CNN, YOLOv5) using COCO mAP@0.5–0.95 on 1025×1025 RGB images, showing that the learning curve flattens once ~80 % of the data is used.  \nThe models achieve mAP scores only 6–10 % below the inter‑annotator agreement, indicating a meaningful challenge, while YOLOv5x even surpasses human performance on abundant classes such as Text, Table and Picture; Mask R‑CNN and Faster R‑CNN perform comparably, suggesting pixel‑level segmentation offers limited benefit over bounding boxes.",
     "level": 2,
@@ -141,6 +161,7 @@
   },
   {
     "ref": "#/texts/704",
+    "item": "section_header",
     "title": "Baselines for Object Detection",
     "summary": "Baseline experiments on Mask R‑CNN, Faster R‑CNN and YOLOv5 (all trained/evaluated on 1025×1025 RGB images) show only a small mAP gap between the models, yet all are roughly 6–10 % below the human triple‑annotator mAP. The similarity of Mask R‑CNN and Faster R‑CNN scores indicates that pixel‑level segmentation derived from bounding boxes does not add benefit, while YOLOv5x excels—surpassing humans on frequent, visually distinctive classes such as Text, Table, and Picture. These results highlight DocLayNet’s difficulty in bridging the gap between human and machine performance.",
     "level": 3,

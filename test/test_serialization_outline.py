@@ -160,7 +160,7 @@ def test_outline_serializer_json_format():
     first_item = data[0]
     assert isinstance(first_item, dict)
     assert first_item["ref"] == "#/body", "First item should be document-level metadata"
-    assert first_item.keys() == {"ref", "title", "summary", "level"}
+    assert first_item.keys() == {"ref", "item", "title", "summary", "level"}
     assert isinstance(first_item["level"], int)
 
     # Check second item (first text item)
@@ -192,7 +192,7 @@ def test_outline_serializer_json_format():
     first_item = data[0]
     # Document-level metadata should have the custom field from the document's meta
     assert first_item["ref"] == "#/body"
-    assert first_item.keys() == {"ref", "title", "summary", "level", "mellea__original_char_count"}
+    assert first_item.keys() == {"ref", "item", "title", "summary", "level", "mellea__original_char_count"}
     assert first_item["mellea__original_char_count"] == 382  # Document-level summary char count
     assert isinstance(first_item["level"], int)
 

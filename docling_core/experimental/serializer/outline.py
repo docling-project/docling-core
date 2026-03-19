@@ -63,6 +63,7 @@ class OutlineItemData(_ExtraAllowingModel):
     ref: Annotated[
         str, Field(pattern=_JSON_POINTER_REGEX, description="JSON pointer reference to the item in the document")
     ]
+    item: Annotated[str, Field(description="Label of the item")]
     title: Annotated[str | None, Field(description="Title or heading text of the item")] = None
     summary: Annotated[str | None, Field(description="Summary text of the item")] = None
     level: Annotated[
@@ -153,8 +154,10 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     # (ITXT will be assembled at document level in serialize_doc)
     if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
         # Prepare base fields
+        label: str | None = item.label if isinstance(item, DocItem | GroupItem) else None
         data_dict: dict[str, Any] = {
             "ref": item.self_ref,
+            "item": label,
             "title": title_text,
             "summary": item.meta.summary.text if item.meta and item.meta.summary else None,
         }
@@ -486,6 +489,7 @@ class OutlineDocSerializer(MarkdownDocSerializer):
             if self.doc.body.meta and self.doc.body.meta.summary:
                 body_data: dict[str, Any] = {
                     "ref": self.doc.body.self_ref,
+                    "item": DocItemLabel.SECTION_HEADER,
                     "title": self.doc.name if params.include_non_meta else None,
                     "summary": self.doc.body.meta.summary.text,
                     "level": 0,
