@@ -1,0 +1,469 @@
+<doclang version="1.0.0">
+  <heading level="1">
+    <location value="30"/>
+    <location value="23"/>
+    <location value="213"/>
+    <location value="31"/>
+    AIRSPACE INFORMATION (Continued)
+  </heading>
+  <heading level="2">
+    <location value="30"/>
+    <location value="39"/>
+    <location value="145"/>
+    <location value="46"/>
+    High Energy Radiation Areas
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Illustration</classification>
+      </meta>
+      <location value="140"/>
+      <location value="48"/>
+      <location value="237"/>
+      <location value="141"/>
+    </picture>
+  </floating_group>
+  <text>
+    <location value="29"/>
+    <location value="123"/>
+    <location value="130"/>
+    <location value="136"/>
+    Appropriate notes as required may be shown.
+  </text>
+  <heading level="2">
+    <location value="30"/>
+    <location value="146"/>
+    <location value="151"/>
+    <location value="152"/>
+    Military Training Routes (MTR)
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Illustration</classification>
+      </meta>
+      <location value="139"/>
+      <location value="159"/>
+      <location value="248"/>
+      <location value="164"/>
+    </picture>
+  </floating_group>
+  <heading level="2">
+    <location value="30"/>
+    <location value="169"/>
+    <location value="186"/>
+    <location value="176"/>
+    Special Military Activity Routes (SMAR)
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Illustration</classification>
+      </meta>
+      <location value="137"/>
+      <location value="180"/>
+      <location value="248"/>
+      <location value="225"/>
+    </picture>
+  </floating_group>
+  <text>
+    <location value="30"/>
+    <location value="241"/>
+    <location value="127"/>
+    <location value="253"/>
+    Boxed notes shown adjacent to route .
+  </text>
+  <text>
+    <location value="139"/>
+    <location value="234"/>
+    <location value="244"/>
+    <location value="248"/>
+    SPECIAL MILITARY ACTIVITY CTC ALBUQUERQUE CNTR ON 135.875 FOR ACTIVITY STATUS
+  </text>
+  <text>
+    <location value="176"/>
+    <location value="258"/>
+    <location value="208"/>
+    <location value="272"/>
+    40/05 AGL
+  </text>
+  <heading level="2">
+    <location value="30"/>
+    <location value="278"/>
+    <location value="74"/>
+    <location value="284"/>
+    IFR Routes
+  </heading>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="30"/>
+        <location value="294"/>
+        <location value="51"/>
+        <location value="299"/>
+        Arrival
+      </key>
+      <value class="read_only">
+        <location value="132"/>
+        <location value="292"/>
+        <location value="251"/>
+        <location value="315"/>
+        15,000 - 7000
+      </value>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="132"/>
+          <location value="292"/>
+          <location value="251"/>
+          <location value="315"/>
+        </picture>
+      </floating_group>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="30"/>
+        <location value="329"/>
+        <location value="64"/>
+        <location value="335"/>
+        Departure
+      </key>
+      <value class="read_only">
+        <location value="161"/>
+        <location value="330"/>
+        <location value="232"/>
+        <location value="341"/>
+        8000-12000
+      </value>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="161"/>
+          <location value="330"/>
+          <location value="232"/>
+          <location value="341"/>
+        </picture>
+      </floating_group>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="30"/>
+        <location value="350"/>
+        <location value="87"/>
+        <location value="356"/>
+        Arrival/Departure
+      </key>
+      <value class="read_only">
+        <location value="147"/>
+        <location value="354"/>
+        <location value="243"/>
+        <location value="372"/>
+        IFR ARRIVALS IFR DEPARTURES 8000 - 5000 5000 - 8000
+      </value>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="147"/>
+          <location value="354"/>
+          <location value="243"/>
+          <location value="372"/>
+        </picture>
+      </floating_group>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="178"/>
+    <location value="378"/>
+    <location value="210"/>
+    <location value="384"/>
+    TAC only
+  </text>
+  <heading level="2">
+    <location value="261"/>
+    <location value="41"/>
+    <location value="473"/>
+    <location value="55"/>
+    Special Security Notice Permanent Continuous Flight Restriction Areas
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Illustration</classification>
+      </meta>
+      <location value="377"/>
+      <location value="57"/>
+      <location value="459"/>
+      <location value="132"/>
+    </picture>
+  </floating_group>
+  <heading level="2">
+    <location value="260"/>
+    <location value="142"/>
+    <location value="461"/>
+    <location value="155"/>
+    Sporting Event Temporary Flight Restriction (TFR) Sites
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Illustration</classification>
+      </meta>
+      <location value="397"/>
+      <location value="165"/>
+      <location value="432"/>
+      <location value="174"/>
+    </picture>
+  </floating_group>
+  <heading level="2">
+    <location value="261"/>
+    <location value="188"/>
+    <location value="424"/>
+    <location value="195"/>
+    Space Operations Area (FAR Part 91.143)
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Illustration</classification>
+      </meta>
+      <location value="377"/>
+      <location value="197"/>
+      <location value="475"/>
+      <location value="244"/>
+    </picture>
+  </floating_group>
+  <heading level="2">
+    <location value="261"/>
+    <location value="250"/>
+    <location value="375"/>
+    <location value="257"/>
+    Miscellaneous Activity Areas
+  </heading>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="419"/>
+        <location value="265"/>
+        <location value="450"/>
+        <location value="278"/>
+        A
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="419"/>
+          <location value="265"/>
+          <location value="450"/>
+          <location value="278"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="260"/>
+        <location value="271"/>
+        <location value="340"/>
+        <location value="278"/>
+        Aerobatic Practice Area
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="419"/>
+        <location value="292"/>
+        <location value="449"/>
+        <location value="306"/>
+        G
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="419"/>
+          <location value="292"/>
+          <location value="449"/>
+          <location value="306"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="299"/>
+        <location value="320"/>
+        <location value="306"/>
+        Glider Operations
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="421"/>
+        <location value="322"/>
+        <location value="451"/>
+        <location value="336"/>
+        H
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="421"/>
+          <location value="322"/>
+          <location value="451"/>
+          <location value="336"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="328"/>
+        <location value="327"/>
+        <location value="334"/>
+        Hang Glider Activity
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="421"/>
+        <location value="347"/>
+        <location value="451"/>
+        <location value="361"/>
+<![CDATA[<img>U</img>]]>      </key>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="421"/>
+          <location value="347"/>
+          <location value="451"/>
+          <location value="361"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="355"/>
+        <location value="317"/>
+        <location value="362"/>
+        Ultralight Activity
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="421"/>
+        <location value="371"/>
+        <location value="451"/>
+        <location value="385"/>
+        UA
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="421"/>
+          <location value="371"/>
+          <location value="451"/>
+          <location value="385"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="377"/>
+        <location value="349"/>
+        <location value="383"/>
+        Unmanned Aircraft Activity
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="417"/>
+        <location value="401"/>
+        <location value="450"/>
+        <location value="410"/>
+        parachute 122.9
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="417"/>
+          <location value="401"/>
+          <location value="450"/>
+          <location value="410"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="404"/>
+        <location value="397"/>
+        <location value="410"/>
+        Parachute Jumping Area with Frequency
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="431"/>
+        <location value="441"/>
+        <location value="443"/>
+        <location value="457"/>
+        ✿
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="431"/>
+          <location value="441"/>
+          <location value="443"/>
+          <location value="457"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="446"/>
+        <location value="352"/>
+        <location value="453"/>
+        Space Launch Activity Area
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="250"/>
+    <location value="491"/>
+    <location value="260"/>
+    <location value="497"/>
+    31
+  </text>
+  <text>
+    <location value="492"/>
+    <location value="164"/>
+    <location value="500"/>
+    <location value="347"/>
+    FAA Chart Users Guide VFR Symbology - Sectional and Terminal Area Charts
+  </text>
+</doclang>

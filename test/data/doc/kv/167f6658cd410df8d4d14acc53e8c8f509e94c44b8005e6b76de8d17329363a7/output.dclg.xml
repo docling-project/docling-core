@@ -1,0 +1,613 @@
+<doclang version="1.0.0">
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Bar code</classification>
+      </meta>
+      <location value="255"/>
+      <location value="3"/>
+      <location value="448"/>
+      <location value="24"/>
+    </picture>
+  </floating_group>
+  <list ordered="false">
+    <list_text>
+      <location value="73"/>
+      <location value="29"/>
+      <location value="223"/>
+      <location value="48"/>
+      (12) United States Patent Jung et al.
+    </list_text>
+    <list_text>
+      <location value="279"/>
+      <location value="30"/>
+      <location value="448"/>
+      <location value="39"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="295"/>
+            <location value="31"/>
+            <location value="344"/>
+            <location value="37"/>
+            Patent No.:
+          </key>
+          <value class="read_only">
+            <location value="365"/>
+            <location value="31"/>
+            <location value="448"/>
+            <location value="39"/>
+            US\;6,482,565\;\mathrm{B1}
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="278"/>
+      <location value="40"/>
+      <location value="447"/>
+      <location value="48"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="295"/>
+            <location value="41"/>
+            <location value="360"/>
+            <location value="47"/>
+            Date of Patent:
+          </key>
+          <value class="read_only">
+            <location value="390"/>
+            <location value="41"/>
+            <location value="447"/>
+            <location value="48"/>
+            Nov.\,19,\,2002
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+  </list>
+  <list ordered="false">
+    <list_text>
+      <location value="73"/>
+      <location value="69"/>
+      <location value="225"/>
+      <location value="87"/>
+      (54) PHOTORESIST CROSS-LINKER AND
+    </list_text>
+    <list_text>
+      <location value="72"/>
+      <location value="94"/>
+      <location value="247"/>
+      <location value="120"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="94"/>
+            <location value="123"/>
+            <location value="100"/>
+            Inventors:
+          </key>
+          <value class="read_only">
+            <location value="127"/>
+            <location value="94"/>
+            <location value="247"/>
+            <location value="119"/>
+            : Jae Chang Jung; Keun Kyu Kong; Myoung Soo Kim; Hyoung Gi Kim; Hyeong Soo Kim; Ki Ho Baik, all of Kyoungki-do (KR)
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="72"/>
+      <location value="126"/>
+      <location value="245"/>
+      <location value="138"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="145"/>
+            <location value="114"/>
+            <location value="149"/>
+            Notice:
+          </key>
+          <value class="read_only">
+            <location value="128"/>
+            <location value="145"/>
+            <location value="253"/>
+            <location value="163"/>
+            Subject to any disclaimer, the term of this patent is extended or adjusted under 35 U.S.C. 154(b) by 0 days.
+          </value>
+        </field_item>
+      </field_region>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="126"/>
+            <location value="122"/>
+            <location value="132"/>
+            Assignee:
+          </key>
+          <value class="read_only">
+            <location value="128"/>
+            <location value="126"/>
+            <location value="245"/>
+            <location value="138"/>
+            Hyundai Electronics Industries Co., Ltd. (KR)
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="172"/>
+      <location value="162"/>
+      <location value="177"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="172"/>
+            <location value="125"/>
+            <location value="177"/>
+            Appl. No.:
+          </key>
+          <value class="read_only">
+            <location value="128"/>
+            <location value="172"/>
+            <location value="162"/>
+            <location value="177"/>
+            09/448,964
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="72"/>
+      <location value="182"/>
+      <location value="172"/>
+      <location value="188"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="182"/>
+            <location value="111"/>
+            <location value="187"/>
+            Filed:
+          </key>
+          <value class="read_only">
+            <location value="128"/>
+            <location value="182"/>
+            <location value="172"/>
+            <location value="187"/>
+            Nov.\textbf{~24},1999
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="192"/>
+      <location value="219"/>
+      <location value="198"/>
+      (30) Foreign Application Priority Data
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="217"/>
+      <location value="253"/>
+      <location value="224"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="218"/>
+            <location value="120"/>
+            <location value="223"/>
+            \mathbf{Int.\ Cl.}^{7}
+          </key>
+          <value class="read_only">
+            <location value="216"/>
+            <location value="218"/>
+            <location value="254"/>
+            <location value="223"/>
+            G03F 7/004
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="225"/>
+      <location value="254"/>
+      <location value="237"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="225"/>
+            <location value="118"/>
+            <location value="230"/>
+            U.S.\ Cl.
+          </key>
+          <value class="read_only">
+            <location value="112"/>
+            <location value="226"/>
+            <location value="253"/>
+            <location value="237"/>
+            Cl:430/270.1; 430/325; 526/266; 526/320; 526/271; 549/347; 549/369; 549/430
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="239"/>
+      <location value="253"/>
+      <location value="251"/>
+      <field_region>
+        <field_item>
+          <key>
+            <location value="93"/>
+            <location value="239"/>
+            <location value="143"/>
+            <location value="243"/>
+            Field of Search
+          </key>
+          <value class="read_only">
+            <location value="137"/>
+            <location value="239"/>
+            <location value="253"/>
+            <location value="250"/>
+            arch . 430/270.1, 325;
+          </value>
+        </field_item>
+      </field_region>
+    </list_text>
+    <list_text>
+      <location value="73"/>
+      <location value="257"/>
+      <location value="191"/>
+      <location value="264"/>
+      (56) References Cited
+    </list_text>
+    <list_text>
+      <location value="268"/>
+      <location value="174"/>
+      <location value="449"/>
+      <location value="186"/>
+      (74) Attorney , Agent , or Firm—Townsend and Townsend
+    </list_text>
+  </list>
+  <floating_group class="table">
+    <otsl>
+      <location value="77"/>
+      <location value="202"/>
+      <location value="253"/>
+      <location value="213"/>
+      <fcel/>
+      Nov. 27, 1998
+      <fcel/>
+      (KR)
+      <fcel/>
+      98-51356
+      <nl/>
+      <fcel/>
+      Feb. 22, 1999
+      <fcel/>
+      (KR) ...
+      <fcel/>
+      ．99-5825
+      <nl/>
+    </otsl>
+  </floating_group>
+  <heading level="2">
+    <location value="117"/>
+    <location value="268"/>
+    <location value="209"/>
+    <location value="272"/>
+    U.S. PATENT DOCUMENTS
+  </heading>
+  <heading level="2">
+    <location value="107"/>
+    <location value="311"/>
+    <location value="219"/>
+    <location value="316"/>
+    FOREIGN PATENT DOCUMENTS
+  </heading>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="123"/>
+        <location value="372"/>
+        <location value="204"/>
+        <location value="376"/>
+        OTHER PUBLICATIONS
+      </key>
+      <value class="read_only">
+        <location value="73"/>
+        <location value="382"/>
+        <location value="253"/>
+        <location value="446"/>
+        1970:100663 Caplus Abstract.* 1971:65746 Caplus Abstract.* 1967:10943 Caplus Abstract.* 1984:10943 Caplus Abstract.* 1972:552633 Caplus Abstract.* 1970:477088 Caplus Abstract.* 1998:604944 Caplus Abstract.* 1971:112779 Caplus Abstract of JP 45040054, Dec. 1970.* 1970:510169 Caplus Abstract to Ouchi, T. et al. Kogyo Kagaku Zasshi, 1970, 73(7), 1717–19.*
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="268"/>
+    <location value="69"/>
+    <location value="449"/>
+    <location value="88"/>
+    Anionic polymerizabilities of 2-vinyl-1,3-dioxolane and 2-vinyl-1,3-dioxane, Yamashita, N. et al., J. Polym.Sci., Polym.Lett.Ed., 1979, 17, 521–6.*
+  </text>
+  <text>
+    <location value="269"/>
+    <location value="90"/>
+    <location value="448"/>
+    <location value="96"/>
+    1994:496066 Caplus Abstract of JP 5216294, Aug. 1993.*
+  </text>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="269"/>
+        <location value="98"/>
+        <location value="338"/>
+        <location value="103"/>
+        Chemical Abstract No.
+      </key>
+      <value class="read_only">
+        <location value="342"/>
+        <location value="99"/>
+        <location value="428"/>
+        <location value="103"/>
+<![CDATA[131:337017 & JP 11315075.]]>      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="269"/>
+        <location value="107"/>
+        <location value="338"/>
+        <location value="111"/>
+        Chemical Abstract No.
+      </key>
+      <value class="read_only">
+        <location value="341"/>
+        <location value="107"/>
+        <location value="428"/>
+        <location value="111"/>
+<![CDATA[128:295769 & JP 10088419.]]>      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="269"/>
+        <location value="115"/>
+        <location value="338"/>
+        <location value="119"/>
+        Chemical Abstract No.
+      </key>
+      <value class="read_only">
+        <location value="269"/>
+        <location value="115"/>
+        <location value="449"/>
+        <location value="126"/>
+<![CDATA[Chemical Abstract No. 118:102825 & J. Masłinska–Solich et al., React. Polym. (1992), 18(2), 159–166.]]>      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="268"/>
+    <location value="129"/>
+    <location value="450"/>
+    <location value="148"/>
+    J.Maślińska-Solich et al., “Studies on Co(II) and Mn(II) complesex of some maleic anhydride copolymers,” *Reactive Polymers*, vol. 18, 1992, pp. 159–166.
+  </text>
+  <footnote>
+    <location value="269"/>
+    <location value="154"/>
+    <location value="330"/>
+    <location value="159"/>
+    * cited by examiner
+  </footnote>
+  <text>
+    <location value="267"/>
+    <location value="168"/>
+    <location value="396"/>
+    <location value="173"/>
+    Primary Examiner-Rosemary E. Ashton
+  </text>
+  <floating_group class="table">
+    <otsl>
+      <location value="88"/>
+      <location value="278"/>
+      <location value="254"/>
+      <location value="307"/>
+      <fcel/>
+      3,468,857
+      <fcel/>
+      A
+      <fcel/>
+      9/1969
+      <fcel/>
+      Graver ... ... ... ... ...
+      <fcel/>
+      260/80.3
+      <nl/>
+      <fcel/>
+      5,049,463
+      <fcel/>
+      A*
+      <fcel/>
+      9/1991
+      <fcel/>
+      Kato et al. ...........
+      <fcel/>
+      ... 430/49
+      <nl/>
+      <fcel/>
+      5,059,698
+      <fcel/>
+      A
+      <fcel/>
+      10/1991
+      <fcel/>
+      Schulthess et al. ...
+      <fcel/>
+      ..549/375
+      <nl/>
+      <fcel/>
+      5,412,041
+      <fcel/>
+      A*
+      <fcel/>
+      5/1995
+      <fcel/>
+      Lesko et al. ...........
+      <fcel/>
+      ..525/340
+      <nl/>
+      <fcel/>
+      6,060,212
+      <fcel/>
+      A*
+      <fcel/>
+      5/2000
+      <fcel/>
+      McCulloch et al. ......
+      <fcel/>
+      430/270.1
+      <nl/>
+    </otsl>
+  </floating_group>
+  <floating_group class="table">
+    <otsl>
+      <location value="72"/>
+      <location value="321"/>
+      <location value="189"/>
+      <location value="367"/>
+      <fcel/>
+      DE
+      <fcel/>
+      3714276
+      <fcel/>
+      A1
+      <fcel/>
+      11/1988
+      <nl/>
+      <fcel/>
+      EP
+      <fcel/>
+      0347381
+      <fcel/>
+      A1
+      <fcel/>
+      12/1989
+      <nl/>
+      <fcel/>
+      EP
+      <fcel/>
+      0422888
+      <fcel/>
+      A2
+      <fcel/>
+      4/1991
+      <nl/>
+      <fcel/>
+      EP
+      <fcel/>
+      875 789
+      <fcel/>
+      A1
+      <fcel/>
+      11/1998
+      <nl/>
+      <fcel/>
+      GB
+      <fcel/>
+      922747
+      <ecel/>
+      <fcel/>
+      4/1963
+      <nl/>
+      <fcel/>
+      JP
+      <fcel/>
+      4-5040054
+      <fcel/>
+      *
+      <fcel/>
+      12/1970
+      <nl/>
+      <fcel/>
+      JP
+      <fcel/>
+      5-216294
+      <fcel/>
+      *
+      <fcel/>
+      8/1993
+      <nl/>
+      <fcel/>
+      WO
+      <fcel/>
+      WO 99/61497
+      <ecel/>
+      <fcel/>
+      12/1999
+      <nl/>
+    </otsl>
+  </floating_group>
+  <heading level="2">
+    <location value="338"/>
+    <location value="191"/>
+    <location value="379"/>
+    <location value="196"/>
+    ABSTRACT
+  </heading>
+  <text>
+    <location value="268"/>
+    <location value="202"/>
+    <location value="449"/>
+    <location value="259"/>
+    The present invention relates to a cross-linker for use in a photoresist which is suitable for a photolithography process using KrF (248 ru), ArF (193 nm), E-beam, ion beam or EUV light source. According to the present invention, preferred cross-linkers comprise a copolymer having repeating units derived from: (i) a compound represented by following Chemical Formula 1 and/or (ii) one or more compound(s) selected from the group consisting of acrylic acid, meth-acrylic acid and maleic anhydride.
+  </text>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Illustration</classification>
+      </meta>
+      <location value="285"/>
+      <location value="268"/>
+      <location value="450"/>
+      <location value="328"/>
+    </picture>
+  </floating_group>
+  <text>
+    <location value="276"/>
+    <location value="342"/>
+    <location value="449"/>
+    <location value="425"/>
+    wherein, R₁, R₂ and R individually represent straight or branched C₁-10 alkyl, straight or branched C₁-10 ester, straight or branched C₁-10 ketone, straight or branched C₁-10 carboxylic acid, straight or branched C₁-10 acetal, straight or branched C₁-10 alkyl including at least one hydroxyl group, straight or branched C₁-10 ester including at least one hydroxyl group, straight or branched C₁-10 ketone including at least one hydroxyl group, straight or branched C₁-10 carboxylic acid including at least one hydroxyl group, and straight or branched C₁-10 acetal including at least one hydroxyl group; R₃ represents hydrogen or methyl; m represents 0 or 1; and n represents a number of 1 to 5.
+  </text>
+  <text>
+    <location value="312"/>
+    <location value="440"/>
+    <location value="406"/>
+    <location value="446"/>
+    16 Claims, 5 Drawing Sheets
+  </text>
+  <text>
+    <location value="268"/>
+    <location value="191"/>
+    <location value="281"/>
+    <location value="197"/>
+    (57)
+  </text>
+</doclang>

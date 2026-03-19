@@ -52,6 +52,8 @@ class HybridChunker(BaseChunker):
         repeat_table_headers: Whether to repeat a table header if the table is chunked
         merge_peers: Whether to merge undersized chunks sharing same relevant metadata
         always_emit_headings: Whether to emit headings even for empty sections
+        omit_header_on_overflow: Only used when repeat_table_header is True. When True,
+            omit table headers for rows that would overflow with them.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -59,6 +61,7 @@ class HybridChunker(BaseChunker):
     tokenizer: BaseTokenizer = Field(default_factory=get_default_tokenizer)
     repeat_table_header: bool = True
     merge_peers: bool = True
+    omit_header_on_overflow: bool = False
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
     always_emit_headings: bool = False
@@ -253,6 +256,7 @@ class HybridChunker(BaseChunker):
                 tokenizer=self.tokenizer,
                 max_tokens=available_length,
                 prefix="\n".join(header_lines),
+                omit_prefix_on_overflow=self.omit_header_on_overflow,
                 serializer_provider=self.serializer_provider,
             )
             segments = line_chunker.chunk_text(lines=body_lines)
