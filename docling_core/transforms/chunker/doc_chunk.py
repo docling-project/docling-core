@@ -93,48 +93,48 @@ class DocChunk(BaseChunk):
 
     meta: DocMeta
 
-    def get_top_containing_objects(self, doc: DoclingDocument) -> list[DocItem] | None:
-        objects = {}
+    def get_top_containing_items(self, doc: DoclingDocument) -> list[DocItem] | None:
+        items = {}
         ref_items = [item.self_ref for item in self.meta.doc_items]
         for item in ref_items:
             # traverse document tree till top level (body)
-            obj = RefItem(cref=item).resolve(doc)
-            while obj.parent != doc.body.get_ref():
-                obj = obj.parent.resolve(doc)
-            objects[obj.self_ref] = obj
+            top_item = RefItem(cref=item).resolve(doc)
+            while top_item.parent != doc.body.get_ref():
+                top_item = top_item.parent.resolve(doc)
+            items[top_item.self_ref] = top_item
 
         # maintain the reading order as in the original document
         doc_body_refs = [ref.cref for ref in doc.body.children]
-        doc_ordered_refs = [ref for ref in doc_body_refs if ref in objects]
+        doc_ordered_refs = [ref for ref in doc_body_refs if ref in items]
         if len(doc_ordered_refs) > 0:
-            return [objects[ref] for ref in doc_ordered_refs]
+            return [items[ref] for ref in doc_ordered_refs]
         return None
 
-    def expand_to_object(self, dl_doc: DoclingDocument, serializer: BaseDocSerializer) -> DocChunk:
-        top_objects = self.get_top_containing_objects(dl_doc)
-        if not top_objects:
-            _logger.warning(f"error in getting top objects of {self}")
+    def expand_to_item(self, dl_doc: DoclingDocument, serializer: BaseDocSerializer) -> DocChunk:
+        top_items = self.get_top_containing_items(dl_doc)
+        if not top_items:
+            _logger.warning(f"error in getting top items of {self}")
             return self
 
         content = ""
-        doc_items = []
+        all_doc_items = []
 
-        for top_object in top_objects:
-            if isinstance(top_object, ListGroup | InlineGroup | DocItem):
+        for top_item in top_items:
+            if isinstance(top_item, ListGroup | InlineGroup | DocItem):
                 try:
-                    ser_res = serializer.serialize(item=top_object)
+                    ser_res = serializer.serialize(item=top_item)
                     content += ser_res.text + "\n"
                     # Extract doc_items from serialization result
-                    doc_items.append(top_object)
+                    all_doc_items.extend(ser_res.get_unique_doc_items())
 
                 except Exception as e:
-                    _logger.warning(f"error in extacting text of {top_object}: {e}")
+                    _logger.warning(f"error in extacting text of {top_item}: {e}")
         if len(content.strip()) == 0:
             _logger.warning(f"expansion of {self} did not yield any text")
             return self
 
         meta = copy(self.meta)
-        meta.doc_items = doc_items
+        meta.doc_items = all_doc_items
         return DocChunk(
             text=content,
             meta=meta,

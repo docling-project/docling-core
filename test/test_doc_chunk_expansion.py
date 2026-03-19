@@ -1,17 +1,11 @@
 """Tests for DocChunk expansion methods."""
 
-import re
-
 import pytest
 
 from docling_core.transforms.chunker.doc_chunk import DocChunk, DocMeta
-from docling_core.transforms.chunker.hierarchical_chunker import (
-    ChunkingDocSerializer,
-    ChunkingSerializerProvider,
-)
+from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
-from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument, Size
 from docling_core.types.doc.document import TableData
 
@@ -65,53 +59,56 @@ def sample_doc_with_pages():
 
 
 @pytest.fixture
+def hybrid_chunker():
+    """Create a reusable HybridChunker instance."""
+    return HybridChunker(
+        tokenizer=HuggingFaceTokenizer.from_pretrained(
+            model_name=EMBED_MODEL_ID,
+            max_tokens=MAX_TOKENS,
+        ),
+    )
+
+
+@pytest.fixture
 def chunking_serializer(sample_doc):
     """Create a chunking serializer for testing."""
     return ChunkingDocSerializer(doc=sample_doc)
 
 
-class TestGetTopContainingObjects:
-    """Tests for get_top_containing_objects method."""
+class TestGetTopContainingItems:
+    """Tests for get_top_containing_items method."""
     
-    def test_get_top_objects_basic(self, sample_doc):
-        """Test getting top-level objects from a chunk."""
-        # Create a chunker and get chunks
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=sample_doc))
+    def test_get_top_items_basic(self, sample_doc, hybrid_chunker):
+        """Test getting top-level items from a chunk."""
+        chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc))
         assert len(chunks) > 0, "Should have at least one chunk"
         
         # Test the first chunk - convert to DocChunk
         chunk = DocChunk.model_validate(chunks[0])
-        top_objects = chunk.get_top_containing_objects(sample_doc)
+        top_items = chunk.get_top_containing_items(sample_doc)
         
-        assert top_objects is not None, "Should return top objects"
-        assert len(top_objects) > 0, "Should have at least one top object"
+        assert top_items is not None, "Should return top items"
+        assert len(top_items) > 0, "Should have at least one top item"
         
-        # Verify all returned objects are direct children of body
-        for obj in top_objects:
-            assert obj.parent == sample_doc.body.get_ref(), (
-                f"Object {obj.self_ref} should be direct child of body"
+        # Verify all returned items are direct children of body
+        for item in top_items:
+            assert item.parent == sample_doc.body.get_ref(), (
+                f"Item {item.self_ref} should be direct child of body"
             )
         
-        # Verify that at least one doc_item from the chunk is a descendant of a top object
+        # Verify that at least one doc_item from the chunk is a descendant of a top item
         chunk_item_refs = {item.self_ref for item in chunk.meta.doc_items}
                 
-        # Additional check: recursively traverse top object children to find chunk items
-        def find_chunk_item_in_descendants(obj, doc, target_refs):
-            """Recursively check if any target_refs are in obj's descendants."""
-            # Check if this object itself is a target
-            if obj.self_ref in target_refs:
+        # Additional check: recursively traverse top item children to find chunk items
+        def find_chunk_item_in_descendants(item, doc, target_refs):
+            """Recursively check if any target_refs are in item's descendants."""
+            # Check if this item itself is a target
+            if item.self_ref in target_refs:
                 return True
             
-            # Check children if object has them
-            if hasattr(obj, 'children') and obj.children:
-                for child_ref in obj.children:
+            # Check children if item has them
+            if hasattr(item, 'children') and item.children:
+                for child_ref in item.children:
                     child = child_ref.resolve(doc)
                     if find_chunk_item_in_descendants(child, doc, target_refs):
                         return True
@@ -119,72 +116,57 @@ class TestGetTopContainingObjects:
             return False
         
         
-        for top_obj in top_objects:
-            assert find_chunk_item_in_descendants(top_obj, sample_doc, chunk_item_refs), (
-                f"Could not find any chunk items in descendants of top object {top_obj.self_ref}"
+        for top_item in top_items:
+            assert find_chunk_item_in_descendants(top_item, sample_doc, chunk_item_refs), (
+                f"Could not find any chunk items in descendants of top item {top_item.self_ref}"
             )
        
     
-    def test_get_top_objects_maintains_order(self, sample_doc):
-        """Test that top objects maintain document reading order."""
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=sample_doc))
+    def test_get_top_items_maintains_order(self, sample_doc, hybrid_chunker):
+        """Test that top items maintain document reading order."""
+        chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc))
         
         for chunk in chunks:
-            top_objects = chunk.get_top_containing_objects(sample_doc)
-            if top_objects and len(top_objects) > 1:
+            top_items = chunk.get_top_containing_items(sample_doc)
+            if top_items and len(top_items) > 1:
                 # Get the order in the document body
                 body_refs = [ref.cref for ref in sample_doc.body.children]
-                top_refs = [obj.self_ref for obj in top_objects]
+                top_refs = [item.self_ref for item in top_items]
                 
                 # Verify order is maintained
                 prev_idx = -1
                 for ref in top_refs:
                     curr_idx = body_refs.index(ref)
-                    assert curr_idx > prev_idx, "Objects should maintain reading order"
+                    assert curr_idx > prev_idx, "Items should maintain reading order"
                     prev_idx = curr_idx
     
-    def test_get_top_objects_empty_chunk(self):
-        """Test get_top_containing_objects with chunk containing non-body items."""
+    def test_get_top_items_empty_chunk(self):
+        """Test get_top_containing_items with chunk containing non-body items."""
         doc = DoclingDocument(name="empty_doc")
         text_item = doc.add_text(text="Some text", label=DocItemLabel.PARAGRAPH)
         
         # Create a chunk with a doc item that doesn't have proper parent
-        # This simulates an edge case where get_top_containing_objects might return None
+        # This simulates an edge case where get_top_containing_items might return None
         meta = DocMeta(doc_items=[text_item])
         chunk = DocChunk(text="test", meta=meta)
         
-        # Should return the text item as top object since it's a direct child of body
-        result = chunk.get_top_containing_objects(doc)
-        assert result is not None, "Should return top objects for valid doc_items"
-        assert len(result) > 0, "Should have at least one top object"
+        # Should return the text item as top item since it's a direct child of body
+        result = chunk.get_top_containing_items(doc)
+        assert result is not None, "Should return top items for valid doc_items"
+        assert len(result) > 0, "Should have at least one top item"
 
 
-class TestExpandToObject:
-    """Tests for expand_to_object method."""
+class TestExpandToItem:
+    """Tests for expand_to_item method."""
     
-    def test_expand_to_object_basic(self, sample_doc, chunking_serializer):
-        """Test basic expansion to full objects."""
-        # Create chunks
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=sample_doc))
+    def test_expand_to_item_basic(self, sample_doc, chunking_serializer, hybrid_chunker):
+        """Test basic expansion to full items."""
+        chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc))
         assert len(chunks) > 0, "Should have chunks"
         
         # Expand the first chunk - convert to DocChunk
         original_chunk = DocChunk.model_validate(chunks[0])
-        expanded_chunk = original_chunk.expand_to_object(
+        expanded_chunk = original_chunk.expand_to_item(
             dl_doc=sample_doc,
             serializer=chunking_serializer
         )
@@ -204,7 +186,7 @@ class TestExpandToObject:
     
   
     
-    def test_expand_to_object_with_table(self):
+    def test_expand_to_item_with_table(self, hybrid_chunker):
         """Test expansion with table content."""
         doc = DoclingDocument(name="table_doc")
         doc.add_heading(text="Table Section", level=1)
@@ -216,16 +198,8 @@ class TestExpandToObject:
         table_data.add_row(["D", "E", "F"])
         table_item = doc.add_table(data=table_data)
         
-        # Create chunks
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=doc))
-        serializer = chunker.serializer_provider.get_serializer(doc)
+        chunks = list(hybrid_chunker.chunk(dl_doc=doc))
+        serializer = hybrid_chunker.serializer_provider.get_serializer(doc)
         
         # Serialize the table to get expected text
         table_serialized = serializer.serialize(item=table_item)
@@ -240,7 +214,7 @@ class TestExpandToObject:
                 break
         
         if table_chunk:
-            expanded = table_chunk.expand_to_object(
+            expanded = table_chunk.expand_to_item(
                 dl_doc=doc,
                 serializer=serializer
             )
@@ -254,8 +228,8 @@ class TestExpandToObject:
                 f"expanded: {expanded.text}"
             )
     
-    def test_expand_to_object_error_handling(self, sample_doc):
-        """Test error handling in expand_to_object when serialization fails."""
+    def test_expand_to_item_error_handling(self, sample_doc, hybrid_chunker):
+        """Test error handling in expand_to_item when serialization fails."""
         # Create a mock serializer that raises an exception
         class FailingSerializer:
             def serialize(self, item):
@@ -268,7 +242,7 @@ class TestExpandToObject:
         
         # Call expand_to_object with failing serializer
         # Should catch the exception and return original chunk
-        result = original_chunk.expand_to_object(
+        result = original_chunk.expand_to_item(
             dl_doc=sample_doc,
             serializer=FailingSerializer()
         )
@@ -277,19 +251,12 @@ class TestExpandToObject:
         assert result == original_chunk, "Should return original chunk when serialization fails"
         assert result.text == "original text", "Original text should be preserved"
     
-    def test_expand_to_object_preserves_metadata(self, sample_doc, chunking_serializer):
+    def test_expand_to_item_preserves_metadata(self, sample_doc, chunking_serializer, hybrid_chunker):
         """Test that expansion preserves chunk metadata."""
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=sample_doc))
+        chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc))
         if len(chunks) > 0:
             original = chunks[0]
-            expanded = original.expand_to_object(
+            expanded = original.expand_to_item(
                 dl_doc=sample_doc,
                 serializer=chunking_serializer
             )
@@ -303,18 +270,10 @@ class TestExpandToObject:
 class TestExpandToPage:
     """Tests for expand_to_page method."""
     
-    def test_expand_to_page_basic(self, sample_doc_with_pages):
+    def test_expand_to_page_basic(self, sample_doc_with_pages, hybrid_chunker):
         """Test basic page expansion."""
-        # Create chunks
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=sample_doc_with_pages))
-        serializer = chunker.serializer_provider.get_serializer(sample_doc_with_pages)
+        chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc_with_pages))
+        serializer = hybrid_chunker.serializer_provider.get_serializer(sample_doc_with_pages)
         
         if len(chunks) > 0:
             chunk = chunks[0]
@@ -326,17 +285,10 @@ class TestExpandToPage:
             assert expanded is not None, "Should return expanded chunk"
             assert isinstance(expanded, DocChunk), "Should return DocChunk"
     
-    def test_expand_to_page_includes_page_content(self, sample_doc_with_pages):
+    def test_expand_to_page_includes_page_content(self, sample_doc_with_pages, hybrid_chunker):
         """Test that page expansion includes all page content."""
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=sample_doc_with_pages))
-        serializer = chunker.serializer_provider.get_serializer(sample_doc_with_pages)
+        chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc_with_pages))
+        serializer = hybrid_chunker.serializer_provider.get_serializer(sample_doc_with_pages)
         
         for c in chunks:
             chunk = DocChunk.model_validate(c)
@@ -382,17 +334,10 @@ class TestExpandToPage:
             assert result == chunk, "Should return original chunk when no pages"
     
         
-    def test_expand_to_page_preserves_metadata(self, sample_doc_with_pages):
+    def test_expand_to_page_preserves_metadata(self, sample_doc_with_pages, hybrid_chunker):
         """Test that page expansion preserves metadata."""
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=sample_doc_with_pages))
-        serializer = chunker.serializer_provider.get_serializer(sample_doc_with_pages)
+        chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc_with_pages))
+        serializer = hybrid_chunker.serializer_provider.get_serializer(sample_doc_with_pages)
         
         if len(chunks) > 0:
             original = DocChunk.model_validate(chunks[0])
@@ -428,7 +373,7 @@ class TestExpandToObjectWithRealDocument:
         
         # Test expand_to_object on first chunk
         chunk = DocChunk.model_validate(chunks[0])
-        expanded_obj = chunk.expand_to_object(
+        expanded_obj = chunk.expand_to_item(
             dl_doc=dl_doc,
             serializer=serializer
         )
@@ -445,27 +390,20 @@ class TestExpandToObjectWithRealDocument:
             
             assert expanded_page is not None, "Should expand to page successfully"
     
-    def test_expand_all_chunks(self):
+    def test_expand_all_chunks(self, hybrid_chunker):
         """Test expanding all chunks from a document."""
         with open(INPUT_FILE, encoding="utf-8") as f:
             data_json = f.read()
         dl_doc = DoclingDocument.model_validate_json(data_json)
         
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=dl_doc))
-        serializer = chunker.serializer_provider.get_serializer(dl_doc)
+        chunks = list(hybrid_chunker.chunk(dl_doc=dl_doc))
+        serializer = hybrid_chunker.serializer_provider.get_serializer(dl_doc)
         
         # Expand all chunks to objects
         expanded_chunks = []
         for c in chunks:
             chunk = DocChunk.model_validate(c)
-            expanded = chunk.expand_to_object(
+            expanded = chunk.expand_to_item(
                 dl_doc=dl_doc,
                 serializer=serializer
             )
@@ -486,22 +424,15 @@ class TestEdgeCases:
     """Test edge cases and error conditions."""
     
        
-    def test_expand_with_none_serializer(self, sample_doc):
+    def test_expand_with_none_serializer(self, sample_doc, hybrid_chunker):
         """Test expansion with None serializer."""
-        chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer.from_pretrained(
-                model_name=EMBED_MODEL_ID,
-                max_tokens=MAX_TOKENS,
-            ),
-        )
-        
-        chunks = list(chunker.chunk(dl_doc=sample_doc))
+        chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc))
         if len(chunks) > 0:
             # Convert to DocChunk to access expansion methods
             chunk = DocChunk.model_validate(chunks[0])
             # Should handle None serializer gracefully by returning original chunk
             # (errors are caught and logged, not raised)
-            result = chunk.expand_to_object(
+            result = chunk.expand_to_item(
                 dl_doc=sample_doc,
                 serializer=None
             )
