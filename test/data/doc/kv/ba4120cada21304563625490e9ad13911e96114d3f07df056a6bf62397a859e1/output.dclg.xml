@@ -1,0 +1,1618 @@
+<doclang version="1.0.0">
+  <text>
+    <location value="30"/>
+    <location value="23"/>
+    <location value="186"/>
+    <location value="29"/>
+    Michigan Department of Treasury (Rev. 05-19), Page 1 of 2
+  </text>
+  <text>
+    <location value="317"/>
+    <location value="25"/>
+    <location value="479"/>
+    <location value="30"/>
+    Issued under authority of Public Act 281 of 1967 , as amended .
+  </text>
+  <heading level="1">
+    <location value="30"/>
+    <location value="35"/>
+    <location value="332"/>
+    <location value="44"/>
+    2019 MICHIGAN Individual Income Tax Return MI-1040
+  </heading>
+  <text>
+    <location value="29"/>
+    <location value="47"/>
+    <location value="254"/>
+    <location value="54"/>
+    Return is due April 15, 2020 . Type or print in blue or black ink .
+  </text>
+  <field_region>
+    <location value="383"/>
+    <location value="38"/>
+    <location value="472"/>
+    <location value="52"/>
+    <field_item>
+      <value class="read_only">
+        <location value="383"/>
+        <location value="39"/>
+        <location value="471"/>
+        <location value="51"/>
+        <checkbox class="unselected"/>
+        Amended Return (Include Schedule AMD)
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <location value="30"/>
+    <location value="54"/>
+    <location value="483"/>
+    <location value="476"/>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="33"/>
+            <location value="55"/>
+            <location value="87"/>
+            <location value="61"/>
+<![CDATA[1. Filer's First Name]]>          </key>
+          <value class="read_only">
+            <location value="66"/>
+            <location value="62"/>
+            <location value="86"/>
+            <location value="68"/>
+            Sean
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="154"/>
+        <location value="56"/>
+        <location value="165"/>
+        <location value="60"/>
+        M.I.
+      </key>
+      <value class="read_only">
+        <location value="157"/>
+        <location value="62"/>
+        <location value="163"/>
+        <location value="68"/>
+        L
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="172"/>
+        <location value="56"/>
+        <location value="202"/>
+        <location value="61"/>
+        Last Name
+      </key>
+      <value class="read_only">
+        <location value="220"/>
+        <location value="62"/>
+        <location value="240"/>
+        <location value="68"/>
+        Boyle
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="154"/>
+        <location value="71"/>
+        <location value="164"/>
+        <location value="76"/>
+        M.I.
+      </key>
+      <value class="fillable">
+        <location value="152"/>
+        <location value="77"/>
+        <location value="169"/>
+        <location value="86"/>
+        $\square$
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="33"/>
+        <location value="87"/>
+        <location value="151"/>
+        <location value="92"/>
+        Home Address (Number, Street, or P.O. Box)
+      </key>
+      <value class="read_only">
+        <location value="117"/>
+        <location value="92"/>
+        <location value="173"/>
+        <location value="98"/>
+        1416 Echo Lane
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="33"/>
+        <location value="101"/>
+        <location value="67"/>
+        <location value="108"/>
+        City or Town
+      </key>
+      <value class="read_only">
+        <location value="110"/>
+        <location value="108"/>
+        <location value="157"/>
+        <location value="115"/>
+        Grand Rapids
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="219"/>
+        <location value="102"/>
+        <location value="235"/>
+        <location value="107"/>
+        State
+      </key>
+      <value class="read_only">
+        <location value="222"/>
+        <location value="106"/>
+        <location value="232"/>
+        <location value="113"/>
+        MI
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="243"/>
+        <location value="102"/>
+        <location value="270"/>
+        <location value="107"/>
+        ZIP Code
+      </key>
+      <value class="read_only">
+        <location value="262"/>
+        <location value="106"/>
+        <location value="285"/>
+        <location value="113"/>
+        49503
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="321"/>
+            <location value="56"/>
+            <location value="473"/>
+            <location value="63"/>
+<![CDATA[2. Filer's Full Social Security No. (Example: 123-45-6789)]]>          </key>
+          <value class="read_only">
+            <location value="340"/>
+            <location value="66"/>
+            <location value="452"/>
+            <location value="73"/>
+            362 40 0950
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="322"/>
+            <location value="102"/>
+            <location value="446"/>
+            <location value="108"/>
+            4. School District Code (5 digits -- see page 60)
+          </key>
+          <value class="fillable">
+            <location value="319"/>
+            <location value="108"/>
+            <location value="482"/>
+            <location value="117"/>
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="35"/>
+            <location value="119"/>
+            <location value="128"/>
+            <location value="125"/>
+            5. STATE CAMPAIGN FUND
+          </key>
+          <value class="read_only">
+            <location value="47"/>
+            <location value="125"/>
+            <location value="169"/>
+            <location value="151"/>
+            Check if you (and/or your spouse, if filing a joint return) want $3 of your taxes to go to this fund. This will not increase your tax or reduce your refund.
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="47"/>
+        <location value="125"/>
+        <location value="169"/>
+        <location value="151"/>
+        Check if you (and/or your spouse, if filing a joint return) want $3 of your taxes to go to this fund. This will not increase your tax or reduce your refund.
+      </key>
+      <value class="read_only">
+        <location value="189"/>
+        <location value="123"/>
+        <location value="227"/>
+        <location value="133"/>
+        <checkbox class="selected"/>
+        a. ☑ Filer
+      </value>
+      <value class="read_only">
+        <location value="190"/>
+        <location value="139"/>
+        <location value="235"/>
+        <location value="149"/>
+        <checkbox class="unselected"/>
+        b. Spouse
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="282"/>
+            <location value="119"/>
+            <location value="429"/>
+            <location value="125"/>
+            6. FARMERS, FISHERMEN, OR SEAFARERS
+          </key>
+          <value class="read_only">
+            <location value="293"/>
+            <location value="131"/>
+            <location value="466"/>
+            <location value="146"/>
+            <checkbox class="unselected"/>
+            ☐ Check this box if 2/3 of your income is from farming , fishing , or seafaring .
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="36"/>
+            <location value="157"/>
+            <location value="153"/>
+            <location value="163"/>
+            7. 2019 FILING STATUS . Check one.
+          </key>
+          <value class="read_only">
+            <location value="38"/>
+            <location value="162"/>
+            <location value="86"/>
+            <location value="172"/>
+            <checkbox class="selected"/>
+            a. [X] Single
+          </value>
+          <value class="read_only">
+            <location value="39"/>
+            <location value="178"/>
+            <location value="125"/>
+            <location value="188"/>
+            <checkbox class="unselected"/>
+            b. ☐ Married filing jointly
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="38"/>
+        <location value="162"/>
+        <location value="86"/>
+        <location value="172"/>
+        a. [X] Single
+      </key>
+      <value class="read_only">
+        <location value="39"/>
+        <location value="194"/>
+        <location value="141"/>
+        <location value="203"/>
+        <checkbox class="unselected"/>
+        c. ☐ Married filing separately*
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="153"/>
+        <location value="166"/>
+        <location value="258"/>
+        <location value="185"/>
+<![CDATA[* If you check box "c," complete]]>      </key>
+      <value class="fillable">
+        <location value="151"/>
+        <location value="187"/>
+        <location value="266"/>
+        <location value="203"/>
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="283"/>
+            <location value="157"/>
+            <location value="443"/>
+            <location value="164"/>
+            8. 2019 RESIDENCY STATUS . Check all that apply.
+          </key>
+          <value class="read_only">
+            <location value="285"/>
+            <location value="163"/>
+            <location value="341"/>
+            <location value="172"/>
+            <checkbox class="selected"/>
+            a. ☑ Resident
+          </value>
+          <value class="read_only">
+            <location value="286"/>
+            <location value="178"/>
+            <location value="355"/>
+            <location value="188"/>
+            <checkbox class="unselected"/>
+            b. ☐ Nonresident *
+          </value>
+          <value class="read_only">
+            <location value="285"/>
+            <location value="193"/>
+            <location value="375"/>
+            <location value="204"/>
+            <checkbox class="unselected"/>
+            c. ☐ Part-Year Resident *
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <text>
+      <location value="400"/>
+      <location value="171"/>
+      <location value="471"/>
+      <location value="197"/>
+<![CDATA[* If you check box "b" or "c," you must complete and include Schedule NR.]]>    </text>
+    <list ordered="false">
+      <list_text>
+        <location value="35"/>
+        <location value="211"/>
+        <location value="481"/>
+        <location value="218"/>
+        9. EXEMPTIONS. NOTE: If someone else can claim you as a dependent, check box 9e, enter 0 on line 9a and enter $1,500 on line 9e (see instr.).
+      </list_text>
+      <list ordered="false">
+        <list_text>
+          <field_item>
+            <key>
+              <location value="49"/>
+              <location value="227"/>
+              <location value="295"/>
+              <location value="234"/>
+              a. Number of exemptions (see instructions) 94
+            </key>
+            <value class="read_only">
+              <location value="302"/>
+              <location value="228"/>
+              <location value="312"/>
+              <location value="233"/>
+              9a.
+            </value>
+          </field_item>
+        </list_text>
+        <list_text>
+          <field_item>
+            <key>
+              <location value="49"/>
+              <location value="236"/>
+              <location value="302"/>
+              <location value="249"/>
+              b. Number of individuals who qualify for one of the following special exemptions: deaf, blind, hemiplegic, paraplegic, quadriplegic, or totally and permanently disabled 9b.
+            </key>
+            <value class="read_only">
+              <location value="302"/>
+              <location value="243"/>
+              <location value="312"/>
+              <location value="248"/>
+              9b.
+            </value>
+          </field_item>
+        </list_text>
+        <list_text>
+          <field_item>
+            <key>
+              <location value="49"/>
+              <location value="250"/>
+              <location value="295"/>
+              <location value="257"/>
+              c. Number of qualified disabled veterans ... 9
+            </key>
+            <value class="read_only">
+              <location value="302"/>
+              <location value="251"/>
+              <location value="312"/>
+              <location value="256"/>
+              9c.
+            </value>
+          </field_item>
+        </list_text>
+        <list_text>
+          <field_item>
+            <key>
+              <location value="49"/>
+              <location value="257"/>
+              <location value="295"/>
+              <location value="264"/>
+              d. Number of Certificates of Stillbirth from MDHHS (see instructions) 90
+            </key>
+            <value class="read_only">
+              <location value="302"/>
+              <location value="259"/>
+              <location value="312"/>
+              <location value="264"/>
+              9d.
+            </value>
+          </field_item>
+        </list_text>
+        <list_text>
+          <field_item>
+            <key>
+              <location value="49"/>
+              <location value="274"/>
+              <location value="295"/>
+              <location value="280"/>
+              e. Claimed as dependent , see line 9 NOTE above ... ......... 90
+            </key>
+            <value class="read_only">
+              <location value="301"/>
+              <location value="274"/>
+              <location value="312"/>
+              <location value="280"/>
+              9e.
+            </value>
+          </field_item>
+        </list_text>
+        <list_text>
+          <field_item>
+            <key>
+              <location value="49"/>
+              <location value="289"/>
+              <location value="380"/>
+              <location value="295"/>
+            </key>
+            <value class="read_only">
+              <location value="388"/>
+              <location value="289"/>
+              <location value="397"/>
+              <location value="295"/>
+              9f.
+            </value>
+          </field_item>
+        </list_text>
+      </list>
+    </list>
+    <field_item>
+      <key>
+        <location value="302"/>
+        <location value="228"/>
+        <location value="312"/>
+        <location value="233"/>
+        9a.
+      </key>
+      <value class="fillable">
+        <location value="314"/>
+        <location value="218"/>
+        <location value="343"/>
+        <location value="233"/>
+        $\square$
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="314"/>
+        <location value="218"/>
+        <location value="343"/>
+        <location value="233"/>
+        $\square$
+      </key>
+      <value class="read_only">
+        <location value="348"/>
+        <location value="227"/>
+        <location value="382"/>
+        <location value="233"/>
+        x $4,400
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="348"/>
+        <location value="227"/>
+        <location value="382"/>
+        <location value="233"/>
+        x $4,400
+      </key>
+      <value class="read_only">
+        <location value="387"/>
+        <location value="227"/>
+        <location value="397"/>
+        <location value="233"/>
+        9a.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="387"/>
+        <location value="227"/>
+        <location value="397"/>
+        <location value="233"/>
+        9a.
+      </key>
+      <value class="fillable">
+        <location value="398"/>
+        <location value="218"/>
+        <location value="471"/>
+        <location value="233"/>
+        | |
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="398"/>
+        <location value="218"/>
+        <location value="471"/>
+        <location value="233"/>
+        | |
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="227"/>
+        <location value="481"/>
+        <location value="233"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="302"/>
+        <location value="243"/>
+        <location value="312"/>
+        <location value="248"/>
+        9b.
+      </key>
+      <value class="fillable">
+        <location value="314"/>
+        <location value="234"/>
+        <location value="344"/>
+        <location value="249"/>
+        $\square$
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="314"/>
+        <location value="234"/>
+        <location value="344"/>
+        <location value="249"/>
+        $\square$
+      </key>
+      <value class="read_only">
+        <location value="348"/>
+        <location value="243"/>
+        <location value="382"/>
+        <location value="249"/>
+        x $2,700
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="348"/>
+        <location value="243"/>
+        <location value="382"/>
+        <location value="249"/>
+        x $2,700
+      </key>
+      <value class="read_only">
+        <location value="387"/>
+        <location value="243"/>
+        <location value="397"/>
+        <location value="248"/>
+        9b.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="387"/>
+        <location value="243"/>
+        <location value="397"/>
+        <location value="248"/>
+        9b.
+      </key>
+      <value class="fillable">
+        <location value="398"/>
+        <location value="233"/>
+        <location value="471"/>
+        <location value="249"/>
+        0.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="398"/>
+        <location value="233"/>
+        <location value="471"/>
+        <location value="249"/>
+        0.
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="242"/>
+        <location value="481"/>
+        <location value="248"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="302"/>
+        <location value="251"/>
+        <location value="312"/>
+        <location value="256"/>
+        9c.
+      </key>
+      <value class="fillable">
+        <location value="314"/>
+        <location value="249"/>
+        <location value="343"/>
+        <location value="256"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="314"/>
+        <location value="249"/>
+        <location value="343"/>
+        <location value="256"/>
+      </key>
+      <value class="read_only">
+        <location value="348"/>
+        <location value="250"/>
+        <location value="379"/>
+        <location value="256"/>
+        x $400
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="348"/>
+        <location value="250"/>
+        <location value="379"/>
+        <location value="256"/>
+        x $400
+      </key>
+      <value class="read_only">
+        <location value="387"/>
+        <location value="250"/>
+        <location value="397"/>
+        <location value="256"/>
+        9c.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="387"/>
+        <location value="250"/>
+        <location value="397"/>
+        <location value="256"/>
+        9c.
+      </key>
+      <value class="fillable">
+        <location value="398"/>
+        <location value="248"/>
+        <location value="471"/>
+        <location value="257"/>
+        C1
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="398"/>
+        <location value="248"/>
+        <location value="471"/>
+        <location value="257"/>
+        C1
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="250"/>
+        <location value="481"/>
+        <location value="256"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="302"/>
+        <location value="259"/>
+        <location value="312"/>
+        <location value="264"/>
+        9d.
+      </key>
+      <value class="fillable">
+        <location value="314"/>
+        <location value="257"/>
+        <location value="343"/>
+        <location value="264"/>
+        $\square$
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="314"/>
+        <location value="257"/>
+        <location value="343"/>
+        <location value="264"/>
+        $\square$
+      </key>
+      <value class="read_only">
+        <location value="347"/>
+        <location value="259"/>
+        <location value="382"/>
+        <location value="264"/>
+        x $4,400
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="347"/>
+        <location value="259"/>
+        <location value="382"/>
+        <location value="264"/>
+        x $4,400
+      </key>
+      <value class="read_only">
+        <location value="387"/>
+        <location value="258"/>
+        <location value="397"/>
+        <location value="264"/>
+        9d.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="387"/>
+        <location value="258"/>
+        <location value="397"/>
+        <location value="264"/>
+        9d.
+      </key>
+      <value class="fillable">
+        <location value="397"/>
+        <location value="256"/>
+        <location value="470"/>
+        <location value="264"/>
+        14
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="397"/>
+        <location value="256"/>
+        <location value="470"/>
+        <location value="264"/>
+        14
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="258"/>
+        <location value="481"/>
+        <location value="264"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="301"/>
+        <location value="274"/>
+        <location value="312"/>
+        <location value="280"/>
+        9e.
+      </key>
+      <value class="fillable">
+        <location value="319"/>
+        <location value="272"/>
+        <location value="332"/>
+        <location value="280"/>
+        $\square$
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="319"/>
+        <location value="272"/>
+        <location value="332"/>
+        <location value="280"/>
+        $\square$
+      </key>
+      <value class="read_only">
+        <location value="387"/>
+        <location value="274"/>
+        <location value="397"/>
+        <location value="280"/>
+        9e.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="387"/>
+        <location value="274"/>
+        <location value="397"/>
+        <location value="280"/>
+        9e.
+      </key>
+      <value class="read_only">
+        <location value="441"/>
+        <location value="270"/>
+        <location value="462"/>
+        <location value="277"/>
+        1,500
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="441"/>
+        <location value="270"/>
+        <location value="462"/>
+        <location value="277"/>
+        1,500
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="274"/>
+        <location value="481"/>
+        <location value="280"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="388"/>
+        <location value="289"/>
+        <location value="397"/>
+        <location value="295"/>
+        9f.
+      </key>
+      <value class="read_only">
+        <location value="442"/>
+        <location value="285"/>
+        <location value="463"/>
+        <location value="292"/>
+        1,500
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="442"/>
+        <location value="285"/>
+        <location value="463"/>
+        <location value="292"/>
+        1,500
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="289"/>
+        <location value="481"/>
+        <location value="295"/>
+        00
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="36"/>
+            <location value="305"/>
+            <location value="358"/>
+            <location value="310"/>
+            10. Adjusted Gross Income from your U.S. Forms 1040 or 1040NR (see instructions) ... 10
+          </key>
+          <value class="read_only">
+            <location value="368"/>
+            <location value="305"/>
+            <location value="378"/>
+            <location value="311"/>
+            10 .
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="368"/>
+        <location value="305"/>
+        <location value="378"/>
+        <location value="311"/>
+        10 .
+      </key>
+      <value class="read_only">
+        <location value="444"/>
+        <location value="302"/>
+        <location value="458"/>
+        <location value="308"/>
+        400
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="444"/>
+        <location value="302"/>
+        <location value="458"/>
+        <location value="308"/>
+        400
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="305"/>
+        <location value="481"/>
+        <location value="310"/>
+        00
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="37"/>
+            <location value="321"/>
+            <location value="358"/>
+            <location value="326"/>
+            11. Additions from Schedule 1 , line 9 . Include Schedule 1 ...
+          </key>
+          <value class="read_only">
+            <location value="368"/>
+            <location value="320"/>
+            <location value="378"/>
+            <location value="326"/>
+            11 .
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="368"/>
+        <location value="320"/>
+        <location value="378"/>
+        <location value="326"/>
+        11 .
+      </key>
+      <value class="read_only">
+        <location value="442"/>
+        <location value="318"/>
+        <location value="463"/>
+        <location value="324"/>
+        1,500
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="442"/>
+        <location value="318"/>
+        <location value="463"/>
+        <location value="324"/>
+        1,500
+      </key>
+      <value class="read_only">
+        <location value="472"/>
+        <location value="320"/>
+        <location value="481"/>
+        <location value="326"/>
+        00
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="35"/>
+            <location value="335"/>
+            <location value="358"/>
+            <location value="343"/>
+            12. Total . Add lines 10 and 11 ...
+          </key>
+          <value class="read_only">
+            <location value="368"/>
+            <location value="336"/>
+            <location value="378"/>
+            <location value="341"/>
+            12 .
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="368"/>
+        <location value="336"/>
+        <location value="378"/>
+        <location value="341"/>
+        12 .
+      </key>
+      <value class="read_only">
+        <location value="444"/>
+        <location value="330"/>
+        <location value="464"/>
+        <location value="337"/>
+        1,900
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="444"/>
+        <location value="330"/>
+        <location value="464"/>
+        <location value="337"/>
+        1,900
+      </key>
+      <value class="read_only">
+        <location value="472"/>
+        <location value="336"/>
+        <location value="481"/>
+        <location value="341"/>
+        00
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="35"/>
+            <location value="351"/>
+            <location value="358"/>
+            <location value="358"/>
+            13. Subtractions from Schedule 1 , line 28 . Include Schedule 1 .........
+          </key>
+          <value class="read_only">
+            <location value="368"/>
+            <location value="351"/>
+            <location value="378"/>
+            <location value="357"/>
+            13 .
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="368"/>
+        <location value="351"/>
+        <location value="378"/>
+        <location value="357"/>
+        13 .
+      </key>
+      <value class="read_only">
+        <location value="445"/>
+        <location value="349"/>
+        <location value="465"/>
+        <location value="356"/>
+        2,500
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="445"/>
+        <location value="349"/>
+        <location value="465"/>
+        <location value="356"/>
+        2,500
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="351"/>
+        <location value="481"/>
+        <location value="357"/>
+        00
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="36"/>
+            <location value="367"/>
+            <location value="359"/>
+            <location value="373"/>
+<![CDATA[14. Income subject to tax . Subtract line 13 from line 12 . If line 13 is greater than line 12 , enter "0" .........]]>          </key>
+          <value class="read_only">
+            <location value="368"/>
+            <location value="367"/>
+            <location value="378"/>
+            <location value="372"/>
+            14 .
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="368"/>
+        <location value="367"/>
+        <location value="378"/>
+        <location value="372"/>
+        14 .
+      </key>
+      <value class="fillable">
+        <location value="380"/>
+        <location value="357"/>
+        <location value="470"/>
+        <location value="373"/>
+        a .
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="380"/>
+        <location value="357"/>
+        <location value="470"/>
+        <location value="373"/>
+        a .
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="366"/>
+        <location value="481"/>
+        <location value="372"/>
+        00
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="35"/>
+            <location value="382"/>
+            <location value="358"/>
+            <location value="389"/>
+            15. Exemption allowance . Enter amount from line 9f or Schedule NR , line 19 . ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... 15
+          </key>
+          <value class="read_only">
+            <location value="368"/>
+            <location value="382"/>
+            <location value="378"/>
+            <location value="388"/>
+            15.
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="368"/>
+        <location value="382"/>
+        <location value="378"/>
+        <location value="388"/>
+        15.
+      </key>
+      <value class="read_only">
+        <location value="440"/>
+        <location value="378"/>
+        <location value="460"/>
+        <location value="384"/>
+        1,500
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="440"/>
+        <location value="378"/>
+        <location value="460"/>
+        <location value="384"/>
+        1,500
+      </key>
+      <value class="read_only">
+        <location value="472"/>
+        <location value="382"/>
+        <location value="481"/>
+        <location value="388"/>
+        00
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="36"/>
+            <location value="398"/>
+            <location value="357"/>
+            <location value="405"/>
+<![CDATA[16. Taxable income . Subtract line 15 from line 14 . If line 15 is greater than line 14 , enter "0" ... .........]]>          </key>
+          <value class="read_only">
+            <location value="368"/>
+            <location value="398"/>
+            <location value="378"/>
+            <location value="404"/>
+            16 .
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="368"/>
+        <location value="398"/>
+        <location value="378"/>
+        <location value="404"/>
+        16 .
+      </key>
+      <value class="fillable">
+        <location value="380"/>
+        <location value="388"/>
+        <location value="470"/>
+        <location value="404"/>
+        a.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="380"/>
+        <location value="388"/>
+        <location value="470"/>
+        <location value="404"/>
+        a.
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="398"/>
+        <location value="481"/>
+        <location value="404"/>
+        00
+      </value>
+    </field_item>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="35"/>
+            <location value="414"/>
+            <location value="358"/>
+            <location value="420"/>
+            17. Tax. Multiply line 16 by 4.25% (0.0425) ............... 17
+          </key>
+          <value class="read_only">
+            <location value="368"/>
+            <location value="414"/>
+            <location value="378"/>
+            <location value="419"/>
+            17.
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="368"/>
+        <location value="414"/>
+        <location value="378"/>
+        <location value="419"/>
+        17.
+      </key>
+      <value class="fillable">
+        <location value="380"/>
+        <location value="404"/>
+        <location value="471"/>
+        <location value="420"/>
+        :
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="380"/>
+        <location value="404"/>
+        <location value="471"/>
+        <location value="420"/>
+        :
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="413"/>
+        <location value="481"/>
+        <location value="419"/>
+        00
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="29"/>
+      <location value="420"/>
+      <location value="137"/>
+      <location value="426"/>
+      NON-REFUNDABLE CREDITS
+    </heading>
+    <heading level="3">
+      <location value="290"/>
+      <location value="421"/>
+      <location value="319"/>
+      <location value="426"/>
+      AMOUNT
+    </heading>
+    <heading level="3">
+      <location value="419"/>
+      <location value="421"/>
+      <location value="443"/>
+      <location value="426"/>
+      CREDIT
+    </heading>
+    <list ordered="false">
+      <list_text>
+        <field_item>
+          <key>
+            <location value="37"/>
+            <location value="431"/>
+            <location value="232"/>
+            <location value="444"/>
+            18. Income Tax Imposed by government units outside Michigan. Include a copy of the return (see instructions)....................... 1
+          </key>
+          <value class="read_only">
+            <location value="237"/>
+            <location value="437"/>
+            <location value="251"/>
+            <location value="442"/>
+            18a.
+          </value>
+        </field_item>
+      </list_text>
+      <list_text>
+        <field_item>
+          <key>
+            <location value="36"/>
+            <location value="446"/>
+            <location value="232"/>
+            <location value="459"/>
+            19. Michigan Historic Preservation Tax Credit carryforward (see instructions) 1
+          </key>
+          <value class="read_only">
+            <location value="237"/>
+            <location value="452"/>
+            <location value="251"/>
+            <location value="458"/>
+            19a.
+          </value>
+        </field_item>
+      </list_text>
+      <list_text>
+        <field_item>
+          <key>
+            <location value="35"/>
+            <location value="462"/>
+            <location value="358"/>
+            <location value="475"/>
+<![CDATA[20. Income Tax. Subtract the sum of lines 18b and 19b from line 17. If the sum of lines 18b and 19b is greater than line 17, enter "0".....]]>          </key>
+          <value class="read_only">
+            <location value="367"/>
+            <location value="467"/>
+            <location value="378"/>
+            <location value="474"/>
+            20.
+          </value>
+        </field_item>
+      </list_text>
+    </list>
+    <field_item>
+      <key>
+        <location value="237"/>
+        <location value="437"/>
+        <location value="251"/>
+        <location value="442"/>
+        18a.
+      </key>
+      <value class="read_only">
+        <location value="297"/>
+        <location value="432"/>
+        <location value="311"/>
+        <location value="439"/>
+        900
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="297"/>
+        <location value="432"/>
+        <location value="311"/>
+        <location value="439"/>
+        900
+      </key>
+      <value class="read_only">
+        <location value="345"/>
+        <location value="437"/>
+        <location value="354"/>
+        <location value="442"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="345"/>
+        <location value="437"/>
+        <location value="354"/>
+        <location value="442"/>
+        00
+      </key>
+      <value class="read_only">
+        <location value="363"/>
+        <location value="436"/>
+        <location value="378"/>
+        <location value="442"/>
+        18b. .
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="363"/>
+        <location value="436"/>
+        <location value="378"/>
+        <location value="442"/>
+        18b. .
+      </key>
+      <value class="read_only">
+        <location value="438"/>
+        <location value="433"/>
+        <location value="453"/>
+        <location value="439"/>
+        900
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="438"/>
+        <location value="433"/>
+        <location value="453"/>
+        <location value="439"/>
+        900
+      </key>
+      <value class="read_only">
+        <location value="472"/>
+        <location value="436"/>
+        <location value="481"/>
+        <location value="442"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="237"/>
+        <location value="452"/>
+        <location value="251"/>
+        <location value="458"/>
+        19a.
+      </key>
+      <value class="read_only">
+        <location value="300"/>
+        <location value="449"/>
+        <location value="314"/>
+        <location value="455"/>
+        500
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="300"/>
+        <location value="449"/>
+        <location value="314"/>
+        <location value="455"/>
+        500
+      </key>
+      <value class="read_only">
+        <location value="345"/>
+        <location value="452"/>
+        <location value="354"/>
+        <location value="458"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="345"/>
+        <location value="452"/>
+        <location value="354"/>
+        <location value="458"/>
+        00
+      </key>
+      <value class="read_only">
+        <location value="363"/>
+        <location value="452"/>
+        <location value="378"/>
+        <location value="458"/>
+        19b.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="363"/>
+        <location value="452"/>
+        <location value="378"/>
+        <location value="458"/>
+        19b.
+      </key>
+      <value class="read_only">
+        <location value="440"/>
+        <location value="449"/>
+        <location value="455"/>
+        <location value="455"/>
+        500
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="440"/>
+        <location value="449"/>
+        <location value="455"/>
+        <location value="455"/>
+        500
+      </key>
+      <value class="read_only">
+        <location value="472"/>
+        <location value="452"/>
+        <location value="481"/>
+        <location value="458"/>
+        00
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="367"/>
+        <location value="467"/>
+        <location value="378"/>
+        <location value="474"/>
+        20.
+      </key>
+      <value class="fillable">
+        <location value="380"/>
+        <location value="458"/>
+        <location value="471"/>
+        <location value="474"/>
+        a.
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="380"/>
+        <location value="458"/>
+        <location value="471"/>
+        <location value="474"/>
+        a.
+      </key>
+      <value class="read_only">
+        <location value="471"/>
+        <location value="467"/>
+        <location value="481"/>
+        <location value="474"/>
+        00
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="30"/>
+    <location value="483"/>
+    <location value="162"/>
+    <location value="491"/>
+    + 0000 2019 05 01 27 1
+  </text>
+  <text>
+    <location value="187"/>
+    <location value="484"/>
+    <location value="483"/>
+    <location value="491"/>
+    Continue on page 2 . This form cannot be processed if page 2 is not completed and included.
+  </text>
+</doclang>

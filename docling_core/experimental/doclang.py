@@ -7,7 +7,10 @@ from enum import Enum
 from itertools import groupby
 from typing import Any, ClassVar, Final, Optional, cast
 from xml.dom.minidom import Element, Node, Text
+from xml.etree.ElementTree import Element as ETElement
+from xml.etree.ElementTree import tostring
 
+from defusedxml.ElementTree import fromstring
 from defusedxml.minidom import parseString
 from pydantic import BaseModel, PrivateAttr
 from typing_extensions import override
@@ -63,10 +66,19 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
-from docling_core.types.doc.document import FormulaItem, RichTableCell
+from docling_core.types.doc.document import (
+    FieldHeadingItem,
+    FieldItem,
+    FieldRegionItem,
+    FieldValueItem,
+    FormulaItem,
+    GroupItem,
+    RichTableCell,
+)
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
+    GroupLabel,
     PictureClassificationLabel,
 )
 
@@ -355,23 +367,23 @@ class DoclangToken(str, Enum):
     PAGE_FOOTER = "page_footer"
     WATERMARK = "watermark"
     PICTURE = "picture"
-    FORM = "form"
-    FORM_ITEM = "form_item"
-    FORM_HEADING = "form_heading"
-    FORM_TEXT = "form_text"
-    HINT = "hint"
     FORMULA = "formula"
     CODE = "code"
     LIST_TEXT = "list_text"
     CHECKBOX = "checkbox"
     OTSL = "otsl"  # this will take care of the structure in the table.
+    FIELD_REGION = "field_region"
+    FIELD_ITEM = "field_item"
+    FIELD_KEY = "key"
+    FIELD_VALUE = "value"
+    FIELD_HEADING = "field_heading"
+    FIELD_HINT = "hint"
 
     # Grouping
     SECTION = "section"
     LIST = "list"
     GROUP = "group"
     FLOATING_GROUP = "floating_group"
-    INLINE = "inline"
 
     # Formatting
     BOLD = "bold"
@@ -397,10 +409,6 @@ class DoclangToken(str, Enum):
     UCEL = "ucel"
     XCEL = "xcel"
     NL = "nl"
-    # -- Forms
-    KEY = "key"
-    IMPLICIT_KEY = "implicit_key"
-    VALUE = "value"
 
     # Continuation
     THREAD = "thread"
@@ -465,13 +473,12 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.SECOND: {DoclangAttributeKey.VALUE},
         DoclangToken.CENTISECOND: {DoclangAttributeKey.VALUE},
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL},
-        DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL},
+        DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.CHECKBOX: {DoclangAttributeKey.CLASS},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL},
         DoclangToken.LIST: {DoclangAttributeKey.ORDERED},
         DoclangToken.GROUP: {DoclangAttributeKey.TYPE},
         DoclangToken.FLOATING_GROUP: {DoclangAttributeKey.CLASS},
-        DoclangToken.INLINE: {DoclangAttributeKey.CLASS},
         DoclangToken.THREAD: {DoclangAttributeKey.ID},
         DoclangToken.H_THREAD: {DoclangAttributeKey.ID},
     }
@@ -495,13 +502,6 @@ class DoclangVocabulary(BaseModel):
             DoclangAttributeKey.CLASS: {
                 DoclangAttributeValue.SELECTED,
                 DoclangAttributeValue.UNSELECTED,
-            }
-        },
-        DoclangToken.INLINE: {
-            DoclangAttributeKey.CLASS: {
-                DoclangAttributeValue.FORMULA,
-                DoclangAttributeValue.CODE,
-                DoclangAttributeValue.PICTURE,
             }
         },
         DoclangToken.FLOATING_GROUP: {
@@ -530,7 +530,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.CENTISECOND: {DoclangAttributeKey.VALUE: (0, 99)},
         # Levels (N ≥ 1)
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
-        DoclangToken.FORM_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
+        DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
         DoclangToken.SECTION: {DoclangAttributeKey.LEVEL: (1, 6)},
         # Continuation markers (id length constraints)
         DoclangToken.THREAD: {DoclangAttributeKey.ID: (1, 10)},
@@ -591,11 +591,10 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.PAGE_FOOTER: DoclangCategory.SEMANTIC,
         DoclangToken.WATERMARK: DoclangCategory.SEMANTIC,
         DoclangToken.PICTURE: DoclangCategory.SEMANTIC,
-        DoclangToken.FORM: DoclangCategory.SEMANTIC,
-        DoclangToken.FORM_ITEM: DoclangCategory.SEMANTIC,
-        DoclangToken.FORM_HEADING: DoclangCategory.SEMANTIC,
-        DoclangToken.FORM_TEXT: DoclangCategory.SEMANTIC,
-        DoclangToken.HINT: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_REGION: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_ITEM: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_HEADING: DoclangCategory.SEMANTIC,
+        DoclangToken.FIELD_HINT: DoclangCategory.SEMANTIC,
         DoclangToken.FORMULA: DoclangCategory.SEMANTIC,
         DoclangToken.CODE: DoclangCategory.SEMANTIC,
         DoclangToken.LIST_TEXT: DoclangCategory.SEMANTIC,
@@ -606,7 +605,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.LIST: DoclangCategory.GROUPING,
         DoclangToken.GROUP: DoclangCategory.GROUPING,
         DoclangToken.FLOATING_GROUP: DoclangCategory.GROUPING,
-        DoclangToken.INLINE: DoclangCategory.GROUPING,
         # Formatting
         DoclangToken.BOLD: DoclangCategory.FORMATTING,
         DoclangToken.ITALIC: DoclangCategory.FORMATTING,
@@ -626,9 +624,8 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.UCEL: DoclangCategory.STRUCTURAL,
         DoclangToken.XCEL: DoclangCategory.STRUCTURAL,
         DoclangToken.NL: DoclangCategory.STRUCTURAL,
-        DoclangToken.KEY: DoclangCategory.STRUCTURAL,
-        DoclangToken.IMPLICIT_KEY: DoclangCategory.STRUCTURAL,
-        DoclangToken.VALUE: DoclangCategory.STRUCTURAL,
+        DoclangToken.FIELD_KEY: DoclangCategory.STRUCTURAL,
+        DoclangToken.FIELD_VALUE: DoclangCategory.STRUCTURAL,
         # Continuation
         DoclangToken.THREAD: DoclangCategory.CONTINUATION,
         DoclangToken.H_THREAD: DoclangCategory.CONTINUATION,
@@ -1003,7 +1000,9 @@ class DoclangParams(CommonParams):
 
     add_page_break: bool = True
 
-    # types of content to serialize:
+    add_content: bool = True
+
+    # types of content to serialize (only relevant if show_content is True):
     content_types: set[ContentType] = _DEFAULT_CONTENT_TYPES
 
     # Doclang formatting
@@ -1454,6 +1453,7 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         #   free of type-based special casing.
         wrap_open_token: Optional[str]
         selected_token: str = ""
+        tok: DoclangToken | None = None
         if isinstance(item, SectionHeaderItem):
             wrap_open_token = DoclangVocabulary.create_heading_token(level=item.level)
         elif isinstance(item, ListItem):
@@ -1474,6 +1474,20 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             selected_token = DoclangVocabulary.create_checkbox_token(
                 selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
             )
+        elif isinstance(item, TextItem) and (
+            tok := {
+                DocItemLabel.FIELD_KEY: DoclangToken.FIELD_KEY,
+                DocItemLabel.FIELD_VALUE: DoclangToken.FIELD_VALUE,
+                DocItemLabel.FIELD_HEADING: DoclangToken.FIELD_HEADING,
+                DocItemLabel.FIELD_HINT: DoclangToken.FIELD_HINT,
+                DocItemLabel.MARKER: DoclangToken.MARKER,
+            }.get(item.label)
+        ):
+            wrap_open_token = f"<{tok.value}>"
+            if isinstance(item, FieldValueItem):
+                wrap_open_token = f'<{tok.value} class="{item.kind}">'
+            elif isinstance(item, FieldHeadingItem):
+                wrap_open_token = f'<{tok.value} level="{item.level}">'
         elif isinstance(item, TextItem) and (
             item.label
             in [  # FIXME: Catch all ...
@@ -1515,10 +1529,14 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
             or (not isinstance(item, CodeItem | FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
         ):
-            # Check if we should serialize a single inline group child instead of text
-            if len(item.children) > 0 and isinstance((first_child := item.children[0].resolve(doc)), InlineGroup):
-                ser_res = doc_serializer.serialize(item=first_child, visited=my_visited, **kwargs)
-                text_part = ser_res.text
+            if item.children and not item.text:
+                sub_parts = [
+                    doc_serializer.serialize(item=child_item, visited=my_visited, **kwargs).text
+                    for child_ref in item.children
+                    # special case: nested lists are serialized as siblings, not children
+                    if not (isinstance(child_item := child_ref.resolve(doc), ListGroup) and isinstance(item, ListItem))
+                ]
+                text_part = _get_delim(params=params).join(sub_parts)
             else:
                 text_part = _escape_text(item.text, params)
                 text_part = doc_serializer.post_process(
@@ -1962,9 +1980,23 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize unsupported nodes by concatenating their textual parts."""
+        params = DoclangParams(**kwargs)
+        delim = _get_delim(params=DoclangParams(**kwargs))
         if isinstance(item, ListGroup | InlineGroup):
             parts = doc_serializer.get_parts(item=item, **kwargs)
-            text_res = "\n".join([p.text for p in parts if p.text])
+            text_res = delim.join([p.text for p in parts if p.text])
+            return create_ser_result(text=text_res, span_source=parts)
+        elif isinstance(item, FieldRegionItem | FieldItem):
+            parts = []
+            # add any location tokens for FieldRegionItem
+            if (is_fri := isinstance(item, FieldRegionItem)) and params.add_location:
+                loc_str = _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
+                if loc_str:
+                    parts.append(create_ser_result(text=loc_str, span_source=item))
+            parts.extend(doc_serializer.get_parts(item=item, **kwargs))
+            text_res = delim.join([p.text for p in parts if p.text])
+            tok = DoclangToken.FIELD_REGION if is_fri else DoclangToken.FIELD_ITEM
+            text_res = _wrap(text=text_res, wrap_tag=tok.value)
             return create_ser_result(text=text_res, span_source=parts)
         return create_ser_result()
 
@@ -2103,6 +2135,49 @@ class DoclangDocSerializer(DocSerializer):
             parts.append(f'<default_resolution width="{self.params.xsize}" height="{self.params.ysize}"/>')
         return _wrap(text="".join(parts), wrap_tag=DoclangToken.HEAD.value) if parts else ""
 
+    def _is_content_tag(self, tag: str) -> bool:
+        return tag in {DoclangToken.CONTENT.value, DoclangToken.META.value}
+
+    def _remove_content_subtrees(self, element: ETElement) -> None:
+        """Remove any child that is a regarded as content element and its entire subtree."""
+        to_remove = []
+        for child in element:
+            if self._is_content_tag(child.tag):
+                to_remove.append(child)
+            else:
+                self._remove_content_subtrees(child)
+        for child in to_remove:
+            element.remove(child)
+
+    def _strip_text_from_element(self, element: ETElement) -> None:
+        """Remove all text content and whitespace from element."""
+        element.text = None
+        for child in element:
+            self._strip_text_from_element(child)
+            child.tail = None
+
+    def _filter_out_all_content(self, text: str) -> str:
+        root = fromstring(text)
+        self._remove_content_subtrees(root)
+        self._strip_text_from_element(root)
+        out = tostring(root, encoding="unicode", method="xml", short_empty_elements=True)
+        return out
+
+    def _serialize_body(self, **kwargs) -> SerializationResult:
+        """Serialize the document body."""
+
+        # intercept from DoclangDocSerializer to update param kwargs:
+        my_delta = {}
+        if not self.params.add_content:
+            # in this case filtering is done by XML-based post-processing
+            params = self.params.model_copy(deep=True)
+            params.content_types = set(ContentType)
+            my_delta = params.model_dump()
+        my_kwargs = {**kwargs, **my_delta}
+        subparts = self.get_parts(**my_kwargs)
+        res = self.serialize_doc(parts=subparts, **my_kwargs)
+        return res
+
     @override
     def serialize_doc(
         self,
@@ -2128,6 +2203,10 @@ class DoclangDocSerializer(DocSerializer):
                 text_res = text_res.replace(full_match, page_sep)
 
         text_res = f"{open_token}{head}{text_res}{close_token}"
+
+        if not self.params.add_content:
+            # do XML-based post-filtering
+            text_res = self._filter_out_all_content(text_res)
 
         if self.params.pretty_indentation is not None:
             try:
@@ -2273,8 +2352,6 @@ class DoclangDeserializer(BaseModel):
             self._parse_list(doc=doc, el=el, parent=parent)
         elif name == DoclangToken.FLOATING_GROUP.value:
             self._parse_floating_group(doc=doc, el=el, parent=parent)
-        elif name == DoclangToken.INLINE.value:
-            self._parse_inline_group(doc=doc, el=el, parent=parent)
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
 

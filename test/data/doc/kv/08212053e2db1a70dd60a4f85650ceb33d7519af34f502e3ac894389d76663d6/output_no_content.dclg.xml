@@ -1,0 +1,386 @@
+<doclang version="1.0.0">
+  <heading level="1">
+    <location value="30"/>
+    <location value="23"/>
+    <location value="213"/>
+    <location value="31"/>
+  </heading>
+  <heading level="2">
+    <location value="30"/>
+    <location value="39"/>
+    <location value="145"/>
+    <location value="46"/>
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <location value="140"/>
+      <location value="48"/>
+      <location value="237"/>
+      <location value="141"/>
+    </picture>
+  </floating_group>
+  <text>
+    <location value="29"/>
+    <location value="123"/>
+    <location value="130"/>
+    <location value="136"/>
+  </text>
+  <heading level="2">
+    <location value="30"/>
+    <location value="146"/>
+    <location value="151"/>
+    <location value="152"/>
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <location value="139"/>
+      <location value="159"/>
+      <location value="248"/>
+      <location value="164"/>
+    </picture>
+  </floating_group>
+  <heading level="2">
+    <location value="30"/>
+    <location value="169"/>
+    <location value="186"/>
+    <location value="176"/>
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <location value="137"/>
+      <location value="180"/>
+      <location value="248"/>
+      <location value="225"/>
+    </picture>
+  </floating_group>
+  <text>
+    <location value="30"/>
+    <location value="241"/>
+    <location value="127"/>
+    <location value="253"/>
+  </text>
+  <text>
+    <location value="139"/>
+    <location value="234"/>
+    <location value="244"/>
+    <location value="248"/>
+  </text>
+  <text>
+    <location value="176"/>
+    <location value="258"/>
+    <location value="208"/>
+    <location value="272"/>
+  </text>
+  <heading level="2">
+    <location value="30"/>
+    <location value="278"/>
+    <location value="74"/>
+    <location value="284"/>
+  </heading>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="30"/>
+        <location value="294"/>
+        <location value="51"/>
+        <location value="299"/>
+      </key>
+      <value class="read_only">
+        <location value="132"/>
+        <location value="292"/>
+        <location value="251"/>
+        <location value="315"/>
+      </value>
+      <floating_group class="picture">
+        <picture>
+          <location value="132"/>
+          <location value="292"/>
+          <location value="251"/>
+          <location value="315"/>
+        </picture>
+      </floating_group>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="30"/>
+        <location value="329"/>
+        <location value="64"/>
+        <location value="335"/>
+      </key>
+      <value class="read_only">
+        <location value="161"/>
+        <location value="330"/>
+        <location value="232"/>
+        <location value="341"/>
+      </value>
+      <floating_group class="picture">
+        <picture>
+          <location value="161"/>
+          <location value="330"/>
+          <location value="232"/>
+          <location value="341"/>
+        </picture>
+      </floating_group>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="30"/>
+        <location value="350"/>
+        <location value="87"/>
+        <location value="356"/>
+      </key>
+      <value class="read_only">
+        <location value="147"/>
+        <location value="354"/>
+        <location value="243"/>
+        <location value="372"/>
+      </value>
+      <floating_group class="picture">
+        <picture>
+          <location value="147"/>
+          <location value="354"/>
+          <location value="243"/>
+          <location value="372"/>
+        </picture>
+      </floating_group>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="178"/>
+    <location value="378"/>
+    <location value="210"/>
+    <location value="384"/>
+  </text>
+  <heading level="2">
+    <location value="261"/>
+    <location value="41"/>
+    <location value="473"/>
+    <location value="55"/>
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <location value="377"/>
+      <location value="57"/>
+      <location value="459"/>
+      <location value="132"/>
+    </picture>
+  </floating_group>
+  <heading level="2">
+    <location value="260"/>
+    <location value="142"/>
+    <location value="461"/>
+    <location value="155"/>
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <location value="397"/>
+      <location value="165"/>
+      <location value="432"/>
+      <location value="174"/>
+    </picture>
+  </floating_group>
+  <heading level="2">
+    <location value="261"/>
+    <location value="188"/>
+    <location value="424"/>
+    <location value="195"/>
+  </heading>
+  <floating_group class="picture">
+    <picture>
+      <location value="377"/>
+      <location value="197"/>
+      <location value="475"/>
+      <location value="244"/>
+    </picture>
+  </floating_group>
+  <heading level="2">
+    <location value="261"/>
+    <location value="250"/>
+    <location value="375"/>
+    <location value="257"/>
+  </heading>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="419"/>
+        <location value="265"/>
+        <location value="450"/>
+        <location value="278"/>
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <location value="419"/>
+          <location value="265"/>
+          <location value="450"/>
+          <location value="278"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="260"/>
+        <location value="271"/>
+        <location value="340"/>
+        <location value="278"/>
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="419"/>
+        <location value="292"/>
+        <location value="449"/>
+        <location value="306"/>
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <location value="419"/>
+          <location value="292"/>
+          <location value="449"/>
+          <location value="306"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="299"/>
+        <location value="320"/>
+        <location value="306"/>
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="421"/>
+        <location value="322"/>
+        <location value="451"/>
+        <location value="336"/>
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <location value="421"/>
+          <location value="322"/>
+          <location value="451"/>
+          <location value="336"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="328"/>
+        <location value="327"/>
+        <location value="334"/>
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="421"/>
+        <location value="347"/>
+        <location value="451"/>
+        <location value="361"/>
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <location value="421"/>
+          <location value="347"/>
+          <location value="451"/>
+          <location value="361"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="355"/>
+        <location value="317"/>
+        <location value="362"/>
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="421"/>
+        <location value="371"/>
+        <location value="451"/>
+        <location value="385"/>
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <location value="421"/>
+          <location value="371"/>
+          <location value="451"/>
+          <location value="385"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="377"/>
+        <location value="349"/>
+        <location value="383"/>
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="417"/>
+        <location value="401"/>
+        <location value="450"/>
+        <location value="410"/>
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <location value="417"/>
+          <location value="401"/>
+          <location value="450"/>
+          <location value="410"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="404"/>
+        <location value="397"/>
+        <location value="410"/>
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="431"/>
+        <location value="441"/>
+        <location value="443"/>
+        <location value="457"/>
+      </key>
+      <floating_group class="picture">
+        <picture>
+          <location value="431"/>
+          <location value="441"/>
+          <location value="443"/>
+          <location value="457"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="261"/>
+        <location value="446"/>
+        <location value="352"/>
+        <location value="453"/>
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="250"/>
+    <location value="491"/>
+    <location value="260"/>
+    <location value="497"/>
+  </text>
+  <text>
+    <location value="492"/>
+    <location value="164"/>
+    <location value="500"/>
+    <location value="347"/>
+  </text>
+</doclang>

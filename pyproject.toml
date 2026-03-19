@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.69.0"  # DO NOT EDIT, updated automatically
+version = "2.70.1"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -99,7 +99,7 @@ examples = [
 dev = [
     "pre-commit~=3.7",
     "mypy~=1.6",
-    "black~=24.4",
+    "black~=26.3.1",
     "isort~=5.10",
     "autoflake~=2.0",
     "flake8~=7.1",

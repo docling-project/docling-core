@@ -1,0 +1,512 @@
+<doclang version="1.0.0">
+  <heading level="1">
+    <location value="118"/>
+    <location value="30"/>
+    <location value="394"/>
+    <location value="36"/>
+    UNITED STATES SECURITIES AND EXCHANGE COMMISSION
+  </heading>
+  <text>
+    <location value="201"/>
+    <location value="37"/>
+    <location value="309"/>
+    <location value="44"/>
+    Washington , D.C. 20549
+  </text>
+  <heading level="2">
+    <location value="226"/>
+    <location value="44"/>
+    <location value="287"/>
+    <location value="51"/>
+    Form 10-K
+  </heading>
+  <location value="23"/>
+  <location value="58"/>
+  <location value="363"/>
+  <location value="62"/>
+  <checkbox class="selected"/>
+  ☑ ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934
+  <text>
+    <location value="32"/>
+    <location value="62"/>
+    <location value="247"/>
+    <location value="68"/>
+    FOR THE FISCAL YEAR ENDED DECEMBER 31, 2020
+  </text>
+  <location value="32"/>
+  <location value="73"/>
+  <location value="489"/>
+  <location value="81"/>
+  <checkbox class="unselected"/>
+  TRANSITION REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934 FOR THE TRANSITION PERIOD FROM TO
+  <text>
+    <location value="15"/>
+    <location value="80"/>
+    <location value="24"/>
+    <location value="83"/>
+    OR
+  </text>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="196"/>
+        <location value="85"/>
+        <location value="284"/>
+        <location value="89"/>
+        Commission file number 1
+      </key>
+      <value class="read_only">
+        <location value="286"/>
+        <location value="85"/>
+        <location value="315"/>
+        <location value="89"/>
+        1-13179
+      </value>
+    </field_item>
+  </field_region>
+  <heading level="2">
+    <location value="153"/>
+    <location value="91"/>
+    <location value="358"/>
+    <location value="99"/>
+    FLOWSERVE CORPORATION
+  </heading>
+  <text>
+    <location value="185"/>
+    <location value="101"/>
+    <location value="326"/>
+    <location value="105"/>
+    (Exact name of registrant as specified in its charter)
+  </text>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Logo</classification>
+      </meta>
+      <location value="221"/>
+      <location value="112"/>
+      <location value="282"/>
+      <location value="128"/>
+    </picture>
+  </floating_group>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="66"/>
+        <location value="138"/>
+        <location value="228"/>
+        <location value="142"/>
+        (State or other jurisdiction of incorporation or organization)
+      </key>
+      <value class="read_only">
+        <location value="99"/>
+        <location value="133"/>
+        <location value="131"/>
+        <location value="136"/>
+        New York
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="334"/>
+        <location value="138"/>
+        <location value="428"/>
+        <location value="142"/>
+        (I.R.S. Employer Identification No.)
+      </key>
+      <value class="read_only">
+        <location value="361"/>
+        <location value="133"/>
+        <location value="401"/>
+        <location value="136"/>
+        31-0267900
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="103"/>
+        <location value="155"/>
+        <location value="209"/>
+        <location value="159"/>
+        (Address of principal executive offices)
+      </key>
+      <value class="read_only">
+        <location value="42"/>
+        <location value="149"/>
+        <location value="260"/>
+        <location value="154"/>
+<![CDATA[5215 N. O'Connor Boulevard Suite 2300, Irving, Texas]]>      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="367"/>
+        <location value="155"/>
+        <location value="395"/>
+        <location value="159"/>
+        (Zip Code)
+      </key>
+      <value class="read_only">
+        <location value="371"/>
+        <location value="149"/>
+        <location value="391"/>
+        <location value="153"/>
+        75039
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="176"/>
+        <location value="166"/>
+        <location value="335"/>
+        <location value="171"/>
+<![CDATA[(Registrant's telephone number , including area code)]]>      </key>
+      <value class="read_only">
+        <location value="230"/>
+        <location value="162"/>
+        <location value="281"/>
+        <location value="166"/>
+        (972) 443-6500
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="27"/>
+    <location value="178"/>
+    <location value="223"/>
+    <location value="182"/>
+    Securities registered pursuant to Section 12(b) of the Act:
+  </text>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="73"/>
+        <location value="191"/>
+        <location value="163"/>
+        <location value="200"/>
+        Common Stock, $1.25 Per Value 1.25% Senior Notes due 2022
+      </key>
+      <value class="read_only">
+        <location value="90"/>
+        <location value="186"/>
+        <location value="146"/>
+        <location value="190"/>
+        Title of Each Class
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="245"/>
+        <location value="191"/>
+        <location value="266"/>
+        <location value="200"/>
+        FLS22A
+      </key>
+      <value class="read_only">
+        <location value="231"/>
+        <location value="186"/>
+        <location value="280"/>
+        <location value="190"/>
+        Trading Symbol
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="357"/>
+        <location value="191"/>
+        <location value="429"/>
+        <location value="201"/>
+        New York Stock Exchange New York Stock Exchange
+      </key>
+      <value class="read_only">
+        <location value="323"/>
+        <location value="186"/>
+        <location value="463"/>
+        <location value="190"/>
+        Name of Each Exchange on Which Registered
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="158"/>
+        <location value="205"/>
+        <location value="353"/>
+        <location value="209"/>
+        Securities registered pursuant to Section 12(g) of the Act:
+      </key>
+      <value class="read_only">
+        <location value="247"/>
+        <location value="210"/>
+        <location value="264"/>
+        <location value="213"/>
+        None
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="27"/>
+        <location value="216"/>
+        <location value="348"/>
+        <location value="220"/>
+        Indicate by check mark if the registrant is a well-known seasoned issuer, as defined in Rule 405 of the Securities Act . Yes
+      </key>
+      <value class="read_only">
+        <location value="350"/>
+        <location value="215"/>
+        <location value="366"/>
+        <location value="219"/>
+        <checkbox class="selected"/>
+        Yes ☑
+      </value>
+      <value class="read_only">
+        <location value="375"/>
+        <location value="216"/>
+        <location value="390"/>
+        <location value="219"/>
+        <checkbox class="unselected"/>
+        No ☐
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="27"/>
+        <location value="222"/>
+        <location value="354"/>
+        <location value="226"/>
+        Indicate by check mark if the registrant is not required to file reports pursuant to Section 13 or Section 15(d) of the Act. Yes
+      </key>
+      <value class="read_only">
+        <location value="358"/>
+        <location value="221"/>
+        <location value="374"/>
+        <location value="225"/>
+        <checkbox class="selected"/>
+        Yes ☐
+      </value>
+      <value class="read_only">
+        <location value="383"/>
+        <location value="221"/>
+        <location value="397"/>
+        <location value="225"/>
+        <checkbox class="unselected"/>
+        No ☑
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="12"/>
+        <location value="227"/>
+        <location value="499"/>
+        <location value="240"/>
+        Indicate by check mark whether the registrant (1) has filed all reports required to be filed by Section 13 or 15(d) of the Securities Exchange Act of 1934 during the preceding 12 months (or for such shorter period that the registrant was required to file such reports), and (2) has been subject to such filing requirements for the past 90 days. Yes ☑ No ☐
+      </key>
+      <value class="read_only">
+        <location value="39"/>
+        <location value="235"/>
+        <location value="55"/>
+        <location value="239"/>
+        <checkbox class="selected"/>
+        Yes ☑
+      </value>
+      <value class="read_only">
+        <location value="63"/>
+        <location value="235"/>
+        <location value="78"/>
+        <location value="239"/>
+        <checkbox class="unselected"/>
+        No ☐
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="12"/>
+        <location value="241"/>
+        <location value="499"/>
+        <location value="250"/>
+        Indicate by check mark whether the registrant has submitted electronically every interactive Data File required to be submitted pursuant to Rule 405 of Regulation S-T ( § 232.405 of this chapter) during the preceding 12 months (or for such shorter period that the registrant was required to submit such files). Yes ☑ No ☐
+      </key>
+      <value class="read_only">
+        <location value="399"/>
+        <location value="245"/>
+        <location value="416"/>
+        <location value="249"/>
+        <checkbox class="selected"/>
+        Yes ☑
+      </value>
+      <value class="read_only">
+        <location value="424"/>
+        <location value="245"/>
+        <location value="439"/>
+        <location value="249"/>
+        <checkbox class="unselected"/>
+        No ☐
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="12"/>
+    <location value="256"/>
+    <location value="499"/>
+    <location value="263"/>
+<![CDATA[Indicate by check mark whether the registrant is a large accelerated filer, an accelerated filer, a non-accelerated filer, a smaller reporting company, or an emerging growth company . See the definitions of "large accelerated filer," "accelerated filer," "smaller reporting company" and "emerging growth company" in Rule 12b-2 of the Exchange Act.]]>  </text>
+  <location value="30"/>
+  <location value="266"/>
+  <location value="120"/>
+  <location value="270"/>
+  <checkbox class="selected"/>
+  Large accelerated filer ☑
+  <field_region>
+    <field_item>
+      <value class="read_only">
+        <location value="158"/>
+        <location value="266"/>
+        <location value="241"/>
+        <location value="270"/>
+        <checkbox class="unselected"/>
+        Accelerated filer ☐
+      </value>
+      <value class="read_only">
+        <location value="288"/>
+        <location value="266"/>
+        <location value="380"/>
+        <location value="270"/>
+        <checkbox class="unselected"/>
+        Non-accelerated filer ☐
+      </value>
+      <value class="read_only">
+        <location value="399"/>
+        <location value="266"/>
+        <location value="495"/>
+        <location value="270"/>
+        <checkbox class="unselected"/>
+        Smaller reporting company ☐
+      </value>
+      <value class="read_only">
+        <location value="23"/>
+        <location value="271"/>
+        <location value="120"/>
+        <location value="276"/>
+        <checkbox class="unselected"/>
+        Emerging growth company ☐
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="13"/>
+        <location value="276"/>
+        <location value="444"/>
+        <location value="285"/>
+        If an emerging growth company, indicate by check mark if the registrant has elected not to use the extended transition period for complying with any new or revised financial accounting standards provided pursuant to Section 13(a) of the Exchange Act. ☐
+      </key>
+      <value class="read_only">
+        <location value="302"/>
+        <location value="281"/>
+        <location value="307"/>
+        <location value="284"/>
+        <checkbox class="unselected"/>
+        $\square$
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="12"/>
+        <location value="289"/>
+        <location value="499"/>
+        <location value="301"/>
+<![CDATA[Indicate by check mark whether the registrant has filed a report on and attestation to its management's assessment of the effectiveness of its internal control over financial reporting under Section 404(b) of the Sarbanes-Oxley Act (15 U.S.C. 7262(b)) by the registered public accounting firm that prepared or issued its audit report. Yes ☑ No ☐]]>      </key>
+      <value class="read_only">
+        <location value="12"/>
+        <location value="297"/>
+        <location value="30"/>
+        <location value="301"/>
+        <checkbox class="selected"/>
+        Yes ☑
+      </value>
+      <value class="read_only">
+        <location value="38"/>
+        <location value="297"/>
+        <location value="53"/>
+        <location value="301"/>
+        <checkbox class="unselected"/>
+        No ☐
+      </value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>
+        <location value="27"/>
+        <location value="303"/>
+        <location value="338"/>
+        <location value="307"/>
+        Indicate by check mark whether the registrant is a shell company (as defined in Rule 12b-2 of the Exchange Act). Yes
+      </key>
+      <value class="read_only">
+        <location value="340"/>
+        <location value="303"/>
+        <location value="357"/>
+        <location value="307"/>
+        <checkbox class="unselected"/>
+        Yes ☐
+      </value>
+      <value class="read_only">
+        <location value="365"/>
+        <location value="303"/>
+        <location value="380"/>
+        <location value="307"/>
+        <checkbox class="selected"/>
+        No
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="13"/>
+    <location value="309"/>
+    <location value="499"/>
+    <location value="322"/>
+<![CDATA[The aggregate market value of the common stock held by non-affiliates of the registrant, computed by reference to the closing price of the registrant's common stock as reported on June 30, 2020 (the last business day of the registrant's most recently completed second fiscal quarter), was approximately $3,069,855,077. For purposes of the foregoing calculation only, all directors, executive officers and known 5% beneficial owners have been deemed affiliates.]]>  </text>
+  <text>
+    <location value="27"/>
+    <location value="322"/>
+    <location value="297"/>
+    <location value="326"/>
+<![CDATA[Number of the registrant's common shares outstanding as of February 17, 2021 was 130,276,070.]]>  </text>
+  <heading level="3">
+    <location value="181"/>
+    <location value="334"/>
+    <location value="330"/>
+    <location value="337"/>
+    DOCUMENTS INCORPORATED BY REFERENCE
+  </heading>
+  <text>
+    <location value="13"/>
+    <location value="339"/>
+    <location value="499"/>
+    <location value="347"/>
+<![CDATA[Certain information contained in the definitive proxy statement for the registrant's 2021 Annual Meeting of Shareholders scheduled to be held on May 20, 2021 is incorporated by reference into Part III hereof.]]>  </text>
+</doclang>

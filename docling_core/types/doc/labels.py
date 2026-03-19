@@ -34,6 +34,14 @@ class DocItemLabel(str, Enum):
     PARAGRAPH = "paragraph"
     REFERENCE = "reference"
 
+    FIELD_REGION = "field_region"
+    FIELD_HEADING = "field_heading"
+    FIELD_ITEM = "field_item"
+    FIELD_KEY = "field_key"
+    FIELD_VALUE = "field_value"
+    FIELD_HINT = "field_hint"
+    MARKER = "marker"
+
     def __str__(self):
         """Get string value."""
         return str(self.value)
@@ -65,6 +73,13 @@ class DocItemLabel(str, Enum):
             DocItemLabel.GRADING_SCALE: (255, 204, 204),
             DocItemLabel.HANDWRITTEN_TEXT: (204, 255, 204),
             DocItemLabel.EMPTY_VALUE: (220, 220, 220),
+            DocItemLabel.FIELD_REGION: (183, 65, 14),
+            DocItemLabel.FIELD_HEADING: (200, 80, 30),
+            DocItemLabel.FIELD_ITEM: (183, 100, 40),
+            DocItemLabel.FIELD_KEY: (160, 70, 80),
+            DocItemLabel.FIELD_VALUE: (135, 80, 20),
+            DocItemLabel.FIELD_HINT: (190, 120, 90),
+            DocItemLabel.MARKER: (205, 85, 120),
         }
         return color_map.get(label, (0, 0, 0))
 

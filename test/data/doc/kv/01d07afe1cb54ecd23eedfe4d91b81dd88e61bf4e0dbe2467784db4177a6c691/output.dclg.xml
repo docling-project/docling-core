@@ -1,0 +1,27 @@
+<doclang version="1.0.0">
+  <floating_group class="table">
+    <otsl>
+      <location value="67"/>
+      <location value="40"/>
+      <location value="451"/>
+      <location value="473"/>
+      <fcel/>
+      display (continued) Convert Page Segment to PFM display 357, 358 Convert PCD to Page Segment (CVTPCDPAGS) display 324, 325, 326 Convert PFM to Page Segment (CVTPFMPAGS) display 326, 327 Convert to Page Segment display 316, 317, 331, 332, 333, 335 Copy PFD Definition display 198 Copy PFD Definition File display 212 Copy Source Overlay display 77 Copy Source Overlay File display 92 Create Overlay display 47, 54, 80 Create PFD Definition display 131 Create PFD Definition File display 108 Create PFD Definition Files display 209 Create PFD Definitions display 110, 147 Create Source Overlay display 33, 46, 65 Create Source Overlay File display 32, 89, 91 Create Source Overlays display 33 Define Bar Code Detail display 265 Define Box Detail display 254, 255 Define Line Detail display 251 Define Overlay Specifications display 66 Define PFD Specifications display 149, 150 Define Printout Specifications display 130, 131, 187 Define Summary Data display 181 Define Text Detail display 116, 117 design display 16, 228, 229 list view 229 screen view 229 Design Overlay display 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 51, 52, 230, 240, 242, 243, 250, 252, 263, 273, 278, 279, 288, 289, 290, 291, 292 Design Page Layout display 127, 128, 129, 130, 169, 170, 171, 175, 176, 284 Design Record Layout display 112, 114, 115, 118, 119, 120, 121, 122, 123, 125, 126, 162, 166 Display PFD Definition Font display 304, 305, 306 Edit Numeric display 168 Exit Definition display 132 Exit Overlay Utility display 46, 53, 73 Exit PFD Definition display 194 fonts 304 help 19 IBM Advanced Function Printing Utilities for iSeries display 15, 30, 49, 59, 106, 135, 139, 221, 315, 323 iSeries Main Menu display 223 Mapping Page Segment Name display 192 menu display 14 display (continued) overlay description 312, 346 page segment description 312, 356 PFD definition file description 214 Place Graphics Detail display 281 Place Page Segment Detail display 275 Place Record Layout Detail display 128, 173, 174, 285 Print Database File Member display 134, 136, 216, 220, 221 Print Overlay display 319, 345 Print Page segment display 322 Print Page Segment display 355 Print PFD Data (PRTPFDDTA) display 223 Save PFD Definition display 132, 195 Save Source Overlay display 47, 54, 74 Select Database File display 159 Select Database File Member display 219 Select Field in Record Format display 117, 164, 276, 283 Select Fields to Edit Numeric display 169 Select Page Segment display 276 Select PFD Definition display 137, 222 Select PFD Definition File display 221 Select Record Format display 160 Select Reserved Variable Name display 164 Select Source Overlay Font display 249 source overlay file description 94 Specify Break Fields display 161 Specify Database File display 110, 111, 158 Specify Element Selection 124 Specify Mapping Object Name display 191 Specify Record Selection display 183 work with display 15 Work with Overlays display 318, 319, 341 Work with Page Segments display 321, 351 Work with PFD Definition Files display 107, 203, 205 Work with PFD Definition Fonts display 297 Work with PFD Definitions display 109, 133, 135, 143, 196, 215 Work with Source Overlay display 48 Work with Source Overlay Files display 31, 48, 83, 85 Work with Source Overlay Fonts display 297 Work with Source Overlays display 33, 50, 55, 61 display a page segment description 312 display an overlay description 312 display description of PFD definition file 214 display description of source overlay file 94 DMAS forms 459 duplex 188 E EAN-13 264 EAN-8 264 edit element 288, 295 element operations 234 EIA (Electronic Industries Association) labels 461 element 14, 100 bar code 42, 263, 413 block edit 289 box 39, 252, 411 format 419 rotation 420 shading 435 text placement 419 change 239, 294 change in list view 291 confirm delete 72 copy 288 create 294 define 239 edit 288, 295 graphic 43, 277 graphics 415 line 38, 249, 409 move 288 page segment 273, 414 record layout 284, 414 remove 288 text 35, 242, 408 element list copy 295 move 295 remove 295 restore 295 sort 295 element mark 231 hide 232 on/off 232 refresh 232 scroll 232 element operations change 234 define 233 edit 234 screen view 233 element position 408 element position limitations 391, 395 element selection specify 123 element type 227, 408 bar code 227 box 227 line 227 page segment 227 record layout 228 text 227 element type and position (problem analysis) 408
+      <nl/>
+    </otsl>
+  </floating_group>
+  <text>
+    <location value="420"/>
+    <location value="484"/>
+    <location value="438"/>
+    <location value="490"/>
+    Index
+  </text>
+  <text>
+    <location value="446"/>
+    <location value="483"/>
+    <location value="461"/>
+    <location value="489"/>
+    477
+  </text>
+</doclang>

@@ -1,3 +1,20 @@
+## [v2.70.1](https://github.com/docling-project/docling-core/releases/tag/v2.70.1) - 2026-03-17
+
+### Fix
+
+* **markdown:** Remove assert statements to support Python optimization mode ([#548](https://github.com/docling-project/docling-core/issues/548)) ([`0a3b278`](https://github.com/docling-project/docling-core/commit/0a3b2787e04259d8f2be4813b289aa1fe0aaa734))
+* Improve rich table cell validation ([#550](https://github.com/docling-project/docling-core/issues/550)) ([`c57e50a`](https://github.com/docling-project/docling-core/commit/c57e50ac43e977ce86a78bd6d8ca5db9d17c503f))
+
+## [v2.70.0](https://github.com/docling-project/docling-core/releases/tag/v2.70.0) - 2026-03-13
+
+### Feature
+
+* Introduce field data model incl. Doclang serialization ([#519](https://github.com/docling-project/docling-core/issues/519)) ([`b93d5a3`](https://github.com/docling-project/docling-core/commit/b93d5a3920353736c2436e1d5a36010d12f46866))
+* Make an experimental outline serializer ([#415](https://github.com/docling-project/docling-core/issues/415)) ([`8d7859e`](https://github.com/docling-project/docling-core/commit/8d7859eeecd8be2680550894dcebc0ab2c98a8d4))
+* Profile a document or collection ([#511](https://github.com/docling-project/docling-core/issues/511)) ([`af50f1c`](https://github.com/docling-project/docling-core/commit/af50f1cb079ca5b1bd1e4d609bf01494f2145be6))
+* Split html table to headers and body ([#532](https://github.com/docling-project/docling-core/issues/532)) ([`b435090`](https://github.com/docling-project/docling-core/commit/b435090fdfa27eef65c8d615ef19e8b074a04df0))
+* Handle wide table outliers with LineBasedTokenChunker ([#536](https://github.com/docling-project/docling-core/issues/536)) ([`e00125c`](https://github.com/docling-project/docling-core/commit/e00125c47760e3388cc8b860671738965f52a2d4))
+
 ## [v2.69.0](https://github.com/docling-project/docling-core/releases/tag/v2.69.0) - 2026-03-09
 
 ### Feature

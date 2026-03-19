@@ -24,6 +24,17 @@ class LineBasedTokenChunker(BaseChunker):
     intact within chunks. It only splits a line if it exceeds the maximum token limit on
     its own. This is particularly useful for structured content like tables, code, or logs
     where line boundaries are semantically important.
+
+    The chunker supports adding a repeated prefix to each chunk, which can be useful for
+    keeping context like headers or metadata, while also offering flexibility when unusually
+    long lines appear. If a line is too large to fit alongside the prefix, the chunker
+    can either split the line across multiple prefixed chunks to maintain a consistent
+    format, or temporarily drop the prefix for that line to preserve the line's
+    integrity.
+
+    Note:
+        If the prefix itself exceeds max_tokens, it will be split into multiple
+        standalone chunks and only included at the beginning of the output.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -44,6 +55,11 @@ class LineBasedTokenChunker(BaseChunker):
         ),
     ]
 
+    omit_prefix_on_overflow: Annotated[
+        bool,
+        Field(default=False, description="When True, omit prefix for lines that would overflow with it. "),
+    ]
+
     serializer_provider: Annotated[
         BaseSerializerProvider,
         Field(
@@ -54,13 +70,44 @@ class LineBasedTokenChunker(BaseChunker):
 
     @computed_field  # type: ignore[misc]
     @cached_property
-    def prefix_len(self) -> int:
-        """Cached token count of the prefix, computed during initialization."""
+    def prefix_chunks(self) -> list[str]:
+        """Cached list of prefix chunks, computed during initialization.
+
+        If the prefix is larger than max_tokens, it will be split into multiple chunks.
+        """
+        if not self.prefix:
+            return []
+
         token_count = self.tokenizer.count_tokens(self.prefix)
         if token_count >= self.max_tokens:
             warnings.warn(
-                f"Chunks prefix: {self.prefix} is too long for chunk size {self.max_tokens} and will be ignored"
+                f"Chunks prefix is too long ({token_count} tokens) for chunk size {self.max_tokens}. "
+                f"It will be split into multiple chunks and only included in the first chunk(s). "
+                f"Consider increasing max_tokens to accommodate the full prefix in each chunk."
             )
+            # Split the prefix into chunks using a temporary chunker with no prefix
+            temp_chunker = LineBasedTokenChunker(
+                tokenizer=self.tokenizer,
+                prefix="",
+                omit_prefix_on_overflow=False,
+                serializer_provider=self.serializer_provider,
+            )
+            return temp_chunker.chunk_text([self.prefix])
+
+        return [self.prefix]
+
+    @computed_field  # type: ignore[misc]
+    @cached_property
+    def prefix_len(self) -> int:
+        """Cached token count of the prefix that fits in a single chunk.
+
+        Returns 0 if prefix needs to be split into multiple chunks.
+        """
+        if not self.prefix:
+            return 0
+
+        token_count = self.tokenizer.count_tokens(self.prefix)
+        if token_count >= self.max_tokens:
             return 0
         return token_count
 
@@ -70,11 +117,10 @@ class LineBasedTokenChunker(BaseChunker):
         return self.tokenizer.get_max_tokens()
 
     def model_post_init(self, __context) -> None:
-        # Trigger computation of prefix_len to validate prefix length
-        _ = self.prefix_len
-        if self.prefix_len == 0 and self.prefix:
-            # If prefix_len is 0 but prefix exists, it means prefix was too long
-            self.prefix = ""
+        # Trigger computation of prefix_chunks to validate prefix length
+        _ = self.prefix_chunks
+        # Track whether we've warned about prefix omission
+        self._prefix_omitted_warned = False
 
     def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
         """Chunk the provided document using line-based token-aware chunking.
@@ -109,8 +155,32 @@ class LineBasedTokenChunker(BaseChunker):
 
     def chunk_text(self, lines: list[str]) -> list[str]:
         chunks = []
-        current = self.prefix
-        current_len = self.prefix_len
+
+        # Handle prefix chunks - add them first if prefix is too large
+        if self.prefix_chunks and self.prefix_len == 0:
+            # Prefix is too large, add prefix chunks first
+            chunks.extend(self.prefix_chunks)
+            # Continue with regular chunking without prefix
+            current = ""
+            current_len = 0
+        else:
+            # Check if first line would overflow with prefix when omit_prefix_on_overflow=True
+            # If yes, add prefix as a standalone chunk first to ensure it's visible
+            if self.omit_prefix_on_overflow and self.prefix_len > 0 and lines:
+                first_line_tokens = self.tokenizer.count_tokens(lines[0])
+                # If first line would overflow with prefix, add prefix as standalone chunk
+                if first_line_tokens + self.prefix_len > self.max_tokens:
+                    chunks.append(self.prefix)
+                    current = ""
+                    current_len = 0
+                else:
+                    # First line fits with prefix, use normal flow
+                    current = self.prefix
+                    current_len = self.prefix_len
+            else:
+                # Normal case: prefix fits in a single chunk or no prefix
+                current = self.prefix
+                current_len = self.prefix_len
 
         for line in lines:
             remaining = line
@@ -129,9 +199,37 @@ class LineBasedTokenChunker(BaseChunker):
                 # If it CAN fit into a fresh chunk → flush current and start new one.
                 if line_tokens + self.prefix_len <= self.max_tokens:
                     chunks.append(current)
-                    current = self.prefix
-                    current_len = self.prefix_len
+                    # Only add prefix to new chunks if it fits (prefix_len > 0)
+                    if self.prefix_len > 0:
+                        current = self.prefix
+                        current_len = self.prefix_len
+                    else:
+                        current = ""
+                        current_len = 0
                     # loop continues to retry fitting `remaining`
+                    continue
+
+                # Check if omitting prefix would allow the line to fit
+                # (only if line itself is not larger than max_tokens)
+                if self.omit_prefix_on_overflow and line_tokens <= self.max_tokens and self.prefix_len > 0:
+                    # Warn once when prefix is actually omitted
+                    if not self._prefix_omitted_warned:
+                        warnings.warn(
+                            f"Prefix omitted for at least one line due to omit_prefix_on_overflow=True. "
+                            f"Line would overflow with prefix ({self.prefix_len} tokens) but fits without it "
+                            f"within max_tokens ({self.max_tokens}). This may result in inconsistent chunk formatting.",
+                            UserWarning,
+                            stacklevel=4,
+                        )
+                        self._prefix_omitted_warned = True
+
+                    # Omit prefix for this line to make it fit
+                    # Only append current if it contains more than just the prefix
+                    if current and current != self.prefix:
+                        chunks.append(current)
+                    current = ""
+                    current_len = 0
+                    # loop continues to retry fitting `remaining` without prefix
                     continue
 
                 # Remaining is too large even for an empty chunk → split it.
@@ -154,13 +252,31 @@ class LineBasedTokenChunker(BaseChunker):
 
                 # flush the current chunk (full)
                 chunks.append(current)
-                current = self.prefix
-                current_len = self.prefix_len
+
+                # Determine whether to add prefix to the next chunk
+                # If omit_prefix_on_overflow is True, don't add prefix for overflow chunks
+                if self.prefix_len > 0 and not self.omit_prefix_on_overflow:
+                    current = self.prefix
+                    current_len = self.prefix_len
+                else:
+                    # Warn once when prefix is omitted for overflow chunks
+                    if self.omit_prefix_on_overflow and self.prefix_len > 0 and not self._prefix_omitted_warned:
+                        warnings.warn(
+                            f"Prefix omitted for at least one line due to omit_prefix_on_overflow=True. "
+                            f"Line would overflow with prefix ({self.prefix_len} tokens) but fits without it "
+                            f"within max_tokens ({self.max_tokens}). This may result in inconsistent chunk formatting.",
+                            UserWarning,
+                            stacklevel=4,
+                        )
+                        self._prefix_omitted_warned = True
+                    current = ""
+                    current_len = 0
 
             # end while for this line
 
         # push final chunk if non-empty
-        if current != self.prefix:
+        # Check against both empty string and prefix (for when prefix fits)
+        if current and (self.prefix_len == 0 or current != self.prefix):
             chunks.append(current)
 
         return chunks

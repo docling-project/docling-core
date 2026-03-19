@@ -48,6 +48,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
+from docling_core.types.doc.document import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
 from docling_core.types.doc.document import CURRENT_VERSION, PageItem
 from docling_core.types.doc.webvtt import WebVTTFile
 
@@ -541,6 +542,33 @@ def test_docitems():
                 self_ref="#",
                 orig="whatever",
                 text="E=mc^2",
+            )
+            verify(dc, obj)
+        elif dc is FieldRegionItem:
+            obj = dc(
+                self_ref="#",
+            )
+            verify(dc, obj)
+        elif dc is FieldItem:
+            obj = dc(
+                self_ref="#",
+            )
+            verify(dc, obj)
+        elif dc is FieldValueItem:
+            obj = dc(
+                self_ref="#",
+                orig="whatever",
+                text="whatever",
+                kind="fillable",
+            )
+            verify(dc, obj)
+        elif dc is FieldHeadingItem:
+            obj = dc(
+                text="whatever",
+                orig="whatever",
+                label=DocItemLabel.FIELD_HEADING,
+                self_ref="#",
+                level=2,
             )
             verify(dc, obj)
         elif dc is GraphData:  # we skip this on purpose
@@ -1819,6 +1847,41 @@ def test_invalid_rich_table_doc():
 
             # discouraged but technically possible:
             table_item.data.table_cells.append(table_cell)
+
+    # ensure validate_document() raises:
+    with pytest.raises(ValueError):
+        DoclingDocument.validate_document(doc)
+
+def test_invalid_single_linked_rich_table_doc():
+    doc = DoclingDocument(name="")
+    table_item = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    rich_item = doc.add_text(
+        text="rich item",
+        label=DocItemLabel.TEXT,
+        parent=table_item,
+    )
+    for i in range(table_item.data.num_rows):
+        for j in range(table_item.data.num_cols):
+            if i == 1 and j == 1:
+                table_cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item.get_ref(),
+                )
+            else:
+                table_cell = TableCell(
+                    text=f"cell {i},{j}",
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                )
+            doc.add_table_cell(table_item=table_item, cell=table_cell)
+
+    # delete child reference from table item
+    del(table_item.children[0])
 
     # ensure validate_document() raises:
     with pytest.raises(ValueError):

@@ -1,0 +1,41 @@
+<doclang version="1.0.0">
+  <field_region>
+    <floating_group class="table">
+      <otsl>
+        <ched/>
+        Description of property
+        <ched/>
+        Cost or other basis, plus improvements and expense of sale
+        <ched/>
+        Gain or loss
+        <nl/>
+        <fcel/>
+        <field_item>
+          <value class="fillable"></value>
+        </field_item>
+        <fcel/>
+        <field_item>
+          <value class="fillable">gain</value>
+        </field_item>
+        <fcel/>
+        <field_item>
+          <value class="fillable">150,997</value>
+        </field_item>
+        <nl/>
+        <fcel/>
+        <field_item>
+          <value class="fillable"></value>
+        </field_item>
+        <fcel/>
+        <field_item>
+          <value class="fillable">loss</value>
+        </field_item>
+        <fcel/>
+        <field_item>
+          <value class="fillable">114,676</value>
+        </field_item>
+        <nl/>
+      </otsl>
+    </floating_group>
+  </field_region>
+</doclang>

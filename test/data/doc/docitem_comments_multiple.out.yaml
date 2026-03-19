@@ -79,4 +79,4 @@ texts:
   prov: []
   self_ref: '#/texts/4'
   text: '[Reviewer B]: This is a comment on texts 2 (range [0,6)) and 3.'
-version: 1.9.0
+version: 1.10.0
