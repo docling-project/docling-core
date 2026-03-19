@@ -42,67 +42,70 @@ _SECTION_HEADER_PREFIX = "section_header_level_"
 class _PictureClassificationToken(str, Enum):
     """PictureClassificationToken."""
 
-    OTHER = "<other>"
+    # Current v2 model tokens (DocumentFigureClassifier-v2.0)
 
-    # If more than one picture is grouped together, it
-    # is generally not possible to assign a label
-    PICTURE_GROUP = "<picture_group>"
-
-    # General
-    CHART = "<chart>"
-    PIE_CHART = "<pie_chart>"
+    # Charts
     BAR_CHART = "<bar_chart>"
-    STACKED_BAR_CHART = "<stacked_bar_chart>"
-    LINE_CHART = "<line_chart>"
-    FLOW_CHART = "<flow_chart>"
-    SCATTER_CHART = "<scatter_chart>"
-    SCATTER_PLOT = "<scatter_plot>"
     BOX_PLOT = "<box_plot>"
-    HEATMAP = "<heatmap>"
-    REMOTE_SENSING = "<remote_sensing>"
-    INFOGRAPHIC = "<infographic>"
-    DECORATION = "<decoration>"
-    ILLUSTRATION = "<illustration>"
+    FLOW_CHART = "<flow_chart>"
+    LINE_CHART = "<line_chart>"
+    PIE_CHART = "<pie_chart>"
+    SCATTER_PLOT = "<scatter_plot>"
     TABLE = "<table>"
 
-    NATURAL_IMAGE = "<natural_image>"
-    PHOTOGRAPH = "<photograph>"
+    # Images
     FULL_PAGE_IMAGE = "<full_page_image>"
     PAGE_THUMBNAIL = "<page_thumbnail>"
-    PERSON = "<person>"
+    PHOTOGRAPH = "<photograph>"
 
     # Chemistry
-    MOLECULAR_STRUCTURE = "<chemistry_molecular_structure>"
-    MARKUSH_STRUCTURE = "<chemistry_markush_structure>"
     CHEMISTRY_STRUCTURE = "<chemistry_structure>"
 
-    # Company
+    # Company & Document
+    BAR_CODE = "<bar_code>"
     ICON = "<icon>"
     LOGO = "<logo>"
+    QR_CODE = "<qr_code>"
     SIGNATURE = "<signature>"
     STAMP = "<stamp>"
-    QR_CODE = "<qr_code>"
-    BAR_CODE = "<bar_code>"
-    SCREENSHOT = "<screenshot>"
-    SCREENSHOT_FROM_COMPUTER = "<screenshot_from_computer>"
-    SCREENSHOT_FROM_MANUAL = "<screenshot_from_manual>"
-    UI_ELEMENT = "<ui_element>"
-
-    # Geology/Geography
-    GEOGRAPHIC_MAP = "<map>"
-    GEOGRAPHICAL_MAP = "<geographical_map>"
-    TOPOGRAPHICAL_MAP = "<topographical_map>"
-    STRATIGRAPHIC_CHART = "<stratigraphic_chart>"
 
     # Engineering
-    CAD_DRAWING = "<cad_drawing>"
     ENGINEERING_DRAWING = "<engineering_drawing>"
-    ELECTRICAL_DIAGRAM = "<electrical_diagram>"
 
-    # Other specific
-    MUSIC = "<music>"
+    # Screenshots
+    SCREENSHOT_FROM_COMPUTER = "<screenshot_from_computer>"
+    SCREENSHOT_FROM_MANUAL = "<screenshot_from_manual>"
+
+    # Geography
+    GEOGRAPHICAL_MAP = "<geographical_map>"
+    TOPOGRAPHICAL_MAP = "<topographical_map>"
+
+    # Other
     CALENDAR = "<calendar>"
     CROSSWORD_PUZZLE = "<crossword_puzzle>"
+    MUSIC = "<music>"
+    OTHER = "<other>"
+
+    # Legacy tokens
+    CAD_DRAWING = "<cad_drawing>"
+    CHART = "<chart>"
+    DECORATION = "<decoration>"
+    ELECTRICAL_DIAGRAM = "<electrical_diagram>"
+    GEOGRAPHIC_MAP = "<map>"
+    HEATMAP = "<heatmap>"
+    ILLUSTRATION = "<illustration>"
+    INFOGRAPHIC = "<infographic>"
+    MARKUSH_STRUCTURE = "<chemistry_markush_structure>"
+    MOLECULAR_STRUCTURE = "<chemistry_molecular_structure>"
+    NATURAL_IMAGE = "<natural_image>"
+    PERSON = "<person>"
+    PICTURE_GROUP = "<picture_group>"
+    REMOTE_SENSING = "<remote_sensing>"
+    SCATTER_CHART = "<scatter_chart>"
+    SCREENSHOT = "<screenshot>"
+    STACKED_BAR_CHART = "<stacked_bar_chart>"
+    STRATIGRAPHIC_CHART = "<stratigraphic_chart>"
+    UI_ELEMENT = "<ui_element>"
 
 
 class _CodeLanguageToken(str, Enum):

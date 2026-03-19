@@ -5400,56 +5400,60 @@ class DoclingDocument(BaseModel):
             """Extract any picture classification label from the chunk."""
             label = None
 
-            # All possible picture classification labels
-            all_labels = [
-                # Charts
-                PictureClassificationLabel.PIE_CHART,
-                PictureClassificationLabel.BAR_CHART,
-                PictureClassificationLabel.STACKED_BAR_CHART,
-                PictureClassificationLabel.LINE_CHART,
-                PictureClassificationLabel.FLOW_CHART,
-                PictureClassificationLabel.SCATTER_CHART,
-                PictureClassificationLabel.SCATTER_PLOT,
-                PictureClassificationLabel.BOX_PLOT,
-                PictureClassificationLabel.HEATMAP,
-                PictureClassificationLabel.TABLE,
-                # Images
-                PictureClassificationLabel.NATURAL_IMAGE,
-                PictureClassificationLabel.PHOTOGRAPH,
-                PictureClassificationLabel.FULL_PAGE_IMAGE,
-                PictureClassificationLabel.PAGE_THUMBNAIL,
-                PictureClassificationLabel.REMOTE_SENSING,
-                # Company/Document elements
-                PictureClassificationLabel.ICON,
+            # Current v2 model labels (DocumentFigureClassifier-v2.0)
+            all_labels: list[PictureClassificationLabel | str] = [
                 PictureClassificationLabel.LOGO,
-                PictureClassificationLabel.SIGNATURE,
-                PictureClassificationLabel.STAMP,
-                PictureClassificationLabel.QR_CODE,
-                PictureClassificationLabel.BAR_CODE,
-                PictureClassificationLabel.SCREENSHOT,
-                PictureClassificationLabel.SCREENSHOT_FROM_COMPUTER,
-                PictureClassificationLabel.SCREENSHOT_FROM_MANUAL,
-                # Chemistry
-                PictureClassificationLabel.MOLECULAR_STRUCTURE,
-                PictureClassificationLabel.MARKUSH_STRUCTURE,
-                PictureClassificationLabel.CHEMISTRY_STRUCTURE,
-                # Geology/Geography
-                PictureClassificationLabel.GEOGRAPHICAL_MAP,
-                PictureClassificationLabel.TOPOGRAPHICAL_MAP,
-                # Engineering
+                PictureClassificationLabel.PHOTOGRAPH,
+                PictureClassificationLabel.ICON,
                 PictureClassificationLabel.ENGINEERING_DRAWING,
-                # Other
+                PictureClassificationLabel.LINE_CHART,
+                PictureClassificationLabel.BAR_CHART,
                 PictureClassificationLabel.OTHER,
-                PictureClassificationLabel.PICTURE_GROUP,
+                PictureClassificationLabel.TABLE,
+                PictureClassificationLabel.FLOW_CHART,
+                PictureClassificationLabel.SCREENSHOT_FROM_COMPUTER,
+                PictureClassificationLabel.SIGNATURE,
+                PictureClassificationLabel.SCREENSHOT_FROM_MANUAL,
+                PictureClassificationLabel.GEOGRAPHICAL_MAP,
+                PictureClassificationLabel.PIE_CHART,
+                PictureClassificationLabel.PAGE_THUMBNAIL,
+                PictureClassificationLabel.STAMP,
                 PictureClassificationLabel.MUSIC,
                 PictureClassificationLabel.CALENDAR,
+                PictureClassificationLabel.QR_CODE,
+                PictureClassificationLabel.BAR_CODE,
+                PictureClassificationLabel.FULL_PAGE_IMAGE,
+                PictureClassificationLabel.SCATTER_PLOT,
+                PictureClassificationLabel.CHEMISTRY_STRUCTURE,
+                PictureClassificationLabel.TOPOGRAPHICAL_MAP,
                 PictureClassificationLabel.CROSSWORD_PUZZLE,
-                # Legacy SmolDocling labels
-                "line",
-                "dot_line",
-                "vbar_categorical",
-                "hbar_categorical",
+                PictureClassificationLabel.BOX_PLOT,
             ]
+
+            # Legacy v1 model labels
+            all_labels.extend(
+                [
+                    PictureClassificationLabel.STACKED_BAR_CHART,
+                    PictureClassificationLabel.SCATTER_CHART,
+                    PictureClassificationLabel.HEATMAP,
+                    PictureClassificationLabel.NATURAL_IMAGE,
+                    PictureClassificationLabel.REMOTE_SENSING,
+                    PictureClassificationLabel.SCREENSHOT,
+                    PictureClassificationLabel.MOLECULAR_STRUCTURE,
+                    PictureClassificationLabel.MARKUSH_STRUCTURE,
+                    PictureClassificationLabel.PICTURE_GROUP,
+                ]
+            )
+
+            # Legacy SmolDocling labels
+            all_labels.extend(
+                [
+                    "line",
+                    "dot_line",
+                    "vbar_categorical",
+                    "hbar_categorical",
+                ]
+            )
 
             # Mapping for legacy labels
             label_mapping = {
