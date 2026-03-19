@@ -6,6 +6,8 @@ from docling_core.experimental.serializer.outline import (
     OutlineFormat,
     OutlineMode,
     OutlineParams,
+    OutlineItemData,
+    _format_indented_text_line,
 )
 from docling_core.types.doc import DoclingDocument
 from docling_core.types.doc.labels import DocItemLabel
@@ -315,3 +317,66 @@ def test_outline_serializer_itxt_format_without_non_meta():
             # Format with title: [ref=...] [Title] summary
             bracket_count = line.count("[")
             assert bracket_count == 1, f"Should only have ref bracket when include_non_meta=False, got {bracket_count} in: {line}"
+
+
+def test_format_indented_text_line():
+    """Test _format_indented_text_line function with various inputs."""
+    
+    # Test with short summary (should not be truncated)
+    item_short = OutlineItemData(
+        ref="#/texts/0",
+        item="section_header",
+        title="Introduction",
+        summary="This is a short summary.",
+        level=1
+    )
+    result = _format_indented_text_line(item_short, indent_size=2, max_summary_length=100)
+    assert result == "  [ref=#/texts/0] [Introduction] This is a short summary."
+    assert "..." not in result, "Short summary should not be truncated"
+    
+    # Test with long summary (should be truncated)
+    long_summary = "A" * 150  # 150 characters
+    item_long = OutlineItemData(
+        ref="#/texts/1",
+        item="section_header",
+        title="Long Section",
+        summary=long_summary,
+        level=2
+    )
+    result = _format_indented_text_line(item_long, indent_size=2, max_summary_length=50)
+    assert result.startswith("    [ref=#/texts/1] [Long Section] ")
+    assert result.endswith("...")
+    assert len(result.split("] ")[-1]) == 50, "Truncated summary should be exactly max_summary_length"
+    
+    # Test without title
+    item_no_title = OutlineItemData(
+        ref="#/texts/2",
+        item="paragraph",
+        summary="Summary without title",
+        level=0
+    )
+    result = _format_indented_text_line(item_no_title, indent_size=2, max_summary_length=100)
+    assert result == "[ref=#/texts/2] Summary without title"
+    assert "[" not in result.split("] ", 1)[1], "Should not have title brackets"
+    
+    # Test without summary
+    item_no_summary = OutlineItemData(
+        ref="#/texts/3",
+        item="title",
+        title="Title Only",
+        level=1
+    )
+    result = _format_indented_text_line(item_no_summary, indent_size=2, max_summary_length=100)
+    assert result == "  [ref=#/texts/3] [Title Only]"
+    
+    # Test with different indent sizes
+    item_indent = OutlineItemData(
+        ref="#/texts/4",
+        item="section_header",
+        title="Nested",
+        summary="Nested content",
+        level=3
+    )
+    result = _format_indented_text_line(item_indent, indent_size=3, max_summary_length=100)
+    assert result.startswith(" " * 9)  # 3 spaces * level 3
+    assert "[ref=#/texts/4] [Nested] Nested content" in result
