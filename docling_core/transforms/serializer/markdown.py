@@ -672,8 +672,6 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 text_res = resolved_placeholder
             else:
                 text_res = f"![Image]({item.image.uri!s})"
-        else:
-            text_res = resolved_placeholder
 
         return create_ser_result(text=text_res, span_source=item)
 
