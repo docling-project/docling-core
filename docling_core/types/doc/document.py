@@ -5777,6 +5777,7 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         mark_annotations: bool = False,
         compact_tables: bool = False,
+        traverse_pictures: bool = False,
         *,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
         allowed_meta_names: Optional[set[str]] = None,
@@ -5829,6 +5830,11 @@ class DoclingDocument(BaseModel):
         :type mark_annotations: bool = False
         :param compact_tables: bool: Whether to use compact table format without column padding. (Default value = False).
         :type compact_tables: bool = False
+        :param traverse_pictures: bool: Whether to traverse into picture items and
+            serialize their text children. Must be set to True for scanned/image-based
+            PDFs processed with full-page OCR, where the layout model places all OCR
+            text as children of a top-level PictureItem. (Default value = False).
+        :type traverse_pictures: bool = False
         :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
         :type use_legacy_annotations: Optional[bool] = None
         :param mark_meta: bool: Whether to mark meta in the export
@@ -5876,6 +5882,7 @@ class DoclingDocument(BaseModel):
                 blocked_meta_names=blocked_meta_names or set(),
                 mark_annotations=mark_annotations,
                 compact_tables=compact_tables,
+                traverse_pictures=traverse_pictures,
             ),
         )
         ser_res = serializer.serialize()
@@ -5900,6 +5907,7 @@ class DoclingDocument(BaseModel):
         page_no: Optional[int] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
         page_break_placeholder: Optional[str] = None,
+        traverse_pictures: bool = False,
     ) -> str:
         """Export to plain text.
 
@@ -5925,6 +5933,11 @@ class DoclingDocument(BaseModel):
         :param page_break_placeholder: String inserted at page boundaries. None means
             no page-break marker is emitted.
         :type page_break_placeholder: Optional[str] = None
+        :param traverse_pictures: bool: Whether to traverse into picture items and
+            include their text children. Must be set to True for scanned/image-based
+            PDFs processed with full-page OCR, where the layout model places all OCR
+            text as children of a top-level PictureItem. (Default value = False).
+        :type traverse_pictures: bool = False
         :returns: The exported plain-text representation.
         :rtype: str
         """
@@ -5950,6 +5963,7 @@ class DoclingDocument(BaseModel):
                 start_idx=from_element,
                 stop_idx=to_element,
                 page_break_placeholder=page_break_placeholder,
+                traverse_pictures=traverse_pictures,
             ),
         )
         return serializer.serialize().text

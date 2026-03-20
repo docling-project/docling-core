@@ -1706,6 +1706,49 @@ def test_export_markdown_compact_tables():
     assert len(md_compact) < len(md_padded)
 
 
+def test_export_traverse_pictures_ocr_scanned_pdf():
+    """Test that OCR text nested under a PictureItem is included when traverse_pictures=True."""
+    doc = DoclingDocument(name="Scanned Doc")
+    picture = doc.add_picture()
+
+    ocr_item_1 = TextItem(
+        self_ref=f"#/texts/{len(doc.texts)}",
+        parent=RefItem(cref=picture.self_ref),
+        label=DocItemLabel.TEXT,
+        text="SOCIAL SECURITY",
+        orig="SOCIAL SECURITY",
+    )
+    doc.texts.append(ocr_item_1)
+    picture.children.append(RefItem(cref=ocr_item_1.self_ref))
+
+    ocr_item_2 = TextItem(
+        self_ref=f"#/texts/{len(doc.texts)}",
+        parent=RefItem(cref=picture.self_ref),
+        label=DocItemLabel.TEXT,
+        text="000-00-0000",
+        orig="000-00-0000",
+    )
+    doc.texts.append(ocr_item_2)
+    picture.children.append(RefItem(cref=ocr_item_2.self_ref))
+
+    result_no_traverse_md = doc.export_to_markdown()
+    result_no_traverse_text = doc.export_to_text()
+
+    assert "SOCIAL SECURITY" not in result_no_traverse_md
+    assert "000-00-0000" not in result_no_traverse_md
+    assert "<!-- image -->" in result_no_traverse_md
+    assert "SOCIAL SECURITY" not in result_no_traverse_text
+    assert "000-00-0000" not in result_no_traverse_text
+
+    result_with_traverse_md = doc.export_to_markdown(traverse_pictures=True)
+    result_with_traverse_text = doc.export_to_text(traverse_pictures=True)
+
+    assert "SOCIAL SECURITY" in result_with_traverse_md
+    assert "000-00-0000" in result_with_traverse_md
+    assert "<!-- image -->" in result_with_traverse_md
+    assert "SOCIAL SECURITY" in result_with_traverse_text
+    assert "000-00-0000" in result_with_traverse_text
+
 
 def test_list_group_with_list_items():
     good_doc = DoclingDocument(name="")
