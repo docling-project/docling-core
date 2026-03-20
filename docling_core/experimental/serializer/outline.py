@@ -8,7 +8,7 @@ import json
 from enum import Enum
 from typing import Annotated, Any
 
-from pydantic import Field, model_validator
+from pydantic import Field, TypeAdapter, model_validator
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
@@ -61,12 +61,18 @@ class OutlineItemData(_ExtraAllowingModel):
     """
 
     ref: Annotated[
-        str, Field(pattern=_JSON_POINTER_REGEX, description="JSON pointer reference to the item in the document")
+        str,
+        Field(
+            pattern=_JSON_POINTER_REGEX,
+            description="JSON pointer reference to the item in the document",
+        ),
     ]
+    item: Annotated[str, Field(description="Label of the item")]
     title: Annotated[str | None, Field(description="Title or heading text of the item")] = None
     summary: Annotated[str | None, Field(description="Summary text of the item")] = None
     level: Annotated[
-        int | None, Field(description="Hierarchical level of the item (for titles and section headers)")
+        int | None,
+        Field(description="Hierarchical level of the item (for titles and section headers)"),
     ] = None
 
 
@@ -102,33 +108,31 @@ def _serialize_text_item(item: TextItem, doc: DoclingDocument, **kwargs: Any) ->
     return result.text.strip()
 
 
-def _format_indented_text_line(item: dict[str, Any], indent_size: int = 2, max_summary_length: int = 100) -> str:
+def _format_indented_text_line(item: OutlineItemData, indent_size: int = 2, max_summary_length: int = 100) -> str:
     """Format a single item as an indented text line.
 
     Args:
-        item: Dictionary with ref, title, summary, and optional level fields
+        item: An outline data point
         indent_size: Number of spaces per indentation level
         max_summary_length: Maximum length for summary text before truncation
 
     Returns:
         Formatted line with indentation based on level
     """
-    level = item.get("level", 1)
+    level = item.level if item.level is not None else 1
     indent = " " * (indent_size * level)
-
-    ref = item.get("ref", "")
-    title = item.get("title", "")
-    summary = item.get("summary", "")
+    summary = item.summary if item.summary else ""
 
     # Format: [ref=...] [title] summary
-    parts = []
-    if ref:
-        parts.append(f"[ref={ref}]")
-    if title:
-        parts.append(f"[{title}]")
+    parts = [f"[ref={item.ref}]"]
+    if item.title is not None:
+        parts.append(f"[{item.title}]")
     if summary:
         # Truncate summary if too long, keep first part
-        summary_text = summary if len(summary) <= max_summary_length else summary[: max_summary_length - 3] + "..."
+        if len(summary) <= max_summary_length:
+            summary_text = summary
+        else:
+            summary_text = summary[: max_summary_length - 3] + "..."
         parts.append(summary_text)
 
     return indent + " ".join(parts)
@@ -153,8 +157,10 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     # (ITXT will be assembled at document level in serialize_doc)
     if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
         # Prepare base fields
+        label: str | None = item.label if isinstance(item, DocItem | GroupItem) else None
         data_dict: dict[str, Any] = {
             "ref": item.self_ref,
+            "item": label,
             "title": title_text,
             "summary": item.meta.summary.text if item.meta and item.meta.summary else None,
         }
@@ -188,7 +194,8 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
         else:
             text_parts.append(_default_prepend(item))
 
-    # Always include reference (structure). Add two trailing spaces for Markdown line break.
+    # Always include reference (structure).
+    # Add two trailing spaces for Markdown line break.
     text_parts.append(_default_outline_node(item) + "  ")
 
     # Always include summary (metadata) if available
@@ -248,19 +255,28 @@ class OutlineParams(MarkdownParams):
     mode: Annotated[
         OutlineMode,
         Field(
-            description="Display mode: 'outline' includes all document elements, 'table_of_contents' shows only titles and section headers"
+            description=(
+                "Display mode: 'outline' includes all document elements, "
+                "'table_of_contents' shows only titles and section headers"
+            )
         ),
     ] = OutlineMode.OUTLINE
     format: Annotated[
         OutlineFormat,
         Field(
-            description="Output format: 'markdown' for human-readable text, 'json' for structured data, 'itxt' for hierarchical indented text"
+            description=(
+                "Output format: 'markdown' for human-readable text, "
+                "'json' for structured data, 'itxt' for hierarchical indented text"
+            )
         ),
     ] = OutlineFormat.MARKDOWN
     itxt_max_summary_length: Annotated[
         int,
         Field(
-            description="Maximum length for summary text in ITXT format. Summaries longer than this will be truncated with '...'",
+            description=(
+                "Maximum length for summary text in ITXT format. "
+                "Summaries longer than this will be truncated with '...'"
+            ),
             ge=10,
         ),
     ] = 100
@@ -313,7 +329,7 @@ class _OutlineTableSerializer(BaseTableSerializer):
         if DocItemLabel.TABLE not in params.labels:
             return create_ser_result()
 
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -333,7 +349,7 @@ class _OutlinePictureSerializer(BasePictureSerializer):
         if DocItemLabel.PICTURE not in params.labels:
             return create_ser_result()
 
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -355,7 +371,7 @@ class _OutlineKeyValueSerializer(BaseKeyValueSerializer):
 
         print("label: ", item.label)
 
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -375,7 +391,7 @@ class _OutlineFormSerializer(BaseFormSerializer):
         if DocItemLabel.FORM not in params.labels:
             return create_ser_result()
 
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -421,7 +437,7 @@ class _OutlineFallbackSerializer(BaseFallbackSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -478,14 +494,16 @@ class OutlineDocSerializer(MarkdownDocSerializer):
         For Markdown format, uses the default behavior.
         """
         params = self.params.merge_with_patch(patch=kwargs)
+        OutlineT = TypeAdapter(list[OutlineItemData])
 
         if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
-            json_objects = []
+            outline: list[OutlineItemData] = []
 
             # Add body-level summary if present
             if self.doc.body.meta and self.doc.body.meta.summary:
                 body_data: dict[str, Any] = {
                     "ref": self.doc.body.self_ref,
+                    "item": DocItemLabel.SECTION_HEADER,
                     "title": self.doc.name if params.include_non_meta else None,
                     "summary": self.doc.body.meta.summary.text,
                     "level": 0,
@@ -495,23 +513,19 @@ class OutlineDocSerializer(MarkdownDocSerializer):
                     body_data.update(extra_dict)
 
                 outline_data = OutlineItemData(**body_data)
-                json_objects.append(outline_data.model_dump(exclude_none=True))
+                outline.append(outline_data)
 
             # Add all the other parts
             for part in parts:
                 if part.text:
-                    try:
-                        json_objects.append(json.loads(part.text))
-                    except json.JSONDecodeError:
-                        # Skip invalid JSON
-                        pass
+                    outline.append(OutlineItemData.model_validate_json(part.text))
 
             if params.format == OutlineFormat.JSON:
-                text_res = json.dumps(json_objects, ensure_ascii=False, indent=2)
+                text_res: str = OutlineT.dump_json(outline, exclude_none=True, ensure_ascii=False, indent=2).decode()
             else:
                 lines = [
                     _format_indented_text_line(item, max_summary_length=params.itxt_max_summary_length)
-                    for item in json_objects
+                    for item in outline
                 ]
                 text_res = "\n".join(lines)
 

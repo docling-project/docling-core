@@ -7,6 +7,10 @@
     "level": 0
   },
   {
+    "ref": "#/pictures/0",
+    "item": "picture"
+  },
+  {
     "ref": "#/texts/1",
     "item": "section_header",
     "title": "Docling Technical Report",
@@ -21,11 +25,23 @@
     "level": 1
   },
   {
+    "ref": "#/texts/3",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/4",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/5",
     "item": "section_header",
     "title": "Abstract",
     "summary": "Docling is an MIT‑licensed, self‑contained open‑source PDF conversion tool that leverages cutting‑edge AI models—DocLayNet for layout analysis and TableFormer for table structure recognition—to produce high‑quality outputs while running efficiently on commodity hardware with a modest resource footprint. Its flexible code interface makes it straightforward to extend the package and integrate new features or models.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/6",
+    "item": "text"
   },
   {
     "ref": "#/texts/7",
@@ -35,11 +51,43 @@
     "level": 1
   },
   {
+    "ref": "#/texts/8",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/9",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/12",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/19",
     "item": "section_header",
     "title": "2 Getting Started",
     "summary": "Docling can be installed from PyPI and its documentation, including code examples, is hosted on GitHub; all required model assets are automatically downloaded to a local Hugging Face cache unless pre‑installed manually. The library offers a simple API for converting PDFs from files, URLs, or binary streams into JSON or Markdown, with separate methods for single documents or batches, and supports optional configuration of pipeline features such as OCR, table recognition, input size limits, and CPU thread budgets. Advanced usage details and a Dockerfile are available in the README for containerized deployment.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/20",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/21",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/22",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/23",
+    "item": "code"
+  },
+  {
+    "ref": "#/texts/24",
+    "item": "text"
   },
   {
     "ref": "#/texts/25",
@@ -49,11 +97,35 @@
     "level": 1
   },
   {
+    "ref": "#/texts/26",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/27",
     "item": "section_header",
     "title": "3.1 PDF backends",
     "summary": "Docling’s PDF backend interface must extract all text with its geometric coordinates and render each page exactly as a viewer would display it. Existing Python libraries failed to meet this—due to restrictive licensing, slow performance or severe quality problems such as merged cells—so we built a custom parser on the low‑level qpdf library (docling‑parse) as the default backend, while also offering a pypdfium‑based alternative for cases where font‑encoding issues arise.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/28",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/29",
+    "item": "footnote"
+  },
+  {
+    "ref": "#/pictures/1",
+    "item": "picture"
+  },
+  {
+    "ref": "#/texts/47",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/48",
+    "item": "text"
   },
   {
     "ref": "#/texts/49",
@@ -63,11 +135,23 @@
     "level": 1
   },
   {
+    "ref": "#/texts/50",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/51",
     "item": "section_header",
     "title": "Layout Analysis Model",
     "summary": "The layout analysis model is an RT‑DETR–derived object detector trained on DocLayNet and proprietary data that predicts bounding boxes and classes for page elements. It runs via ONNX Runtime on 72 dpi images with sub‑second CPU latency, then post‑processes outputs to remove overlapping proposals before intersecting them with PDF text tokens to form coherent units such as paragraphs, titles, lists, captions, figures or tables.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/52",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/53",
+    "item": "text"
   },
   {
     "ref": "#/texts/54",
@@ -77,11 +161,27 @@
     "level": 1
   },
   {
+    "ref": "#/texts/55",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/57",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/58",
     "item": "section_header",
     "title": "OCR",
     "summary": "Docling optionally performs OCR on high‑resolution page images using EasyOCR (≈30 s per page, CPU‑slow), and invites community contributions of faster or additional backends. After OCR, the results are assembled into a docling‑core document object, post‑processed for language detection, reading order, figure–caption matching and metadata labeling, and can be exported as JSON or Markdown. The processing chain—the model pipeline—is fully extensible by subclassing `BaseModelPipeline` or cloning the default; custom pipelines must implement `__call__` to consume an iterator of pages and return an augmented iterator.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/59",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/60",
+    "item": "text"
   },
   {
     "ref": "#/texts/61",
@@ -91,11 +191,23 @@
     "level": 1
   },
   {
+    "ref": "#/texts/62",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/63",
     "item": "section_header",
     "title": "3.4 Extensibility",
     "summary": "Docling lets users extend its core processing by subclassing the abstract `BaseModelPipeline` or cloning the default implementation, enabling full customization of the chain of models, addition or replacement of components, and new configuration options. A custom pipeline class can be passed to the main conversion functions, encouraging community contributions of alternative models and improvements. Implemented model classes must follow Python’s Callable interface: their `__call__` method takes an iterator of page objects and returns a new iterator with each page augmented by the model’s predictions.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/64",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/65",
+    "item": "text"
   },
   {
     "ref": "#/texts/66",
@@ -105,11 +217,36 @@
     "level": 1
   },
   {
+    "ref": "#/texts/67",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/68",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/69",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/71",
+    "item": "text"
+  },
+  {
+    "ref": "#/tables/0",
+    "item": "table",
+    "summary": "Docling processes 225 pages faster with the pypdfium backend (up to 2.45 pages/second on Apple M3 Max) than the native backend (up to 1.34 pages/second), while also using significantly less memory (2.42-2.56 GB vs 6.16-6.20 GB), with performance scaling effectively from 4 to 16 threads on both tested systems."
+  },
+  {
     "ref": "#/texts/73",
     "item": "section_header",
     "title": "5 Applications",
     "summary": "Docling’s richly structured conversion supports a range of downstream tasks—enterprise search, passage retrieval, classification, and knowledge‑extraction pipelines that can treat tables, figures, sections, and references separately. Its output powers generative‑AI patterns such as RAG through the open‑source *quackling* package, which plugs into LLM frameworks like LlamaIndex, and it enables fast, cost‑effective creation of document‑derived datasets for automated knowledge‑base construction. Docling is also integrated with IBM’s data‑prep kit to build scalable multi‑modal training sets.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/74",
+    "item": "text"
   },
   {
     "ref": "#/texts/75",
@@ -119,11 +256,23 @@
     "level": 1
   },
   {
+    "ref": "#/texts/76",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/77",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/78",
     "item": "section_header",
     "title": "References",
     "summary": "This section lists a suite of open‑source libraries that enable end‑to‑end document processing—OCR (EasyOCR), PDF manipulation (Qpdf, PyMuPDF, pypdf, PyPDFium2), model deployment (ONNX Runtime, PyTorch 2) and LLM orchestration (LlamaIndex). It also cites recent research on table structure understanding (Tableformer, optimized tokenization) and large‑language‑model extraction of ESG KPIs from tables, along with datasets such as Patcid for chemical structures and Doclaynet for layout segmentation. Together, these resources form the technical foundation for high‑throughput, cloud‑based document conversion and analysis pipelines.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/82",
+    "item": "text"
   },
   {
     "ref": "#/texts/98",
@@ -133,6 +282,430 @@
     "level": 1
   },
   {
+    "ref": "#/texts/99",
+    "item": "text"
+  },
+  {
+    "ref": "#/pictures/2",
+    "item": "picture"
+  },
+  {
+    "ref": "#/texts/595",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/596",
+    "item": "caption"
+  },
+  {
+    "ref": "#/texts/598",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/599",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/600",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/601",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/602",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/603",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/604",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/605",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/606",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/607",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/608",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/609",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/610",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/611",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/612",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/613",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/614",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/615",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/616",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/617",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/618",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/619",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/620",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/621",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/622",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/623",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/624",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/625",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/626",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/627",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/628",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/629",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/630",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/631",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/632",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/633",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/634",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/635",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/636",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/637",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/638",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/639",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/640",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/641",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/642",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/643",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/644",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/645",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/646",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/647",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/648",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/649",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/650",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/651",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/652",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/653",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/654",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/655",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/656",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/657",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/658",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/659",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/660",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/661",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/662",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/663",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/664",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/665",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/666",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/667",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/668",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/669",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/670",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/671",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/672",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/673",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/674",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/675",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/676",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/677",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/678",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/679",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/680",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/681",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/682",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/683",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/684",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/685",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/686",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/687",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/688",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/689",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/690",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/691",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/692",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/693",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/694",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/695",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/696",
+    "item": "caption"
+  },
+  {
+    "ref": "#/texts/697",
+    "item": "text"
+  },
+  {
+    "ref": "#/tables/1",
+    "item": "table"
+  },
+  {
+    "ref": "#/texts/698",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/699",
     "item": "section_header",
     "title": "5 EXPERIMENTS",
@@ -140,10 +713,254 @@
     "level": 1
   },
   {
+    "ref": "#/texts/700",
+    "item": "text"
+  },
+  {
+    "ref": "#/pictures/3",
+    "item": "picture"
+  },
+  {
+    "ref": "#/texts/702",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/703",
+    "item": "text"
+  },
+  {
     "ref": "#/texts/704",
     "item": "section_header",
     "title": "Baselines for Object Detection",
     "summary": "Baseline object‑detection experiments on the DocLayNet dataset were conducted with Mask R‑CNN, Faster R‑CNN, and YOLOv5 using RGB images of size 1025×1025, training only a single annotation per page when duplicates existed. The models achieved mAP scores that are 6–10 % lower than the average human inter‑annotator agreement, indicating a still‑open gap between machine and human performance. Mask R‑CNN and Faster R‑CNN yielded nearly identical mAPs, suggesting that pixel‑level segmentation from bounding boxes offers little advantage, while YOLOv5x even outperformed humans on visually distinctive classes such as Text, Table, and Picture.",
     "level": 1
+  },
+  {
+    "ref": "#/texts/705",
+    "item": "text"
+  },
+  {
+    "ref": "#/tables/2",
+    "item": "table"
+  },
+  {
+    "ref": "#/texts/708",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/709",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/710",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/711",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/712",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/713",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/714",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/715",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/716",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/717",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/718",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/719",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/720",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/721",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/722",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/723",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/724",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/725",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/726",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/727",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/728",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/729",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/730",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/731",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/732",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/733",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/734",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/735",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/736",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/737",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/738",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/739",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/740",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/741",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/742",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/743",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/744",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/745",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/746",
+    "item": "text"
+  },
+  {
+    "ref": "#/pictures/4",
+    "item": "picture"
+  },
+  {
+    "ref": "#/texts/1180",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1181",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1182",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1183",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1184",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1185",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1186",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1187",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1188",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1189",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1190",
+    "item": "caption"
+  },
+  {
+    "ref": "#/texts/1191",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1192",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1193",
+    "item": "text"
+  },
+  {
+    "ref": "#/texts/1194",
+    "item": "text"
   }
 ]
