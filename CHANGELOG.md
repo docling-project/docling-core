@@ -1,3 +1,11 @@
+## [v2.70.2](https://github.com/docling-project/docling-core/releases/tag/v2.70.2) - 2026-03-20
+
+### Fix
+
+* **Doclang:** Suppress empty elements in Doclang serialization ([#554](https://github.com/docling-project/docling-core/issues/554)) ([`91ee7e2`](https://github.com/docling-project/docling-core/commit/91ee7e230285e6c903bab2f587f71bc4530faab9))
+* Expose traverse_pictures in export_to_markdown and export_to_text ([#557](https://github.com/docling-project/docling-core/issues/557)) ([`3e030ed`](https://github.com/docling-project/docling-core/commit/3e030edc6fdf97eb5454e06e0492ab24640930cb))
+* Sync picture classification enums with DocumentFigureClassifier-v2.0 model ([#529](https://github.com/docling-project/docling-core/issues/529)) ([`f97ec83`](https://github.com/docling-project/docling-core/commit/f97ec83f67f746418eac0c021f58ee44fc35b317))
+
 ## [v2.70.1](https://github.com/docling-project/docling-core/releases/tag/v2.70.1) - 2026-03-17
 
 ### Fix
