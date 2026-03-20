@@ -6,6 +6,7 @@ from functools import cached_property
 from typing import Any, Optional, Union, cast
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from typing_extensions import override
 
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
@@ -42,7 +43,7 @@ from docling_core.types import DoclingDocument
 
 
 class HybridChunker(BaseChunker):
-    r"""Chunker doing tokenization-aware refinements on top of document layout chunking.
+    """Chunker doing tokenization-aware refinements on top of document layout chunking.
 
     Args:
         tokenizer: The tokenizer to use; either instantiated object or name or path of
@@ -312,11 +313,12 @@ class HybridChunker(BaseChunker):
 
         return output_chunks
 
+    @override
     def chunk(
         self,
         dl_doc: DoclingDocument,
         **kwargs: Any,
-    ) -> Iterator[BaseChunk]:
+    ) -> Iterator[DocChunk]:
         r"""Chunk the provided document.
 
         Args:

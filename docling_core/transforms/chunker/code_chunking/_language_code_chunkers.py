@@ -456,6 +456,7 @@ class _CodeChunker(BaseChunker):
         """Get tree sitter parser."""
         return self.parser.parse(bytes(code, self.utf8_encoding))
 
+    @override
     def chunk(self, dl_doc: DLDocument, **kwargs: Any) -> Iterator[CodeChunk]:
         """Chunk the provided code by methods."""
         for item, _ in dl_doc.iterate_items():

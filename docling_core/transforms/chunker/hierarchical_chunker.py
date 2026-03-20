@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Iterator
-from typing import Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 
 from pydantic import ConfigDict, Field
 from typing_extensions import override
 
-from docling_core.transforms.chunker import BaseChunk, BaseChunker
+from docling_core.transforms.chunker import BaseChunker
 from docling_core.transforms.chunker.code_chunking.base_code_chunking_strategy import (
     BaseCodeChunkingStrategy,
 )
@@ -39,7 +38,8 @@ from docling_core.types.doc.document import (
     TitleItem,
 )
 
-_logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from docling_core.transforms.chunker.code_chunking.code_chunk import CodeChunk
 
 
 class TripletTableSerializer(BaseTableSerializer):
@@ -148,11 +148,12 @@ class HierarchicalChunker(BaseChunker):
     # deprecated:
     merge_list_items: Annotated[bool, Field(deprecated=True)] = True
 
+    @override
     def chunk(
         self,
         dl_doc: DLDocument,
         **kwargs: Any,
-    ) -> Iterator[BaseChunk]:
+    ) -> Iterator[DocChunk | CodeChunk]:
         r"""Chunk the provided document.
 
         Args:

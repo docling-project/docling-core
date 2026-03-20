@@ -4,6 +4,7 @@ from functools import cached_property
 from typing import Annotated, Any
 
 from pydantic import ConfigDict, Field, computed_field
+from typing_extensions import override
 
 from docling_core.transforms.chunker import BaseChunk, BaseChunker, DocChunk, DocMeta
 from docling_core.transforms.chunker.hierarchical_chunker import (
@@ -122,7 +123,8 @@ class LineBasedTokenChunker(BaseChunker):
         # Track whether we've warned about prefix omission
         self._prefix_omitted_warned = False
 
-    def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[BaseChunk]:
+    @override
+    def chunk(self, dl_doc: DoclingDocument, **kwargs: Any) -> Iterator[DocChunk]:
         """Chunk the provided document using line-based token-aware chunking.
 
         Args:
