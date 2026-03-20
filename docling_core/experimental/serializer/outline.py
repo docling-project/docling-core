@@ -329,7 +329,7 @@ class _OutlineTableSerializer(BaseTableSerializer):
         if DocItemLabel.TABLE not in params.labels:
             return create_ser_result()
 
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -349,7 +349,7 @@ class _OutlinePictureSerializer(BasePictureSerializer):
         if DocItemLabel.PICTURE not in params.labels:
             return create_ser_result()
 
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -371,7 +371,7 @@ class _OutlineKeyValueSerializer(BaseKeyValueSerializer):
 
         print("label: ", item.label)
 
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -391,7 +391,7 @@ class _OutlineFormSerializer(BaseFormSerializer):
         if DocItemLabel.FORM not in params.labels:
             return create_ser_result()
 
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 
@@ -437,7 +437,7 @@ class _OutlineFallbackSerializer(BaseFallbackSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
-        text = _default_text(item=item, doc=doc)
+        text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text)
 
 

@@ -4,9 +4,9 @@ from pathlib import Path
 from docling_core.experimental.serializer.outline import (
     OutlineDocSerializer,
     OutlineFormat,
+    OutlineItemData,
     OutlineMode,
     OutlineParams,
-    OutlineItemData,
     _format_indented_text_line,
 )
 from docling_core.types.doc import DoclingDocument
@@ -200,6 +200,36 @@ def test_outline_serializer_json_format():
 
     assert_or_generate_ground_truth(result.text, exp_path_hier, is_json=True)
 
+    # Outline mode with title
+    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    exp_path_hier = doc_path.with_suffix(".outline.gt.json")
+    doc = DoclingDocument.load_from_json(filename=doc_path)
+    params = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.OUTLINE,
+        format=OutlineFormat.JSON
+    )
+    ser = OutlineDocSerializer(doc=doc, params=params)
+    result = ser.serialize()
+
+    assert isinstance(result.text, str)
+    assert len(result.text) > 0
+    data = json.loads(result.text)
+    assert isinstance(data, list)
+    assert len(data) > 0
+    has_title = any("title" in item for item in data)
+    assert has_title, "At least some items should have titles when include_non_meta=True"
+    has_item = all("item" in item for item in data)
+    assert has_item, "All data points should have the item field"
+    has_picture = any(item["item"] == "picture" for item in data)
+    assert has_picture, f"In document {doc_path.name} at least some items should be of type 'picture' in outline mode"
+    has_table = any(item["item"] == "table" for item in data)
+    assert has_table, f"In document {doc_path.name} at least some items should be of type 'table' in outline mode"
+    has_table_summary = any(item["item"] == "table" and "summary" in item for item in data)
+    assert has_table_summary, f"In document {doc_path.name} at least a table has a summary and should appear in outline mode"
+
+    assert_or_generate_ground_truth(result.text, exp_path_hier, is_json=True)
+
 
 def test_outline_serializer_json_format_without_non_meta():
     """Test JSON format output without non-meta content."""
@@ -231,8 +261,6 @@ def test_outline_serializer_json_format_without_non_meta():
         # Summaries should still be present
         if "summary" in item:
             assert isinstance(item["summary"], str)
-
-
 
 
 def test_outline_serializer_itxt_format():
@@ -321,7 +349,7 @@ def test_outline_serializer_itxt_format_without_non_meta():
 
 def test_format_indented_text_line():
     """Test _format_indented_text_line function with various inputs."""
-    
+
     # Test with short summary (should not be truncated)
     item_short = OutlineItemData(
         ref="#/texts/0",
@@ -333,7 +361,7 @@ def test_format_indented_text_line():
     result = _format_indented_text_line(item_short, indent_size=2, max_summary_length=100)
     assert result == "  [ref=#/texts/0] [Introduction] This is a short summary."
     assert "..." not in result, "Short summary should not be truncated"
-    
+
     # Test with long summary (should be truncated)
     long_summary = "A" * 150  # 150 characters
     item_long = OutlineItemData(
@@ -347,7 +375,7 @@ def test_format_indented_text_line():
     assert result.startswith("    [ref=#/texts/1] [Long Section] ")
     assert result.endswith("...")
     assert len(result.split("] ")[-1]) == 50, "Truncated summary should be exactly max_summary_length"
-    
+
     # Test without title
     item_no_title = OutlineItemData(
         ref="#/texts/2",
@@ -358,7 +386,7 @@ def test_format_indented_text_line():
     result = _format_indented_text_line(item_no_title, indent_size=2, max_summary_length=100)
     assert result == "[ref=#/texts/2] Summary without title"
     assert "[" not in result.split("] ", 1)[1], "Should not have title brackets"
-    
+
     # Test without summary
     item_no_summary = OutlineItemData(
         ref="#/texts/3",
@@ -368,7 +396,7 @@ def test_format_indented_text_line():
     )
     result = _format_indented_text_line(item_no_summary, indent_size=2, max_summary_length=100)
     assert result == "  [ref=#/texts/3] [Title Only]"
-    
+
     # Test with different indent sizes
     item_indent = OutlineItemData(
         ref="#/texts/4",
