@@ -566,6 +566,13 @@ class MarkdownTableSerializer(BaseTableSerializer):
             if table_text:
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
+        ftn_res = doc_serializer.serialize_footnotes(
+            item=item,
+            **kwargs,
+        )
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+
         text_res = "\n\n".join([r.text for r in res_parts])
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -626,6 +633,14 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 md_table_content = temp_table.export_to_markdown(temp_doc)
                 if len(md_table_content) > 0:
                     res_parts.append(create_ser_result(text=md_table_content, span_source=item))
+
+        ftn_res = doc_serializer.serialize_footnotes(
+            item=item,
+            **kwargs,
+        )
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+
         text_res = "\n\n".join([r.text for r in res_parts if r.text])
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -915,6 +930,21 @@ class MarkdownDocSerializer(DocSerializer):
             hyperlink=hyperlink,
         )
         return res
+
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize footnotes as separate Markdown blocks."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        if DocItemLabel.FOOTNOTE not in params.labels:
+            return create_ser_result()
+
+        results = self._serialize_referenced_text_items(item.footnotes, **kwargs)
+        text_res = "\n\n".join([r.text for r in results])
+        return create_ser_result(text=text_res, span_source=results)
 
     @override
     def serialize_doc(

@@ -2,6 +2,7 @@
 
 import threading
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -10,6 +11,7 @@ from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLOutputStyle,
     HTMLParams,
+    HTMLTableSerializer,
 )
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
@@ -24,6 +26,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DescriptionAnnotation,
     DoclingDocument,
+    Formatting,
     RefItem,
     RichTableCell,
     TableCell,
@@ -54,6 +57,64 @@ def verify(exp_file: Path, actual: str):
             actual = _normalize_quotes(actual)
 
         assert actual == expected
+
+
+def _build_table_with_footnote_doc(footnote_text: str) -> DoclingDocument:
+    doc = DoclingDocument(name="table_footnotes")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=1))
+    doc.add_table_cell(
+        table,
+        TableCell(
+            text="Header",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        TableCell(
+            text="Value*",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        ),
+    )
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote_text)
+    table.footnotes.append(footnote.get_ref())
+    return doc
+
+
+def _build_picture_with_footnote_doc(footnote_text: str) -> DoclingDocument:
+    doc = DoclingDocument(name="picture_footnotes")
+    picture = doc.add_picture()
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Picture caption")
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote_text)
+    picture.captions.append(caption.get_ref())
+    picture.footnotes.append(footnote.get_ref())
+    return doc
+
+
+def _build_table_with_formatted_footnote_doc() -> DoclingDocument:
+    doc = _build_table_with_footnote_doc(footnote_text="bold link")
+    footnote = next(text for text in doc.texts if text.label == DocItemLabel.FOOTNOTE)
+    footnote.formatting = Formatting(bold=True)
+    footnote.hyperlink = "https://example.com"
+    return doc
+
+
+def _build_table_with_multiple_formatted_footnotes_doc() -> DoclingDocument:
+    doc = _build_table_with_footnote_doc(footnote_text="one")
+    table = doc.tables[0]
+    first_footnote = next(text for text in doc.texts if text.label == DocItemLabel.FOOTNOTE)
+    first_footnote.formatting = Formatting(bold=True)
+    first_footnote.hyperlink = "https://one.example"
+
+    second_footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="two")
+    table.footnotes.append(second_footnote.get_ref())
+    return doc
 
 
 # ===============================
@@ -175,6 +236,42 @@ def test_md_charts():
     )
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
+
+
+def test_md_table_footnotes_are_serialized_once():
+    footnote_text = "Table footnote <unsafe> & more"
+    doc = _build_table_with_footnote_doc(footnote_text=footnote_text)
+
+    actual = doc.export_to_markdown()
+
+    assert "\n\nTable footnote &lt;unsafe&gt; &amp; more" in actual
+    assert actual.count("Table footnote") == 1
+
+
+def test_md_picture_footnotes_are_serialized_once():
+    footnote_text = "Picture footnote"
+    doc = _build_picture_with_footnote_doc(footnote_text=footnote_text)
+
+    actual = doc.export_to_markdown()
+
+    assert actual.index("Picture caption") < actual.index("<!-- image -->") < actual.index(footnote_text)
+    assert actual.count(footnote_text) == 1
+
+
+def test_md_footnotes_preserve_formatting_and_hyperlinks():
+    doc = _build_table_with_formatted_footnote_doc()
+
+    actual = doc.export_to_markdown()
+
+    assert "[**bold link**](https://example.com)" in actual
+
+
+def test_md_multiple_footnotes_are_separate_blocks():
+    doc = _build_table_with_multiple_formatted_footnotes_doc()
+
+    actual = doc.export_to_markdown()
+
+    assert "[**one**](https://one.example)\n\ntwo" in actual
 
 
 def test_md_inline_and_formatting():
@@ -538,46 +635,44 @@ def test_md_traverse_pictures():
 
 def test_html_table_serializer_get_header_and_body_lines():
     """Test HTMLTableSerializer.get_header_and_body_lines() method."""
-    from docling_core.transforms.serializer.html import HTMLTableSerializer
-    from unittest.mock import patch, MagicMock
-    
+
     serializer = HTMLTableSerializer()
-    
+
     # Test 1: Valid HTML with headers and data
     valid_html = "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Data1</td><td>Data2</td></tr></table>"
     headers, body = serializer.get_header_and_body_lines(table_text=valid_html)
     assert len(headers) > 0, "Should have headers"
     assert len(body) > 0, "Should have body rows"
-    
+
     # Test 2: Row without closing </tr> tag
     # Parser will find the row, but when we search for </tr> it won't be found
     no_close_tr = "<tr><th>Header</th></tr><tr><td>Data1"
     headers, body = serializer.get_header_and_body_lines(table_text=no_close_tr)
     assert isinstance(headers, list)
     assert isinstance(body, list)
-    
+
     # Test 3: Data rows with incomplete closing tags
     # When collecting remaining rows, some </tr> tags are missing
     incomplete_data = "<tr><th>H1</th></tr><tr><td>D1</td></tr><tr><td>D2"
     headers, body = serializer.get_header_and_body_lines(table_text=incomplete_data)
     assert isinstance(headers, list)
     assert isinstance(body, list)
-    
+
     # Test 4: Force exception in parser
-    with patch('docling_core.transforms.serializer.html._SimpleHTMLTableParser') as mock_parser_class:
+    with patch("docling_core.transforms.serializer.html._SimpleHTMLTableParser") as mock_parser_class:
         mock_parser = MagicMock()
         mock_parser.feed.side_effect = Exception("Parser error")
         mock_parser_class.return_value = mock_parser
-        
+
         broken_html = "<tr><th>Header</th></tr><tr><td>Data</td></tr>"
         headers, body = serializer.get_header_and_body_lines(table_text=broken_html)
         # Should use fallback logic
         assert isinstance(headers, list)
         assert isinstance(body, list)
-    
+
     # Test 5: Parser returns more rows than exist in HTML
     # Mock parser to return extra rows that don't exist in the HTML
-    with patch('docling_core.transforms.serializer.html._SimpleHTMLTableParser') as mock_parser_class:
+    with patch("docling_core.transforms.serializer.html._SimpleHTMLTableParser") as mock_parser_class:
         mock_parser = MagicMock()
         # Create fake row data - more rows than actually exist in HTML
         mock_parser.rows = [
@@ -587,32 +682,32 @@ def test_html_table_serializer_get_header_and_body_lines():
             {"th_cells": [], "td_cells": ["D1"]},
         ]
         mock_parser_class.return_value = mock_parser
-        
+
         # HTML with only 2 rows, but parser claims 4
         limited_html = "<tr><th>H1</th></tr><tr><th>H2</th></tr>"
         headers, body = serializer.get_header_and_body_lines(table_text=limited_html)
         assert isinstance(headers, list)
         assert isinstance(body, list)
-    
+
     # Test 6: Specific case for line 485 - row_start found but row_end not found
     # Create HTML where parser finds a row, but the actual HTML has <tr without </tr>
-    with patch('docling_core.transforms.serializer.html._SimpleHTMLTableParser') as mock_parser_class:
+    with patch("docling_core.transforms.serializer.html._SimpleHTMLTableParser") as mock_parser_class:
         mock_parser = MagicMock()
         # Parser reports a header row exists
         mock_parser.rows = [
             {"th_cells": ["Header"], "td_cells": []},
         ]
         mock_parser_class.return_value = mock_parser
-        
+
         # But the HTML has <tr without matching </tr>
         html_no_close = "<tr><th>Header"
         headers, body = serializer.get_header_and_body_lines(table_text=html_no_close)
         assert isinstance(headers, list)
         assert isinstance(body, list)
-    
+
     # Test 7: Specific case for line 504 - data collection finds <tr but no </tr>
     # Create HTML where we start collecting data rows but encounter incomplete row
-    with patch('docling_core.transforms.serializer.html._SimpleHTMLTableParser') as mock_parser_class:
+    with patch("docling_core.transforms.serializer.html._SimpleHTMLTableParser") as mock_parser_class:
         mock_parser = MagicMock()
         # Parser reports header then data rows
         mock_parser.rows = [
@@ -620,13 +715,13 @@ def test_html_table_serializer_get_header_and_body_lines():
             {"th_cells": [], "td_cells": ["D1"]},  # This triggers data collection
         ]
         mock_parser_class.return_value = mock_parser
-        
+
         # HTML has complete header but incomplete data row
         html_incomplete_data = "<tr><th>H</th></tr><tr><td>D1</td></tr><tr><td>D2"
         headers, body = serializer.get_header_and_body_lines(table_text=html_incomplete_data)
         assert isinstance(headers, list)
         assert isinstance(body, list)
-    
+
     # Test 8: Table with footer content
     with_footer = "<tr><th>H</th></tr><tr><td>D</td></tr>Footer content"
     headers, body = serializer.get_header_and_body_lines(table_text=with_footer)
@@ -635,6 +730,58 @@ def test_html_table_serializer_get_header_and_body_lines():
     # Footer should be in body
     assert "Footer" in str(body)
 
+
+def test_html_table_footnotes_are_serialized_once():
+    footnote_text = "Table footnote <unsafe> & more"
+    doc = _build_table_with_footnote_doc(footnote_text=footnote_text)
+
+    actual = doc.export_to_html()
+
+    assert '<div class="footnotes" role="note">' in actual
+    assert '<div class="footnote">' in actual
+    assert ".footnotes {" in actual
+    assert "&lt;unsafe&gt; &amp; more" in actual
+    assert actual.count("Table footnote") == 1
+    assert 'class="footnotes" role="note" style=' not in actual
+    assert 'class="footnote" style=' not in actual
+    assert actual.index("</table>") < actual.index('<div class="footnotes"')
+
+
+def test_html_picture_footnotes_are_serialized_once():
+    footnote_text = "Picture footnote <unsafe> & more"
+    doc = _build_picture_with_footnote_doc(footnote_text=footnote_text)
+
+    actual = doc.export_to_html()
+
+    assert '<div class="footnotes" role="note">' in actual
+    assert '<div class="footnote">' in actual
+    assert "&lt;unsafe&gt; &amp; more" in actual
+    assert actual.count("Picture footnote") == 1
+    assert ".footnote + .footnote {" in actual
+    assert 'class="footnotes" role="note" style=' not in actual
+    assert 'class="footnote" style=' not in actual
+    assert actual.index("<figcaption>") < actual.index('<div class="footnotes"') < actual.index("</figure>")
+
+
+def test_html_footnotes_preserve_formatting_and_hyperlinks():
+    doc = _build_table_with_formatted_footnote_doc()
+
+    actual = doc.export_to_html()
+
+    assert '<div class="footnotes"' in actual
+    assert '<a href="https://example.com"><strong>bold link</strong></a>' in actual
+
+
+def test_html_hidden_footnotes_do_not_inject_footnote_css():
+    doc = _build_table_with_footnote_doc(footnote_text="hidden footnote")
+
+    actual = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(labels=_DEFAULT_LABELS - {DocItemLabel.FOOTNOTE}),
+    ).serialize().text
+
+    assert '<div class="footnotes"' not in actual
+    assert ".footnotes {" not in actual
 
 
 def test_html_charts():
@@ -894,4 +1041,3 @@ def test_webvtt_params():
     ser_default = WebVTTDocSerializer(doc=doc, params=WebVTTParams())
     actual_default = ser_default.serialize().text
     assert len(actual) <= len(actual_default) or actual != actual_default
-

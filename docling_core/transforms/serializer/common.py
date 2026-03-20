@@ -52,6 +52,7 @@ from docling_core.types.doc import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    RefItem,
     Script,
     TableAnnotationType,
     TableItem,
@@ -202,6 +203,7 @@ class CommonParams(BaseModel):
     include_formatting: bool = True
     include_hyperlinks: bool = True
     caption_delim: str = " "
+    footnote_delim: str = " "
     use_legacy_annotations: bool = Field(
         default=False,
         description="Use legacy annotation serialization.",
@@ -315,6 +317,62 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             }
             self._excluded_refs_cache[params_json] = refs
         return refs
+
+    def _iter_visible_referenced_text_items(
+        self,
+        refs: Iterable[RefItem],
+        *,
+        excluded_refs: set[str],
+    ) -> Iterable[TextItem]:
+        """Yield referenced text items that survive the current serializer filters."""
+        for ref in refs:
+            if isinstance(it := ref.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
+                yield it
+
+    def _serialize_referenced_text_items(
+        self,
+        refs: Iterable[RefItem],
+        **kwargs: Any,
+    ) -> list[SerializationResult]:
+        """Serialize referenced text items while bypassing the top-level skip path."""
+        excluded_refs = self.get_excluded_refs(**kwargs)
+        return [
+            self.text_serializer.serialize(
+                item=it,
+                doc_serializer=self,
+                doc=self.doc,
+                is_inline_scope=True,
+                **kwargs,
+            )
+            for it in self._iter_visible_referenced_text_items(
+                refs,
+                excluded_refs=excluded_refs,
+            )
+        ]
+
+    def has_visible_footnotes(self, **kwargs: Any) -> bool:
+        """Whether the current serialization scope includes floating-item footnotes."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        if DocItemLabel.FOOTNOTE not in params.labels:
+            return False
+
+        excluded_refs = self.get_excluded_refs(**kwargs)
+        for item, _ in _iterate_items(
+            doc=self.doc,
+            traverse_pictures=True,
+            layers=params.layers,
+        ):
+            if isinstance(item, FloatingItem) and item.self_ref not in excluded_refs:
+                if any(
+                    True
+                    for _ in self._iter_visible_referenced_text_items(
+                        item.footnotes,
+                        excluded_refs=excluded_refs,
+                    )
+                ):
+                    return True
+
+        return False
 
     @abstractmethod
     def serialize_doc(
@@ -621,18 +679,11 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> SerializationResult:
         """Serialize the item's footnotes."""
         params = self.params.merge_with_patch(patch=kwargs)
-        results: list[SerializationResult] = []
         if DocItemLabel.FOOTNOTE in params.labels:
-            results = [
-                create_ser_result(text=it.text, span_source=it)
-                for ftn in item.footnotes
-                if isinstance(it := ftn.resolve(self.doc), TextItem)
-                and it.self_ref not in self.get_excluded_refs(**kwargs)
-            ]
-            # FIXME: using the caption_delimiter for now ...
-            text_res = params.caption_delim.join([r.text for r in results])
-            text_res = self.post_process(text=text_res)
+            results = self._serialize_referenced_text_items(item.footnotes, **kwargs)
+            text_res = params.footnote_delim.join([r.text for r in results])
         else:
+            results = []
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
 
