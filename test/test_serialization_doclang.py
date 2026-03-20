@@ -1219,3 +1219,239 @@ def test_kv_migration_annot_scenario():
                 pages = doc.get_visualization(viz_mode=modes[mode_kw])
                 for page_no, page in pages.items():
                     page.save(str(subdir / f"output_{mode_kw}_p{page_no}.png"))
+
+
+# ===============================
+# suppress_empty_elements tests
+# ===============================
+
+_SUPPRESS_PARAMS = DoclangParams(
+    suppress_empty_elements=True,
+    add_location=False,
+    content_types=set(),  # no content → forces items empty
+)
+
+
+def test_suppress_empty_text_item():
+    """An empty text item is omitted when suppress_empty_elements is True."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="")
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    # The empty <text></text> must not appear
+    assert "<text" not in result
+    # Document root must still be present
+    assert "<doclang" in result
+
+
+def test_empty_text_item_preserved_by_default():
+    """Without suppress_empty_elements the empty tag pair is emitted."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="")
+
+    default_params = DoclangParams(
+        add_location=False,
+        content_types=set(),
+    )
+    result = serialize_doclang(doc, params=default_params)
+    assert "<text></text>" in result
+
+
+def test_suppress_empty_heading():
+    """An empty heading is suppressed."""
+    doc = DoclingDocument(name="test")
+    doc.add_heading(text="", level=2)
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    assert "<heading" not in result
+    assert "</heading>" not in result
+
+
+def test_suppress_empty_code():
+    """An empty code block is suppressed."""
+    doc = DoclingDocument(name="test")
+    doc.add_code(text="")
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    assert "<code" not in result
+
+
+def test_suppress_empty_picture():
+    """A picture with no content, no caption, no footnotes is suppressed."""
+    doc = DoclingDocument(name="test")
+    doc.add_picture()
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    assert "<floating_group" not in result
+    assert "<picture" not in result
+
+
+def test_empty_picture_preserved_by_default():
+    """Without suppress_empty_elements the empty floating group is emitted."""
+    doc = DoclingDocument(name="test")
+    doc.add_picture()
+
+    default_params = DoclangParams(
+        add_location=False,
+        content_types=set(),
+    )
+    result = serialize_doclang(doc, params=default_params)
+    assert "<floating_group" in result
+
+
+def test_suppress_empty_table():
+    """A table with no data, no caption, no footnotes is suppressed."""
+    doc = DoclingDocument(name="test")
+    doc.add_table(data=TableData())
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    assert "<floating_group" not in result
+    assert "<otsl" not in result
+
+
+def test_empty_table_preserved_by_default():
+    """Without suppress_empty_elements the empty table group is emitted."""
+    doc = DoclingDocument(name="test")
+    doc.add_table(data=TableData())
+
+    default_params = DoclangParams(
+        add_location=False,
+        content_types=set(),
+    )
+    result = serialize_doclang(doc, params=default_params)
+    assert "<floating_group" in result
+
+
+def test_suppress_empty_inline_group():
+    """An inline group whose children are all empty is suppressed."""
+    doc = DoclingDocument(name="test")
+    inl = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="", parent=inl)
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    # The inline group emits <text> wrapper when unwrapped; both should vanish
+    assert "<text" not in result
+
+
+def test_suppress_list_with_all_empty_children():
+    """A list group whose children all produce empty text is auto-suppressed.
+
+    The list serializer already skips the <list> wrapper when no child text
+    is produced, so suppressing individual empty <list_text> items causes
+    the parent <list> to vanish too.
+    """
+    doc = DoclingDocument(name="test")
+    lst = doc.add_list_group()
+    doc.add_list_item(text="", parent=lst)
+    doc.add_list_item(text="", parent=lst)
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    assert "<list" not in result
+    assert "<list_text" not in result
+
+
+def test_suppress_list_keeps_nonempty_items():
+    """Only empty list items are suppressed; non-empty ones remain."""
+    doc = DoclingDocument(name="test")
+    lst = doc.add_list_group()
+    doc.add_list_item(text="", parent=lst)
+    doc.add_list_item(text="Keep me", parent=lst)
+    doc.add_list_item(text="", parent=lst)
+
+    params = DoclangParams(
+        suppress_empty_elements=True,
+        add_location=False,
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<list " in result
+    assert result.count("<list_text>") == 1
+    assert "Keep me" in result
+
+
+def test_suppress_mixed_content():
+    """A document with a mix of empty and non-empty items.
+
+    Empty items are suppressed, non-empty ones remain.
+    """
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="")  # suppressed
+    doc.add_text(label=DocItemLabel.TEXT, text="Visible paragraph")  # kept
+    doc.add_picture()  # suppressed (empty picture)
+    doc.add_heading(text="Visible Heading", level=1)  # kept
+    doc.add_code(text="")  # suppressed
+
+    params = DoclangParams(
+        suppress_empty_elements=True,
+        add_location=False,
+    )
+    result = serialize_doclang(doc, params=params)
+    assert result.count("<text>") == 1
+    assert "Visible paragraph" in result
+    assert "<floating_group" not in result
+    assert '<heading level="1">' in result
+    assert "Visible Heading" in result
+    assert "<code" not in result
+
+
+def test_suppress_does_not_affect_nonempty():
+    """Suppression flag has no effect on items that carry content."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello")
+    doc.add_heading(text="World", level=1)
+
+    params = DoclangParams(
+        suppress_empty_elements=True,
+        add_location=False,
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<text>Hello</text>" in result
+    assert '<heading level="1">World</heading>' in result
+
+
+def test_suppress_nested_section_with_empty_children():
+    """A section containing only empty elements should still emit the section
+    (sections are grouping tokens and not subject to content-level suppression),
+    but all its empty children should be suppressed.
+    """
+    from docling_core.types.doc import GroupLabel
+
+    doc = DoclingDocument(name="test")
+    sec = doc.add_group(label=GroupLabel.SECTION, name="empty_sec")
+    doc.add_text(label=DocItemLabel.TEXT, text="", parent=sec)
+    doc.add_code(text="", parent=sec)
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    # Section grouping wrapper may or may not remain (depends on serializer),
+    # but importantly no <text> or <code> tags appear
+    assert "<text" not in result
+    assert "<code" not in result
+
+
+def test_suppress_empty_caption_and_footnote_on_picture():
+    """A picture with an empty caption and empty footnote is suppressed when
+    suppress_empty_elements is True and there is no other content.
+    """
+    doc = DoclingDocument(name="test")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="")
+    doc.add_picture(caption=cap)
+
+    result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
+    assert "<floating_group" not in result
+    assert "<picture" not in result
+
+
+def test_suppress_empty_picture_with_nonempty_caption():
+    """A picture with a non-empty caption should still be emitted even when
+    suppress_empty_elements is True, because the composed_inner is non-empty.
+    """
+    doc = DoclingDocument(name="test")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="My Figure")
+    doc.add_picture(caption=cap)
+
+    params = DoclangParams(
+        suppress_empty_elements=True,
+        add_location=False,
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<floating_group" in result
+    assert "My Figure" in result
