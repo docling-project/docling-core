@@ -2666,6 +2666,9 @@ class DoclingDocument(BaseModel):
                     item["content_layer"] = "furniture"
         return data
 
+    def _create_pos_by_cell_id(self, graph: GraphData) -> dict[int, int]:
+        return {cell.cell_id: idx for idx, cell in enumerate(graph.cells)}
+
     def _migrate_to_field_regions(self) -> None:
         has_single_kv_item = len(self.key_value_items) == 1
         last_item_is_kv_item = False
@@ -2692,6 +2695,7 @@ class DoclingDocument(BaseModel):
 
             for item, _ in self.iterate_items():
                 if isinstance(item, FormItem | KeyValueItem):
+                    pos_by_cell_id = self._create_pos_by_cell_id(item.graph)
                     to_delete.append(item)
 
                     visited: set[str] = set()
@@ -2709,11 +2713,11 @@ class DoclingDocument(BaseModel):
 
                     for link in item.graph.links:
                         if link.label == GraphLinkLabel.TO_VALUE:
-                            key_cell = item.graph.cells[link.source_cell_id]
-                            value_cell = item.graph.cells[link.target_cell_id]
+                            key_cell = item.graph.cells[pos_by_cell_id[link.source_cell_id]]
+                            value_cell = item.graph.cells[pos_by_cell_id[link.target_cell_id]]
                         elif link.label == GraphLinkLabel.TO_KEY:
-                            value_cell = item.graph.cells[link.source_cell_id]
-                            key_cell = item.graph.cells[link.target_cell_id]
+                            value_cell = item.graph.cells[pos_by_cell_id[link.source_cell_id]]
+                            key_cell = item.graph.cells[pos_by_cell_id[link.target_cell_id]]
 
                         # check if we have already seen this key-value pair
                         if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
@@ -2722,14 +2726,14 @@ class DoclingDocument(BaseModel):
 
                     for key_cell_id, value_cell_ids in outgoing_links.items():
                         kve = self.add_field_item(parent=kvm)
-                        key_cell = item.graph.cells[key_cell_id]
+                        key_cell = item.graph.cells[pos_by_cell_id[key_cell_id]]
                         self.add_field_key(
                             text=key_cell.text,
                             parent=kve,
                             prov=key_cell.prov,
                         )
                         for value_cell_id in value_cell_ids:
-                            value_cell = item.graph.cells[value_cell_id]
+                            value_cell = item.graph.cells[pos_by_cell_id[value_cell_id]]
                             self.add_field_value(
                                 text=value_cell.text,
                                 parent=kve,
@@ -2753,7 +2757,7 @@ class DoclingDocument(BaseModel):
             return False  # TODO: can normalize and compare but needs page size
         return prov1.bbox.intersection_over_union(other=prov2.bbox, eps=0.0) > iou_threshold
 
-    def _build_prov_index(self, kvi: KeyValueItem) -> dict[str, Optional[NodeItem]]:
+    def _build_prov_index(self, kvi: KeyValueItem, pos_by_cell_id: dict[int, int]) -> dict[str, Optional[NodeItem]]:
         visited: set[str] = set()
         prov_index: dict[str, NodeItem | None] = {}
         text_index: dict[str, str | None] = {}
@@ -2761,14 +2765,14 @@ class DoclingDocument(BaseModel):
             if link.label not in {GraphLinkLabel.TO_VALUE, GraphLinkLabel.TO_KEY}:
                 continue
             key_cell = (
-                kvi.graph.cells[link.source_cell_id]
+                kvi.graph.cells[pos_by_cell_id[link.source_cell_id]]
                 if link.label == GraphLinkLabel.TO_VALUE
-                else kvi.graph.cells[link.target_cell_id]
+                else kvi.graph.cells[pos_by_cell_id[link.target_cell_id]]
             )
             value_cell = (
-                kvi.graph.cells[link.target_cell_id]
+                kvi.graph.cells[pos_by_cell_id[link.target_cell_id]]
                 if link.label == GraphLinkLabel.TO_VALUE
-                else kvi.graph.cells[link.source_cell_id]
+                else kvi.graph.cells[pos_by_cell_id[link.source_cell_id]]
             )
             # check if we have already seen this key-value pair
             if (
@@ -2805,18 +2809,19 @@ class DoclingDocument(BaseModel):
     def _build_kv_migration_index(self, kvi: KeyValueItem) -> dict[str, dict[int, "DoclingDocument._KVMigrData"]]:
         outgoing_links: dict[str, dict[int, DoclingDocument._KVMigrData]] = {}
         visited: set[str] = set()
-        prov_index = self._build_prov_index(kvi)
+        pos_by_cell_id = self._create_pos_by_cell_id(kvi.graph)
+        prov_index = self._build_prov_index(kvi, pos_by_cell_id)
 
         for link in kvi.graph.links:
             key_cell = (
-                kvi.graph.cells[link.source_cell_id]
+                kvi.graph.cells[pos_by_cell_id[link.source_cell_id]]
                 if link.label == GraphLinkLabel.TO_VALUE
-                else kvi.graph.cells[link.target_cell_id]
+                else kvi.graph.cells[pos_by_cell_id[link.target_cell_id]]
             )
             value_cell = (
-                kvi.graph.cells[link.target_cell_id]
+                kvi.graph.cells[pos_by_cell_id[link.target_cell_id]]
                 if link.label == GraphLinkLabel.TO_VALUE
-                else kvi.graph.cells[link.source_cell_id]
+                else kvi.graph.cells[pos_by_cell_id[link.source_cell_id]]
             )
             # check if we have already seen this key-value pair
             if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
