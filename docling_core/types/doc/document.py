@@ -2666,6 +2666,9 @@ class DoclingDocument(BaseModel):
                     item["content_layer"] = "furniture"
         return data
 
+    def _create_pos_by_cell_id(self, graph: GraphData) -> dict[int, int]:
+        return {cell.cell_id: idx for idx, cell in enumerate(graph.cells)}
+
     def _migrate_to_field_regions(self) -> None:
         has_single_kv_item = len(self.key_value_items) == 1
         last_item_is_kv_item = False
@@ -2692,6 +2695,7 @@ class DoclingDocument(BaseModel):
 
             for item, _ in self.iterate_items():
                 if isinstance(item, FormItem | KeyValueItem):
+                    pos_by_cell_id = self._create_pos_by_cell_id(item.graph)
                     to_delete.append(item)
 
                     visited: set[str] = set()
@@ -2709,11 +2713,11 @@ class DoclingDocument(BaseModel):
 
                     for link in item.graph.links:
                         if link.label == GraphLinkLabel.TO_VALUE:
-                            key_cell = item.graph.cells[link.source_cell_id]
-                            value_cell = item.graph.cells[link.target_cell_id]
+                            key_cell = item.graph.cells[pos_by_cell_id[link.source_cell_id]]
+                            value_cell = item.graph.cells[pos_by_cell_id[link.target_cell_id]]
                         elif link.label == GraphLinkLabel.TO_KEY:
-                            value_cell = item.graph.cells[link.source_cell_id]
-                            key_cell = item.graph.cells[link.target_cell_id]
+                            value_cell = item.graph.cells[pos_by_cell_id[link.source_cell_id]]
+                            key_cell = item.graph.cells[pos_by_cell_id[link.target_cell_id]]
 
                         # check if we have already seen this key-value pair
                         if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
@@ -2722,14 +2726,14 @@ class DoclingDocument(BaseModel):
 
                     for key_cell_id, value_cell_ids in outgoing_links.items():
                         kve = self.add_field_item(parent=kvm)
-                        key_cell = item.graph.cells[key_cell_id]
+                        key_cell = item.graph.cells[pos_by_cell_id[key_cell_id]]
                         self.add_field_key(
                             text=key_cell.text,
                             parent=kve,
                             prov=key_cell.prov,
                         )
                         for value_cell_id in value_cell_ids:
-                            value_cell = item.graph.cells[value_cell_id]
+                            value_cell = item.graph.cells[pos_by_cell_id[value_cell_id]]
                             self.add_field_value(
                                 text=value_cell.text,
                                 parent=kve,
@@ -2745,34 +2749,30 @@ class DoclingDocument(BaseModel):
         key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")
         value_cells: list[GraphCell] = []
 
-    def _serialize_bbox(self, bbox: BoundingBox) -> str:
-        return f"{bbox.l},{bbox.t},{bbox.r},{bbox.b},{bbox.coord_origin.value}"
+    def _serialize_prov(self, prov: ProvenanceItem) -> str:
+        return f"{prov.page_no},{prov.bbox.l},{prov.bbox.t},{prov.bbox.r},{prov.bbox.b},{prov.bbox.coord_origin.value}"
 
-    def _deserialize_bbox(self, bbox_str: str) -> BoundingBox:
-        l, t, r, b, coord_origin = bbox_str.split(",")
-        return BoundingBox(l=float(l), t=float(t), r=float(r), b=float(b), coord_origin=CoordOrigin(coord_origin))
-
-    def _bboxes_match(self, bbox1: BoundingBox, bbox2: BoundingBox, iou_threshold: float = 0.01) -> bool:
-        if bbox1.coord_origin != bbox2.coord_origin:
+    def _provs_match(self, prov1: ProvenanceItem, prov2: ProvenanceItem, iou_threshold: float = 0.01) -> bool:
+        if prov1.page_no != prov2.page_no or prov1.bbox.coord_origin != prov2.bbox.coord_origin:
             return False  # TODO: can normalize and compare but needs page size
-        return bbox1.intersection_over_union(other=bbox2, eps=0.0) > iou_threshold
+        return prov1.bbox.intersection_over_union(other=prov2.bbox, eps=0.0) > iou_threshold
 
-    def _build_bbox_index(self, kvi: KeyValueItem) -> dict[str, Optional[NodeItem]]:
+    def _build_prov_index(self, kvi: KeyValueItem, pos_by_cell_id: dict[int, int]) -> dict[str, Optional[NodeItem]]:
         visited: set[str] = set()
-        bbox_index: dict[str, NodeItem | None] = {}
+        prov_index: dict[str, NodeItem | None] = {}
         text_index: dict[str, str | None] = {}
         for link in kvi.graph.links:
             if link.label not in {GraphLinkLabel.TO_VALUE, GraphLinkLabel.TO_KEY}:
                 continue
             key_cell = (
-                kvi.graph.cells[link.source_cell_id]
+                kvi.graph.cells[pos_by_cell_id[link.source_cell_id]]
                 if link.label == GraphLinkLabel.TO_VALUE
-                else kvi.graph.cells[link.target_cell_id]
+                else kvi.graph.cells[pos_by_cell_id[link.target_cell_id]]
             )
             value_cell = (
-                kvi.graph.cells[link.target_cell_id]
+                kvi.graph.cells[pos_by_cell_id[link.target_cell_id]]
                 if link.label == GraphLinkLabel.TO_VALUE
-                else kvi.graph.cells[link.source_cell_id]
+                else kvi.graph.cells[pos_by_cell_id[link.source_cell_id]]
             )
             # check if we have already seen this key-value pair
             if (
@@ -2786,22 +2786,22 @@ class DoclingDocument(BaseModel):
                     with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
                 ):
                     if isinstance(item, DocItem) and item.prov:
-                        if self._bboxes_match(item.prov[0].bbox, key_cell.prov.bbox):
-                            serialized_bbox = self._serialize_bbox(key_cell.prov.bbox)
-                            bbox_index[serialized_bbox] = item
+                        if self._provs_match(item.prov[0], key_cell.prov):
+                            serialized_prov = self._serialize_prov(key_cell.prov)
+                            prov_index[serialized_prov] = item
                             text_index[key_cell.text] = (
                                 item.self_ref + "|" + (item.text if isinstance(item, TextItem) else "")
                             )
-                        if self._bboxes_match(item.prov[0].bbox, value_cell.prov.bbox):
-                            serialized_bbox = self._serialize_bbox(value_cell.prov.bbox)
-                            bbox_index[serialized_bbox] = item
+                        if self._provs_match(item.prov[0], value_cell.prov):
+                            serialized_prov = self._serialize_prov(value_cell.prov)
+                            prov_index[serialized_prov] = item
                             text_index[value_cell.text] = (
                                 item.self_ref + "|" + (item.text if isinstance(item, TextItem) else "")
                             )
-        return bbox_index
+        return prov_index
 
-    def _find_node_by_bbox(self, bbox: BoundingBox, bbox_index: dict[str, NodeItem | None]) -> NodeItem | None:
-        val = bbox_index.get(self._serialize_bbox(bbox))
+    def _find_node_by_prov(self, prov: ProvenanceItem, prov_index: dict[str, NodeItem | None]) -> NodeItem | None:
+        val = prov_index.get(self._serialize_prov(prov))
         if val is not None:
             pass
         return val
@@ -2809,29 +2809,30 @@ class DoclingDocument(BaseModel):
     def _build_kv_migration_index(self, kvi: KeyValueItem) -> dict[str, dict[int, "DoclingDocument._KVMigrData"]]:
         outgoing_links: dict[str, dict[int, DoclingDocument._KVMigrData]] = {}
         visited: set[str] = set()
-        bbox_index = self._build_bbox_index(kvi)
+        pos_by_cell_id = self._create_pos_by_cell_id(kvi.graph)
+        prov_index = self._build_prov_index(kvi, pos_by_cell_id)
 
         for link in kvi.graph.links:
             key_cell = (
-                kvi.graph.cells[link.source_cell_id]
+                kvi.graph.cells[pos_by_cell_id[link.source_cell_id]]
                 if link.label == GraphLinkLabel.TO_VALUE
-                else kvi.graph.cells[link.target_cell_id]
+                else kvi.graph.cells[pos_by_cell_id[link.target_cell_id]]
             )
             value_cell = (
-                kvi.graph.cells[link.target_cell_id]
+                kvi.graph.cells[pos_by_cell_id[link.target_cell_id]]
                 if link.label == GraphLinkLabel.TO_VALUE
-                else kvi.graph.cells[link.source_cell_id]
+                else kvi.graph.cells[pos_by_cell_id[link.source_cell_id]]
             )
             # check if we have already seen this key-value pair
             if (key_val_id := f"{key_cell.cell_id}-{value_cell.cell_id}") not in visited:
                 key_item_ref = key_cell.item_ref or (
                     node.get_ref()
-                    if key_cell.prov and (node := self._find_node_by_bbox(key_cell.prov.bbox, bbox_index))
+                    if key_cell.prov and (node := self._find_node_by_prov(key_cell.prov, prov_index))
                     else None
                 )
                 val_item_ref = value_cell.item_ref or (
                     node.get_ref()
-                    if value_cell.prov and (node := self._find_node_by_bbox(value_cell.prov.bbox, bbox_index))
+                    if value_cell.prov and (node := self._find_node_by_prov(value_cell.prov, prov_index))
                     else None
                 )
                 if key_item_ref and val_item_ref:
@@ -2865,7 +2866,7 @@ class DoclingDocument(BaseModel):
             for _, migr_data_item in key_cell_dict.items():
                 reuse_existing_key_item = False
 
-                cell_and_ex_key_item_bbox_equal = (
+                cell_and_ex_key_item_provs_equal = (
                     migr_data_item.key_cell.prov
                     and isinstance(existing_key_item, DocItem)
                     and existing_key_item.prov
@@ -2873,7 +2874,7 @@ class DoclingDocument(BaseModel):
                 )
 
                 if len(key_cell_dict) == 1 and (
-                    migr_data_item.key_cell.prov is None or cell_and_ex_key_item_bbox_equal
+                    migr_data_item.key_cell.prov is None or cell_and_ex_key_item_provs_equal
                 ):
                     reuse_existing_key_item = True
 
@@ -2894,17 +2895,22 @@ class DoclingDocument(BaseModel):
                         parent=existing_key_item,
                         prov=key_prov,
                     )
+                skip_ki_deletion = key_item in to_delete
 
                 fi = self.add_field_item(parent=fri)
                 if isinstance(key_item, TextItem):
                     self.add_field_key(text=migr_data_item.key_cell.text or key_item.text, parent=fi, prov=key_prov)
                     if isinstance(key_item, ListItem):
+                        skip_ki_deletion = True
                         key_item.text = ""
-                        if cell_and_ex_key_item_bbox_equal:
+                        if cell_and_ex_key_item_provs_equal:
                             key_item.prov = []
                 elif isinstance(key_item, PictureItem):
                     fk = self.add_field_key(text=migr_data_item.key_cell.text, parent=fi, prov=key_prov)
-                    self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
+                    if not key_item.children:
+                        self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
+                    else:
+                        skip_ki_deletion = True
                 else:
                     continue  # TODO: handle other key item types
 
@@ -2914,30 +2920,41 @@ class DoclingDocument(BaseModel):
                     value_prov = migr_data_item.value_cells[idx].prov or (
                         value_item.prov[0] if isinstance(value_item, DocItem) and value_item.prov else None
                     )
+                    skip_vi_deletion = value_item in to_delete
                     if isinstance(value_item, TextItem):
                         # giving priority to the text from the graph cells
                         value_text = migr_data_item.value_cells[idx].text or value_item.text
                         if value_item.label in {DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED}:
-                            fv = self.add_field_value(text="", parent=fi)
-                            new_text_item = value_item.model_copy(deep=True)
-                            new_text_item.prov = [value_prov] if value_prov else []
-                            new_text_item.text = value_text
-                            self.append_child_item(child=new_text_item, parent=fv)
+                            if not value_item.children:
+                                fv = self.add_field_value(text="", parent=fi)
+                                new_text_item = value_item.model_copy(deep=True)
+                                new_text_item.prov = [value_prov] if value_prov else []
+                                new_text_item.text = value_text
+                                self.append_child_item(child=new_text_item, parent=fv)
+                            else:
+                                skip_vi_deletion = True
                         else:
                             fv = self.add_field_value(text=value_text, parent=fi, prov=value_prov)
                             if value_item.label == DocItemLabel.EMPTY_VALUE:
                                 fv.kind = "fillable"
+
+                        if isinstance(value_item, ListItem):
+                            skip_vi_deletion = True
                     elif isinstance(value_item, PictureItem):
                         fv = self.add_field_value(text=migr_data_item.value_cells[idx].text, parent=fi, prov=value_prov)
-                        self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
+                        if not value_item.children:
+                            self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
+                        else:
+                            skip_vi_deletion = True
                     else:
                         continue  # TODO: handle other value item types
-                    if value_item not in to_delete and not isinstance(value_item, ListItem):
+
+                    if not skip_vi_deletion:
                         to_delete.append(value_item)
-                if key_item not in to_delete and not isinstance(key_item, ListItem):
+                if not skip_ki_deletion:
                     to_delete.append(key_item)
 
-                if existing_key_item.prov and not cell_and_ex_key_item_bbox_equal and not ex_key_item_is_li:
+                if existing_key_item.prov and not cell_and_ex_key_item_provs_equal and not ex_key_item_is_li:
                     fi.prov = existing_key_item.prov
 
         self.delete_items(node_items=to_delete)
@@ -7050,7 +7067,7 @@ class DoclingDocument(BaseModel):
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             if not self.validate_tree(self.body) or not self.validate_tree(self.furniture):
-                raise ValueError("Document hierachy is inconsistent.")
+                raise ValueError("Document hierarchy is inconsistent.")
 
         return self
 

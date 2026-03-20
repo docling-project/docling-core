@@ -1,0 +1,1417 @@
+<doclang version="1.0.0">
+  <text>
+    <location value="336"/>
+    <location value="14"/>
+    <location value="464"/>
+    <location value="21"/>
+<![CDATA[Appendice 5 de l'Annexe VII]]>  </text>
+  <floating_group class="picture">
+    <picture>
+      <meta>
+        <classification>Logo</classification>
+      </meta>
+      <location value="49"/>
+      <location value="34"/>
+      <location value="139"/>
+      <location value="53"/>
+    </picture>
+  </floating_group>
+  <field_region>
+    <field_item>
+      <value class="read_only">
+        <location value="49"/>
+        <location value="63"/>
+        <location value="183"/>
+        <location value="71"/>
+        <checkbox class="unselected"/>
+        ☐ AUTORISATION DE TRAVAIL
+      </value>
+      <value class="read_only">
+        <location value="188"/>
+        <location value="63"/>
+        <location value="268"/>
+        <location value="71"/>
+        <checkbox class="unselected"/>
+        ☐ PERMIS DE FEU
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="297"/>
+    <location value="65"/>
+    <location value="307"/>
+    <location value="70"/>
+    N°
+  </text>
+  <field_region>
+    <location value="41"/>
+    <location value="80"/>
+    <location value="484"/>
+    <location value="471"/>
+    <heading level="2">
+      <location value="49"/>
+      <location value="83"/>
+      <location value="119"/>
+      <location value="88"/>
+      Travaux commandés par
+    </heading>
+    <field_item>
+      <key>
+        <location value="49"/>
+        <location value="89"/>
+        <location value="99"/>
+        <location value="93"/>
+        Responsable CUE:
+      </key>
+      <value class="fillable">
+        <location value="99"/>
+        <location value="89"/>
+        <location value="158"/>
+        <location value="93"/>
+        :
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="49"/>
+        <location value="99"/>
+        <location value="84"/>
+        <location value="103"/>
+        Tél. ou GSM:
+      </key>
+      <value class="fillable">
+        <location value="86"/>
+        <location value="99"/>
+        <location value="158"/>
+        <location value="110"/>
+        :
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="49"/>
+        <location value="110"/>
+        <location value="60"/>
+        <location value="114"/>
+        Fax:
+      </key>
+      <value class="fillable">
+        <location value="62"/>
+        <location value="111"/>
+        <location value="158"/>
+        <location value="116"/>
+        x .
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="164"/>
+      <location value="83"/>
+      <location value="227"/>
+      <location value="87"/>
+      Entreprise exécutante
+    </heading>
+    <field_item>
+      <key>
+        <location value="164"/>
+        <location value="89"/>
+        <location value="239"/>
+        <location value="93"/>
+        Entreprise générale/pilote:
+      </key>
+      <value class="fillable">
+        <location value="240"/>
+        <location value="88"/>
+        <location value="317"/>
+        <location value="93"/>
+        :
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="164"/>
+        <location value="94"/>
+        <location value="228"/>
+        <location value="99"/>
+        CO-/Sous-traitant final:
+      </key>
+      <value class="fillable">
+        <location value="229"/>
+        <location value="94"/>
+        <location value="317"/>
+        <location value="99"/>
+        :
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="164"/>
+        <location value="99"/>
+        <location value="234"/>
+        <location value="104"/>
+        Responsable des travaux:
+      </key>
+      <value class="fillable">
+        <location value="235"/>
+        <location value="100"/>
+        <location value="317"/>
+        <location value="104"/>
+        x
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="164"/>
+        <location value="110"/>
+        <location value="199"/>
+        <location value="114"/>
+        Tél. ou GSM:
+      </key>
+      <value class="fillable">
+        <location value="202"/>
+        <location value="110"/>
+        <location value="316"/>
+        <location value="115"/>
+        :
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="164"/>
+        <location value="115"/>
+        <location value="196"/>
+        <location value="120"/>
+        FAX/E-mail:
+      </key>
+      <value class="fillable">
+        <location value="197"/>
+        <location value="115"/>
+        <location value="317"/>
+        <location value="120"/>
+        il:
+      </value>
+    </field_item>
+    <text>
+      <location value="49"/>
+      <location value="125"/>
+      <location value="123"/>
+      <location value="130"/>
+      Emplacement des travaux
+    </text>
+    <text>
+      <location value="179"/>
+      <location value="123"/>
+      <location value="201"/>
+      <location value="132"/>
+    </text>
+    <text>
+      <location value="204"/>
+      <location value="122"/>
+      <location value="227"/>
+      <location value="132"/>
+    </text>
+    <text>
+      <location value="231"/>
+      <location value="123"/>
+      <location value="254"/>
+      <location value="132"/>
+    </text>
+    <text>
+      <location value="257"/>
+      <location value="123"/>
+      <location value="316"/>
+      <location value="132"/>
+    </text>
+    <field_item>
+      <key>
+        <location value="49"/>
+        <location value="145"/>
+        <location value="62"/>
+        <location value="148"/>
+        Date
+      </key>
+      <value class="fillable">
+        <location value="65"/>
+        <location value="143"/>
+        <location value="172"/>
+        <location value="152"/>
+        e
+      </value>
+    </field_item>
+    <text>
+      <location value="49"/>
+      <location value="170"/>
+      <location value="172"/>
+      <location value="179"/>
+<![CDATA[Le présent permis de feu n'est valable que la date mentionnée ci-dessus.]]>    </text>
+    <field_item>
+      <key>
+        <location value="189"/>
+        <location value="165"/>
+        <location value="194"/>
+        <location value="183"/>
+        Bâtiment
+      </key>
+      <value class="fillable">
+        <location value="191"/>
+        <location value="142"/>
+        <location value="201"/>
+        <location value="166"/>
+        现
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="215"/>
+        <location value="173"/>
+        <location value="221"/>
+        <location value="184"/>
+        Etage
+      </key>
+      <value class="fillable">
+        <location value="209"/>
+        <location value="136"/>
+        <location value="222"/>
+        <location value="172"/>
+        6)
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="242"/>
+        <location value="176"/>
+        <location value="247"/>
+        <location value="184"/>
+        Aile
+      </key>
+      <value class="fillable">
+        <location value="237"/>
+        <location value="134"/>
+        <location value="249"/>
+        <location value="174"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="265"/>
+        <location value="174"/>
+        <location value="270"/>
+        <location value="184"/>
+        local
+      </key>
+      <value class="fillable">
+        <location value="262"/>
+        <location value="136"/>
+        <location value="273"/>
+        <location value="172"/>
+        -
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="280"/>
+        <location value="135"/>
+        <location value="299"/>
+        <location value="139"/>
+        Autres
+      </key>
+      <value class="fillable">
+        <location value="279"/>
+        <location value="140"/>
+        <location value="313"/>
+        <location value="182"/>
+        NÚCLEO
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="49"/>
+        <location value="186"/>
+        <location value="118"/>
+        <location value="191"/>
+        Description des travaux:
+      </key>
+      <value class="fillable">
+        <location value="45"/>
+        <location value="192"/>
+        <location value="317"/>
+        <location value="234"/>
+        Ris
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="48"/>
+        <location value="237"/>
+        <location value="315"/>
+        <location value="246"/>
+<![CDATA[Mesures de prévention prises par l'entreprise chargée des travaux pour protéger les occupants et les installations du bâtiment:]]>      </key>
+      <value class="fillable">
+        <location value="45"/>
+        <location value="248"/>
+        <location value="317"/>
+        <location value="324"/>
+        occupants et les installations du bâtiment.
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="324"/>
+      <location value="83"/>
+      <location value="378"/>
+      <location value="87"/>
+      Nature des travaux
+    </heading>
+    <field_item>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="89"/>
+        <location value="392"/>
+        <location value="93"/>
+        <checkbox class="unselected"/>
+        ☐ Nouvelle installation
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="94"/>
+        <location value="386"/>
+        <location value="99"/>
+        <checkbox class="unselected"/>
+        ☐ Adaptation/rénov.
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="100"/>
+        <location value="377"/>
+        <location value="104"/>
+        <checkbox class="unselected"/>
+        ☐ Replacement
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="105"/>
+        <location value="366"/>
+        <location value="109"/>
+        <checkbox class="unselected"/>
+        ☐ Dépannage
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="110"/>
+        <location value="360"/>
+        <location value="114"/>
+        <checkbox class="unselected"/>
+        ☐ Entretien
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="115"/>
+        <location value="366"/>
+        <location value="120"/>
+        <checkbox class="unselected"/>
+        ☐ Démolition
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="121"/>
+        <location value="354"/>
+        <location value="125"/>
+        <checkbox class="unselected"/>
+        ☐ Autres:
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="323"/>
+      <location value="135"/>
+      <location value="368"/>
+      <location value="140"/>
+      Types de travail
+    </heading>
+    <field_item>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="145"/>
+        <location value="355"/>
+        <location value="149"/>
+        <checkbox class="unselected"/>
+        ☐ Brosser
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="151"/>
+        <location value="358"/>
+        <location value="154"/>
+        <checkbox class="unselected"/>
+        ☐ Chauffer
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="156"/>
+        <location value="350"/>
+        <location value="160"/>
+        <checkbox class="unselected"/>
+        ☐ Coller
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="161"/>
+        <location value="361"/>
+        <location value="165"/>
+        <checkbox class="unselected"/>
+        ☐ Découper
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="166"/>
+        <location value="359"/>
+        <location value="170"/>
+        <checkbox class="unselected"/>
+        ☐ Marteler
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="172"/>
+        <location value="354"/>
+        <location value="176"/>
+        <checkbox class="unselected"/>
+        ☐ Meuler
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="177"/>
+        <location value="359"/>
+        <location value="182"/>
+        <checkbox class="unselected"/>
+        ☐ Nettoyer
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="183"/>
+        <location value="352"/>
+        <location value="186"/>
+        <checkbox class="unselected"/>
+        ☐ Percer
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="188"/>
+        <location value="354"/>
+        <location value="192"/>
+        <checkbox class="unselected"/>
+        ☐ Souder
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="193"/>
+        <location value="354"/>
+        <location value="197"/>
+        <checkbox class="unselected"/>
+        ☐ Autres:
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="324"/>
+      <location value="214"/>
+      <location value="345"/>
+      <location value="219"/>
+      Risques
+    </heading>
+    <field_item>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="220"/>
+        <location value="348"/>
+        <location value="224"/>
+        <checkbox class="unselected"/>
+        ☐ Bruit
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="226"/>
+        <location value="357"/>
+        <location value="230"/>
+        <checkbox class="unselected"/>
+        ☐ Brûlures
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="231"/>
+        <location value="348"/>
+        <location value="235"/>
+        <checkbox class="unselected"/>
+        ☐ Choc
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="236"/>
+        <location value="353"/>
+        <location value="240"/>
+        <checkbox class="unselected"/>
+        ☐ Chutes
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="242"/>
+        <location value="375"/>
+        <location value="246"/>
+        <checkbox class="unselected"/>
+<![CDATA[☐ Chutes d'objet]]>      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="247"/>
+        <location value="387"/>
+        <location value="251"/>
+        <checkbox class="unselected"/>
+        ☐ Contact direct élec
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="252"/>
+        <location value="369"/>
+        <location value="256"/>
+        <checkbox class="unselected"/>
+        ☐ Court circuit
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="258"/>
+        <location value="373"/>
+        <location value="262"/>
+        <checkbox class="unselected"/>
+        ☐ Effondrement
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="263"/>
+        <location value="369"/>
+        <location value="267"/>
+        <checkbox class="unselected"/>
+        ☐ Electrisation
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="269"/>
+        <location value="360"/>
+        <location value="273"/>
+        <checkbox class="unselected"/>
+        ☐ Etincelles
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="274"/>
+        <location value="361"/>
+        <location value="278"/>
+        <checkbox class="unselected"/>
+        ☐ Explosion
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="279"/>
+        <location value="358"/>
+        <location value="283"/>
+        <checkbox class="unselected"/>
+        ☐ Incendie
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="285"/>
+        <location value="359"/>
+        <location value="288"/>
+        <checkbox class="unselected"/>
+        ☐ Irritation
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="290"/>
+        <location value="364"/>
+        <location value="294"/>
+        <checkbox class="unselected"/>
+        ☐ Inondation
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="295"/>
+        <location value="354"/>
+        <location value="299"/>
+        <checkbox class="unselected"/>
+        ☐ Odeurs
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="300"/>
+        <location value="363"/>
+        <location value="304"/>
+        <checkbox class="unselected"/>
+        ☐ Poussières
+      </value>
+      <value class="read_only">
+        <location value="324"/>
+        <location value="306"/>
+        <location value="354"/>
+        <location value="310"/>
+        <checkbox class="unselected"/>
+        ☐ Autres:
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="407"/>
+      <location value="83"/>
+      <location value="447"/>
+      <location value="87"/>
+      Influences sur
+    </heading>
+    <field_item>
+      <value class="read_only">
+        <location value="408"/>
+        <location value="89"/>
+        <location value="471"/>
+        <location value="93"/>
+        <checkbox class="unselected"/>
+        ☐ Compartimentage
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="94"/>
+        <location value="447"/>
+        <location value="98"/>
+        <checkbox class="unselected"/>
+        ☐ Détection
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="100"/>
+        <location value="456"/>
+        <location value="109"/>
+        <checkbox class="unselected"/>
+        ☐ Extinction automatique
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="110"/>
+        <location value="474"/>
+        <location value="115"/>
+        <checkbox class="unselected"/>
+        ☐ Hydrants; dévidoirs
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="116"/>
+        <location value="451"/>
+        <location value="120"/>
+        <checkbox class="unselected"/>
+        ☐ Installation
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="121"/>
+        <location value="450"/>
+        <location value="125"/>
+        <checkbox class="unselected"/>
+        ☐ Evacuation
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="126"/>
+        <location value="468"/>
+        <location value="130"/>
+        <checkbox class="unselected"/>
+        ☐ Sortie de secours
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="132"/>
+        <location value="450"/>
+        <location value="136"/>
+        <checkbox class="unselected"/>
+        ☐ Ventilation
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="137"/>
+        <location value="440"/>
+        <location value="141"/>
+        <checkbox class="unselected"/>
+        ☐ Autres:
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="407"/>
+      <location value="162"/>
+      <location value="456"/>
+      <location value="166"/>
+      Energies utilisées
+    </heading>
+    <field_item>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="169"/>
+        <location value="428"/>
+        <location value="173"/>
+        <checkbox class="unselected"/>
+        ☐ Air
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="174"/>
+        <location value="430"/>
+        <location value="178"/>
+        <checkbox class="unselected"/>
+        ☐ Eau
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="179"/>
+        <location value="447"/>
+        <location value="183"/>
+        <checkbox class="unselected"/>
+        ☐ Electricité
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="185"/>
+        <location value="430"/>
+        <location value="189"/>
+        <checkbox class="unselected"/>
+        ☐ Gaz
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="190"/>
+        <location value="471"/>
+        <location value="195"/>
+        <checkbox class="unselected"/>
+        ☐ Réaction chimique
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="196"/>
+        <location value="440"/>
+        <location value="199"/>
+        <checkbox class="unselected"/>
+        ☐ Autres:
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="407"/>
+      <location value="207"/>
+      <location value="433"/>
+      <location value="211"/>
+      Matières
+    </heading>
+    <field_item>
+      <value class="read_only">
+        <location value="408"/>
+        <location value="215"/>
+        <location value="436"/>
+        <location value="219"/>
+        <checkbox class="unselected"/>
+        ☐ Béton
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="220"/>
+        <location value="431"/>
+        <location value="224"/>
+        <checkbox class="unselected"/>
+        ☐ Bois
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="225"/>
+        <location value="436"/>
+        <location value="229"/>
+        <checkbox class="unselected"/>
+        ☐ Métal
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="231"/>
+        <location value="436"/>
+        <location value="235"/>
+        <checkbox class="unselected"/>
+        ☐ Pierre
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="236"/>
+        <location value="445"/>
+        <location value="240"/>
+        <checkbox class="unselected"/>
+        ☐ Plastique
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="241"/>
+        <location value="436"/>
+        <location value="245"/>
+        <checkbox class="unselected"/>
+        ☐ Plâtre
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="247"/>
+        <location value="468"/>
+        <location value="251"/>
+        <checkbox class="unselected"/>
+        Produit chimique
+      </value>
+      <value class="read_only">
+        <location value="408"/>
+        <location value="252"/>
+        <location value="439"/>
+        <location value="256"/>
+        <checkbox class="unselected"/>
+        ☐ Autres:
+      </value>
+    </field_item>
+    <heading level="2">
+      <location value="407"/>
+      <location value="272"/>
+      <location value="436"/>
+      <location value="276"/>
+      Type local
+    </heading>
+    <field_item>
+      <value class="read_only">
+        <location value="408"/>
+        <location value="279"/>
+        <location value="464"/>
+        <location value="283"/>
+        <checkbox class="unselected"/>
+        ☐ Local technique
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="284"/>
+        <location value="440"/>
+        <location value="288"/>
+        <checkbox class="unselected"/>
+        ☐ Couloir
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="290"/>
+        <location value="439"/>
+        <location value="293"/>
+        <checkbox class="unselected"/>
+        ☐ Bureau
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="295"/>
+        <location value="440"/>
+        <location value="299"/>
+        <checkbox class="unselected"/>
+        ☐ Cuisine
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="300"/>
+        <location value="440"/>
+        <location value="304"/>
+        <checkbox class="unselected"/>
+        ☐ Parking
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="305"/>
+        <location value="441"/>
+        <location value="310"/>
+        <checkbox class="unselected"/>
+        ☐ Archive
+      </value>
+      <value class="read_only">
+        <location value="408"/>
+        <location value="311"/>
+        <location value="441"/>
+        <location value="315"/>
+        <checkbox class="unselected"/>
+        ☐ Confiné
+      </value>
+      <value class="read_only">
+        <location value="407"/>
+        <location value="316"/>
+        <location value="440"/>
+        <location value="320"/>
+        <checkbox class="unselected"/>
+        ☐ Autres:
+      </value>
+    </field_item>
+    <text>
+      <location value="49"/>
+      <location value="334"/>
+      <location value="308"/>
+      <location value="339"/>
+<![CDATA[La présente autorisation est accordée par l'UP du CUE sous réserve de l'application stricte :]]>    </text>
+    <list ordered="false">
+      <list_text>
+        <location value="49"/>
+        <location value="340"/>
+        <location value="181"/>
+        <location value="344"/>
+        1. des consignes de sécurité indiquées au verso
+      </list_text>
+      <list_text>
+        <location value="49"/>
+        <location value="346"/>
+        <location value="301"/>
+        <location value="350"/>
+<![CDATA[2. d'avoir averti chaque jour le CDI (02/281 9100) avant le début et après la fin des travaux]]>      </list_text>
+      <list_text>
+        <location value="49"/>
+        <location value="352"/>
+        <location value="166"/>
+        <location value="356"/>
+        3. des mesures de prévention spécifiques:
+      </list_text>
+    </list>
+    <field_item>
+      <value class="read_only">
+        <location value="49"/>
+        <location value="358"/>
+        <location value="54"/>
+        <location value="362"/>
+        <checkbox class="unselected"/>
+        $\square$
+      </value>
+      <value class="read_only">
+        <location value="49"/>
+        <location value="364"/>
+        <location value="55"/>
+        <location value="368"/>
+        <checkbox class="unselected"/>
+        $\square$
+      </value>
+    </field_item>
+    <text>
+      <location value="319"/>
+      <location value="336"/>
+      <location value="395"/>
+      <location value="345"/>
+      URGENCES
+    </text>
+    <field_item>
+      <key>
+        <location value="319"/>
+        <location value="350"/>
+        <location value="336"/>
+        <location value="359"/>
+<![CDATA[<img>red telephone icon</img>]]>      </key>
+      <floating_group class="picture">
+        <picture>
+          <meta>
+            <classification>Icon</classification>
+          </meta>
+          <location value="319"/>
+          <location value="350"/>
+          <location value="336"/>
+          <location value="359"/>
+        </picture>
+      </floating_group>
+      <value class="read_only">
+        <location value="337"/>
+        <location value="351"/>
+        <location value="371"/>
+        <location value="359"/>
+        2000
+      </value>
+    </field_item>
+    <text>
+      <location value="318"/>
+      <location value="370"/>
+      <location value="327"/>
+      <location value="373"/>
+      OU
+    </text>
+    <text>
+      <location value="350"/>
+      <location value="369"/>
+      <location value="389"/>
+      <location value="374"/>
+      02 / 281 2000
+    </text>
+    <text>
+      <location value="48"/>
+      <location value="383"/>
+      <location value="85"/>
+      <location value="392"/>
+      Entreprise exécutante
+    </text>
+    <field_item>
+      <key>
+        <location value="49"/>
+        <location value="396"/>
+        <location value="67"/>
+        <location value="405"/>
+        Fait le Par
+      </key>
+      <value class="fillable">
+        <location value="105"/>
+        <location value="392"/>
+        <location value="161"/>
+        <location value="402"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="49"/>
+        <location value="410"/>
+        <location value="78"/>
+        <location value="415"/>
+        Signature
+      </key>
+      <value class="fillable">
+        <location value="105"/>
+        <location value="404"/>
+        <location value="160"/>
+        <location value="414"/>
+      </value>
+    </field_item>
+    <text>
+      <location value="167"/>
+      <location value="383"/>
+      <location value="202"/>
+      <location value="392"/>
+      Entreprise pilote
+    </text>
+    <field_item>
+      <key>
+        <location value="168"/>
+        <location value="396"/>
+        <location value="186"/>
+        <location value="405"/>
+        Fait le Par
+      </key>
+      <value class="fillable">
+        <location value="212"/>
+        <location value="395"/>
+        <location value="272"/>
+        <location value="404"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="167"/>
+        <location value="410"/>
+        <location value="197"/>
+        <location value="415"/>
+        Signature
+      </key>
+      <value class="fillable">
+        <location value="212"/>
+        <location value="407"/>
+        <location value="272"/>
+        <location value="414"/>
+      </value>
+    </field_item>
+    <text>
+      <location value="279"/>
+      <location value="383"/>
+      <location value="350"/>
+      <location value="388"/>
+      Accord SPSS du CUE
+    </text>
+    <field_item>
+      <key>
+        <location value="279"/>
+        <location value="396"/>
+        <location value="298"/>
+        <location value="405"/>
+        Fait le Par
+      </key>
+      <value class="fillable">
+        <location value="309"/>
+        <location value="396"/>
+        <location value="375"/>
+        <location value="405"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="279"/>
+        <location value="410"/>
+        <location value="308"/>
+        <location value="415"/>
+        Signature
+      </key>
+      <value class="fillable">
+        <location value="311"/>
+        <location value="408"/>
+        <location value="376"/>
+        <location value="414"/>
+        100%
+      </value>
+    </field_item>
+    <text>
+      <location value="382"/>
+      <location value="383"/>
+      <location value="477"/>
+      <location value="397"/>
+<![CDATA[Remise en état fonctionnel des installations concernées par l'entreprise exécutante]]>    </text>
+    <field_item>
+      <key>
+        <location value="382"/>
+        <location value="397"/>
+        <location value="400"/>
+        <location value="405"/>
+        Fait le Par
+      </key>
+      <value class="fillable">
+        <location value="410"/>
+        <location value="397"/>
+        <location value="477"/>
+        <location value="406"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="382"/>
+        <location value="410"/>
+        <location value="411"/>
+        <location value="414"/>
+        Signature
+      </key>
+      <value class="fillable">
+        <location value="414"/>
+        <location value="409"/>
+        <location value="481"/>
+        <location value="414"/>
+      </value>
+    </field_item>
+    <text>
+      <location value="48"/>
+      <location value="430"/>
+      <location value="54"/>
+      <location value="470"/>
+      Mesures internes
+    </text>
+    <text>
+      <location value="64"/>
+      <location value="427"/>
+      <location value="172"/>
+      <location value="437"/>
+      Surveillance permanente : oui / non Détecteurs - Lignes - Boucles
+    </text>
+    <field_item>
+      <key>
+        <location value="181"/>
+        <location value="427"/>
+        <location value="226"/>
+        <location value="432"/>
+        Effectuée par :
+      </key>
+      <value class="fillable">
+        <location value="228"/>
+        <location value="427"/>
+        <location value="316"/>
+        <location value="437"/>
+        :
+      </value>
+    </field_item>
+    <text>
+      <location value="64"/>
+      <location value="440"/>
+      <location value="191"/>
+      <location value="446"/>
+      Rondes préventives / fiche de contrôle
+    </text>
+    <text>
+      <location value="63"/>
+      <location value="448"/>
+      <location value="71"/>
+      <location value="452"/>
+      Hr
+    </text>
+    <text>
+      <location value="64"/>
+      <location value="459"/>
+      <location value="75"/>
+      <location value="463"/>
+      Par
+    </text>
+    <text>
+      <location value="100"/>
+      <location value="447"/>
+      <location value="119"/>
+      <location value="453"/>
+      Début
+    </text>
+    <text>
+      <location value="132"/>
+      <location value="446"/>
+      <location value="169"/>
+      <location value="455"/>
+    </text>
+    <text>
+      <location value="170"/>
+      <location value="446"/>
+      <location value="206"/>
+      <location value="455"/>
+      | | |
+    </text>
+    <text>
+      <location value="207"/>
+      <location value="446"/>
+      <location value="243"/>
+      <location value="455"/>
+    </text>
+    <text>
+      <location value="244"/>
+      <location value="447"/>
+      <location value="280"/>
+      <location value="455"/>
+    </text>
+    <text>
+      <location value="284"/>
+      <location value="447"/>
+      <location value="295"/>
+      <location value="452"/>
+      Fin
+    </text>
+    <text>
+      <location value="95"/>
+      <location value="455"/>
+      <location value="131"/>
+      <location value="470"/>
+    </text>
+    <text>
+      <location value="132"/>
+      <location value="455"/>
+      <location value="169"/>
+      <location value="470"/>
+    </text>
+    <text>
+      <location value="170"/>
+      <location value="455"/>
+      <location value="207"/>
+      <location value="470"/>
+    </text>
+    <text>
+      <location value="207"/>
+      <location value="455"/>
+      <location value="243"/>
+      <location value="470"/>
+    </text>
+    <text>
+      <location value="243"/>
+      <location value="455"/>
+      <location value="280"/>
+      <location value="471"/>
+    </text>
+    <text>
+      <location value="280"/>
+      <location value="455"/>
+      <location value="317"/>
+      <location value="470"/>
+    </text>
+    <field_item>
+      <key>
+        <location value="322"/>
+        <location value="423"/>
+        <location value="357"/>
+        <location value="431"/>
+        PO - Safety Suivi EDI
+      </key>
+      <value class="fillable">
+        <location value="317"/>
+        <location value="433"/>
+        <location value="399"/>
+        <location value="443"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="322"/>
+        <location value="445"/>
+        <location value="351"/>
+        <location value="454"/>
+        Fait le Par
+      </key>
+      <value class="fillable">
+        <location value="354"/>
+        <location value="445"/>
+        <location value="398"/>
+        <location value="455"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="322"/>
+        <location value="454"/>
+        <location value="352"/>
+        <location value="459"/>
+        Signature
+      </key>
+      <value class="fillable">
+        <location value="317"/>
+        <location value="460"/>
+        <location value="399"/>
+        <location value="470"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="404"/>
+        <location value="423"/>
+        <location value="471"/>
+        <location value="431"/>
+        Service de Prévention Evaluation
+      </key>
+      <value class="fillable">
+        <location value="401"/>
+        <location value="433"/>
+        <location value="482"/>
+        <location value="443"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="405"/>
+        <location value="445"/>
+        <location value="434"/>
+        <location value="453"/>
+        Fait le Par
+      </key>
+      <value class="fillable">
+        <location value="437"/>
+        <location value="445"/>
+        <location value="481"/>
+        <location value="455"/>
+      </value>
+    </field_item>
+    <field_item>
+      <key>
+        <location value="404"/>
+        <location value="454"/>
+        <location value="434"/>
+        <location value="459"/>
+        Signature
+      </key>
+      <value class="fillable">
+        <location value="401"/>
+        <location value="460"/>
+        <location value="482"/>
+        <location value="470"/>
+      </value>
+    </field_item>
+  </field_region>
+  <text>
+    <location value="41"/>
+    <location value="489"/>
+    <location value="90"/>
+    <location value="494"/>
+    ANNEX VII
+  </text>
+  <text>
+    <location value="460"/>
+    <location value="480"/>
+    <location value="470"/>
+    <location value="485"/>
+    96
+  </text>
+  <text>
+    <location value="452"/>
+    <location value="489"/>
+    <location value="471"/>
+    <location value="497"/>
+    FR
+  </text>
+</doclang>
