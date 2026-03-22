@@ -108,44 +108,64 @@ class GroupLabel(str, Enum):
 class PictureClassificationLabel(str, Enum):
     """PictureClassificationLabel."""
 
-    OTHER = "other"
+    # Current v2 model labels (DocumentFigureClassifier-v2.0)
 
-    # If more than one picture is grouped together, it
-    # is generally not possible to assign a label
-    PICTURE_GROUP = "picture_group"
-
-    # General
-    PIE_CHART = "pie_chart"
+    # Charts
     BAR_CHART = "bar_chart"
-    STACKED_BAR_CHART = "stacked_bar_chart"
-    LINE_CHART = "line_chart"
+    BOX_PLOT = "box_plot"
     FLOW_CHART = "flow_chart"
-    SCATTER_CHART = "scatter_chart"
-    HEATMAP = "heatmap"
-    REMOTE_SENSING = "remote_sensing"
+    LINE_CHART = "line_chart"
+    PIE_CHART = "pie_chart"
+    SCATTER_PLOT = "scatter_plot"
+    TABLE = "table"
 
-    NATURAL_IMAGE = "natural_image"
+    # Images
+    FULL_PAGE_IMAGE = "full_page_image"
+    PAGE_THUMBNAIL = "page_thumbnail"
+    PHOTOGRAPH = "photograph"
 
     # Chemistry
-    MOLECULAR_STRUCTURE = "chemistry_molecular_structure"
-    MARKUSH_STRUCTURE = "chemistry_markush_structure"
+    CHEMISTRY_STRUCTURE = "chemistry_structure"
 
-    # Company
+    # Company & Document
+    BAR_CODE = "bar_code"
     ICON = "icon"
     LOGO = "logo"
+    QR_CODE = "qr_code"
     SIGNATURE = "signature"
     STAMP = "stamp"
-    QR_CODE = "qr_code"
-    BAR_CODE = "bar_code"
-    SCREENSHOT = "screenshot"
-
-    # Geology/Geography
-    GEOGRAPHIC_MAP = "map"
-    STRATIGRAPHIC_CHART = "stratigraphic_chart"
 
     # Engineering
+    ENGINEERING_DRAWING = "engineering_drawing"
+
+    # Screenshots
+    SCREENSHOT_FROM_COMPUTER = "screenshot_from_computer"
+    SCREENSHOT_FROM_MANUAL = "screenshot_from_manual"
+
+    # Geography
+    GEOGRAPHICAL_MAP = "geographical_map"
+    TOPOGRAPHICAL_MAP = "topographical_map"
+
+    # Other
+    CALENDAR = "calendar"
+    CROSSWORD_PUZZLE = "crossword_puzzle"
+    MUSIC = "music"
+    OTHER = "other"
+
+    # Legacy labels
     CAD_DRAWING = "cad_drawing"
     ELECTRICAL_DIAGRAM = "electrical_diagram"
+    GEOGRAPHIC_MAP = "map"
+    HEATMAP = "heatmap"
+    MARKUSH_STRUCTURE = "chemistry_markush_structure"
+    MOLECULAR_STRUCTURE = "chemistry_molecular_structure"
+    NATURAL_IMAGE = "natural_image"
+    PICTURE_GROUP = "picture_group"
+    REMOTE_SENSING = "remote_sensing"
+    SCATTER_CHART = "scatter_chart"
+    SCREENSHOT = "screenshot"
+    STACKED_BAR_CHART = "stacked_bar_chart"
+    STRATIGRAPHIC_CHART = "stratigraphic_chart"
 
     def __str__(self):
         """Get string value."""

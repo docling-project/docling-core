@@ -1,5 +1,3 @@
-import json
-
 import pytest
 from transformers import AutoTokenizer
 
@@ -8,7 +6,7 @@ from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTok
 from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.labels import DocItemLabel
 
-from .test_data_gen_flag import GEN_TEST_DATA
+from .test_utils import assert_or_generate_json_ground_truth
 
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
 MAX_TOKENS = 25
@@ -22,18 +20,6 @@ def default_tokenizer():
         tokenizer=INNER_TOKENIZER,
         max_tokens=MAX_TOKENS,
     )
-
-
-def _process(act_data, exp_path_str):
-    """Helper function to either generate or compare test data."""
-    if GEN_TEST_DATA:
-        with open(exp_path_str, mode="w", encoding="utf-8") as f:
-            json.dump(act_data, fp=f, indent=4)
-            f.write("\n")
-    else:
-        with open(exp_path_str, encoding="utf-8") as f:
-            exp_data = json.load(fp=f)
-        assert exp_data == act_data
 
 
 def test_chunk_text_with_prefix(default_tokenizer):
@@ -70,11 +56,11 @@ def test_chunk_text_long_prefix_warning(default_tokenizer):
     assert chunker.prefix == long_prefix
     assert chunker.prefix_len == 0  # Returns 0 when prefix is too large
     assert len(chunker.prefix_chunks) > 1  # Should be split into multiple chunks
-    
+
     # Test that chunking works with large prefix
     lines = ["Line 1", "Line 2", "Line 3"]
     chunks = chunker.chunk_text(lines)
-    
+
     # First chunk(s) should contain the prefix chunks
     assert len(chunks) > 0
     # The prefix chunks should be at the beginning
@@ -408,21 +394,21 @@ def test_omit_prefix_on_overflow_false(default_tokenizer):
         prefix=prefix,
         omit_prefix_on_overflow=False,
     )
-    
+
     # Create a line that fits without prefix but not with prefix
     # prefix_len is around 2 tokens, create a line that's just 1 token short
     line = "word " * (MAX_TOKENS - 1) 
     line_tokens = chunker.tokenizer.count_tokens(line)
-    
+
     # Verify test setup: line should fit alone but not with prefix
     assert line_tokens <= MAX_TOKENS, f"Line should fit in chunk: {line_tokens} <= {MAX_TOKENS}"
     assert line_tokens + chunker.prefix_len > MAX_TOKENS, (
         f"Line with prefix should NOT fit: {line_tokens} + {chunker.prefix_len} > {MAX_TOKENS}"
     )
-    
+
     lines = [line]
     chunks = chunker.chunk_text(lines)
-    
+
     # With omit_prefix_on_overflow=False, the line should be split
     # and each chunk should have the prefix
     assert len(chunks) > 1, "Line should be split into multiple chunks"
@@ -438,20 +424,20 @@ def test_omit_prefix_on_overflow_true(default_tokenizer):
         prefix=prefix,
         omit_prefix_on_overflow=True,
     )
-    
+
     # Create a line that fits without prefix but not with prefix
     line = "word " * (MAX_TOKENS - 1)
     line_tokens = chunker.tokenizer.count_tokens(line)
-    
+
     # Verify our test setup
     assert line_tokens <= MAX_TOKENS, f"Line should fit in chunk: {line_tokens} <= {MAX_TOKENS}"
     assert line_tokens + chunker.prefix_len > MAX_TOKENS, (
         f"Line with prefix should NOT fit: {line_tokens} + {chunker.prefix_len} > {MAX_TOKENS}"
     )
-    
+
     lines = [line]
     chunks = chunker.chunk_text(lines)
-    
+
     # With omit_prefix_on_overflow=True and first line overflowing:
     # - First chunk should be the prefix alone (to ensure it's visible)
     # - Second chunk should be the line content without prefix
@@ -469,20 +455,20 @@ def test_omit_prefix_on_overflow_line_too_large(default_tokenizer):
         prefix=prefix,
         omit_prefix_on_overflow=True,
     )
-    
+
     # Create a line that's larger than max_tokens even without prefix
     long_line = "word " * (MAX_TOKENS * 2)
     line_tokens = chunker.tokenizer.count_tokens(long_line)
-    
+
     # Verify line is too large
     assert line_tokens > MAX_TOKENS, f"Line should exceed max_tokens: {line_tokens} > {MAX_TOKENS}"
-    
+
     lines = [long_line]
     chunks = chunker.chunk_text(lines)
-    
+
     # Line should be split regardless of omit_prefix_on_overflow
     assert len(chunks) > 1, "Line should be split when it exceeds max_tokens"
-    
+
     # Verify each chunk respects token limit
     for chunk in chunks:
         token_count = chunker.tokenizer.count_tokens(chunk)
@@ -497,24 +483,24 @@ def test_omit_prefix_on_overflow_multiple_lines(default_tokenizer):
         prefix=prefix,
         omit_prefix_on_overflow=True,
     )
-    
+
     # Line 1: Small, fits with prefix
     line1 = "Small line\n"
     # Line 2: Medium, fits without prefix but not with prefix
     line2 = "word " * (MAX_TOKENS - 1) + "\n"
     # Line 3: Small again, fits with prefix
     line3 = "Another small line\n"
-    
+
     lines = [line1, line2, line3]
     chunks = chunker.chunk_text(lines)
-    
+
     # Verify we have chunks
     assert len(chunks) > 0
-    
+
     # First chunk should have prefix and line1
     assert chunks[0].startswith(prefix)
     assert line1.strip() in chunks[0]
-    
+
     # line2 should be in a chunk without prefix (due to overflow)
     line2_found = False
     for chunk in chunks:
@@ -524,7 +510,7 @@ def test_omit_prefix_on_overflow_multiple_lines(default_tokenizer):
             assert not chunk.startswith(prefix), "Line2 chunk should not have prefix due to overflow"
             break
     assert line2_found, "Line2 should be found in chunks"
-    
+
     # line3 should be in a chunk with prefix (it's small enough)
     line3_found = False
     for chunk in chunks:
@@ -543,11 +529,11 @@ def test_omit_prefix_on_overflow_no_prefix(default_tokenizer):
         prefix="",
         omit_prefix_on_overflow=True,
     )
-    
+
     line = "word " * (MAX_TOKENS - 1)
     lines = [line]
     chunks = chunker.chunk_text(lines)
-    
+
     # Should work normally without prefix
     assert len(chunks) == 1
     assert line in chunks[0]
@@ -561,27 +547,27 @@ def test_omit_prefix_on_overflow_with_line_splitting(default_tokenizer):
         prefix=prefix,
         omit_prefix_on_overflow=True,
     )
-    
+
     # Create a line that's too long even without prefix (will be split)
     long_line = "word " * (MAX_TOKENS * 2)
     line_tokens = chunker.tokenizer.count_tokens(long_line)
-    
+
     # Verify line is too large even without prefix
     assert line_tokens > MAX_TOKENS, f"Line should exceed max_tokens: {line_tokens} > {MAX_TOKENS}"
-    
+
     lines = [long_line]
     chunks = chunker.chunk_text(lines)
-    
+
     # Line should be split into multiple chunks
     assert len(chunks) > 1, "Line should be split when it exceeds max_tokens"
-    
+
     # With omit_prefix_on_overflow=True:
     # - First chunk may have prefix (if it was already in current when line started)
     # - Subsequent overflow chunks should NOT have the prefix
     for i, chunk in enumerate(chunks):
         token_count = chunker.tokenizer.count_tokens(chunk)
         assert token_count <= MAX_TOKENS, f"Chunk {i} should respect token limit: {token_count} <= {MAX_TOKENS}"
-    
+
     # At least the overflow chunks (after the first) should not have prefix
     if len(chunks) > 1:
         for i in range(1, len(chunks)):
@@ -596,52 +582,52 @@ def test_omit_prefix_on_overflow_false_with_line_splitting(default_tokenizer):
         prefix=prefix,
         omit_prefix_on_overflow=False,  # Default behavior
     )
-    
+
     # Create a line that's too long even without prefix (will be split)
     long_line = "word " * (MAX_TOKENS * 2)
     line_tokens = chunker.tokenizer.count_tokens(long_line)
-    
+
     # Verify line is too large even without prefix
     assert line_tokens > MAX_TOKENS, f"Line should exceed max_tokens: {line_tokens} > {MAX_TOKENS}"
-    
+
     lines = [long_line]
     chunks = chunker.chunk_text(lines)
-    
+
     # Line should be split into multiple chunks
     assert len(chunks) > 1, "Line should be split when it exceeds max_tokens"
-    
+
     # With omit_prefix_on_overflow=False, all chunks should have the prefix
     for i, chunk in enumerate(chunks):
         token_count = chunker.tokenizer.count_tokens(chunk)
         assert token_count <= MAX_TOKENS, f"Chunk {i} should respect token limit: {token_count} <= {MAX_TOKENS}"
-        
+
         # All chunks should have the prefix when omit_prefix_on_overflow=False
         assert chunk.startswith(prefix), f"Chunk {i} should have prefix with omit_prefix_on_overflow=False"
 
 def test_omit_prefix_on_overflow_warning(default_tokenizer):
     """Test that a warning is issued once when prefix is actually omitted."""
     prefix = "PREFIX: "
-    
+
     # Create chunker with omit_prefix_on_overflow=True
     chunker = LineBasedTokenChunker(
         tokenizer=default_tokenizer,
         prefix=prefix,
         omit_prefix_on_overflow=True,
     )
-    
+
     # Create a line that fits without prefix but not with prefix
     line = "word " * (MAX_TOKENS - 1)
     line_tokens = chunker.tokenizer.count_tokens(line)
-    
+
     # Verify test setup
     assert line_tokens <= MAX_TOKENS
     assert line_tokens + chunker.prefix_len > MAX_TOKENS
-    
+
     # Should warn once when prefix is omitted
     with pytest.warns(UserWarning, match="Prefix omitted for at least one line"):
         lines = [line, line, line]  # Multiple lines that would cause omission
         chunks = chunker.chunk_text(lines)
-    
+
     # Verify chunks were created
     assert len(chunks) > 0
 
@@ -649,30 +635,30 @@ def test_omit_prefix_on_overflow_warning(default_tokenizer):
 def test_omit_prefix_on_overflow_no_warning_when_not_omitted(default_tokenizer):
     """Test that no warning is issued when prefix is never omitted."""
     prefix = "PREFIX: "
-    
+
     # Create chunker with omit_prefix_on_overflow=True
     chunker = LineBasedTokenChunker(
         tokenizer=default_tokenizer,
         prefix=prefix,
         omit_prefix_on_overflow=True,
     )
-    
+
     # Create lines that fit with prefix (no omission needed)
     small_line = "Small line\n"
-    
+
     # Should NOT warn since prefix is never omitted
     import warnings as warnings_module
     with warnings_module.catch_warnings(record=True) as warning_list:
         warnings_module.simplefilter("always")
         lines = [small_line, small_line, small_line]
         chunks = chunker.chunk_text(lines)
-        
+
         # Filter for UserWarnings about prefix omission
         prefix_warnings = [w for w in warning_list if "Prefix omitted" in str(w.message)]
-    
+
     # Verify no prefix omission warnings were issued
     assert len(prefix_warnings) == 0
-    
+
     # Verify chunks were created with prefix
     assert len(chunks) > 0
     for chunk in chunks:
@@ -682,29 +668,29 @@ def test_omit_prefix_on_overflow_no_warning_when_not_omitted(default_tokenizer):
 def test_omit_prefix_on_overflow_warning_on_split_line(default_tokenizer):
     """Test that warning is issued when prefix is omitted for overflow chunks from split lines."""
     prefix = "PREFIX: "
-    
+
     # Create chunker with omit_prefix_on_overflow=True
     chunker = LineBasedTokenChunker(
         tokenizer=default_tokenizer,
         prefix=prefix,
         omit_prefix_on_overflow=True,
     )
-    
+
     # Create a line that's too long even without prefix (will be split)
     long_line = "word " * (MAX_TOKENS * 2)
     line_tokens = chunker.tokenizer.count_tokens(long_line)
-    
+
     # Verify line is too large even without prefix
     assert line_tokens > MAX_TOKENS
-    
+
     # Should warn once when prefix is omitted for overflow chunks
     with pytest.warns(UserWarning, match="Prefix omitted for at least one line"):
         lines = [long_line]
         chunks = chunker.chunk_text(lines)
-    
+
     # Verify line was split into multiple chunks
     assert len(chunks) > 1
-    
+
     # With omit_prefix_on_overflow=True, overflow chunks should NOT have prefix
     # (first chunk may or may not have prefix depending on initial state)
     for i in range(1, len(chunks)):
@@ -716,47 +702,47 @@ def test_omit_prefix_on_overflow_all_lines_overflow(default_tokenizer):
     Test edge case where omit_prefix_on_overflow=True and ALL lines overflow with prefix.
     """
     prefix = "HEADER: Column1 | Column2 | Column3\n"
-    
+
     chunker = LineBasedTokenChunker(
         tokenizer=default_tokenizer,
         prefix=prefix,
         omit_prefix_on_overflow=True,
     )
-    
+
     prefix_tokens = chunker.tokenizer.count_tokens(prefix)
     assert prefix_tokens < MAX_TOKENS, f"Prefix should fit in chunk: {prefix_tokens} < {MAX_TOKENS}"
     assert chunker.prefix_len > 0, "prefix_len should be > 0 when prefix fits"
-    
+
     # Each line should be close to max_tokens so that prefix + line > max_tokens
     line1 = "word " * (MAX_TOKENS - chunker.prefix_len + 1) + "\n"
     line2 = "data " * (MAX_TOKENS - chunker.prefix_len + 1) + "\n"
     line3 = "text " * (MAX_TOKENS - chunker.prefix_len + 1) + "\n"
-    
+
     for i, line in enumerate([line1, line2, line3], 1):
         line_tokens = chunker.tokenizer.count_tokens(line)
         assert line_tokens <= MAX_TOKENS, f"Line {i} should fit alone: {line_tokens} <= {MAX_TOKENS}"
         assert line_tokens + chunker.prefix_len > MAX_TOKENS, (
             f"Line {i} with prefix should overflow: {line_tokens} + {chunker.prefix_len} > {MAX_TOKENS}"
         )
-    
+
     lines = [line1, line2, line3]
-    
+
     # Chunk the text
     with pytest.warns(UserWarning, match="Prefix omitted for at least one line"):
         chunks = chunker.chunk_text(lines)
-    
+
     assert len(chunks) > 0, "Should create at least one chunk"
-    
+
     # Check if prefix appears in any chunk
     prefix_found = any(prefix.strip() in chunk for chunk in chunks)
-    
+
     # This assertion will FAIL with the current implementation, demonstrating the bug
     assert prefix_found, (
         "Prefix should appear in at least one chunk even when all lines omit it. "
         "This ensures headers/context are visible. "
         f"Chunks: {chunks}"
     )
-    
+
     # Additionally verify that content lines are present (without prefix)
     for line in lines:
         line_found = any(line.strip() in chunk for chunk in chunks)
