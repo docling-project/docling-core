@@ -128,7 +128,7 @@ class DocChunk(BaseChunk):
                     doc_items.append(top_object)
 
                 except Exception as e:
-                    _logger.warning(f"error in extacting text of {top_object}: {e}")
+                    _logger.warning(f"error in extracting text of {top_object}: {e}")
         if len(content.strip()) == 0:
             _logger.warning(f"expansion of {self} did not yield any text")
             return self
@@ -140,7 +140,7 @@ class DocChunk(BaseChunk):
             meta=meta,
         )
 
-    def expand_to_page(self, doc: DoclingDocument, serializer: BaseDocSerializer) -> DocChunk | None:
+    def expand_to_page(self, doc: DoclingDocument, serializer: BaseDocSerializer) -> DocChunk:
         page_ids = [i.page_no for item in self.meta.doc_items for i in item.prov]
         ser_params: CommonParams | None = getattr(serializer, "params", None)
         if len(doc.pages) == 0 or page_ids is None or len(page_ids) == 0 or not ser_params:
