@@ -76,7 +76,7 @@ def chunking_serializer(sample_doc):
 
 
 class TestGetTopContainingItems:
-    """Tests for get_top_containing_items method."""
+    """Tests for _get_top_containing_items method."""
     
     def test_get_top_items_basic(self, sample_doc, hybrid_chunker):
         """Test getting top-level items from a chunk."""
@@ -85,7 +85,7 @@ class TestGetTopContainingItems:
         
         # Test the first chunk - convert to DocChunk
         chunk = DocChunk.model_validate(chunks[0])
-        top_items = chunk.get_top_containing_items(sample_doc)
+        top_items = chunk._get_top_containing_items(sample_doc)
         
         assert top_items is not None, "Should return top items"
         assert len(top_items) > 0, "Should have at least one top item"
@@ -127,7 +127,7 @@ class TestGetTopContainingItems:
         chunks = list(hybrid_chunker.chunk(dl_doc=sample_doc))
         
         for chunk in chunks:
-            top_items = chunk.get_top_containing_items(sample_doc)
+            top_items = chunk._get_top_containing_items(sample_doc)
             if top_items and len(top_items) > 1:
                 # Get the order in the document body
                 body_refs = [ref.cref for ref in sample_doc.body.children]
@@ -141,7 +141,7 @@ class TestGetTopContainingItems:
                     prev_idx = curr_idx
     
     def test_get_top_items_empty_chunk(self):
-        """Test get_top_containing_items with chunk containing non-body items."""
+        """Test _get_top_containing_items with chunk containing non-body items."""
         doc = DoclingDocument(name="empty_doc")
         text_item = doc.add_text(text="Some text", label=DocItemLabel.PARAGRAPH)
         
@@ -151,7 +151,7 @@ class TestGetTopContainingItems:
         chunk = DocChunk(text="test", meta=meta)
         
         # Should return the text item as top item since it's a direct child of body
-        result = chunk.get_top_containing_items(doc)
+        result = chunk._get_top_containing_items(doc)
         assert result is not None, "Should return top items for valid doc_items"
         assert len(result) > 0, "Should have at least one top item"
 

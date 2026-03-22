@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import logging
 import re
-from copy import copy
+import warnings
+from copy import deepcopy
 from typing import Annotated, ClassVar, Final, Literal, Optional
 
 from pydantic import Field, StringConstraints, field_validator
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseMeta
-from docling_core.transforms.serializer.base import BaseDocSerializer
-from docling_core.transforms.serializer.common import CommonParams
+from docling_core.transforms.serializer.common import DocSerializer
 from docling_core.types.doc.document import DocItem, DoclingDocument, DocumentOrigin, InlineGroup, ListGroup, RefItem
 
 _VERSION: Final = "1.0.0"
@@ -93,7 +93,20 @@ class DocChunk(BaseChunk):
 
     meta: DocMeta
 
-    def get_top_containing_items(self, doc: DoclingDocument) -> list[DocItem] | None:
+    def _get_top_containing_items(self, doc: DoclingDocument) -> list[DocItem] | None:
+        """Get top-level document items that contain this chunk's items.
+
+        Traverses the document tree upward from each item in the chunk to find
+        the top-level items (direct children of document body) that contain them.
+        Maintains the original document reading order.
+
+        Args:
+            doc: The DoclingDocument containing this chunk.
+
+        Returns:
+            List of top-level DocItems in document order, or None if no items found.
+        """
+
         items = {}
         ref_items = [item.self_ref for item in self.meta.doc_items]
         for item in ref_items:
@@ -110,8 +123,25 @@ class DocChunk(BaseChunk):
             return [items[ref] for ref in doc_ordered_refs]
         return None
 
-    def expand_to_item(self, dl_doc: DoclingDocument, serializer: BaseDocSerializer) -> DocChunk:
-        top_items = self.get_top_containing_items(dl_doc)
+    def expand_to_item(self, dl_doc: DoclingDocument, serializer: DocSerializer) -> DocChunk:
+        """Expand chunk to include complete top-level document items.
+
+        Expands the chunk to contain full top-level items (sections, tables, lists)
+        rather than partial content. This ensures semantic completeness by including
+        all content from the top-level items that contain any part of the original chunk.
+
+        Args:
+            dl_doc: The DoclingDocument containing this chunk.
+            serializer: Serializer to convert document items to text.
+
+        Returns:
+            New DocChunk with expanded content and updated metadata, or the original
+            chunk if expansion fails or yields no content.
+
+        Note:
+            - It is recommended to use same serializer as the original document
+        """
+        top_items = self._get_top_containing_items(dl_doc)
         if not top_items:
             _logger.warning(f"error in getting top items of {self}")
             return self
@@ -133,28 +163,56 @@ class DocChunk(BaseChunk):
             _logger.warning(f"expansion of {self} did not yield any text")
             return self
 
-        meta = copy(self.meta)
+        meta = deepcopy(self.meta)
         meta.doc_items = all_doc_items
         return DocChunk(
             text=content,
             meta=meta,
         )
 
-    def expand_to_page(self, doc: DoclingDocument, serializer: BaseDocSerializer) -> DocChunk | None:
+    def expand_to_page(self, doc: DoclingDocument, serializer: DocSerializer) -> DocChunk:
+        """Expand chunk to include all content from its pages.
+
+        Expands the chunk to contain all content from the pages it spans. This is
+        useful for maintaining page-level context and ensuring complete page coverage
+        in retrieval applications.
+
+        Args:
+            doc: The DoclingDocument containing this chunk.
+            serializer: Serializer to convert document content to text.
+
+        Returns:
+            New DocChunk with all content from the chunk's pages and updated metadata,
+            or the original chunk if expansion is not possible.
+
+        Raises:
+            UserWarning: If document has no pages or chunk items have no page provenance.
+
+        Example:
+            If a chunk spans pages 2-3, this expands it to include all content
+            from both pages, not just the original chunk's items.
+
+        Note:
+            - It is recommended to use same serializer as the original document
+        """
+
         page_ids = [i.page_no for item in self.meta.doc_items for i in item.prov]
-        ser_params: CommonParams | None = getattr(serializer, "params", None)
-        if len(doc.pages) == 0 or page_ids is None or len(page_ids) == 0 or not ser_params:
-            _logger.warning(f"cannot expand to page the following chunk: {self}")
+
+        if len(doc.pages) == 0 or page_ids is None or len(page_ids) == 0:
+            warnings.warn(
+                f"cannot expand to page the following chunk: {self}. \n Probably pagination was not supported in document conversion"
+            )
             return self
 
-        ser_params.pages = set(page_ids)
-        ser_res = serializer.serialize()
+        page_serializer = deepcopy(serializer)  # avoid mutating the serializer
+        page_serializer.params.pages = set(page_ids)
+        ser_res = page_serializer.serialize()
 
         # Extract doc_items from serialization result
         expanded_doc_items = ser_res.get_unique_doc_items()
 
         # Update metadata
-        meta = copy(self.meta)
+        meta = deepcopy(self.meta)
         meta.doc_items = expanded_doc_items
         return DocChunk(
             text=ser_res.text,
