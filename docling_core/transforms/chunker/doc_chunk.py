@@ -159,6 +159,7 @@ class DocChunk(BaseChunk):
 
                 except Exception as e:
                     _logger.warning(f"error in extacting text of {top_item}: {e}")
+
         if len(content.strip()) == 0:
             _logger.warning(f"expansion of {self} did not yield any text")
             return self
