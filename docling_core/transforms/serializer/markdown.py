@@ -440,7 +440,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
             the header row and separator row, and body_lines contains the data rows.
         """
 
-        lines = [line for line in table_text.split("\n") if line.strip()]
+        lines = [line for line in table_text.splitlines(True) if line.strip()]
 
         if len(lines) < 2:
             # Not enough lines for a proper markdown table (need at least header + separator)
