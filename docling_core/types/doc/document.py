@@ -12,7 +12,6 @@ import sys
 import typing
 import warnings
 from collections.abc import Sequence
-from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
@@ -26,6 +25,8 @@ from typing import (
 )
 from urllib.parse import unquote
 
+import cv2
+import numpy as np
 import pandas as pd
 import yaml
 from PIL import Image as PILImage
@@ -1109,9 +1110,8 @@ class ImageRef(BaseModel):
     @classmethod
     def from_pil(cls, image: PILImage.Image, dpi: int) -> Self:
         """Construct ImageRef from a PIL Image."""
-        buffered = BytesIO()
-        image.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        _, buffered = cv2.imencode(".png", cv2.cvtColor(np.array(image), cv2.COLOR_RGBA2BGRA))
+        img_str = base64.b64encode(buffered.tobytes()).decode("utf-8")
         img_uri = f"data:image/png;base64,{img_str}"
         return cls(
             mimetype="image/png",
