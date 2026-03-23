@@ -7078,8 +7078,6 @@ class DoclingDocument(BaseModel):
     def validate_document(self) -> Self:
         """validate_document."""
 
-        self._normalize_table_children_from_rich_cells()
-
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
