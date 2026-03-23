@@ -5287,7 +5287,7 @@ class DoclingDocument(BaseModel):
 
         parent_ref = parent.get_ref()
 
-        new_refs = self._append_item_copies(node_items=node_items, parent_ref=parent_ref, doc=doc)
+        new_refs, _lookup = self._append_item_copies(node_items=node_items, parent_ref=parent_ref, doc=doc)
 
         # Add the new item refs in the document structure
 
@@ -5322,7 +5322,7 @@ class DoclingDocument(BaseModel):
 
         parent_ref = parent.get_ref()
 
-        new_refs = self._append_item_copies(node_items=node_items, parent_ref=parent_ref, doc=doc)
+        new_refs, _lookup = self._append_item_copies(node_items=node_items, parent_ref=parent_ref, doc=doc)
 
         # Get the stack of the sibling
 
@@ -5348,35 +5348,78 @@ class DoclingDocument(BaseModel):
         node_items: list[NodeItem],
         parent_ref: RefItem,
         doc: "DoclingDocument",
-    ) -> list[RefItem]:
+        lookup: Optional[dict[str, dict[int, int]]] = None,
+    ) -> tuple[list[RefItem], dict[str, dict[int, int]]]:
         """Append node item copies (with their children) from a different document to the content of this document.
 
         :param node_items: list[NodeItem]: The NodeItems to be appended
         :param parent_ref: RefItem: The reference of the parent of the new items in this document
         :param doc: DoclingDocument: The document from which the NodeItems are taken
+        :param lookup: Optional[dict]: A lookup table to track old->new index mappings (used internally)
 
-        :returns: list[RefItem]: A list of references to the newly added items in this document
+        :returns: tuple of (list[RefItem], dict): A list of references to the newly added items in this document and the lookup mapping
         """
         new_refs: list[RefItem] = []
+
+        # Initialize lookup if not provided
+        if lookup is None:
+            lookup = {}
 
         for item in node_items:
             item_copy = item.model_copy(deep=True)
 
+            # Capture the old self_ref before appending
+            old_self_ref = item_copy.self_ref
+            old_path = old_self_ref.split("/") if old_self_ref else []
+            old_label = old_path[1] if len(old_path) >= 2 else None
+            old_index = int(old_path[2]) if len(old_path) >= 3 else None
+
             self._append_item(item=item_copy, parent_ref=parent_ref)
+
+            # Capture the new self_ref after appending
+            new_self_ref = item_copy.self_ref
+            new_path = new_self_ref.split("/") if new_self_ref else []
+            new_label = new_path[1] if len(new_path) >= 2 else None
+            new_index = int(new_path[2]) if len(new_path) >= 3 else None
+
+            # Record the mapping old -> new index
+            if old_label and new_label and old_index is not None and new_index is not None:
+                if old_label not in lookup:
+                    lookup[old_label] = {}
+                lookup[old_label][old_index] = new_index - old_index
 
             if item_copy.children:
                 children_node_items = [ref.resolve(doc) for ref in item_copy.children]
 
-                item_copy.children = self._append_item_copies(
+                item_copy.children, lookup = self._append_item_copies(
                     node_items=children_node_items,
                     parent_ref=item_copy.get_ref(),
                     doc=doc,
+                    lookup=lookup,
+                )
+
+            # Update captions, references, and footnotes with the lookup
+            if isinstance(item_copy, FloatingItem):
+                item_copy.captions = self._update_refitems_with_lookup(
+                    ref_items=item_copy.captions,
+                    refs_to_be_deleted=[],
+                    lookup=lookup,
+                )
+                item_copy.references = self._update_refitems_with_lookup(
+                    ref_items=item_copy.references,
+                    refs_to_be_deleted=[],
+                    lookup=lookup,
+                )
+                item_copy.footnotes = self._update_refitems_with_lookup(
+                    ref_items=item_copy.footnotes,
+                    refs_to_be_deleted=[],
+                    lookup=lookup,
                 )
 
             new_ref = item_copy.get_ref()
             new_refs.append(new_ref)
 
-        return new_refs
+        return new_refs, lookup
 
     def num_pages(self):
         """num_pages."""
