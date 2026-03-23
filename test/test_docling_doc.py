@@ -1863,7 +1863,7 @@ def test_invalid_rich_table_doc():
     rich_item = doc.add_text(
         text="rich item",
         label=DocItemLabel.TEXT,
-        parent=doc.body,  # not the table item
+        parent=table_item,
     )
     for i in range(table_item.data.num_rows):
         for j in range(table_item.data.num_cols):
@@ -1875,10 +1875,6 @@ def test_invalid_rich_table_doc():
                     end_col_offset_idx=j + 1,
                     ref=rich_item.get_ref(),
                 )
-
-                # ensure add_table_cell() raises:
-                with pytest.raises(ValueError):
-                    doc.add_table_cell(table_item=table_item, cell=table_cell)
             else:
                 table_cell = TableCell(
                     text=f"cell {i},{j}",
@@ -1888,12 +1884,13 @@ def test_invalid_rich_table_doc():
                     end_col_offset_idx=j + 1,
                 )
 
-            # discouraged but technically possible:
-            table_item.data.table_cells.append(table_cell)
+            doc.add_table_cell(table_item=table_item, cell=table_cell)
 
-    # ensure validate_document() raises:
-    with pytest.raises(ValueError):
-        DoclingDocument.validate_document(doc)
+    table_item.children = []
+
+    validated_doc = DoclingDocument.validate_document(doc)
+    assert validated_doc is doc
+    assert [child.cref for child in table_item.children] == [rich_item.self_ref]
 
 def test_invalid_single_linked_rich_table_doc():
     doc = DoclingDocument(name="")
@@ -1926,9 +1923,9 @@ def test_invalid_single_linked_rich_table_doc():
     # delete child reference from table item
     del(table_item.children[0])
 
-    # ensure validate_document() raises:
-    with pytest.raises(ValueError):
-        DoclingDocument.validate_document(doc)
+    validated_doc = DoclingDocument.validate_document(doc)
+    assert validated_doc is doc
+    assert [child.cref for child in table_item.children] == [rich_item.self_ref]
 
 
 def test_rich_table_item_insertion_normalization():

@@ -7060,9 +7060,26 @@ class DoclingDocument(BaseModel):
         else:
             return CURRENT_VERSION
 
+    def _normalize_table_children_from_rich_cells(self):
+        """Repair missing table child links for already-parented rich table cells."""
+        for table in self.tables:
+            child_crefs = {child.cref for child in table.children}
+
+            for cell in table.data.table_cells:
+                if not isinstance(cell, RichTableCell):
+                    continue
+
+                item = cell.ref.resolve(self)
+                if item.parent is not None and item.parent.cref == table.self_ref and cell.ref.cref not in child_crefs:
+                    table.children.append(cell.ref)
+                    child_crefs.add(cell.ref.cref)
+
     @model_validator(mode="after")
     def validate_document(self) -> Self:
         """validate_document."""
+
+        self._normalize_table_children_from_rich_cells()
+
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
