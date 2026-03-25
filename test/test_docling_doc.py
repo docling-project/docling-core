@@ -1706,6 +1706,49 @@ def test_export_markdown_compact_tables():
     assert len(md_compact) < len(md_padded)
 
 
+def test_export_traverse_pictures_ocr_scanned_pdf():
+    """Test that OCR text nested under a PictureItem is included when traverse_pictures=True."""
+    doc = DoclingDocument(name="Scanned Doc")
+    picture = doc.add_picture()
+
+    ocr_item_1 = TextItem(
+        self_ref=f"#/texts/{len(doc.texts)}",
+        parent=RefItem(cref=picture.self_ref),
+        label=DocItemLabel.TEXT,
+        text="SOCIAL SECURITY",
+        orig="SOCIAL SECURITY",
+    )
+    doc.texts.append(ocr_item_1)
+    picture.children.append(RefItem(cref=ocr_item_1.self_ref))
+
+    ocr_item_2 = TextItem(
+        self_ref=f"#/texts/{len(doc.texts)}",
+        parent=RefItem(cref=picture.self_ref),
+        label=DocItemLabel.TEXT,
+        text="000-00-0000",
+        orig="000-00-0000",
+    )
+    doc.texts.append(ocr_item_2)
+    picture.children.append(RefItem(cref=ocr_item_2.self_ref))
+
+    result_no_traverse_md = doc.export_to_markdown()
+    result_no_traverse_text = doc.export_to_text()
+
+    assert "SOCIAL SECURITY" not in result_no_traverse_md
+    assert "000-00-0000" not in result_no_traverse_md
+    assert "<!-- image -->" in result_no_traverse_md
+    assert "SOCIAL SECURITY" not in result_no_traverse_text
+    assert "000-00-0000" not in result_no_traverse_text
+
+    result_with_traverse_md = doc.export_to_markdown(traverse_pictures=True)
+    result_with_traverse_text = doc.export_to_text(traverse_pictures=True)
+
+    assert "SOCIAL SECURITY" in result_with_traverse_md
+    assert "000-00-0000" in result_with_traverse_md
+    assert "<!-- image -->" in result_with_traverse_md
+    assert "SOCIAL SECURITY" in result_with_traverse_text
+    assert "000-00-0000" in result_with_traverse_text
+
 
 def test_list_group_with_list_items():
     good_doc = DoclingDocument(name="")
@@ -1847,6 +1890,41 @@ def test_invalid_rich_table_doc():
 
             # discouraged but technically possible:
             table_item.data.table_cells.append(table_cell)
+
+    # ensure validate_document() raises:
+    with pytest.raises(ValueError):
+        DoclingDocument.validate_document(doc)
+
+def test_invalid_single_linked_rich_table_doc():
+    doc = DoclingDocument(name="")
+    table_item = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    rich_item = doc.add_text(
+        text="rich item",
+        label=DocItemLabel.TEXT,
+        parent=table_item,
+    )
+    for i in range(table_item.data.num_rows):
+        for j in range(table_item.data.num_cols):
+            if i == 1 and j == 1:
+                table_cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item.get_ref(),
+                )
+            else:
+                table_cell = TableCell(
+                    text=f"cell {i},{j}",
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                )
+            doc.add_table_cell(table_item=table_item, cell=table_cell)
+
+    # delete child reference from table item
+    del(table_item.children[0])
 
     # ensure validate_document() raises:
     with pytest.raises(ValueError):

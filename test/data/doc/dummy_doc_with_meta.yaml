@@ -6,6 +6,12 @@ body:
   - $ref: '#/tables/0'
   content_layer: body
   label: unspecified
+  meta:
+    summary:
+      confidence: 0.98
+      text: This is a document-level summary describing the entire document.
+    my_corp__doc_category: technical_report
+    my_corp__doc_version: '1.0'
   name: _root_
   self_ref: '#/body'
 form_items: []

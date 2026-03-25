@@ -81,4 +81,4 @@ texts:
   prov: []
   self_ref: '#/texts/3'
   text: foo
-version: 1.9.0
+version: 1.10.0

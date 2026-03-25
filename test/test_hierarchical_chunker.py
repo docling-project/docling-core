@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 from docling_core.transforms.chunker import HierarchicalChunker
@@ -12,18 +11,7 @@ from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
 
-from .test_data_gen_flag import GEN_TEST_DATA
-
-
-def _process(act_data, exp_path_str):
-    if GEN_TEST_DATA:
-        with open(exp_path_str, mode="w", encoding="utf-8") as f:
-            json.dump(act_data, fp=f, indent=4)
-            f.write("\n")
-    else:
-        with open(exp_path_str, encoding="utf-8") as f:
-            exp_data = json.load(fp=f)
-        assert exp_data == act_data
+from .test_utils import assert_or_generate_json_ground_truth
 
 
 def test_chunk():
@@ -35,10 +23,7 @@ def test_chunk():
     )
     chunks = chunker.chunk(dl_doc=dl_doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
-    _process(
-        act_data=act_data,
-        exp_path_str="test/data/chunker/0_out_chunks.json",
-    )
+    assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0_out_chunks.json")
 
 
 def test_chunk_custom_serializer():
@@ -60,10 +45,7 @@ def test_chunk_custom_serializer():
 
     chunks = chunker.chunk(dl_doc=dl_doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
-    _process(
-        act_data=act_data,
-        exp_path_str="test/data/chunker/0b_out_chunks.json",
-    )
+    assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0b_out_chunks.json")
 
 
 
@@ -200,7 +182,4 @@ def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
         root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
     )
 
-    _process(
-        act_data=act_data,
-        exp_path_str="test/data/chunker/0c_out_chunks.json",
-    )
+    assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0c_out_chunks.json")

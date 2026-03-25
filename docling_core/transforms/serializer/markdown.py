@@ -1,11 +1,12 @@
 """Define classes for Markdown serialization."""
 
 import html
+import logging
 import re
 import textwrap
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import tabulate
@@ -67,6 +68,8 @@ from docling_core.types.doc.document import (
     TextItem,
     TitleItem,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 def _cell_content_has_table(item: NodeItem, doc: DoclingDocument) -> bool:
@@ -242,20 +245,22 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
                 # wrap with outer marker (if applicable)
                 if params.ensure_valid_list_item_marker and not case_already_valid:
-                    assert item.parent
-                    list_group = item.parent.resolve(doc)
-                    assert isinstance(list_group, ListGroup)
-                    if list_group.first_item_is_enumerated(doc) and (
-                        params.orig_list_item_marker_mode != OrigListItemMarkerMode.AUTO or not item.marker
-                    ):
-                        pos = -1
-                        for i, child in enumerate(list_group.children):
-                            if child.resolve(doc) == item:
-                                pos = i
-                                break
-                        md_marker = f"{pos + 1}."
+                    md_marker = "-"
+                    if item.parent is None:
+                        _logger.warning(f"ListItem {item} must have a parent")
                     else:
-                        md_marker = "-"
+                        list_group = item.parent.resolve(doc)
+                        if not isinstance(list_group, ListGroup):
+                            _logger.warning(f"Expected ListGroup, got {type(list_group)}")
+                        elif list_group.first_item_is_enumerated(doc) and (
+                            params.orig_list_item_marker_mode != OrigListItemMarkerMode.AUTO or not item.marker
+                        ):
+                            pos = -1
+                            for i, child in enumerate(list_group.children):
+                                if child.resolve(doc) == item:
+                                    pos = i
+                                    break
+                            md_marker = f"{pos + 1}."
                     pieces.append(md_marker)
 
                 # include original marker (if applicable)
