@@ -37,6 +37,7 @@ from pydantic import (
     FieldSerializationInfo,
     SerializerFunctionWrapHandler,
     StringConstraints,
+    ValidationInfo,
     computed_field,
     field_serializer,
     field_validator,
@@ -5643,6 +5644,9 @@ class DoclingDocument(BaseModel):
         with open(filename, "w", encoding="utf-8") as fw:
             json.dump(out, fw, indent=indent)
 
+    class _ValidationContext(BaseModel):
+        validate_ref_bidir: bool = True  # whether to validate reference bidirectionality
+
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":
         """load_from_json.
@@ -7074,7 +7078,6 @@ class DoclingDocument(BaseModel):
                     table.children.append(cell.ref)
                     child_crefs.add(cell.ref.cref)
 
-    @model_validator(mode="after")
     def validate_document(self) -> Self:
         """validate_document."""
 
@@ -7085,6 +7088,14 @@ class DoclingDocument(BaseModel):
                 raise ValueError("Document hierarchy is inconsistent.")
 
         return self
+
+    @model_validator(mode="after")
+    def _validate_document(self, info: ValidationInfo) -> Self:
+        ctx = self._ValidationContext.model_validate(info.context or {})
+        if ctx.validate_ref_bidir:
+            return self.validate_document()
+        else:
+            return self
 
     @model_validator(mode="after")
     def validate_misplaced_list_items(self) -> Self:
