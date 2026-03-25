@@ -1,5 +1,6 @@
 """Unit tests for Doclang create_closing_token helper."""
 
+from itertools import chain
 from pathlib import Path
 from typing import Optional
 
@@ -1176,8 +1177,11 @@ def test_kv_migration_self_contained_scenario():
     verify(exp_file=exp_file, actual=ser_txt)
 
 def test_kv_migration_annot_scenario():
-    kv_dir = Path("./test/data/doc/kv")
-    for subdir in sorted(kv_dir.iterdir()):
+    roots = [
+        "./test/data/doc/kv",
+        "./test/data/doc/doclang_ref",
+    ]
+    for subdir in chain.from_iterable([Path(root).iterdir() for root in roots]):
         if not subdir.is_dir():
             continue
         input_json = subdir / "input.json"
