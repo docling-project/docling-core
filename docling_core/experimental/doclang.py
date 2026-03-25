@@ -1991,7 +1991,7 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
         """Serialize unsupported nodes by concatenating their textual parts."""
         params = DoclangParams(**kwargs)
         delim = _get_delim(params=DoclangParams(**kwargs))
-        if isinstance(item, ListGroup | InlineGroup):
+        if isinstance(item, GroupItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = delim.join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
