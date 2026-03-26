@@ -1,6 +1,6 @@
 [
     {
-        "text": "In this image we can see a cartoon image of a duck holding a paper.\n\n<!-- image -->",
+        "text": "In this image we can see a cartoon image of a duck holding a paper.\n\n<!-- image_0 -->",
         "meta": {
             "doc_items": [
                 "#/pictures/0"
@@ -104,7 +104,7 @@
         }
     },
     {
-        "text": "Two basic requirements to process PDF documents in our pipeline are a) to retrieve all text content and their geometric coordinates on each page and b) to render the visual representation of each page as it would appear in a PDF viewer. Both these requirements are encapsulated in Docling's PDF backend interface. While there are several open-source PDF parsing libraries available for python, we faced major obstacles with all of them for different reasons, among which were restrictive\n1 see huggingface.co/ds4sd/docling-models/\nIn this image, we can see some text and images.\n\nFigure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.\n\n<!-- image -->\nlicensing (e.g. pymupdf [7]), poor speed or unrecoverable quality issues, such as merged text cells across far-apart text tokens or table columns (pypdfium, PyPDF) [15, 14].",
+        "text": "Two basic requirements to process PDF documents in our pipeline are a) to retrieve all text content and their geometric coordinates on each page and b) to render the visual representation of each page as it would appear in a PDF viewer. Both these requirements are encapsulated in Docling's PDF backend interface. While there are several open-source PDF parsing libraries available for python, we faced major obstacles with all of them for different reasons, among which were restrictive\n1 see huggingface.co/ds4sd/docling-models/\nIn this image, we can see some text and images.\n\nFigure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.\n\n<!-- image_1 -->\nlicensing (e.g. pymupdf [7]), poor speed or unrecoverable quality issues, such as merged text cells across far-apart text tokens or table columns (pypdfium, PyPDF) [15, 14].",
         "meta": {
             "doc_items": [
                 "#/texts/28",
@@ -557,7 +557,7 @@
         }
     },
     {
-        "text": "Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ahmed S. Nassar, and Peter Staar. 2022. DocLayNet: A Large Human-Annotated Dataset for DocumentLayout Analysis. In Proceedings of the 28th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '22), August 14-18, 2022, Washington, DC, USA. ACM, New York, NY, USA, 9 pages. https://doi.org/10.1145/ 3534678.3539043\nIn this image there is a table with some text on it.\n\n<!-- image -->\nIn this image we can see a text.\n\n<!-- image -->\nAGL Energy Limited  ABN 74 1\n5 061 375\nIn this image I can see the text on the image.\n\n<!-- image -->\nIn this image there is a paper with some text on it.\n\n<!-- image -->\nFigure 1: Four examples of complex page layouts across different document categories",
+        "text": "Birgit Pfitzmann, Christoph Auer, Michele Dolfi, Ahmed S. Nassar, and Peter Staar. 2022. DocLayNet: A Large Human-Annotated Dataset for DocumentLayout Analysis. In Proceedings of the 28th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '22), August 14-18, 2022, Washington, DC, USA. ACM, New York, NY, USA, 9 pages. https://doi.org/10.1145/ 3534678.3539043\nIn this image there is a table with some text on it.\n\n<!-- image_2 -->\nIn this image we can see a text.\n\n<!-- image_3 -->\nAGL Energy Limited  ABN 74 1\n5 061 375\nIn this image I can see the text on the image.\n\n<!-- image_4 -->\nIn this image there is a paper with some text on it.\n\n<!-- image_5 -->\nFigure 1: Four examples of complex page layouts across different document categories",
         "meta": {
             "doc_items": [
                 "#/texts/128",
@@ -662,7 +662,7 @@
         }
     },
     {
-        "text": "The primary goal of DocLayNet is to obtain high-quality ML models capable of accurate document-layout analysis on a wide variety of challenging layouts. As discussed in Section 2, object detection models are currently the easiest to use, due to the standardisation of ground-truth data in COCO format [16] and the availability of general frameworks such as detectron2 [17]. Furthermore, baseline numbers in PubLayNet and DocBank were obtained using standard object detection models such as Mask R-CNN and Faster R-CNN. As such, we will relate to these object detection methods in this\nIn this image, we can see a table.\n\n<!-- image -->\nThird, achienec",
+        "text": "The primary goal of DocLayNet is to obtain high-quality ML models capable of accurate document-layout analysis on a wide variety of challenging layouts. As discussed in Section 2, object detection models are currently the easiest to use, due to the standardisation of ground-truth data in COCO format [16] and the availability of general frameworks such as detectron2 [17]. Furthermore, baseline numbers in PubLayNet and DocBank were obtained using standard object detection models such as Mask R-CNN and Faster R-CNN. As such, we will relate to these object detection methods in this\nIn this image, we can see a table.\n\n<!-- image_6 -->\nThird, achienec",
         "meta": {
             "doc_items": [
                 "#/texts/515",
@@ -676,7 +676,7 @@
         }
     },
     {
-        "text": "chalenongayouls ground-vuth dawa such WC\nThe image is a line graph that shows the percentage of respondents who have used a specific type of training in the past 24 hours. The x-axis represents the time in hours, while the y-axis represents the percentage of respondents. The graph is titled \"Training.\"\n\nThe graph has two lines: one for the training type and one for the training duration. The training type line is labeled \"Training\" and the training duration line is labeled \"Training Duration.\"\n\nThe graph shows that the percentage of respondents who have used the training type increases as the time increases. Specifically, the percentage of respondents who have used the training type increases from 10% to 20% over the 24-hour period. The percentage of respondents who have used the training duration increases from 10% to 20% over the 24-hour period.\n\nThe graph also shows that the percentage of respondents who have used the training type increases as the\n\n<!-- image -->",
+        "text": "chalenongayouls ground-vuth dawa such WC\nThe image is a line graph that shows the percentage of respondents who have used a specific type of training in the past 24 hours. The x-axis represents the time in hours, while the y-axis represents the percentage of respondents. The graph is titled \"Training.\"\n\nThe graph has two lines: one for the training type and one for the training duration. The training type line is labeled \"Training\" and the training duration line is labeled \"Training Duration.\"\n\nThe graph shows that the percentage of respondents who have used the training type increases as the time increases. Specifically, the percentage of respondents who have used the training type increases from 10% to 20% over the 24-hour period. The percentage of respondents who have used the training duration increases from 10% to 20% over the 24-hour period.\n\nThe graph also shows that the percentage of respondents who have used the training type increases as the\n\n<!-- image_7 -->",
         "meta": {
             "doc_items": [
                 "#/texts/518",
@@ -746,7 +746,7 @@
         }
     },
     {
-        "text": "The image consists of a blue circle with the letter \"A\" written in white color. The circle is placed on a white background, which makes the letter \"A\" stand out prominently. The background is a gradient of blue and white, transitioning from a lighter shade at the top to a darker shade at the bottom. The gradient effect gives a sense of depth and movement, making the letter \"A\" stand out more.\n\n### Description of Objects in the Image:\n1. **Circle**: The central element of the image is a blue circle.\n2. **White Letter \"A\"**: The letter \"A\" is written in white color.\n3. **Background**: The background is a gradient of blue and white, transitioning from a lighter shade at the top to a darker shade at the bottom.\n4. **Color Gradient**: The gradient effect is present, with the color transitioning from a lighter shade at the top to a darker shade at the bottom.\n\n<!-- image -->",
+        "text": "The image consists of a blue circle with the letter \"A\" written in white color. The circle is placed on a white background, which makes the letter \"A\" stand out prominently. The background is a gradient of blue and white, transitioning from a lighter shade at the top to a darker shade at the bottom. The gradient effect gives a sense of depth and movement, making the letter \"A\" stand out more.\n\n### Description of Objects in the Image:\n1. **Circle**: The central element of the image is a blue circle.\n2. **White Letter \"A\"**: The letter \"A\" is written in white color.\n3. **Background**: The background is a gradient of blue and white, transitioning from a lighter shade at the top to a darker shade at the bottom.\n4. **Color Gradient**: The gradient effect is present, with the color transitioning from a lighter shade at the top to a darker shade at the bottom.\n\n<!-- image_8 -->",
         "meta": {
             "doc_items": [
                 "#/pictures/8"
@@ -758,7 +758,7 @@
         }
     },
     {
-        "text": "In this image, there is a table with two columns. The first column is labeled \"Class label,\" and the second column is labeled \"Count.\" The first row in the table has the label \"Class label,\" and the count is 22524. The second row in the table has the label \"Count,\" and the count is 204.\n\n<!-- image -->",
+        "text": "In this image, there is a table with two columns. The first column is labeled \"Class label,\" and the second column is labeled \"Count.\" The first row in the table has the label \"Class label,\" and the count is 22524. The second row in the table has the label \"Count,\" and the count is 204.\n\n<!-- image_9 -->",
         "meta": {
             "doc_items": [
                 "#/pictures/9"
@@ -914,7 +914,7 @@
         }
     },
     {
-        "text": "In this image I can see a blue circle.\n\n<!-- image -->\ninclude publication repositories such as arXiv\nTable 1: DocLayNet dataset overview. Along with the frequency of each class label, we present the relative occurrence (as % of row \"Total\") in the train, test and validation sets. The inter-annotator agreement is computed as the mAP@0.5-0.95 metric between pairwise annotations from the triple-\nannotated pages, from which we obtain accuracy ranges.\nA table with different columns and rows.\n\n<!-- image -->",
+        "text": "In this image I can see a blue circle.\n\n<!-- image_10 -->\ninclude publication repositories such as arXiv\nTable 1: DocLayNet dataset overview. Along with the frequency of each class label, we present the relative occurrence (as % of row \"Total\") in the train, test and validation sets. The inter-annotator agreement is computed as the mAP@0.5-0.95 metric between pairwise annotations from the triple-\nannotated pages, from which we obtain accuracy ranges.\nA table with different columns and rows.\n\n<!-- image_11 -->",
         "meta": {
             "doc_items": [
                 "#/pictures/10",
@@ -1082,7 +1082,7 @@
         }
     },
     {
-        "text": "page. Specificity ensures that the choice of label is not ambiguous,\nIn this image there is a table with some text on it.\n\n<!-- image -->\nwe distributed the annotation workload and performed continuous be annotated. We refrained from class labels that are very specific\nonly. For phases three and four, a group of 40 dedicated annotators while coverage ensures that all meaningful items on a page can\nquality controls. Phase one and two required a small team of experts to a document category, such as\nAbstract in the\nScientific Articles were assembled and supervised.\ncategory. We also avoided class labels that are tightly linked to the\nPhase 1: Data selection and preparation.\nOur inclusion cri-\nAuthor\nAffiliation",
+        "text": "page. Specificity ensures that the choice of label is not ambiguous,\nIn this image there is a table with some text on it.\n\n<!-- image_12 -->\nwe distributed the annotation workload and performed continuous be annotated. We refrained from class labels that are very specific\nonly. For phases three and four, a group of 40 dedicated annotators while coverage ensures that all meaningful items on a page can\nquality controls. Phase one and two required a small team of experts to a document category, such as\nAbstract in the\nScientific Articles were assembled and supervised.\ncategory. We also avoided class labels that are tightly linked to the\nPhase 1: Data selection and preparation.\nOur inclusion cri-\nAuthor\nAffiliation",
         "meta": {
             "doc_items": [
                 "#/texts/914",
