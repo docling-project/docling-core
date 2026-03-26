@@ -566,6 +566,13 @@ class MarkdownTableSerializer(BaseTableSerializer):
             if table_text:
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
+        ftn_res = doc_serializer.serialize_footnotes(
+            item=item,
+            **kwargs,
+        )
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+
         text_res = "\n\n".join([r.text for r in res_parts])
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -626,6 +633,14 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 md_table_content = temp_table.export_to_markdown(temp_doc)
                 if len(md_table_content) > 0:
                     res_parts.append(create_ser_result(text=md_table_content, span_source=item))
+
+        ftn_res = doc_serializer.serialize_footnotes(
+            item=item,
+            **kwargs,
+        )
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+
         text_res = "\n\n".join([r.text for r in res_parts if r.text])
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -841,6 +856,34 @@ class MarkdownDocSerializer(DocSerializer):
     annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
 
     params: MarkdownParams = MarkdownParams()
+
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        if DocItemLabel.FOOTNOTE in params.labels:
+            results = []
+            for footnote in item.footnotes:
+                if isinstance(ftn := footnote.resolve(self.doc), TextItem):
+                    parts = ftn.text.split(" ", 1)
+
+                    if len(parts) == 2:
+                        formatted_text = f"[^{parts[0]}]: {parts[1]}\n"
+                    else:
+                        formatted_text = f"[^{parts[0]}]:\n"
+
+                    results.append(create_ser_result(text=formatted_text, span_source=ftn))
+
+            text_res = "".join([r.text for r in results])
+
+        else:
+            text_res = ""
+            
+        return create_ser_result(text=text_res, span_source=results)
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any):
