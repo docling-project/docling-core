@@ -96,6 +96,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.FIELD_HEADING,
     DocItemLabel.FIELD_HINT,
     DocItemLabel.MARKER,
+    DocItemLabel.HANDWRITTEN_TEXT,
 }
 
 DOCUMENT_TOKENS_EXPORT_LABELS = DEFAULT_EXPORT_LABELS.copy()
@@ -1692,6 +1693,7 @@ class TextItem(DocItem):
         DocItemLabel.FIELD_KEY,
         DocItemLabel.FIELD_HINT,
         DocItemLabel.MARKER,
+        DocItemLabel.HANDWRITTEN_TEXT,
     ]
 
     orig: str  # untreated representation

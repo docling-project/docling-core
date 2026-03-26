@@ -474,6 +474,12 @@ def _create_content_filtering_doc(inp_doc: DoclingDocument):
     return doc
 
 
+def test_handwritten_text_label(doc_with_handwritten: DoclingDocument):
+    result = doc_with_handwritten.export_to_doclang()
+    exp_file = Path("./test/data/doc/handwritten_text.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=result)
+
+
 def test_content_allow_all_types(sample_doc: DoclingDocument):
     doc = _create_content_filtering_doc(sample_doc)
     serializer = DoclangDocSerializer(
