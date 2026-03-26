@@ -372,6 +372,7 @@
     <location value="486"/>
     <location value="156"/>
     <location value="489"/>
+    <layer value="furniture"/>
     Form PCT/ISA/210 (second sheet) (April 2005)
   </text>
   <text>
@@ -379,6 +380,7 @@
     <location value="471"/>
     <location value="34"/>
     <location value="476"/>
+    <layer value="furniture"/>
     2
   </text>
 </doclang>

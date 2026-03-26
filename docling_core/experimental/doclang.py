@@ -38,6 +38,7 @@ from docling_core.types.doc import (
     BaseMeta,
     BoundingBox,
     CodeItem,
+    ContentLayer,
     DescriptionMetaField,
     DocItem,
     DoclingDocument,
@@ -352,6 +353,7 @@ class DoclangToken(str, Enum):
 
     # Geometric and temporal
     LOCATION = "location"
+    LAYER = "layer"
     HOUR = "hour"
     MINUTE = "minute"
     SECOND = "second"
@@ -469,6 +471,7 @@ class DoclangVocabulary(BaseModel):
             DoclangAttributeKey.VALUE,
             DoclangAttributeKey.RESOLUTION,
         },
+        DoclangToken.LAYER: {DoclangAttributeKey.VALUE},
         DoclangToken.HOUR: {DoclangAttributeKey.VALUE},
         DoclangToken.MINUTE: {DoclangAttributeKey.VALUE},
         DoclangToken.SECOND: {DoclangAttributeKey.VALUE},
@@ -543,6 +546,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.PAGE_BREAK,
         DoclangToken.TIME_BREAK,
         DoclangToken.LOCATION,
+        DoclangToken.LAYER,
         DoclangToken.HOUR,
         DoclangToken.MINUTE,
         DoclangToken.SECOND,
@@ -577,6 +581,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.TIME_BREAK: DoclangCategory.SPECIAL,
         # Geometric
         DoclangToken.LOCATION: DoclangCategory.GEOMETRIC,
+        DoclangToken.LAYER: DoclangCategory.GEOMETRIC,
         # Temporal
         DoclangToken.HOUR: DoclangCategory.TEMPORAL,
         DoclangToken.MINUTE: DoclangCategory.TEMPORAL,
@@ -970,6 +975,13 @@ class WrapMode(str, Enum):
     WRAP_WHEN_NEEDED = "wrap_when_needed"  # wrap text only if it has leading or trailing whitespace
 
 
+class LayerMode(str, Enum):
+    """Layer mode for Doclang output."""
+
+    ALWAYS = "always"  # always include layer element
+    MINIMAL = "minimal"  # include layer element only when it differs from default
+
+
 class ContentType(str, Enum):
     """Content type for Doclang output."""
 
@@ -991,6 +1003,9 @@ _DEFAULT_CONTENT_TYPES: set[ContentType] = set(ContentType)
 class DoclangParams(CommonParams):
     """Doclang-specific serialization parameters independent of Doclang."""
 
+    # Override parent's layers to default to all ContentLayers
+    layers: set[ContentLayer] = set(ContentLayer)
+
     # Geometry & content controls (aligned with Doclang defaults)
     xsize: int = DOCLANG_DFLT_RESOLUTION
     ysize: int = DOCLANG_DFLT_RESOLUTION
@@ -1007,6 +1022,9 @@ class DoclangParams(CommonParams):
     # types of content to serialize (only relevant if show_content is True):
     content_types: set[ContentType] = _DEFAULT_CONTENT_TYPES
 
+    # Layer mode
+    layer_mode: LayerMode = LayerMode.MINIMAL
+
     # Doclang formatting
     do_self_closing: bool = True
     pretty_indentation: Optional[str] = 2 * " "  # None means minimized serialization, "" means no indentation
@@ -1019,6 +1037,22 @@ class DoclangParams(CommonParams):
     escape_mode: EscapeMode = EscapeMode.CDATA_WHEN_NEEDED
     content_wrapping_mode: WrapMode = WrapMode.WRAP_WHEN_NEEDED
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
+
+
+def _create_layer_token(
+    *,
+    item: DocItem,
+    params: DoclangParams,
+) -> str:
+    """Create `<layer .../>` token for an item's content layer if needed."""
+    if params.layer_mode == LayerMode.ALWAYS or (
+        params.layer_mode == LayerMode.MINIMAL and item.content_layer != ContentLayer.BODY
+    ):
+        return DoclangVocabulary.create_selfclosing_token(
+            token=DoclangToken.LAYER,
+            attrs={DoclangAttributeKey.VALUE: item.content_layer.value},
+        )
+    return ""
 
 
 def _get_delim(*, params: DoclangParams) -> str:
@@ -1521,6 +1555,9 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             if loc:
                 parts.append(loc)
 
+        if layer_token := _create_layer_token(item=item, params=params):
+            parts.append(layer_token)
+
         if selected_token:
             parts.append(selected_token)
 
@@ -1687,6 +1724,9 @@ class DoclangPictureSerializer(BasePictureSerializer):
             body = ""
             if params.add_location:
                 body += _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
+
+            if layer_token := _create_layer_token(item=item, params=params):
+                body += layer_token
 
             uri: Optional[str] = None
             if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
@@ -1888,6 +1928,9 @@ class DoclangTableSerializer(BaseTableSerializer):
             if params.add_location:
                 body += _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
 
+            if layer_token := _create_layer_token(item=item, params=params):
+                body += layer_token
+
             if ContentType.TABLE in params.content_types:
                 otsl_text = self._emit_otsl(
                     item=item,
@@ -2008,6 +2051,9 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
                 loc_str = _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
                 if loc_str:
                     parts.append(create_ser_result(text=loc_str, span_source=item))
+            if is_fri:
+                if layer_token := _create_layer_token(item=item, params=params):
+                    parts.append(create_ser_result(text=layer_token, span_source=item))
             parts.extend(doc_serializer.get_parts(item=item, **kwargs))
             text_res = delim.join([p.text for p in parts if p.text])
             tok = DoclangToken.FIELD_REGION if is_fri else DoclangToken.FIELD_ITEM
@@ -2104,6 +2150,9 @@ class DoclangDocSerializer(DocSerializer):
                                 item=cap, doc=self.doc, xres=params.xsize, yres=params.ysize
                             )
                             results.append(create_ser_result(text=loc_txt))
+
+                            if layer_token := _create_layer_token(item=cap, params=params):
+                                results.append(create_ser_result(text=layer_token))
             if cap_res.text and ContentType.REF_CAPTION in params.content_types:
                 cap_res.text = _escape_text(cap_res.text, params)
                 results.append(cap_res)
@@ -2130,11 +2179,13 @@ class DoclangDocSerializer(DocSerializer):
                             item=ftn, doc=self.doc, xres=params.xsize, yres=params.ysize
                         )
 
+                    layer_token = _create_layer_token(item=ftn, params=params)
+
                     content = ""
                     if ftn.text and ContentType.REF_FOOTNOTE in params.content_types:
                         content = _escape_text(ftn.text, params)
 
-                    text_res = f"{location}{content}"
+                    text_res = f"{location}{layer_token}{content}"
                     if text_res:
                         text_res = _wrap(text_res, wrap_tag=DoclangToken.FOOTNOTE.value)
                         results.append(create_ser_result(text=text_res))
@@ -2378,6 +2429,7 @@ class DoclangDeserializer(BaseModel):
                     DoclangToken.HEAD.value,
                     DoclangToken.META.value,
                     DoclangToken.LOCATION.value,
+                    DoclangToken.LAYER.value,
                 }:
                     continue
                 self._dispatch_element(doc=doc, el=node, parent=parent)
@@ -2393,6 +2445,7 @@ class DoclangDeserializer(BaseModel):
             if isinstance(el, Element):
                 if el.tagName not in {
                     DoclangToken.LOCATION.value,
+                    DoclangToken.LAYER.value,
                     DoclangToken.BR.value,
                     DoclangToken.BOLD.value,
                     DoclangToken.ITALIC.value,
@@ -2416,7 +2469,9 @@ class DoclangDeserializer(BaseModel):
     def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         """Parse text-like tokens (title, text, caption, footnotes, code, formula)."""
         element_children = [
-            node for node in el.childNodes if isinstance(node, Element) and node.tagName != DoclangToken.LOCATION.value
+            node
+            for node in el.childNodes
+            if isinstance(node, Element) and node.tagName not in {DoclangToken.LOCATION.value, DoclangToken.LAYER.value}
         ]
 
         if len(element_children) > 1 or self._get_children_simple_text_block(el) is None:
@@ -2424,6 +2479,7 @@ class DoclangDeserializer(BaseModel):
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
         text, formatting = self._extract_text_with_formatting(el)
         if not text:
             return
@@ -2440,6 +2496,7 @@ class DoclangDeserializer(BaseModel):
                 code_language=lang_label,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
+                content_layer=content_layer,
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
@@ -2494,6 +2551,7 @@ class DoclangDeserializer(BaseModel):
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
                 formatting=formatting,
+                content_layer=content_layer,
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
@@ -2504,6 +2562,7 @@ class DoclangDeserializer(BaseModel):
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
                 formatting=formatting,
+                content_layer=content_layer,
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
@@ -2549,6 +2608,7 @@ class DoclangDeserializer(BaseModel):
             level = 1
         # Extract provenance from heading token (if any)
         prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
         text = self._get_text(el)
         text_stripped = text.strip()
         if text_stripped:
@@ -2557,6 +2617,7 @@ class DoclangDeserializer(BaseModel):
                 level=level,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
+                content_layer=content_layer,
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
@@ -2672,13 +2733,15 @@ class DoclangDeserializer(BaseModel):
             return
         # Extract table provenance from <otsl> leading <location/> tokens
         tbl_provs = self._extract_provenance(doc=doc, el=otsl_el)
-        # Get inner XML excluding location tokens (work directly with parsed DOM)
-        inner = self._inner_xml(otsl_el, exclude_tags={"location"})
+        content_layer = self._extract_layer(el=otsl_el)
+        # Get inner XML excluding location and layer tokens (work directly with parsed DOM)
+        inner = self._inner_xml(otsl_el, exclude_tags={"location", "layer"})
         tbl = doc.add_table(
             data=TableData(),
             caption=caption,
             parent=parent,
             prov=(tbl_provs[0] if tbl_provs else None),
+            content_layer=content_layer,
         )
         tbl_content = _wrap(text=inner, wrap_tag=DoclangToken.OTSL.value)
         td = self._parse_otsl_table_content(otsl_content=tbl_content, doc=doc, parent=tbl)
@@ -2693,17 +2756,20 @@ class DoclangDeserializer(BaseModel):
         caption = self._extract_caption(doc=doc, el=el)
         footnotes = self._extract_footnotes(doc=doc, el=el)
 
-        # Extract provenance from the <picture> block (locations appear inside it)
+        # Extract provenance and layer from the <picture> block (locations and layer appear inside it)
         prov_list: list[ProvenanceItem] = []
+        content_layer: Optional[ContentLayer] = None
         picture_el = self._first_child(el, DoclangToken.PICTURE.value)
         if picture_el is not None:
             prov_list = self._extract_provenance(doc=doc, el=picture_el)
+            content_layer = self._extract_layer(el=picture_el)
 
         # Create the picture item first, attach caption and provenance
         pic = doc.add_picture(
             caption=caption,
             parent=parent,
             prov=(prov_list[0] if prov_list else None),
+            content_layer=content_layer,
         )
         for p in prov_list[1:]:
             pic.prov.append(p)
@@ -3102,3 +3168,14 @@ class DoclangDeserializer(BaseModel):
                 res_for_group = None
 
         return provs
+
+    def _extract_layer(self, *, el: Element) -> Optional[ContentLayer]:
+        """Extract content layer from <layer value="..."/> token if present."""
+        for node in el.childNodes:
+            if isinstance(node, Element) and node.tagName == DoclangToken.LAYER.value:
+                if layer_value := node.getAttribute(DoclangAttributeKey.VALUE.value):
+                    try:
+                        return ContentLayer(layer_value)
+                    except ValueError:
+                        pass
+        return None
