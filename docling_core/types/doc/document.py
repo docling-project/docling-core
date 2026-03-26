@@ -3488,15 +3488,15 @@ class DoclingDocument(BaseModel):
         if old_subroot.parent is None:
             raise ValueError("Can not move the root")
 
+        # unlink old subroot from its previous parent
+        previous_parent: NodeItem = old_subroot.parent.resolve(doc=self)
+        previous_parent.children.remove(old_subroot.get_ref())
+
         # link new subroot => old subroot
         if pos is not None:
             new_subroot.children.insert(pos, old_subroot.get_ref())
         else:
             new_subroot.children.append(old_subroot.get_ref())
-
-        # unlink old subroot from its previous parent
-        previous_parent: NodeItem = old_subroot.parent.resolve(doc=self)
-        previous_parent.children.remove(old_subroot.get_ref())
 
         # link old subroot => new subroot
         old_subroot.parent = new_subroot.get_ref()

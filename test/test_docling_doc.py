@@ -1549,6 +1549,14 @@ def test_misplaced_list_items():
         exp_doc = DoclingDocument.load_from_yaml(exp_file)
         assert doc == exp_doc
 
+def test_moving_within_same_parent():
+    doc = DoclingDocument(name="")
+    doc.add_text(label=DocItemLabel.TEXT, text="bar")
+    foo = doc.add_text(label=DocItemLabel.TEXT, text="foo")
+    assert foo.parent is not None
+    doc._move_subtree(old_subroot=foo, new_subroot=foo.parent.resolve(doc), pos=0)
+    assert [it.text for it, _ in doc.iterate_items() if isinstance(it, TextItem)] == ["foo", "bar"]
+
 
 def test_export_with_precision():
     doc = DoclingDocument.load_from_yaml(filename="test/data/doc/dummy_doc_2.yaml")
