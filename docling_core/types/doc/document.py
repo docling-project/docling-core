@@ -3761,7 +3761,7 @@ class DoclingDocument(BaseModel):
         mark_annotations: bool = False,
         compact_tables: bool = False,
         traverse_pictures: bool = False,
-        artifacts_dir: Optional[Union[str, Path]] = None,
+        image_dir: Optional[Union[str, Path]] = None,
         *,
         use_legacy_annotations: bool | None = None,  # deprecated
         allowed_meta_names: set[str] | None = None,
@@ -3820,10 +3820,10 @@ class DoclingDocument(BaseModel):
             PDFs processed with full-page OCR, where the layout model places all OCR
             text as children of a top-level PictureItem. (Default value = False).
         :type traverse_pictures: bool = False
-        :param artifacts_dir: Optional directory path where images will be saved when using
+        :param image_dir: Optional directory path where images will be saved when using
             ImageRefMode.REFERENCED. If provided, images are automatically saved to this
             directory and referenced in the markdown output. (Default value = None).
-        :type artifacts_dir: Optional[Union[str, Path]] = None
+        :type image_dir: Optional[Union[str, Path]] = None
         :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
         :type use_legacy_annotations: Optional[bool] = None
         :param mark_meta: bool: Whether to mark meta in the export
@@ -3853,11 +3853,11 @@ class DoclingDocument(BaseModel):
                 DeprecationWarning,
             )
 
-        # Handle image saving when artifacts_dir is provided
+        # Handle image saving when image_dir is provided
         doc = self
-        if artifacts_dir is not None and image_mode == ImageRefMode.REFERENCED:
+        if image_dir is not None and image_mode == ImageRefMode.REFERENCED:
             doc = self._with_pictures_refs(
-                image_dir=Path(artifacts_dir),
+                image_dir=Path(image_dir),
                 page_no=page_no,
             )
 
@@ -4083,7 +4083,7 @@ class DoclingDocument(BaseModel):
         included_content_layers: set[ContentLayer] | None = None,
         split_page_view: bool = False,
         include_annotations: bool = True,
-        artifacts_dir: Optional[Union[str, Path]] = None,
+        image_dir: Optional[Union[str, Path]] = None,
     ) -> str:
         r"""Serialize to HTML."""
         from docling_core.transforms.serializer.html import (
@@ -4117,11 +4117,11 @@ class DoclingDocument(BaseModel):
         if html_head == "null":
             params.html_head = None
 
-        # Handle image saving when artifacts_dir is provided
+        # Handle image saving when image_dir is provided
         doc = self
-        if artifacts_dir is not None and image_mode == ImageRefMode.REFERENCED:
+        if image_dir is not None and image_mode == ImageRefMode.REFERENCED:
             doc = self._with_pictures_refs(
-                image_dir=Path(artifacts_dir),
+                image_dir=Path(image_dir),
                 page_no=page_no,
             )
 
