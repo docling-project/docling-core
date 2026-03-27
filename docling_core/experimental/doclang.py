@@ -471,7 +471,7 @@ class DoclangVocabulary(BaseModel):
             DoclangAttributeKey.VALUE,
             DoclangAttributeKey.RESOLUTION,
         },
-        DoclangToken.LAYER: {DoclangAttributeKey.VALUE},
+        DoclangToken.LAYER: {DoclangAttributeKey.CLASS},
         DoclangToken.HOUR: {DoclangAttributeKey.VALUE},
         DoclangToken.MINUTE: {DoclangAttributeKey.VALUE},
         DoclangToken.SECOND: {DoclangAttributeKey.VALUE},
@@ -1050,7 +1050,7 @@ def _create_layer_token(
     ):
         return DoclangVocabulary.create_selfclosing_token(
             token=DoclangToken.LAYER,
-            attrs={DoclangAttributeKey.VALUE: item.content_layer.value},
+            attrs={DoclangAttributeKey.CLASS: item.content_layer.value},
         )
     return ""
 
@@ -3170,10 +3170,10 @@ class DoclangDeserializer(BaseModel):
         return provs
 
     def _extract_layer(self, *, el: Element) -> Optional[ContentLayer]:
-        """Extract content layer from <layer value="..."/> token if present."""
+        """Extract content layer from <layer class="..."/> token if present."""
         for node in el.childNodes:
             if isinstance(node, Element) and node.tagName == DoclangToken.LAYER.value:
-                if layer_value := node.getAttribute(DoclangAttributeKey.VALUE.value):
+                if layer_value := node.getAttribute(DoclangAttributeKey.CLASS.value):
                     try:
                         return ContentLayer(layer_value)
                     except ValueError:

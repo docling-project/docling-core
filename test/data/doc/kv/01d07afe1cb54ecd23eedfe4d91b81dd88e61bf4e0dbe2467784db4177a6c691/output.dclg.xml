@@ -15,7 +15,7 @@
     <location value="484"/>
     <location value="438"/>
     <location value="490"/>
-    <layer value="furniture"/>
+    <layer class="furniture"/>
     Index
   </text>
   <text>
@@ -23,7 +23,7 @@
     <location value="483"/>
     <location value="461"/>
     <location value="489"/>
-    <layer value="furniture"/>
+    <layer class="furniture"/>
     477
   </text>
 </doclang>

@@ -4,7 +4,7 @@
     <location value="24"/>
     <location value="101"/>
     <location value="29"/>
-    <layer value="furniture"/>
+    <layer class="furniture"/>
     13040.19
   </text>
   <text>
@@ -12,7 +12,7 @@
     <location value="24"/>
     <location value="267"/>
     <location value="29"/>
-    <layer value="furniture"/>
+    <layer class="furniture"/>
     - 16 -
   </text>
   <floating_group class="picture">
@@ -24,7 +24,7 @@
       <location value="10"/>
       <location value="476"/>
       <location value="39"/>
-      <layer value="furniture"/>
+      <layer class="furniture"/>
     </picture>
   </floating_group>
   <floating_group class="table">

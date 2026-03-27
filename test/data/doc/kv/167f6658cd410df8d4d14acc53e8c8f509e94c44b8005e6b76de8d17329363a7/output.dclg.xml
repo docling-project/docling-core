@@ -608,7 +608,7 @@
     <location value="191"/>
     <location value="281"/>
     <location value="197"/>
-    <layer value="background"/>
+    <layer class="background"/>
     (57)
   </text>
 </doclang>
