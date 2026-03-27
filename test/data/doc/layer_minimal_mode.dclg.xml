@@ -1,0 +1,25 @@
+<doclang version="1.0.0">
+  <page_header>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    <layer class="furniture"/>
+    Page Header
+  </page_header>
+  <text>
+    <location value="26"/>
+    <location value="471"/>
+    <location value="36"/>
+    <location value="481"/>
+    Main body content
+  </text>
+  <page_footer>
+    <location value="46"/>
+    <location value="451"/>
+    <location value="56"/>
+    <location value="461"/>
+    <layer class="furniture"/>
+    Page Footer
+  </page_footer>
+</doclang>

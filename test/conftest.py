@@ -495,3 +495,56 @@ def _doc_with_handwritten() -> DoclingDocument:
 def doc_with_handwritten(_doc_with_handwritten: DoclingDocument) -> DoclingDocument:
     """Copy of a document with handwritten text for each test function."""
     return _doc_with_handwritten.model_copy(deep=True)
+
+
+@pytest.fixture(scope="session")
+def _doc_with_layers() -> DoclingDocument:
+    """Fixture for a document with different content layers to be reused across the test session."""
+    from docling_core.types.doc.document import ContentLayer
+
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+
+    # Add page header with furniture layer
+    doc.add_text(
+        label=DocItemLabel.PAGE_HEADER,
+        text="Page Header",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 11),
+        ),
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    # Add regular text with body layer (default)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Main body content",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((5, 6, 7, 8), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 17),
+        ),
+        content_layer=ContentLayer.BODY,
+    )
+
+    # Add page footer with furniture layer
+    doc.add_text(
+        label=DocItemLabel.PAGE_FOOTER,
+        text="Page Footer",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((9, 10, 11, 12), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 11),
+        ),
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    return doc
+
+
+@pytest.fixture(scope="function")
+def doc_with_layers(_doc_with_layers: DoclingDocument) -> DoclingDocument:
+    """Copy of a document with different content layers for each test function."""
+    return _doc_with_layers.model_copy(deep=True)

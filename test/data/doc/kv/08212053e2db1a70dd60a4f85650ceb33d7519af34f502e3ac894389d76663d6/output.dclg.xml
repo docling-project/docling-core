@@ -457,6 +457,7 @@
     <location value="491"/>
     <location value="260"/>
     <location value="497"/>
+    <layer class="furniture"/>
     31
   </text>
   <text>
@@ -464,6 +465,7 @@
     <location value="164"/>
     <location value="500"/>
     <location value="347"/>
+    <layer class="furniture"/>
     FAA Chart Users Guide VFR Symbology - Sectional and Terminal Area Charts
   </text>
 </doclang>

@@ -4,6 +4,7 @@
     <location value="23"/>
     <location value="186"/>
     <location value="29"/>
+    <layer class="furniture"/>
     Michigan Department of Treasury (Rev. 05-19), Page 1 of 2
   </text>
   <text>
@@ -11,6 +12,7 @@
     <location value="25"/>
     <location value="479"/>
     <location value="30"/>
+    <layer class="furniture"/>
     Issued under authority of Public Act 281 of 1967 , as amended .
   </text>
   <heading level="1">
@@ -1606,6 +1608,7 @@
     <location value="483"/>
     <location value="162"/>
     <location value="491"/>
+    <layer class="furniture"/>
     + 0000 2019 05 01 27 1
   </text>
   <text>
@@ -1613,6 +1616,7 @@
     <location value="484"/>
     <location value="483"/>
     <location value="491"/>
+    <layer class="furniture"/>
     Continue on page 2 . This form cannot be processed if page 2 is not completed and included.
   </text>
 </doclang>
