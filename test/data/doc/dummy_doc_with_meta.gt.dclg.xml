@@ -1,13 +1,13 @@
 <doclang version="1.0.0">
   <title>
-    <location value="43"/>
-    <location value="26"/>
-    <location value="415"/>
-    <location value="47"/>
     <meta>
       <summary>This is a title.</summary>
       <my_corp__foo>More stuff here.</my_corp__foo>
     </meta>
+    <location value="43"/>
+    <location value="26"/>
+    <location value="415"/>
+    <location value="47"/>
     DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
   </title>
   <floating_group class="picture">
