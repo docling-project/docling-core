@@ -3431,7 +3431,8 @@
             "empty_value",
             "field_key",
             "field_hint",
-            "marker"
+            "marker",
+            "handwritten_text"
           ],
           "title": "Label",
           "type": "string"

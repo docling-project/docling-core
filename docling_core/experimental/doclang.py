@@ -392,6 +392,7 @@ class DoclangToken(str, Enum):
     STRIKETHROUGH = "strikethrough"
     SUPERSCRIPT = "superscript"
     SUBSCRIPT = "subscript"
+    HANDWRITING = "handwriting"
 
     # Formatting self-closing
     RTL = "rtl"
@@ -611,6 +612,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.STRIKETHROUGH: DoclangCategory.FORMATTING,
         DoclangToken.SUPERSCRIPT: DoclangCategory.FORMATTING,
         DoclangToken.SUBSCRIPT: DoclangCategory.FORMATTING,
+        DoclangToken.HANDWRITING: DoclangCategory.FORMATTING,
         DoclangToken.RTL: DoclangCategory.FORMATTING,
         DoclangToken.BR: DoclangCategory.FORMATTING,
         # Structural
@@ -1547,6 +1549,8 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
                 )
+                if item.label == DocItemLabel.HANDWRITTEN_TEXT:
+                    text_part = _wrap(text=text_part, wrap_tag=DoclangToken.HANDWRITING.value)
 
             if text_part:
                 parts.append(text_part)
@@ -1564,7 +1568,9 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(ftn_text)
 
         text_res = "".join(parts)
-        if wrap_open_token is not None and not (is_inline_scope and item.label == DocItemLabel.TEXT):
+        if wrap_open_token is not None and not (
+            is_inline_scope and item.label in {DocItemLabel.TEXT, DocItemLabel.HANDWRITTEN_TEXT}
+        ):
             if text_res or not params.suppress_empty_elements:
                 text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
         return create_ser_result(text=text_res, span_source=item)
@@ -1991,7 +1997,7 @@ class DoclangFallbackSerializer(BaseFallbackSerializer):
         """Serialize unsupported nodes by concatenating their textual parts."""
         params = DoclangParams(**kwargs)
         delim = _get_delim(params=DoclangParams(**kwargs))
-        if isinstance(item, ListGroup | InlineGroup):
+        if isinstance(item, GroupItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = delim.join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
@@ -2394,6 +2400,7 @@ class DoclangDeserializer(BaseModel):
                     DoclangToken.STRIKETHROUGH.value,
                     DoclangToken.SUBSCRIPT.value,
                     DoclangToken.SUPERSCRIPT.value,
+                    DoclangToken.HANDWRITING.value,
                     DoclangToken.CONTENT.value,
                 }:
                     return None
@@ -2476,8 +2483,13 @@ class DoclangDeserializer(BaseModel):
                     formatting.script = Script.SUB
                 elif is_superscript:
                     formatting.script = Script.SUPER
+            label = text_label_map[nm]
+            if nm == DoclangToken.TEXT.value and any(
+                c.tagName == DoclangToken.HANDWRITING.value for c in element_children
+            ):
+                label = DocItemLabel.HANDWRITTEN_TEXT
             item = doc.add_text(
-                label=text_label_map[nm],
+                label=label,
                 text=text,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),

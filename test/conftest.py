@@ -24,6 +24,8 @@ from docling_core.types.doc import (
     TableCell,
     TableData,
 )
+from docling_core.types.doc.base import BoundingBox, CoordOrigin, Size
+from docling_core.types.doc.document import ProvenanceItem
 
 
 # factored out of fixture to simplify IDE-level debugging
@@ -465,3 +467,31 @@ def rich_table_doc(_rich_table_doc: DoclingDocument) -> DoclingDocument:
     """Copy of a rich table document for each test function."""
 
     return _rich_table_doc.model_copy(deep=True)
+
+@pytest.fixture(scope="session")
+def _doc_with_handwritten() -> DoclingDocument:
+    """Fixture for a document with handwritten text to be reused across the test session."""
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 2),
+    )
+    doc.add_text(label=DocItemLabel.HANDWRITTEN_TEXT, text="My hand-written note")
+    doc.add_text(label=DocItemLabel.HANDWRITTEN_TEXT, text="My hand-written note (with prov)", prov=prov)
+
+    inl_text = doc.add_text(label=DocItemLabel.TEXT, text="", prov=prov)
+    inline = doc.add_inline_group(parent=inl_text)
+    doc.add_text(label=DocItemLabel.TEXT, text="Check ", parent=inline)
+    doc.add_text(label=DocItemLabel.HANDWRITTEN_TEXT, text="out", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text=" these", parent=inline)
+    doc.add_text(label=DocItemLabel.HANDWRITTEN_TEXT, text=" hand-written spans", parent=inline)
+
+    return doc
+
+
+@pytest.fixture(scope="function")
+def doc_with_handwritten(_doc_with_handwritten: DoclingDocument) -> DoclingDocument:
+    """Copy of a document with handwritten text for each test function."""
+    return _doc_with_handwritten.model_copy(deep=True)

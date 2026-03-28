@@ -1,0 +1,24 @@
+<doclang version="1.0.0">
+  <text>
+    <handwriting>My hand-written note</handwriting>
+  </text>
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    <handwriting>My hand-written note (with prov)</handwriting>
+  </text>
+  <text>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+    <content>Check </content>
+    <handwriting>out</handwriting>
+    <content> these</content>
+    <handwriting>
+      <content> hand-written spans</content>
+    </handwriting>
+  </text>
+</doclang>

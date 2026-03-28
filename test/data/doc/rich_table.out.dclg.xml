@@ -44,12 +44,12 @@
         </otsl>
       </floating_group>
       <nl/>
-      <ecel/>
+      <fcel/>
+      <text>Some text in a generic group.</text>
+      <text>More text in the group.</text>
       <fcel/>
       cell 4,1
       <nl/>
     </otsl>
   </floating_group>
-  <text>Some text in a generic group.</text>
-  <text>More text in the group.</text>
 </doclang>

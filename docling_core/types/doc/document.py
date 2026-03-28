@@ -11,7 +11,7 @@ import re
 import sys
 import typing
 import warnings
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
@@ -96,6 +96,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.FIELD_HEADING,
     DocItemLabel.FIELD_HINT,
     DocItemLabel.MARKER,
+    DocItemLabel.HANDWRITTEN_TEXT,
 }
 
 DOCUMENT_TOKENS_EXPORT_LABELS = DEFAULT_EXPORT_LABELS.copy()
@@ -1692,6 +1693,7 @@ class TextItem(DocItem):
         DocItemLabel.FIELD_KEY,
         DocItemLabel.FIELD_HINT,
         DocItemLabel.MARKER,
+        DocItemLabel.HANDWRITTEN_TEXT,
     ]
 
     orig: str  # untreated representation
@@ -7060,6 +7062,29 @@ class DoclingDocument(BaseModel):
         else:
             return CURRENT_VERSION
 
+    @model_validator(mode="after")
+    def _validate_unique_refs(self) -> Self:
+        seen: set[str] = set()
+        item_lists: list[Iterable[NodeItem]] = [
+            self.groups,
+            self.texts,
+            self.pictures,
+            self.tables,
+            self.key_value_items,
+            self.form_items,
+            self.field_regions,
+            self.field_items,
+        ]
+        for item_list in item_lists:
+            for item in item_list:
+                if isinstance(item, NodeItem):
+                    if item.self_ref in seen:
+                        raise ValueError(f"Duplicate ref: {item.self_ref}")
+                    seen.add(item.self_ref)
+                else:
+                    raise ValueError(f"Unknown element encountered: {item}")
+        return self
+
     def _normalize_table_children_from_rich_cells(self):
         """Repair missing table child links for already-parented rich table cells."""
         for table in self.tables:
@@ -7168,7 +7193,16 @@ class DoclingDocument(BaseModel):
             self._names.append(doc.name)
 
             # record starting indices so post-processing only touches new items
-            post_processing_keys = ["texts", "pictures", "tables", "key_value_items", "form_items"]
+            post_processing_keys = [
+                "groups",
+                "texts",
+                "pictures",
+                "tables",
+                "key_value_items",
+                "form_items",
+                "field_regions",
+                "field_items",
+            ]
             start_indices = {k: len(self.get_item_list(k)) for k in post_processing_keys}
 
             # collect items in traversal order

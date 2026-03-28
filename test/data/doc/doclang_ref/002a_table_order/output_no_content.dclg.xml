@@ -1,0 +1,180 @@
+<doclang version="1.0.0">
+  <text>
+    <location value="61"/>
+    <location value="24"/>
+    <location value="101"/>
+    <location value="29"/>
+  </text>
+  <text>
+    <location value="245"/>
+    <location value="24"/>
+    <location value="267"/>
+    <location value="29"/>
+  </text>
+  <floating_group class="picture">
+    <picture>
+      <location value="432"/>
+      <location value="10"/>
+      <location value="476"/>
+      <location value="39"/>
+    </picture>
+  </floating_group>
+  <floating_group class="table">
+    <otsl>
+      <location value="103"/>
+      <location value="51"/>
+      <location value="452"/>
+      <location value="192"/>
+      <ched/>
+      <ched/>
+      <ched/>
+      <nl/>
+      <rhed/>
+      <fcel/>
+      <text>
+        <location value="136"/>
+        <location value="94"/>
+        <location value="195"/>
+        <location value="98"/>
+      </text>
+      <list ordered="false">
+        <list_text>
+          <location value="136"/>
+          <location value="100"/>
+          <location value="255"/>
+          <location value="104"/>
+        </list_text>
+        <list_text>
+          <location value="136"/>
+          <location value="106"/>
+          <location value="296"/>
+          <location value="111"/>
+        </list_text>
+        <list_text>
+          <location value="136"/>
+          <location value="113"/>
+          <location value="191"/>
+          <location value="117"/>
+        </list_text>
+        <list_text>
+          <location value="136"/>
+          <location value="119"/>
+          <location value="195"/>
+          <location value="124"/>
+        </list_text>
+        <list_text>
+          <location value="136"/>
+          <location value="125"/>
+          <location value="318"/>
+          <location value="136"/>
+        </list_text>
+      </list>
+      <fcel/>
+      <nl/>
+      <rhed/>
+      <fcel/>
+      <text>
+        <location value="136"/>
+        <location value="140"/>
+        <location value="195"/>
+        <location value="145"/>
+      </text>
+      <list ordered="false">
+        <list_text>
+          <location value="136"/>
+          <location value="147"/>
+          <location value="224"/>
+          <location value="152"/>
+        </list_text>
+        <list_text>
+          <location value="136"/>
+          <location value="153"/>
+          <location value="204"/>
+          <location value="157"/>
+        </list_text>
+        <list_text>
+          <location value="136"/>
+          <location value="159"/>
+          <location value="361"/>
+          <location value="171"/>
+        </list_text>
+      </list>
+      <fcel/>
+      <nl/>
+      <rhed/>
+      <fcel/>
+      <text>
+        <location value="136"/>
+        <location value="175"/>
+        <location value="239"/>
+        <location value="179"/>
+      </text>
+      <fcel/>
+      <nl/>
+      <rhed/>
+      <fcel/>
+      <text>
+        <location value="136"/>
+        <location value="184"/>
+        <location value="240"/>
+        <location value="189"/>
+      </text>
+      <fcel/>
+      <nl/>
+    </otsl>
+    <footnote>
+      <location value="104"/>
+      <location value="203"/>
+      <location value="395"/>
+      <location value="210"/>
+    </footnote>
+  </floating_group>
+  <list ordered="false">
+    <list_text>
+      <location value="60"/>
+      <location value="236"/>
+      <location value="452"/>
+      <location value="254"/>
+    </list_text>
+  </list>
+  <text>
+    <location value="103"/>
+    <location value="271"/>
+    <location value="451"/>
+    <location value="301"/>
+  </text>
+  <floating_group class="table">
+    <otsl>
+      <location value="103"/>
+      <location value="316"/>
+      <location value="452"/>
+      <location value="386"/>
+      <ched/>
+      <ched/>
+      <ched/>
+      <ched/>
+      <nl/>
+      <srow/>
+      <lcel/>
+      <lcel/>
+      <lcel/>
+      <nl/>
+      <rhed/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+      <rhed/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+    </otsl>
+    <footnote>
+      <location value="104"/>
+      <location value="397"/>
+      <location value="451"/>
+      <location value="410"/>
+    </footnote>
+  </floating_group>
+</doclang>
