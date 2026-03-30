@@ -1427,7 +1427,8 @@ class FloatingMeta(BaseMeta):
 class CodeMetaField(BasePrediction):
     """Code representation for the respective item."""
 
-    code: str
+    text: str  # the actual code
+    language: Optional[CodeLanguageLabel] = None
 
 
 class PictureMeta(FloatingMeta):

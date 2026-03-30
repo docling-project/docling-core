@@ -454,13 +454,24 @@
           ],
           "title": "Created By"
         },
-        "code": {
-          "title": "Code",
+        "text": {
+          "title": "Text",
           "type": "string"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CodeLanguageLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
-        "code"
+        "text"
       ],
       "title": "CodeMetaField",
       "type": "object"
