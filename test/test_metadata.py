@@ -24,12 +24,14 @@ from docling_core.types.doc import (
     RefItem,
     SummaryMetaField,
 )
-from docling_core.types.doc.document import PictureMeta
 
 from .test_data_gen_flag import GEN_TEST_DATA
 from .test_utils import assert_or_generate_ground_truth
 
 
+class CustomCoordinates(BaseModel):
+    longitude: float
+    latitude: float
 
 
 @pytest.fixture(scope="module")
@@ -69,23 +71,19 @@ def doc_with_group_with_metadata() -> DoclingDocument:
 def test_metadata_usage(dummy_doc_with_meta: DoclingDocument) -> None:
     doc = dummy_doc_with_meta.model_copy(deep=True)
 
-    # example values
-    example_item = doc.pictures[0]
-    example_namespace = "my_corp"
-    example_name = "coords"
+    first_pic = doc.pictures[0]
+    assert first_pic.meta
+    assert first_pic.meta.classification
+    assert first_pic.meta.classification.predictions
+    assert first_pic.meta.classification.predictions[0].confidence == 0.78
 
-    # example custom type definition
-    class CustomCoordinates(BaseModel):
-        longitude: float
-        latitude: float
-
-    # ensure meta is present (here as PictureMeta since item is picture)
-    if example_item.meta is None:
-        example_item.meta = PictureMeta()
+    example_item: NodeItem = RefItem(cref="#/texts/2").resolve(doc=doc)
+    assert example_item.meta is not None
 
     # add a custom metadata object to the item
     value = CustomCoordinates(longitude=47.3769, latitude=8.5417)
-    example_item.meta.set_custom_field(namespace=example_namespace, name=example_name, value=value)
+    target_name = example_item.meta.set_custom_field(namespace="my_corp", name="coords", value=value)
+    assert target_name == "my_corp__coords"
 
     # save the document
     exp_file = Path("test/data/doc/dummy_doc_with_meta_modified.yaml")
@@ -97,17 +95,14 @@ def test_metadata_usage(dummy_doc_with_meta: DoclingDocument) -> None:
 
     # load back the document and read the custom metadata object
     loaded_doc = DoclingDocument.load_from_yaml(filename=exp_file)
-    loaded_item = loaded_doc.pictures[0]  # should be same as above
+    loaded_item: NodeItem = RefItem(cref="#/texts/2").resolve(doc=loaded_doc)
     assert loaded_item.meta is not None
 
-    loaded_obj = loaded_item.meta.get_custom_field(namespace=example_namespace, name=example_name)
-    loaded_value = CustomCoordinates.model_validate(loaded_obj)
+    loaded_dict = loaded_item.meta.get_custom_part()[target_name]
+    loaded_value = CustomCoordinates.model_validate(loaded_dict)
 
     # ensure the value is the same
     assert loaded_value == value
-
-    full_name = MetaUtils.create_meta_field_name(namespace=example_namespace, name=example_name)
-    assert full_name == "my_corp__coords"
 
 
 def test_metadata_relaxed_migration() -> None:
