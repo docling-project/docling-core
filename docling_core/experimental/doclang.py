@@ -1549,6 +1549,11 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
 
         parts: list[str] = []
 
+        if item.meta:
+            meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+            if meta_res.text:
+                parts.append(meta_res.text)
+
         if params.add_location:
             # Use Doclang `<location>` tokens instead of `<loc_.../>`
             loc = _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize)
@@ -1560,11 +1565,6 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
 
         if selected_token:
             parts.append(selected_token)
-
-        if item.meta:
-            meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
-            if meta_res.text:
-                parts.append(meta_res.text)
 
         if (
             (isinstance(item, CodeItem) and ContentType.TEXT_CODE in params.content_types)
