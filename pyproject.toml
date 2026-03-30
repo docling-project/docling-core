@@ -50,7 +50,6 @@ dependencies = [
     'typer (>=0.12.5,<0.25.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
     "defusedxml (>=0.7.1, <0.8.0)",
-    "opencv-python-headless>=4.13.0.92",
 ]
 
 [project.urls]
@@ -95,6 +94,8 @@ examples = [
     "matplotlib>=3.7.0",
     "openpyxl>=3.1.5",
 ]
+opencv-python-headless = ["opencv-python-headless (>=4.6.0.66,<5.0.0.0)"]
+opencv-python = ["opencv-python (>=4.6.0.66,<5.0.0.0)"]
 
 [dependency-groups]
 dev = [
@@ -126,6 +127,12 @@ constraints = [
 
 [tool.uv]
 package = true
+conflicts = [
+    [
+        { extra = "opencv-python-headless" },
+        { extra = "opencv-python" },
+    ]
+]
 
 [tool.setuptools.packages.find]
 where = [".", "docling_core/resources/schemas"]
