@@ -1249,17 +1249,20 @@
     <location value="489"/>
     <location value="90"/>
     <location value="494"/>
+    <layer class="furniture"/>
   </text>
   <text>
     <location value="460"/>
     <location value="480"/>
     <location value="470"/>
     <location value="485"/>
+    <layer class="furniture"/>
   </text>
   <text>
     <location value="452"/>
     <location value="489"/>
     <location value="471"/>
     <location value="497"/>
+    <layer class="furniture"/>
   </text>
 </doclang>

@@ -376,11 +376,13 @@
     <location value="491"/>
     <location value="260"/>
     <location value="497"/>
+    <layer class="furniture"/>
   </text>
   <text>
     <location value="492"/>
     <location value="164"/>
     <location value="500"/>
     <location value="347"/>
+    <layer class="furniture"/>
   </text>
 </doclang>
