@@ -1189,6 +1189,34 @@ class MarkdownDocSerializer(DocSerializer):
     params: MarkdownParams = MarkdownParams()
 
     @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        if DocItemLabel.FOOTNOTE in params.labels:
+            results = []
+            for footnote in item.footnotes:
+                if isinstance(ftn := footnote.resolve(self.doc), TextItem):
+                    parts = ftn.text.split(" ", 1)
+
+                    if len(parts) == 2:
+                        formatted_text = f"[^{parts[0]}]: {parts[1]}\n"
+                    else:
+                        formatted_text = f"[^{parts[0]}]:\n"
+
+                    results.append(create_ser_result(text=formatted_text, span_source=ftn))
+
+            text_res = "".join([r.text for r in results])
+
+        else:
+            text_res = ""
+
+        return create_ser_result(text=text_res, span_source=results)
+
+    @override
     def serialize_bold(self, text: str, **kwargs: Any):
         """Apply Markdown-specific bold serialization."""
         return f"**{text}**"
