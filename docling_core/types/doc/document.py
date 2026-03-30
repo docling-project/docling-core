@@ -1418,12 +1418,20 @@ class FloatingMeta(BaseMeta):
     description: Optional[DescriptionMetaField] = None
 
 
+class CodeMetaField(BasePrediction):
+    """Code representation for the respective item."""
+
+    text: str  # the actual code
+    language: Optional[CodeLanguageLabel] = None
+
+
 class PictureMeta(FloatingMeta):
     """Metadata model for pictures."""
 
     classification: Optional[PictureClassificationMetaField] = None
     molecule: Optional[MoleculeMetaField] = None
     tabular_chart: Optional[TabularChartMetaField] = None
+    code: Optional[CodeMetaField] = None
 
 
 class NodeItem(BaseModel):

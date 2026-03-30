@@ -415,6 +415,67 @@
       "title": "CodeLanguageLabel",
       "type": "string"
     },
+    "CodeMetaField": {
+      "additionalProperties": true,
+      "description": "Code representation for the respective item.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CodeLanguageLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "CodeMetaField",
+      "type": "object"
+    },
     "ContentLayer": {
       "description": "ContentLayer.",
       "enum": [
@@ -2514,6 +2575,17 @@
           "anyOf": [
             {
               "$ref": "#/$defs/TabularChartMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CodeMetaField"
             },
             {
               "type": "null"
