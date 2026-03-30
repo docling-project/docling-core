@@ -1,3 +1,19 @@
+## [v2.71.0](https://github.com/docling-project/docling-core/releases/tag/v2.71.0) - 2026-03-30
+
+### Feature
+
+* Add code representation meta field ([#573](https://github.com/docling-project/docling-core/issues/573)) ([`0bd5d8e`](https://github.com/docling-project/docling-core/commit/0bd5d8e649d0b6ab964e343a02d72c393c731ddd))
+* **Doclang:** Add content layer support ([#568](https://github.com/docling-project/docling-core/issues/568)) ([`fe9bbfb`](https://github.com/docling-project/docling-core/commit/fe9bbfbb0f9eeae827c0bae8da1ba245415d20d4))
+* Add handwriting support ([#561](https://github.com/docling-project/docling-core/issues/561)) ([`fb3b603`](https://github.com/docling-project/docling-core/commit/fb3b603bc41533873633f6f8672a1a29e8195029))
+
+### Fix
+
+* **Doclang:** Improve checkbox serialization & deserialization ([#570](https://github.com/docling-project/docling-core/issues/570)) ([`c9b5152`](https://github.com/docling-project/docling-core/commit/c9b51520d29ffd59e5c9b31c1af8ac55f20bb578))
+* **Doclang:** Fix serialization order in text items ([#571](https://github.com/docling-project/docling-core/issues/571)) ([`a1535bc`](https://github.com/docling-project/docling-core/commit/a1535bc1d849941c7296314a8ee7c398ecca76c0))
+* Extend validation to address duplicate refs ([#565](https://github.com/docling-project/docling-core/issues/565)) ([`0cfb663`](https://github.com/docling-project/docling-core/commit/0cfb663275d283a5ad6bbd9154c7cd1cd4e99de8))
+* **Doclang:** Fix group serialization ([#566](https://github.com/docling-project/docling-core/issues/566)) ([`159eb8f`](https://github.com/docling-project/docling-core/commit/159eb8f02191a066bd11aac7526b94b1d18e51e3))
+* Repair table children when rich table cells break hierarchy ([#563](https://github.com/docling-project/docling-core/issues/563)) ([`b65dd24`](https://github.com/docling-project/docling-core/commit/b65dd242126ff42f258cd3a08954b8b8b158c010))
+
 ## [v2.70.2](https://github.com/docling-project/docling-core/releases/tag/v2.70.2) - 2026-03-20
 
 ### Fix
