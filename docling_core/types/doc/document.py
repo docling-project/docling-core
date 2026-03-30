@@ -1326,6 +1326,12 @@ class _ExtraAllowingModel(BaseModel):
         setattr(self, key, value)
         return key
 
+    def get_custom_field(self, namespace: str, name: str) -> Any:
+        """Get a custom field."""
+        key = MetaUtils.create_meta_field_name(namespace=namespace, name=name)
+        custom_part = self.get_custom_part()
+        return custom_part.get(key)
+
 
 class BasePrediction(_ExtraAllowingModel):
     """Prediction field."""
@@ -1418,12 +1424,19 @@ class FloatingMeta(BaseMeta):
     description: Optional[DescriptionMetaField] = None
 
 
+class CodeMetaField(BasePrediction):
+    """Code representation for the respective item."""
+
+    code: str
+
+
 class PictureMeta(FloatingMeta):
     """Metadata model for pictures."""
 
     classification: Optional[PictureClassificationMetaField] = None
     molecule: Optional[MoleculeMetaField] = None
     tabular_chart: Optional[TabularChartMetaField] = None
+    code: Optional[CodeMetaField] = None
 
 
 class NodeItem(BaseModel):

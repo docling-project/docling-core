@@ -114,6 +114,9 @@ pictures:
       - - 1.0
         - 1.0
       smi: CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1
+    my_corp__coords:
+      latitude: 8.5417
+      longitude: 47.3769
   parent:
     $ref: '#/body'
   prov:
@@ -246,9 +249,6 @@ texts:
   label: section_header
   level: 1
   meta:
-    my_corp__coords:
-      latitude: 8.5417
-      longitude: 47.3769
     summary:
       text: This is a section header.
   orig: OPERATION (cont.)
