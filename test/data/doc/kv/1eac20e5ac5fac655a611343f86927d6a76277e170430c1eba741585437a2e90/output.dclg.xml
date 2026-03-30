@@ -20,12 +20,14 @@
     <location value="51"/>
     Form 10-K
   </heading>
-  <location value="23"/>
-  <location value="58"/>
-  <location value="363"/>
-  <location value="62"/>
-  <checkbox class="selected"/>
-  ☑ ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934
+  <text>
+    <location value="23"/>
+    <location value="58"/>
+    <location value="363"/>
+    <location value="62"/>
+    <checkbox class="selected"/>
+    ☑ ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934
+  </text>
   <text>
     <location value="32"/>
     <location value="62"/>
@@ -33,12 +35,14 @@
     <location value="68"/>
     FOR THE FISCAL YEAR ENDED DECEMBER 31, 2020
   </text>
-  <location value="32"/>
-  <location value="73"/>
-  <location value="489"/>
-  <location value="81"/>
-  <checkbox class="unselected"/>
-  TRANSITION REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934 FOR THE TRANSITION PERIOD FROM TO
+  <text>
+    <location value="32"/>
+    <location value="73"/>
+    <location value="489"/>
+    <location value="81"/>
+    <checkbox class="unselected"/>
+    TRANSITION REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934 FOR THE TRANSITION PERIOD FROM TO
+  </text>
   <text>
     <location value="15"/>
     <location value="80"/>
@@ -370,12 +374,14 @@
     <location value="499"/>
     <location value="263"/>
 <![CDATA[Indicate by check mark whether the registrant is a large accelerated filer, an accelerated filer, a non-accelerated filer, a smaller reporting company, or an emerging growth company . See the definitions of "large accelerated filer," "accelerated filer," "smaller reporting company" and "emerging growth company" in Rule 12b-2 of the Exchange Act.]]>  </text>
-  <location value="30"/>
-  <location value="266"/>
-  <location value="120"/>
-  <location value="270"/>
-  <checkbox class="selected"/>
-  Large accelerated filer ☑
+  <text>
+    <location value="30"/>
+    <location value="266"/>
+    <location value="120"/>
+    <location value="270"/>
+    <checkbox class="selected"/>
+    Large accelerated filer ☑
+  </text>
   <field_region>
     <field_item>
       <value class="read_only">

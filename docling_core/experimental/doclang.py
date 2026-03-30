@@ -1491,7 +1491,6 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         #   list items, this maps to <list_text> and keeps the text serializer
         #   free of type-based special casing.
         wrap_open_token: Optional[str]
-        selected_token: str = ""
         tok: DoclangToken | None = None
         if isinstance(item, SectionHeaderItem):
             wrap_open_token = DoclangVocabulary.create_heading_token(level=item.level)
@@ -1508,11 +1507,12 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             DocItemLabel.CHECKBOX_SELECTED,
             DocItemLabel.CHECKBOX_UNSELECTED,
         ]:
-            tok = DoclangToken.TEXT
-            wrap_open_token = None
-            selected_token = DoclangVocabulary.create_checkbox_token(
-                selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
-            )
+            if item.parent and isinstance((parent_item := item.parent.resolve(doc)), TextItem) and not parent_item.text:
+                # skip re-wrapping if already in a text item
+                wrap_open_token = None
+            else:
+                tok = DoclangToken.TEXT
+                wrap_open_token = f"<{tok.value}>"
         elif isinstance(item, TextItem) and (
             tok := {
                 DocItemLabel.FIELD_KEY: DoclangToken.FIELD_KEY,
@@ -1563,9 +1563,6 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         if layer_token := _create_layer_token(item=item, params=params):
             parts.append(layer_token)
 
-        if selected_token:
-            parts.append(selected_token)
-
         if (
             (isinstance(item, CodeItem) and ContentType.TEXT_CODE in params.content_types)
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
@@ -1588,6 +1585,12 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                 )
                 if item.label == DocItemLabel.HANDWRITTEN_TEXT:
                     text_part = _wrap(text=text_part, wrap_tag=DoclangToken.HANDWRITING.value)
+                elif item.label in [DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED]:
+                    # Add checkbox token before the text
+                    checkbox_token = DoclangVocabulary.create_checkbox_token(
+                        selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
+                    )
+                    text_part = checkbox_token + text_part
 
             if text_part:
                 parts.append(text_part)
@@ -1606,7 +1609,14 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
 
         text_res = "".join(parts)
         if wrap_open_token is not None and not (
-            is_inline_scope and item.label in {DocItemLabel.TEXT, DocItemLabel.HANDWRITTEN_TEXT}
+            is_inline_scope
+            and item.label
+            in {
+                DocItemLabel.TEXT,
+                DocItemLabel.HANDWRITTEN_TEXT,
+                DocItemLabel.CHECKBOX_SELECTED,
+                DocItemLabel.CHECKBOX_UNSELECTED,
+            }
         ):
             if text_res or not params.suppress_empty_elements:
                 text_res = _wrap_token(text=text_res, open_token=wrap_open_token)
@@ -2454,6 +2464,7 @@ class DoclangDeserializer(BaseModel):
                     DoclangToken.SUBSCRIPT.value,
                     DoclangToken.SUPERSCRIPT.value,
                     DoclangToken.HANDWRITING.value,
+                    DoclangToken.CHECKBOX.value,
                     DoclangToken.CONTENT.value,
                 }:
                     return None
@@ -2545,6 +2556,17 @@ class DoclangDeserializer(BaseModel):
                 c.tagName == DoclangToken.HANDWRITING.value for c in element_children
             ):
                 label = DocItemLabel.HANDWRITTEN_TEXT
+            elif nm == DoclangToken.TEXT.value:
+                # Check for checkbox elements with class attribute
+                for c in element_children:
+                    if c.tagName == DoclangToken.CHECKBOX.value:
+                        checkbox_class = c.getAttribute(DoclangAttributeKey.CLASS.value)
+                        if checkbox_class == DoclangAttributeValue.SELECTED.value:
+                            label = DocItemLabel.CHECKBOX_SELECTED
+                            break
+                        elif checkbox_class == DoclangAttributeValue.UNSELECTED.value:
+                            label = DocItemLabel.CHECKBOX_UNSELECTED
+                            break
             item = doc.add_text(
                 label=label,
                 text=text,

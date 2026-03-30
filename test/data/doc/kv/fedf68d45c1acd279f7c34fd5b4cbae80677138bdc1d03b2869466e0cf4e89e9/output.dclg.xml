@@ -181,12 +181,14 @@
         <nl/>
       </otsl>
     </floating_group>
-    <location value="52"/>
-    <location value="345"/>
-    <location value="227"/>
-    <location value="355"/>
-    <checkbox class="unselected"/>
-    Further documents are listed in the continuation of Box O.
+    <text>
+      <location value="52"/>
+      <location value="345"/>
+      <location value="227"/>
+      <location value="355"/>
+      <checkbox class="unselected"/>
+      Further documents are listed in the continuation of Box O.
+    </text>
     <text>
       <location value="53"/>
       <location value="359"/>
@@ -304,12 +306,14 @@
         : (+31-70) 340-3016
       </value>
     </field_item>
-    <location value="273"/>
-    <location value="345"/>
-    <location value="358"/>
-    <location value="354"/>
-    <checkbox class="selected"/>
-    X See patent family annex.
+    <text>
+      <location value="273"/>
+      <location value="345"/>
+      <location value="358"/>
+      <location value="354"/>
+      <checkbox class="selected"/>
+      X See patent family annex.
+    </text>
     <text>
       <location value="269"/>
       <location value="363"/>
