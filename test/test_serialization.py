@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import AnyUrl
 
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
@@ -101,7 +102,7 @@ def _build_table_with_formatted_footnote_doc() -> DoclingDocument:
     doc = _build_table_with_footnote_doc(footnote_text="bold link")
     footnote = next(text for text in doc.texts if text.label == DocItemLabel.FOOTNOTE)
     footnote.formatting = Formatting(bold=True)
-    footnote.hyperlink = "https://example.com"
+    footnote.hyperlink = AnyUrl("https://example.com")
     return doc
 
 
@@ -110,7 +111,7 @@ def _build_table_with_multiple_formatted_footnotes_doc() -> DoclingDocument:
     table = doc.tables[0]
     first_footnote = next(text for text in doc.texts if text.label == DocItemLabel.FOOTNOTE)
     first_footnote.formatting = Formatting(bold=True)
-    first_footnote.hyperlink = "https://one.example"
+    first_footnote.hyperlink = AnyUrl("https://one.example")
 
     second_footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="two")
     table.footnotes.append(second_footnote.get_ref())
@@ -263,7 +264,7 @@ def test_md_footnotes_preserve_formatting_and_hyperlinks():
 
     actual = doc.export_to_markdown()
 
-    assert "[**bold link**](https://example.com)" in actual
+    assert "[**bold link**](https://example.com/)" in actual
 
 
 def test_md_multiple_footnotes_are_separate_blocks():
@@ -271,7 +272,7 @@ def test_md_multiple_footnotes_are_separate_blocks():
 
     actual = doc.export_to_markdown()
 
-    assert "[**one**](https://one.example)\n\ntwo" in actual
+    assert "[**one**](https://one.example/)\n\ntwo" in actual
 
 
 def test_md_inline_and_formatting():
@@ -769,7 +770,7 @@ def test_html_footnotes_preserve_formatting_and_hyperlinks():
     actual = doc.export_to_html()
 
     assert '<div class="footnotes"' in actual
-    assert '<a href="https://example.com"><strong>bold link</strong></a>' in actual
+    assert '<a href="https://example.com/"><strong>bold link</strong></a>' in actual
 
 
 def test_html_hidden_footnotes_do_not_inject_footnote_css():

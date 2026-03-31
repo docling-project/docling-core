@@ -364,8 +364,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         ):
             if isinstance(item, FloatingItem) and item.self_ref not in excluded_refs:
                 if any(
-                    True
-                    for _ in self._iter_visible_referenced_text_items(
+                    self._iter_visible_referenced_text_items(
                         item.footnotes,
                         excluded_refs=excluded_refs,
                     )
