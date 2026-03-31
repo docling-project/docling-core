@@ -6,6 +6,7 @@ import logging
 from collections.abc import Iterator
 from typing import Annotated, Any, Optional, Union
 
+import pandas as pd
 from pydantic import ConfigDict, Field
 from typing_extensions import override
 
@@ -71,38 +72,79 @@ class TripletTableSerializer(BaseTableSerializer):
                 **kwargs,
             )
             if table_df.shape[0] >= 1 and table_df.shape[1] >= 1:
-                # Handle single-column tables
-                if table_df.shape[1] == 1:
-                    # For single-column tables, use first row as column name
-                    # and remaining rows as values
-                    col_name = str(table_df.iloc[0, 0]).strip()
-                    values = [str(val).strip() for val in table_df.iloc[1:, 0].to_list()]
-                    table_text_parts = [f"{col_name} = {val}" for val in values]
-                    table_text = ". ".join(table_text_parts)
-                    parts.append(create_ser_result(text=table_text, span_source=item))
-                else:
-                    # For multi-column tables
-                    # copy header as first row and shift all rows by one
-                    table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
-                    table_df.index = table_df.index + 1
-                    table_df = table_df.sort_index()
+                # Detect real headers from the table cell metadata
+                # rather than assuming positional conventions.
+                has_col_headers = not isinstance(table_df.columns, pd.RangeIndex)
+                has_row_headers = any(cell.row_header for row in item.data.grid for cell in row)
 
-                    rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
-                    cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
-
-                    nrows = table_df.shape[0]
-                    ncols = table_df.shape[1]
-                    table_text_parts = [
-                        f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
-                        for i in range(1, nrows)
-                        for j in range(1, ncols)
-                    ]
-                    table_text = ". ".join(table_text_parts)
-                    parts.append(create_ser_result(text=table_text, span_source=item))
+                table_text_parts = self._build_triplets(
+                    table_df,
+                    has_col_headers=has_col_headers,
+                    has_row_headers=has_row_headers,
+                )
+                table_text = ". ".join(table_text_parts)
+                parts.append(create_ser_result(text=table_text, span_source=item))
 
         text_res = "\n\n".join([r.text for r in parts])
 
         return create_ser_result(text=text_res, span_source=parts)
+
+    @staticmethod
+    def _build_triplets(
+        table_df: pd.DataFrame,
+        *,
+        has_col_headers: bool,
+        has_row_headers: bool,
+    ) -> list[str]:
+        table_df = table_df.copy()
+
+        nrows, ncols = table_df.shape
+
+        # Both row and column headers — use them directly.
+        if has_col_headers and has_row_headers:
+            row_headers = [str(v).strip() for v in table_df.iloc[:, 0]]
+            col_headers = [str(c).strip() for c in table_df.columns]
+
+            return [
+                f"{row_headers[i]}, {col_headers[j]} = {str(table_df.iloc[i, j]).strip()}"
+                for i in range(nrows)
+                for j in range(1, ncols)
+            ]
+
+        # Column headers only — single column.
+        if has_col_headers and ncols == 1:
+            col_name = str(table_df.columns[0]).strip()
+            return [f"{col_name} = {str(table_df.iloc[i, 0]).strip()}" for i in range(nrows)]
+
+        # Column headers only — multi-column.
+        # First column values serve as informal row identifiers.
+        if has_col_headers:
+            table_df.loc[-1] = list(table_df.columns)  # type: ignore[call-overload]
+            table_df.index = table_df.index + 1
+            table_df = table_df.sort_index()
+
+            rows = [str(v).strip() for v in table_df.iloc[:, 0]]
+            cols = [str(v).strip() for v in table_df.iloc[0, :]]
+
+            nrows, ncols = table_df.shape
+
+            return [
+                f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
+                for i in range(1, nrows)
+                for j in range(1, ncols)
+            ]
+
+        # Row headers only — no column names available.
+        if has_row_headers:
+            rows = [str(v).strip() for v in table_df.iloc[:, 0]]
+            return [
+                f"{rows[i]}, Column {j} = {str(table_df.iloc[i, j]).strip()}"
+                for i in range(nrows)
+                for j in range(1, ncols)
+            ]
+
+        # No headers at all — positional notation.
+        return [f"Row {i}, Column {j} = {str(table_df.iloc[i, j]).strip()}" for i in range(nrows) for j in range(ncols)]
 
 
 class ChunkingDocSerializer(MarkdownDocSerializer):

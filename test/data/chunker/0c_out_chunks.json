@@ -1,7 +1,7 @@
 {
     "root": [
         {
-            "text": "cell 0,0, 1 = cell 0,1. cell 1,0, 1 = <em><p>text in italic</p></em>. <ul>\n<li>list item 1</li>\n<li>list item 2</li>\n</ul>, 1 = cell 2,1. cell 3,0, 1 = inner cell 0,0, 1 = inner cell 0,1. inner cell 0,0, 2 = inner cell 0,2. inner cell 1,0, 1 = inner cell 1,1. inner cell 1,0, 2 = inner cell 1,2. <p>Some text in a generic group.</p>\n<p>More text in the group.</p>, 1 = cell 4,1",
+            "text": "Row 0, Column 0 = cell 0,0. Row 0, Column 1 = cell 0,1. Row 1, Column 0 = cell 1,0. Row 1, Column 1 = <em><p>text in italic</p></em>. Row 2, Column 0 = <ul>\n<li>list item 1</li>\n<li>list item 2</li>\n</ul>. Row 2, Column 1 = cell 2,1. Row 3, Column 0 = cell 3,0. Row 3, Column 1 = Row 0, Column 0 = inner cell 0,0. Row 0, Column 1 = inner cell 0,1. Row 0, Column 2 = inner cell 0,2. Row 1, Column 0 = inner cell 1,0. Row 1, Column 1 = inner cell 1,1. Row 1, Column 2 = inner cell 1,2. Row 4, Column 0 = <p>Some text in a generic group.</p>\n<p>More text in the group.</p>. Row 4, Column 1 = cell 4,1",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
