@@ -3,10 +3,14 @@
     <list_text>item of leading list</list_text>
   </list>
   <title>Title of the Document</title>
-  <text>Author 1
-Affiliation 1</text>
-  <text>Author 2
-Affiliation 2</text>
+  <text>
+    <content>Author 1
+Affiliation 1</content>
+  </text>
+  <text>
+    <content>Author 2
+Affiliation 2</content>
+  </text>
   <heading level="1">1. Introduction</heading>
   <text>This paper introduces the biggest invention ever made. ...</text>
   <list ordered="false">

@@ -1266,3 +1266,23 @@ def test_roundtrip_with_layers():
     assert items[0].content_layer == ContentLayer.FURNITURE
     assert items[1].content_layer == ContentLayer.BODY
     assert items[2].content_layer == ContentLayer.FURNITURE
+
+def test_roundtrip_with_newlines():
+    doclang_str = """
+<doclang version="1.0.0">
+  <text>
+    <content>foo
+bar</content>
+  </text>
+  <text>
+    <content>zoo
+ </content>
+    <bold>zen</bold>
+  </text>
+</doclang>"""
+
+    doc = _deserialize(doclang_str)
+
+    exp_doclang_str = doc.export_to_doclang()
+
+    assert doclang_str.strip() == exp_doclang_str.strip()
