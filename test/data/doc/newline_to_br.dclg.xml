@@ -1,0 +1,34 @@
+<doclang version="1.0.0">
+  <text>
+    <content>foo
+bar</content>
+  </text>
+  <text>
+    <content>eins
+</content>
+    <content> zwei
+ </content>
+    <bold>drei</bold>
+  </text>
+  <code>
+    <content>
+
+
+import pytest
+
+from docling_core.experimental.doclang import (
+    ContentType,
+    EscapeMode,
+    DoclangDocSerializer,
+    DoclangParams,
+    DoclangVocabulary,
+    LayerMode,
+    WrapMode,
+)
+ </content>
+  </code>
+  <text>
+    <content>
+</content>
+  </text>
+</doclang>

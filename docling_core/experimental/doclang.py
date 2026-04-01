@@ -1062,7 +1062,7 @@ def _get_delim(*, params: DoclangParams) -> str:
 
 def _escape_text(text: str, params: DoclangParams) -> str:
     do_wrap = params.content_wrapping_mode == WrapMode.WRAP_ALWAYS or (
-        params.content_wrapping_mode == WrapMode.WRAP_WHEN_NEEDED and text != text.strip()
+        params.content_wrapping_mode == WrapMode.WRAP_WHEN_NEEDED and (text != text.strip() or "\n" in text)
     )
     if params.escape_mode == EscapeMode.CDATA_ALWAYS or (
         params.escape_mode == EscapeMode.CDATA_WHEN_NEEDED and any(c in text for c in ['"', "'", "&", "<", ">"])
@@ -2295,7 +2295,26 @@ class DoclangDocSerializer(DocSerializer):
             if my_root is None:
                 raise ValueError("XML pretty-print failed: documentElement is None")
             text_res = my_root.toprettyxml(indent=self.params.pretty_indentation)
-            text_res = "\n".join([line for line in text_res.split("\n") if line.strip()])
+
+            # Filter out empty lines, but preserve them inside <content> tags
+            lines = text_res.split("\n")
+            filtered_lines = []
+            inside_content = False
+            for line in lines:
+                # Check if we're entering or exiting a content tag
+                if "<content>" in line or "<content " in line:
+                    inside_content = True
+                if "</content>" in line:
+                    # Add the line first, then mark as outside content
+                    filtered_lines.append(line)
+                    inside_content = False
+                    continue
+
+                # Keep all lines inside content tags, filter empty lines outside
+                if inside_content or line.strip():
+                    filtered_lines.append(line)
+
+            text_res = "\n".join(filtered_lines)
 
             if self.params.preserve_empty_non_selfclosing:
                 # Expand self-closing forms for tokens that are not allowed

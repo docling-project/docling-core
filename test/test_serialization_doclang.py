@@ -1499,3 +1499,44 @@ def test_layer_filter_body_only(doc_with_layers):
 
     exp_file = Path("./test/data/doc/layer_only_body.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_newline_to_br():
+
+    code = """
+
+
+import pytest
+
+from docling_core.experimental.doclang import (
+    ContentType,
+    EscapeMode,
+    DoclangDocSerializer,
+    DoclangParams,
+    DoclangVocabulary,
+    LayerMode,
+    WrapMode,
+)
+ """
+
+    """Test that newlines survive serialization and deserialization roundtrip."""
+    from docling_core.experimental.doclang import DoclangDeserializer
+    from docling_core.types.doc import TextItem
+
+    # Create a document with newlines
+    doc = DoclingDocument(name="")
+    doc.add_text(label=DocItemLabel.TEXT, text="foo\nbar")
+
+    inl = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="eins\n", parent=inl)
+    doc.add_text(label=DocItemLabel.TEXT, text=" zwei\n ", parent=inl)
+    doc.add_text(label=DocItemLabel.TEXT, text="drei", parent=inl, formatting=Formatting(bold=True))
+
+    doc.add_code(text=code)
+
+    # NOTE: this particular case seems bit brittle as to how it's preserved by XML tooling
+    doc.add_text(label=DocItemLabel.TEXT, text="\n")
+
+    ser_txt = doc.export_to_doclang()
+    exp_file = Path("./test/data/doc/newline_to_br.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
