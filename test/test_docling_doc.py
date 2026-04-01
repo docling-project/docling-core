@@ -645,7 +645,8 @@ def test_construct_bad_doc():
     filename = "test/data/doc/bad_doc.yaml"
 
     doc = _construct_bad_doc()
-    assert not doc.validate_tree(doc.body)
+    with pytest.raises(ValueError):
+        doc.validate_tree(doc.body, raise_on_error=True)
 
     with pytest.raises(ValueError):
         _test_export_methods(doc, filename=filename)

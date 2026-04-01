@@ -1,0 +1,73 @@
+<doclang version="1.0.0">
+  <title>Title</title>
+  <text>Some intro</text>
+  <heading level="1">Foo</heading>
+  <text>Foo stuff</text>
+  <heading level="2">Bar</heading>
+  <text>Bar stuff</text>
+  <text>More stuff</text>
+  <heading level="1">
+    Rich heading
+    <italic>without</italic>
+other children besides the inline
+  </heading>
+  <text>Section content as sibling of the heading.</text>
+  <heading level="2">Subheading</heading>
+  <text>Subsection content.</text>
+  <heading level="1">
+    Rich heading
+    <italic>with</italic>
+other children besides the inline
+  </heading>
+  <text>Section content as child of the heading.</text>
+  <text>Section content as sibling of the heading.</text>
+  <heading level="1">Heading</heading>
+  <text>Bar</text>
+  <list ordered="false">
+    <list_text>List item</list_text>
+    <list_text>List item</list_text>
+    <list ordered="false">
+      <list_text>List item</list_text>
+      <list_text>List item</list_text>
+    </list>
+  </list>
+  <heading level="2">Heading</heading>
+  <floating_group class="table">
+    <otsl>
+      <fcel/>
+      cell 0,0
+      <fcel/>
+      cell 0,1
+      <nl/>
+      <fcel/>
+      cell 1,0
+      <fcel/>
+      <text>
+        <italic>
+          <content>text in italic </content>
+        </italic>
+        <bold>text in bold</bold>
+      </text>
+      <nl/>
+      <fcel/>
+      cell 2,0
+      <fcel/>
+      cell 2,1
+      <nl/>
+      <fcel/>
+      cell 3,0
+      <fcel/>
+      cell 3,1
+      <nl/>
+    </otsl>
+  </floating_group>
+  <heading level="1">Heading</heading>
+  <field_region>
+    <text>Some text</text>
+    <field_item>
+      <text>Some text</text>
+      <key>Key</key>
+      <value class="read_only">Value</value>
+    </field_item>
+  </field_region>
+</doclang>
