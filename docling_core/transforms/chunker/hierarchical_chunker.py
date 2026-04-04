@@ -65,25 +65,45 @@ class TripletTableSerializer(BaseTableSerializer):
         if cap_res.text:
             parts.append(cap_res)
 
-        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            table_df = item._export_to_dataframe_with_options(
-                doc,
-                doc_serializer=doc_serializer,
-                **kwargs,
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return create_ser_result(
+                text="\n\n".join([r.text for r in parts]),
+                span_source=parts,
             )
-            if table_df.shape[0] >= 1 and table_df.shape[1] >= 1:
-                # Detect real headers from the table cell metadata
-                # rather than assuming positional conventions.
-                has_col_headers = not isinstance(table_df.columns, pd.RangeIndex)
-                has_row_headers = any(cell.row_header for row in item.data.grid for cell in row)
 
-                table_text_parts = self._build_triplets(
-                    table_df,
-                    has_col_headers=has_col_headers,
-                    has_row_headers=has_row_headers,
-                )
-                table_text = ". ".join(table_text_parts)
-                parts.append(create_ser_result(text=table_text, span_source=item))
+        table_df = item._export_to_dataframe_with_options(
+            doc,
+            doc_serializer=doc_serializer,
+            **kwargs,
+        )
+
+        if table_df.shape[0] == 0 or table_df.shape[1] == 0:
+            return create_ser_result(
+                text="\n\n".join([r.text for r in parts]),
+                span_source=parts,
+            )
+
+        # Header Detection (metadata-first, fallback-safe)
+        has_row_headers = any(getattr(cell, "row_header", False) for row in item.data.grid for cell in row)
+
+        has_col_headers = any(getattr(cell, "col_header", False) for row in item.data.grid for cell in row)
+
+        # Fallback if metadata missing
+        if not has_col_headers:
+            has_col_headers = not isinstance(table_df.columns, pd.RangeIndex) and any(
+                str(c).strip() for c in table_df.columns
+            )
+
+        # Build Triplets
+        triplets = self._build_triplets(
+            table_df,
+            has_row_headers=has_row_headers,
+            has_col_headers=has_col_headers,
+        )
+
+        if triplets:
+            table_text = ". ".join(triplets)
+            parts.append(create_ser_result(text=table_text, span_source=item))
 
         text_res = "\n\n".join([r.text for r in parts])
 
@@ -93,58 +113,83 @@ class TripletTableSerializer(BaseTableSerializer):
     def _build_triplets(
         table_df: pd.DataFrame,
         *,
-        has_col_headers: bool,
         has_row_headers: bool,
+        has_col_headers: bool,
     ) -> list[str]:
-        table_df = table_df.copy()
+        """
+        Convert table into triplets of form:
+            (row_label, col_label) = value
 
-        nrows, ncols = table_df.shape
+        Guarantees:
+        - No mutation of input DataFrame
+        - Consistent schema across all cases
+        - No implicit structural assumptions
+        """
 
-        # Both row and column headers — use them directly.
-        if has_col_headers and has_row_headers:
-            row_headers = [str(v).strip() for v in table_df.iloc[:, 0]]
-            col_headers = [str(c).strip() for c in table_df.columns]
+        table_data_df = table_df.copy()
+        nrows, ncols = table_data_df.shape
 
-            return [
-                f"{row_headers[i]}, {col_headers[j]} = {str(table_df.iloc[i, j]).strip()}"
-                for i in range(nrows)
-                for j in range(1, ncols)
-            ]
-
-        # Column headers only — single column.
-        if has_col_headers and ncols == 1:
-            col_name = str(table_df.columns[0]).strip()
-            return [f"{col_name} = {str(table_df.iloc[i, 0]).strip()}" for i in range(nrows)]
-
-        # Column headers only — multi-column.
-        # First column values serve as informal row identifiers.
-        if has_col_headers:
-            table_df.loc[-1] = list(table_df.columns)  # type: ignore[call-overload]
-            table_df.index = table_df.index + 1
-            table_df = table_df.sort_index()
-
-            rows = [str(v).strip() for v in table_df.iloc[:, 0]]
-            cols = [str(v).strip() for v in table_df.iloc[0, :]]
-
-            nrows, ncols = table_df.shape
-
-            return [
-                f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
-                for i in range(1, nrows)
-                for j in range(1, ncols)
-            ]
-
-        # Row headers only — no column names available.
+        # Extract headers safely
+        row_headers: Optional[list[str]] = None
         if has_row_headers:
-            rows = [str(v).strip() for v in table_df.iloc[:, 0]]
-            return [
-                f"{rows[i]}, Column {j} = {str(table_df.iloc[i, j]).strip()}"
-                for i in range(nrows)
-                for j in range(1, ncols)
-            ]
+            row_headers = [str(v).strip() for v in table_data_df.iloc[:, 0]]
 
-        # No headers at all — positional notation.
-        return [f"Row {i}, Column {j} = {str(table_df.iloc[i, j]).strip()}" for i in range(nrows) for j in range(ncols)]
+        col_headers: Optional[list[str]] = None
+        data_start_row = 0
+
+        if has_col_headers:
+            if isinstance(table_data_df.columns, pd.RangeIndex) and nrows > 0:
+                # Some exporters keep the header row in the table body when
+                # DataFrame columns are still a RangeIndex.
+                col_headers = [str(v).strip() for v in table_data_df.iloc[0, :]]
+                data_start_row = 1
+            else:
+                col_headers = [str(c).strip() for c in table_data_df.columns]
+
+        # Label helpers
+        def get_row_label(i: int) -> str:
+            if row_headers:
+                return row_headers[i] or f"row_{i}"
+            return f"row_{i}"
+
+        def get_col_label(j: int) -> str:
+            if col_headers:
+                return col_headers[j] or f"col_{j}"
+            return f"col_{j}"
+
+        triplets: list[str] = []
+
+        # For single-column tables, emit "column = value" only when a real
+        # column header is detected; otherwise fall back to generic triplets.
+        if ncols == 1 and nrows > 0 and has_col_headers and not has_row_headers:
+            col_name = col_headers[0] if col_headers else "col_0"
+            col_name = col_name or "col_0"
+            # Header is sourced from DataFrame columns, so all rows are values.
+            for value in table_data_df.iloc[:, 0].to_list():
+                if pd.isna(value) or str(value).strip() == "":
+                    continue
+                triplets.append(f"{col_name} = {str(value).strip()}")
+            if triplets:
+                return triplets
+
+        # Main extraction loop
+        for i in range(data_start_row, nrows):
+            for j in range(ncols):
+                # Skip header cells themselves
+                if has_row_headers and j == 0:
+                    continue
+                value = table_data_df.iloc[i, j]
+
+                # Skip empty / NaN cells (important for RAG quality)
+                if pd.isna(value) or str(value).strip() == "":
+                    continue
+
+                row_label = get_row_label(i)
+                col_label = get_col_label(j)
+
+                triplets.append(f"{row_label}, {col_label} = {str(value).strip()}")
+
+        return triplets
 
 
 class ChunkingDocSerializer(MarkdownDocSerializer):
