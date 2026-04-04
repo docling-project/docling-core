@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Iterator
 from typing import Annotated, Any, Optional, Union
 
@@ -115,15 +116,12 @@ class TripletTableSerializer(BaseTableSerializer):
         *,
         has_row_headers: bool,
         has_col_headers: bool,
+        depth: int = 0,
+        max_depth: int = 3,
     ) -> list[str]:
         """
         Convert table into triplets of form:
             (row_label, col_label) = value
-
-        Guarantees:
-        - No mutation of input DataFrame
-        - Consistent schema across all cases
-        - No implicit structural assumptions
         """
 
         table_data_df = table_df.copy()
@@ -172,22 +170,61 @@ class TripletTableSerializer(BaseTableSerializer):
             if triplets:
                 return triplets
 
+        def is_empty_cell_value(cell_value: Any) -> bool:
+            # Avoid pd.isna(DataFrame) truth-value ambiguity for nested tables.
+            return pd.isna(cell_value) or str(cell_value).strip() == ""
+
+        def is_serialized_inner_table(cell_value: Any) -> bool:
+            if not isinstance(cell_value, str):
+                return False
+            return re.match(r"^\s*row_\d+,\s*col_\d+\s*=", cell_value) is not None
+
         # Main extraction loop
         for i in range(data_start_row, nrows):
             for j in range(ncols):
                 # Skip header cells themselves
                 if has_row_headers and j == 0:
                     continue
-                value = table_data_df.iloc[i, j]
-
-                # Skip empty / NaN cells (important for RAG quality)
-                if pd.isna(value) or str(value).strip() == "":
-                    continue
-
                 row_label = get_row_label(i)
                 col_label = get_col_label(j)
 
-                triplets.append(f"{row_label}, {col_label} = {str(value).strip()}")
+                cell_value = table_data_df.iloc[i, j]
+
+                # Nested table handling
+                if isinstance(cell_value, pd.DataFrame):
+                    if depth >= max_depth:
+                        continue
+
+                    nested_df = cell_value
+
+                    nested_has_col_headers = not isinstance(nested_df.columns, pd.RangeIndex) and any(
+                        str(c).strip() for c in nested_df.columns
+                    )
+                    nested_has_row_headers = False  # safe default
+
+                    nested_triplets = TripletTableSerializer._build_triplets(
+                        nested_df,
+                        has_row_headers=nested_has_row_headers,
+                        has_col_headers=nested_has_col_headers,
+                        depth=depth + 1,
+                        max_depth=max_depth,
+                    )
+
+                    for nt in nested_triplets:
+                        triplets.append(f"{row_label}, {col_label} -> {nt}")
+
+                    continue
+
+                if is_serialized_inner_table(cell_value):
+                    triplets.append(f"{row_label}, {col_label} -> {str(cell_value).strip()}")
+                    continue
+
+                # Skip empty / NaN scalar cells
+                if is_empty_cell_value(cell_value):
+                    continue
+
+                # Normal scalar cell
+                triplets.append(f"{row_label}, {col_label} = {str(cell_value).strip()}")
 
         return triplets
 

@@ -1,7 +1,7 @@
 {
     "root": [
         {
-            "text": "row_0, col_0 = cell 0,0. row_0, col_1 = cell 0,1. row_1, col_0 = cell 1,0. row_1, col_1 = <em><p>text in italic</p></em>. row_2, col_0 = <ul>\n<li>list item 1</li>\n<li>list item 2</li>\n</ul>. row_2, col_1 = cell 2,1. row_3, col_0 = cell 3,0. row_3, col_1 = row_0, col_0 = inner cell 0,0. row_0, col_1 = inner cell 0,1. row_0, col_2 = inner cell 0,2. row_1, col_0 = inner cell 1,0. row_1, col_1 = inner cell 1,1. row_1, col_2 = inner cell 1,2. row_4, col_0 = <p>Some text in a generic group.</p>\n<p>More text in the group.</p>. row_4, col_1 = cell 4,1",
+            "text": "row_0, col_0 = cell 0,0. row_0, col_1 = cell 0,1. row_1, col_0 = cell 1,0. row_1, col_1 = <em><p>text in italic</p></em>. row_2, col_0 = <ul>\n<li>list item 1</li>\n<li>list item 2</li>\n</ul>. row_2, col_1 = cell 2,1. row_3, col_0 = cell 3,0. row_3, col_1 -> row_0, col_0 = inner cell 0,0. row_0, col_1 = inner cell 0,1. row_0, col_2 = inner cell 0,2. row_1, col_0 = inner cell 1,0. row_1, col_1 = inner cell 1,1. row_1, col_2 = inner cell 1,2. row_4, col_0 = <p>Some text in a generic group.</p>\n<p>More text in the group.</p>. row_4, col_1 = cell 4,1",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",

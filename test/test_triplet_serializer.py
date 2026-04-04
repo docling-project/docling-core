@@ -204,4 +204,4 @@ def test_triplet_nested_table_in_cell():
     )
 
     text = _serialize(doc, outer)
-    assert text == "row_0, col_0 = plain. row_0, col_1 = row_0, col_0 = x. row_0, col_1 = y"
+    assert text == "row_0, col_0 = plain. row_0, col_1 -> row_0, col_0 = x. row_0, col_1 = y"
