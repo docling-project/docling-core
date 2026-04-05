@@ -13,13 +13,13 @@ from docling_core.types.doc.document import (
 
 # Mock footnotes for pre-serialization
 numericFtnMock = "1 Note about data"
-wordFtnMock = "ID Note about data"
+wordFtnMock = "ID Another note "
 idOnlyFtnMock = "ID"
 
 # Mock footnotes for post-serialization
-numericFtnSerialized = "[^1]: Note about data\n"
-wordFtnSerialized = "[^ID]: Note about data\n"
-idOnlyFtnSerialized = "[^ID]:\n"
+numericFtnSerialized = "[^1]: Note about data"
+wordFtnSerialized = "\n[^ID]: Another note"
+idOnlyFtnSerialized = "\n[^ID]:"
 
 
 def test_table_with_footnotes_markdown():

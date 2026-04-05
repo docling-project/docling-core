@@ -872,13 +872,15 @@ class MarkdownDocSerializer(DocSerializer):
                     parts = ftn.text.split(" ", 1)
 
                     if len(parts) == 2:
-                        formatted_text = f"[^{parts[0]}]: {parts[1]}\n"
+                        # If footnote has a description
+                        formatted_text = f"[^{parts[0]}]: {parts[1]}"
                     else:
-                        formatted_text = f"[^{parts[0]}]:\n"
+                        # If footnote has no description
+                        formatted_text = f"[^{parts[0]}]:"
 
                     results.append(create_ser_result(text=formatted_text, span_source=ftn))
 
-            text_res = "".join([r.text for r in results])
+            text_res = "\n".join([r.text for r in results])
 
         else:
             text_res = ""
