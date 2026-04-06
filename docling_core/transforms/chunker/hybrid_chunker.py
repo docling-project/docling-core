@@ -145,7 +145,7 @@ class HybridChunker(BaseChunker):
         counts = []
         for doc_item in doc_items:
             text = doc_serializer.serialize(item=doc_item).text
-            if text and not isinstance(doc_item, (TitleItem, SectionHeaderItem)):
+            if text and not isinstance(doc_item, TitleItem | SectionHeaderItem):
                 counts.append(self.tokenizer.count_tokens(text=text))
             else:
                 counts.append(0)
