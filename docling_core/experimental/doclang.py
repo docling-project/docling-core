@@ -1748,7 +1748,9 @@ class DoclangPictureSerializer(BasePictureSerializer):
                 uri = f"data:image/png;base64,{imgb64}"
 
             if uri:
-                body += _wrap(text=uri, wrap_tag=DoclangToken.URI.value)
+                # Apply CDATA escaping to URI if needed
+                uri_text = _escape_text(uri, params)
+                body += _wrap(text=uri_text, wrap_tag=DoclangToken.URI.value)
 
             is_chart = self._picture_is_chart(item)
             if ((not is_chart) and ContentType.PICTURE in params.content_types) or (
@@ -2384,7 +2386,9 @@ class DoclangDocSerializer(DocSerializer):
           [text with optional formatting]
         </hyperlink>
         """
-        uri_part = _wrap(text=str(hyperlink), wrap_tag=DoclangToken.URI.value)
+        # Apply CDATA escaping to URI if needed
+        uri_text = _escape_text(str(hyperlink), self.params)
+        uri_part = _wrap(text=uri_text, wrap_tag=DoclangToken.URI.value)
         content = f"{uri_part}{text}"
         return _wrap(text=content, wrap_tag=DoclangToken.HYPERLINK.value)
 
