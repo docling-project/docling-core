@@ -1,3 +1,10 @@
+## [v2.72.0](https://github.com/docling-project/docling-core/releases/tag/v2.72.0) - 2026-04-07
+
+### Feature
+
+* **Doclang:** Add newline handling ([#575](https://github.com/docling-project/docling-core/issues/575)) ([`00c3bb2`](https://github.com/docling-project/docling-core/commit/00c3bb223d2cd6486ecef59b5f616ae6091d6b0c))
+* Add transforms in the hierarchy ([#572](https://github.com/docling-project/docling-core/issues/572)) ([`f20068d`](https://github.com/docling-project/docling-core/commit/f20068db9183c33235ffdfa32665dc3d829f8f95))
+
 ## [v2.71.0](https://github.com/docling-project/docling-core/releases/tag/v2.71.0) - 2026-03-30
 
 ### Feature
