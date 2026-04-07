@@ -96,15 +96,21 @@ Affiliation 2</content>
     <strikethrough>strikethrough</strikethrough>
     <subscript>subscript</subscript>
     <superscript>superscript</superscript>
-hyperlink
+    <hyperlink>
+      <uri>.</uri>
+      hyperlink
+    </hyperlink>
 <![CDATA[&]]>    
-    <strikethrough>
-      <underline>
-        <italic>
-          <bold>everything at the same time.</bold>
-        </italic>
-      </underline>
-    </strikethrough>
+    <hyperlink>
+      <uri>https://github.com/DS4SD/docling</uri>
+      <strikethrough>
+        <underline>
+          <italic>
+            <bold>everything at the same time.</bold>
+          </italic>
+        </underline>
+      </strikethrough>
+    </hyperlink>
   </text>
   <list ordered="true">
     <list_text>Item 1 in A</list_text>

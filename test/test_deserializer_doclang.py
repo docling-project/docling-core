@@ -1286,3 +1286,65 @@ bar</content>
     exp_doclang_str = doc.export_to_doclang()
 
     assert doclang_str.strip() == exp_doclang_str.strip()
+
+
+
+def test_roundtrip_hyperlink():
+    """Test roundtrip serialization/deserialization of hyperlinks with formatting."""
+    from pydantic import AnyUrl
+    from docling_core.types.doc import Formatting
+
+    doc = DoclingDocument(name="t")
+
+    # Simple hyperlink
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="simple link",
+        hyperlink=AnyUrl("https://example.com")
+    )
+
+    # Hyperlink with bold text
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bold link",
+        hyperlink=AnyUrl("https://example.com/bold"),
+        formatting=Formatting(bold=True)
+    )
+
+    # Hyperlink with italic and bold text
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="styled link",
+        hyperlink=AnyUrl("https://example.com/styled"),
+        formatting=Formatting(bold=True, italic=True)
+    )
+
+    dt = _serialize(doc)
+    doc2 = _deserialize(dt)
+    dt2 = _serialize(doc2)
+
+    exp_dt = """
+<doclang version="1.0.0">
+  <text>
+    <hyperlink>
+      <uri>https://example.com/</uri>
+      simple link
+    </hyperlink>
+  </text>
+  <text>
+    <hyperlink>
+      <uri>https://example.com/bold</uri>
+      <bold>bold link</bold>
+    </hyperlink>
+  </text>
+  <text>
+    <hyperlink>
+      <uri>https://example.com/styled</uri>
+      <italic>
+        <bold>styled link</bold>
+      </italic>
+    </hyperlink>
+  </text>
+</doclang>
+    """
+    assert dt2.strip() == exp_dt.strip()

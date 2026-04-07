@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 import pytest
+from pydantic import AnyUrl
 
 from docling_core.experimental.doclang import (
     ContentType,
@@ -33,6 +34,7 @@ from docling_core.types.doc import (
     SummaryMetaField,
     TableData,
     TabularChartMetaField,
+    TextItem,
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import ContentLayer, GraphCell, GraphData, GraphLink, ImageRef, RichTableCell, TableCell
@@ -1539,4 +1541,42 @@ from docling_core.experimental.doclang import (
 
     ser_txt = doc.export_to_doclang()
     exp_file = Path("./test/data/doc/newline_to_br.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+
+def test_hyperlink():
+    """Test serialization of hyperlinks with various formatting combinations."""
+    doc = DoclingDocument(name="test")
+
+    # Simple hyperlink
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="simple link",
+        hyperlink=AnyUrl("https://example.com")
+    )
+
+    # Hyperlink with bold text
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bold link",
+        hyperlink=AnyUrl("https://example.com/bold"),
+        formatting=Formatting(bold=True)
+    )
+
+    # Hyperlink with italic and bold text
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="styled link",
+        hyperlink=AnyUrl("https://example.com/styled"),
+        formatting=Formatting(bold=True, italic=True)
+    )
+
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(),
+    )
+    ser_res = ser.serialize()
+    ser_txt = ser_res.text
+    exp_file = Path("./test/data/doc/hyperlink.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)

@@ -1,0 +1,22 @@
+<doclang version="1.0.0">
+  <text>
+    <hyperlink>
+      <uri>https://example.com/</uri>
+      simple link
+    </hyperlink>
+  </text>
+  <text>
+    <hyperlink>
+      <uri>https://example.com/bold</uri>
+      <bold>bold link</bold>
+    </hyperlink>
+  </text>
+  <text>
+    <hyperlink>
+      <uri>https://example.com/styled</uri>
+      <italic>
+        <bold>styled link</bold>
+      </italic>
+    </hyperlink>
+  </text>
+</doclang>
