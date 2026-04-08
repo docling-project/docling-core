@@ -88,10 +88,6 @@ def _default_outline_node(item: NodeItem) -> str:
     return f"\\[ref={item.self_ref}\\]"
 
 
-def _default_summary(summary: str) -> str:
-    return summary
-
-
 def _serialize_text_item(item: TextItem, doc: DoclingDocument, **kwargs: Any) -> str:
     """Serialize a text item using Markdown serializers.
 
@@ -286,7 +282,7 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
 
     # Always include summary (metadata) if available
     if item.meta and item.meta.summary:
-        text_parts.append(_default_summary(item.meta.summary.text))
+        text_parts.append(item.meta.summary.text)
 
     return "\n".join(text_parts).strip()
 
@@ -479,8 +475,6 @@ class _OutlineKeyValueSerializer(BaseKeyValueSerializer):
         if DocItemLabel.KEY_VALUE_REGION not in params.labels:
             return create_ser_result()
 
-        print("label: ", item.label)
-
         text = _default_text(item=item, doc=doc, **kwargs)
         return create_ser_result(text=text, span_source=item)
 
@@ -595,27 +589,6 @@ class OutlineDocSerializer(MarkdownDocSerializer):
     params: OutlineParams = OutlineParams()
 
     @override
-    def serialize(
-        self,
-        *,
-        item: NodeItem | None = None,
-        list_level: int = 0,
-        is_inline_scope: bool = False,
-        visited: set[str] | None = None,
-        **kwargs: Any,
-    ) -> SerializationResult:
-        """Serialize a given node."""
-
-        # Always use parent implementation - it will call get_parts which handles filtering
-        return super().serialize(
-            item=item,
-            list_level=list_level,
-            is_inline_scope=is_inline_scope,
-            visited=visited,
-            **kwargs,
-        )
-
-    @override
     def serialize_doc(
         self,
         *,
@@ -702,7 +675,7 @@ class OutlineDocSerializer(MarkdownDocSerializer):
                     body_text_parts.append(f"# {self.doc.name}")
                 # Add reference with two trailing spaces for Markdown line break
                 body_text_parts.append(f"\\[ref={self.doc.body.self_ref}\\]  ")
-                body_text_parts.append(_default_summary(self.doc.body.meta.summary.text))
+                body_text_parts.append(self.doc.body.meta.summary.text)
                 body_text = "\n".join(body_text_parts).strip()
                 all_parts.append(create_ser_result(text=body_text))
 

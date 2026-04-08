@@ -55,7 +55,8 @@ def test_outline_serializer_mode_toc_custom():
     exp_path = doc_path.with_suffix(".custom.gt.md")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
-    params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, labels={DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER, DocItemLabel.TABLE})
+    params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, labels={
+        DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER, DocItemLabel.TABLE})
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
 
