@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from docling_core.experimental.serializer.outline import (
     OutlineDocSerializer,
     OutlineFormat,
@@ -10,6 +12,7 @@ from docling_core.experimental.serializer.outline import (
     _format_indented_text_line,
 )
 from docling_core.types.doc import DoclingDocument
+from docling_core.types.doc.document import RefItem
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_utils import assert_or_generate_ground_truth
@@ -52,8 +55,6 @@ def test_outline_serializer_mode_toc_custom():
     exp_path = doc_path.with_suffix(".custom.gt.md")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
-
-    # params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS)
     params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, labels={DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER, DocItemLabel.TABLE})
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
@@ -336,9 +337,8 @@ def test_outline_serializer_itxt_format_without_non_meta():
     assert len(lines) > 0
 
     # Check that no titles are present when include_non_meta=False
-    # (titles appear in brackets like [Title Text])
     for line in lines:
-        if line.strip():  # Skip empty lines
+        if line.strip():
             assert "[ref=" in line, "Each line should have a ref"
             # Count brackets - should have ref brackets but no title brackets when include_non_meta=False
             # Format without title: [ref=...] summary
@@ -408,3 +408,184 @@ def test_format_indented_text_line():
     result = _format_indented_text_line(item_indent, indent_size=3, max_summary_length=100)
     assert result.startswith(" " * 9)  # 3 spaces * level 3
     assert "[ref=#/texts/4] [Nested] Nested content" in result
+
+@pytest.mark.filterwarnings("ignore:Pydantic serializer warnings:UserWarning")
+def test_outline_serialization_from_item():
+    """Test the outline serialization starting from different node item."""
+
+    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    doc = DoclingDocument.load_from_json(filename=doc_path)
+    params = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.JSON
+    )
+
+    ser = OutlineDocSerializer(doc=doc, params=params)
+    doc_out = ser.serialize()
+    root_data = json.loads(doc_out.text)
+
+    # Test 1: Serialize from a nested item using start_item parameter
+    nested_item = RefItem(cref="#/texts/25").resolve(doc)
+    params_with_start = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.JSON,
+        start_item=nested_item
+    )
+    ser_nested = OutlineDocSerializer(doc=doc, params=params_with_start)
+    nested_out = ser_nested.serialize()
+
+    # nested_out should be a properly formatted JSON array
+    assert nested_out.text, "Nested serialization should produce output"
+    nested_data = json.loads(nested_out.text)
+    assert isinstance(nested_data, list), "Nested output should be a JSON array"
+
+    # The nested output should be a subset of the root output
+    assert len(nested_data) <= len(root_data), "Nested outline should have fewer or equal items than root"
+    assert len(nested_data) > 0, "Nested outline should have at least one item"
+
+    # Check that the nested item is included
+    nested_ref = nested_item.self_ref
+    assert any(item_data["ref"] == nested_ref for item_data in nested_data), \
+        f"Nested item {nested_ref} should be in the output"
+
+    # Verify that all items in nested_data are either the nested_item or its descendants
+    # Expected: #/texts/25 (level 2) and its 7 children (all level 3)
+    assert len(nested_data) == 8, f"Expected 8 items (1 parent + 7 children), got {len(nested_data)}"
+
+    # First item should be the starting item
+    assert nested_data[0]["ref"] == "#/texts/25"
+    assert nested_data[0]["level"] == 2
+
+    # All other items should be level 3 (children of level 2)
+    for item_data in nested_data[1:]:
+        assert item_data["level"] == 3, f"Child item {item_data['ref']} should be level 3"
+
+    # Test 2: Serialize with maximum level
+    params_with_max_level = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.JSON,
+        max_level=2
+    )
+    ser_max_level = OutlineDocSerializer(doc=doc, params=params_with_max_level)
+    max_level_out = ser_max_level.serialize()
+    max_level_data = json.loads(max_level_out.text)
+
+    # The max_level output should be a subset of the root output
+    assert len(max_level_data) <= len(root_data), "Max level outline should have fewer or equal items than root"
+
+    # Check that all section headers have level <= 2
+    for item_data in max_level_data:
+        if "level" in item_data and item_data["item"] == "section_header":
+            assert item_data["level"] <= 2, f"Section header level {item_data['level']} should be <= 2"
+
+    # Test 3: Combine start_item and max_level
+    # When start_item is level 2 and max_level is 2, we should get the item and its level-3 children excluded
+    params_combined = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.JSON,
+        start_item=nested_item,
+        max_level=2
+    )
+    ser_combined = OutlineDocSerializer(doc=doc, params=params_combined)
+    combined_out = ser_combined.serialize()
+    combined_data = json.loads(combined_out.text)
+    assert isinstance(combined_data, list), "Combined output should be a JSON array"
+
+    # Should only include the nested item itself (level 2), not its level-3 children
+    assert len(combined_data) == 1, f"Expected 1 item (only level 2, no level 3 children), got {len(combined_data)}"
+    assert combined_data[0]["ref"] == "#/texts/25"
+    assert combined_data[0]["level"] == 2
+
+    # Test 4: Test with OUTLINE mode (includes all items, not just headings)
+    params_outline_max = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.OUTLINE,
+        format=OutlineFormat.JSON,
+        max_level=2
+    )
+    ser_outline_max = OutlineDocSerializer(doc=doc, params=params_outline_max)
+    outline_max_out = ser_outline_max.serialize()
+    outline_max_data = json.loads(outline_max_out.text)
+
+    # In OUTLINE mode with max_level, we should still get non-heading items
+    # but only those that are children of headings with level <= max_level
+    has_non_heading = any(item["item"] not in ["section_header", "title"] for item in outline_max_data)
+    assert has_non_heading, "OUTLINE mode should include non-heading items"
+
+    # Test 5: Test with Markdown format
+    params_md_max = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.MARKDOWN,
+        max_level=2
+    )
+    ser_md_max = OutlineDocSerializer(doc=doc, params=params_md_max)
+    md_max_out = ser_md_max.serialize()
+    assert isinstance(md_max_out.text, str)
+    assert "# 2408.09869v5\n\\[ref=#/body\\]" in md_max_out.text
+    assert "## Docling Technical Report\n\\[ref=#/texts/1\\]" in md_max_out.text
+    assert "### 4 Performance\n\\[ref=#/texts/66\\]" in md_max_out.text
+    assert "### References\n\\[ref=#/texts/78\\]" in md_max_out.text
+    assert "#### OCR\n\\[ref=#/texts/58\\]" not in md_max_out.text
+
+    params_md_start = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.MARKDOWN,
+        start_item=nested_item
+    )
+    ser_md_start = OutlineDocSerializer(doc=doc, params=params_md_start)
+    md_start_out = ser_md_start.serialize()
+    assert md_start_out.text.startswith("### 3 Processing pipeline\n\\[ref=#/texts/25\\]")
+    # check parents are not included
+    assert "\\[ref=#/texts/19\\]" not in md_start_out.text
+    assert "\\[ref=#/texts/1\\]" not in md_start_out.text
+    assert "\\[ref=#/body\\]" not in md_start_out.text
+    # check siblings are not included
+    assert "\\[ref=#/texts/19\\]" not in md_start_out.text
+    assert "\\[ref=#/texts/66\\]" not in md_start_out.text
+
+    # Test 6: Test with ITXT format
+    params_itxt_max = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.ITXT,
+        max_level=2
+    )
+    ser_itxt_max = OutlineDocSerializer(doc=doc, params=params_itxt_max)
+    itxt_max_out = ser_itxt_max.serialize()
+    assert isinstance(itxt_max_out.text, str)
+    assert "[ref=#/body]" in itxt_max_out.text
+    assert "[ref=#/texts/1]" in itxt_max_out.text
+    assert "[ref=#/texts/66]" in itxt_max_out.text
+    assert "[ref=#/texts/78]" in itxt_max_out.text
+    assert "[ref=#/texts/58]" not in itxt_max_out.text
+
+    params_itxt_start = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.ITXT,
+        start_item=nested_item
+    )
+    ser_itxt_start = OutlineDocSerializer(doc=doc, params=params_itxt_start)
+    itxt_start_out = ser_itxt_start.serialize()
+    assert isinstance(itxt_start_out.text, str)
+    assert len(itxt_start_out.text) > 0
+    # check parents are not included
+    assert "[ref=#/texts/19]" not in itxt_start_out.text
+    assert "[ref=#/texts/1]" not in itxt_start_out.text
+    assert "[ref=#/body]" not in itxt_start_out.text
+    # check siblings are not included
+    assert "[ref=#/texts/19]" not in itxt_start_out.text
+    assert "[ref=#/texts/66]" not in itxt_start_out.text
+
+    # Check that indentation is normalized (first line should have no leading spaces)
+    itxt_lines = itxt_start_out.text.split("\n")
+    assert len(itxt_lines) > 0, "ITXT output should have at least one line"
+    first_line = itxt_lines[0]
+    assert not first_line.startswith(" "), f"First line should have no leading spaces, got: '{first_line}'"
+    assert first_line.startswith("[ref=#/texts/25]"), "First line should be the start_item"

@@ -5,10 +5,11 @@ document outline or a table of contents derived from a Docling document.
 """
 
 import json
+import re
 from enum import Enum
 from typing import Annotated, Any
 
-from pydantic import Field, TypeAdapter, model_validator
+from pydantic import ConfigDict, Field, TypeAdapter, model_validator
 from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
@@ -138,6 +139,93 @@ def _format_indented_text_line(item: OutlineItemData, indent_size: int = 2, max_
     return indent + " ".join(parts)
 
 
+def _extract_ref_from_markdown(text: str) -> tuple[str | None, int | None]:
+    """Extract reference and level from Markdown outline text.
+
+    Args:
+        text: Markdown text containing a reference like \\[ref=#/texts/1\\]
+
+    Returns:
+        Tuple of (reference, level) where level is extracted from heading markers
+    """
+    # The text contains \\[ref=...\\] (escaped brackets in Markdown)
+    # Match pattern: \[ref=#/path/to/item\]
+    ref_pattern = r"\\+\[ref=(#/[\w/-]+)\\+\]"
+    ref_match = re.search(ref_pattern, text)
+    ref = ref_match.group(1) if ref_match else None
+
+    # Extract level from heading markers (# for level 1, ## for level 2, etc.)
+    # Title is represented as # (level 1), section headers as ## (level 1), ### (level 2), etc.
+    level = None
+    lines = text.split("\n")
+    if lines:
+        first_line = lines[0].strip()
+        if first_line.startswith("#"):
+            # Count the number of # characters
+            hash_count = len(first_line) - len(first_line.lstrip("#"))
+            if hash_count == 1:
+                # Single # is the title (level 1)
+                level = 1
+            else:
+                # Multiple ## represent section headers (level = hash_count - 1)
+                level = hash_count - 1
+
+    return ref, level
+
+
+def _extract_item_info_from_part(part: SerializationResult) -> tuple[str | None, int | None, str | None]:
+    """Extract item reference, level, and type from a serialization part.
+
+    Args:
+        part: A serialization result part
+
+    Returns:
+        Tuple of (item_ref, item_level, item_type)
+    """
+    if not part.text:
+        return None, None, None
+
+    item_ref = None
+    item_level = None
+    item_type = None
+
+    # First try JSON parsing (for JSON/ITXT formats)
+    try:
+        item_data = json.loads(part.text)
+        item_ref = item_data.get("ref")
+        item_level = item_data.get("level")
+        item_type = item_data.get("item")
+        return item_ref, item_level, item_type
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Not JSON, try to get from spans (for Markdown format)
+    if part.spans and len(part.spans) > 0:
+        first_span = part.spans[0]
+        item_ref = first_span.item.self_ref
+        # Get level and type if it's a section header or title
+        if isinstance(first_span.item, SectionHeaderItem):
+            item_level = first_span.item.level
+            item_type = "section_header"
+        elif isinstance(first_span.item, TitleItem):
+            item_level = 1
+            item_type = "title"
+        elif isinstance(first_span.item, DocItem | GroupItem):
+            item_type = first_span.item.label.value if hasattr(first_span.item, "label") else None
+    else:
+        # Spans are empty, extract from Markdown text
+        item_ref, extracted_level = _extract_ref_from_markdown(part.text)
+        if extracted_level is not None:
+            item_level = extracted_level
+            # Determine item type based on level
+            if extracted_level == 1:
+                item_type = "title"
+            else:
+                item_type = "section_header"
+
+    return item_ref, item_level, item_type
+
+
 def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     if isinstance(item, ListItem):
         return ""
@@ -184,7 +272,6 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
         # Return as JSON string (will be parsed and reassembled in serialize_doc)
         return json.dumps(data, ensure_ascii=False)
 
-    # For Markdown format, build text parts with newlines
     text_parts = []
 
     # Only include prepend (actual text content) if include_non_meta is True
@@ -194,7 +281,6 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
         else:
             text_parts.append(_default_prepend(item))
 
-    # Always include reference (structure).
     # Add two trailing spaces for Markdown line break.
     text_parts.append(_default_outline_node(item) + "  ")
 
@@ -252,6 +338,8 @@ class OutlineParams(MarkdownParams):
     Inherits MarkdownParams to retain Markdown behaviors (escaping, links, etc.).
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     mode: Annotated[
         OutlineMode,
         Field(
@@ -280,6 +368,28 @@ class OutlineParams(MarkdownParams):
             ge=10,
         ),
     ] = 100
+    start_item: Annotated[
+        NodeItem | None,
+        Field(
+            description=(
+                "Optional starting node item for the outline. "
+                "If provided, only this item and its children (recursively) will be included. "
+                "If None (default), the outline starts from the document root (#/body)."
+            ),
+        ),
+    ] = None
+    max_level: Annotated[
+        int | None,
+        Field(
+            description=(
+                "Optional maximum heading level to include in the outline. "
+                "If provided, only headings with level <= max_level will be included "
+                "(along with their children). Level 0 represents the document root. "
+                "If None (default), all heading levels are included."
+            ),
+            ge=0,
+        ),
+    ] = None
 
     @model_validator(mode="after")
     def adjust_allowed_labels(self) -> Self:
@@ -481,6 +591,27 @@ class OutlineDocSerializer(MarkdownDocSerializer):
     params: OutlineParams = OutlineParams()
 
     @override
+    def serialize(
+        self,
+        *,
+        item: NodeItem | None = None,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: set[str] | None = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a given node."""
+
+        # Always use parent implementation - it will call get_parts which handles filtering
+        return super().serialize(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=is_inline_scope,
+            visited=visited,
+            **kwargs,
+        )
+
+    @override
     def serialize_doc(
         self,
         *,
@@ -496,11 +627,16 @@ class OutlineDocSerializer(MarkdownDocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
         OutlineT = TypeAdapter(list[OutlineItemData])
 
+        # Check if we're serializing from body by looking at kwargs
+        # If 'from_non_body' is set, don't add body-level summary
+        from_non_body = kwargs.get("_from_non_body", False)
+
         if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
             outline: list[OutlineItemData] = []
 
-            # Add body-level summary if present
-            if self.doc.body.meta and self.doc.body.meta.summary:
+            # Add body-level summary if present and we're serializing from body
+            # Don't add it if start_item is specified (we're filtering to a subtree)
+            if not from_non_body and not params.start_item and self.doc.body.meta and self.doc.body.meta.summary:
                 body_data: dict[str, Any] = {
                     "ref": self.doc.body.self_ref,
                     "item": DocItemLabel.SECTION_HEADER,
@@ -518,11 +654,33 @@ class OutlineDocSerializer(MarkdownDocSerializer):
             # Add all the other parts
             for part in parts:
                 if part.text:
-                    outline.append(OutlineItemData.model_validate_json(part.text))
+                    # Check if the part is already a JSON array (from recursive serialize_doc call)
+                    try:
+                        parsed = json.loads(part.text)
+                        if isinstance(parsed, list):
+                            # It's already a list of OutlineItemData, extend our outline
+                            for item_dict in parsed:
+                                outline.append(OutlineItemData(**item_dict))
+                        else:
+                            # It's a single OutlineItemData object
+                            outline.append(OutlineItemData.model_validate_json(part.text))
+                    except (json.JSONDecodeError, ValueError):
+                        # Not JSON, skip it
+                        pass
 
             if params.format == OutlineFormat.JSON:
                 text_res: str = OutlineT.dump_json(outline, exclude_none=True, ensure_ascii=False, indent=2).decode()
             else:
+                # For ITXT format, normalize levels when start_item is specified
+                # so that the starting item has level 0 (no indentation)
+                if params.start_item and outline:
+                    # Find the minimum level in the outline
+                    min_level = min(item.level if item.level is not None else 0 for item in outline)
+                    # Adjust all levels by subtracting the minimum
+                    for item in outline:
+                        if item.level is not None:
+                            item.level = item.level - min_level
+
                 lines = [
                     _format_indented_text_line(item, max_summary_length=params.itxt_max_summary_length)
                     for item in outline
@@ -533,8 +691,7 @@ class OutlineDocSerializer(MarkdownDocSerializer):
         else:
             all_parts = []
 
-            # Add body-level summary if present
-            if self.doc.body.meta and self.doc.body.meta.summary:
+            if not from_non_body and not params.start_item and self.doc.body.meta and self.doc.body.meta.summary:
                 body_text_parts = []
 
                 if params.include_non_meta:
@@ -549,6 +706,92 @@ class OutlineDocSerializer(MarkdownDocSerializer):
 
             # Use default Markdown behavior with all parts
             return super().serialize_doc(parts=all_parts, **kwargs)
+
+    def _filter_by_start_item(
+        self, parts: list[SerializationResult], start_item: NodeItem
+    ) -> list[SerializationResult]:
+        """Filter parts to include only the start item and its descendants.
+
+        Args:
+            parts: List of serialization parts to filter
+            start_item: The item to start from
+
+        Returns:
+            Filtered list of parts
+        """
+        filtered_parts = []
+        found_start = False
+        start_level = None
+
+        # Get the level of the start item if it's a section header
+        if isinstance(start_item, SectionHeaderItem):
+            start_level = start_item.level
+
+        for part in parts:
+            item_ref, item_level, _ = _extract_item_info_from_part(part)
+
+            # Skip if we couldn't extract item_ref
+            if item_ref is None:
+                continue
+
+            # Check if this is the start item
+            if not found_start:
+                if item_ref == start_item.self_ref:
+                    found_start = True
+                    filtered_parts.append(part)
+                continue
+
+            # After finding start, include descendants based on level
+            if start_level is not None and item_level is not None:
+                if item_level <= start_level:
+                    break
+                filtered_parts.append(part)
+            else:
+                filtered_parts.append(part)
+
+        return filtered_parts
+
+    def _filter_by_max_level(self, parts: list[SerializationResult], max_level: int) -> list[SerializationResult]:
+        """Filter parts to include only headings up to max_level and their children.
+
+        Args:
+            parts: List of serialization parts to filter
+            max_level: Maximum heading level to include
+
+        Returns:
+            Filtered list of parts
+        """
+        filtered_parts = []
+        include_children = True  # Track whether to include children of current heading
+
+        for part in parts:
+            _, item_level, item_type = _extract_item_info_from_part(part)
+
+            # Skip if we couldn't extract item_type
+            if item_type is None:
+                continue
+
+            # Check if it's a heading item
+            if item_type == "section_header" and item_level is not None:
+                include_children = item_level <= max_level
+
+                # Include this heading if it's within max_level
+                if include_children:
+                    filtered_parts.append(part)
+            elif item_type == "title":
+                # Titles are always included if max_level >= 1
+                if max_level >= 1:
+                    filtered_parts.append(part)
+                    include_children = True
+                else:
+                    include_children = False
+            else:
+                # For non-heading items, include only if we're including children
+                # of the current heading
+                if include_children:
+                    filtered_parts.append(part)
+
+        return filtered_parts
 
     @override
     def get_parts(
@@ -566,9 +809,19 @@ class OutlineDocSerializer(MarkdownDocSerializer):
         Override to ensure outline items are always processed regardless of
         include_non_meta setting. The _default_text function will handle
         what content to include based on include_non_meta.
+
+        Also handles filtering based on start_item and max_level parameters.
         """
+        # Get start_item BEFORE merge_with_patch to avoid serialization issues
+        start_item_filter = self.params.start_item
+
+        params = self.params.merge_with_patch(patch=kwargs)
+
         kwargs_with_meta = {**kwargs, "include_non_meta": True}
-        return super().get_parts(
+
+        # Always get parts from body (or the item parameter if provided)
+        # We'll filter for start_item afterwards
+        all_parts = super().get_parts(
             item=item,
             traverse_pictures=traverse_pictures,
             list_level=list_level,
@@ -576,3 +829,13 @@ class OutlineDocSerializer(MarkdownDocSerializer):
             visited=visited,
             **kwargs_with_meta,
         )
+
+        # Filter based on start_item if specified
+        if start_item_filter is not None:
+            all_parts = self._filter_by_start_item(all_parts, start_item_filter)
+
+        # Filter based on max_level if specified
+        if params.max_level is not None:
+            all_parts = self._filter_by_max_level(all_parts, params.max_level)
+
+        return all_parts
