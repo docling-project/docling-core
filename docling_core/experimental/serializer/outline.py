@@ -420,7 +420,7 @@ class _OutlineTextSerializer(BaseTextSerializer):
             doc_serializer.params.include_non_meta if isinstance(doc_serializer, MarkdownDocSerializer) else True
         )
         text = _default_text(item=item, doc=doc, include_non_meta=include_non_meta, **kwargs_copy)
-        return create_ser_result(text=text)
+        return create_ser_result(text=text, span_source=item)
 
 
 class _OutlineTableSerializer(BaseTableSerializer):
@@ -440,7 +440,7 @@ class _OutlineTableSerializer(BaseTableSerializer):
             return create_ser_result()
 
         text = _default_text(item=item, doc=doc, **kwargs)
-        return create_ser_result(text=text)
+        return create_ser_result(text=text, span_source=item)
 
 
 class _OutlinePictureSerializer(BasePictureSerializer):
@@ -460,7 +460,7 @@ class _OutlinePictureSerializer(BasePictureSerializer):
             return create_ser_result()
 
         text = _default_text(item=item, doc=doc, **kwargs)
-        return create_ser_result(text=text)
+        return create_ser_result(text=text, span_source=item)
 
 
 class _OutlineKeyValueSerializer(BaseKeyValueSerializer):
@@ -482,7 +482,7 @@ class _OutlineKeyValueSerializer(BaseKeyValueSerializer):
         print("label: ", item.label)
 
         text = _default_text(item=item, doc=doc, **kwargs)
-        return create_ser_result(text=text)
+        return create_ser_result(text=text, span_source=item)
 
 
 class _OutlineFormSerializer(BaseFormSerializer):
@@ -502,7 +502,7 @@ class _OutlineFormSerializer(BaseFormSerializer):
             return create_ser_result()
 
         text = _default_text(item=item, doc=doc, **kwargs)
-        return create_ser_result(text=text)
+        return create_ser_result(text=text, span_source=item)
 
 
 class _OutlineListSerializer(BaseListSerializer):
@@ -548,7 +548,11 @@ class _OutlineFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         text = _default_text(item=item, doc=doc, **kwargs)
-        return create_ser_result(text=text)
+
+        if isinstance(item, DocItem):
+            return create_ser_result(text=text, span_source=item)
+        else:
+            return create_ser_result(text=text)
 
 
 class _OutlineMetaSerializer(MarkdownMetaSerializer):

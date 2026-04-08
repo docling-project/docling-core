@@ -589,3 +589,128 @@ def test_outline_serialization_from_item():
     first_line = itxt_lines[0]
     assert not first_line.startswith(" "), f"First line should have no leading spaces, got: '{first_line}'"
     assert first_line.startswith("[ref=#/texts/25]"), "First line should be the start_item"
+
+
+
+@pytest.mark.filterwarnings("ignore:Pydantic serializer warnings:UserWarning")
+def test_outline_serialization_spans():
+    """Test that serialization results preserve spans for get_unique_doc_items()."""
+    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    doc = DoclingDocument.load_from_json(filename=doc_path)
+    
+    # Get a nested item to use as start_item
+    nested_item = RefItem(cref="#/texts/25").resolve(doc)
+    
+    # Test 1: JSON format with start_item
+    params_json = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.JSON,
+        start_item=nested_item
+    )
+    ser_json = OutlineDocSerializer(doc=doc, params=params_json)
+    result_json = ser_json.serialize()
+    
+    # Verify spans are present
+    assert len(result_json.spans) > 0, "JSON format should have spans"
+    
+    # Get unique doc items
+    doc_items_json = result_json.get_unique_doc_items()
+    assert len(doc_items_json) > 0, "Should have doc items from spans"
+    
+    # Verify the items match what's in the JSON output
+    json_data = json.loads(result_json.text)
+    json_refs = {item["ref"] for item in json_data}
+    span_refs = {item.self_ref for item in doc_items_json}
+    
+    # All items in JSON should have corresponding spans
+    assert json_refs == span_refs, f"JSON refs {json_refs} should match span refs {span_refs}"
+    
+    # Test 2: Markdown format with max_level
+    params_md = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.MARKDOWN,
+        max_level=2
+    )
+    ser_md = OutlineDocSerializer(doc=doc, params=params_md)
+    result_md = ser_md.serialize()
+    
+    # Verify spans are present
+    assert len(result_md.spans) > 0, "Markdown format should have spans"
+    
+    # Get unique doc items
+    doc_items_md = result_md.get_unique_doc_items()
+    assert len(doc_items_md) > 0, "Should have doc items from spans"
+    
+    # Verify items are in the markdown text
+    for item in doc_items_md:
+        assert f"\\[ref={item.self_ref}\\]" in result_md.text, \
+            f"Item {item.self_ref} should be in markdown text"
+    
+    # Test 3: ITXT format with start_item
+    params_itxt = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.ITXT,
+        start_item=nested_item
+    )
+    ser_itxt = OutlineDocSerializer(doc=doc, params=params_itxt)
+    result_itxt = ser_itxt.serialize()
+    
+    # Verify spans are present
+    assert len(result_itxt.spans) > 0, "ITXT format should have spans"
+    
+    # Get unique doc items
+    doc_items_itxt = result_itxt.get_unique_doc_items()
+    assert len(doc_items_itxt) > 0, "Should have doc items from spans"
+    
+    # Verify items are in the ITXT text
+    for item in doc_items_itxt:
+        assert f"[ref={item.self_ref}]" in result_itxt.text, \
+            f"Item {item.self_ref} should be in ITXT text"
+    
+    # Test 4: Verify filtering consistency across formats
+    # All three formats with the same start_item should have the same doc items
+    params_json_filtered = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.JSON,
+        start_item=nested_item
+    )
+    params_md_filtered = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.MARKDOWN,
+        start_item=nested_item
+    )
+    params_itxt_filtered = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        format=OutlineFormat.ITXT,
+        start_item=nested_item
+    )
+    
+    ser_json_f = OutlineDocSerializer(doc=doc, params=params_json_filtered)
+    ser_md_f = OutlineDocSerializer(doc=doc, params=params_md_filtered)
+    ser_itxt_f = OutlineDocSerializer(doc=doc, params=params_itxt_filtered)
+    
+    result_json_f = ser_json_f.serialize()
+    result_md_f = ser_md_f.serialize()
+    result_itxt_f = ser_itxt_f.serialize()
+    
+    items_json_f = result_json_f.get_unique_doc_items()
+    items_md_f = result_md_f.get_unique_doc_items()
+    items_itxt_f = result_itxt_f.get_unique_doc_items()
+    
+    refs_json_f = {item.self_ref for item in items_json_f}
+    refs_md_f = {item.self_ref for item in items_md_f}
+    refs_itxt_f = {item.self_ref for item in items_itxt_f}
+    
+    # All formats should have the same set of item references
+    assert refs_json_f == refs_md_f == refs_itxt_f, \
+        f"All formats should have same items: JSON={refs_json_f}, MD={refs_md_f}, ITXT={refs_itxt_f}"
+    
+    # Verify the expected items are present (nested_item and its 7 children)
+    assert len(items_json_f) == 8, f"Expected 8 items, got {len(items_json_f)}"
+    assert nested_item.self_ref in refs_json_f, "Start item should be included"
