@@ -50,7 +50,7 @@ Affiliation 2]]></content>
   <floating_group class="picture">
     <caption><![CDATA[This is the caption of figure 2.]]></caption>
     <picture>
-      <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
+      <uri><![CDATA[data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==]]></uri>
     </picture>
   </floating_group>
   <list ordered="false">
@@ -89,15 +89,20 @@ Affiliation 2]]></content>
     <strikethrough><![CDATA[strikethrough]]></strikethrough>
     <subscript><![CDATA[subscript]]></subscript>
     <superscript><![CDATA[superscript]]></superscript>
-<![CDATA[hyperlink]]>    
+    <hyperlink>
+      <uri><![CDATA[.]]></uri>
+<![CDATA[hyperlink]]>    </hyperlink>
 <![CDATA[&]]>    
-    <strikethrough>
-      <underline>
-        <italic>
-          <bold><![CDATA[everything at the same time.]]></bold>
-        </italic>
-      </underline>
-    </strikethrough>
+    <hyperlink>
+      <uri><![CDATA[https://github.com/DS4SD/docling]]></uri>
+      <strikethrough>
+        <underline>
+          <italic>
+            <bold><![CDATA[everything at the same time.]]></bold>
+          </italic>
+        </underline>
+      </strikethrough>
+    </hyperlink>
   </text>
   <list ordered="true">
     <list_text><![CDATA[Item 1 in A]]></list_text>

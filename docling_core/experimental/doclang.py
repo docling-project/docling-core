@@ -5,14 +5,15 @@ import re
 import warnings
 from enum import Enum
 from itertools import groupby
-from typing import Any, ClassVar, Final, Optional, cast
+from pathlib import Path
+from typing import Any, ClassVar, Final, Optional, Union, cast
 from xml.dom.minidom import Element, Node, Text
 from xml.etree.ElementTree import Element as ETElement
 from xml.etree.ElementTree import tostring
 
 from defusedxml.ElementTree import fromstring
 from defusedxml.minidom import parseString
-from pydantic import BaseModel, PrivateAttr
+from pydantic import AnyUrl, BaseModel, PrivateAttr
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -395,6 +396,7 @@ class DoclangToken(str, Enum):
     SUPERSCRIPT = "superscript"
     SUBSCRIPT = "subscript"
     HANDWRITING = "handwriting"
+    HYPERLINK = "hyperlink"
 
     # Formatting self-closing
     RTL = "rtl"
@@ -1746,7 +1748,9 @@ class DoclangPictureSerializer(BasePictureSerializer):
                 uri = f"data:image/png;base64,{imgb64}"
 
             if uri:
-                body += _wrap(text=uri, wrap_tag=DoclangToken.URI.value)
+                # Apply CDATA escaping to URI if needed
+                uri_text = _escape_text(uri, params)
+                body += _wrap(text=uri_text, wrap_tag=DoclangToken.URI.value)
 
             is_chart = self._picture_is_chart(item)
             if ((not is_chart) and ContentType.PICTURE in params.content_types) or (
@@ -2367,6 +2371,27 @@ class DoclangDocSerializer(DocSerializer):
         """Apply Doclang-specific superscript serialization."""
         return _wrap(text=text, wrap_tag=DoclangToken.SUPERSCRIPT.value)
 
+    @override
+    def serialize_hyperlink(
+        self,
+        text: str,
+        hyperlink: Union[AnyUrl, Path],
+        **kwargs: Any,
+    ) -> str:
+        """Apply Doclang-specific hyperlink serialization.
+
+        Serializes hyperlinks as:
+        <hyperlink>
+          <uri>[the uri here]</uri>
+          [text with optional formatting]
+        </hyperlink>
+        """
+        # Apply CDATA escaping to URI if needed
+        uri_text = _escape_text(str(hyperlink), self.params)
+        uri_part = _wrap(text=uri_text, wrap_tag=DoclangToken.URI.value)
+        content = f"{uri_part}{text}"
+        return _wrap(text=content, wrap_tag=DoclangToken.HYPERLINK.value)
+
 
 class DoclangDeserializer(BaseModel):
     """Doclang deserializer."""
@@ -2437,6 +2462,8 @@ class DoclangDeserializer(BaseModel):
             DoclangToken.CONTENT.value,
         }:
             self._parse_text_like(doc=doc, el=el, parent=parent)
+        elif name == DoclangToken.HYPERLINK.value:
+            self._parse_hyperlink(doc=doc, el=el, parent=parent)
         elif name == DoclangToken.PAGE_BREAK.value:
             # Start a new page; keep a default square page using the configured resolution
             self._page_no += 1
@@ -2617,6 +2644,114 @@ class DoclangDeserializer(BaseModel):
             )
             for p in prov_list[1:]:
                 item.prov.append(p)
+
+    def _parse_hyperlink(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        """Parse a <hyperlink> element containing <uri> and text content.
+
+        Structure:
+        <hyperlink>
+          <uri>https://example.com</uri>
+          text or <bold>text</bold> or other formatting
+        </hyperlink>
+
+        If the text content has multiple formatting elements, create an inline group.
+        """
+        # Extract the URI
+        uri_element = None
+        for node in el.childNodes:
+            if isinstance(node, Element) and node.tagName == DoclangToken.URI.value:
+                uri_element = node
+                break
+
+        if uri_element is None:
+            # No URI found, skip this hyperlink
+            return
+
+        uri_text = self._get_text(uri_element)
+        if not uri_text:
+            return
+
+        try:
+            hyperlink = AnyUrl(uri_text)
+        except Exception:
+            # Invalid URL, skip
+            return
+
+        # Get all non-URI child elements (these are the text/formatting elements)
+        content_elements = [
+            node
+            for node in el.childNodes
+            if isinstance(node, Element)
+            and node.tagName not in {DoclangToken.URI.value, DoclangToken.LOCATION.value, DoclangToken.LAYER.value}
+        ]
+
+        # Check if we have simple text or need an inline group
+        if len(content_elements) == 0:
+            # Just text nodes, extract directly
+            text_parts = []
+            for node in el.childNodes:
+                if isinstance(node, Text):
+                    text_parts.append(node.data)
+                elif isinstance(node, Element) and node.tagName == DoclangToken.URI.value:
+                    continue  # Skip URI
+
+            text = "".join(text_parts).strip()
+            if not text:
+                return
+
+            prov_list = self._extract_provenance(doc=doc, el=el)
+            content_layer = self._extract_layer(el=el)
+
+            item = doc.add_text(
+                label=DocItemLabel.TEXT,
+                text=text,
+                parent=parent,
+                hyperlink=hyperlink,
+                prov=(prov_list[0] if prov_list else None),
+                content_layer=content_layer,
+            )
+            for p in prov_list[1:]:
+                item.prov.append(p)
+
+        elif len(content_elements) == 1:
+            # Single element - extract text and formatting from it
+            content_el = content_elements[0]
+
+            # Use _extract_text_with_formatting which handles nested formatting
+            text, formatting = self._extract_text_with_formatting(content_el)
+
+            if not text:
+                return
+
+            prov_list = self._extract_provenance(doc=doc, el=el)
+            content_layer = self._extract_layer(el=el)
+
+            item = doc.add_text(
+                label=DocItemLabel.TEXT,
+                text=text,
+                parent=parent,
+                hyperlink=hyperlink,
+                formatting=formatting,
+                prov=(prov_list[0] if prov_list else None),
+                content_layer=content_layer,
+            )
+            for p in prov_list[1:]:
+                item.prov.append(p)
+
+        else:
+            # Multiple elements, need an inline group
+            inline_group = doc.add_inline_group(parent=parent)
+
+            for content_el in content_elements:
+                # Parse each element as a text item within the inline group
+                # Note: hyperlink is applied to the inline group's children
+                self._dispatch_element(doc=doc, el=content_el, parent=inline_group)
+
+            # Apply hyperlink to all children of the inline group
+            for child_ref in inline_group.children:
+                child = child_ref.resolve(doc)
+                if isinstance(child, TextItem):
+                    child.hyperlink = hyperlink
 
     def _extract_code_content_and_language(self, el: Element) -> tuple[str, CodeLanguageLabel]:
         """Extract code content and language from a <code> element."""
@@ -3092,12 +3227,52 @@ class DoclangDeserializer(BaseModel):
     def _extract_text_with_formatting(self, el: Element) -> tuple[str, Optional[Formatting]]:
         """Extract text content and formatting from an element.
 
-        If the element contains a single formatting child (bold, italic, etc.),
+        If the element itself or its children are formatting tags (bold, italic, etc.),
         recursively extract the text and build up the Formatting object.
 
         Returns:
             Tuple of (text_content, formatting_object or None)
         """
+        # Mapping of format tags to Formatting attributes
+        format_tags = {
+            DoclangToken.BOLD.value,
+            DoclangToken.ITALIC.value,
+            DoclangToken.STRIKETHROUGH.value,
+            DoclangToken.UNDERLINE.value,
+            DoclangToken.SUPERSCRIPT.value,
+            DoclangToken.SUBSCRIPT.value,
+        }
+
+        # Check if the element itself is a formatting tag
+        if el.tagName in format_tags:
+            # Recursively extract text and formatting from children
+            text, child_formatting = self._extract_text_with_formatting_from_children(el)
+
+            # Build up the formatting object
+            if child_formatting is None:
+                child_formatting = Formatting()
+
+            # Apply the current element's formatting
+            if el.tagName == DoclangToken.BOLD.value:
+                child_formatting.bold = True
+            elif el.tagName == DoclangToken.ITALIC.value:
+                child_formatting.italic = True
+            elif el.tagName == DoclangToken.STRIKETHROUGH.value:
+                child_formatting.strikethrough = True
+            elif el.tagName == DoclangToken.UNDERLINE.value:
+                child_formatting.underline = True
+            elif el.tagName == DoclangToken.SUPERSCRIPT.value:
+                child_formatting.script = Script.SUPER
+            elif el.tagName == DoclangToken.SUBSCRIPT.value:
+                child_formatting.script = Script.SUB
+
+            return text, child_formatting
+
+        # Element is not a formatting tag, check children
+        return self._extract_text_with_formatting_from_children(el)
+
+    def _extract_text_with_formatting_from_children(self, el: Element) -> tuple[str, Optional[Formatting]]:
+        """Helper to extract text and formatting from an element's children."""
         # Get non-whitespace, non-location child elements
         child_elements = [
             node
@@ -3105,44 +3280,24 @@ class DoclangDeserializer(BaseModel):
             if isinstance(node, Element) and node.tagName not in {DoclangToken.LOCATION.value}
         ]
 
+        # Mapping of format tags
+        format_tags = {
+            DoclangToken.BOLD.value,
+            DoclangToken.ITALIC.value,
+            DoclangToken.STRIKETHROUGH.value,
+            DoclangToken.UNDERLINE.value,
+            DoclangToken.SUPERSCRIPT.value,
+            DoclangToken.SUBSCRIPT.value,
+        }
+
         # Check if we have a single child that is a formatting tag
         if len(child_elements) == 1:
             child = child_elements[0]
             tag_name = child.tagName
 
-            # Mapping of format tags to Formatting attributes
-            format_tags = {
-                DoclangToken.BOLD,
-                DoclangToken.ITALIC,
-                DoclangToken.STRIKETHROUGH,
-                DoclangToken.UNDERLINE,
-                DoclangToken.SUPERSCRIPT,
-                DoclangToken.SUBSCRIPT,
-            }
-
             if tag_name in format_tags:
                 # Recursively extract text and formatting from the child
-                text, child_formatting = self._extract_text_with_formatting(child)
-
-                # Build up the formatting object
-                if child_formatting is None:
-                    child_formatting = Formatting()
-
-                # Apply the current formatting tag
-                if tag_name == DoclangToken.BOLD.value:
-                    child_formatting.bold = True
-                elif tag_name == DoclangToken.ITALIC.value:
-                    child_formatting.italic = True
-                elif tag_name == DoclangToken.STRIKETHROUGH.value:
-                    child_formatting.strikethrough = True
-                elif tag_name == DoclangToken.UNDERLINE.value:
-                    child_formatting.underline = True
-                elif tag_name == DoclangToken.SUPERSCRIPT.value:
-                    child_formatting.script = Script.SUPER
-                elif tag_name == DoclangToken.SUBSCRIPT.value:
-                    child_formatting.script = Script.SUB
-
-                return text, child_formatting
+                return self._extract_text_with_formatting(child)
 
         # No formatting found, just extract plain text
         return self._get_text(el), None
