@@ -43,7 +43,7 @@ Simply use the `uv add` command. The `pyproject.toml` and `uv.lock` files will b
 uv add [OPTIONS] <PACKAGES|--requirements <REQUIREMENTS>>
 ```
 
-### Code sytle guidelines
+### Code style guidelines
 
 We use the following tools to enforce code style:
 
