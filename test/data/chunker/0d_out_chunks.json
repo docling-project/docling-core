@@ -638,7 +638,7 @@
         }
     },
     {
-        "text": "to avoid this at any cost in order to have clear, unbiased baseline numbers for human document-layout annotation. Third, we introduced the feature of snapping boxes around text segments to obtain a pixel-accurate annotation and again reduce time and effort. The CCS annotation tool automatically shrinks every user-drawn box to the minimum bounding-box around the enclosed text-cells for all purely text-based segments, which excludes only Table and Picture . For the latter, we instructed annotation staff to minimise inclusion of surrounding whitespace while including all graphical lines. A downside of snapping boxes to enclosed text cells is that some wrongly parsed PDF pages cannot be annotated correctly and need to be skipped. Fourth, we established a way to flag pages as rejected for cases where no valid annotation according to the label guidelines could be achieved. Example cases for this would be PDF pages that render incorrectly or contain layouts that are impossible to capture with non-overlapping rectangles. Such rejected pages are not contained in the final dataset. With all these measures in place, experienced annotation staff managed to annotate a single page",
+        "text": "to avoid this at any cost in order to have clear, unbiased baseline numbers for human document-layout annotation. Third, we introduced the feature of snapping boxes around text segments to obtain a pixel-accurate annotation and again reduce time and effort. The CCS annotation tool automatically shrinks every user-drawn box to the minimum bounding-box around the enclosed text-cells for all purely text-based segments, which excludes only Table and Picture . For the latter, we instructed annotation staff to minimise inclusion of surrounding whitespace while including all graphical lines. A downside of snapping boxes to enclosed text cells is that some wrongly parsed PDF pages cannot be annotated correctly and need to be skipped. Fourth, we established a way to flag pages as rejected for cases where no valid annotation according to the label guidelines could be achieved. Example cases for this would be PDF pages that render incorrectly or contain layouts that are impossible to capture with non-overlapping rectangles. Such rejected pages are not contained in the final dataset.",
         "meta": {
             "doc_items": [
                 "#/texts/513"
@@ -650,7 +650,7 @@
         }
     },
     {
-        "text": "in a typical timeframe of 20s to 60s, depending on its complexity.",
+        "text": "With all these measures in place, experienced annotation staff managed to annotate a single page in a typical timeframe of 20s to 60s, depending on its complexity.",
         "meta": {
             "doc_items": [
                 "#/texts/513"
@@ -703,7 +703,7 @@
         }
     },
     {
-        "text": "In Table 2, we present baseline experiments (given in mAP) on Mask R-CNN [12], Faster R-CNN [11], and YOLOv5 [13]. Both training and evaluation were performed on RGB images with dimensions of 1025 \u00d7 1025 pixels. For training, we only used one annotation in case of redundantly annotated pages. As one can observe, the variation in mAP between the models is rather low, but overall between 6 and 10% lower than the mAP computed from the pairwise human annotations on triple-annotated pages. This gives a good indication that the DocLayNet dataset poses a worthwhile challenge for the research community to close the gap between human recognition and ML approaches. It is interesting to see that Mask R-CNN and Faster R-CNN produce very comparable mAP scores, indicating that pixel-based image segmentation derived from bounding-boxes does not help to obtain better predictions. On the other hand, the more recent Yolov5x model does very well and even out-performs humans on selected labels such as Text , Table and Picture . This is not entirely surprising, as Text , Table and",
+        "text": "In Table 2, we present baseline experiments (given in mAP) on Mask R-CNN [12], Faster R-CNN [11], and YOLOv5 [13]. Both training and evaluation were performed on RGB images with dimensions of 1025 \u00d7 1025 pixels. For training, we only used one annotation in case of redundantly annotated pages. As one can observe, the variation in mAP between the models is rather low, but overall between 6 and 10% lower than the mAP computed from the pairwise human annotations on triple-annotated pages. This gives a good indication that the DocLayNet dataset poses a worthwhile challenge for the research community to close the gap between human recognition and ML approaches. It is interesting to see that Mask R-CNN and Faster R-CNN produce very comparable mAP scores, indicating that pixel-based image segmentation derived from bounding-boxes does not help to obtain better predictions. On the other hand, the more recent Yolov5x model does very well and even out-performs humans on selected labels such as Text , Table and Picture .",
         "meta": {
             "doc_items": [
                 "#/texts/523"
@@ -715,7 +715,7 @@
         }
     },
     {
-        "text": "Picture are abundant and the most visually distinctive in a document.\ncoioct dcochon modols\nmak enbrel\nFigure 3: Page 6 of the DocLayNet paper. If recognized, metadata such as authors are appearing first under the title. Elements recognized as page headers or footers are suppressed in Markdown to deliver uninterrupted content in reading order. Tables are inserted in reading order. The paragraph in '5. Experiments' wrapping over the column end is broken up in two and interrupted by the table.\nKDD '22, August 14-18, 2022, Washington, DC, USA\nBirgit Pfitzmann, Christoph Auer, Michele Dolfi, Ahmed S. Nassar, and Peter Staar\nTable 1: DocLayNet dataset overview. Along with the frequency of each class label, we present the relative occurrence (as %\nbetween pairwise annotations from the triple-annotated pages, from which we obtain accuracy ranges.\nof row 'Total') in the train, test and validation sets. The inter-annotator agreement is computed as the mAP@0.5-0.95 metric",
+        "text": "This is not entirely surprising, as Text , Table and Picture are abundant and the most visually distinctive in a document.\ncoioct dcochon modols\nmak enbrel\nFigure 3: Page 6 of the DocLayNet paper. If recognized, metadata such as authors are appearing first under the title. Elements recognized as page headers or footers are suppressed in Markdown to deliver uninterrupted content in reading order. Tables are inserted in reading order. The paragraph in '5. Experiments' wrapping over the column end is broken up in two and interrupted by the table.\nKDD '22, August 14-18, 2022, Washington, DC, USA\nBirgit Pfitzmann, Christoph Auer, Michele Dolfi, Ahmed S. Nassar, and Peter Staar\nTable 1: DocLayNet dataset overview. Along with the frequency of each class label, we present the relative occurrence (as %\nbetween pairwise annotations from the triple-annotated pages, from which we obtain accuracy ranges.",
         "meta": {
             "doc_items": [
                 "#/texts/523",
@@ -725,7 +725,18 @@
                 "#/texts/529",
                 "#/texts/530",
                 "#/texts/531",
-                "#/texts/532",
+                "#/texts/532"
+            ],
+            "headings": [
+                "Docling Technical Report",
+                "Baselines for Object Detection"
+            ]
+        }
+    },
+    {
+        "text": "of row 'Total') in the train, test and validation sets. The inter-annotator agreement is computed as the mAP@0.5-0.95 metric",
+        "meta": {
+            "doc_items": [
                 "#/texts/533"
             ],
             "headings": [
