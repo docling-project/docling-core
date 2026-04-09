@@ -72,15 +72,20 @@ class BaseChunker(BaseModel, ABC):
         Returns:
             str: the serialized form of the chunk
         """
-        meta = chunk.meta.export_json_dict()
+        excluded = set(chunk.meta.excluded_embed)
+        meta = chunk.meta.model_dump(
+            mode="json",
+            by_alias=True,
+            exclude_none=True,
+            exclude={field for field in excluded},
+        )
 
         items = []
         for k in meta:
-            if k not in chunk.meta.excluded_embed:
-                if isinstance(meta[k], list):
-                    items.append(self.delim.join([d if isinstance(d, str) else json.dumps(d) for d in meta[k]]))
-                else:
-                    items.append(json.dumps(meta[k]))
+            if isinstance(meta[k], list):
+                items.append(self.delim.join([d if isinstance(d, str) else json.dumps(d) for d in meta[k]]))
+            else:
+                items.append(json.dumps(meta[k]))
         items.append(chunk.text)
 
         return self.delim.join(items)
