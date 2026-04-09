@@ -1,3 +1,14 @@
+## [v2.73.0](https://github.com/docling-project/docling-core/releases/tag/v2.73.0) - 2026-04-09
+
+### Feature
+
+* **ouline:** Extend OutlineDocSerializer with filtering capabilities ([#580](https://github.com/docling-project/docling-core/issues/580)) ([`18f5738`](https://github.com/docling-project/docling-core/commit/18f573899b70e3999371e5ed1e24adafdb7950de))
+* Add latex and Tikz as codelabels ([#579](https://github.com/docling-project/docling-core/issues/579)) ([`46a9b5a`](https://github.com/docling-project/docling-core/commit/46a9b5a3292c60aed821ca28795f8e3577e84ea4))
+
+### Documentation
+
+* Fixes a typo in CONTRIBUTING.md ([#582](https://github.com/docling-project/docling-core/issues/582)) ([`7d8c9db`](https://github.com/docling-project/docling-core/commit/7d8c9db2a7af3bac4bfd6683640d7138a916ebf2))
+
 ## [v2.72.0](https://github.com/docling-project/docling-core/releases/tag/v2.72.0) - 2026-04-07
 
 ### Feature
