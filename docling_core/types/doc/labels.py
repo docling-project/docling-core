@@ -254,6 +254,7 @@ class CodeLanguageLabel(str, Enum):
     DART = "Dart"
     DC = "dc"
     DOCKERFILE = "Dockerfile"
+    DOCLANG = "DocLang"
     ELIXIR = "Elixir"
     ERLANG = "Erlang"
     FORTRAN = "FORTRAN"
