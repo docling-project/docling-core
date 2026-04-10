@@ -148,7 +148,10 @@ def _quantize_to_resolution(value: float, resolution: int) -> int:
         warnings.warn(f"Normalized {value=} less than 0; returning 0", stacklevel=2)
         return 0
     elif n >= resolution:
-        warnings.warn(f"Normalized {value=} greater or equal to 1; returning {resolution-1=}", stacklevel=2)
+        warnings.warn(
+            f"Normalized {value=} greater or equal to 1; returning {resolution-1=}",
+            stacklevel=2,
+        )
         return resolution - 1
     else:
         return n
@@ -525,7 +528,10 @@ class DoclangVocabulary(BaseModel):
         # Keep conservative defaults aligned with existing usage.
         DoclangToken.LOCATION: {
             DoclangAttributeKey.VALUE: (0, DOCLANG_DFLT_RESOLUTION),  # TODO: review
-            DoclangAttributeKey.RESOLUTION: (DOCLANG_DFLT_RESOLUTION, DOCLANG_DFLT_RESOLUTION),  # TODO: review
+            DoclangAttributeKey.RESOLUTION: (
+                DOCLANG_DFLT_RESOLUTION,
+                DOCLANG_DFLT_RESOLUTION,
+            ),  # TODO: review
         },
         # Temporal components
         DoclangToken.HOUR: {DoclangAttributeKey.VALUE: (0, 99)},
@@ -995,6 +1001,7 @@ class ContentType(str, Enum):
     CHART = "chart"
     TABLE_CELL = "table_cell"
     PICTURE = "picture"
+    CHEMISTRY = "chemistry"
 
 
 _DEFAULT_CONTENT_TYPES: set[ContentType] = set(ContentType)
@@ -1585,7 +1592,10 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                 )
                 if item.label == DocItemLabel.HANDWRITTEN_TEXT:
                     text_part = _wrap(text=text_part, wrap_tag=DoclangToken.HANDWRITING.value)
-                elif item.label in [DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED]:
+                elif item.label in [
+                    DocItemLabel.CHECKBOX_SELECTED,
+                    DocItemLabel.CHECKBOX_UNSELECTED,
+                ]:
                     # Add checkbox token before the text
                     checkbox_token = DoclangVocabulary.create_checkbox_token(
                         selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
@@ -1702,6 +1712,14 @@ class DoclangPictureSerializer(BasePictureSerializer):
             }
         return False
 
+    def _picture_is_chem(self, item: PictureItem) -> bool:
+        """Check if predicted class indicates a chemistry structure."""
+        if item.meta and item.meta.classification:
+            return item.meta.classification.get_main_prediction().class_name in {
+                PictureClassificationLabel.CHEMISTRY_STRUCTURE.value,
+            }
+        return False
+
     @override
     def serialize(
         self,
@@ -1749,38 +1767,73 @@ class DoclangPictureSerializer(BasePictureSerializer):
                 body += _wrap(text=uri, wrap_tag=DoclangToken.URI.value)
 
             is_chart = self._picture_is_chart(item)
-            if ((not is_chart) and ContentType.PICTURE in params.content_types) or (
-                is_chart and ContentType.CHART in params.content_types
-            ):
-                if item.meta:
-                    meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
-                    if meta_res.text:
-                        picture_inner_parts.append(meta_res.text)
-                        res_parts.append(meta_res)
+            is_chem = self._picture_is_chem(item)
 
-                # handle tabular chart data
-                chart_data: Optional[TableData] = None
-                if item.meta and item.meta.tabular_chart:
-                    chart_data = item.meta.tabular_chart.chart_data
-                if chart_data and chart_data.table_cells:
-                    temp_doc = DoclingDocument(name="temp")
-                    temp_table = temp_doc.add_table(data=chart_data)
-                    # Reuse the Doclang table emission for chart data
-                    params_chart = DoclangParams(
-                        **{
-                            **params.model_dump(),
-                            "add_table_cell_location": False,
-                        }
-                    )
-                    otsl_content = DoclangTableSerializer()._emit_otsl(
-                        item=temp_table,  # type: ignore[arg-type]
-                        doc_serializer=doc_serializer,
-                        doc=temp_doc,
-                        params=params_chart,
-                        **kwargs,
-                    )
-                    otsl_payload = _wrap(text=otsl_content, wrap_tag=DoclangToken.OTSL.value)
-                    body += otsl_payload
+            # Visibility & meta rules for picture sub-types:
+            #
+            # PICTURE present → ALL pictures are emitted (regular, chart,
+            #   chem) with classification-only meta (molecule / tabular_chart
+            #   blocked).  If a specific type (CHART / CHEMISTRY) is also
+            #   present, matching pictures are upgraded to full meta.
+            #
+            # Only CHART / CHEMISTRY (no PICTURE) → only the matching
+            #   pictures are emitted, with full meta.
+            has_picture_ct = ContentType.PICTURE in params.content_types
+            specific_match = (is_chart and ContentType.CHART in params.content_types) or (
+                is_chem and ContentType.CHEMISTRY in params.content_types
+            )
+            # Decide whether this picture should appear at all:
+            #  - has_picture_ct: every picture is shown
+            #  - specific_match: this particular picture's type was requested
+            any_match = has_picture_ct or specific_match
+
+            if any_match and item.meta:
+                if specific_match:
+                    # Full meta: classification + specialised fields
+                    meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+                elif is_chart or is_chem:
+                    # Chart/chem picture without its specific type enabled:
+                    # classification only - block everything else
+                    meta_kwargs = dict(**kwargs)
+                    meta_kwargs["allowed_meta_names"] = {MetaFieldName.CLASSIFICATION}
+                    meta_res = doc_serializer.serialize_meta(item=item, **meta_kwargs)
+                else:
+                    # Regular picture: block specialised fields only
+                    meta_kwargs = dict(**kwargs)
+                    blocked = set(params.blocked_meta_names)
+                    blocked.add(MetaFieldName.MOLECULE)
+                    blocked.add(MetaFieldName.TABULAR_CHART)
+                    meta_kwargs["blocked_meta_names"] = blocked
+                    meta_res = doc_serializer.serialize_meta(item=item, **meta_kwargs)
+
+                if meta_res.text:
+                    picture_inner_parts.append(meta_res.text)
+                    res_parts.append(meta_res)
+
+                # handle tabular chart data (only when specific type matches)
+                if specific_match:
+                    chart_data: Optional[TableData] = None
+                    if item.meta and item.meta.tabular_chart:
+                        chart_data = item.meta.tabular_chart.chart_data
+                    if chart_data and chart_data.table_cells:
+                        temp_doc = DoclingDocument(name="temp")
+                        temp_table = temp_doc.add_table(data=chart_data)
+                        # Reuse the Doclang table emission for chart data
+                        params_chart = DoclangParams(
+                            **{
+                                **params.model_dump(),
+                                "add_table_cell_location": False,
+                            }
+                        )
+                        otsl_content = DoclangTableSerializer()._emit_otsl(
+                            item=temp_table,  # type: ignore[arg-type]
+                            doc_serializer=doc_serializer,
+                            doc=temp_doc,
+                            params=params_chart,
+                            **kwargs,
+                        )
+                        otsl_payload = _wrap(text=otsl_content, wrap_tag=DoclangToken.OTSL.value)
+                        body += otsl_payload
 
             if body:
                 picture_inner_parts.append(body)
@@ -2157,7 +2210,10 @@ class DoclangDocSerializer(DocSerializer):
                     if caption.cref not in self.get_excluded_refs(**kwargs):
                         if isinstance(cap := caption.resolve(self.doc), DocItem):
                             loc_txt = _create_location_tokens_for_item(
-                                item=cap, doc=self.doc, xres=params.xsize, yres=params.ysize
+                                item=cap,
+                                doc=self.doc,
+                                xres=params.xsize,
+                                yres=params.ysize,
                             )
                             results.append(create_ser_result(text=loc_txt))
 
@@ -3078,7 +3134,10 @@ class DoclangDeserializer(BaseModel):
         return table_cells, split_row_tokens
 
     def _parse_otsl_table_content(
-        self, otsl_content: str, doc: Optional["DoclingDocument"] = None, parent: Optional[NodeItem] = None
+        self,
+        otsl_content: str,
+        doc: Optional["DoclingDocument"] = None,
+        parent: Optional[NodeItem] = None,
     ) -> TableData:
         """Parse OTSL content into TableData (inlined from utils)."""
         tokens, mixed = self._otsl_extract_tokens_and_text(otsl_content)

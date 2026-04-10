@@ -112,6 +112,9 @@
   <floating_group class="picture">
     <caption>Picture Caption</caption>
     <picture>
+      <meta>
+        <classification>Pie chart</classification>
+      </meta>
       <location value="5"/>
       <location value="492"/>
       <location value="15"/>
