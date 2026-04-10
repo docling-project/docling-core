@@ -5903,6 +5903,7 @@ class DoclingDocument(BaseModel):
         image_placeholder: str = "<!-- image -->",
         enable_chart_tables: bool = True,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        artifacts_dir: Optional[Path] = None,
         indent: int = 4,
         text_width: int = -1,
         page_no: Optional[int] = None,
@@ -5947,6 +5948,12 @@ class DoclingDocument(BaseModel):
         :param image_mode: The mode to use for including images in the
             markdown. (Default value = ImageRefMode.PLACEHOLDER).
         :type image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
+        :param artifacts_dir: Directory where images are saved when
+            image_mode is ImageRefMode.REFERENCED. The markdown output will
+            contain relative paths pointing into this directory. Ignored when
+            image_mode is not ImageRefMode.REFERENCED.
+            (Default value = None).
+        :type artifacts_dir: Optional[Path] = None
         :param indent: The indent in spaces of the nested lists.
             (Default value = 4).
         :type indent: int = 4
@@ -5994,8 +6001,16 @@ class DoclingDocument(BaseModel):
                 DeprecationWarning,
             )
 
+        if image_mode == ImageRefMode.REFERENCED and artifacts_dir is not None:
+            os.makedirs(artifacts_dir, exist_ok=True)
+            doc: DoclingDocument = self._with_pictures_refs(
+                image_dir=artifacts_dir, page_no=page_no
+            )
+        else:
+            doc = self
+
         serializer = MarkdownDocSerializer(
-            doc=self,
+            doc=doc,
             params=MarkdownParams(
                 labels=my_labels,
                 layers=my_layers,

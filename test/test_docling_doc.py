@@ -2231,3 +2231,51 @@ def test_docitem_comments_delete_updates_refs():
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
+
+
+def test_export_to_markdown_with_artifacts_dir(sample_doc, tmp_path):
+    """export_to_markdown saves images and returns referenced markdown when artifacts_dir is given."""
+    artifacts_dir = tmp_path / "images"
+
+    md = sample_doc.export_to_markdown(
+        image_mode=ImageRefMode.REFERENCED,
+        artifacts_dir=artifacts_dir,
+    )
+
+    # The directory must be created and contain the saved image(s)
+    assert artifacts_dir.is_dir(), "artifacts_dir was not created"
+    saved_images = list(artifacts_dir.glob("*.png"))
+    assert len(saved_images) > 0, "No images were saved to artifacts_dir"
+
+    # The markdown must contain a reference to at least one saved image
+    assert "![" in md, "Markdown contains no image references"
+    for img_path in saved_images:
+        assert img_path.name in md, f"Image {img_path.name} not referenced in markdown"
+
+
+def test_export_to_markdown_referenced_without_artifacts_dir(sample_doc):
+    """export_to_markdown with REFERENCED mode but no artifacts_dir uses placeholder behaviour."""
+    md = sample_doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED)
+
+    # Without artifacts_dir no images can be written; falls back to placeholder output
+    assert isinstance(md, str)
+    assert len(md) > 0
+
+
+def test_export_to_markdown_artifacts_dir_ignored_for_non_referenced(sample_doc, tmp_path):
+    """artifacts_dir is silently ignored when image_mode is not REFERENCED."""
+    artifacts_dir = tmp_path / "images"
+
+    md_placeholder = sample_doc.export_to_markdown(
+        image_mode=ImageRefMode.PLACEHOLDER,
+        artifacts_dir=artifacts_dir,
+    )
+    md_embedded = sample_doc.export_to_markdown(
+        image_mode=ImageRefMode.EMBEDDED,
+        artifacts_dir=artifacts_dir,
+    )
+
+    # artifacts_dir must NOT have been created for non-REFERENCED modes
+    assert not artifacts_dir.exists(), "artifacts_dir should not be created for non-REFERENCED modes"
+    assert isinstance(md_placeholder, str)
+    assert isinstance(md_embedded, str)
