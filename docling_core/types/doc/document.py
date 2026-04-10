@@ -3453,6 +3453,9 @@ class DoclingDocument(BaseModel):
             node = child_ref.resolve(self)
             self._update_breadth_first_with_lookup(node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup)
 
+    def _find_referencing_table_cells(self, table: TableItem, ref: str) -> list[RichTableCell]:
+        return [cell for cell in table.data.table_cells if isinstance(cell, RichTableCell) and cell.ref.cref == ref]
+
     def _shift_up(self, *, old_subroot: NodeItem) -> None:
         """Move a subtree up in the document tree, removing the old subroot.
 
@@ -3465,6 +3468,7 @@ class DoclingDocument(BaseModel):
         # use old subroot's parent as new subroot
         new_subroot: NodeItem = old_subroot.parent.resolve(doc=self)
 
+        old_subr_cref = old_subroot.self_ref
         old_subr_idx = new_subroot.children.index(old_subroot.get_ref())
         for i, child_ref in enumerate(old_subroot.children):
             # link new subroot => children (right after the old subroot)
@@ -3474,7 +3478,18 @@ class DoclingDocument(BaseModel):
             child: NodeItem = child_ref.resolve(doc=self)
             child.parent = new_subroot.get_ref()
 
-        # unlink old subroot its parent
+        if isinstance(new_subroot, TableItem):
+            if referencing_cells := self._find_referencing_table_cells(table=new_subroot, ref=old_subr_cref):
+                if len(old_subroot.children) == 1:
+                    # cell references
+                    for cell in referencing_cells:
+                        cell.ref.cref = old_subroot.children[0].cref
+                else:
+                    raise ValueError(
+                        "Can not shift up a subtree that is referenced by a table cell if it has multiple or no children"
+                    )
+
+        # unlink old subroot from its parent
         new_subroot.children.remove(old_subroot.get_ref())
 
     def _shift_down(self, *, old_subroot: NodeItem, new_subroot: NodeItem) -> None:
@@ -3487,7 +3502,14 @@ class DoclingDocument(BaseModel):
         if old_subroot.parent is None:
             raise ValueError("Can not shift down the root")
 
+        # If the parent of old_subroot is a TableItem, we'll need to update references in table cells.
+        table_parent = prnt_node if isinstance(prnt_node := old_subroot.parent.resolve(doc=self), TableItem) else None
+
         self.insert_item_before_sibling(new_item=new_subroot, sibling=old_subroot)
+
+        if table_parent:
+            for cell in self._find_referencing_table_cells(table=table_parent, ref=old_subroot.get_ref().cref):
+                cell.ref.cref = new_subroot.self_ref
 
         self._move_subtree(old_subroot=old_subroot, new_subroot=new_subroot)
 
@@ -3496,8 +3518,13 @@ class DoclingDocument(BaseModel):
         if old_subroot.parent is None:
             raise ValueError("Can not move the root")
 
-        # unlink old subroot from its previous parent
         previous_parent: NodeItem = old_subroot.parent.resolve(doc=self)
+        if isinstance(previous_parent, TableItem) and self._find_referencing_table_cells(
+            table=previous_parent, ref=old_subroot.self_ref
+        ):
+            raise ValueError("Can not move a subtree that is referenced by a table cell")
+
+        # unlink old subroot from its previous parent
         previous_parent.children.remove(old_subroot.get_ref())
 
         # link new subroot => old subroot
@@ -7251,27 +7278,19 @@ class DoclingDocument(BaseModel):
         for curr_list_items in reversed(misplaced_list_items):
             # add group
             new_group = ListGroup(self_ref="#")
-            self.insert_item_before_sibling(
-                new_item=new_group,
-                sibling=curr_list_items[0],
-            )
-
-            # delete list items from document (should not be affected by group addition)
-            self.delete_items(node_items=list(curr_list_items))
 
             # add list items to new group
-            for li in curr_list_items:
-                self.add_list_item(
-                    text=li.text,
-                    enumerated=li.enumerated,
-                    marker=li.marker,
-                    orig=li.orig,
-                    prov=li.prov[0] if li.prov else None,
-                    parent=new_group,
-                    content_layer=li.content_layer,
-                    formatting=li.formatting,
-                    hyperlink=li.hyperlink,
-                )
+            for i, li in enumerate(curr_list_items):
+                if i == 0:
+                    self._shift_down(
+                        old_subroot=li,
+                        new_subroot=new_group,
+                    )
+                else:
+                    self._move_subtree(
+                        old_subroot=li,
+                        new_subroot=new_group,
+                    )
         return self
 
     class _DocIndex(BaseModel):

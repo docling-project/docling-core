@@ -34,6 +34,7 @@ from docling_core.types.doc import (
     ImageRef,
     ImageRefMode,
     KeyValueItem,
+    ListGroup,
     ListItem,
     NodeItem,
     PictureItem,
@@ -48,7 +49,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
+from docling_core.types.doc.document import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem, GroupItem
 from docling_core.types.doc.document import CURRENT_VERSION, PageItem
 from docling_core.types.doc.webvtt import WebVTTFile
 
@@ -1558,6 +1559,91 @@ def test_moving_within_same_parent():
     doc._move_subtree(old_subroot=foo, new_subroot=foo.parent.resolve(doc), pos=0)
     assert [it.text for it, _ in doc.iterate_items() if isinstance(it, TextItem)] == ["foo", "bar"]
 
+
+def test_move_subtree_raises_when_node_referenced_by_rich_table_cell():
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    target_group = doc.add_list_group(parent=doc.body)
+    txt_item = doc.add_text(label=DocItemLabel.TEXT, text="foo", formatting=Formatting(bold=True), parent=table)
+    table.children.append(RefItem(cref=txt_item.self_ref))
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="",
+            ref=txt_item.get_ref(),
+        ),
+    )
+    with pytest.raises(ValueError, match="referenced by a table cell"):
+        doc._move_subtree(old_subroot=txt_item, new_subroot=target_group)
+
+def test_shift_up_raises_when_node_referenced_by_rich_table_cell():
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    txt_item = doc.add_text(label=DocItemLabel.TEXT, text="foo", formatting=Formatting(bold=True), parent=table)
+    table.children.append(RefItem(cref=txt_item.self_ref))
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="",
+            ref=txt_item.get_ref(),
+        ),
+    )
+    with pytest.raises(ValueError, match="referenced by a table cell"):
+        doc._shift_up(old_subroot=txt_item)
+
+
+def test_shift_down_heals_rich_table_cell_ref_when_wrapping_in_group():
+    """_shift_down retargets RichTableCell refs to the new GroupItem before _move_subtree."""
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    text_item = doc.add_text(label=DocItemLabel.TEXT, text="row", parent=table)
+    cell = RichTableCell(
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        text="",
+        ref=text_item.get_ref(),
+    )
+    doc.add_table_cell(table_item=table, cell=cell)
+    new_group = GroupItem(self_ref="#")
+    doc._shift_down(old_subroot=text_item, new_subroot=new_group)
+
+    assert cell.ref.cref == new_group.self_ref
+    assert text_item.parent.cref == new_group.self_ref
+    assert new_group.parent is not None and new_group.parent.cref == table.self_ref
+    assert [c.cref for c in table.children] == [new_group.self_ref]
+    assert [c.cref for c in new_group.children] == [text_item.self_ref]
+    doc.validate_tree(doc.body, raise_on_error=True)
+
+
+def test_misplaced_list_items_under_table_roundtrip_without_rich_cells():
+    """Table-hosted ListItems (no ListGroup parent) are repaired without delete_items ref rewriting."""
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=1))
+    for text in ("a", "b"):
+        idx = len(doc.texts)
+        li = ListItem(
+            text=text,
+            orig=text,
+            self_ref=f"#/texts/{idx}",
+            parent=table.get_ref(),
+            enumerated=False,
+            marker="-",
+        )
+        doc.texts.append(li)
+        table.children.append(RefItem(cref=li.self_ref))
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    roundtrip.validate_tree(roundtrip.body, raise_on_error=True)
 
 def test_export_with_precision():
     doc = DoclingDocument.load_from_yaml(filename="test/data/doc/dummy_doc_2.yaml")
