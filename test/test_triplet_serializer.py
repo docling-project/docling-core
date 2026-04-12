@@ -33,7 +33,8 @@ def _cell(
 
 def _serialize(doc: DoclingDocument, table_item: TableItem) -> str:
     serializer = ChunkingDocSerializer(doc=doc)
-    return TripletTableSerializer().serialize(
+    table_serializer = TripletTableSerializer()
+    return table_serializer.serialize(
         item=table_item,
         doc_serializer=serializer,
         doc=doc,
@@ -174,8 +175,7 @@ def test_triplet_merged_row_span_keeps_first_data_row():
     doc.add_table_cell(table_item=table, cell=_cell("200", 2, 1))
 
     text = _serialize(doc, table)
-    assert "row_0, Revenue = 100" in text
-    assert "row_1, Revenue = 200" in text
+    assert text == "row_0, Year = 2024. row_0, Revenue = 100. row_1, Year = 2024. row_1, Revenue = 200"
 
 
 def test_triplet_nested_table_in_cell():
