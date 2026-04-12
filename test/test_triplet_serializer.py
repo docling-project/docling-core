@@ -1,5 +1,7 @@
 """Pytest coverage for TripletTableSerializer scenarios."""
 
+import pandas as pd
+
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     TripletTableSerializer,
@@ -205,3 +207,143 @@ def test_triplet_nested_table_in_cell():
 
     text = _serialize(doc, outer)
     assert text == "row_0, col_0 = plain. row_0, col_1 -> row_0, col_0 = x. row_0, col_1 = y"
+
+
+def test_triplet_excluded_table_returns_early(monkeypatch):
+    doc = DoclingDocument(name="excluded")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    doc.add_table_cell(table_item=table, cell=_cell("x", 0, 0))
+
+    serializer = ChunkingDocSerializer(doc=doc)
+    table_serializer = TripletTableSerializer()
+    monkeypatch.setattr(
+        ChunkingDocSerializer,
+        "get_excluded_refs",
+        lambda self, **kwargs: {table.self_ref},
+    )
+
+    text = table_serializer.serialize(
+        item=table,
+        doc_serializer=serializer,
+        doc=doc,
+    ).text
+    assert text == ""
+
+
+def test_triplet_empty_dataframe_returns_early(monkeypatch):
+    doc = DoclingDocument(name="empty_df")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    doc.add_table_cell(table_item=table, cell=_cell("x", 0, 0))
+
+    serializer = ChunkingDocSerializer(doc=doc)
+    table_serializer = TripletTableSerializer()
+    monkeypatch.setattr(table, "_export_to_dataframe_with_options", lambda *args, **kwargs: pd.DataFrame())
+
+    text = table_serializer.serialize(
+        item=table,
+        doc_serializer=serializer,
+        doc=doc,
+    ).text
+    assert text == ""
+
+
+def test_triplet_fallback_detects_column_headers_from_dataframe(monkeypatch):
+    doc = DoclingDocument(name="fallback_col_headers")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    doc.add_table_cell(table_item=table, cell=_cell("a", 0, 0))
+    doc.add_table_cell(table_item=table, cell=_cell("b", 0, 1))
+    doc.add_table_cell(table_item=table, cell=_cell("c", 1, 0))
+    doc.add_table_cell(table_item=table, cell=_cell("d", 1, 1))
+
+    serializer = ChunkingDocSerializer(doc=doc)
+    table_serializer = TripletTableSerializer()
+    df = pd.DataFrame([["a", "b"], ["c", "d"]], columns=["Q1", "Q2"])
+    monkeypatch.setattr(table, "_export_to_dataframe_with_options", lambda *args, **kwargs: df)
+
+    text = table_serializer.serialize(
+        item=table,
+        doc_serializer=serializer,
+        doc=doc,
+    ).text
+    assert text == "row_0, Q1 = a. row_0, Q2 = b. row_1, Q1 = c. row_1, Q2 = d"
+
+
+def test_triplet_build_triplets_rangeindex_uses_first_row_as_headers():
+    df = pd.DataFrame(
+        [
+            ["Year", "Revenue"],
+            ["2024", "100"],
+            ["2025", "120"],
+        ]
+    )
+    triplets = TripletTableSerializer._build_triplets(
+        df,
+        has_row_headers=False,
+        has_col_headers=True,
+    )
+    assert triplets == [
+        "row_1, Year = 2024",
+        "row_1, Revenue = 100",
+        "row_2, Year = 2025",
+        "row_2, Revenue = 120",
+    ]
+
+
+def test_triplet_single_column_empty_header_falls_back_to_col_0():
+    df = pd.DataFrame(["Italy", "Canada"], columns=[""])
+    triplets = TripletTableSerializer._build_triplets(
+        df,
+        has_row_headers=False,
+        has_col_headers=True,
+    )
+    assert triplets == ["col_0 = Italy", "col_0 = Canada"]
+
+
+def test_triplet_nested_dataframe_skipped_at_max_depth():
+    nested = pd.DataFrame([["x", "y"]], columns=["A", "B"])
+    outer = pd.DataFrame([[nested, "plain"]], columns=["nested", "value"])
+    triplets = TripletTableSerializer._build_triplets(
+        outer,
+        has_row_headers=False,
+        has_col_headers=True,
+        depth=0,
+        max_depth=0,
+    )
+    assert triplets == ["row_0, value = plain"]
+
+
+def test_triplet_single_column_header_skips_empty_values():
+    df = pd.DataFrame(["Italy", None, "   ", "Canada"], columns=["Country"])
+    triplets = TripletTableSerializer._build_triplets(
+        df,
+        has_row_headers=False,
+        has_col_headers=True,
+    )
+    assert triplets == ["Country = Italy", "Country = Canada"]
+
+
+def test_triplet_non_string_cell_uses_scalar_path():
+    df = pd.DataFrame([[123, "ok"]], columns=["left", "right"])
+    triplets = TripletTableSerializer._build_triplets(
+        df,
+        has_row_headers=False,
+        has_col_headers=True,
+    )
+    assert triplets == ["row_0, left = 123", "row_0, right = ok"]
+
+
+def test_triplet_nested_dataframe_emits_arrow_triplets():
+    nested = pd.DataFrame([["x", "y"]], columns=["A", "B"])
+    outer = pd.DataFrame([[nested, "plain"]], columns=["nested", "value"])
+    triplets = TripletTableSerializer._build_triplets(
+        outer,
+        has_row_headers=False,
+        has_col_headers=True,
+        depth=0,
+        max_depth=3,
+    )
+    assert triplets == [
+        "row_0, nested -> row_0, A = x",
+        "row_0, nested -> row_0, B = y",
+        "row_0, value = plain",
+    ]
