@@ -478,6 +478,75 @@ def test_md_compact_table():
     assert len(compact_result) < len(padded_table)
 
 
+def test_md_numeric_precision_preserved():
+    """Test that numeric values in tables preserve their full precision.
+
+    Regression test for issue where tabulate's numparse would silently
+    truncate numeric strings to ~6 significant figures.
+    """
+    doc = DoclingDocument(name="Numeric Precision Test")
+    precise_values = [
+        "225.8183",
+        "24797.34",
+        "20896.7184",
+        "17358.138",
+        "123.456789",
+    ]
+    table = doc.add_table(data=TableData(num_rows=len(precise_values) + 1, num_cols=2))
+
+    # Add header row
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="Description",
+        ),
+    )
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            text="Value",
+        ),
+    )
+
+    # Add data rows with precise numeric values
+    for row_idx, value in enumerate(precise_values, start=1):
+        doc.add_table_cell(
+            table_item=table,
+            cell=TableCell(
+                start_row_offset_idx=row_idx,
+                end_row_offset_idx=row_idx + 1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+                text=f"Item {row_idx}",
+            ),
+        )
+        doc.add_table_cell(
+            table_item=table,
+            cell=TableCell(
+                start_row_offset_idx=row_idx,
+                end_row_offset_idx=row_idx + 1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+                text=value,
+            ),
+        )
+
+    markdown_output = doc.export_to_markdown()
+    for value in precise_values:
+        assert value in markdown_output, (
+            f"Numeric value '{value}' was not preserved in markdown output. "
+            "This indicates precision loss during table serialization."
+        )
+
+
 def test_md_traverse_pictures():
     """Test traverse_pictures parameter to include text inside PictureItems."""
 
