@@ -2,6 +2,7 @@
 
 import threading
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -10,6 +11,7 @@ from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLOutputStyle,
     HTMLParams,
+    HTMLTableSerializer,
 )
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
@@ -607,46 +609,44 @@ def test_md_traverse_pictures():
 
 def test_html_table_serializer_get_header_and_body_lines():
     """Test HTMLTableSerializer.get_header_and_body_lines() method."""
-    from docling_core.transforms.serializer.html import HTMLTableSerializer
-    from unittest.mock import patch, MagicMock
-    
+
     serializer = HTMLTableSerializer()
-    
+
     # Test 1: Valid HTML with headers and data
     valid_html = "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Data1</td><td>Data2</td></tr></table>"
     headers, body = serializer.get_header_and_body_lines(table_text=valid_html)
     assert len(headers) > 0, "Should have headers"
     assert len(body) > 0, "Should have body rows"
-    
+
     # Test 2: Row without closing </tr> tag
     # Parser will find the row, but when we search for </tr> it won't be found
     no_close_tr = "<tr><th>Header</th></tr><tr><td>Data1"
     headers, body = serializer.get_header_and_body_lines(table_text=no_close_tr)
     assert isinstance(headers, list)
     assert isinstance(body, list)
-    
+
     # Test 3: Data rows with incomplete closing tags
     # When collecting remaining rows, some </tr> tags are missing
     incomplete_data = "<tr><th>H1</th></tr><tr><td>D1</td></tr><tr><td>D2"
     headers, body = serializer.get_header_and_body_lines(table_text=incomplete_data)
     assert isinstance(headers, list)
     assert isinstance(body, list)
-    
+
     # Test 4: Force exception in parser
-    with patch('docling_core.transforms.serializer.html._SimpleHTMLTableParser') as mock_parser_class:
+    with patch("docling_core.transforms.serializer.html._SimpleHTMLTableParser") as mock_parser_class:
         mock_parser = MagicMock()
         mock_parser.feed.side_effect = Exception("Parser error")
         mock_parser_class.return_value = mock_parser
-        
+
         broken_html = "<tr><th>Header</th></tr><tr><td>Data</td></tr>"
         headers, body = serializer.get_header_and_body_lines(table_text=broken_html)
         # Should use fallback logic
         assert isinstance(headers, list)
         assert isinstance(body, list)
-    
+
     # Test 5: Parser returns more rows than exist in HTML
     # Mock parser to return extra rows that don't exist in the HTML
-    with patch('docling_core.transforms.serializer.html._SimpleHTMLTableParser') as mock_parser_class:
+    with patch("docling_core.transforms.serializer.html._SimpleHTMLTableParser") as mock_parser_class:
         mock_parser = MagicMock()
         # Create fake row data - more rows than actually exist in HTML
         mock_parser.rows = [
@@ -656,32 +656,32 @@ def test_html_table_serializer_get_header_and_body_lines():
             {"th_cells": [], "td_cells": ["D1"]},
         ]
         mock_parser_class.return_value = mock_parser
-        
+
         # HTML with only 2 rows, but parser claims 4
         limited_html = "<tr><th>H1</th></tr><tr><th>H2</th></tr>"
         headers, body = serializer.get_header_and_body_lines(table_text=limited_html)
         assert isinstance(headers, list)
         assert isinstance(body, list)
-    
+
     # Test 6: Specific case for line 485 - row_start found but row_end not found
     # Create HTML where parser finds a row, but the actual HTML has <tr without </tr>
-    with patch('docling_core.transforms.serializer.html._SimpleHTMLTableParser') as mock_parser_class:
+    with patch("docling_core.transforms.serializer.html._SimpleHTMLTableParser") as mock_parser_class:
         mock_parser = MagicMock()
         # Parser reports a header row exists
         mock_parser.rows = [
             {"th_cells": ["Header"], "td_cells": []},
         ]
         mock_parser_class.return_value = mock_parser
-        
+
         # But the HTML has <tr without matching </tr>
         html_no_close = "<tr><th>Header"
         headers, body = serializer.get_header_and_body_lines(table_text=html_no_close)
         assert isinstance(headers, list)
         assert isinstance(body, list)
-    
+
     # Test 7: Specific case for line 504 - data collection finds <tr but no </tr>
     # Create HTML where we start collecting data rows but encounter incomplete row
-    with patch('docling_core.transforms.serializer.html._SimpleHTMLTableParser') as mock_parser_class:
+    with patch("docling_core.transforms.serializer.html._SimpleHTMLTableParser") as mock_parser_class:
         mock_parser = MagicMock()
         # Parser reports header then data rows
         mock_parser.rows = [
@@ -689,13 +689,13 @@ def test_html_table_serializer_get_header_and_body_lines():
             {"th_cells": [], "td_cells": ["D1"]},  # This triggers data collection
         ]
         mock_parser_class.return_value = mock_parser
-        
+
         # HTML has complete header but incomplete data row
         html_incomplete_data = "<tr><th>H</th></tr><tr><td>D1</td></tr><tr><td>D2"
         headers, body = serializer.get_header_and_body_lines(table_text=html_incomplete_data)
         assert isinstance(headers, list)
         assert isinstance(body, list)
-    
+
     # Test 8: Table with footer content
     with_footer = "<tr><th>H</th></tr><tr><td>D</td></tr>Footer content"
     headers, body = serializer.get_header_and_body_lines(table_text=with_footer)
