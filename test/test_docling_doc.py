@@ -1565,7 +1565,6 @@ def test_move_subtree_raises_when_node_referenced_by_rich_table_cell():
     table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
     target_group = doc.add_list_group(parent=doc.body)
     txt_item = doc.add_text(label=DocItemLabel.TEXT, text="foo", formatting=Formatting(bold=True), parent=table)
-    table.children.append(RefItem(cref=txt_item.self_ref))
     doc.add_table_cell(
         table_item=table,
         cell=RichTableCell(
@@ -1584,7 +1583,6 @@ def test_shift_up_raises_when_node_referenced_by_rich_table_cell():
     doc = DoclingDocument(name="")
     table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
     txt_item = doc.add_text(label=DocItemLabel.TEXT, text="foo", formatting=Formatting(bold=True), parent=table)
-    table.children.append(RefItem(cref=txt_item.self_ref))
     doc.add_table_cell(
         table_item=table,
         cell=RichTableCell(
