@@ -44,7 +44,7 @@ from pydantic import (
     model_validator,
     validate_call,
 )
-from tabulate import tabulate
+from tabulate import _column_type, tabulate
 from typing_extensions import Self, deprecated, override
 
 from docling_core.search.package import VERSION_PATTERN
@@ -2274,15 +2274,22 @@ class TableItem(FloatingItem):
 
             res = ""
             if len(table) > 1 and len(table[0]) > 0:
-                try:
-                    res = tabulate(table[1:], headers=table[0], tablefmt="github")
-                except ValueError:
-                    res = tabulate(
-                        table[1:],
-                        headers=table[0],
-                        tablefmt="github",
-                        disable_numparse=True,
-                    )
+                # Always disable numparse to prevent silent precision loss in numeric values
+                # Use tabulate's _column_type to detect numeric columns for right-alignment
+                colalign = []
+                num_cols = len(table[0])
+                for col_idx in range(num_cols):
+                    col_values = [row[col_idx] if col_idx < len(row) else "" for row in table[1:]]
+                    col_type = _column_type(col_values)
+                    colalign.append("right" if col_type in (int, float) else "left")
+
+                res = tabulate(
+                    table[1:],
+                    headers=table[0],
+                    tablefmt="github",
+                    disable_numparse=True,
+                    colalign=tuple(colalign) if colalign else None,
+                )
 
         return res
 
