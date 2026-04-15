@@ -90,8 +90,8 @@ groups:
 key_value_items: []
 name: Document
 pages:
-  '0':
-    page_no: 0
+  '1':
+    page_no: 1
     size:
       height: 512.0
       width: 512.0
