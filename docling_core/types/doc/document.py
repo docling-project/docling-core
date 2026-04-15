@@ -6003,9 +6003,7 @@ class DoclingDocument(BaseModel):
 
         if image_mode == ImageRefMode.REFERENCED and artifacts_dir is not None:
             os.makedirs(artifacts_dir, exist_ok=True)
-            doc: DoclingDocument = self._with_pictures_refs(
-                image_dir=artifacts_dir, page_no=page_no
-            )
+            doc: DoclingDocument = self._with_pictures_refs(image_dir=artifacts_dir, page_no=page_no)
         else:
             doc = self
 
