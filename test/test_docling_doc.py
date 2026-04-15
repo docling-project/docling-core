@@ -1024,6 +1024,72 @@ def test_save_pictures_with_page():
     assert n_images == 1
 
 
+def test_to_referenced_images(sample_doc, tmp_path):
+    """_to_referenced_images saves images and sets URIs with the given prefix."""
+    image_dir = tmp_path / "images"
+    prefix = "images/"
+
+    result = sample_doc._to_referenced_images(
+        image_dir=image_dir,
+        image_path_prefix=prefix,
+    )
+
+    # Directory must have been created and contain exactly one PNG
+    saved = list(image_dir.glob("*.png"))
+    assert len(saved) == 1, f"expected 1 saved image, got {len(saved)}"
+
+    # The filename should follow the sequential naming convention
+    assert saved[0].name == "image_001.png"
+
+    # The original document must not have been mutated
+    for item, _ in sample_doc.iterate_items(with_groups=False):
+        if isinstance(item, PictureItem) and item.image is not None:
+            assert str(item.image.uri) != prefix + "image_001.png", (
+                "_to_referenced_images must not mutate the source document"
+            )
+
+    # The returned document must have the URI set to prefix + filename
+    for item, _ in result.iterate_items(with_groups=False):
+        if isinstance(item, PictureItem) and item.image is not None:
+            assert str(item.image.uri) == prefix + "image_001.png"
+
+
+def test_to_referenced_images_markdown_output(sample_doc, tmp_path):
+    """_to_referenced_images + export_to_markdown emits the correct image refs."""
+    image_dir = tmp_path / "imgs"
+    prefix = "imgs/"
+
+    doc_ref = sample_doc._to_referenced_images(
+        image_dir=image_dir,
+        image_path_prefix=prefix,
+    )
+    md = doc_ref.export_to_markdown(image_mode=ImageRefMode.REFERENCED)
+
+    assert "imgs/image_001.png" in md, (
+        f"expected 'imgs/image_001.png' in markdown output, got:\n{md}"
+    )
+
+
+def test_to_embedded_images(sample_doc):
+    """_to_embedded_images returns a deep copy; the source document is unchanged."""
+    result = sample_doc._to_embedded_images()
+
+    # Must return a DoclingDocument
+    assert isinstance(result, DoclingDocument)
+
+    # Must be a copy, not the same object
+    assert result is not sample_doc
+
+    # Pictures that were already embedded should remain embedded in the copy
+    for item, _ in result.iterate_items(with_groups=False):
+        if isinstance(item, PictureItem) and item.image is not None:
+            # Embedded images have no file-based URI
+            if item.image.uri is not None:
+                assert not (
+                    isinstance(item.image.uri, Path) and item.image.uri.is_absolute()
+                ), "Expected no absolute file URI in embedded document"
+
+
 def _normalise_string_wrt_filepaths(instr: str, paths: list[Path]):
     for p in paths:
         instr = instr.replace(str(p), str(p.name))
