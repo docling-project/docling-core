@@ -8,6 +8,7 @@ from typing import Any, ClassVar
 from pydantic import BaseModel
 from typing_extensions import deprecated
 
+from docling_core.transforms.serializer.base import BaseDocSerializer
 from docling_core.types.doc import DoclingDocument as DLDocument
 
 DFLT_DELIM = "\n"
@@ -89,3 +90,21 @@ class BaseChunker(BaseModel, ABC):
     def serialize(self, chunk: BaseChunk) -> str:
         """Contextualize the given chunk. This implementation is embedding-targeted."""
         return self.contextualize(chunk=chunk)
+
+
+class BaseChunkExpander(BaseModel, ABC):
+    """Base chunk expander."""
+
+    @abstractmethod
+    def expand(self, chunk: BaseChunk, dl_doc: DLDocument, serializer: BaseDocSerializer) -> BaseChunk:
+        """Expand the given chunk.
+
+        Args:
+            chunk: The chunk to expand.
+            dl_doc: The DoclingDocument containing this chunk.
+            serializer: Serializer to convert document content to text.
+
+        Returns:
+            BaseChunk: The expanded chunk.
+        """
+        ...
