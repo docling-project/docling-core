@@ -42,9 +42,7 @@ class MsExcelMarkdownFallbackSerializer(MarkdownFallbackSerializer):
             heading = f"## {item.name}"
             text = f"{heading}\n\n{content}" if content else heading
             return create_ser_result(text=text, span_source=parts)
-        return super().serialize(
-            item=item, doc_serializer=doc_serializer, doc=doc, **kwargs
-        )
+        return super().serialize(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
 
 
 class MsExcelMarkdownDocSerializer(MarkdownDocSerializer):
