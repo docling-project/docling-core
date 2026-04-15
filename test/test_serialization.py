@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import AnyUrl
 
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
@@ -26,6 +27,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     DescriptionAnnotation,
     DoclingDocument,
+    Formatting,
     RefItem,
     RichTableCell,
     TableCell,
@@ -56,6 +58,64 @@ def verify(exp_file: Path, actual: str):
             actual = _normalize_quotes(actual)
 
         assert actual == expected
+
+
+def _build_table_with_footnote_doc(footnote_text: str) -> DoclingDocument:
+    doc = DoclingDocument(name="table_footnotes")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=1))
+    doc.add_table_cell(
+        table,
+        TableCell(
+            text="Header",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        TableCell(
+            text="Value*",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        ),
+    )
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote_text)
+    table.footnotes.append(footnote.get_ref())
+    return doc
+
+
+def _build_picture_with_footnote_doc(footnote_text: str) -> DoclingDocument:
+    doc = DoclingDocument(name="picture_footnotes")
+    picture = doc.add_picture()
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Picture caption")
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote_text)
+    picture.captions.append(caption.get_ref())
+    picture.footnotes.append(footnote.get_ref())
+    return doc
+
+
+def _build_table_with_formatted_footnote_doc() -> DoclingDocument:
+    doc = _build_table_with_footnote_doc(footnote_text="bold link")
+    footnote = next(text for text in doc.texts if text.label == DocItemLabel.FOOTNOTE)
+    footnote.formatting = Formatting(bold=True)
+    footnote.hyperlink = AnyUrl("https://example.com")
+    return doc
+
+
+def _build_table_with_multiple_formatted_footnotes_doc() -> DoclingDocument:
+    doc = _build_table_with_footnote_doc(footnote_text="one")
+    table = doc.tables[0]
+    first_footnote = next(text for text in doc.texts if text.label == DocItemLabel.FOOTNOTE)
+    first_footnote.formatting = Formatting(bold=True)
+    first_footnote.hyperlink = AnyUrl("https://one.example")
+
+    second_footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="two")
+    table.footnotes.append(second_footnote.get_ref())
+    return doc
 
 
 # ===============================
@@ -177,6 +237,42 @@ def test_md_charts():
     )
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
+
+
+def test_md_table_footnotes_are_serialized_once():
+    footnote_text = "Table footnote <unsafe> & more"
+    doc = _build_table_with_footnote_doc(footnote_text=footnote_text)
+
+    actual = doc.export_to_markdown()
+
+    assert "\n\nTable footnote &lt;unsafe&gt; &amp; more" in actual
+    assert actual.count("Table footnote") == 1
+
+
+def test_md_picture_footnotes_are_serialized_once():
+    footnote_text = "Picture footnote"
+    doc = _build_picture_with_footnote_doc(footnote_text=footnote_text)
+
+    actual = doc.export_to_markdown()
+
+    assert actual.index("Picture caption") < actual.index("<!-- image -->") < actual.index(footnote_text)
+    assert actual.count(footnote_text) == 1
+
+
+def test_md_footnotes_preserve_formatting_and_hyperlinks():
+    doc = _build_table_with_formatted_footnote_doc()
+
+    actual = doc.export_to_markdown()
+
+    assert "[**bold link**](https://example.com/)" in actual
+
+
+def test_md_multiple_footnotes_are_separate_blocks():
+    doc = _build_table_with_multiple_formatted_footnotes_doc()
+
+    actual = doc.export_to_markdown()
+
+    assert "[**one**](https://one.example/)\n\ntwo" in actual
 
 
 def test_md_inline_and_formatting():
@@ -705,6 +801,58 @@ def test_html_table_serializer_get_header_and_body_lines():
     assert "Footer" in str(body)
 
 
+def test_html_table_footnotes_are_serialized_once():
+    footnote_text = "Table footnote <unsafe> & more"
+    doc = _build_table_with_footnote_doc(footnote_text=footnote_text)
+
+    actual = doc.export_to_html()
+
+    assert '<div class="footnotes" role="note">' in actual
+    assert '<div class="footnote">' in actual
+    assert ".footnotes {" in actual
+    assert "&lt;unsafe&gt; &amp; more" in actual
+    assert actual.count("Table footnote") == 1
+    assert 'class="footnotes" role="note" style=' not in actual
+    assert 'class="footnote" style=' not in actual
+    assert actual.index("</table>") < actual.index('<div class="footnotes"')
+
+
+def test_html_picture_footnotes_are_serialized_once():
+    footnote_text = "Picture footnote <unsafe> & more"
+    doc = _build_picture_with_footnote_doc(footnote_text=footnote_text)
+
+    actual = doc.export_to_html()
+
+    assert '<div class="footnotes" role="note">' in actual
+    assert '<div class="footnote">' in actual
+    assert "&lt;unsafe&gt; &amp; more" in actual
+    assert actual.count("Picture footnote") == 1
+    assert ".footnote + .footnote {" in actual
+    assert 'class="footnotes" role="note" style=' not in actual
+    assert 'class="footnote" style=' not in actual
+    assert actual.index("<figcaption>") < actual.index('<div class="footnotes"') < actual.index("</figure>")
+
+
+def test_html_footnotes_preserve_formatting_and_hyperlinks():
+    doc = _build_table_with_formatted_footnote_doc()
+
+    actual = doc.export_to_html()
+
+    assert '<div class="footnotes"' in actual
+    assert '<a href="https://example.com/"><strong>bold link</strong></a>' in actual
+
+
+def test_html_hidden_footnotes_do_not_inject_footnote_css():
+    doc = _build_table_with_footnote_doc(footnote_text="hidden footnote")
+
+    actual = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(labels=_DEFAULT_LABELS - {DocItemLabel.FOOTNOTE}),
+    ).serialize().text
+
+    assert '<div class="footnotes"' not in actual
+    assert ".footnotes {" not in actual
+
 
 def test_html_charts():
     src = Path("./test/data/doc/barchart.json")
@@ -963,4 +1111,3 @@ def test_webvtt_params():
     ser_default = WebVTTDocSerializer(doc=doc, params=WebVTTParams())
     actual_default = ser_default.serialize().text
     assert len(actual) <= len(actual_default) or actual != actual_default
-
