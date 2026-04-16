@@ -5918,6 +5918,7 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         mark_annotations: bool = False,
         compact_tables: bool = False,
+        image_dir: Optional[Union[str, Path]] = None,
         traverse_pictures: bool = False,
         *,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
@@ -5971,6 +5972,10 @@ class DoclingDocument(BaseModel):
         :type mark_annotations: bool = False
         :param compact_tables: bool: Whether to use compact table format without column padding. (Default value = False).
         :type compact_tables: bool = False
+        :param image_dir: Optional directory path where images will be saved when using
+            ImageRefMode.REFERENCED. If provided, images are automatically saved to this
+            directory and referenced in the markdown output. (Default value = None).
+        :type image_dir: Optional[Union[str, Path]] = None
         :param traverse_pictures: bool: Whether to traverse into picture items and
             serialize their text children. Must be set to True for scanned/image-based
             PDFs processed with full-page OCR, where the layout model places all OCR
@@ -6001,8 +6006,16 @@ class DoclingDocument(BaseModel):
                 DeprecationWarning,
             )
 
+        # Handle image saving when image_dir is provided
+        doc = self
+        if image_dir is not None and image_mode == ImageRefMode.REFERENCED:
+            doc = self._with_pictures_refs(
+                image_dir=Path(image_dir),
+                page_no=page_no,
+            )
+
         serializer = MarkdownDocSerializer(
-            doc=self,
+            doc=doc,
             params=MarkdownParams(
                 labels=my_labels,
                 layers=my_layers,
@@ -6202,6 +6215,7 @@ class DoclingDocument(BaseModel):
         included_content_layers: Optional[set[ContentLayer]] = None,
         split_page_view: bool = False,
         include_annotations: bool = True,
+        image_dir: Optional[Union[str, Path]] = None,
     ) -> str:
         r"""Serialize to HTML."""
         from docling_core.transforms.serializer.html import (
@@ -6235,8 +6249,16 @@ class DoclingDocument(BaseModel):
         if html_head == "null":
             params.html_head = None
 
+        # Handle image saving when image_dir is provided
+        doc = self
+        if image_dir is not None and image_mode == ImageRefMode.REFERENCED:
+            doc = self._with_pictures_refs(
+                image_dir=Path(image_dir),
+                page_no=page_no,
+            )
+
         serializer = HTMLDocSerializer(
-            doc=self,
+            doc=doc,
             params=params,
         )
         ser_res = serializer.serialize()
