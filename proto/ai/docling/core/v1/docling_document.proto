@@ -74,7 +74,7 @@ message DoclingDocument {
   repeated FieldItem field_items = 15;
 
   // Map of page numbers to page metadata.
-  map<string, PageItem> pages = 12;
+  map<int32, PageItem> pages = 12;
 }
 
 // DocumentOrigin contains metadata about the source document file.
@@ -82,8 +82,8 @@ message DocumentOrigin {
   // MIME type of the source file
   string mimetype = 1;
 
-  // Binary hash of the source file for integrity verification.
-  string binary_hash = 2;
+  // Unsigned 64-bit hash of the source file for integrity verification.
+  uint64 binary_hash = 2;
 
   // Original filename of the source document
   string filename = 3;
@@ -162,12 +162,16 @@ message FineRef {
 }
 
 // TrackSource identifies a cue in a media track (audio, video, subtitles).
+//
+// The Pydantic model carries a `kind: Literal["track"]` discriminator field.
+// On the wire, that role is played by the parent `SourceType` oneof tag —
+// selecting `track` already identifies the variant. We deliberately omit a
+// redundant `kind` string field here.
 message TrackSource {
   double start_time = 1;
   double end_time = 2;
   optional string identifier = 3;
   optional string voice = 4;
-  optional string kind = 5;
 }
 
 // SourceType is a union of possible source descriptors.
@@ -302,6 +306,9 @@ enum CodeLanguageLabel {
   CODE_LANGUAGE_LABEL_VISUALBASIC = 56;
   CODE_LANGUAGE_LABEL_XML = 57;
   CODE_LANGUAGE_LABEL_YAML = 58;
+  CODE_LANGUAGE_LABEL_LATEX = 59;
+  CODE_LANGUAGE_LABEL_TIKZ = 60;
+  CODE_LANGUAGE_LABEL_DOCLANG = 61;
 }
 
 // Formatting contains text formatting/styling information.
@@ -311,6 +318,8 @@ message Formatting {
   bool underline = 3;
   bool strikethrough = 4;
   Script script = 5;
+  // Raw script string (fallback for unknown enum values).
+  optional string script_raw = 6;
 }
 
 // BaseTextItem is a union type representing any text-based item in the document.
@@ -375,16 +384,36 @@ message ListItem {
 }
 
 // CodeItem represents a code block with syntax highlighting metadata.
+//
+// Unlike the other text variants (TitleItem, TextItem, etc.), CodeItem does
+// NOT use a `TextItemBase base = 1` wrapper. Reason: in Pydantic, CodeItem
+// inherits from both TextItem (whose `meta` is `Optional[BaseMeta]`) and
+// FloatingItem (which overrides `meta` to `Optional[FloatingMeta]`). Wrapping
+// TextItemBase here would surface two `meta` slots on the wire — `base.meta`
+// (BaseMeta) and the outer override (FloatingMeta) — with no schema-level
+// rule for which one a producer should populate. Inlining the base fields
+// keeps a single, unambiguous `meta = 5` field of type FloatingMeta.
 message CodeItem {
-  TextItemBase base = 1;
-  optional FloatingMeta meta = 2;
-  repeated RefItem captions = 3;
-  repeated RefItem references = 4;
-  repeated RefItem footnotes = 5;
-  optional ImageRef image = 6;
-  optional CodeLanguageLabel code_language = 7;
-  // Raw label string (fallback for unknown enum values).
-  optional string code_language_raw = 8;
+  string self_ref = 1;
+  optional RefItem parent = 2;
+  repeated RefItem children = 3;
+  ContentLayer content_layer = 4;
+  optional FloatingMeta meta = 5;
+  DocItemLabel label = 6;
+  repeated ProvenanceItem prov = 7;
+  string orig = 8;
+  string text = 9;
+  optional Formatting formatting = 10;
+  optional string hyperlink = 11;
+  repeated SourceType source = 12;
+  repeated FineRef comments = 13;
+  repeated RefItem captions = 14;
+  repeated RefItem references = 15;
+  repeated RefItem footnotes = 16;
+  optional ImageRef image = 17;
+  optional CodeLanguageLabel code_language = 18;
+  // Raw language string (fallback for unknown enum values).
+  optional string code_language_raw = 19;
 }
 
 // FormulaItem represents a mathematical formula or equation.
@@ -578,12 +607,12 @@ message TableAnnotation {
 
 // PictureItem represents an image or figure in the document.
 message PictureItem {
-  optional string self_ref = 1;
-  RefItem parent = 2;
+  string self_ref = 1;
+  optional RefItem parent = 2;
   repeated RefItem children = 3;
   ContentLayer content_layer = 4;
   optional PictureMeta meta = 5;
-  string label = 6;
+  DocItemLabel label = 6;
   repeated ProvenanceItem prov = 7;
   repeated RefItem captions = 8;
   repeated RefItem references = 9;
@@ -592,6 +621,8 @@ message PictureItem {
   repeated SourceType source = 12;
   repeated FineRef comments = 13;
   repeated PictureAnnotation annotations = 14;
+  // Raw label fallback for forward-compatibility with newer label vocabularies.
+  optional string label_raw = 15;
 }
 
 // PictureMeta contains rich metadata for pictures, including AI analysis.
@@ -601,6 +632,7 @@ message PictureMeta {
   optional PictureClassificationMetaField classification = 3;
   optional MoleculeMetaField molecule = 4;
   optional TabularChartMetaField tabular_chart = 5;
+  optional CodeMetaField code = 6;
   map<string, google.protobuf.Value> custom_fields = 100;
 }
 
@@ -643,6 +675,17 @@ message TabularChartMetaField {
   map<string, google.protobuf.Value> custom_fields = 100;
 }
 
+// CodeMetaField contains code OCR output extracted from a picture region.
+message CodeMetaField {
+  optional double confidence = 1;
+  optional string created_by = 2;
+  string text = 3;
+  CodeLanguageLabel language = 4;
+  // Raw language fallback for forward-compatibility with newer language vocabularies.
+  optional string language_raw = 5;
+  map<string, google.protobuf.Value> custom_fields = 100;
+}
+
 // FloatingMeta contains metadata for floating elements (tables, code blocks, figures).
 message FloatingMeta {
   optional SummaryMetaField summary = 1;
@@ -657,7 +700,7 @@ message TableItem {
   repeated RefItem children = 3;
   ContentLayer content_layer = 4;
   optional FloatingMeta meta = 5;
-  string label = 6;
+  DocItemLabel label = 6;
   repeated ProvenanceItem prov = 7;
   repeated RefItem captions = 8;
   repeated RefItem references = 9;
@@ -667,6 +710,8 @@ message TableItem {
   repeated SourceType source = 13;
   repeated FineRef comments = 14;
   repeated TableAnnotation annotations = 15;
+  // Raw label fallback for forward-compatibility with newer label vocabularies.
+  optional string label_raw = 16;
 }
 
 // TableData contains the complete table structure and content.
@@ -706,7 +751,7 @@ message KeyValueItem {
   repeated RefItem children = 3;
   ContentLayer content_layer = 4;
   optional FloatingMeta meta = 5;
-  string label = 6;
+  DocItemLabel label = 6;
   repeated ProvenanceItem prov = 7;
   repeated RefItem captions = 8;
   repeated RefItem references = 9;
@@ -715,6 +760,8 @@ message KeyValueItem {
   GraphData graph = 12;
   repeated SourceType source = 13;
   repeated FineRef comments = 14;
+  // Raw label fallback for forward-compatibility with newer label vocabularies.
+  optional string label_raw = 15;
 }
 
 // GraphData represents the structure of key-value relationships as a graph.
@@ -764,7 +811,7 @@ message FormItem {
   repeated RefItem children = 3;
   ContentLayer content_layer = 4;
   optional FloatingMeta meta = 5;
-  string label = 6;
+  DocItemLabel label = 6;
   repeated ProvenanceItem prov = 7;
   repeated RefItem captions = 8;
   repeated RefItem references = 9;
@@ -773,6 +820,8 @@ message FormItem {
   GraphData graph = 12;
   repeated SourceType source = 13;
   repeated FineRef comments = 14;
+  // Raw label fallback for forward-compatibility with newer label vocabularies.
+  optional string label_raw = 15;
 }
 
 // FieldRegionItem represents a region containing form fields.

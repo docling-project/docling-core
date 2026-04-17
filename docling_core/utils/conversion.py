@@ -12,6 +12,7 @@ from docling_core.types.doc.document import (
     BaseSource,
     BoundingBox,
     CodeItem,
+    CodeMetaField,
     ContentLayer,
     DescriptionAnnotation,
     DescriptionMetaField,
@@ -140,6 +141,30 @@ _DOC_ITEM_LABEL_MAP = {
     DocItemLabel.MARKER.value: pb2.DOC_ITEM_LABEL_MARKER,
 }
 
+
+def _to_doc_item_label_enum_and_raw(
+    value: Enum | str | None,
+) -> tuple[int, Optional[str]]:
+    if value is None:
+        return pb2.DOC_ITEM_LABEL_UNSPECIFIED, None
+    key = value.value if isinstance(value, Enum) else str(value)
+    enum_val = _DOC_ITEM_LABEL_MAP.get(str(key))
+    if enum_val is None:
+        return pb2.DOC_ITEM_LABEL_UNSPECIFIED, str(key)
+    return enum_val, None
+
+
+def _to_code_language_enum_and_raw(
+    value: Enum | str | None,
+) -> tuple[int, Optional[str]]:
+    if value is None:
+        return pb2.CODE_LANGUAGE_LABEL_UNSPECIFIED, None
+    key = value.value if isinstance(value, Enum) else str(value)
+    enum_val = _CODE_LANGUAGE_MAP.get(str(key))
+    if enum_val is None:
+        return pb2.CODE_LANGUAGE_LABEL_UNSPECIFIED, str(key)
+    return enum_val, None
+
 _SCRIPT_MAP = {
     Script.BASELINE.value: pb2.SCRIPT_BASELINE,
     Script.SUB.value: pb2.SCRIPT_SUB,
@@ -225,6 +250,9 @@ _CODE_LANGUAGE_MAP = {
     CodeLanguageLabel.VISUALBASIC.value: pb2.CODE_LANGUAGE_LABEL_VISUALBASIC,
     CodeLanguageLabel.XML.value: pb2.CODE_LANGUAGE_LABEL_XML,
     CodeLanguageLabel.YAML.value: pb2.CODE_LANGUAGE_LABEL_YAML,
+    CodeLanguageLabel.LATEX.value: pb2.CODE_LANGUAGE_LABEL_LATEX,
+    CodeLanguageLabel.TIKZ.value: pb2.CODE_LANGUAGE_LABEL_TIKZ,
+    CodeLanguageLabel.DOCLANG.value: pb2.CODE_LANGUAGE_LABEL_DOCLANG,
 }
 
 
@@ -283,13 +311,14 @@ def _to_fine_ref(ref: FineRef) -> pb2.FineRef:
 
 
 def _to_track_source(source: TrackSource) -> pb2.TrackSource:
+    # `source.kind` is the Pydantic discriminator (Literal["track"]).
+    # On the wire, the SourceType oneof tag selects the variant — no need
+    # to also serialize the discriminator string.
     msg = pb2.TrackSource(start_time=source.start_time, end_time=source.end_time)
     if source.identifier is not None:
         msg.identifier = source.identifier
     if source.voice is not None:
         msg.voice = source.voice
-    if source.kind is not None:
-        msg.kind = source.kind
     return msg
 
 
@@ -380,6 +409,19 @@ def _to_tabular_chart_meta(meta: TabularChartMetaField) -> pb2.TabularChartMetaF
     return msg
 
 
+def _to_code_meta(meta: CodeMetaField) -> pb2.CodeMetaField:
+    enum_val, raw = _to_code_language_enum_and_raw(meta.language)
+    msg = pb2.CodeMetaField(text=meta.text, language=enum_val)
+    if raw is not None:
+        msg.language_raw = raw
+    if meta.confidence is not None:
+        msg.confidence = meta.confidence
+    if meta.created_by is not None:
+        msg.created_by = str(meta.created_by)
+    _apply_custom_fields(msg, meta)
+    return msg
+
+
 def _to_floating_meta(meta: Optional[FloatingMeta]) -> Optional[pb2.FloatingMeta]:
     if meta is None:
         return None
@@ -408,6 +450,8 @@ def _to_picture_meta(meta: Optional[PictureMeta]) -> Optional[pb2.PictureMeta]:
         msg.molecule.CopyFrom(_to_molecule_meta(meta.molecule))
     if meta.tabular_chart is not None:
         msg.tabular_chart.CopyFrom(_to_tabular_chart_meta(meta.tabular_chart))
+    if meta.code is not None:
+        msg.code.CopyFrom(_to_code_meta(meta.code))
     _apply_custom_fields(msg, meta)
     return msg
 
@@ -659,8 +703,15 @@ def _to_formatting(fmt: Optional[Formatting]) -> Optional[pb2.Formatting]:
         italic=fmt.italic,
         underline=fmt.underline,
         strikethrough=fmt.strikethrough,
-        script=_enum_value(fmt.script, _SCRIPT_MAP, pb2.SCRIPT_UNSPECIFIED),
     )
+    if fmt.script is not None:
+        key = fmt.script.value if isinstance(fmt.script, Enum) else str(fmt.script)
+        enum_val = _SCRIPT_MAP.get(str(key))
+        if enum_val is None:
+            msg.script = pb2.SCRIPT_UNSPECIFIED
+            msg.script_raw = str(key)
+        else:
+            msg.script = enum_val
     return msg
 
 
@@ -765,10 +816,35 @@ def _to_list_item(item: ListItem) -> pb2.ListItem:
 
 
 def _to_code_item(item: CodeItem) -> pb2.CodeItem:
-    msg = pb2.CodeItem(base=_to_text_item_base(item))
+    msg = pb2.CodeItem(
+        self_ref=item.self_ref,
+        content_layer=_enum_value(
+            item.content_layer, _CONTENT_LAYER_MAP, pb2.CONTENT_LAYER_UNSPECIFIED
+        ),
+        label=_enum_value(
+            item.label, _DOC_ITEM_LABEL_MAP, pb2.DOC_ITEM_LABEL_UNSPECIFIED
+        ),
+        orig=item.orig,
+        text=item.text,
+    )
+    if item.parent is not None:
+        msg.parent.CopyFrom(_to_ref(item.parent))
+    if item.children:
+        msg.children.extend([_to_ref(child) for child in item.children])
     meta = _to_floating_meta(item.meta)
     if meta is not None:
         msg.meta.CopyFrom(meta)
+    if item.prov:
+        msg.prov.extend([_to_provenance_item(p) for p in item.prov])
+    fmt = _to_formatting(item.formatting)
+    if fmt is not None:
+        msg.formatting.CopyFrom(fmt)
+    if item.hyperlink is not None:
+        msg.hyperlink = str(item.hyperlink)
+    if item.source:
+        msg.source.extend([_to_source_type(src) for src in item.source])
+    if item.comments:
+        msg.comments.extend([_to_fine_ref(ref) for ref in item.comments])
     if item.captions:
         msg.captions.extend([_to_ref(ref) for ref in item.captions])
     if item.references:
@@ -779,17 +855,10 @@ def _to_code_item(item: CodeItem) -> pb2.CodeItem:
     if image is not None:
         msg.image.CopyFrom(image)
     if item.code_language is not None:
-        key = (
-            item.code_language.value
-            if isinstance(item.code_language, Enum)
-            else str(item.code_language)
-        )
-        enum_val = _CODE_LANGUAGE_MAP.get(str(key))
-        if enum_val is None:
-            msg.code_language = pb2.CODE_LANGUAGE_LABEL_UNSPECIFIED
-            msg.code_language_raw = str(key)
-        else:
-            msg.code_language = enum_val
+        enum_val, raw = _to_code_language_enum_and_raw(item.code_language)
+        msg.code_language = enum_val
+        if raw is not None:
+            msg.code_language_raw = raw
     return msg
 
 
@@ -856,13 +925,16 @@ def _to_table_data(data: TableData) -> pb2.TableData:
 
 
 def _to_table_item_base(item: TableItem) -> pb2.TableItem:
+    label_enum, label_raw = _to_doc_item_label_enum_and_raw(item.label)
     msg = pb2.TableItem(
         self_ref=item.self_ref,
         content_layer=_enum_value(
             item.content_layer, _CONTENT_LAYER_MAP, pb2.CONTENT_LAYER_UNSPECIFIED
         ),
-        label=str(item.label.value),
+        label=label_enum,
     )
+    if label_raw is not None:
+        msg.label_raw = label_raw
     if item.parent is not None:
         msg.parent.CopyFrom(_to_ref(item.parent))
     if item.children:
@@ -897,13 +969,16 @@ def _to_table_item(item: TableItem) -> pb2.TableItem:
 
 
 def _to_picture_item(item: PictureItem) -> pb2.PictureItem:
+    label_enum, label_raw = _to_doc_item_label_enum_and_raw(item.label)
     msg = pb2.PictureItem(
         self_ref=item.self_ref,
         content_layer=_enum_value(
             item.content_layer, _CONTENT_LAYER_MAP, pb2.CONTENT_LAYER_UNSPECIFIED
         ),
-        label=str(item.label.value),
+        label=label_enum,
     )
+    if label_raw is not None:
+        msg.label_raw = label_raw
     if item.parent is not None:
         msg.parent.CopyFrom(_to_ref(item.parent))
     if item.children:
@@ -968,13 +1043,16 @@ def _to_graph_data(data: GraphData) -> pb2.GraphData:
 
 
 def _to_key_value_item(item: KeyValueItem) -> pb2.KeyValueItem:
+    label_enum, label_raw = _to_doc_item_label_enum_and_raw(item.label)
     msg = pb2.KeyValueItem(
         self_ref=item.self_ref,
         content_layer=_enum_value(
             item.content_layer, _CONTENT_LAYER_MAP, pb2.CONTENT_LAYER_UNSPECIFIED
         ),
-        label=str(item.label.value),
+        label=label_enum,
     )
+    if label_raw is not None:
+        msg.label_raw = label_raw
     if item.parent is not None:
         msg.parent.CopyFrom(_to_ref(item.parent))
     if item.children:
@@ -1002,13 +1080,16 @@ def _to_key_value_item(item: KeyValueItem) -> pb2.KeyValueItem:
 
 
 def _to_form_item(item: FormItem) -> pb2.FormItem:
+    label_enum, label_raw = _to_doc_item_label_enum_and_raw(item.label)
     msg = pb2.FormItem(
         self_ref=item.self_ref,
         content_layer=_enum_value(
             item.content_layer, _CONTENT_LAYER_MAP, pb2.CONTENT_LAYER_UNSPECIFIED
         ),
-        label=str(item.label.value),
+        label=label_enum,
     )
+    if label_raw is not None:
+        msg.label_raw = label_raw
     if item.parent is not None:
         msg.parent.CopyFrom(_to_ref(item.parent))
     if item.children:
@@ -1117,7 +1198,7 @@ def _to_page_item(page: PageItem) -> pb2.PageItem:
 def _to_document_origin(origin: DocumentOrigin) -> pb2.DocumentOrigin:
     msg = pb2.DocumentOrigin(
         mimetype=origin.mimetype,
-        binary_hash=str(origin.binary_hash),
+        binary_hash=int(origin.binary_hash),
         filename=origin.filename,
     )
     if origin.uri is not None:
@@ -1162,5 +1243,5 @@ def docling_document_to_proto(doc: DoclingDocument) -> pb2.DoclingDocument:
     if doc.field_items:
         msg.field_items.extend([_to_field_item(item) for item in doc.field_items])
     for key, page in doc.pages.items():
-        msg.pages[str(key)].CopyFrom(_to_page_item(page))
+        msg.pages[int(key)].CopyFrom(_to_page_item(page))
     return msg
