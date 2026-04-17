@@ -645,7 +645,8 @@ def test_construct_bad_doc():
     filename = "test/data/doc/bad_doc.yaml"
 
     doc = _construct_bad_doc()
-    assert not doc.validate_tree(doc.body)
+    with pytest.raises(ValueError):
+        doc.validate_tree(doc.body, raise_on_error=True)
 
     with pytest.raises(ValueError):
         _test_export_methods(doc, filename=filename)
@@ -1548,6 +1549,14 @@ def test_misplaced_list_items():
     else:
         exp_doc = DoclingDocument.load_from_yaml(exp_file)
         assert doc == exp_doc
+
+def test_moving_within_same_parent():
+    doc = DoclingDocument(name="")
+    doc.add_text(label=DocItemLabel.TEXT, text="bar")
+    foo = doc.add_text(label=DocItemLabel.TEXT, text="foo")
+    assert foo.parent is not None
+    doc._move_subtree(old_subroot=foo, new_subroot=foo.parent.resolve(doc), pos=0)
+    assert [it.text for it, _ in doc.iterate_items() if isinstance(it, TextItem)] == ["foo", "bar"]
 
 
 def test_export_with_precision():

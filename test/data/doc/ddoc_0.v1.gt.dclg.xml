@@ -4,6 +4,7 @@
     <location value="24"/>
     <location value="355"/>
     <location value="31"/>
+    <layer class="furniture"/>
   </text>
   <floating_group class="table">
     <otsl>
@@ -195,11 +196,13 @@
     <location value="486"/>
     <location value="228"/>
     <location value="493"/>
+    <layer class="furniture"/>
   </text>
   <text>
     <location value="463"/>
     <location value="482"/>
     <location value="482"/>
     <location value="487"/>
+    <layer class="furniture"/>
   </text>
 </doclang>

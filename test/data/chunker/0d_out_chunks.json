@@ -259,7 +259,7 @@
         }
     },
     {
-        "text": "Table 1: Runtime characteristics of Docling with the standard model pipeline and settings, on our test dataset of 225 pages, on two different systems. OCR is disabled. We show the time-to-solution (TTS), computed throughput in pages per second, and the peak memory used (resident set size) for both the Docling-native PDF backend and for the pypdfium backend, using 4 and 16 threads.\n| CPU | Thread budget | native backend | native backend | native backend | pypdfium backend | pypdfium backend | pypdfium backend || - | - | - | - | - | - | - | - ||  |  | TTS | Pages/s | Mem | TTS | Pages/s | Mem || Apple M3 Max | 4 | 177 s 167 s | 1.27 1.34 | 6.20 GB | 103 s 92 s | 2.18 2.45 | 2.56 GB |",
+        "text": "Table 1: Runtime characteristics of Docling with the standard model pipeline and settings, on our test dataset of 225 pages, on two different systems. OCR is disabled. We show the time-to-solution (TTS), computed throughput in pages per second, and the peak memory used (resident set size) for both the Docling-native PDF backend and for the pypdfium backend, using 4 and 16 threads.\n\n| CPU | Thread budget | native backend | native backend | native backend | pypdfium backend | pypdfium backend | pypdfium backend |\n| - | - | - | - | - | - | - | - |\n|  |  | TTS | Pages/s | Mem | TTS | Pages/s | Mem |\n| Apple M3 Max | 4 | 177 s 167 s | 1.27 1.34 | 6.20 GB | 103 s 92 s | 2.18 2.45 | 2.56 GB |\n",
         "meta": {
             "doc_items": [
                 "#/tables/0"
@@ -271,7 +271,7 @@
         }
     },
     {
-        "text": "Table 1: Runtime characteristics of Docling with the standard model pipeline and settings, on our test dataset of 225 pages, on two different systems. OCR is disabled. We show the time-to-solution (TTS), computed throughput in pages per second, and the peak memory used (resident set size) for both the Docling-native PDF backend and for the pypdfium backend, using 4 and 16 threads.\n| CPU | Thread budget | native backend | native backend | native backend | pypdfium backend | pypdfium backend | pypdfium backend || (16 cores) Intel(R) Xeon E5-2690 | 16 4 16 | 375 s 244 s | 0.60 0.92 | 6.16 GB | 239 s 143 s | 0.94 1.57 | 2.42 GB |",
+        "text": "Table 1: Runtime characteristics of Docling with the standard model pipeline and settings, on our test dataset of 225 pages, on two different systems. OCR is disabled. We show the time-to-solution (TTS), computed throughput in pages per second, and the peak memory used (resident set size) for both the Docling-native PDF backend and for the pypdfium backend, using 4 and 16 threads.\n\n| CPU | Thread budget | native backend | native backend | native backend | pypdfium backend | pypdfium backend | pypdfium backend |\n| (16 cores) Intel(R) Xeon E5-2690 | 16 4 16 | 375 s 244 s | 0.60 0.92 | 6.16 GB | 239 s 143 s | 0.94 1.57 | 2.42 GB |",
         "meta": {
             "doc_items": [
                 "#/tables/0"
@@ -770,7 +770,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || class label | Count | Train | Test | Val | All | Fin | Man | Sci | Law | Pat | Ten || Caption | 22524 | 2.04 | 1.77 | 2.32 | 84-89 | 40-61 | 86-92 | 94-99 | 95-99 | 69-78 | n/a |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| class label | Count | Train | Test | Val | All | Fin | Man | Sci | Law | Pat | Ten |\n| Caption | 22524 | 2.04 | 1.77 | 2.32 | 84-89 | 40-61 | 86-92 | 94-99 | 95-99 | 69-78 | n/a |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -782,7 +782,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Footnote | 6318 | 0.60 | 0.31 | 0.58 | 83-91 | n/a | 100 | 62-88 | 85-94 | n/a | 82-97 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Footnote | 6318 | 0.60 | 0.31 | 0.58 | 83-91 | n/a | 100 | 62-88 | 85-94 | n/a | 82-97 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -794,7 +794,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Formula | 25027 | 2.25 | 1.90 | 2.96 | 83-85 | n/a | n/a | 84-87 | 86-96 | n/a | n/a |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Formula | 25027 | 2.25 | 1.90 | 2.96 | 83-85 | n/a | n/a | 84-87 | 86-96 | n/a | n/a |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -806,7 +806,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || List-item | 185660 | 17.19 | 13.34 | 15.82 | 87-88 | 74-83 | 90-92 | 97-97 | 81-85 | 75-88 | 93-95 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| List-item | 185660 | 17.19 | 13.34 | 15.82 | 87-88 | 74-83 | 90-92 | 97-97 | 81-85 | 75-88 | 93-95 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -818,7 +818,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Page-footer | 70878 | 6.51 | 5.58 | 6.00 | 93-94 | 88-90 | 95-96 | 100 | 92-97 | 100 | 96-98 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Page-footer | 70878 | 6.51 | 5.58 | 6.00 | 93-94 | 88-90 | 95-96 | 100 | 92-97 | 100 | 96-98 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -830,7 +830,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Page-header | 58022 | 5.10 | 6.70 | 5.06 | 85-89 | 66-76 | 90-94 | 98-100 | 91-92 | 97-99 | 81-86 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Page-header | 58022 | 5.10 | 6.70 | 5.06 | 85-89 | 66-76 | 90-94 | 98-100 | 91-92 | 97-99 | 81-86 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -842,7 +842,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Picture | 45976 | 4.21 | 2.78 | 5.31 | 69-71 | 56-59 | 82-86 | 69-82 | 80-95 | 66-71 | 59-76 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Picture | 45976 | 4.21 | 2.78 | 5.31 | 69-71 | 56-59 | 82-86 | 69-82 | 80-95 | 66-71 | 59-76 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -854,7 +854,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Section-header | 142884 | 12.60 | 15.77 | 12.85 | 83-84 | 76-81 | 90-92 | 94-95 | 87-94 | 69-73 | 78-86 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Section-header | 142884 | 12.60 | 15.77 | 12.85 | 83-84 | 76-81 | 90-92 | 94-95 | 87-94 | 69-73 | 78-86 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -866,7 +866,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Table | 34733 | 3.20 | 2.27 | 3.60 | 77-81 | 75-80 | 83-86 | 98-99 | 58-80 | 79-84 | 70-85 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Table | 34733 | 3.20 | 2.27 | 3.60 | 77-81 | 75-80 | 83-86 | 98-99 | 58-80 | 79-84 | 70-85 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -878,7 +878,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Text | 510377 | 45.82 | 49.28 | 45.00 | 84-86 | 81-86 | 88-93 | 89-93 | 87-92 | 71-79 | 87-95 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Text | 510377 | 45.82 | 49.28 | 45.00 | 84-86 | 81-86 | 88-93 | 89-93 | 87-92 | 71-79 | 87-95 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -890,7 +890,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Title | 5071 | 0.47 | 0.30 | 0.50 | 60-72 | 24-63 | 50-63 | 94-100 | 82-96 | 68-79 | 24-56 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Title | 5071 | 0.47 | 0.30 | 0.50 | 60-72 | 24-63 | 50-63 | 94-100 | 82-96 | 68-79 | 24-56 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -902,7 +902,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Total | 1107470 | 941123 | 99816 | 66531 | 82-83 | 71-74 | 79-81 | 89-94 | 86-91 | 71-76 | 68-85 |",
+        "text": "| class label | Count | % of Total | % of Total | % of Total | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) | triple inter-annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Total | 1107470 | 941123 | 99816 | 66531 | 82-83 | 71-74 | 79-81 | 89-94 | 86-91 | 71-76 | 68-85 |",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -930,7 +930,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || class label | Count | Train | Test | Val | All | Fin | Man | Sci | Law | Pat | Ten || Caption | 22524 | 2.04 | 1.77 | 2.32 | 84-89 | 40-61 | 86-92 | 94-99 | 95-99 | 69-78 | n/a |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| class label | Count | Train | Test | Val | All | Fin | Man | Sci | Law | Pat | Ten |\n| Caption | 22524 | 2.04 | 1.77 | 2.32 | 84-89 | 40-61 | 86-92 | 94-99 | 95-99 | 69-78 | n/a |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -942,7 +942,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Footnote | 6318 | 0.60 | 0.31 | 0.58 | 83-91 | n/a | 100 | 62-88 | 85-94 | n/a | 82-97 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Footnote | 6318 | 0.60 | 0.31 | 0.58 | 83-91 | n/a | 100 | 62-88 | 85-94 | n/a | 82-97 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -954,7 +954,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Formula | 25027 | 2.25 | 1.90 | 2.96 | 83-85 | n/a | n/a | 84-87 | 86-96 | n/a | n/a |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Formula | 25027 | 2.25 | 1.90 | 2.96 | 83-85 | n/a | n/a | 84-87 | 86-96 | n/a | n/a |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -966,7 +966,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || List-item | 185660 | 17.19 | 13.34 | 15.82 | 87-88 | 74-83 | 90-92 | 97-97 | 81-85 | 75-88 | 93-95 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| List-item | 185660 | 17.19 | 13.34 | 15.82 | 87-88 | 74-83 | 90-92 | 97-97 | 81-85 | 75-88 | 93-95 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -978,7 +978,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Page- footer | 70878 | 6.51 | 5.58 | 6.00 | 93-94 | 88-90 | 95-96 | 100 | 92-97 | 100 | 96-98 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Page- footer | 70878 | 6.51 | 5.58 | 6.00 | 93-94 | 88-90 | 95-96 | 100 | 92-97 | 100 | 96-98 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -990,7 +990,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Page- header | 58022 | 5.10 | 6.70 | 5.06 | 85-89 | 66-76 | 90-94 | 98-100 | 91-92 | 97-99 | 81-86 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Page- header | 58022 | 5.10 | 6.70 | 5.06 | 85-89 | 66-76 | 90-94 | 98-100 | 91-92 | 97-99 | 81-86 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -1002,7 +1002,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Picture | 45976 | 4.21 | 2.78 | 5.31 | 69-71 | 56-59 | 82-86 | 69-82 | 80-95 | 66-71 | 59-76 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Picture | 45976 | 4.21 | 2.78 | 5.31 | 69-71 | 56-59 | 82-86 | 69-82 | 80-95 | 66-71 | 59-76 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -1014,7 +1014,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Section- header | 142884 | 12.60 | 15.77 | 12.85 | 83-84 | 76-81 | 90-92 | 94-95 | 87-94 | 69-73 | 78-86 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Section- header | 142884 | 12.60 | 15.77 | 12.85 | 83-84 | 76-81 | 90-92 | 94-95 | 87-94 | 69-73 | 78-86 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -1026,7 +1026,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Table | 34733 | 3.20 | 2.27 | 3.60 | 77-81 | 75-80 | 83-86 | 98-99 | 58-80 | 79-84 | 70-85 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Table | 34733 | 3.20 | 2.27 | 3.60 | 77-81 | 75-80 | 83-86 | 98-99 | 58-80 | 79-84 | 70-85 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -1038,7 +1038,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Text | 510377 | 45.82 | 49.28 | 45.00 | 84-86 | 81-86 | 88-93 | 89-93 | 87-92 | 71-79 | 87-95 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Text | 510377 | 45.82 | 49.28 | 45.00 | 84-86 | 81-86 | 88-93 | 89-93 | 87-92 | 71-79 | 87-95 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -1050,7 +1050,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Title | 5071 | 0.47 | 0.30 | 0.50 | 60-72 | 24-63 | 50-63 | 94-100 | 82-96 | 68-79 | 24-56 |",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Title | 5071 | 0.47 | 0.30 | 0.50 | 60-72 | 24-63 | 50-63 | 94-100 | 82-96 | 68-79 | 24-56 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
@@ -1062,7 +1062,7 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - || Total | 1107470 | 941123 | 99816 | 66531 | 82-83 | 71-74 | 79-81 | 89-94 | 86-91 | 71-76 | 68-85 |\n3\n,\ngovernment offices,\nWe reviewed the col-\n,\nPage-\nTitle and\n.",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Total | 1107470 | 941123 | 99816 | 66531 | 82-83 | 71-74 | 79-81 | 89-94 | 86-91 | 71-76 | 68-85 |\n3\n,\ngovernment offices,\nWe reviewed the col-\n,\nPage-\nTitle and\n.",
         "meta": {
             "doc_items": [
                 "#/tables/4",

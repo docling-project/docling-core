@@ -154,11 +154,13 @@
         <nl/>
       </otsl>
     </floating_group>
-    <location value="52"/>
-    <location value="345"/>
-    <location value="227"/>
-    <location value="355"/>
-    <checkbox class="unselected"/>
+    <text>
+      <location value="52"/>
+      <location value="345"/>
+      <location value="227"/>
+      <location value="355"/>
+      <checkbox class="unselected"/>
+    </text>
     <text>
       <location value="53"/>
       <location value="359"/>
@@ -265,11 +267,13 @@
         <location value="479"/>
       </value>
     </field_item>
-    <location value="273"/>
-    <location value="345"/>
-    <location value="358"/>
-    <location value="354"/>
-    <checkbox class="selected"/>
+    <text>
+      <location value="273"/>
+      <location value="345"/>
+      <location value="358"/>
+      <location value="354"/>
+      <checkbox class="selected"/>
+    </text>
     <text>
       <location value="269"/>
       <location value="363"/>
@@ -328,11 +332,13 @@
     <location value="486"/>
     <location value="156"/>
     <location value="489"/>
+    <layer class="furniture"/>
   </text>
   <text>
     <location value="30"/>
     <location value="471"/>
     <location value="34"/>
     <location value="476"/>
+    <layer class="furniture"/>
   </text>
 </doclang>

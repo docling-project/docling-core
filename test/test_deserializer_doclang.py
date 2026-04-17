@@ -1236,3 +1236,53 @@ def test_picture_tabular_chart_content_cdata_cells():
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[0][1].text == "Player expenses in million U.S. dollars"
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][0].text == "19/20"
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][1].text == "111"
+
+
+
+def test_roundtrip_with_layers():
+    """Test roundtrip with content layers."""
+    from docling_core.types.doc import ContentLayer
+
+    doc = DoclingDocument(name="t")
+    # Add items with different layers
+    doc.add_text(label=DocItemLabel.PAGE_HEADER, text="Header", content_layer=ContentLayer.FURNITURE)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body text", content_layer=ContentLayer.BODY)
+    doc.add_text(label=DocItemLabel.PAGE_FOOTER, text="Footer", content_layer=ContentLayer.FURNITURE)
+
+    # Serialize with ALWAYS mode to ensure layers are included
+    from docling_core.experimental.doclang import LayerMode
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(layer_mode=LayerMode.ALWAYS),
+    )
+    dt = ser.serialize().text
+
+    # Deserialize
+    doc2 = _deserialize(dt)
+
+    # Verify layers are preserved
+    assert len(doc2.body.children) == 3
+    items = [doc2.body.children[i].resolve(doc2) for i in range(3)]
+    assert items[0].content_layer == ContentLayer.FURNITURE
+    assert items[1].content_layer == ContentLayer.BODY
+    assert items[2].content_layer == ContentLayer.FURNITURE
+
+def test_roundtrip_with_newlines():
+    doclang_str = """
+<doclang version="1.0.0">
+  <text>
+    <content>foo
+bar</content>
+  </text>
+  <text>
+    <content>zoo
+ </content>
+    <bold>zen</bold>
+  </text>
+</doclang>"""
+
+    doc = _deserialize(doclang_str)
+
+    exp_doclang_str = doc.export_to_doclang()
+
+    assert doclang_str.strip() == exp_doclang_str.strip()

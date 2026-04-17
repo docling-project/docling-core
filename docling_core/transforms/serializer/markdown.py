@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
-from tabulate import tabulate
+from tabulate import _column_type, tabulate
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -440,7 +440,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
             the header row and separator row, and body_lines contains the data rows.
         """
 
-        lines = [line for line in table_text.split("\n") if line.strip()]
+        lines = [line for line in table_text.splitlines(True) if line.strip()]
 
         if len(lines) < 2:
             # Not enough lines for a proper markdown table (need at least header + separator)
@@ -549,15 +549,22 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
                 rows.append(rendered_row)
             if len(rows) > 0:
-                try:
-                    table_text = tabulate(rows[1:], headers=rows[0], tablefmt="github")
-                except ValueError:
-                    table_text = tabulate(
-                        rows[1:],
-                        headers=rows[0],
-                        tablefmt="github",
-                        disable_numparse=True,
-                    )
+                # Always disable numparse to prevent silent precision loss in numeric values
+                # Use tabulate's _column_type to detect numeric columns for right-alignment
+                colalign = []
+                if len(rows) > 1:  # Need at least header + 1 data row
+                    num_cols = len(rows[0])
+                    for col_idx in range(num_cols):
+                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in rows[1:]]
+                        col_type = _column_type(col_values)
+                        colalign.append("right" if col_type in (int, float) else "left")
+                table_text = tabulate(
+                    rows[1:],
+                    headers=rows[0],
+                    tablefmt="github",
+                    disable_numparse=True,
+                    colalign=tuple(colalign) if colalign else None,
+                )
 
                 if params.compact_tables:
                     table_text = self._compact_table(table_text)

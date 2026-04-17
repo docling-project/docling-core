@@ -1,6 +1,10 @@
 <doclang version="1.0.0">
-  <checkbox class="unselected"/>
-  TODO
-  <checkbox class="selected"/>
-  DONE
+  <text>
+    <checkbox class="unselected"/>
+    TODO
+  </text>
+  <text>
+    <checkbox class="selected"/>
+    DONE
+  </text>
 </doclang>

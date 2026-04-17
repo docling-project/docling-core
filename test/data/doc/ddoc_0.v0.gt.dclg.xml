@@ -4,6 +4,7 @@
     <location value="24"/>
     <location value="355"/>
     <location value="31"/>
+    <layer class="furniture"/>
     ndbinfo_select_all - Select From ndbinfo Tables
   </text>
   <floating_group class="table">
@@ -237,6 +238,7 @@
     <location value="486"/>
     <location value="228"/>
     <location value="493"/>
+    <layer class="furniture"/>
     Print program argument list and exit.
   </text>
   <text>
@@ -244,6 +246,7 @@
     <location value="482"/>
     <location value="482"/>
     <location value="487"/>
+    <layer class="furniture"/>
     4253
   </text>
 </doclang>

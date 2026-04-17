@@ -1,3 +1,49 @@
+## [v2.74.0](https://github.com/docling-project/docling-core/releases/tag/v2.74.0) - 2026-04-17
+
+### Feature
+
+* **serializer:** Add MsExcelMarkdownDocSerializer for sheet-name headings ([#587](https://github.com/docling-project/docling-core/issues/587)) ([`9dc882d`](https://github.com/docling-project/docling-core/commit/9dc882dc48712640fb02f63bfc1be21170ffd0b3))
+* DocChunk expansion ([#549](https://github.com/docling-project/docling-core/issues/549)) ([`f2a6186`](https://github.com/docling-project/docling-core/commit/f2a61868d4c6804fb25d02194389b699132b9670))
+
+### Fix
+
+* **DocLang:** Fix chemistry serialization ([#584](https://github.com/docling-project/docling-core/issues/584)) ([`b72af12`](https://github.com/docling-project/docling-core/commit/b72af126b7bed7dcb410efcf7df55ebcdf8f89ce))
+* Prevent numeric precision loss in Markdown table serialization ([#588](https://github.com/docling-project/docling-core/issues/588)) ([`6cbdee9`](https://github.com/docling-project/docling-core/commit/6cbdee9626f14c79743b1ca8e4046e03e3aa967f))
+
+## [v2.73.0](https://github.com/docling-project/docling-core/releases/tag/v2.73.0) - 2026-04-09
+
+### Feature
+
+* **ouline:** Extend OutlineDocSerializer with filtering capabilities ([#580](https://github.com/docling-project/docling-core/issues/580)) ([`18f5738`](https://github.com/docling-project/docling-core/commit/18f573899b70e3999371e5ed1e24adafdb7950de))
+* Add latex and Tikz as codelabels ([#579](https://github.com/docling-project/docling-core/issues/579)) ([`46a9b5a`](https://github.com/docling-project/docling-core/commit/46a9b5a3292c60aed821ca28795f8e3577e84ea4))
+
+### Documentation
+
+* Fixes a typo in CONTRIBUTING.md ([#582](https://github.com/docling-project/docling-core/issues/582)) ([`7d8c9db`](https://github.com/docling-project/docling-core/commit/7d8c9db2a7af3bac4bfd6683640d7138a916ebf2))
+
+## [v2.72.0](https://github.com/docling-project/docling-core/releases/tag/v2.72.0) - 2026-04-07
+
+### Feature
+
+* **Doclang:** Add newline handling ([#575](https://github.com/docling-project/docling-core/issues/575)) ([`00c3bb2`](https://github.com/docling-project/docling-core/commit/00c3bb223d2cd6486ecef59b5f616ae6091d6b0c))
+* Add transforms in the hierarchy ([#572](https://github.com/docling-project/docling-core/issues/572)) ([`f20068d`](https://github.com/docling-project/docling-core/commit/f20068db9183c33235ffdfa32665dc3d829f8f95))
+
+## [v2.71.0](https://github.com/docling-project/docling-core/releases/tag/v2.71.0) - 2026-03-30
+
+### Feature
+
+* Add code representation meta field ([#573](https://github.com/docling-project/docling-core/issues/573)) ([`0bd5d8e`](https://github.com/docling-project/docling-core/commit/0bd5d8e649d0b6ab964e343a02d72c393c731ddd))
+* **Doclang:** Add content layer support ([#568](https://github.com/docling-project/docling-core/issues/568)) ([`fe9bbfb`](https://github.com/docling-project/docling-core/commit/fe9bbfbb0f9eeae827c0bae8da1ba245415d20d4))
+* Add handwriting support ([#561](https://github.com/docling-project/docling-core/issues/561)) ([`fb3b603`](https://github.com/docling-project/docling-core/commit/fb3b603bc41533873633f6f8672a1a29e8195029))
+
+### Fix
+
+* **Doclang:** Improve checkbox serialization & deserialization ([#570](https://github.com/docling-project/docling-core/issues/570)) ([`c9b5152`](https://github.com/docling-project/docling-core/commit/c9b51520d29ffd59e5c9b31c1af8ac55f20bb578))
+* **Doclang:** Fix serialization order in text items ([#571](https://github.com/docling-project/docling-core/issues/571)) ([`a1535bc`](https://github.com/docling-project/docling-core/commit/a1535bc1d849941c7296314a8ee7c398ecca76c0))
+* Extend validation to address duplicate refs ([#565](https://github.com/docling-project/docling-core/issues/565)) ([`0cfb663`](https://github.com/docling-project/docling-core/commit/0cfb663275d283a5ad6bbd9154c7cd1cd4e99de8))
+* **Doclang:** Fix group serialization ([#566](https://github.com/docling-project/docling-core/issues/566)) ([`159eb8f`](https://github.com/docling-project/docling-core/commit/159eb8f02191a066bd11aac7526b94b1d18e51e3))
+* Repair table children when rich table cells break hierarchy ([#563](https://github.com/docling-project/docling-core/issues/563)) ([`b65dd24`](https://github.com/docling-project/docling-core/commit/b65dd242126ff42f258cd3a08954b8b8b158c010))
+
 ## [v2.70.2](https://github.com/docling-project/docling-core/releases/tag/v2.70.2) - 2026-03-20
 
 ### Fix

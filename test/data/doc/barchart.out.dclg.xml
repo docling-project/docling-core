@@ -4,6 +4,7 @@
     <location value="14"/>
     <location value="222"/>
     <location value="20"/>
+    <layer class="furniture"/>
     Probability, Combinatorics and Control
   </page_header>
   <floating_group class="picture">

@@ -468,6 +468,102 @@ def rich_table_doc(_rich_table_doc: DoclingDocument) -> DoclingDocument:
 
     return _rich_table_doc.model_copy(deep=True)
 
+def _mixed_hierarchy_doc_impl() -> DoclingDocument:
+    doc = DoclingDocument(name="")
+
+    title = doc.add_title(text="Title")
+    doc.add_text(label=DocItemLabel.TEXT, text="Some intro", parent=title)
+
+    h1 = doc.add_heading(text="Foo", level=1, parent=title)
+    doc.add_text(label=DocItemLabel.TEXT, text="Foo stuff", parent=h1)
+    h2 = doc.add_heading(text="Bar", level=2, parent=title)
+    doc.add_text(label=DocItemLabel.TEXT, text="Bar stuff", parent=h2)
+
+    doc.add_text(label=DocItemLabel.TEXT, text="More stuff")
+
+    h1 = doc.add_heading(text="", level=1)
+    h1_inline = doc.add_inline_group(parent=h1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Rich heading", parent=h1_inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="without", parent=h1_inline, formatting=Formatting(italic=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="other children besides the inline", parent=h1_inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Section content as sibling of the heading.")
+
+    h2 = doc.add_heading(text="Subheading", level=2)
+    doc.add_text(label=DocItemLabel.TEXT, text="Subsection content.", parent=h2)
+    # doc.add_heading(text="Tricky case", level=1, parent=h2)
+
+    h1 = doc.add_heading(text="", level=1)
+    h1_inline = doc.add_inline_group(parent=h1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Rich heading", parent=h1_inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="with", parent=h1_inline, formatting=Formatting(italic=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="other children besides the inline", parent=h1_inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Section content as child of the heading.", parent=h1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Section content as sibling of the heading.")
+
+    doc.add_heading(text="Heading", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Bar")
+    my_list = doc.add_list_group(parent=doc.body)
+    doc.add_list_item(text="List item", parent=my_list)
+    li2 = doc.add_list_item(text="List item", parent=my_list)
+    my_list2 = doc.add_list_group(parent=li2)
+    doc.add_list_item(text="List item", parent=my_list2)
+    doc.add_list_item(text="List item", parent=my_list2)
+
+    doc.add_heading(text="Heading", level=2)
+    table_item = doc.add_table(
+        data=TableData(
+            num_rows=4,
+            num_cols=2,
+        ),
+    )
+    rich_item = doc.add_inline_group(
+        parent=table_item,
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="text in italic ", parent=rich_item, formatting=Formatting(italic=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="text in bold", parent=rich_item, formatting=Formatting(bold=True))
+    cell: TableCell
+    for i in range(table_item.data.num_rows):
+        for j in range(table_item.data.num_cols):
+            if i == 1 and j == 1:
+                cell = RichTableCell(
+                    text="",
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    ref=rich_item.get_ref(),
+                )
+            else:
+                cell = TableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text=f"cell {i},{j}",
+                )
+            doc.add_table_cell(table_item=table_item, cell=cell)
+
+    doc.add_heading(text="Heading", level=1)
+    fr = doc.add_field_region()
+    doc.add_text(label=DocItemLabel.TEXT, text="Some text", parent=fr)
+    fi = doc.add_field_item(parent=fr)
+    doc.add_text(label=DocItemLabel.TEXT, text="Some text", parent=fi)
+    doc.add_field_key(text="Key", parent=fi)
+    doc.add_field_value(text="Value", parent=fi)
+
+    return doc
+
+@pytest.fixture(scope="session")
+def _mixed_hierarchy_doc() -> DoclingDocument:
+    """Fixture for a mixed hierarchy document to be reused across the test session."""
+    return _mixed_hierarchy_doc_impl()
+
+@pytest.fixture(scope="function")
+def mixed_hierarchy_doc(_mixed_hierarchy_doc: DoclingDocument) -> DoclingDocument:
+    """Copy of a mixed hierarchy document for each test function."""
+
+    return _mixed_hierarchy_doc.model_copy(deep=True)
+
 @pytest.fixture(scope="session")
 def _doc_with_handwritten() -> DoclingDocument:
     """Fixture for a document with handwritten text to be reused across the test session."""
@@ -495,3 +591,56 @@ def _doc_with_handwritten() -> DoclingDocument:
 def doc_with_handwritten(_doc_with_handwritten: DoclingDocument) -> DoclingDocument:
     """Copy of a document with handwritten text for each test function."""
     return _doc_with_handwritten.model_copy(deep=True)
+
+
+@pytest.fixture(scope="session")
+def _doc_with_layers() -> DoclingDocument:
+    """Fixture for a document with different content layers to be reused across the test session."""
+    from docling_core.types.doc.document import ContentLayer
+
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+
+    # Add page header with furniture layer
+    doc.add_text(
+        label=DocItemLabel.PAGE_HEADER,
+        text="Page Header",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 11),
+        ),
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    # Add regular text with body layer (default)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Main body content",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((5, 6, 7, 8), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 17),
+        ),
+        content_layer=ContentLayer.BODY,
+    )
+
+    # Add page footer with furniture layer
+    doc.add_text(
+        label=DocItemLabel.PAGE_FOOTER,
+        text="Page Footer",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((9, 10, 11, 12), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 11),
+        ),
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    return doc
+
+
+@pytest.fixture(scope="function")
+def doc_with_layers(_doc_with_layers: DoclingDocument) -> DoclingDocument:
+    """Copy of a document with different content layers for each test function."""
+    return _doc_with_layers.model_copy(deep=True)

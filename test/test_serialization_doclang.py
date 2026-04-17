@@ -12,6 +12,7 @@ from docling_core.experimental.doclang import (
     DoclangDocSerializer,
     DoclangParams,
     DoclangVocabulary,
+    LayerMode,
     WrapMode,
 )
 from docling_core.types.doc import (
@@ -34,7 +35,7 @@ from docling_core.types.doc import (
     TabularChartMetaField,
 )
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import GraphCell, GraphData, GraphLink, ImageRef, RichTableCell, TableCell
+from docling_core.types.doc.document import ContentLayer, GraphCell, GraphData, GraphLink, ImageRef, RichTableCell, TableCell
 from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
 from test.test_serialization import verify
 from test.test_data_gen_flag import GEN_TEST_DATA
@@ -1465,3 +1466,77 @@ def test_suppress_empty_picture_with_nonempty_caption():
     result = serialize_doclang(doc, params=params)
     assert "<floating_group" in result
     assert "My Figure" in result
+
+
+def test_layer_minimal_mode(doc_with_layers):
+    """Test MINIMAL mode omits default layer, includes non-default."""
+    params = DoclangParams(layer_mode=LayerMode.MINIMAL)
+    ser = DoclangDocSerializer(doc=doc_with_layers, params=params)
+    ser_txt = ser.serialize().text
+
+    exp_file = Path("./test/data/doc/layer_minimal_mode.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_layer_always_mode(doc_with_layers):
+    """Test ALWAYS mode includes layer element for all items."""
+    params = DoclangParams(layer_mode=LayerMode.ALWAYS)
+    ser = DoclangDocSerializer(doc=doc_with_layers, params=params)
+    ser_txt = ser.serialize().text
+
+    exp_file = Path("./test/data/doc/layer_always_mode.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_layer_filter_body_only(doc_with_layers):
+    """Test that layers parameter filters content to only show specified layers."""
+    # Serialize with only body layer
+    params = DoclangParams(
+        layers={ContentLayer.BODY},
+    )
+    ser = DoclangDocSerializer(doc=doc_with_layers, params=params)
+    ser_txt = ser.serialize().text
+
+    exp_file = Path("./test/data/doc/layer_only_body.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_newline_to_br():
+
+    code = """
+
+
+import pytest
+
+from docling_core.experimental.doclang import (
+    ContentType,
+    EscapeMode,
+    DoclangDocSerializer,
+    DoclangParams,
+    DoclangVocabulary,
+    LayerMode,
+    WrapMode,
+)
+ """
+
+    """Test that newlines survive serialization and deserialization roundtrip."""
+    from docling_core.experimental.doclang import DoclangDeserializer
+    from docling_core.types.doc import TextItem
+
+    # Create a document with newlines
+    doc = DoclingDocument(name="")
+    doc.add_text(label=DocItemLabel.TEXT, text="foo\nbar")
+
+    inl = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="eins\n", parent=inl)
+    doc.add_text(label=DocItemLabel.TEXT, text=" zwei\n ", parent=inl)
+    doc.add_text(label=DocItemLabel.TEXT, text="drei", parent=inl, formatting=Formatting(bold=True))
+
+    doc.add_code(text=code)
+
+    # NOTE: this particular case seems bit brittle as to how it's preserved by XML tooling
+    doc.add_text(label=DocItemLabel.TEXT, text="\n")
+
+    ser_txt = doc.export_to_doclang()
+    exp_file = Path("./test/data/doc/newline_to_br.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)

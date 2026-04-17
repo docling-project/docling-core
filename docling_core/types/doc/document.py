@@ -44,7 +44,7 @@ from pydantic import (
     model_validator,
     validate_call,
 )
-from tabulate import tabulate
+from tabulate import _column_type, tabulate
 from typing_extensions import Self, deprecated, override
 
 from docling_core.search.package import VERSION_PATTERN
@@ -1418,12 +1418,20 @@ class FloatingMeta(BaseMeta):
     description: Optional[DescriptionMetaField] = None
 
 
+class CodeMetaField(BasePrediction):
+    """Code representation for the respective item."""
+
+    text: str  # the actual code
+    language: Optional[CodeLanguageLabel] = None
+
+
 class PictureMeta(FloatingMeta):
     """Metadata model for pictures."""
 
     classification: Optional[PictureClassificationMetaField] = None
     molecule: Optional[MoleculeMetaField] = None
     tabular_chart: Optional[TabularChartMetaField] = None
+    code: Optional[CodeMetaField] = None
 
 
 class NodeItem(BaseModel):
@@ -2266,15 +2274,22 @@ class TableItem(FloatingItem):
 
             res = ""
             if len(table) > 1 and len(table[0]) > 0:
-                try:
-                    res = tabulate(table[1:], headers=table[0], tablefmt="github")
-                except ValueError:
-                    res = tabulate(
-                        table[1:],
-                        headers=table[0],
-                        tablefmt="github",
-                        disable_numparse=True,
-                    )
+                # Always disable numparse to prevent silent precision loss in numeric values
+                # Use tabulate's _column_type to detect numeric columns for right-alignment
+                colalign = []
+                num_cols = len(table[0])
+                for col_idx in range(num_cols):
+                    col_values = [row[col_idx] if col_idx < len(row) else "" for row in table[1:]]
+                    col_type = _column_type(col_values)
+                    colalign.append("right" if col_type in (int, float) else "left")
+
+                res = tabulate(
+                    table[1:],
+                    headers=table[0],
+                    tablefmt="github",
+                    disable_numparse=True,
+                    colalign=tuple(colalign) if colalign else None,
+                )
 
         return res
 
@@ -3488,18 +3503,114 @@ class DoclingDocument(BaseModel):
         if old_subroot.parent is None:
             raise ValueError("Can not move the root")
 
+        # unlink old subroot from its previous parent
+        previous_parent: NodeItem = old_subroot.parent.resolve(doc=self)
+        previous_parent.children.remove(old_subroot.get_ref())
+
         # link new subroot => old subroot
         if pos is not None:
             new_subroot.children.insert(pos, old_subroot.get_ref())
         else:
             new_subroot.children.append(old_subroot.get_ref())
 
-        # unlink old subroot from its previous parent
-        previous_parent: NodeItem = old_subroot.parent.resolve(doc=self)
-        previous_parent.children.remove(old_subroot.get_ref())
-
         # link old subroot => new subroot
         old_subroot.parent = new_subroot.get_ref()
+
+    def _get_heading_level(self, node: NodeItem) -> Optional[int]:
+        """Get the level of a node if it has heading semantics (TitleItem, SectionHeaderItem or root), else None."""
+        if isinstance(node, TitleItem):
+            return 0
+        elif isinstance(node, SectionHeaderItem):
+            return node.level
+        elif node == self.body:
+            return -1
+        else:
+            return None
+
+    def _is_descendant_of(self, node1: NodeItem, node2: NodeItem) -> bool:
+        """Check if node1 is a descendant of node2."""
+        curr = node1
+        while curr.parent is not None:
+            curr = curr.parent.resolve(doc=self)
+            if curr == node2:
+                return True
+        return False
+
+    def _hierarchize(self):
+        """Structure the document's titles and headings into an explicit hierarchy based on their levels."""
+        section_root_by_level: dict[int, Union[TitleItem, SectionHeaderItem]] = {-1: self.body}
+        resume_node: Optional[NodeItem] = self.body
+
+        while resume_node:
+            for item, _ in self.iterate_items(
+                with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+            ):
+                # mechanism for resuming the traversal from a desired node
+                if resume_node:
+                    if item != resume_node:
+                        continue
+                    else:
+                        resume_node = None
+
+                # determine which section root this item should belong to
+                introduced_level = self._get_heading_level(node=item)
+                target_root_level = -1
+                for level in section_root_by_level.keys():
+                    if level > target_root_level and (introduced_level is None or level < introduced_level):
+                        target_root_level = level
+                target_section_root = section_root_by_level[target_root_level]
+
+                # ensure the item is hooked to the target root
+                if item.parent and not self._is_descendant_of(node1=item, node2=target_section_root):
+                    # print(f"Will move {item.self_ref=} to {target_root.self_ref=}")
+                    self._move_subtree(old_subroot=item, new_subroot=target_section_root)
+                    # in case of moving, restart traversal from the right place in the updated tree
+                    resume_node = item
+                    break
+
+                if introduced_level is not None:  # i.e. a heading was found
+                    # remove shadowed headings
+                    keys_to_delete = [k for k in section_root_by_level if k >= introduced_level]
+                    for k in keys_to_delete:
+                        del section_root_by_level[k]
+                    section_root_by_level[introduced_level] = item
+
+    def _flatten(self):
+        """Flatten the document's titles and headings into a single level."""
+        resume_node: Optional[NodeItem] = self.body
+
+        while resume_node:
+            for item, _ in self.iterate_items(
+                with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+            ):
+                # mechanism for resuming the traversal from a desired node
+                if resume_node:
+                    if item != resume_node:
+                        continue
+                    else:
+                        resume_node = None
+
+                if isinstance(item, TitleItem | SectionHeaderItem):
+                    child_refs_to_move = [
+                        child_ref
+                        for idx, child_ref in enumerate(item.children)
+                        if not (  # don't move inline groups that capture the actual heading text (e.g. rich)
+                            item.text == "" and idx == 0 and isinstance(child_ref.resolve(doc=self), InlineGroup)
+                        )
+                    ]
+                    if child_refs_to_move:
+                        self._shift_down(
+                            old_subroot=item,
+                            new_subroot=GroupItem(self_ref="#"),
+                        )
+                        tmp_node = item.parent.resolve(doc=self)
+
+                        for child_ref in child_refs_to_move:
+                            child = child_ref.resolve(doc=self)
+                            self._move_subtree(old_subroot=child, new_subroot=tmp_node)
+                        self._shift_up(old_subroot=tmp_node)
+                        resume_node = item
+                        break
 
     ###################################
     # TODO: refactor add* methods below
@@ -5384,11 +5495,17 @@ class DoclingDocument(BaseModel):
         """num_pages."""
         return len(self.pages.values())
 
-    def validate_tree(self, root: NodeItem) -> bool:
+    def validate_tree(self, root: NodeItem, raise_on_error: bool = False) -> bool:
         """validate_tree."""
+        # TODO add check if heading levels conflict with hierarchy (e.g. level-1 heading with level-2 parent)
         for child_ref in root.children:
             child = child_ref.resolve(self)
-            if child.parent.resolve(self) != root or not self.validate_tree(child):
+            if child.parent.resolve(self) != root or not self.validate_tree(child, raise_on_error=raise_on_error):
+                if raise_on_error:
+                    raise ValueError(
+                        f"Document hierarchy is inconsistent. {root.self_ref} has child {child.self_ref} "
+                        f"with parent {child.parent.resolve(self).self_ref}"
+                    )
                 return False
 
         if isinstance(root, TableItem):
@@ -5399,6 +5516,11 @@ class DoclingDocument(BaseModel):
                     or par_ref.resolve(self) != root
                     or cell.ref.cref not in root_children_crefs
                 ):
+                    if raise_on_error:
+                        raise ValueError(
+                            f"Document hierarchy is inconsistent. {root.self_ref} has cell {cell.ref.cref} "
+                            f"with parent {cell.ref.resolve(self).parent.resolve(self).self_ref}"
+                        )
                     return False
 
         return True
@@ -7106,8 +7228,8 @@ class DoclingDocument(BaseModel):
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            if not self.validate_tree(self.body) or not self.validate_tree(self.furniture):
-                raise ValueError("Document hierarchy is inconsistent.")
+            self.validate_tree(self.body, raise_on_error=True)
+            self.validate_tree(self.furniture, raise_on_error=True)
 
         return self
 
