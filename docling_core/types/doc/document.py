@@ -26,6 +26,7 @@ from typing import (
 )
 from urllib.parse import unquote
 
+import numpy as np
 import pandas as pd
 import yaml
 from PIL import Image as PILImage
@@ -66,6 +67,13 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
+
+try:
+    import cv2
+
+    CV2_INSTALLED = True
+except ImportError:
+    CV2_INSTALLED = False
 
 _logger = logging.getLogger(__name__)
 
@@ -1107,12 +1115,26 @@ class ImageRef(BaseModel):
             raise ValueError(f"'{v}' is not a valid MIME type")
         return v
 
-    @classmethod
-    def from_pil(cls, image: PILImage.Image, dpi: int) -> Self:
-        """Construct ImageRef from a PIL Image."""
+    @staticmethod
+    def _to_img_str_cv2(image: PILImage.Image) -> str:
+        _, buffered = cv2.imencode(".png", cv2.cvtColor(np.array(image), cv2.COLOR_RGBA2BGRA))
+        img_str = base64.b64encode(buffered.tobytes()).decode("utf-8")
+        return img_str
+
+    @staticmethod
+    def _to_img_str_pil(image: PILImage.Image) -> str:
         buffered = BytesIO()
         image.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return img_str
+
+    @classmethod
+    def from_pil(cls, image: PILImage.Image, dpi: int) -> Self:
+        """Construct ImageRef from a PIL Image."""
+        if CV2_INSTALLED:
+            img_str = cls._to_img_str_cv2(image)
+        else:
+            img_str = cls._to_img_str_pil(image)
         img_uri = f"data:image/png;base64,{img_str}"
         return cls(
             mimetype="image/png",
