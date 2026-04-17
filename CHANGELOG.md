@@ -1,3 +1,15 @@
+## [v2.74.0](https://github.com/docling-project/docling-core/releases/tag/v2.74.0) - 2026-04-17
+
+### Feature
+
+* **serializer:** Add MsExcelMarkdownDocSerializer for sheet-name headings ([#587](https://github.com/docling-project/docling-core/issues/587)) ([`9dc882d`](https://github.com/docling-project/docling-core/commit/9dc882dc48712640fb02f63bfc1be21170ffd0b3))
+* DocChunk expansion ([#549](https://github.com/docling-project/docling-core/issues/549)) ([`f2a6186`](https://github.com/docling-project/docling-core/commit/f2a61868d4c6804fb25d02194389b699132b9670))
+
+### Fix
+
+* **DocLang:** Fix chemistry serialization ([#584](https://github.com/docling-project/docling-core/issues/584)) ([`b72af12`](https://github.com/docling-project/docling-core/commit/b72af126b7bed7dcb410efcf7df55ebcdf8f89ce))
+* Prevent numeric precision loss in Markdown table serialization ([#588](https://github.com/docling-project/docling-core/issues/588)) ([`6cbdee9`](https://github.com/docling-project/docling-core/commit/6cbdee9626f14c79743b1ca8e4046e03e3aa967f))
+
 ## [v2.73.0](https://github.com/docling-project/docling-core/releases/tag/v2.73.0) - 2026-04-09
 
 ### Feature
