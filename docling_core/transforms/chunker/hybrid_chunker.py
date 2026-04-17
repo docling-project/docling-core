@@ -131,6 +131,26 @@ class HybridChunker(BaseChunker):
         ser_txt = self.contextualize(chunk=doc_chunk)
         return self.tokenizer.count_tokens(text=ser_txt)
 
+    def _estimate_tokens_for_items(
+        self,
+        doc_items: list,
+        doc_serializer: BaseDocSerializer,
+    ) -> list[int]:
+        """Pre-compute token counts for each doc item's serialized text.
+
+        The sum of individual token counts is always >= the token count of the
+        concatenated text (BPE can merge tokens across boundaries), so this
+        provides a safe upper-bound estimate for fast-path acceptance.
+        """
+        counts = []
+        for doc_item in doc_items:
+            text = doc_serializer.serialize(item=doc_item).text
+            if text and not isinstance(doc_item, TitleItem | SectionHeaderItem):
+                counts.append(self.tokenizer.count_tokens(text=text))
+            else:
+                counts.append(0)
+        return counts
+
     def _doc_chunk_length(self, doc_chunk: DocChunk):
         text_length = self._count_text_tokens(doc_chunk.text)
         total = self._count_chunk_tokens(doc_chunk=doc_chunk)
@@ -174,7 +194,44 @@ class HybridChunker(BaseChunker):
         window_start = 0
         window_end = 0  # an inclusive index
         num_items = len(doc_chunk.meta.doc_items)
+
+        # Pre-compute per-item token counts for fast-path estimation.
+        # Since sum-of-parts >= exact tokenization (BPE merges across
+        # boundaries), estimate <= budget implies exact <= budget.
+        item_token_counts = self._estimate_tokens_for_items(
+            doc_items=doc_chunk.meta.doc_items,
+            doc_serializer=doc_serializer,
+        )
+        overhead_estimate = 0
+        delim_tokens = 0
+        if num_items > 0:
+            probe_chunk = self._make_chunk_from_doc_items(
+                doc_chunk=doc_chunk,
+                window_start=0,
+                window_end=0,
+                doc_serializer=doc_serializer,
+            )
+            probe_total = self._count_chunk_tokens(doc_chunk=probe_chunk)
+            overhead_estimate = probe_total - item_token_counts[0]
+            delim_tokens = self.tokenizer.count_tokens(text=self.delim) if self.delim else 0
+        running_text_tokens = 0
+
         while window_end < num_items:
+            # Update incremental token estimate (always >= exact count)
+            if window_end == window_start:
+                running_text_tokens = item_token_counts[window_end]
+            else:
+                running_text_tokens += item_token_counts[window_end] + delim_tokens
+
+            estimated_total = overhead_estimate + running_text_tokens
+
+            # Fast path: estimate is an upper bound, so if estimate <= budget,
+            # exact count is also <= budget. Safe to skip expensive tokenization.
+            if estimated_total <= self.max_tokens and window_end < num_items - 1:
+                window_end += 1
+                continue
+
+            # Near boundary or at end: use exact tokenization (original logic)
             new_chunk = self._make_chunk_from_doc_items(
                 doc_chunk=doc_chunk,
                 window_start=window_start,
@@ -197,6 +254,7 @@ class HybridChunker(BaseChunker):
                 # plain text splitter.
                 window_end += 1
                 window_start = window_end
+                running_text_tokens = 0
             else:
                 # Multiple items in the window but they don't fit into the chunk.
                 # However, the existing items must have fit or we wouldn't have
@@ -209,6 +267,7 @@ class HybridChunker(BaseChunker):
                     doc_serializer=doc_serializer,
                 )
                 window_start = window_end
+                running_text_tokens = 0
             chunks.append(new_chunk)
         return chunks
 
@@ -271,33 +330,63 @@ class HybridChunker(BaseChunker):
         window_start = 0
         window_end = 0  # an inclusive index
         num_chunks = len(chunks)
+
+        # Pre-compute per-chunk token counts for fast-path estimation
+        chunk_token_counts = [self._count_chunk_tokens(doc_chunk=c) for c in chunks]
+        delim_tokens = self.tokenizer.count_tokens(text=self.delim) if self.delim else 0
+        running_tokens = 0
+
         while window_end < num_chunks:
             chunk = chunks[window_end]
             headings = chunk.meta.headings
             ready_to_append = False
             if window_start == window_end:
                 current_headings = headings
+                running_tokens = chunk_token_counts[window_end]
                 window_end += 1
                 first_chunk_of_window = chunk
             else:
-                chks = chunks[window_start : window_end + 1]
-                doc_items = [it for chk in chks for it in chk.meta.doc_items]
-                candidate = DocChunk(
-                    # TODO: merging should ideally be done by the serializer:
-                    text=self.delim.join([chk.text for chk in chks]),
-                    meta=DocMeta(
-                        doc_items=doc_items,
-                        headings=current_headings,
-                        origin=chunk.meta.origin,
-                    ),
-                )
-                if headings == current_headings and self._count_chunk_tokens(doc_chunk=candidate) <= self.max_tokens:
-                    # there is room to include the new chunk so add it to the window and
-                    # continue
-                    window_end += 1
-                    new_chunk = candidate
-                else:
+                if headings != current_headings:
                     ready_to_append = True
+                else:
+                    # Incremental estimate (upper bound due to BPE)
+                    estimated = running_tokens + chunk_token_counts[window_end] + delim_tokens
+
+                    if estimated <= self.max_tokens:
+                        # Fast path: estimate is upper bound, so exact also fits.
+                        # Build the merged chunk without expensive tokenization.
+                        chks = chunks[window_start : window_end + 1]
+                        doc_items = [it for chk in chks for it in chk.meta.doc_items]
+                        new_chunk = DocChunk(
+                            text=self.delim.join([chk.text for chk in chks]),
+                            meta=DocMeta(
+                                doc_items=doc_items,
+                                headings=current_headings,
+                                origin=chunk.meta.origin,
+                            ),
+                        )
+                        running_tokens = estimated  # safe upper bound for next iteration
+                        window_end += 1
+                    else:
+                        # Estimate exceeds budget but exact might still fit —
+                        # fall back to exact tokenization (original behavior)
+                        chks = chunks[window_start : window_end + 1]
+                        doc_items = [it for chk in chks for it in chk.meta.doc_items]
+                        candidate = DocChunk(
+                            # TODO: merging should ideally be done by the serializer:
+                            text=self.delim.join([chk.text for chk in chks]),
+                            meta=DocMeta(
+                                doc_items=doc_items,
+                                headings=current_headings,
+                                origin=chunk.meta.origin,
+                            ),
+                        )
+                        if self._count_chunk_tokens(doc_chunk=candidate) <= self.max_tokens:
+                            window_end += 1
+                            new_chunk = candidate
+                            running_tokens = self._count_chunk_tokens(doc_chunk=candidate)
+                        else:
+                            ready_to_append = True
             if ready_to_append or window_end == num_chunks:
                 # no more room OR the start of new metadata.  Either way, end the block
                 # and use the current window_end as the start of a new block
@@ -309,6 +398,7 @@ class HybridChunker(BaseChunker):
                 # no need to reset window_text, etc. because that will be reset in the
                 # next iteration in the if window_start == window_end block
                 window_start = window_end
+                running_tokens = 0
 
         return output_chunks
 
