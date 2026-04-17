@@ -2428,18 +2428,20 @@ class DoclangDeserializer(BaseModel):
     """Doclang deserializer."""
 
     # Internal state used while walking the tree (private instance attributes)
-    _page_no: int = PrivateAttr(default=0)
+    _page_no: int = PrivateAttr(default=1)
     _default_resolution: int = PrivateAttr(default=DOCLANG_DFLT_RESOLUTION)
 
     def deserialize(
         self,
         *,
         text: str,
+        page_no: int = 1,
     ) -> DoclingDocument:
         """Deserialize Doclang XML into a DoclingDocument.
 
         Args:
             text: Doclang XML string to parse.
+            page_no: Starting page number (default 1).
 
         Returns:
             A populated `DoclingDocument` parsed from the input.
@@ -2458,9 +2460,7 @@ class DoclangDeserializer(BaseModel):
                 root = cast(Element, candidates[0])
 
         doc = DoclingDocument(name="Document")
-        # TODO revise need for default page & resolution
-        # Initialize with a default page so location tokens can be re-emitted
-        self._page_no = 0
+        self._page_no = page_no
         self._default_resolution = DOCLANG_DFLT_RESOLUTION
         self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
         self._parse_document_root(doc=doc, root=root)
