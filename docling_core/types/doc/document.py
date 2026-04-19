@@ -5702,6 +5702,99 @@ class DoclingDocument(BaseModel):
 
         return result
 
+    def _to_referenced_images(
+        self,
+        image_dir: Path,
+        image_path_prefix: str = "",
+    ) -> "DoclingDocument":
+        """Create a copy of this document with images saved as referenced files.
+
+        Creates a deep copy of the document where each :class:`PictureItem`'s
+        image and each page image is saved as a PNG file inside *image_dir* and
+        the stored URI is updated to ``image_path_prefix + <filename>`` so that
+        the exported markdown (or any other format) emits the desired relative
+        reference.
+
+        This is the recommended way to obtain a document ready for
+        ``export_to_markdown(image_mode=ImageRefMode.REFERENCED)`` when you
+        need full control over where images land and what prefix appears in the
+        output — without writing the document to a file first.
+
+        Example::
+
+            from pathlib import Path
+            from docling_core.types.doc.base import ImageRefMode
+
+            doc_ref = doc._to_referenced_images(
+                image_dir=Path("output/images"),
+                image_path_prefix="images/",
+            )
+            md = doc_ref.export_to_markdown(image_mode=ImageRefMode.REFERENCED)
+
+        :param image_dir: Directory where image files will be written.
+            Created automatically if it does not exist.
+        :type image_dir: Path
+        :param image_path_prefix: String prepended to each image filename in
+            the document's URI field (e.g. ``"images/"``).  Defaults to ``""``.
+        :type image_path_prefix: str
+        :returns: A new :class:`DoclingDocument` whose picture and page image
+            URIs point to the saved files.
+        :rtype: DoclingDocument
+        """
+        result: DoclingDocument = copy.deepcopy(self)
+        image_dir.mkdir(parents=True, exist_ok=True)
+
+        img_count = 0
+        for item, _ in result.iterate_items(with_groups=False):
+            if isinstance(item, PictureItem):
+                img = item.get_image(doc=self)
+                if img is not None:
+                    filename = f"image_{img_count + 1:03d}.png"
+                    loc_path = image_dir / filename
+                    img.save(loc_path)
+                    uri_path = Path(image_path_prefix + filename)
+                    if item.image is None:
+                        scale = img.size[0] / item.prov[0].bbox.width
+                        item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
+                    item.image.uri = uri_path
+                img_count += 1
+
+        for page_no, page_item in sorted(result.pages.items()):
+            if page_item.image is not None:
+                pil_img = page_item.image.pil_image
+                if pil_img is not None:
+                    filename = f"page_{page_no:03d}.png"
+                    loc_path = image_dir / filename
+                    pil_img.save(loc_path)
+                    page_item.image.uri = Path(image_path_prefix + filename)
+
+        return result
+
+    def _to_embedded_images(self) -> "DoclingDocument":
+        """Create a copy of this document with all images embedded as base64.
+
+        Creates a deep copy of the document where every :class:`PictureItem`
+        that currently holds an image referenced through a file URI is
+        converted to an inline base64-encoded form.  Pictures that are already
+        embedded are left unchanged.
+
+        This is the recommended way to obtain a self-contained document ready
+        for ``export_to_markdown(image_mode=ImageRefMode.EMBEDDED)`` or for
+        serialisation to JSON / YAML without external artefacts.
+
+        Example::
+
+            from docling_core.types.doc.base import ImageRefMode
+
+            doc_emb = doc._to_embedded_images()
+            md = doc_emb.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+        :returns: A new :class:`DoclingDocument` with all picture data
+            embedded inline.
+        :rtype: DoclingDocument
+        """
+        return self._with_embedded_pictures()
+
     def print_element_tree(self):
         """Print_element_tree."""
         for ix, (item, level) in enumerate(
