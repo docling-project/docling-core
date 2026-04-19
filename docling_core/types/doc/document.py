@@ -5703,9 +5703,10 @@ class DoclingDocument(BaseModel):
         """Create a copy of this document with images saved as referenced files.
 
         Creates a deep copy of the document where each :class:`PictureItem`'s
-        image is saved as a PNG file inside *image_dir* and the stored URI is
-        updated to ``image_path_prefix + <filename>`` so that the exported
-        markdown (or any other format) emits the desired relative reference.
+        image and each page image is saved as a PNG file inside *image_dir* and
+        the stored URI is updated to ``image_path_prefix + <filename>`` so that
+        the exported markdown (or any other format) emits the desired relative
+        reference.
 
         This is the recommended way to obtain a document ready for
         ``export_to_markdown(image_mode=ImageRefMode.REFERENCED)`` when you
@@ -5729,8 +5730,8 @@ class DoclingDocument(BaseModel):
         :param image_path_prefix: String prepended to each image filename in
             the document's URI field (e.g. ``"images/"``).  Defaults to ``""``.
         :type image_path_prefix: str
-        :returns: A new :class:`DoclingDocument` whose picture URIs point to
-            the saved files.
+        :returns: A new :class:`DoclingDocument` whose picture and page image
+            URIs point to the saved files.
         :rtype: DoclingDocument
         """
         result: DoclingDocument = copy.deepcopy(self)
@@ -5750,6 +5751,15 @@ class DoclingDocument(BaseModel):
                         item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
                     item.image.uri = uri_path
                 img_count += 1
+
+        for page_no, page_item in sorted(result.pages.items()):
+            if page_item.image is not None:
+                pil_img = page_item.image.pil_image
+                if pil_img is not None:
+                    filename = f"page_{page_no:03d}.png"
+                    loc_path = image_dir / filename
+                    pil_img.save(loc_path)
+                    page_item.image.uri = Path(image_path_prefix + filename)
 
         return result
 
