@@ -1070,6 +1070,39 @@ def test_to_referenced_images_markdown_output(sample_doc, tmp_path):
     )
 
 
+def test_to_referenced_images_saves_page_images(tmp_path):
+    """_to_referenced_images also saves page images and updates their URIs."""
+    from docling_core.types.doc.document import PageItem
+    from docling_core.types.doc.base import Size
+
+    image_dir = tmp_path / "pages"
+    prefix = "pages/"
+
+    # Build a document with one page that has an image
+    doc = DoclingDocument(name="page-image test")
+    page_img = PILImage.new("RGB", (32, 32), "blue")
+    page_image_ref = ImageRef.from_pil(image=page_img, dpi=72)
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=page_image_ref)
+
+    result = doc._to_referenced_images(
+        image_dir=image_dir,
+        image_path_prefix=prefix,
+    )
+
+    # The page image file should have been saved
+    saved = list(image_dir.glob("*.png"))
+    assert len(saved) == 1, f"expected 1 saved page image, got {len(saved)}"
+    assert saved[0].name == "page_001.png"
+
+    # The result document's page URI must be updated
+    assert str(result.pages[1].image.uri) == prefix + "page_001.png"
+
+    # The source document must not have been mutated
+    assert str(doc.pages[1].image.uri) != prefix + "page_001.png", (
+        "_to_referenced_images must not mutate the source document's page URIs"
+    )
+
+
 def test_to_embedded_images(sample_doc):
     """_to_embedded_images returns a deep copy; the source document is unchanged."""
     result = sample_doc._to_embedded_images()
