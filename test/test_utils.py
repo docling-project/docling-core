@@ -150,3 +150,169 @@ def test_resolve_source_to_stream_url_wout_path(monkeypatch):
 
     text = doc_stream.stream.read().decode("utf8")
     assert text == expected_str
+
+
+def test_sanitize_filename_paths():
+    """Test filename sanitization for path-like inputs."""
+    from docling_core.utils.file import _sanitize_filename
+
+    assert _sanitize_filename("../../etc/config.txt") == "config.txt"
+
+    assert _sanitize_filename("/etc/config.txt") == "config.txt"
+
+    assert _sanitize_filename("..\\..\\windows\\system32\\config") == "config"
+    assert _sanitize_filename("C:\\Windows\\System32\\config") == "config"
+
+    assert _sanitize_filename("../../../etc\\config.txt") == "config.txt"
+
+    assert _sanitize_filename("document.pdf") == "document.pdf"
+    assert _sanitize_filename("my-file_123.txt") == "my-file_123.txt"
+
+    assert _sanitize_filename("") is None
+    assert _sanitize_filename(".") is None
+    assert _sanitize_filename("..") is None
+
+
+def test_is_safe_url_rejects_private_networks():
+    """Test URL filtering for non-public network ranges."""
+    from docling_core.utils.file import _is_safe_url
+
+    assert not _is_safe_url("http://10.0.0.1/file")
+    assert not _is_safe_url("http://172.16.0.1/file")
+    assert not _is_safe_url("http://192.168.1.1/file")
+
+    assert not _is_safe_url("http://127.0.0.1/file")
+    assert not _is_safe_url("http://localhost/file")
+
+    assert not _is_safe_url("http://169.254.169.254/latest/meta-data/")
+
+    assert not _is_safe_url("http://[::1]/file")
+    assert not _is_safe_url("http://[fe80::1]/file")
+
+    assert _is_safe_url("http://8.8.8.8/file")
+    assert _is_safe_url("https://example.com/file")
+    assert _is_safe_url("https://github.com/github/file")
+
+
+def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
+    """Test filename normalization from Content-Disposition."""
+    from docling_core.utils.file import resolve_source_to_stream
+    from requests import Response
+
+    def get_response(*args, **kwargs):
+        r = Response()
+        r.status_code = 200
+        r._content = b"test content"
+        r.headers["Content-Disposition"] = 'attachment; filename="../../etc/config.txt"'
+        return r
+
+    monkeypatch.setattr("requests.Session.get", get_response)
+
+    doc_stream = resolve_source_to_stream("https://example.com/file")
+    assert doc_stream.name == "config.txt"
+
+
+def test_resolve_source_rejects_non_public_urls(monkeypatch):
+    """Test that non-public URLs are rejected."""
+    from docling_core.utils.file import resolve_source_to_stream
+    import pytest
+
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("http://127.0.0.1/file")
+
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("http://10.0.0.1/file")
+
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("http://192.168.1.1/file")
+
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("http://169.254.169.254/latest/meta-data/")
+
+
+def test_resolve_source_to_path_sanitizes_filename(monkeypatch, tmp_path):
+    """Test that saved filenames stay within the target directory."""
+    from docling_core.utils.file import resolve_source_to_path
+    from requests import Response
+
+    def get_response(*args, **kwargs):
+        r = Response()
+        r.status_code = 200
+        r._content = b"test content"
+        r.headers["Content-Disposition"] = 'attachment; filename="../../../../tmp/output.txt"'
+        return r
+
+    monkeypatch.setattr("requests.Session.get", get_response)
+
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+
+    result_path = resolve_source_to_path("https://example.com/file", workdir=cache_dir)
+
+    assert result_path.parent == cache_dir
+    assert result_path.name == "output.txt"
+    assert result_path.exists()
+
+    assert not (tmp_path.parent.parent.parent / "tmp" / "output.txt").exists()
+
+
+def test_redirect_limit_enforced(monkeypatch):
+    """Test that redirect limits are configured on the session."""
+    from docling_core.utils.file import _MAX_REDIRECTS
+    from requests import Session, Response
+
+    session_created = []
+
+    original_init = Session.__init__
+
+    def track_session_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        session_created.append(self)
+
+    monkeypatch.setattr(Session, "__init__", track_session_init)
+
+    def mock_get(*args, **kwargs):
+        r = Response()
+        r.status_code = 200
+        r._content = b"test"
+        return r
+
+    monkeypatch.setattr(Session, "get", mock_get)
+
+    from docling_core.utils.file import resolve_source_to_stream
+
+    try:
+        resolve_source_to_stream("https://example.com/file")
+    except Exception:
+        pass
+
+    assert len(session_created) > 0
+    session = session_created[0]
+    assert session.max_redirects == _MAX_REDIRECTS
+
+
+
+def test_redirect_to_non_public_ip_rejected(monkeypatch):
+    """Test that redirects to non-public addresses are rejected."""
+    from docling_core.utils.file import resolve_source_to_stream
+    from requests import Response, Session
+    import pytest
+
+    original_get = Session.get
+
+    def mock_get_with_redirect(self, *args, **kwargs):
+        r = Response()
+        r.status_code = 302
+        r.headers['location'] = 'http://192.168.1.1/private-file'
+        r.url = args[0] if args else kwargs.get('url', 'http://example.com')
+
+        if hasattr(self, 'hooks') and 'response' in self.hooks:
+            for hook in self.hooks['response']:
+                hook(r)
+
+        return r
+
+    monkeypatch.setattr(Session, "get", mock_get_with_redirect)
+
+    with pytest.raises(ValueError, match="Redirect target is not allowed"):
+        resolve_source_to_stream("https://example.com/redirect")
