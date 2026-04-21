@@ -9,7 +9,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 )
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -48,7 +48,6 @@ def test_chunk_custom_serializer():
     assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0b_out_chunks.json")
 
 
-
 def test_traverse_pictures():
     """Test that traverse_pictures parameter works correctly with HierarchicalChunker."""
 
@@ -65,9 +64,7 @@ def test_traverse_pictures():
                 has_non_caption_text_in_picture = True
                 break
 
-    assert has_non_caption_text_in_picture, (
-        "Test document should have non-caption TextItem children of PictureItem"
-    )
+    assert has_non_caption_text_in_picture, "Test document should have non-caption TextItem children of PictureItem"
 
     # Test 1: Default behavior (traverse_pictures=False)
     # Only caption TextItems should be included
@@ -115,9 +112,7 @@ def test_traverse_pictures():
         f"children of PictureItems should NOT be included. Found {non_caption_count_default}"
     )
 
-    assert caption_count_default > 0, (
-        "Caption TextItems should be included even with traverse_pictures=False"
-    )
+    assert caption_count_default > 0, "Caption TextItems should be included even with traverse_pictures=False"
 
     assert non_caption_count_traverse > 0, (
         f"With traverse_pictures=True, non-caption TextItems that are children of "
@@ -134,6 +129,38 @@ def test_traverse_pictures():
     assert total_items_traverse > total_items_default, (
         f"With traverse_pictures=True, more doc_items should be included in chunks. "
         f"Got {total_items_traverse} vs {total_items_default}"
+    )
+
+
+def test_chunk_multiple_content_layers(doc_with_layers: DoclingDocument):
+    """Test that chunking can include multiple content layers in the output."""
+
+    default_chunker = HierarchicalChunker()
+    default_text = "\n".join(chunk.text for chunk in default_chunker.chunk(dl_doc=doc_with_layers))
+
+    assert "Main body content" in default_text
+    assert "Page Header" not in default_text
+    assert "Page Footer" not in default_text
+
+    class MultiLayerSerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            params = MarkdownParams(layers={ContentLayer.BODY, ContentLayer.FURNITURE})
+            return ChunkingDocSerializer(doc=doc, params=params)
+
+    multilayer_chunker = HierarchicalChunker(
+        serializer_provider=MultiLayerSerializerProvider(),
+    )
+    multilayer_chunks = list(multilayer_chunker.chunk(dl_doc=doc_with_layers))
+    multilayer_text = "\n".join(chunk.text for chunk in multilayer_chunks)
+
+    assert "Main body content" in multilayer_text
+    assert "Page Header" in multilayer_text
+    assert "Page Footer" in multilayer_text
+
+    act_data = dict(root=[DocChunk.model_validate(chunk).export_json_dict() for chunk in multilayer_chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        "test/data/chunker/0f_out_chunks_multilayer.json",
     )
 
 
@@ -269,8 +296,6 @@ def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
     )
 
     chunks = chunker.chunk(dl_doc=doc)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
 
     assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0c_out_chunks.json")
