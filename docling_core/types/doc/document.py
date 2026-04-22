@@ -66,6 +66,7 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
+from docling_core.utils.settings import settings
 
 _logger = logging.getLogger(__name__)
 
@@ -1085,17 +1086,17 @@ class ImageRef(BaseModel):
         if self._pil is not None:
             return self._pil
 
-        MAX_DECODED_SIZE = 20 * 1024 * 1024  # 20MB
-
         if isinstance(self.uri, AnyUrl):
             if self.uri.scheme == "file":
-                raise ValueError("file:// URI scheme is not supported. Use Path objects for local files.")
+                if not settings.allow_image_file_uri:
+                    raise ValueError("file:// URI scheme is not enabled.")
+                self._pil = PILImage.open(unquote(str(self.uri.path)))
             elif self.uri.scheme == "data":
                 encoded_img = str(self.uri).split(",")[1]
                 decoded_img = base64.b64decode(encoded_img)
 
-                if len(decoded_img) > MAX_DECODED_SIZE:
-                    raise ValueError(f"Decoded image exceeds size limit of {MAX_DECODED_SIZE} bytes.")
+                if len(decoded_img) > settings.max_image_decoded_size:
+                    raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
 
                 self._pil = PILImage.open(BytesIO(decoded_img))
             # else: Handle http request or other protocols...
