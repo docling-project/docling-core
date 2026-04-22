@@ -1085,13 +1085,19 @@ class ImageRef(BaseModel):
         if self._pil is not None:
             return self._pil
 
+        MAX_DECODED_SIZE = 20 * 1024 * 1024  # 20MB
+
         if isinstance(self.uri, AnyUrl):
-            if self.uri.scheme == "data":
+            if self.uri.scheme == "file":
+                raise ValueError("file:// URI scheme is not supported. Use Path objects for local files.")
+            elif self.uri.scheme == "data":
                 encoded_img = str(self.uri).split(",")[1]
                 decoded_img = base64.b64decode(encoded_img)
+
+                if len(decoded_img) > MAX_DECODED_SIZE:
+                    raise ValueError(f"Decoded image exceeds size limit of {MAX_DECODED_SIZE} bytes.")
+
                 self._pil = PILImage.open(BytesIO(decoded_img))
-            elif self.uri.scheme == "file":
-                self._pil = PILImage.open(unquote(str(self.uri.path)))
             # else: Handle http request or other protocols...
         elif isinstance(self.uri, Path):
             self._pil = PILImage.open(self.uri)
