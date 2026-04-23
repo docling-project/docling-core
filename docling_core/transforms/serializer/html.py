@@ -39,8 +39,10 @@ from docling_core.transforms.serializer.common import (
     create_ser_result,
 )
 from docling_core.transforms.serializer.html_styles import (
+    _get_css_for_footnotes,
     _get_css_for_single_column,
     _get_css_for_split_page,
+    _get_css_with_no_styling,
 )
 from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc.base import ImageRefMode
@@ -363,10 +365,10 @@ class HTMLTableSerializer(BaseTableSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed table item to HTML."""
-        res_parts: list[SerializationResult] = []
+        table_parts: list[SerializationResult] = []
         cap_res = doc_serializer.serialize_captions(item=item, tag="caption", **kwargs)
         if cap_res.text:
-            res_parts.append(cap_res)
+            table_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
@@ -416,10 +418,18 @@ class HTMLTableSerializer(BaseTableSerializer):
 
             if body:
                 body = f"<tbody>{body}</tbody>"
-                res_parts.append(create_ser_result(text=body, span_source=span_source))
+                table_parts.append(create_ser_result(text=body, span_source=span_source))
+
+        res_parts: list[SerializationResult] = []
+        if table_parts:
+            table_text = "".join([r.text for r in table_parts])
+            res_parts.append(create_ser_result(text=f"<table>{table_text}</table>", span_source=table_parts))
+
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
 
         text_res = "".join([r.text for r in res_parts])
-        text_res = f"<table>{text_res}</table>" if text_res else ""
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
@@ -609,6 +619,10 @@ class HTMLPictureSerializer(BasePictureSerializer):
             if meta_res.text:
                 details_html = f"<details><summary>Meta</summary>{meta_res.text}</details>"
                 res_parts.append(create_ser_result(text=details_html, span_source=[meta_res]))
+
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
@@ -1210,6 +1224,39 @@ class HTMLDocSerializer(DocSerializer):
             text_res = f"<{tag}>{text_res}</{tag}>"
         return create_ser_result(text=text_res, span_source=results)
 
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        if DocItemLabel.FOOTNOTE not in params.labels:
+            return create_ser_result()
+
+        raw_results = self._serialize_referenced_text_items(item.footnotes, **kwargs)
+        if not raw_results:
+            return create_ser_result()
+
+        results: list[SerializationResult] = []
+        for ser_res in raw_results:
+            dir_str = ""
+            if ser_res.spans and isinstance(ser_res.spans[0].item, TextItem):
+                text_dir = get_text_direction(ser_res.spans[0].item.text)
+                dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
+
+            results.append(
+                create_ser_result(
+                    text=f'<div class="footnote"{dir_str}>{ser_res.text}</div>',
+                    span_source=[ser_res],
+                )
+            )
+
+        text_res = "".join([r.text for r in results])
+        text_res = f'<div class="footnotes" role="note">{text_res}</div>'
+        return create_ser_result(text=text_res, span_source=results)
+
     def _generate_head(self) -> str:
         """Generate the HTML head section with metadata and styles."""
         params = self.params
@@ -1236,8 +1283,12 @@ class HTMLDocSerializer(DocSerializer):
                 head_parts.append(f"<style>\n{params.css_styles}\n</style>")
         elif self.params.output_style == HTMLOutputStyle.SPLIT_PAGE:
             head_parts.append(_get_css_for_split_page())
+            if self.has_visible_footnotes():
+                head_parts.append(_get_css_for_footnotes())
         elif self.params.output_style == HTMLOutputStyle.SINGLE_COLUMN:
             head_parts.append(_get_css_for_single_column())
+            if self.has_visible_footnotes():
+                head_parts.append(_get_css_for_footnotes())
         else:
             raise ValueError(f"unknown output-style: {self.params.output_style}")
 
@@ -1250,7 +1301,7 @@ class HTMLDocSerializer(DocSerializer):
 
     def _get_default_css(self) -> str:
         """Return default CSS styles for the HTML document."""
-        return "<style></style>"
+        return _get_css_with_no_styling()
 
     @override
     def requires_page_break(self):
