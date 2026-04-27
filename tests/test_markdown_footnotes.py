@@ -1,14 +1,7 @@
 from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument, TableCell, TableData
 from docling_core.types.doc.document import (
-    CodeItem,
-    FieldHeadingItem,
-    FieldValueItem,
-    FormulaItem,
-    ListItem,
-    SectionHeaderItem,
     TextItem,
-    TitleItem,
 )
 
 # Mock footnotes for pre-serialization
