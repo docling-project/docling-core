@@ -10,6 +10,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.types.doc.document import RichTableCell
 
 from .test_utils import assert_or_generate_json_ground_truth
 
@@ -183,3 +184,55 @@ def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
     )
 
     assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0c_out_chunks.json")
+
+
+def test_layout_table_produces_chunks():
+    """Regression test for layout tables (all-header RichTableCell tables) that
+    serialize to empty text but previously consumed all referenced items via the
+    shared `visited` set, resulting in zero chunks for the entire document.
+    """
+    doc = DoclingDocument(name="layout_table_regression")
+
+    # Add a layout table: 2 rows, 1 column, both rows are column headers.
+    # TripletTableSerializer will produce empty text because there are no data
+    # rows, but it must NOT permanently mark the referenced TextItems as visited.
+    table_item = doc.add_table(data=TableData(num_rows=2, num_cols=1))
+    text1 = doc.add_text(
+        parent=table_item,
+        label=DocItemLabel.TEXT,
+        text="Paragraph one from layout table",
+    )
+    text2 = doc.add_text(
+        parent=table_item,
+        label=DocItemLabel.TEXT,
+        text="Paragraph two from layout table",
+    )
+    doc.add_table_cell(
+        table_item=table_item,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            column_header=True,
+            ref=text1.get_ref(),
+        ),
+    )
+    doc.add_table_cell(
+        table_item=table_item,
+        cell=RichTableCell(
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            column_header=True,
+            ref=text2.get_ref(),
+        ),
+    )
+
+    chunks = list(HierarchicalChunker().chunk(doc))
+    chunk_texts = [c.text for c in chunks]
+
+    assert len(chunks) > 0, "Expected chunks from layout-table document, got zero"
+    assert text1.text in chunk_texts
+    assert text2.text in chunk_texts

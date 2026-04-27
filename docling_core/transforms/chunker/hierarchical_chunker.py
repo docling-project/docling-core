@@ -56,6 +56,8 @@ class TripletTableSerializer(BaseTableSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         parts: list[SerializationResult] = []
+        visited: Optional[set[str]] = kwargs.get("visited") if isinstance(kwargs.get("visited"), set) else None
+        visited_before: set[str] = set(visited) if visited is not None else set()
 
         cap_res = doc_serializer.serialize_captions(
             item=item,
@@ -101,6 +103,14 @@ class TripletTableSerializer(BaseTableSerializer):
                     parts.append(create_ser_result(text=table_text, span_source=item))
 
         text_res = "\n\n".join([r.text for r in parts])
+
+        # If the table produced no output, restore visited to its pre-call state so
+        # that child items referenced via RichTableCell remain available for chunking.
+        # This prevents layout tables (which serialize to empty text) from silently
+        # consuming all their referenced items and producing zero chunks.
+        if not text_res and visited is not None:
+            visited.clear()
+            visited.update(visited_before)
 
         return create_ser_result(text=text_res, span_source=parts)
 
