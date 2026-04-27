@@ -873,7 +873,6 @@ class MarkdownDocSerializer(DocSerializer):
         params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
         results: list[SerializationResult] = []
         if DocItemLabel.FOOTNOTE in params.labels:
-            results = []
             for footnote in item.footnotes:
                 if isinstance(ftn := footnote.resolve(self.doc), TextItem):
                     parts = ftn.text.split(" ", 1)
