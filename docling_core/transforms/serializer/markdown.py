@@ -220,6 +220,13 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text = f"- [x] {text}"
         if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
             text = f"- [ ] {text}"
+        if item.label == DocItemLabel.FOOTNOTE:
+            # Format standalone footnotes in markdown style
+            parts = text.split(" ", 1)
+            if len(parts) == 2:
+                text = f"[^{parts[0]}]: {parts[1]}"
+            else:
+                text = f"[^{parts[0]}]:"
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
