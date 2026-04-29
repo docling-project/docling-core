@@ -641,6 +641,32 @@ def test_md_footnotes_enriched():
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".footnotes.gt.md"), actual=actual)
 
+def test_md_table_with_footnotes():
+    """Test markdown serialization of a table with footnotes."""
+    doc = DoclingDocument(name="test_table_footnotes")
+    
+    td = TableData(num_rows=2, num_cols=1)
+    td.add_row(["Header 1"])
+    td.add_row(["Data 1"])
+    
+    table = doc.add_table(data=td)
+    
+    footnote1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="table footnote")
+    
+    table.footnotes.append(footnote1.get_ref())
+    
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+        ),
+    )
+    actual = ser.serialize().text
+    
+    assert "| Header 1" in actual 
+    assert "| Data 1" in actual
+    assert "[^table]:" in actual and "footnote" in actual
 
 # ===============================
 # HTML tests
