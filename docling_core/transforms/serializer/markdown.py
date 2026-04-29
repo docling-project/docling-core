@@ -334,6 +334,14 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         """
         return text.replace("\n", " ")
 
+    @staticmethod
+    def _format_footnote_text(text: str) -> str:
+        parts = text.split(" ", 1)
+        if len(parts) == 2:
+            return f"[^{parts[0]}]: {parts[1]}"
+        else:
+            return f"[^{parts[0]}]:"
+
     @override
     def serialize(
         self,
@@ -388,6 +396,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             box = "[x]" if item.label == DocItemLabel.CHECKBOX_SELECTED else "[ ]"
             # The syntax needs a space after the box, unless the text brings its own.
             text = f"- {box}{text}" if text[:1].isspace() else f"- {box} {text}"
+        if item.label == DocItemLabel.FOOTNOTE:
+            text = self._format_footnote_text(text)
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
@@ -1220,15 +1230,8 @@ class MarkdownDocSerializer(DocSerializer):
         if DocItemLabel.FOOTNOTE in params.labels:
             for footnote in item.footnotes:
                 if isinstance(ftn := footnote.resolve(self.doc), TextItem):
-                    parts = ftn.text.split(" ", 1)
-
-                    if len(parts) == 2:
-                        # If footnote has a description
-                        formatted_text = f"[^{parts[0]}]: {parts[1]}"
-                    else:
-                        # If footnote has no description
-                        formatted_text = f"[^{parts[0]}]:"
-
+                    # Use the static method from MarkdownTextSerializer
+                    formatted_text = MarkdownTextSerializer._format_footnote_text(ftn.text)
                     results.append(create_ser_result(text=formatted_text, span_source=ftn))
 
             text_res = "\n".join([r.text for r in results])
