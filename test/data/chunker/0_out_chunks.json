@@ -809,7 +809,7 @@
             }
         },
         {
-            "text": "1 see huggingface.co/ds4sd/docling-models/",
+            "text": "[^1]: see huggingface.co/ds4sd/docling-models/",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",

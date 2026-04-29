@@ -603,6 +603,45 @@ def test_md_traverse_pictures():
     assert "<!-- image -->" in result_with_traverse
 
 
+def test_md_footnotes():
+    """Test markdown serialization of standalone footnotes using real document."""
+    import yaml
+    
+    src = Path("./test/data/doc/2206.01062.yaml")
+    
+    with open(src, encoding="utf-8") as fp:
+        dict_from_yaml = yaml.safe_load(fp)
+    
+    doc: DoclingDocument = DoclingDocument.model_validate(dict_from_yaml)
+    
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".yaml.footnotes.gt.md"), actual=actual)
+
+
+
+def test_md_footnotes_enriched():
+    """Test markdown serialization of footnotes using enriched document."""
+    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+    
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".footnotes.gt.md"), actual=actual)
+
+
 # ===============================
 # HTML tests
 # ===============================
