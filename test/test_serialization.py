@@ -614,7 +614,7 @@ def test_md_footnotes():
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".yaml.footnotes.gt.md"), actual=actual)
+    verify(exp_file=src.with_suffix(".yaml.md"), actual=actual)
 
 def test_md_footnotes_enriched():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
@@ -623,12 +623,12 @@ def test_md_footnotes_enriched():
     ser = MarkdownDocSerializer(
         doc=doc,
         params=MarkdownParams(
-            image_mode=ImageRefMode.PLACEHOLDER,
-            image_placeholder="<!-- image -->",
+            page_break_placeholder="<!-- page break -->",
+            pages={3, 4, 6},
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".footnotes.gt.md"), actual=actual)
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 def test_md_table_with_footnotes():
     doc = DoclingDocument(name="test_table_footnotes")
