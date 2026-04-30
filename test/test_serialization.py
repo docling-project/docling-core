@@ -602,17 +602,9 @@ def test_md_traverse_pictures():
     assert "Text inside picture" in result_with_traverse
     assert "<!-- image -->" in result_with_traverse
 
-
 def test_md_footnotes():
-    """Test markdown serialization of standalone footnotes using real document."""
-    import yaml
-    
     src = Path("./test/data/doc/2206.01062.yaml")
-    
-    with open(src, encoding="utf-8") as fp:
-        dict_from_yaml = yaml.safe_load(fp)
-    
-    doc: DoclingDocument = DoclingDocument.model_validate(dict_from_yaml)
+    doc = DoclingDocument.load_from_yaml(src)
     
     ser = MarkdownDocSerializer(
         doc=doc,
@@ -624,10 +616,7 @@ def test_md_footnotes():
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".yaml.footnotes.gt.md"), actual=actual)
 
-
-
 def test_md_footnotes_enriched():
-    """Test markdown serialization of footnotes using enriched document."""
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
     
@@ -642,7 +631,6 @@ def test_md_footnotes_enriched():
     verify(exp_file=src.with_suffix(".footnotes.gt.md"), actual=actual)
 
 def test_md_table_with_footnotes():
-    """Test markdown serialization of a table with footnotes."""
     doc = DoclingDocument(name="test_table_footnotes")
     
     td = TableData(num_rows=2, num_cols=1)
