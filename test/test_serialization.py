@@ -623,12 +623,11 @@ def test_md_footnotes_enriched():
     ser = MarkdownDocSerializer(
         doc=doc,
         params=MarkdownParams(
-            page_break_placeholder="<!-- page break -->",
-            pages={3, 4, 6},
+            pages={2},
         ),
     )
     actual = ser.serialize().text
-    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
+    verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
 
 def test_md_table_with_footnotes():
     doc = DoclingDocument(name="test_table_footnotes")
