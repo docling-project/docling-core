@@ -422,8 +422,6 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             # The syntax needs a space after the box, unless the text brings its own.
             text = f"- {box}{text}" if text[:1].isspace() else f"- {box} {text}"
         if item.label == DocItemLabel.FOOTNOTE:
-            # Convert footnote to definition format [^id]: content
-            # Footnotes appear inline where they are positioned in the document
             text = self._format_footnote_text(text)
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
