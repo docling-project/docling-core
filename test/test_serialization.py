@@ -602,7 +602,7 @@ def test_md_traverse_pictures():
     assert "Text inside picture" in result_with_traverse
     assert "<!-- image -->" in result_with_traverse
 
-def test_md_footnotes():
+def test_md_footnotes_yaml():
     src = Path("./test/data/doc/2206.01062.yaml")
     doc = DoclingDocument.load_from_yaml(src)
     
@@ -616,7 +616,7 @@ def test_md_footnotes():
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".yaml.md"), actual=actual)
 
-def test_md_footnotes_enriched():
+def test_md_footnotes_json():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
     
