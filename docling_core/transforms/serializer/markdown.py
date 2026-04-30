@@ -254,8 +254,6 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
             text = f"- [ ] {text}"
         if item.label == DocItemLabel.FOOTNOTE:
-            # Convert footnote to definition format [^id]: content
-            # Footnotes appear inline where they are positioned in the document
             text = self._format_footnote_text(text)
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
