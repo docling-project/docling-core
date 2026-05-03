@@ -4,7 +4,6 @@ import base64
 import copy
 import hashlib
 import json
-import orjson
 import logging
 import mimetypes
 import os
@@ -29,6 +28,7 @@ from typing import (
 )
 from urllib.parse import unquote
 
+import orjson
 import pandas as pd
 import yaml
 from PIL import Image as PILImage
@@ -4880,7 +4880,7 @@ class DoclingDocument(BaseModel):
             coord_precision=coord_precision, confid_precision=confid_precision
         )
         with open(filename, "wb") as fw:
-            fw.write(orjson.dumps(out, option=orjson.OPT_INDENT_2 if indent else 0))
+            fw.write(orjson.dumps(out, option=orjson.OPT_INDENT_2 if indent else None))
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":

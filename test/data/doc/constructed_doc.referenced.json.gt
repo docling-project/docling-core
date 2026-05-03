@@ -425,7 +425,7 @@
       "orig": "item of leading list",
       "text": "item of leading list",
       "enumerated": false,
-      "marker": "\u25a0"
+      "marker": "■"
     },
     {
       "self_ref": "#/texts/1",
@@ -507,7 +507,7 @@
       "orig": "list item 1",
       "text": "list item 1",
       "enumerated": false,
-      "marker": "\u25a0"
+      "marker": "■"
     },
     {
       "self_ref": "#/texts/7",
@@ -521,7 +521,7 @@
       "orig": "list item 2",
       "text": "list item 2",
       "enumerated": false,
-      "marker": "\u25a0"
+      "marker": "■"
     },
     {
       "self_ref": "#/texts/8",
@@ -539,7 +539,7 @@
       "orig": "list item 3",
       "text": "list item 3",
       "enumerated": false,
-      "marker": "\u25a0"
+      "marker": "■"
     },
     {
       "self_ref": "#/texts/9",
@@ -613,7 +613,7 @@
       "orig": "list item 4",
       "text": "list item 4",
       "enumerated": false,
-      "marker": "\u25a0"
+      "marker": "■"
     },
     {
       "self_ref": "#/texts/14",
@@ -663,7 +663,7 @@
       "orig": "item 1 of list",
       "text": "item 1 of list",
       "enumerated": false,
-      "marker": "\u25a0"
+      "marker": "■"
     },
     {
       "self_ref": "#/texts/18",
@@ -705,7 +705,7 @@
       "orig": "item 1 of neighboring list",
       "text": "item 1 of neighboring list",
       "enumerated": false,
-      "marker": "\u25a0"
+      "marker": "■"
     },
     {
       "self_ref": "#/texts/21",
@@ -723,7 +723,7 @@
       "orig": "item 2 of neighboring list",
       "text": "item 2 of neighboring list",
       "enumerated": false,
-      "marker": "\u25a0"
+      "marker": "■"
     },
     {
       "self_ref": "#/texts/22",
@@ -737,7 +737,7 @@
       "orig": "item 1 of sub list",
       "text": "item 1 of sub list",
       "enumerated": false,
-      "marker": "\u25a1"
+      "marker": "□"
     },
     {
       "self_ref": "#/texts/23",
@@ -755,7 +755,7 @@
       "orig": "",
       "text": "",
       "enumerated": false,
-      "marker": "\u25a1"
+      "marker": "□"
     },
     {
       "self_ref": "#/texts/24",
@@ -813,7 +813,7 @@
       "orig": "",
       "text": "",
       "enumerated": false,
-      "marker": "\u25a1"
+      "marker": "□"
     },
     {
       "self_ref": "#/texts/28",

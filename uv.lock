@@ -792,7 +792,7 @@ requires-dist = [
     { name = "jsonref", specifier = ">=1.1.0,<2.0.0" },
     { name = "jsonschema", specifier = ">=4.16.0,<5.0.0" },
     { name = "latex2mathml", specifier = ">=3.77.0,<4.0.0" },
-    { name = "orjson", specifier = ">=3.11.5" },
+    { name = "orjson", specifier = ">=3.11.5,<4.0.0" },
     { name = "pandas", specifier = ">=2.1.4,<3.0.0" },
     { name = "pillow", specifier = ">=10.0.0,<13.0.0" },
     { name = "pydantic", specifier = ">=2.6.0,!=2.10.0,!=2.10.1,!=2.10.2,<3.0.0" },
