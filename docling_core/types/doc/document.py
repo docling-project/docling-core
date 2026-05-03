@@ -11,10 +11,13 @@ import re
 import sys
 import typing
 import warnings
+from collections.abc import Iterable
+from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     Dict,
     Final,
@@ -38,15 +41,17 @@ from pydantic import (
     ConfigDict,
     Field,
     FieldSerializationInfo,
+    SerializerFunctionWrapHandler,
     StringConstraints,
     computed_field,
     field_serializer,
     field_validator,
+    model_serializer,
     model_validator,
     validate_call,
 )
-from tabulate import tabulate
-from typing_extensions import Annotated, Self, deprecated, override
+from tabulate import _column_type, tabulate
+from typing_extensions import Self, deprecated, override
 
 from docling_core.search.package import VERSION_PATTERN
 from docling_core.types.base import _JSON_POINTER_REGEX
