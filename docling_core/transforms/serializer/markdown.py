@@ -532,9 +532,20 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     res_parts.append(ann_res)
 
             rows = []
-            for row in item.data.grid:
+            for r, row in enumerate(item.data.grid):
                 rendered_row = []
-                for col in row:
+                for c, col in enumerate(row):
+                    # Spanning cells (col_span > 1 or row_span > 1) appear at
+                    # every grid position they cover. Emit cell text only at
+                    # the cell's origin position; spanned positions render as
+                    # empty so a colspan=4 cell isn't repeated 4 times.
+                    is_origin = (
+                        r == col.start_row_offset_idx
+                        and c == col.start_col_offset_idx
+                    )
+                    if not is_origin:
+                        rendered_row.append("")
+                        continue
                     if isinstance(col, RichTableCell):
                         ref_item = col.ref.resolve(doc=doc)
                         inner_kwargs = {**kwargs, "_nested_in_table": True}
