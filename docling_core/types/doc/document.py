@@ -1099,8 +1099,10 @@ class ImageRef(BaseModel):
                     raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
 
                 self._pil = PILImage.open(BytesIO(decoded_img))
-            # else: Handle http request or other protocols...
+            # NOTE: any further protocol support added (https etc.) must adhere to respective sanitization practices
         elif isinstance(self.uri, Path):
+            if not settings.allow_image_local_path:
+                raise ValueError("Loading images from local paths is not enabled.")
             self._pil = PILImage.open(self.uri)
 
         return self._pil

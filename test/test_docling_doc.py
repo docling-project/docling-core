@@ -1,5 +1,6 @@
 import os
 import re
+import tempfile
 import warnings
 from collections import deque
 from copy import deepcopy
@@ -896,6 +897,66 @@ def test_file_uri_blocked_by_default():
 
     with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
         _ = image_ref.pil_image
+
+
+def test_local_path_blocked_by_default():
+    """Test that local Path objects are blocked by default."""
+    image_ref = ImageRef(
+        dpi=72,
+        mimetype="image/png",
+        size=Size(width=100, height=100),
+        uri=Path("/etc/something"),
+    )
+
+    with pytest.raises(ValueError, match="Loading images from local paths is not enabled"):
+        _ = image_ref.pil_image
+
+
+def test_local_path_allowed_with_setting():
+    """Test that local Path objects work when enabled via settings."""
+    orig_allow_image_local_path = settings.allow_image_local_path
+
+    with tempfile.NamedTemporaryFile(suffix=".png") as tmp_file:
+        test_img_path = Path(tmp_file.name)
+
+        try:
+            img = PILImage.new("RGB", (50, 50), color="blue")
+            img.save(test_img_path)
+
+            settings.allow_image_local_path = True
+
+            image_ref = ImageRef(
+                dpi=72,
+                mimetype="image/png",
+                size=Size(width=50, height=50),
+                uri=test_img_path,
+            )
+
+            pil_img = image_ref.pil_image
+            assert pil_img is not None
+            assert pil_img.size == (50, 50)
+            assert pil_img.mode == "RGB"
+        finally:
+            settings.allow_image_local_path = orig_allow_image_local_path
+
+
+def test_local_path_traversal_blocked():
+    """Test that path traversal attempts are blocked by default."""
+    paths_to_check = [
+        Path("/etc/something"),
+        Path("../../../etc/something"),
+    ]
+
+    for path in paths_to_check:
+        image_ref = ImageRef(
+            dpi=72,
+            mimetype="image/png",
+            size=Size(width=100, height=100),
+            uri=path,
+        )
+
+        with pytest.raises(ValueError, match="Loading images from local paths is not enabled"):
+            _ = image_ref.pil_image
 
 
 def test_max_decoded_size_custom():
