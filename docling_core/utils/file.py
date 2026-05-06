@@ -182,6 +182,14 @@ def resolve_source_to_stream(
         stream = BytesIO(res.content)
         doc_stream = DocumentStream(name=fname, stream=stream)
     except ValidationError:
+        if isinstance(source, str) and "://" in source:
+            scheme = source.split("://", 1)[0].lower()
+            if scheme not in ("http", "https"):
+                raise ValueError(
+                    "Unsupported URL scheme: '{scheme}'. Only http:// and https:// are supported.".format(
+                        scheme=scheme
+                    )
+                )
         try:
             local_path = TypeAdapter(Path).validate_python(source)
             stream = BytesIO(local_path.read_bytes())

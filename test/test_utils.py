@@ -230,6 +230,15 @@ def test_resolve_source_rejects_non_public_urls(monkeypatch):
         resolve_source_to_stream("http://169.254.169.254/latest/meta-data/")
 
 
+def test_resolve_source_rejects_unsupported_scheme():
+    """Test that unsupported URL schemes are rejected before file fallback."""
+    from docling_core.utils.file import resolve_source_to_stream
+    import pytest
+
+    with pytest.raises(ValueError, match="Unsupported URL scheme"):
+        resolve_source_to_stream("ftp://some-server/file.pdf")
+
+
 def test_resolve_source_to_path_sanitizes_filename(monkeypatch, tmp_path):
     """Test that saved filenames stay within the target directory."""
     from docling_core.utils.file import resolve_source_to_path
