@@ -1714,10 +1714,8 @@ class DoclangPictureSerializer(BasePictureSerializer):
 
     def _picture_is_chem(self, item: PictureItem) -> bool:
         """Check if predicted class indicates a chemistry structure."""
-        if item.meta and item.meta.classification:
-            return item.meta.classification.get_main_prediction().class_name in {
-                PictureClassificationLabel.CHEMISTRY_STRUCTURE.value,
-            }
+        if item.meta and item.meta.molecule:
+            return True
         return False
 
     @override
