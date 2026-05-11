@@ -192,7 +192,54 @@ def test_is_safe_url_rejects_private_networks():
     assert _is_safe_url("http://8.8.8.8/file")
     assert _is_safe_url("https://example.com/file")
     assert _is_safe_url("https://github.com/github/file")
+    
+def test_ip_in_allowlist():
+    import ipaddress
+    from docling_core.utils.file import _ip_in_allowlist
 
+    assert _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["127.0.0.1"])
+    assert not _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["127.0.0.2"])
+
+    assert _ip_in_allowlist(ipaddress.ip_address("10.20.30.40"), ["10.0.0.0/8"])
+    assert not _ip_in_allowlist(ipaddress.ip_address("10.21.0.1"), ["10.20.0.0/16"])
+
+    assert _ip_in_allowlist(ipaddress.ip_address("192.168.1.100"), ["192.168.1.0/24"])
+    assert not _ip_in_allowlist(ipaddress.ip_address("192.168.1.100"), ["192.168.1.5/24"])
+
+    assert _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["garbage", "127.0.0.1"])
+    assert not _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["garbage", "300.300.300.300"])
+
+
+
+def test_allowed_private_ips(monkeypatch):
+    import pytest
+    from docling_core.utils.file import resolve_source_to_stream
+    from docling_core.utils.settings import settings
+    from requests import Response
+
+    def mock_get(*args, **kwargs):
+        r = Response()
+        r.status_code = 200
+        r._content = b"ok"
+        return r
+
+    monkeypatch.setattr("requests.Session.get", mock_get)
+
+    monkeypatch.setattr(settings, "allowed_private_ips", [])
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("http://10.0.0.1/file")
+
+    monkeypatch.setattr(settings, "allowed_private_ips", [""])
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("http://10.0.0.1/file")
+
+    monkeypatch.setattr(settings, "allowed_private_ips", ["127.0.0.1"])
+    assert resolve_source_to_stream("http://127.0.0.1/file").stream.read() == b"ok"
+
+    monkeypatch.setattr(settings, "allowed_private_ips", ["192.168.1.0/24"])
+    assert resolve_source_to_stream("http://192.168.1.42/doc").stream.read() == b"ok"
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("http://192.168.2.1/doc")
 
 def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
     """Test filename normalization from Content-Disposition."""
