@@ -1,10 +1,10 @@
-<doclang version="1.0.0">
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
   <field_region>
     <location value="48"/>
     <location value="12"/>
     <location value="477"/>
     <location value="484"/>
-    <heading level="1">
+    <heading level="2">
       <location value="142"/>
       <location value="12"/>
       <location value="304"/>
@@ -24,7 +24,7 @@
         <location value="32"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="53"/>
       <location value="37"/>
       <location value="179"/>
@@ -84,7 +84,7 @@
       <location value="301"/>
       <location value="69"/>
     </text>
-    <heading level="2">
+    <heading level="3">
       <location value="54"/>
       <location value="73"/>
       <location value="118"/>
@@ -132,28 +132,26 @@
       <location value="166"/>
       <location value="141"/>
     </text>
-    <heading level="2">
+    <heading level="3">
       <location value="54"/>
       <location value="168"/>
       <location value="195"/>
       <location value="171"/>
     </heading>
-    <floating_group class="table">
-      <otsl>
-        <location value="48"/>
-        <location value="172"/>
-        <location value="477"/>
-        <location value="342"/>
-        <ched/>
-        <ched/>
-        <ched/>
-        <nl/>
-        <fcel/>
-        <fcel/>
-        <fcel/>
-        <nl/>
-      </otsl>
-    </floating_group>
+    <table>
+      <location value="48"/>
+      <location value="172"/>
+      <location value="477"/>
+      <location value="342"/>
+      <ched/>
+      <ched/>
+      <ched/>
+      <nl/>
+      <fcel/>
+      <fcel/>
+      <fcel/>
+      <nl/>
+    </table>
     <text>
       <location value="52"/>
       <location value="345"/>

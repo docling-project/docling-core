@@ -1,20 +1,23 @@
-<doclang version="1.0.0">
-  <floating_group class="picture">
-    <picture>
-      <location value="255"/>
-      <location value="3"/>
-      <location value="448"/>
-      <location value="24"/>
-    </picture>
-  </floating_group>
-  <list ordered="false">
-    <list_text>
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <picture>
+    <meta>
+      <classification/>
+    </meta>
+    <location value="255"/>
+    <location value="3"/>
+    <location value="448"/>
+    <location value="24"/>
+  </picture>
+  <list class="unordered">
+    <ldiv/>
+    <text>
       <location value="73"/>
       <location value="29"/>
       <location value="223"/>
       <location value="48"/>
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <group>
       <location value="279"/>
       <location value="30"/>
       <location value="448"/>
@@ -35,8 +38,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="278"/>
       <location value="40"/>
       <location value="447"/>
@@ -57,16 +61,18 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
+    </group>
   </list>
-  <list ordered="false">
-    <list_text>
+  <list class="unordered">
+    <ldiv/>
+    <text>
       <location value="73"/>
       <location value="69"/>
       <location value="225"/>
       <location value="87"/>
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <group>
       <location value="72"/>
       <location value="94"/>
       <location value="247"/>
@@ -87,8 +93,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="72"/>
       <location value="126"/>
       <location value="245"/>
@@ -125,8 +132,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="73"/>
       <location value="172"/>
       <location value="162"/>
@@ -147,8 +155,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="72"/>
       <location value="182"/>
       <location value="172"/>
@@ -169,14 +178,16 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <text>
       <location value="73"/>
       <location value="192"/>
       <location value="219"/>
       <location value="198"/>
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <group>
       <location value="73"/>
       <location value="217"/>
       <location value="253"/>
@@ -197,8 +208,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="73"/>
       <location value="225"/>
       <location value="254"/>
@@ -219,8 +231,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="73"/>
       <location value="239"/>
       <location value="253"/>
@@ -241,43 +254,43 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <text>
       <location value="73"/>
       <location value="257"/>
       <location value="191"/>
       <location value="264"/>
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <text>
       <location value="268"/>
       <location value="174"/>
       <location value="449"/>
       <location value="186"/>
-    </list_text>
+    </text>
   </list>
-  <floating_group class="table">
-    <otsl>
-      <location value="77"/>
-      <location value="202"/>
-      <location value="253"/>
-      <location value="213"/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-    </otsl>
-  </floating_group>
-  <heading level="2">
+  <table>
+    <location value="77"/>
+    <location value="202"/>
+    <location value="253"/>
+    <location value="213"/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+  </table>
+  <heading level="3">
     <location value="117"/>
     <location value="268"/>
     <location value="209"/>
     <location value="272"/>
   </heading>
-  <heading level="2">
+  <heading level="3">
     <location value="107"/>
     <location value="311"/>
     <location value="219"/>
@@ -377,93 +390,89 @@
     <location value="396"/>
     <location value="173"/>
   </text>
-  <floating_group class="table">
-    <otsl>
-      <location value="88"/>
-      <location value="278"/>
-      <location value="254"/>
-      <location value="307"/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-    </otsl>
-  </floating_group>
-  <floating_group class="table">
-    <otsl>
-      <location value="72"/>
-      <location value="321"/>
-      <location value="189"/>
-      <location value="367"/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <ecel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <fcel/>
-      <nl/>
-      <fcel/>
-      <fcel/>
-      <ecel/>
-      <fcel/>
-      <nl/>
-    </otsl>
-  </floating_group>
-  <heading level="2">
+  <table>
+    <location value="88"/>
+    <location value="278"/>
+    <location value="254"/>
+    <location value="307"/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+  </table>
+  <table>
+    <location value="72"/>
+    <location value="321"/>
+    <location value="189"/>
+    <location value="367"/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <ecel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <fcel/>
+    <nl/>
+    <fcel/>
+    <fcel/>
+    <ecel/>
+    <fcel/>
+    <nl/>
+  </table>
+  <heading level="3">
     <location value="338"/>
     <location value="191"/>
     <location value="379"/>
@@ -475,14 +484,15 @@
     <location value="449"/>
     <location value="259"/>
   </text>
-  <floating_group class="picture">
-    <picture>
-      <location value="285"/>
-      <location value="268"/>
-      <location value="450"/>
-      <location value="328"/>
-    </picture>
-  </floating_group>
+  <picture>
+    <meta>
+      <classification/>
+    </meta>
+    <location value="285"/>
+    <location value="268"/>
+    <location value="450"/>
+    <location value="328"/>
+  </picture>
   <text>
     <location value="276"/>
     <location value="342"/>

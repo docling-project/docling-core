@@ -1,24 +1,24 @@
-<doclang version="1.0.0">
-  <floating_group class="picture">
-    <picture>
-      <meta>
-        <classification>Bar code</classification>
-      </meta>
-      <location value="255"/>
-      <location value="3"/>
-      <location value="448"/>
-      <location value="24"/>
-    </picture>
-  </floating_group>
-  <list ordered="false">
-    <list_text>
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <picture>
+    <meta>
+      <classification>Bar code</classification>
+    </meta>
+    <location value="255"/>
+    <location value="3"/>
+    <location value="448"/>
+    <location value="24"/>
+  </picture>
+  <list class="unordered">
+    <ldiv/>
+    <text>
       <location value="73"/>
       <location value="29"/>
       <location value="223"/>
       <location value="48"/>
       (12) United States Patent Jung et al.
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <group>
       <location value="279"/>
       <location value="30"/>
       <location value="448"/>
@@ -41,8 +41,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="278"/>
       <location value="40"/>
       <location value="447"/>
@@ -65,17 +66,19 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
+    </group>
   </list>
-  <list ordered="false">
-    <list_text>
+  <list class="unordered">
+    <ldiv/>
+    <text>
       <location value="73"/>
       <location value="69"/>
       <location value="225"/>
       <location value="87"/>
       (54) PHOTORESIST CROSS-LINKER AND
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <group>
       <location value="72"/>
       <location value="94"/>
       <location value="247"/>
@@ -98,8 +101,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="72"/>
       <location value="126"/>
       <location value="245"/>
@@ -140,8 +144,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="73"/>
       <location value="172"/>
       <location value="162"/>
@@ -164,8 +169,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="72"/>
       <location value="182"/>
       <location value="172"/>
@@ -188,15 +194,17 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <text>
       <location value="73"/>
       <location value="192"/>
       <location value="219"/>
       <location value="198"/>
       (30) Foreign Application Priority Data
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <group>
       <location value="73"/>
       <location value="217"/>
       <location value="253"/>
@@ -219,8 +227,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="73"/>
       <location value="225"/>
       <location value="254"/>
@@ -243,8 +252,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="73"/>
       <location value="239"/>
       <location value="253"/>
@@ -267,52 +277,52 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <text>
       <location value="73"/>
       <location value="257"/>
       <location value="191"/>
       <location value="264"/>
       (56) References Cited
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <text>
       <location value="268"/>
       <location value="174"/>
       <location value="449"/>
       <location value="186"/>
       (74) Attorney , Agent , or Firm—Townsend and Townsend
-    </list_text>
+    </text>
   </list>
-  <floating_group class="table">
-    <otsl>
-      <location value="77"/>
-      <location value="202"/>
-      <location value="253"/>
-      <location value="213"/>
-      <fcel/>
-      Nov. 27, 1998
-      <fcel/>
-      (KR)
-      <fcel/>
-      98-51356
-      <nl/>
-      <fcel/>
-      Feb. 22, 1999
-      <fcel/>
-      (KR) ...
-      <fcel/>
-      ．99-5825
-      <nl/>
-    </otsl>
-  </floating_group>
-  <heading level="2">
+  <table>
+    <location value="77"/>
+    <location value="202"/>
+    <location value="253"/>
+    <location value="213"/>
+    <fcel/>
+    Nov. 27, 1998
+    <fcel/>
+    (KR)
+    <fcel/>
+    98-51356
+    <nl/>
+    <fcel/>
+    Feb. 22, 1999
+    <fcel/>
+    (KR) ...
+    <fcel/>
+    ．99-5825
+    <nl/>
+  </table>
+  <heading level="3">
     <location value="117"/>
     <location value="268"/>
     <location value="209"/>
     <location value="272"/>
     U.S. PATENT DOCUMENTS
   </heading>
-  <heading level="2">
+  <heading level="3">
     <location value="107"/>
     <location value="311"/>
     <location value="219"/>
@@ -423,148 +433,144 @@
     <location value="173"/>
     Primary Examiner-Rosemary E. Ashton
   </text>
-  <floating_group class="table">
-    <otsl>
-      <location value="88"/>
-      <location value="278"/>
-      <location value="254"/>
-      <location value="307"/>
-      <fcel/>
-      3,468,857
-      <fcel/>
-      A
-      <fcel/>
-      9/1969
-      <fcel/>
-      Graver ... ... ... ... ...
-      <fcel/>
-      260/80.3
-      <nl/>
-      <fcel/>
-      5,049,463
-      <fcel/>
-      A*
-      <fcel/>
-      9/1991
-      <fcel/>
-      Kato et al. ...........
-      <fcel/>
-      ... 430/49
-      <nl/>
-      <fcel/>
-      5,059,698
-      <fcel/>
-      A
-      <fcel/>
-      10/1991
-      <fcel/>
-      Schulthess et al. ...
-      <fcel/>
-      ..549/375
-      <nl/>
-      <fcel/>
-      5,412,041
-      <fcel/>
-      A*
-      <fcel/>
-      5/1995
-      <fcel/>
-      Lesko et al. ...........
-      <fcel/>
-      ..525/340
-      <nl/>
-      <fcel/>
-      6,060,212
-      <fcel/>
-      A*
-      <fcel/>
-      5/2000
-      <fcel/>
-      McCulloch et al. ......
-      <fcel/>
-      430/270.1
-      <nl/>
-    </otsl>
-  </floating_group>
-  <floating_group class="table">
-    <otsl>
-      <location value="72"/>
-      <location value="321"/>
-      <location value="189"/>
-      <location value="367"/>
-      <fcel/>
-      DE
-      <fcel/>
-      3714276
-      <fcel/>
-      A1
-      <fcel/>
-      11/1988
-      <nl/>
-      <fcel/>
-      EP
-      <fcel/>
-      0347381
-      <fcel/>
-      A1
-      <fcel/>
-      12/1989
-      <nl/>
-      <fcel/>
-      EP
-      <fcel/>
-      0422888
-      <fcel/>
-      A2
-      <fcel/>
-      4/1991
-      <nl/>
-      <fcel/>
-      EP
-      <fcel/>
-      875 789
-      <fcel/>
-      A1
-      <fcel/>
-      11/1998
-      <nl/>
-      <fcel/>
-      GB
-      <fcel/>
-      922747
-      <ecel/>
-      <fcel/>
-      4/1963
-      <nl/>
-      <fcel/>
-      JP
-      <fcel/>
-      4-5040054
-      <fcel/>
-      *
-      <fcel/>
-      12/1970
-      <nl/>
-      <fcel/>
-      JP
-      <fcel/>
-      5-216294
-      <fcel/>
-      *
-      <fcel/>
-      8/1993
-      <nl/>
-      <fcel/>
-      WO
-      <fcel/>
-      WO 99/61497
-      <ecel/>
-      <fcel/>
-      12/1999
-      <nl/>
-    </otsl>
-  </floating_group>
-  <heading level="2">
+  <table>
+    <location value="88"/>
+    <location value="278"/>
+    <location value="254"/>
+    <location value="307"/>
+    <fcel/>
+    3,468,857
+    <fcel/>
+    A
+    <fcel/>
+    9/1969
+    <fcel/>
+    Graver ... ... ... ... ...
+    <fcel/>
+    260/80.3
+    <nl/>
+    <fcel/>
+    5,049,463
+    <fcel/>
+    A*
+    <fcel/>
+    9/1991
+    <fcel/>
+    Kato et al. ...........
+    <fcel/>
+    ... 430/49
+    <nl/>
+    <fcel/>
+    5,059,698
+    <fcel/>
+    A
+    <fcel/>
+    10/1991
+    <fcel/>
+    Schulthess et al. ...
+    <fcel/>
+    ..549/375
+    <nl/>
+    <fcel/>
+    5,412,041
+    <fcel/>
+    A*
+    <fcel/>
+    5/1995
+    <fcel/>
+    Lesko et al. ...........
+    <fcel/>
+    ..525/340
+    <nl/>
+    <fcel/>
+    6,060,212
+    <fcel/>
+    A*
+    <fcel/>
+    5/2000
+    <fcel/>
+    McCulloch et al. ......
+    <fcel/>
+    430/270.1
+    <nl/>
+  </table>
+  <table>
+    <location value="72"/>
+    <location value="321"/>
+    <location value="189"/>
+    <location value="367"/>
+    <fcel/>
+    DE
+    <fcel/>
+    3714276
+    <fcel/>
+    A1
+    <fcel/>
+    11/1988
+    <nl/>
+    <fcel/>
+    EP
+    <fcel/>
+    0347381
+    <fcel/>
+    A1
+    <fcel/>
+    12/1989
+    <nl/>
+    <fcel/>
+    EP
+    <fcel/>
+    0422888
+    <fcel/>
+    A2
+    <fcel/>
+    4/1991
+    <nl/>
+    <fcel/>
+    EP
+    <fcel/>
+    875 789
+    <fcel/>
+    A1
+    <fcel/>
+    11/1998
+    <nl/>
+    <fcel/>
+    GB
+    <fcel/>
+    922747
+    <ecel/>
+    <fcel/>
+    4/1963
+    <nl/>
+    <fcel/>
+    JP
+    <fcel/>
+    4-5040054
+    <fcel/>
+    *
+    <fcel/>
+    12/1970
+    <nl/>
+    <fcel/>
+    JP
+    <fcel/>
+    5-216294
+    <fcel/>
+    *
+    <fcel/>
+    8/1993
+    <nl/>
+    <fcel/>
+    WO
+    <fcel/>
+    WO 99/61497
+    <ecel/>
+    <fcel/>
+    12/1999
+    <nl/>
+  </table>
+  <heading level="3">
     <location value="338"/>
     <location value="191"/>
     <location value="379"/>
@@ -578,17 +584,15 @@
     <location value="259"/>
     The present invention relates to a cross-linker for use in a photoresist which is suitable for a photolithography process using KrF (248 ru), ArF (193 nm), E-beam, ion beam or EUV light source. According to the present invention, preferred cross-linkers comprise a copolymer having repeating units derived from: (i) a compound represented by following Chemical Formula 1 and/or (ii) one or more compound(s) selected from the group consisting of acrylic acid, meth-acrylic acid and maleic anhydride.
   </text>
-  <floating_group class="picture">
-    <picture>
-      <meta>
-        <classification>Illustration</classification>
-      </meta>
-      <location value="285"/>
-      <location value="268"/>
-      <location value="450"/>
-      <location value="328"/>
-    </picture>
-  </floating_group>
+  <picture>
+    <meta>
+      <classification>Illustration</classification>
+    </meta>
+    <location value="285"/>
+    <location value="268"/>
+    <location value="450"/>
+    <location value="328"/>
+  </picture>
   <text>
     <location value="276"/>
     <location value="342"/>

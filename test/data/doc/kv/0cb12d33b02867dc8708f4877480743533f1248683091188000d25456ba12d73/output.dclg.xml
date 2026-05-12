@@ -1,4 +1,4 @@
-<doclang version="1.0.0">
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
   <text>
     <location value="61"/>
     <location value="27"/>
@@ -6,44 +6,43 @@
     <location value="33"/>
     (19)
   </text>
-  <floating_group class="picture">
-    <picture>
-      <meta>
-        <classification>Logo</classification>
-      </meta>
-      <location value="80"/>
-      <location value="26"/>
-      <location value="167"/>
-      <location value="57"/>
-    </picture>
-  </floating_group>
-  <floating_group class="picture">
-    <picture>
-      <meta>
-        <classification>Bar code</classification>
-      </meta>
-      <location value="332"/>
-      <location value="26"/>
-      <location value="462"/>
-      <location value="41"/>
-    </picture>
-  </floating_group>
-  <list ordered="false">
-    <list_text>
+  <picture>
+    <meta>
+      <classification>Logo</classification>
+    </meta>
+    <location value="80"/>
+    <location value="26"/>
+    <location value="167"/>
+    <location value="57"/>
+  </picture>
+  <picture>
+    <meta>
+      <classification>Bar code</classification>
+    </meta>
+    <location value="332"/>
+    <location value="26"/>
+    <location value="462"/>
+    <location value="41"/>
+  </picture>
+  <list class="unordered">
+    <ldiv/>
+    <text>
       <location value="312"/>
       <location value="48"/>
       <location value="461"/>
       <location value="57"/>
       (11) EP 3 800 018 A1
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <text>
       <location value="61"/>
       <location value="63"/>
       <location value="355"/>
       <location value="72"/>
       (12) EUROPÄISCHE PATENTANMELDUNG
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <group>
       <location value="61"/>
       <location value="81"/>
       <location value="196"/>
@@ -66,8 +65,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="61"/>
       <location value="103"/>
       <location value="184"/>
@@ -90,8 +90,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="61"/>
       <location value="117"/>
       <location value="164"/>
@@ -114,8 +115,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="267"/>
       <location value="81"/>
       <location value="435"/>
@@ -138,8 +140,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="61"/>
       <location value="133"/>
       <location value="255"/>
@@ -194,8 +197,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="61"/>
       <location value="198"/>
       <location value="239"/>
@@ -217,8 +221,9 @@
 <![CDATA[Anmelder: Dienes Werke für Maschinenteile GmbH & Co. KG 51491 Overath (DE)]]>          </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <group>
       <location value="61"/>
       <location value="226"/>
       <location value="139"/>
@@ -248,29 +253,33 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
-    <list_text>
+    </group>
+    <ldiv/>
+    <text>
       <location value="61"/>
       <location value="256"/>
       <location value="313"/>
       <location value="263"/>
       (54) SENSORVORRICHTUNG FÜR EINEN MESSERHALTER
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <text>
       <location value="60"/>
       <location value="273"/>
       <location value="250"/>
       <location value="335"/>
       (57) Die vorliegende Erfindung betrifft eine Sensor- vorrichtung (4) für einen Messerhalter (1), umfassend - einen Grundkörper (6) zur Befestigung der Sensorvor- richtung (4) an einem Messerhalter (1), - mindestens einen an dem Grundkörper (6) befestigten Sensor (7) zur Erfassung einer Größe und - einen an dem Grundkörper (6) befestigten Sender (8) zur kabellosen Übertragung der von dem Sensor (7) er- fassten Größe.
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <text>
       <location value="279"/>
       <location value="133"/>
       <location value="345"/>
       <location value="146"/>
       - Klöcker, Gerd 51061 Köln (DE)
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <group>
       <location value="267"/>
       <location value="155"/>
       <location value="459"/>
@@ -308,9 +317,9 @@
           </value>
         </field_item>
       </field_region>
-    </list_text>
+    </group>
   </list>
-  <floating_group class="picture">
+  <group>
     <caption>
       <location value="409"/>
       <location value="450"/>
@@ -327,7 +336,7 @@
       <location value="450"/>
       <location value="458"/>
     </picture>
-  </floating_group>
+  </group>
   <field_region>
     <field_item>
       <key>

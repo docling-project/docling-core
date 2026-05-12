@@ -1,4 +1,4 @@
-<doclang version="1.0.0">
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
   <field_region>
     <field_heading level="1">KV heading</field_heading>
     <field_item>

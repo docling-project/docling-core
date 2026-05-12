@@ -7,11 +7,12 @@ from typing import Optional
 import pytest
 
 from docling_core.experimental.doclang import (
+    DOCLANG_NAMESPACE,
+    DOCLANG_VERSION,
     ContentType,
     EscapeMode,
     DoclangDocSerializer,
     DoclangParams,
-    DoclangVocabulary,
     LayerMode,
     WrapMode,
 )
@@ -137,56 +138,6 @@ def add_list_section(doc: DoclingDocument):
     doc.add_list_item(text="final element", parent=lg)
 
 # ===============================
-# Doclang unit-tests
-# ===============================
-
-
-def test_create_closing_token_from_opening_tag_simple():
-    assert DoclangVocabulary.create_closing_token(token="<text>") == "</text>"
-    assert (
-        DoclangVocabulary.create_closing_token(token='\n  <heading level="2">  ')
-        == "</heading>"
-    )
-    assert (
-        DoclangVocabulary.create_closing_token(token=' <list ordered="true"> ')
-        == "</list>"
-    )
-
-
-def test_create_closing_token_returns_existing_closing():
-    assert DoclangVocabulary.create_closing_token(token="</text>") == "</text>"
-
-
-@pytest.mark.parametrize(
-    "bad",
-    [
-        "<br/>",
-        '<location value="3"/>',
-        '<hour value="1"/>',
-        '<thread id="abc"/>',
-    ],
-)
-def test_create_closing_token_rejects_self_closing(bad):
-    with pytest.raises(ValueError):
-        DoclangVocabulary.create_closing_token(token=bad)
-
-
-@pytest.mark.parametrize(
-    "bad",
-    [
-        "text",  # not a tag
-        "<text",  # incomplete
-        "<text/>",  # self-closing form of non-self-closing token
-        "</ unknown >",  # malformed closing
-        "<unknown>",  # unknown token
-    ],
-)
-def test_create_closing_token_invalid_inputs(bad):
-    with pytest.raises(ValueError):
-        DoclangVocabulary.create_closing_token(token=bad)
-
-
-# ===============================
 # Doclang tests
 # ===============================
 
@@ -203,11 +154,13 @@ def test_list_items_not_double_wrapped_when_no_content():
     doc.add_list_item("Item B", parent=lst)
 
     txt = serialize_doclang(doc, params=DoclangParams(content_types=set()))
-    exp_txt = """
-<doclang version="1.0.0">
-  <list ordered="false">
-    <list_text></list_text>
-    <list_text></list_text>
+    exp_txt = f"""
+<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+  <list class="unordered">
+    <ldiv/>
+    <text></text>
+    <ldiv/>
+    <text></text>
   </list>
 </doclang>
     """
@@ -273,25 +226,23 @@ def test_doclang_crop_embedded():
     actual = serializer.serialize().text
 
     # verifying everything except base64 data as the latter seems to be flaky across runs/platforms
-    exp_prefix = """
-<doclang version="1.0.0">
-  <floating_group class="picture">
-    <picture>
-      <meta>
-        <classification>Other</classification>
-      </meta>
-      <location value="43"/>
-      <location value="117"/>
-      <location value="172"/>
-      <location value="208"/>
-      <uri>data:image/png;base64,
+    exp_prefix = f"""
+<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+  <picture>
+    <meta>
+      <classification>Other</classification>
+    </meta>
+    <location value="43"/>
+    <location value="117"/>
+    <location value="172"/>
+    <location value="208"/>
+    <uri>data:image/png;base64,
     """.strip()
     assert actual.startswith(exp_prefix)
 
     exp_suffix = """
-      </uri>
-    </picture>
-  </floating_group>
+    </uri>
+  </picture>
 </doclang>
     """.strip()
     assert actual.endswith(exp_suffix)
@@ -682,6 +633,9 @@ def test_vlm_mode():
             pretty_indentation=None,
             escape_mode=EscapeMode.CDATA_ALWAYS,
             content_wrapping_mode=WrapMode.WRAP_ALWAYS,
+            traverse_pictures=True,
+            include_namespace=False,
+            include_version=False,
         ),
     )
     ser_res = ser.serialize()
@@ -847,7 +801,8 @@ def test_kv():
 
 
 
-def test_kv_invoice():
+def _create_kv_invoice_doc() -> DoclingDocument:
+    """Helper to create a key-value invoice document with various field types."""
     doc = DoclingDocument(name="")
     doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
     prov = ProvenanceItem(
@@ -855,7 +810,6 @@ def test_kv_invoice():
         bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
         charspan=(0, 2),
     )
-    # prov = None
     image_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="
 
     # first key-value map
@@ -874,7 +828,6 @@ def test_kv_invoice():
         ),
     )
     doc.add_field_value(text="+123-456-7890", parent=kve)
-
 
     # another inlined key-value pair
     kve = doc.add_field_item(parent=kvm)
@@ -911,14 +864,30 @@ def test_kv_invoice():
     doc.add_field_key(text="Administrator", parent=kve, prov=prov)
     doc.add_field_value(text="John Doe", parent=kve, prov=prov)
 
+    return doc
+
+
+def test_kv_invoice():
+    doc = _create_kv_invoice_doc()
+
     exp_json = Path("./test/data/doc/kv_invoice.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser_txt = doc.export_to_doclang()
+    serializer = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(image_mode=ImageRefMode.PLACEHOLDER),
+    )
+    ser_txt = serializer.serialize().text
     exp_file = Path("./test/data/doc/kv_invoice.out.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
-
+    serializer = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(image_mode=ImageRefMode.EMBEDDED),
+    )
+    ser_txt = serializer.serialize().text
+    exp_file = Path("./test/data/doc/kv_invoice_embedded.out.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
 
 
 def test_kv_advanced_inline():
@@ -1293,12 +1262,12 @@ def test_suppress_empty_picture():
     doc.add_picture()
 
     result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
-    assert "<floating_group" not in result
+    assert "<group" not in result
     assert "<picture" not in result
 
 
 def test_empty_picture_preserved_by_default():
-    """Without suppress_empty_elements the empty floating group is emitted."""
+    """Without suppress_empty_elements the empty picture is preserved."""
     doc = DoclingDocument(name="test")
     doc.add_picture()
 
@@ -1307,7 +1276,9 @@ def test_empty_picture_preserved_by_default():
         content_types=set(),
     )
     result = serialize_doclang(doc, params=default_params)
-    assert "<floating_group" in result
+    # After fix: empty pictures now emit <picture></picture> instead of <group></group>
+    assert "<picture></picture>" in result
+    assert "<group" not in result
 
 
 def test_suppress_empty_table():
@@ -1316,12 +1287,12 @@ def test_suppress_empty_table():
     doc.add_table(data=TableData())
 
     result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
-    assert "<floating_group" not in result
+    assert "<group" not in result
     assert "<otsl" not in result
 
 
 def test_empty_table_preserved_by_default():
-    """Without suppress_empty_elements the empty table group is emitted."""
+    """Without suppress_empty_elements the empty group is preserved."""
     doc = DoclingDocument(name="test")
     doc.add_table(data=TableData())
 
@@ -1330,7 +1301,8 @@ def test_empty_table_preserved_by_default():
         content_types=set(),
     )
     result = serialize_doclang(doc, params=default_params)
-    assert "<floating_group" in result
+    assert "<group" in result
+    assert "<table" not in result
 
 
 def test_suppress_empty_inline_group():
@@ -1358,7 +1330,7 @@ def test_suppress_list_with_all_empty_children():
 
     result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
     assert "<list" not in result
-    assert "<list_text" not in result
+    assert "<ldiv" not in result
 
 
 def test_suppress_list_keeps_nonempty_items():
@@ -1375,7 +1347,7 @@ def test_suppress_list_keeps_nonempty_items():
     )
     result = serialize_doclang(doc, params=params)
     assert "<list " in result
-    assert result.count("<list_text>") == 1
+    assert result.count("<ldiv/>") == 1
     assert "Keep me" in result
 
 
@@ -1398,8 +1370,8 @@ def test_suppress_mixed_content():
     result = serialize_doclang(doc, params=params)
     assert result.count("<text>") == 1
     assert "Visible paragraph" in result
-    assert "<floating_group" not in result
-    assert '<heading level="1">' in result
+    assert "<group" not in result
+    assert '<heading level="2">' in result
     assert "Visible Heading" in result
     assert "<code" not in result
 
@@ -1416,7 +1388,7 @@ def test_suppress_does_not_affect_nonempty():
     )
     result = serialize_doclang(doc, params=params)
     assert "<text>Hello</text>" in result
-    assert '<heading level="1">World</heading>' in result
+    assert '<heading level="2">World</heading>' in result
 
 
 def test_suppress_nested_section_with_empty_children():
@@ -1447,13 +1419,13 @@ def test_suppress_empty_caption_and_footnote_on_picture():
     doc.add_picture(caption=cap)
 
     result = serialize_doclang(doc, params=_SUPPRESS_PARAMS)
-    assert "<floating_group" not in result
+    assert "<group" not in result
     assert "<picture" not in result
 
 
 def test_suppress_empty_picture_with_nonempty_caption():
     """A picture with a non-empty caption should still be emitted even when
-    suppress_empty_elements is True, because the composed_inner is non-empty.
+    suppress_empty_elements is True, because the composed content is non-empty.
     """
     doc = DoclingDocument(name="test")
     cap = doc.add_text(label=DocItemLabel.CAPTION, text="My Figure")
@@ -1464,7 +1436,13 @@ def test_suppress_empty_picture_with_nonempty_caption():
         add_location=False,
     )
     result = serialize_doclang(doc, params=params)
-    assert "<floating_group" in result
+    assert "<group" in result
+    assert "<caption" in result
+    assert "<picture" in result
+    assert "My Figure" in result
+    assert "<group" in result
+    assert "<caption" in result
+    assert "<picture" in result
     assert "My Figure" in result
 
 
@@ -1539,4 +1517,45 @@ from docling_core.experimental.doclang import (
 
     ser_txt = doc.export_to_doclang()
     exp_file = Path("./test/data/doc/newline_to_br.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_list_item_with_code_child():
+    """Test list item with empty text but CodeItem as child."""
+    doc = DoclingDocument(name="test")
+    lst = doc.add_list_group()
+
+    # List item with empty text but has a code child
+    li = doc.add_list_item(text="", parent=lst, marker="•")
+    doc.add_code(text="print('hello')", parent=li)
+
+    ser_txt = doc.export_to_doclang()
+    exp_file = Path("./test/data/doc/list_item_with_code.gt.dclg.xml")
+
+
+def test_list_item_with_code_child_and_bbox():
+    """Test list item with empty text, CodeItem child, and bounding box."""
+    doc = DoclingDocument(name="test")
+    doc.add_page(page_no=0, size=Size(width=100, height=100), image=None)
+    lst = doc.add_list_group()
+
+    # List item with empty text but has a code child and provenance
+    li = doc.add_list_item(text="", parent=lst, marker="•")
+    doc.add_code(
+        text="print('hello')",
+        parent=li,
+        prov=ProvenanceItem(
+            page_no=0,
+            bbox=BoundingBox.from_tuple((100, 200, 300, 250), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 0),
+        ),
+    )
+
+    serializer = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(add_location=True, xsize=256, ysize=256),
+    )
+    ser_txt = serializer.serialize().text
+    exp_file = Path("./test/data/doc/list_item_with_code_and_bbox.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
     verify(exp_file=exp_file, actual=ser_txt)

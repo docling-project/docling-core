@@ -1,0 +1,8 @@
+<doclang xmlns="https://www.doclang.ai/ns/v0">
+  <list class="unordered">
+    <ldiv>
+      <marker>•</marker>
+    </ldiv>
+    <code><![CDATA[print('hello')]]></code>
+  </list>
+</doclang>
