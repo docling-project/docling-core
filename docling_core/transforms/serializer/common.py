@@ -339,6 +339,13 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         """Whether the item's serializer handles meta wrapping internally."""
         return False
 
+    def _meta_position(self) -> str:
+        """Where the meta block should be placed relative to the item content.
+
+        Returns "after" (default) or "before".
+        """
+        return "after"
+
     @override
     def serialize(
         self,
@@ -359,17 +366,24 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         my_item = item or self.doc.body
 
+        meta_position = self._meta_position()
+
         if my_item == self.doc.body:
+            body_meta_part: Optional[SerializationResult] = None
             if my_item.meta and not self._meta_is_wrapped():
-                meta_part = self.serialize_meta(item=my_item, **my_kwargs)
-                if meta_part.text:
-                    parts.append(meta_part)
+                candidate = self.serialize_meta(item=my_item, **my_kwargs)
+                if candidate.text:
+                    body_meta_part = candidate
+                    if meta_position == "before":
+                        parts.append(body_meta_part)
 
             if my_item.self_ref not in my_visited:
                 my_visited.add(my_item.self_ref)
                 part = self._serialize_body(**my_kwargs)
                 if part.text:
                     parts.append(part)
+                if body_meta_part is not None and meta_position == "after":
+                    parts.append(body_meta_part)
                 return create_ser_result(
                     text=delim.join([p.text for p in parts if p.text]),
                     span_source=parts,
@@ -379,10 +393,13 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         my_visited.add(my_item.self_ref)
 
+        meta_part: Optional[SerializationResult] = None
         if my_item.meta and not self._meta_is_wrapped() and not self._item_wraps_meta(my_item):
-            meta_part = self.serialize_meta(item=my_item, **my_kwargs)
-            if meta_part.text:
-                parts.append(meta_part)
+            candidate = self.serialize_meta(item=my_item, **my_kwargs)
+            if candidate.text:
+                meta_part = candidate
+                if meta_position == "before":
+                    parts.append(meta_part)
 
         if my_params.include_non_meta:
             ########
@@ -474,6 +491,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     **my_kwargs,
                 )
             parts.append(part)
+
+        if meta_part is not None and meta_position == "after":
+            parts.append(meta_part)
 
         return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
 

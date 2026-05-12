@@ -87,6 +87,27 @@ def _get_css_for_split_page() -> str:
         word-wrap: break-word;
         /*overflow-wrap: break-word;*/
     }
+    details.docling-meta {
+        margin: 0.5em 0;
+        font-size: 0.9em;
+    }
+    details.docling-meta > summary {
+        cursor: pointer;
+        color: #555;
+        font-style: italic;
+        padding: 2px 6px;
+    }
+    .docling-meta-field {
+        background-color: #f0f0f0;
+        border-left: 3px solid #ccc;
+        padding: 6px 10px;
+        margin: 4px 0 4px 1em;
+        border-radius: 3px;
+    }
+    .docling-meta-field-label {
+        font-weight: bold;
+        color: #444;
+    }
 </style>
 """
 
@@ -208,5 +229,26 @@ def _get_css_for_single_column() -> str:
         font-size: 0.9em;
         color: #666;
         margin-top: 0.5em;
+    }
+    details.docling-meta {
+        margin: 0.5em 0;
+        font-size: 0.9em;
+    }
+    details.docling-meta > summary {
+        cursor: pointer;
+        color: #555;
+        font-style: italic;
+        padding: 2px 6px;
+    }
+    .docling-meta-field {
+        background-color: #f0f0f0;
+        border-left: 3px solid #ccc;
+        padding: 6px 10px;
+        margin: 4px 0 4px 1em;
+        border-radius: 3px;
+    }
+    .docling-meta-field-label {
+        font-weight: bold;
+        color: #444;
     }
 </style>"""

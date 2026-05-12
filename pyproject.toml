@@ -64,6 +64,7 @@ changelog = "https://github.com/docling-project/docling-core/blob/main/CHANGELOG
 # generate_jsonschema = "docling_core.utils.generate_jsonschema:main"  # use python -m docling_core.utils.generate_jsonschema
 # generate_docs = "docling_core.utils.generate_docs:main"  # use python -m docling_core.utils.generate_docs
 docling-view = "docling_core.cli.view:app"
+docling-serialize = "docling_core.cli.serialize:app"
 
 [project.optional-dependencies]
 chunking = [
