@@ -47,6 +47,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CodeItem,
+    CodeMetaField,
     ContentLayer,
     DescriptionAnnotation,
     DescriptionMetaField,
@@ -958,6 +959,10 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                     txt = table_content
                 else:
                     return None
+            elif isinstance(field_val, CodeMetaField):
+                lang = field_val.language.value.lower() if field_val.language else ""
+                code_class = f' class="language-{html.escape(lang)}"' if lang else ""
+                txt = f'<pre class="docling-meta-code"><code{code_class}>{html.escape(field_val.text)}</code></pre>'
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:

@@ -605,7 +605,7 @@
             }
         },
         {
-            "text": "Two basic requirements to process PDF documents in our pipeline are a) to retrieve all text content and their geometric coordinates on each page and b) to render the visual representation of each page as it would appear in a PDF viewer. Both these requirements are encapsulated in Docling's PDF backend interface. While there are several open-source PDF parsing libraries available for python, we faced major obstacles with all of them for different reasons, among which were restrictive\n1 see huggingface.co/ds4sd/docling-models/\nIn this image, we can see some text and images.\n\nFigure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.\nlicensing (e.g. pymupdf [7]), poor speed or unrecoverable quality issues, such as merged text cells across far-apart text tokens or table columns (pypdfium, PyPDF) [15, 14].\nWe therefore decided to provide multiple backend choices, and additionally open-source a custombuilt PDF parser, which is based on the low-level qpdf [4] library. It is made available in a separate package named docling-parse and powers the default PDF backend in Docling. As an alternative, we provide a PDF backend relying on pypdfium , which may be a safe backup choice in certain cases, e.g. if issues are seen with particular font encodings.",
+            "text": "Two basic requirements to process PDF documents in our pipeline are a) to retrieve all text content and their geometric coordinates on each page and b) to render the visual representation of each page as it would appear in a PDF viewer. Both these requirements are encapsulated in Docling's PDF backend interface. While there are several open-source PDF parsing libraries available for python, we faced major obstacles with all of them for different reasons, among which were restrictive\n1 see huggingface.co/ds4sd/docling-models/\nFigure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.\n\nIn this image, we can see some text and images.\nlicensing (e.g. pymupdf [7]), poor speed or unrecoverable quality issues, such as merged text cells across far-apart text tokens or table columns (pypdfium, PyPDF) [15, 14].\nWe therefore decided to provide multiple backend choices, and additionally open-source a custombuilt PDF parser, which is based on the low-level qpdf [4] library. It is made available in a separate package named docling-parse and powers the default PDF backend in Docling. As an alternative, we provide a PDF backend relying on pypdfium , which may be a safe backup choice in certain cases, e.g. if issues are seen with particular font encodings.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -656,6 +656,31 @@
                                 "charspan": [
                                     0,
                                     42
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "self_ref": "#/texts/31",
+                        "parent": {
+                            "$ref": "#/pictures/1"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "caption",
+                        "prov": [
+                            {
+                                "page_no": 3,
+                                "bbox": {
+                                    "l": 108.0,
+                                    "t": 570.003,
+                                    "r": 504.00300000000004,
+                                    "b": 550.542,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    134
                                 ]
                             }
                         ]
@@ -731,31 +756,6 @@
                                 "charspan": [
                                     0,
                                     0
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "self_ref": "#/texts/31",
-                        "parent": {
-                            "$ref": "#/pictures/1"
-                        },
-                        "children": [],
-                        "content_layer": "body",
-                        "label": "caption",
-                        "prov": [
-                            {
-                                "page_no": 3,
-                                "bbox": {
-                                    "l": 108.0,
-                                    "t": 570.003,
-                                    "r": 504.00300000000004,
-                                    "b": 550.542,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    134
                                 ]
                             }
                         ]
