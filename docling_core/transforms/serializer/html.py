@@ -929,7 +929,7 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                     and (tmp := self._serialize_meta_field(item.meta, key))
                 )
             ]
-            if item.meta
+            if item.meta is not None and item.meta.has_content()
             else []
         )
         if not field_parts:

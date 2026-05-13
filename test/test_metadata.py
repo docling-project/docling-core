@@ -303,3 +303,15 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
     assert "data-meta-entities" in html
     assert ">en<" in html
     assert "IBM (ORG), Zurich (LOC)" in html
+
+
+def test_html_skips_empty_base_meta() -> None:
+    doc = DoclingDocument(name="empty-meta")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
+    item.meta = BaseMeta(
+        entities=EntitiesMetaField.model_construct(mentions=[]),
+    )
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert '<details class="docling-meta">' not in html
+    assert "data-meta-entities" not in html

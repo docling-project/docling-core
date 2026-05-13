@@ -1403,6 +1403,22 @@ class BaseMeta(_ExtraAllowingModel):
     language: Optional[LanguageMetaField] = None
     entities: Optional[EntitiesMetaField] = None
 
+    def has_content(self) -> bool:
+        """Return True if this metadata contains any meaningful content."""
+        return any(self._value_has_content(value) for value in self.model_dump(exclude_none=True).values())
+
+    @staticmethod
+    def _value_has_content(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, list):
+            return any(BaseMeta._value_has_content(v) for v in value)
+        if isinstance(value, dict):
+            return any(BaseMeta._value_has_content(v) for v in value.values())
+        if isinstance(value, BaseModel):
+            return any(BaseMeta._value_has_content(v) for v in value.model_dump(exclude_none=True).values())
+        return True
+
 
 class DescriptionMetaField(BasePrediction):
     """Description metadata field."""
