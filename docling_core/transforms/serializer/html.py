@@ -53,6 +53,7 @@ from docling_core.types.doc.document import (
     DescriptionMetaField,
     DocItem,
     DoclingDocument,
+    EntitiesMetaField,
     FloatingItem,
     FormItem,
     FormulaItem,
@@ -61,6 +62,7 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    LanguageMetaField,
     ListGroup,
     ListItem,
     MoleculeMetaField,
@@ -945,6 +947,13 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
+            elif isinstance(field_val, LanguageMetaField):
+                txt = field_val.code.value
+            elif isinstance(field_val, EntitiesMetaField):
+                txt = ", ".join(
+                    mention.text if mention.label is None else f"{mention.text} ({mention.label})"
+                    for mention in field_val.mentions
+                )
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
             elif isinstance(field_val, PictureClassificationMetaField):

@@ -62,6 +62,7 @@ from docling_core.types.doc.labels import (
     GraphCellLabel,
     GraphLinkLabel,
     GroupLabel,
+    HumanLanguageLabel,
     PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
@@ -1361,21 +1362,46 @@ class SummaryMetaField(BasePrediction):
     text: str
 
 
+class LanguageMetaField(BasePrediction):
+    """Detected human language."""
+
+    code: HumanLanguageLabel
+
+
 # NOTE: must be manually kept in sync with top-level BaseMeta hierarchy fields
 class MetaFieldName(str, Enum):
     """Standard meta field names."""
 
     SUMMARY = "summary"  # a summary of the tree under this node
+    LANGUAGE = "language"  # detected language of the node content
+    ENTITIES = "entities"  # named entities extracted from the node content
     DESCRIPTION = "description"  # a description of the node (e.g. for images)
     CLASSIFICATION = "classification"  # a classification of the node content
     MOLECULE = "molecule"  # molecule data
     TABULAR_CHART = "tabular_chart"  # tabular chart data
 
 
+class EntityMention(BasePrediction):
+    """Entity mention extracted from text."""
+
+    text: str
+    original: Optional[str] = None
+    label: Optional[str] = None
+    span: Optional[tuple[int, int]] = None
+
+
+class EntitiesMetaField(_ExtraAllowingModel):
+    """Container for extracted entity mentions."""
+
+    mentions: list[EntityMention] = Field(default_factory=list, min_length=1)
+
+
 class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
     summary: Optional[SummaryMetaField] = None
+    language: Optional[LanguageMetaField] = None
+    entities: Optional[EntitiesMetaField] = None
 
 
 class DescriptionMetaField(BasePrediction):

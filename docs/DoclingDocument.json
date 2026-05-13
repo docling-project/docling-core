@@ -14,6 +14,28 @@
             }
           ],
           "default": null
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "entities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EntitiesMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "BaseMeta",
@@ -615,6 +637,118 @@
       "title": "DocumentOrigin",
       "type": "object"
     },
+    "EntitiesMetaField": {
+      "additionalProperties": true,
+      "description": "Container for extracted entity mentions.",
+      "properties": {
+        "mentions": {
+          "items": {
+            "$ref": "#/$defs/EntityMention"
+          },
+          "minItems": 1,
+          "title": "Mentions",
+          "type": "array"
+        }
+      },
+      "title": "EntitiesMetaField",
+      "type": "object"
+    },
+    "EntityMention": {
+      "additionalProperties": true,
+      "description": "Entity mention extracted from text.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "original": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Original"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "span": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "EntityMention",
+      "type": "object"
+    },
     "FieldHeadingItem": {
       "additionalProperties": false,
       "properties": {
@@ -1114,6 +1248,28 @@
           "anyOf": [
             {
               "$ref": "#/$defs/SummaryMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "entities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EntitiesMetaField"
             },
             {
               "type": "null"
@@ -1622,6 +1778,198 @@
       "title": "GroupLabel",
       "type": "string"
     },
+    "HumanLanguageLabel": {
+      "description": "Two-letter human language primary subtags using BCP-47 values.",
+      "enum": [
+        "aa",
+        "ab",
+        "ae",
+        "af",
+        "ak",
+        "am",
+        "an",
+        "ar",
+        "as",
+        "av",
+        "ay",
+        "az",
+        "ba",
+        "be",
+        "bg",
+        "bh",
+        "bi",
+        "bm",
+        "bn",
+        "bo",
+        "br",
+        "bs",
+        "ca",
+        "ce",
+        "ch",
+        "co",
+        "cr",
+        "cs",
+        "cu",
+        "cv",
+        "cy",
+        "da",
+        "de",
+        "dv",
+        "dz",
+        "ee",
+        "el",
+        "en",
+        "eo",
+        "es",
+        "et",
+        "eu",
+        "fa",
+        "ff",
+        "fi",
+        "fj",
+        "fo",
+        "fr",
+        "fy",
+        "ga",
+        "gd",
+        "gl",
+        "gn",
+        "gu",
+        "gv",
+        "ha",
+        "he",
+        "hi",
+        "ho",
+        "hr",
+        "ht",
+        "hu",
+        "hy",
+        "hz",
+        "ia",
+        "id",
+        "ie",
+        "ig",
+        "ii",
+        "ik",
+        "io",
+        "is",
+        "it",
+        "iu",
+        "ja",
+        "jv",
+        "ka",
+        "kg",
+        "ki",
+        "kj",
+        "kk",
+        "kl",
+        "km",
+        "kn",
+        "ko",
+        "kr",
+        "ks",
+        "ku",
+        "kv",
+        "kw",
+        "ky",
+        "la",
+        "lb",
+        "lg",
+        "li",
+        "ln",
+        "lo",
+        "lt",
+        "lu",
+        "lv",
+        "mg",
+        "mh",
+        "mi",
+        "mk",
+        "ml",
+        "mn",
+        "mr",
+        "ms",
+        "mt",
+        "my",
+        "na",
+        "nb",
+        "nd",
+        "ne",
+        "ng",
+        "nl",
+        "nn",
+        "no",
+        "nr",
+        "nv",
+        "ny",
+        "oc",
+        "oj",
+        "om",
+        "or",
+        "os",
+        "pa",
+        "pi",
+        "pl",
+        "ps",
+        "pt",
+        "qu",
+        "rm",
+        "rn",
+        "ro",
+        "ru",
+        "rw",
+        "sa",
+        "sc",
+        "sd",
+        "se",
+        "sg",
+        "sh",
+        "si",
+        "sk",
+        "sl",
+        "sm",
+        "sn",
+        "so",
+        "sq",
+        "sr",
+        "ss",
+        "st",
+        "su",
+        "sv",
+        "sw",
+        "ta",
+        "te",
+        "tg",
+        "th",
+        "ti",
+        "tk",
+        "tl",
+        "tn",
+        "to",
+        "tr",
+        "ts",
+        "tt",
+        "tw",
+        "ty",
+        "ug",
+        "uk",
+        "ur",
+        "uz",
+        "ve",
+        "vi",
+        "vo",
+        "wa",
+        "wo",
+        "xh",
+        "yi",
+        "yo",
+        "za",
+        "zh",
+        "zu"
+      ],
+      "title": "HumanLanguageLabel",
+      "type": "string"
+    },
     "ImageRef": {
       "description": "ImageRef.",
       "properties": {
@@ -1849,6 +2197,55 @@
         "graph"
       ],
       "title": "KeyValueItem",
+      "type": "object"
+    },
+    "LanguageMetaField": {
+      "additionalProperties": true,
+      "description": "Detected human language.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "code": {
+          "$ref": "#/$defs/HumanLanguageLabel"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "LanguageMetaField",
       "type": "object"
     },
     "ListGroup": {
@@ -2534,6 +2931,28 @@
           "anyOf": [
             {
               "$ref": "#/$defs/SummaryMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "entities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EntitiesMetaField"
             },
             {
               "type": "null"
