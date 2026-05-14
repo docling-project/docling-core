@@ -1002,9 +1002,16 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                 txt = tmp
             else:
                 return None
+            # NOTE: TabularChartMetaField intentionally produces HTML markup
+            # (a nested table) and must not be HTML-escaped here. All other
+            # branches above produce plain text that needs escaping for safe
+            # XHTML output.
+            if not isinstance(field_val, TabularChartMetaField):
+                txt = html.escape(txt, quote=False)
+            escaped_name = html.escape(name, quote=True)
             return (
-                f'<div class="docling-meta-field" data-meta-{name}>'
-                f'<span class="docling-meta-field-label">{name}:</span> '
+                f'<div class="docling-meta-field" data-meta-name="{escaped_name}">'
+                f'<span class="docling-meta-field-label">{escaped_name}:</span> '
                 f'<span class="docling-meta-field-value">{txt}</span>'
                 f"</div>"
             )
