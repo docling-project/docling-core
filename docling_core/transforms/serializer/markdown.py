@@ -614,8 +614,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             img_res = self._serialize_image_part(
                 item=item,
                 doc=doc,
-                image_mode=params.image_mode,
-                image_placeholder=params.image_placeholder,
+                **kwargs,
             )
             if img_res.text:
                 res_parts.append(img_res)
