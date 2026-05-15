@@ -1375,6 +1375,9 @@ class MetaFieldName(str, Enum):
     SUMMARY = "summary"  # a summary of the tree under this node
     LANGUAGE = "language"  # detected language of the node content
     ENTITIES = "entities"  # named entities extracted from the node content
+    TOPICS = "topics"  # topic classification of the node content
+    KEYWORDS = "keywords"  # extracted keywords / keyphrases
+    STATEMENTS = "statements"  # ontology statements / assertions
     DESCRIPTION = "description"  # a description of the node (e.g. for images)
     CLASSIFICATION = "classification"  # a classification of the node content
     MOLECULE = "molecule"  # molecule data
