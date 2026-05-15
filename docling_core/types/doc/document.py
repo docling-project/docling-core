@@ -1396,12 +1396,54 @@ class EntitiesMetaField(_ExtraAllowingModel):
     mentions: list[EntityMention] = Field(default_factory=list, min_length=1)
 
 
+class TopicPrediction(BasePrediction):
+    """A single topic prediction."""
+
+    label: str
+    taxonomy: Optional[str] = None  # e.g. "IPTC", "MeSH", "arXiv"
+    taxonomy_id: Optional[str] = None  # canonical ID in that taxonomy
+
+
+class TopicMetaField(_ExtraAllowingModel):
+    """Container for topic predictions."""
+
+    predictions: list[TopicPrediction] = Field(default_factory=list, min_length=1)
+
+    def get_main_prediction(self) -> TopicPrediction:
+        """Get prediction with highest confidence (first by convention)."""
+        max_conf_pos: Optional[int] = None
+        max_conf: Optional[float] = None
+        for i, pred in enumerate(self.predictions):
+            if pred.confidence is not None and (
+                max_conf is None or pred.confidence > max_conf
+            ):
+                max_conf_pos = i
+                max_conf = pred.confidence
+        return self.predictions[max_conf_pos if max_conf_pos is not None else 0]
+
+
+class KeywordPrediction(BasePrediction):
+    """A single keyword/keyphrase prediction."""
+
+    text: str
+    normalized: Optional[str] = None
+    weight: Optional[float] = None  # TF-IDF / salience (distinct from confidence)
+
+
+class KeywordsMetaField(_ExtraAllowingModel):
+    """Container for keyword predictions."""
+
+    predictions: list[KeywordPrediction] = Field(default_factory=list, min_length=1)
+
+
 class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
     summary: Optional[SummaryMetaField] = None
     language: Optional[LanguageMetaField] = None
     entities: Optional[EntitiesMetaField] = None
+    topics: Optional[TopicMetaField] = None
+    keywords: Optional[KeywordsMetaField] = None
 
 
 class DescriptionMetaField(BasePrediction):
