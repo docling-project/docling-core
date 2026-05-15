@@ -49,10 +49,15 @@ from docling_core.types.doc import (
     KeyValueItem,
     ListGroup,
     ListItem,
+    EntitiesMetaField,
+    KeywordsMetaField,
+    LanguageMetaField,
     MetaFieldName,
     MoleculeMetaField,
     NodeItem,
     PictureClassificationMetaField,
+    StatementsMetaField,
+    TopicMetaField,
     PictureItem,
     PictureMeta,
     ProvenanceItem,
@@ -1673,6 +1678,42 @@ class DoclangMetaSerializer(BaseModel, BaseMetaSerializer):
             if name == MetaFieldName.SUMMARY and isinstance(field_val, SummaryMetaField):
                 escaped_text = _escape_text(field_val.text, params)
                 txt = f"<summary>{escaped_text}</summary>"
+            elif name == MetaFieldName.LANGUAGE and isinstance(field_val, LanguageMetaField):
+                escaped_text = _escape_text(field_val.code.value, params)
+                txt = f"<language>{escaped_text}</language>"
+            elif name == MetaFieldName.ENTITIES and isinstance(field_val, EntitiesMetaField):
+                mentions_text = ", ".join(
+                    mention.text if mention.label is None else f"{mention.text} ({mention.label})"
+                    for mention in field_val.mentions
+                )
+                escaped_text = _escape_text(mentions_text, params)
+                txt = f"<entities>{escaped_text}</entities>"
+            elif name == MetaFieldName.TOPICS and isinstance(field_val, TopicMetaField):
+                topics_text = ", ".join(
+                    pred.label if pred.taxonomy is None else f"{pred.label} [{pred.taxonomy}]"
+                    for pred in field_val.predictions
+                )
+                escaped_text = _escape_text(topics_text, params)
+                txt = f"<topics>{escaped_text}</topics>"
+            elif name == MetaFieldName.KEYWORDS and isinstance(field_val, KeywordsMetaField):
+                keywords_text = ", ".join(pred.text for pred in field_val.predictions)
+                escaped_text = _escape_text(keywords_text, params)
+                txt = f"<keywords>{escaped_text}</keywords>"
+            elif name == MetaFieldName.STATEMENTS and isinstance(field_val, StatementsMetaField):
+                parts = []
+                for stmt in field_val.statements:
+                    if stmt.predicate and stmt.object:
+                        parts.append(
+                            f"{stmt.subject.text} {stmt.predicate.text} {stmt.object.text}"
+                        )
+                    else:
+                        props = "; ".join(
+                            f"{p.name}={p.value.scalar if p.value.kind.value == 'scalar' else p.value.text}"
+                            for p in stmt.properties
+                        )
+                        parts.append(f"{stmt.subject.text}: {props}" if props else stmt.subject.text)
+                escaped_text = _escape_text("; ".join(parts), params)
+                txt = f"<statements>{escaped_text}</statements>"
             elif name == MetaFieldName.DESCRIPTION and isinstance(field_val, DescriptionMetaField):
                 escaped_text = _escape_text(field_val.text, params)
                 txt = f"<description>{escaped_text}</description>"

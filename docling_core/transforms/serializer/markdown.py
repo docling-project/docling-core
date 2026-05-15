@@ -53,6 +53,9 @@ from docling_core.types.doc.document import (
     KeyValueItem,
     ListGroup,
     ListItem,
+    EntitiesMetaField,
+    KeywordsMetaField,
+    LanguageMetaField,
     MoleculeMetaField,
     NodeItem,
     PictureClassificationData,
@@ -62,11 +65,13 @@ from docling_core.types.doc.document import (
     PictureTabularChartData,
     RichTableCell,
     SectionHeaderItem,
+    StatementsMetaField,
     SummaryMetaField,
     TableItem,
     TabularChartMetaField,
     TextItem,
     TitleItem,
+    TopicMetaField,
 )
 
 _logger = logging.getLogger(__name__)
@@ -364,6 +369,34 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
+            elif isinstance(field_val, LanguageMetaField):
+                txt = field_val.code.value
+            elif isinstance(field_val, EntitiesMetaField):
+                txt = ", ".join(
+                    mention.text if mention.label is None else f"{mention.text} ({mention.label})"
+                    for mention in field_val.mentions
+                )
+            elif isinstance(field_val, TopicMetaField):
+                txt = ", ".join(
+                    pred.label if pred.taxonomy is None else f"{pred.label} [{pred.taxonomy}]"
+                    for pred in field_val.predictions
+                )
+            elif isinstance(field_val, KeywordsMetaField):
+                txt = ", ".join(pred.text for pred in field_val.predictions)
+            elif isinstance(field_val, StatementsMetaField):
+                parts = []
+                for stmt in field_val.statements:
+                    if stmt.predicate and stmt.object:
+                        parts.append(
+                            f"{stmt.subject.text} {stmt.predicate.text} {stmt.object.text}"
+                        )
+                    else:
+                        props = "; ".join(
+                            f"{p.name}={p.value.scalar if p.value.kind.value == 'scalar' else p.value.text}"
+                            for p in stmt.properties
+                        )
+                        parts.append(f"{stmt.subject.text}: {props}" if props else stmt.subject.text)
+                txt = "; ".join(parts)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
             elif isinstance(field_val, PictureClassificationMetaField):
