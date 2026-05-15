@@ -32,14 +32,14 @@
       <location value="452"/>
       <location value="192"/>
       <ched/>
-      Zeile
+      <text>Zeile</text>
       <ched/>
-      Bauteil
+      <text>Bauteil</text>
       <ched/>
-      Empfehlungen für normalen Schall- schutz erf. bew. Schall- dämm-Maß Gn w in dB
+      <text>Empfehlungen für normalen Schall- schutz erf. bew. Schall- dämm-Maß Gn w in dB</text>
       <nl/>
       <rhed/>
-      1
+      <text>1</text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -91,10 +91,10 @@
         </text>
       </list>
       <fcel/>
-      + 42
+      <text>+ 42</text>
       <nl/>
       <rhed/>
-      2
+      <text>2</text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -130,10 +130,10 @@
         </text>
       </list>
       <fcel/>
-      + 47
+      <text>+ 47</text>
       <nl/>
       <rhed/>
-      3
+      <text>3</text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -143,10 +143,10 @@
         Türen in Wänden nach Zeile 1
       </text>
       <fcel/>
-      + 32 1)
+      <text>+ 32 1)</text>
       <nl/>
       <rhed/>
-      4
+      <text>4</text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -156,7 +156,7 @@
         Türen in Wänden nach Zeile 2
       </text>
       <fcel/>
-      + 37 1)
+      <text>+ 37 1)</text>
       <nl/>
     </table>
     <footnote>
@@ -191,35 +191,37 @@
       <location value="452"/>
       <location value="386"/>
       <ched/>
-      Nr.
+      <text>Nr.</text>
       <ched/>
-      Bauteil
+      <text>Bauteil</text>
       <ched/>
-<![CDATA[erf. bew. Schall- dämm-Maß erf. R'w [dB]]]>      <ched/>
-<![CDATA[erf. Norm- Trittschallpegel erf. L'n,w [dB]]]>      <nl/>
+      <text><![CDATA[erf. bew. Schall- dämm-Maß erf. R'w [dB]]]></text>
+      <ched/>
+      <text><![CDATA[erf. Norm- Trittschallpegel erf. L'n,w [dB]]]></text>
+      <nl/>
       <srow/>
-      Technikräume (Innenpegel Li,max | 75 dB(A))
+      <text>Technikräume (Innenpegel Li,max | 75 dB(A))</text>
       <lcel/>
       <lcel/>
       <lcel/>
       <nl/>
       <rhed/>
-      1
+      <text>1</text>
       <fcel/>
-      Wände und Decken
+      <text>Wände und Decken</text>
       <fcel/>
-      57
+      <text>57</text>
       <fcel/>
-      -
+      <text>-</text>
       <nl/>
       <rhed/>
-      2
+      <text>2</text>
       <fcel/>
-      Fußböden
+      <text>Fußböden</text>
       <fcel/>
-      -
+      <text>-</text>
       <fcel/>
-      43 1)
+      <text>43 1)</text>
       <nl/>
     </table>
     <footnote>

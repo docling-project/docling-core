@@ -13,19 +13,19 @@
     <location value="482"/>
     <location value="79"/>
     <rhed/>
-    Default Value
+    <text>Default Value</text>
     <fcel/>
-    1
+    <text>1</text>
     <nl/>
     <rhed/>
-    Minimum Value
+    <text>Minimum Value</text>
     <fcel/>
-    0
+    <text>0</text>
     <nl/>
     <rhed/>
-    Maximum Value
+    <text>Maximum Value</text>
     <fcel/>
-    MAX_INT
+    <text>MAX_INT</text>
     <nl/>
   </table>
   <text>
@@ -51,19 +51,19 @@
     <location value="482"/>
     <location value="153"/>
     <rhed/>
-    Command-Line Format
+    <text>Command-Line Format</text>
     <fcel/>
-    --ndb-connectstring=connection-string
+    <text>--ndb-connectstring=connection-string</text>
     <nl/>
     <rhed/>
-    Type
+    <text>Type</text>
     <fcel/>
-    String
+    <text>String</text>
     <nl/>
     <rhed/>
-    Default Value
+    <text>Default Value</text>
     <fcel/>
-    [none]
+    <text>[none]</text>
     <nl/>
   </table>
   <text>
@@ -88,19 +88,19 @@
     <location value="482"/>
     <location value="236"/>
     <rhed/>
-    Command-Line Format
+    <text>Command-Line Format</text>
     <fcel/>
-    --ndb-mgmd-host=connection-string
+    <text>--ndb-mgmd-host=connection-string</text>
     <nl/>
     <rhed/>
-    Type
+    <text>Type</text>
     <fcel/>
-    String
+    <text>String</text>
     <nl/>
     <rhed/>
-    Default Value
+    <text>Default Value</text>
     <fcel/>
-    [none]
+    <text>[none]</text>
     <nl/>
   </table>
   <text>
@@ -126,19 +126,19 @@
     <location value="482"/>
     <location value="310"/>
     <rhed/>
-    Command-Line Format
+    <text>Command-Line Format</text>
     <fcel/>
-    --ndb-nodeid=#
+    <text>--ndb-nodeid=#</text>
     <nl/>
     <rhed/>
-    Type
+    <text>Type</text>
     <fcel/>
-    Integer
+    <text>Integer</text>
     <nl/>
     <rhed/>
-    Default Value
+    <text>Default Value</text>
     <fcel/>
-    [none]
+    <text>[none]</text>
     <nl/>
   </table>
   <text>
@@ -164,9 +164,9 @@
     <location value="483"/>
     <location value="363"/>
     <rhed/>
-    Command-Line Format
+    <text>Command-Line Format</text>
     <fcel/>
-    --ndb-optimized-node-selection
+    <text>--ndb-optimized-node-selection</text>
     <nl/>
   </table>
   <text>
@@ -192,9 +192,9 @@
     <location value="482"/>
     <location value="425"/>
     <rhed/>
-    Command-Line Format
+    <text>Command-Line Format</text>
     <fcel/>
-    --no-defaults
+    <text>--no-defaults</text>
     <nl/>
   </table>
   <text>
@@ -220,9 +220,9 @@
     <location value="482"/>
     <location value="478"/>
     <rhed/>
-    Command-Line Format
+    <text>Command-Line Format</text>
     <fcel/>
-    --print-defaults
+    <text>--print-defaults</text>
     <nl/>
   </table>
   <text>

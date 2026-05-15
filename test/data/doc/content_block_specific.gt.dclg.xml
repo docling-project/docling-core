@@ -193,14 +193,14 @@ hyperlink
       <location value="502"/>
       <table>
         <fcel/>
-        Foo
+        <text>Foo</text>
         <fcel/>
-        Bar
+        <text>Bar</text>
         <nl/>
         <fcel/>
-        One
+        <text>One</text>
         <fcel/>
-        Two
+        <text>Two</text>
         <nl/>
       </table>
     </picture>

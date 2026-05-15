@@ -1189,7 +1189,7 @@ def test_rich_table_cells():
 <doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
   <table>
     <fcel/>
-    foo
+    <text>foo</text>
     <fcel/>
     <text>
       <italic>text in italic</italic>
@@ -1198,12 +1198,12 @@ def test_rich_table_cells():
     <fcel/>
     <table>
       <fcel/>
-      inner cell 0,0
+      <text>inner cell 0,0</text>
       <fcel/>
-      inner cell 0,1
+      <text>inner cell 0,1</text>
       <nl/>
       <fcel/>
-      inner cell 1,0
+      <text>inner cell 1,0</text>
       <fcel/>
       <text>
         <content>inner cell 1,1 </content>
@@ -1212,7 +1212,7 @@ def test_rich_table_cells():
       <nl/>
     </table>
     <fcel/>
-    bar
+    <text>bar</text>
     <nl/>
   </table>
 </doclang>

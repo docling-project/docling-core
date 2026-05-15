@@ -1,0 +1,22 @@
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <list class="unordered">
+    <ldiv/>
+    <text>Regular item</text>
+    <ldiv/>
+    <code class="Python"><![CDATA[print('hello')]]></code>
+    <ldiv/>
+    <text>Another item</text>
+  </list>
+  <table>
+    <fcel/>
+    <text>Cell 1</text>
+    <fcel/>
+    <text>Cell 2</text>
+    <nl/>
+    <fcel/>
+    <text>Cell 3</text>
+    <fcel/>
+    <formula>E=mc^2</formula>
+    <nl/>
+  </table>
+</doclang>

@@ -969,6 +969,8 @@ class DoclangParams(CommonParams):
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     include_namespace: bool = True
     include_version: bool = True
+    # Virtual text mode: when True, list items and table cells omit <text> wrapper
+    use_virtual_texts: bool = False
 
 
 def _create_layer_token(
@@ -1400,17 +1402,26 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         return False
 
     def _determine_list_item_wrapper(
-        self, *, item: ListItem, doc: DoclingDocument
+        self, *, item: ListItem, doc: DoclingDocument, use_virtual_texts: bool = False
     ) -> tuple[Optional[str], Optional[DoclangToken]]:
         """Determine the wrapper token for a ListItem.
+
+        Args:
+            item: The ListItem to determine wrapper for.
+            doc: The document containing the item.
+            use_virtual_texts: If True, skip <text> wrapper for list items (virtual text mode).
 
         Returns:
             Tuple of (wrap_open_token, tok) where wrap_open_token is the opening tag
             string or None, and tok is the DoclangToken or None.
         """
         if item.text:
-            tok = DoclangToken.TEXT
-            return f"<{tok.value}>", tok
+            # Virtual text mode: no wrapper if use_virtual_texts=True
+            if use_virtual_texts:
+                return None, None
+            else:
+                tok = DoclangToken.TEXT
+                return f"<{tok.value}>", tok
         elif not item.text and item.prov and item.children:
             # Check if first child is InlineGroup (rich text case)
             first_child_ref = item.children[0]
@@ -1469,7 +1480,9 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         elif isinstance(item, SectionHeaderItem):
             wrap_open_token = DoclangVocabulary._create_heading_token(level=item.level + 1)
         elif isinstance(item, ListItem):
-            wrap_open_token, tok = self._determine_list_item_wrapper(item=item, doc=doc)
+            wrap_open_token, tok = self._determine_list_item_wrapper(
+                item=item, doc=doc, use_virtual_texts=params.use_virtual_texts
+            )
         elif isinstance(item, CodeItem):
             tok = DoclangToken.CODE
             if (linguist_lang := _LinguistLabel.from_code_language_label(item.code_language)) is not None:
@@ -1955,6 +1968,9 @@ class DoclangTableSerializer(BaseTableSerializer):
                             # Apply XML escaping to table cell content
                             if not isinstance(cell, RichTableCell):
                                 content = _escape_text(content, params)
+                                # Wrap in <text> tags unless use_virtual_texts is True
+                                if not params.use_virtual_texts:
+                                    content = _wrap(text=content, wrap_tag=DoclangToken.TEXT.value)
                             parts.append(content)
                     else:
                         parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.ECEL))
@@ -2758,6 +2774,23 @@ class DoclangDeserializer(BaseModel):
             for p in prov_list[1:]:
                 item.prov.append(p)
 
+    def _has_virtual_text_content(self, nodes: Any) -> bool:
+        """Check if a list of nodes contains raw text or <content> elements.
+
+        This indicates virtual text mode where content should be treated as a text element.
+
+        Args:
+            nodes: List of DOM nodes (can be Text or Element nodes)
+        """
+        for node in nodes:
+            if isinstance(node, Text):
+                # Check if it's not just whitespace
+                if node.data.strip():
+                    return True
+            elif isinstance(node, Element) and node.tagName == DoclangToken.CONTENT.value:
+                return True
+        return False
+
     def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         ordered = el.getAttribute(DoclangAttributeKey.CLASS.value) == DoclangAttributeValue.ORDERED.value
         li_group = doc.add_list_group(parent=parent)
@@ -2790,10 +2823,33 @@ class DoclangDeserializer(BaseModel):
                     marker_text = self._get_text(ch).strip()
                     break
 
-            # Content elements come after the ldiv (start+1 to end)
+            # Get ALL nodes (including Text nodes) between this ldiv and the next
+            # We need to check the original childNodes, not just actual_children
+            ldiv_index_in_all = list(el.childNodes).index(ldiv_el)
+            next_ldiv_index = None
+            if end < len(actual_children):
+                next_ldiv_index = list(el.childNodes).index(actual_children[end])
+
+            # Get all nodes between ldivs (including Text nodes)
+            if next_ldiv_index is not None:
+                all_content_nodes = list(el.childNodes)[ldiv_index_in_all + 1 : next_ldiv_index]
+            else:
+                all_content_nodes = list(el.childNodes)[ldiv_index_in_all + 1 :]
+
+            # Filter out location elements from all_content_nodes
+            all_content_nodes = [
+                n
+                for n in all_content_nodes
+                if not (isinstance(n, Element) and n.tagName == DoclangToken.LOCATION.value)
+            ]
+
+            # Content elements come after the ldiv (start+1 to end) - only Element nodes
             content_elements = actual_children[start + 1 : end]
 
-            if len(content_elements) == 0:
+            # Check if we have virtual text content (raw text or <content> elements)
+            has_virtual_text = self._has_virtual_text_content(all_content_nodes)
+
+            if len(content_elements) == 0 and not has_virtual_text:
                 # Empty list item (just ldiv, no content)
                 doc.add_list_item(
                     text="",
@@ -3227,8 +3283,10 @@ class DoclangDeserializer(BaseModel):
                     children_before = len(parent.children)
 
                     # Parse the child elements and create document items
+                    parsed_element = None
                     for child_node in root_el.childNodes:
                         if isinstance(child_node, Element):
+                            parsed_element = child_node
                             # Dispatch to parse this element (creates items as side effect)
                             self._dispatch_element(doc=doc, el=child_node, parent=parent)
                             break  # Only process first element
@@ -3237,10 +3295,12 @@ class DoclangDeserializer(BaseModel):
                     if len(parent.children) > children_before:
                         # Get the newly created item
                         child_item = parent.children[-1].resolve(doc=doc)
+                        # Extract the actual text content from the parsed element
+                        actual_text = self._get_text(parsed_element) if parsed_element else cell_text_stripped
                         # Create a RichTableCell with reference to the parsed content
                         table_cells.append(
                             RichTableCell(
-                                text=cell_text_stripped,
+                                text=actual_text,
                                 row_span=row_span,
                                 col_span=col_span,
                                 start_row_offset_idx=r_idx,

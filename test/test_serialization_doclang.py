@@ -636,6 +636,7 @@ def test_vlm_mode():
             traverse_pictures=True,
             include_namespace=False,
             include_version=False,
+            use_virtual_texts=True,
         ),
     )
     ser_res = ser.serialize()
@@ -1558,4 +1559,152 @@ def test_list_item_with_code_child_and_bbox():
     ser_txt = serializer.serialize().text
     exp_file = Path("./test/data/doc/list_item_with_code_and_bbox.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def _create_virtual_text_test_doc(add_location: bool = False) -> DoclingDocument:
+    """Helper to create a test document for virtual text testing.
+    
+    Args:
+        add_location: If True, add provenance/location info to items.
+    
+    Returns:
+        DoclingDocument with list items and table cells for testing.
+    """
+    doc = DoclingDocument(name="test_virtual_texts")
+    
+    # Add page if we need location
+    if add_location:
+        doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    
+    # Add a list with various item types
+    lg = doc.add_list_group()
+    
+    # Regular list item with text
+    prov = None
+    if add_location:
+        prov = ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((10, 20, 30, 25), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 12),
+        )
+    doc.add_list_item(text="Regular item", parent=lg, prov=prov)
+    
+    # List item with empty text and CodeItem child
+    li_with_code = doc.add_list_item(text="", parent=lg)
+    doc.add_code(
+        text="print('hello')",
+        parent=li_with_code,
+        code_language=CodeLanguageLabel.PYTHON,
+    )
+    
+    # List item with text
+    prov2 = None
+    if add_location:
+        prov2 = ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((10, 30, 30, 35), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 12),
+        )
+    doc.add_list_item(text="Another item", parent=lg, prov=prov2)
+    
+    # Add a table with cells (mix of regular and rich cells)
+    # Add provenance to the table so cell locations can be serialized
+    table_prov = None
+    if add_location:
+        table_prov = ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((2, 40, 90, 80), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 50),
+        )
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2), prov=table_prov)
+    
+    cell: TableCell
+    # Add cells to the table
+    for i in range(2):
+        for j in range(2):
+            # Make cell (1,1) a RichTableCell with a formula
+            if i == 1 and j == 1:
+                formula_item = doc.add_formula(text="E=mc^2", parent=table)
+                cell = RichTableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text="",
+                    ref=formula_item.get_ref(),
+                )
+            else:
+                cell = TableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text=f"Cell {i * 2 + j + 1}",
+                    bbox=prov2.bbox if prov2 and i + j == 0 else None,
+                )
+            doc.add_table_cell(table_item=table, cell=cell)
+    
+    return doc
+
+
+def test_virtual_texts_true_no_location():
+    """Test use_virtual_texts=True without location info."""
+    doc = _create_virtual_text_test_doc(add_location=False)
+    
+    params = DoclangParams(
+        use_virtual_texts=True,
+        add_location=False,
+    )
+    serializer = DoclangDocSerializer(doc=doc, params=params)
+    ser_txt = serializer.serialize().text
+    
+    exp_file = Path("./test/data/doc/virtual_texts_true_no_loc.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_virtual_texts_true_with_location():
+    """Test use_virtual_texts=True with location info."""
+    doc = _create_virtual_text_test_doc(add_location=True)
+    
+    params = DoclangParams(
+        use_virtual_texts=True,
+        add_location=True,
+        add_table_cell_location=True,
+    )
+    serializer = DoclangDocSerializer(doc=doc, params=params)
+    ser_txt = serializer.serialize().text
+    
+    exp_file = Path("./test/data/doc/virtual_texts_true_with_loc.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_virtual_texts_false_no_location():
+    """Test use_virtual_texts=False (default) without location info."""
+    doc = _create_virtual_text_test_doc(add_location=False)
+    
+    params = DoclangParams(
+        use_virtual_texts=False,
+        add_location=False,
+    )
+    serializer = DoclangDocSerializer(doc=doc, params=params)
+    ser_txt = serializer.serialize().text
+    
+    exp_file = Path("./test/data/doc/virtual_texts_false_no_loc.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+
+def test_virtual_texts_false_with_location():
+    """Test use_virtual_texts=False (default) with location info."""
+    doc = _create_virtual_text_test_doc(add_location=True)
+    
+    params = DoclangParams(
+        use_virtual_texts=False,
+        add_location=True,
+        add_table_cell_location=True,
+    )
+    serializer = DoclangDocSerializer(doc=doc, params=params)
+    ser_txt = serializer.serialize().text
+    
+    exp_file = Path("./test/data/doc/virtual_texts_false_with_loc.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)

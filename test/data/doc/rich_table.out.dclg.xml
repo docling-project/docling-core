@@ -2,12 +2,12 @@
   <heading level="1">Rich tables</heading>
   <table>
     <fcel/>
-    cell 0,0
+    <text>cell 0,0</text>
     <fcel/>
-    cell 0,1
+    <text>cell 0,1</text>
     <nl/>
     <fcel/>
-    cell 1,0
+    <text>cell 1,0</text>
     <fcel/>
     <text>
       <italic>text in italic</italic>
@@ -21,25 +21,25 @@
       <text>list item 2</text>
     </list>
     <fcel/>
-    cell 2,1
+    <text>cell 2,1</text>
     <nl/>
     <fcel/>
-    cell 3,0
+    <text>cell 3,0</text>
     <fcel/>
     <table>
       <fcel/>
-      inner cell 0,0
+      <text>inner cell 0,0</text>
       <fcel/>
-      inner cell 0,1
+      <text>inner cell 0,1</text>
       <fcel/>
-      inner cell 0,2
+      <text>inner cell 0,2</text>
       <nl/>
       <fcel/>
-      inner cell 1,0
+      <text>inner cell 1,0</text>
       <fcel/>
-      inner cell 1,1
+      <text>inner cell 1,1</text>
       <fcel/>
-      inner cell 1,2
+      <text>inner cell 1,2</text>
       <nl/>
     </table>
     <nl/>
@@ -47,7 +47,7 @@
     <text>Some text in a generic group.</text>
     <text>More text in the group.</text>
     <fcel/>
-    cell 4,1
+    <text>cell 4,1</text>
     <nl/>
   </table>
 </doclang>

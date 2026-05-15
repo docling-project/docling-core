@@ -50,17 +50,24 @@ Affiliation 2]]></content>
     <caption><![CDATA[This is the caption of table 1.]]></caption>
     <table>
       <fcel/>
-<![CDATA[Product]]>      <fcel/>
-<![CDATA[Years]]>      <lcel/>
+      <text><![CDATA[Product]]></text>
+      <fcel/>
+      <text><![CDATA[Years]]></text>
+      <lcel/>
       <nl/>
       <ucel/>
       <fcel/>
-<![CDATA[2016]]>      <fcel/>
-<![CDATA[2017]]>      <nl/>
+      <text><![CDATA[2016]]></text>
       <fcel/>
-<![CDATA[Apple]]>      <fcel/>
-<![CDATA[49823]]>      <fcel/>
-<![CDATA[695944]]>      <nl/>
+      <text><![CDATA[2017]]></text>
+      <nl/>
+      <fcel/>
+      <text><![CDATA[Apple]]></text>
+      <fcel/>
+      <text><![CDATA[49823]]></text>
+      <fcel/>
+      <text><![CDATA[695944]]></text>
+      <nl/>
     </table>
   </group>
   <group>
@@ -201,17 +208,25 @@ Affiliation 2]]></content>
   <code class="Python"><![CDATA[42 < 1337]]></code>
   <table>
     <fcel/>
-<![CDATA[Foo]]>    <fcel/>
-<![CDATA[Bar]]>    <nl/>
+    <text><![CDATA[Foo]]></text>
     <fcel/>
-<![CDATA[Header & Title]]>    <fcel/>
-<![CDATA[Value > 100]]>    <nl/>
+    <text><![CDATA[Bar]]></text>
+    <nl/>
     <fcel/>
-<![CDATA[<script>]]>    <fcel/>
-<![CDATA[A & B]]>    <nl/>
+    <text><![CDATA[Header & Title]]></text>
     <fcel/>
-<![CDATA[Only]]>    <fcel/>
-<![CDATA[<second>]]>    <nl/>
+    <text><![CDATA[Value > 100]]></text>
+    <nl/>
+    <fcel/>
+    <text><![CDATA[<script>]]></text>
+    <fcel/>
+    <text><![CDATA[A & B]]></text>
+    <nl/>
+    <fcel/>
+    <text><![CDATA[Only]]></text>
+    <fcel/>
+    <text><![CDATA[<second>]]></text>
+    <nl/>
   </table>
   <text><![CDATA[0 < 1]]></text>
   <text>

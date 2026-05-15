@@ -17,53 +17,53 @@
     <location value="152"/>
     <table>
       <fcel/>
-      Number of impellers
+      <text>Number of impellers</text>
       <fcel/>
-      single-frequency
+      <text>single-frequency</text>
       <fcel/>
-      multi-frequency
+      <text>multi-frequency</text>
       <nl/>
       <fcel/>
-      1
+      <text>1</text>
       <fcel/>
-      0.06
+      <text>0.06</text>
       <fcel/>
-      0.16
+      <text>0.16</text>
       <nl/>
       <fcel/>
-      2
+      <text>2</text>
       <fcel/>
-      0.12
+      <text>0.12</text>
       <fcel/>
-      0.26
+      <text>0.26</text>
       <nl/>
       <fcel/>
-      3
+      <text>3</text>
       <fcel/>
-      0.16
+      <text>0.16</text>
       <fcel/>
-      0.27
+      <text>0.27</text>
       <nl/>
       <fcel/>
-      4
+      <text>4</text>
       <fcel/>
-      0.14
+      <text>0.14</text>
       <fcel/>
-      0.26
+      <text>0.26</text>
       <nl/>
       <fcel/>
-      5
+      <text>5</text>
       <fcel/>
-      0.16
+      <text>0.16</text>
       <fcel/>
-      0.25
+      <text>0.25</text>
       <nl/>
       <fcel/>
-      6
+      <text>6</text>
       <fcel/>
-      0.24
+      <text>0.24</text>
       <fcel/>
-      0.24
+      <text>0.24</text>
       <nl/>
     </table>
   </picture>

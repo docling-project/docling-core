@@ -50,23 +50,23 @@ Affiliation 2</content>
     <caption>This is the caption of table 1.</caption>
     <table>
       <fcel/>
-      Product
+      <text>Product</text>
       <fcel/>
-      Years
+      <text>Years</text>
       <lcel/>
       <nl/>
       <ucel/>
       <fcel/>
-      2016
+      <text>2016</text>
       <fcel/>
-      2017
+      <text>2017</text>
       <nl/>
       <fcel/>
-      Apple
+      <text>Apple</text>
       <fcel/>
-      49823
+      <text>49823</text>
       <fcel/>
-      695944
+      <text>695944</text>
       <nl/>
     </table>
   </group>
@@ -214,14 +214,14 @@ hyperlink
       <location value="502"/>
       <table>
         <fcel/>
-        Foo
+        <text>Foo</text>
         <fcel/>
-        Bar
+        <text>Bar</text>
         <nl/>
         <fcel/>
-        One
+        <text>One</text>
         <fcel/>
-        Two
+        <text>Two</text>
         <nl/>
       </table>
     </picture>

@@ -50,23 +50,23 @@ Affiliation 2</content>
     <caption>This is the caption of table 1.</caption>
     <table>
       <fcel/>
-      Product
+      <text>Product</text>
       <fcel/>
-      Years
+      <text>Years</text>
       <lcel/>
       <nl/>
       <ucel/>
       <fcel/>
-      2016
+      <text>2016</text>
       <fcel/>
-      2017
+      <text>2017</text>
       <nl/>
       <fcel/>
-      Apple
+      <text>Apple</text>
       <fcel/>
-      49823
+      <text>49823</text>
       <fcel/>
-      695944
+      <text>695944</text>
       <nl/>
     </table>
   </group>
@@ -208,20 +208,25 @@ hyperlink
   <code class="Python"><![CDATA[42 < 1337]]></code>
   <table>
     <fcel/>
-    Foo
+    <text>Foo</text>
     <fcel/>
-    Bar
+    <text>Bar</text>
     <nl/>
     <fcel/>
-<![CDATA[Header & Title]]>    <fcel/>
-<![CDATA[Value > 100]]>    <nl/>
+    <text><![CDATA[Header & Title]]></text>
     <fcel/>
-<![CDATA[<script>]]>    <fcel/>
-<![CDATA[A & B]]>    <nl/>
+    <text><![CDATA[Value > 100]]></text>
+    <nl/>
     <fcel/>
-    Only
+    <text><![CDATA[<script>]]></text>
     <fcel/>
-<![CDATA[<second>]]>    <nl/>
+    <text><![CDATA[A & B]]></text>
+    <nl/>
+    <fcel/>
+    <text>Only</text>
+    <fcel/>
+    <text><![CDATA[<second>]]></text>
+    <nl/>
   </table>
   <text><![CDATA[0 < 1]]></text>
   <text>
