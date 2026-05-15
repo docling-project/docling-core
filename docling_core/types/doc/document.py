@@ -1436,6 +1436,82 @@ class KeywordsMetaField(_ExtraAllowingModel):
     predictions: list[KeywordPrediction] = Field(default_factory=list, min_length=1)
 
 
+class PropertyValueKind(str, Enum):
+    """Discriminator for StatementProperty value shapes."""
+
+    SCALAR = "scalar"
+    RANGE = "range"
+    CATEGORICAL = "categorical"
+    TEXT = "text"
+
+
+class PropertyValue(BaseModel):
+    """Tagged-union value for a StatementProperty.
+
+    Discriminator field ``kind`` selects which of scalar / (range_min, range_max)
+    / text is populated.  Pydantic bare unions on numerics are fragile, so we use
+    an explicit discriminator + model_validator instead.
+    """
+
+    kind: PropertyValueKind
+    scalar: Optional[float] = None
+    range_min: Optional[float] = None
+    range_max: Optional[float] = None
+    text: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_by_kind(self) -> Self:
+        if self.kind == PropertyValueKind.SCALAR:
+            if self.scalar is None:
+                raise ValueError("PropertyValue with kind='scalar' requires 'scalar' to be set.")
+        elif self.kind == PropertyValueKind.RANGE:
+            if self.range_min is None or self.range_max is None:
+                raise ValueError(
+                    "PropertyValue with kind='range' requires both 'range_min' and 'range_max' to be set."
+                )
+        elif self.kind in (PropertyValueKind.CATEGORICAL, PropertyValueKind.TEXT):
+            if self.text is None:
+                raise ValueError(
+                    f"PropertyValue with kind='{self.kind.value}' requires 'text' to be set."
+                )
+        return self
+
+
+class StatementProperty(BasePrediction):
+    """A typed property on a Statement subject."""
+
+    name: str  # normalized property name
+    original: Optional[str] = None  # surface form from the document
+    property_taxonomy: Optional[str] = None
+    property_id: Optional[str] = None  # e.g. Wikidata P-id, UMLS code
+    value: PropertyValue
+    unit: Optional[str] = None  # UCUM preferred ("kg", "mmol/L")
+    unit_iri: Optional[str] = None  # QUDT/UCUM IRI for unambiguous units
+
+
+class Statement(BasePrediction):
+    """A typed assertion extracted from the document.
+
+    Two usage shapes, one class:
+      - subject + properties           "patientX has hemoglobin 13.2 g/dL"
+      - subject + predicate + object   "drugA inhibits proteinB"
+    """
+
+    subject: EntityMention
+    predicate: Optional[EntityMention] = None
+    object: Optional[EntityMention] = None
+    properties: list[StatementProperty] = Field(default_factory=list)
+    qualifiers: dict[str, str] = Field(default_factory=dict)
+    evidence_span: Optional[tuple[int, int]] = None
+    evidence_item_ref: Optional[RefItem] = None  # back-link to source node
+
+
+class StatementsMetaField(_ExtraAllowingModel):
+    """Container for ontology statements."""
+
+    statements: list[Statement] = Field(default_factory=list, min_length=1)
+
+
 class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
@@ -1444,6 +1520,7 @@ class BaseMeta(_ExtraAllowingModel):
     entities: Optional[EntitiesMetaField] = None
     topics: Optional[TopicMetaField] = None
     keywords: Optional[KeywordsMetaField] = None
+    statements: Optional[StatementsMetaField] = None
 
 
 class DescriptionMetaField(BasePrediction):
