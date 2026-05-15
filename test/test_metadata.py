@@ -18,16 +18,26 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    DocumentMeta,
     EntitiesMetaField,
     EntityMention,
     GroupLabel,
     HumanLanguageLabel,
+    KeywordPrediction,
+    KeywordsMetaField,
     LanguageMetaField,
     MetaFieldName,
     MetaUtils,
     NodeItem,
+    PropertyValue,
+    PropertyValueKind,
     RefItem,
+    Statement,
+    StatementProperty,
+    StatementsMetaField,
     SummaryMetaField,
+    TopicMetaField,
+    TopicPrediction,
 )
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -303,3 +313,198 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
     assert "data-meta-entities" in html
     assert ">en<" in html
     assert "IBM (ORG), Zurich (LOC)" in html
+
+
+def test_topics_roundtrip_and_rendering() -> None:
+    doc = DoclingDocument(name="topics-test")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="Machine learning advances.")
+    item.meta = BaseMeta(
+        topics=TopicMetaField(
+            predictions=[
+                TopicPrediction(label="Artificial Intelligence", taxonomy="arXiv", taxonomy_id="cs.AI"),
+                TopicPrediction(label="Machine Learning"),
+            ]
+        ),
+    )
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    meta = roundtrip.texts[0].meta
+    assert meta is not None
+    assert meta.topics is not None
+    assert len(meta.topics.predictions) == 2
+    assert meta.topics.predictions[0].label == "Artificial Intelligence"
+    assert meta.topics.predictions[0].taxonomy == "arXiv"
+    assert meta.topics.get_main_prediction().label == "Artificial Intelligence"
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "data-meta-topics" in html
+    assert "Artificial Intelligence [arXiv]" in html
+    assert "Machine Learning" in html
+
+
+def test_keywords_roundtrip_and_rendering() -> None:
+    doc = DoclingDocument(name="keywords-test")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="Polymers and material science.")
+    item.meta = BaseMeta(
+        keywords=KeywordsMetaField(
+            predictions=[
+                KeywordPrediction(text="polymer", weight=0.9),
+                KeywordPrediction(text="material science", normalized="materials science"),
+            ]
+        ),
+    )
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    meta = roundtrip.texts[0].meta
+    assert meta is not None
+    assert meta.keywords is not None
+    assert len(meta.keywords.predictions) == 2
+    assert meta.keywords.predictions[0].text == "polymer"
+    assert meta.keywords.predictions[0].weight == 0.9
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "data-meta-keywords" in html
+    assert "polymer" in html
+
+
+def test_property_value_scalar() -> None:
+    pv = PropertyValue(kind=PropertyValueKind.SCALAR, scalar=13.2)
+    assert pv.scalar == 13.2
+
+
+def test_property_value_range() -> None:
+    pv = PropertyValue(kind=PropertyValueKind.RANGE, range_min=10.0, range_max=20.0)
+    assert pv.range_min == 10.0
+    assert pv.range_max == 20.0
+
+
+def test_property_value_text() -> None:
+    pv = PropertyValue(kind=PropertyValueKind.TEXT, text="positive")
+    assert pv.text == "positive"
+
+
+def test_property_value_categorical() -> None:
+    pv = PropertyValue(kind=PropertyValueKind.CATEGORICAL, text="high")
+    assert pv.text == "high"
+
+
+def test_property_value_scalar_missing_raises() -> None:
+    with pytest.raises(Exception):
+        PropertyValue(kind=PropertyValueKind.SCALAR)
+
+
+def test_property_value_range_missing_raises() -> None:
+    with pytest.raises(Exception):
+        PropertyValue(kind=PropertyValueKind.RANGE, range_min=10.0)
+
+
+def test_property_value_text_missing_raises() -> None:
+    with pytest.raises(Exception):
+        PropertyValue(kind=PropertyValueKind.TEXT)
+
+
+def test_statement_subject_properties_shape() -> None:
+    """Test Statement with subject + properties (no predicate/object)."""
+    stmt = Statement(
+        subject=EntityMention(text="Patient X"),
+        properties=[
+            StatementProperty(
+                name="hemoglobin",
+                value=PropertyValue(kind=PropertyValueKind.SCALAR, scalar=13.2),
+                unit="g/dL",
+            ),
+        ],
+    )
+    assert stmt.subject.text == "Patient X"
+    assert stmt.predicate is None
+    assert stmt.object is None
+    assert len(stmt.properties) == 1
+    assert stmt.properties[0].value.scalar == 13.2
+    assert stmt.properties[0].unit == "g/dL"
+
+
+def test_statement_triple_shape() -> None:
+    """Test Statement with subject + predicate + object (full triple)."""
+    stmt = Statement(
+        subject=EntityMention(text="Drug A", label="DRUG"),
+        predicate=EntityMention(text="inhibits", label="RELATION"),
+        object=EntityMention(text="Protein B", label="PROTEIN"),
+    )
+    assert stmt.subject.text == "Drug A"
+    assert stmt.predicate.text == "inhibits"
+    assert stmt.object.text == "Protein B"
+
+
+def test_statements_roundtrip_and_rendering() -> None:
+    doc = DoclingDocument(name="statements-test")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="Drug A inhibits Protein B.")
+    item.meta = BaseMeta(
+        statements=StatementsMetaField(
+            statements=[
+                Statement(
+                    subject=EntityMention(text="Drug A", label="DRUG"),
+                    predicate=EntityMention(text="inhibits"),
+                    object=EntityMention(text="Protein B", label="PROTEIN"),
+                ),
+            ]
+        ),
+    )
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    meta = roundtrip.texts[0].meta
+    assert meta is not None
+    assert meta.statements is not None
+    assert len(meta.statements.statements) == 1
+    stmt = meta.statements.statements[0]
+    assert stmt.subject.text == "Drug A"
+    assert stmt.predicate.text == "inhibits"
+    assert stmt.object.text == "Protein B"
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "data-meta-statements" in html
+    assert "Drug A inhibits Protein B" in html
+
+
+def test_document_meta_roundtrip() -> None:
+    """Test DocumentMeta on DoclingDocument."""
+    doc = DoclingDocument(name="doc-meta-test")
+    doc.meta = DocumentMeta(
+        summary=SummaryMetaField(text="A paper about polymers."),
+        language=LanguageMetaField(code=HumanLanguageLabel.EN),
+        topics=TopicMetaField(
+            predictions=[TopicPrediction(label="Materials Science")]
+        ),
+        keywords=KeywordsMetaField(
+            predictions=[KeywordPrediction(text="polymer"), KeywordPrediction(text="synthesis")]
+        ),
+        title="Advances in Polymer Science",
+        authors=["Alice", "Bob"],
+        publication_date="2026-01-15",
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Some content.")
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    assert roundtrip.meta is not None
+    assert roundtrip.meta.title == "Advances in Polymer Science"
+    assert roundtrip.meta.authors == ["Alice", "Bob"]
+    assert roundtrip.meta.publication_date == "2026-01-15"
+    assert roundtrip.meta.language.code == HumanLanguageLabel.EN
+    assert roundtrip.meta.topics.predictions[0].label == "Materials Science"
+    assert len(roundtrip.meta.keywords.predictions) == 2
+    assert roundtrip.meta.summary.text == "A paper about polymers."
+
+
+def test_document_meta_none_by_default() -> None:
+    """Verify DoclingDocument.meta defaults to None (backward compat)."""
+    doc = DoclingDocument(name="empty")
+    assert doc.meta is None
+
+
+def test_basemeta_new_fields_default_none() -> None:
+    """Verify all new BaseMeta fields default to None (backward compat)."""
+    meta = BaseMeta()
+    assert meta.topics is None
+    assert meta.keywords is None
+    assert meta.statements is None
+    assert meta.language is None
+    assert meta.entities is None
