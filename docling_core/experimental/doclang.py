@@ -42,34 +42,35 @@ from docling_core.types.doc import (
     DescriptionMetaField,
     DocItem,
     DoclingDocument,
+    EntitiesMetaField,
     FloatingItem,
     Formatting,
     FormItem,
     InlineGroup,
     KeyValueItem,
-    ListGroup,
-    ListItem,
-    EntitiesMetaField,
     KeywordsMetaField,
     LanguageMetaField,
+    ListGroup,
+    ListItem,
     MetaFieldName,
     MoleculeMetaField,
     NodeItem,
     PictureClassificationMetaField,
-    StatementsMetaField,
-    TopicMetaField,
     PictureItem,
     PictureMeta,
+    PropertyValueKind,
     ProvenanceItem,
     Script,
     SectionHeaderItem,
     Size,
+    StatementsMetaField,
     SummaryMetaField,
     TableCell,
     TableData,
     TableItem,
     TabularChartMetaField,
     TextItem,
+    TopicMetaField,
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.document import (
@@ -1707,10 +1708,16 @@ class DoclangMetaSerializer(BaseModel, BaseMetaSerializer):
                             f"{stmt.subject.text} {stmt.predicate.text} {stmt.object.text}"
                         )
                     else:
-                        props = "; ".join(
-                            f"{p.name}={p.value.scalar if p.value.kind.value == 'scalar' else p.value.text}"
-                            for p in stmt.properties
-                        )
+                        prop_strs: list[str] = []
+                        for p in stmt.properties:
+                            if p.value.kind == PropertyValueKind.SCALAR:
+                                val = str(p.value.scalar)
+                            elif p.value.kind == PropertyValueKind.RANGE:
+                                val = f"{p.value.range_min}–{p.value.range_max}"
+                            else:
+                                val = str(p.value.text)
+                            prop_strs.append(f"{p.name}={val}")
+                        props = "; ".join(prop_strs)
                         parts.append(f"{stmt.subject.text}: {props}" if props else stmt.subject.text)
                 escaped_text = _escape_text("; ".join(parts), params)
                 txt = f"<statements>{escaped_text}</statements>"

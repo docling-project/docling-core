@@ -54,7 +54,6 @@ from docling_core.types.doc.document import (
     DocItem,
     DoclingDocument,
     EntitiesMetaField,
-    KeywordsMetaField,
     FloatingItem,
     FormItem,
     FormulaItem,
@@ -63,9 +62,8 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    KeywordsMetaField,
     LanguageMetaField,
-    StatementsMetaField,
-    TopicMetaField,
     ListGroup,
     ListItem,
     MoleculeMetaField,
@@ -75,13 +73,16 @@ from docling_core.types.doc.document import (
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
+    PropertyValueKind,
     RichTableCell,
     SectionHeaderItem,
+    StatementsMetaField,
     SummaryMetaField,
     TableItem,
     TabularChartMetaField,
     TextItem,
     TitleItem,
+    TopicMetaField,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
@@ -972,10 +973,16 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                             f"{stmt.subject.text} {stmt.predicate.text} {stmt.object.text}"
                         )
                     else:
-                        props = "; ".join(
-                            f"{p.name}={p.value.scalar if p.value.kind.value == 'scalar' else p.value.text}"
-                            for p in stmt.properties
-                        )
+                        prop_strs: list[str] = []
+                        for p in stmt.properties:
+                            if p.value.kind == PropertyValueKind.SCALAR:
+                                val = str(p.value.scalar)
+                            elif p.value.kind == PropertyValueKind.RANGE:
+                                val = f"{p.value.range_min}–{p.value.range_max}"
+                            else:
+                                val = str(p.value.text)
+                            prop_strs.append(f"{p.name}={val}")
+                        props = "; ".join(prop_strs)
                         parts.append(f"{stmt.subject.text}: {props}" if props else stmt.subject.text)
                 txt = "; ".join(parts)
             elif isinstance(field_val, DescriptionMetaField):
