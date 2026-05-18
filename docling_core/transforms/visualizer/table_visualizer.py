@@ -23,13 +23,18 @@ class TableVisualizer(BaseVisualizer):
 
         # show_Label: bool = False
         show_cells: bool = True
+        show_merged_cells: bool = True
+        show_single_cells: bool = True
         show_rows: bool = False
         show_cols: bool = False
         minimal_row_bboxes: bool = True
         minimal_col_bboxes: bool = True
 
-        cell_color: tuple[int, int, int, int] = (255, 0, 0, 32)
-        cell_outline: tuple[int, int, int, int] = (255, 0, 0, 128)
+        single_cell_color: tuple[int, int, int, int] = (255, 0, 0, 32)
+        single_cell_outline: tuple[int, int, int, int] = (255, 0, 0, 128)
+
+        merged_cell_color: tuple[int, int, int, int] = (255, 140, 0, 40)
+        merged_cell_outline: tuple[int, int, int, int] = (255, 140, 0, 160)
 
         row_color: tuple[int, int, int, int] = (255, 0, 0, 32)
         row_outline: tuple[int, int, int, int] = (255, 0, 0, 128)
@@ -64,11 +69,21 @@ class TableVisualizer(BaseVisualizer):
         main_draw = ImageDraw.Draw(page_image)
 
         for cell in table.data.table_cells:
+            is_merged_cell = cell.row_span > 1 or cell.col_span > 1
+            if is_merged_cell and not self.params.show_merged_cells:
+                continue
+            if not is_merged_cell and not self.params.show_single_cells:
+                continue
+
             if cell.bbox is not None:
                 tl_bbox = cell.bbox.to_top_left_origin(page_height=page_height)
 
-                cell_color = self.params.cell_color
-                cell_outline = self.params.cell_outline
+                if is_merged_cell:
+                    cell_color = self.params.merged_cell_color
+                    cell_outline = self.params.merged_cell_outline
+                else:
+                    cell_color = self.params.single_cell_color
+                    cell_outline = self.params.single_cell_outline
                 if cell.column_header:
                     cell_color = self.params.col_header_color
                     cell_outline = self.params.col_header_outline
