@@ -1305,6 +1305,30 @@ def test_empty_table_preserved_by_default():
     assert "<group" in result
     assert "<table" not in result
 
+def test_document_index_serialization():
+    """Test that DOCUMENT_INDEX tables are serialized with class='index' attribute."""
+    doc = DoclingDocument(name="test")
+    
+    # Add a regular table
+    table_data = TableData(num_cols=2)
+    table_data.add_row(['Header 1', 'Header 2'])
+    table_data.grid[0][0].column_header = True
+    table_data.grid[0][1].column_header = True
+    table_data.add_row(['Data 1', 'Data 2'])
+    doc.add_table(data=table_data, label=DocItemLabel.TABLE)
+    
+    # Add a DOCUMENT_INDEX table
+    index_data = TableData(num_cols=2)
+    index_data.add_row(['Index 1', 'Page 1'])
+    index_data.add_row(['Index 2', 'Page 2'])
+    doc.add_table(data=index_data, label=DocItemLabel.DOCUMENT_INDEX)
+    
+    result = serialize_doclang(doc)
+    
+    # Verify against expected output
+    exp_file = Path("./test/data/doc/document_index.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=result)
+
 
 def test_suppress_empty_inline_group():
     """An inline group whose children are all empty is suppressed."""

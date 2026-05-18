@@ -388,6 +388,10 @@ class DoclangAttributeValue(str, Enum):
     CODE = "code"
     PICTURE = "picture"
 
+    # Table class values
+    INDEX = "index"
+    DATA = "data"
+
     # Group class values (deprecated, kept for backward compatibility in deserialization)
     DOCUMENT_INDEX = "document_index"
     TABLE = "table"
@@ -416,6 +420,7 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.CHECKBOX: {DoclangAttributeKey.CLASS},
         DoclangToken.LIST: {DoclangAttributeKey.CLASS},
+        DoclangToken.TABLE: {DoclangAttributeKey.CLASS},
         DoclangToken.GROUP: {DoclangAttributeKey.TYPE},
         DoclangToken.THREAD: {DoclangAttributeKey.ID},
         DoclangToken.H_THREAD: {DoclangAttributeKey.ID},
@@ -440,6 +445,12 @@ class DoclangVocabulary(BaseModel):
             DoclangAttributeKey.CLASS: {
                 DoclangAttributeValue.SELECTED,
                 DoclangAttributeValue.UNSELECTED,
+            }
+        },
+        DoclangToken.TABLE: {
+            DoclangAttributeKey.CLASS: {
+                DoclangAttributeValue.INDEX,
+                DoclangAttributeValue.DATA,
             }
         },
         # Other attributes (e.g., level, type, id) are not enumerated here
@@ -1998,7 +2009,7 @@ class DoclangTableSerializer(BaseTableSerializer):
         """Serializes the passed item."""
         params = DoclangParams(**kwargs)
 
-        # FIXME: we might need to check the label to distinguish between TABLE and DOCUMENT_INDEX label
+        # Check the label to distinguish between TABLE and DOCUMENT_INDEX label
         open_token: str = DoclangVocabulary._create_group_token()
         close_token: str = DoclangVocabulary._create_group_token(closing=True)
 
@@ -2033,7 +2044,15 @@ class DoclangTableSerializer(BaseTableSerializer):
                 )
                 body += otsl_text
             if body:
-                otsl_payload = _wrap(text=body, wrap_tag=DoclangToken.TABLE.value)
+                # Add class="index" attribute for DOCUMENT_INDEX tables
+                from docling_core.types.doc.labels import DocItemLabel
+
+                if item.label == DocItemLabel.DOCUMENT_INDEX:
+                    table_open = f'<{DoclangToken.TABLE.value} {DoclangAttributeKey.CLASS.value}="{DoclangAttributeValue.INDEX.value}">'
+                    table_close = f"</{DoclangToken.TABLE.value}>"
+                    otsl_payload = f"{table_open}{body}{table_close}"
+                else:
+                    otsl_payload = _wrap(text=body, wrap_tag=DoclangToken.TABLE.value)
                 res_parts.append(create_ser_result(text=body, span_source=item))
 
         # Footnote as sibling of the OTSL payload within the floating group
@@ -3005,6 +3024,8 @@ class DoclangDeserializer(BaseModel):
                 self._walk_children(doc=doc, el=el, parent=parent)
 
     def _parse_table_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        from docling_core.types.doc.labels import DocItemLabel
+
         otsl_el: Optional[Element]
         if el.tagName == DoclangToken.TABLE.value:
             caption = None
@@ -3019,6 +3040,24 @@ class DoclangDeserializer(BaseModel):
                 for ftn in footnotes:
                     tbl.footnotes.append(ftn.get_ref())
                 return
+
+        # Check for class attribute to determine table type
+        table_label = DocItemLabel.TABLE
+        if otsl_el:
+            cls_val = otsl_el.getAttribute(DoclangAttributeKey.CLASS.value)
+            if cls_val:
+                # Validate that class value is one of the allowed values
+                if cls_val == DoclangAttributeValue.INDEX.value:
+                    table_label = DocItemLabel.DOCUMENT_INDEX
+                elif cls_val == DoclangAttributeValue.DATA.value:
+                    table_label = DocItemLabel.TABLE
+                else:
+                    raise ValueError(
+                        f"Invalid class attribute value '{cls_val}' for table element. "
+                        f"Allowed values are: '{DoclangAttributeValue.INDEX.value}', '{DoclangAttributeValue.DATA.value}'"
+                    )
+            # If no class attribute, default to TABLE
+
         # Extract table provenance from <otsl> leading <location/> tokens
         tbl_provs = self._extract_provenance(doc=doc, el=otsl_el)
         content_layer = self._extract_layer(el=otsl_el)
@@ -3030,6 +3069,7 @@ class DoclangDeserializer(BaseModel):
             parent=parent,
             prov=(tbl_provs[0] if tbl_provs else None),
             content_layer=content_layer,
+            label=table_label,
         )
         tbl_content = _wrap(text=inner, wrap_tag=DoclangToken.TABLE.value)
         td = self._parse_otsl_table_content(otsl_content=tbl_content, doc=doc, parent=tbl)
