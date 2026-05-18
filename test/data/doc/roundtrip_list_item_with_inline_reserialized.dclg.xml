@@ -1,41 +1,52 @@
-<doclang version="1.0.0">
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
   <text>Simple text</text>
   <text>
     <content>Here a code snippet: </content>
     <code class="Python">help()</code>
     <content> (to be shown)</content>
   </text>
-  <list ordered="false">
-    <list_text>foo</list_text>
-    <list_text>bar</list_text>
-    <list_text>
+  <list class="unordered">
+    <ldiv/>
+    <text>foo</text>
+    <ldiv/>
+    <text>bar</text>
+    <ldiv/>
+    <text>
       <content>Here a formula: </content>
       <formula>
         <content>E=mc^2 </content>
       </formula>
 in line
-    </list_text>
-    <list_text>
+    </text>
+    <ldiv/>
+    <text>
       <content>Here a </content>
       <bold>bold</bold>
       <content> text</content>
-    </list_text>
-    <list_text>will contain sublist</list_text>
-    <list ordered="false">
-      <list_text>sublist item 1</list_text>
-      <list_text>sublist item 2</list_text>
+    </text>
+    <ldiv/>
+    <text>will contain sublist</text>
+    <list class="unordered">
+      <ldiv/>
+      <text>sublist item 1</text>
+      <ldiv/>
+      <text>sublist item 2</text>
     </list>
-    <list_text>
+    <ldiv/>
+    <text>
       <content>Here a </content>
       <italic>
         <bold>both bold and italicized</bold>
       </italic>
       <content> text and a sublist:</content>
-    </list_text>
-    <list ordered="false">
-      <list_text>sublist item a</list_text>
-      <list_text>sublist item b</list_text>
+    </text>
+    <list class="unordered">
+      <ldiv/>
+      <text>sublist item a</text>
+      <ldiv/>
+      <text>sublist item b</text>
     </list>
-    <list_text>final element</list_text>
+    <ldiv/>
+    <text>final element</text>
   </list>
 </doclang>

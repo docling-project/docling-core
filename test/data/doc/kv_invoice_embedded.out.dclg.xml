@@ -6,13 +6,17 @@
     <location value="502"/>
     <field_item>
       <key>
-        <picture></picture>
+        <picture>
+          <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=</uri>
+        </picture>
       </key>
       <value class="read_only">+123-456-7890</value>
     </field_item>
     <field_item>
       <key>
-        <picture></picture>
+        <picture>
+          <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=</uri>
+        </picture>
       </key>
       <value class="read_only">hello@example.com</value>
     </field_item>

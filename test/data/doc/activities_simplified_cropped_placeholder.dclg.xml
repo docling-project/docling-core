@@ -1,13 +1,11 @@
-<doclang version="1.0.0">
-  <floating_group class="picture">
-    <picture>
-      <meta>
-        <classification>Other</classification>
-      </meta>
-      <location value="43"/>
-      <location value="117"/>
-      <location value="172"/>
-      <location value="208"/>
-    </picture>
-  </floating_group>
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <picture>
+    <meta>
+      <classification>Other</classification>
+    </meta>
+    <location value="43"/>
+    <location value="117"/>
+    <location value="172"/>
+    <location value="208"/>
+  </picture>
 </doclang>

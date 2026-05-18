@@ -1,14 +1,13 @@
-<doclang version="1.0.0">
-  <floating_group class="table">
-    <otsl>
-      <location value="67"/>
-      <location value="40"/>
-      <location value="451"/>
-      <location value="473"/>
-      <fcel/>
-      <nl/>
-    </otsl>
-  </floating_group>
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <table>
+    <location value="67"/>
+    <location value="40"/>
+    <location value="451"/>
+    <location value="473"/>
+    <fcel/>
+    <text></text>
+    <nl/>
+  </table>
   <text>
     <location value="420"/>
     <location value="484"/>
