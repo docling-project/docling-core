@@ -1,0 +1,26 @@
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <table>
+    <ched/>
+    <text>Header 1</text>
+    <ched/>
+    <text>Header 2</text>
+    <nl/>
+    <fcel/>
+    <text>Data 1</text>
+    <fcel/>
+    <text>Data 2</text>
+    <nl/>
+  </table>
+  <table class="index">
+    <fcel/>
+    <text>Index 1</text>
+    <fcel/>
+    <text>Page 1</text>
+    <nl/>
+    <fcel/>
+    <text>Index 2</text>
+    <fcel/>
+    <text>Page 2</text>
+    <nl/>
+  </table>
+</doclang>

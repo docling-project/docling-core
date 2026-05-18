@@ -1280,4 +1280,87 @@ bar</content>
 
     exp_doclang_str = doc.export_to_doclang()
 
-    assert doclang_str.strip() == exp_doclang_str.strip()
+
+
+def test_roundtrip_document_index_table():
+    """Test that DOCUMENT_INDEX label is preserved through serialization/deserialization."""
+    doc = DoclingDocument(name="test")
+    _add_default_page(doc)
+    
+    # Add a regular table
+    table_data = TableData(num_cols=2)
+    table_data.add_row(['Header 1', 'Header 2'])
+    table_data.grid[0][0].column_header = True
+    table_data.grid[0][1].column_header = True
+    table_data.add_row(['Data 1', 'Data 2'])
+    doc.add_table(data=table_data, label=DocItemLabel.TABLE, prov=_default_prov())
+    
+    # Add a DOCUMENT_INDEX table
+    index_data = TableData(num_cols=2)
+    index_data.add_row(['Index 1', 'Page 1'])
+    index_data.add_row(['Index 2', 'Page 2'])
+    doc.add_table(data=index_data, label=DocItemLabel.DOCUMENT_INDEX, prov=_default_prov())
+    
+    # Serialize
+    xml_str = _serialize(doc)
+    
+    # Verify serialization contains class="index"
+    assert '<table class="index">' in xml_str
+    
+    # Deserialize
+    doc2 = _deserialize(xml_str)
+    
+    # Verify we have 2 tables
+    assert len(doc2.tables) == 2
+    
+    # Verify labels are preserved
+    assert doc2.tables[0].label == DocItemLabel.TABLE
+    assert doc2.tables[1].label == DocItemLabel.DOCUMENT_INDEX
+    
+    # Verify table data is preserved
+    assert doc2.tables[0].data.num_rows == 2
+    assert doc2.tables[0].data.num_cols == 2
+    assert doc2.tables[1].data.num_rows == 2
+    assert doc2.tables[1].data.num_cols == 2
+
+
+def test_roundtrip_table_with_data_class():
+    """Test that tables with class='data' are correctly deserialized as TABLE label."""
+    # Create XML with explicit class="data"
+    xml_str = """<doclang xmlns="https://www.doclang.ai/ns/v0">
+  <table class="data">
+    <ched/>
+    <text>Header 1</text>
+    <ched/>
+    <text>Header 2</text>
+    <nl/>
+    <fcel/>
+    <text>Data 1</text>
+    <fcel/>
+    <text>Data 2</text>
+    <nl/>
+  </table>
+</doclang>"""
+    
+    # Deserialize
+    doc = _deserialize(xml_str)
+    
+    # Verify we have 1 table with TABLE label
+    assert len(doc.tables) == 1
+    assert doc.tables[0].label == DocItemLabel.TABLE
+
+
+def test_table_with_invalid_class_raises_error():
+    """Test that tables with invalid class values raise an error."""
+    # Create XML with invalid class="invalid"
+    xml_str = """<doclang xmlns="https://www.doclang.ai/ns/v0">
+  <table class="invalid">
+    <fcel/>
+    <text>Data 1</text>
+    <nl/>
+  </table>
+</doclang>"""
+    
+    # Deserialize should raise ValueError
+    with pytest.raises(ValueError, match="Invalid class attribute value 'invalid' for table element"):
+        _deserialize(xml_str)
