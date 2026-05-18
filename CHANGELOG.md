@@ -1,3 +1,9 @@
+## [v2.76.0](https://github.com/docling-project/docling-core/releases/tag/v2.76.0) - 2026-05-18
+
+### Feature
+
+* Updated the table visualization ([#615](https://github.com/docling-project/docling-core/issues/615)) ([`b6c3d6f`](https://github.com/docling-project/docling-core/commit/b6c3d6fb1463df7d9d353028ea36d669fff1293e))
+
 ## [v2.75.0](https://github.com/docling-project/docling-core/releases/tag/v2.75.0) - 2026-05-12
 
 ### Feature
