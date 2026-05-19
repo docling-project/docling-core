@@ -1,10 +1,10 @@
-<doclang version="1.0.0">
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
   <field_region>
     <location value="48"/>
     <location value="12"/>
     <location value="477"/>
     <location value="484"/>
-    <heading level="1">
+    <heading level="2">
       <location value="142"/>
       <location value="12"/>
       <location value="304"/>
@@ -27,7 +27,7 @@
         PCT/US2020/024355
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="53"/>
       <location value="37"/>
       <location value="179"/>
@@ -97,7 +97,7 @@
       <location value="69"/>
       According to International Patent Classification (IPC) or to both national classification and IPC
     </text>
-    <heading level="2">
+    <heading level="3">
       <location value="54"/>
       <location value="73"/>
       <location value="118"/>
@@ -152,35 +152,33 @@
       <location value="141"/>
       EPO-Internal , WPI Data
     </text>
-    <heading level="2">
+    <heading level="3">
       <location value="54"/>
       <location value="168"/>
       <location value="195"/>
       <location value="171"/>
       C. DOCUMENTS CONSIDERED TO BE RELEVANT
     </heading>
-    <floating_group class="table">
-      <otsl>
-        <location value="48"/>
-        <location value="172"/>
-        <location value="477"/>
-        <location value="342"/>
-        <ched/>
-        Category*
-        <ched/>
-        Citation of document, with indication, where appropriate, of the relevant passages
-        <ched/>
-        Relevant to claim No.
-        <nl/>
-        <fcel/>
-        x
-        <fcel/>
-        US 2019/026000 A1 (LIPMAN KEITH [US]) 24 January 2019 (2019-01-24) paragraph [0249] - paragraph [0250]; figures 1,2,28-30 paragraph [0038] ------
-        <fcel/>
-        1-15
-        <nl/>
-      </otsl>
-    </floating_group>
+    <table>
+      <location value="48"/>
+      <location value="172"/>
+      <location value="477"/>
+      <location value="342"/>
+      <ched/>
+      <text>Category*</text>
+      <ched/>
+      <text>Citation of document, with indication, where appropriate, of the relevant passages</text>
+      <ched/>
+      <text>Relevant to claim No.</text>
+      <nl/>
+      <fcel/>
+      <text>x</text>
+      <fcel/>
+      <text>US 2019/026000 A1 (LIPMAN KEITH [US]) 24 January 2019 (2019-01-24) paragraph [0249] - paragraph [0250]; figures 1,2,28-30 paragraph [0038] ------</text>
+      <fcel/>
+      <text>1-15</text>
+      <nl/>
+    </table>
     <text>
       <location value="52"/>
       <location value="345"/>

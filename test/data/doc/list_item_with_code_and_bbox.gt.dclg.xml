@@ -1,0 +1,16 @@
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <head>
+    <default_resolution width="256" height="256"/>
+  </head>
+  <list class="unordered">
+    <ldiv>
+      <marker>•</marker>
+    </ldiv>
+    <code>
+      <location value="255"/>
+      <location value="255"/>
+      <location value="255"/>
+      <location value="255"/>
+<![CDATA[print('hello')]]>    </code>
+  </list>
+</doclang>

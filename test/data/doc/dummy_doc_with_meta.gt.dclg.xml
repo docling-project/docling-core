@@ -1,5 +1,5 @@
-<doclang version="1.0.0">
-  <title>
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <heading level="1">
     <meta>
       <summary>This is a title.</summary>
       <my_corp__foo>More stuff here.</my_corp__foo>
@@ -9,8 +9,8 @@
     <location value="415"/>
     <location value="47"/>
     DocLayNet: A Large Human-Annotated Dataset for Document-Layout Analysis
-  </title>
-  <floating_group class="picture">
+  </heading>
+  <group>
     <caption>
       <location value="215"/>
       <location value="201"/>
@@ -31,13 +31,11 @@
       <location value="511"/>
       <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=</uri>
     </picture>
-  </floating_group>
-  <floating_group class="table">
-    <otsl>
-      <location value="215"/>
-      <location value="201"/>
-      <location value="251"/>
-      <location value="218"/>
-    </otsl>
-  </floating_group>
+  </group>
+  <table>
+    <location value="215"/>
+    <location value="201"/>
+    <location value="251"/>
+    <location value="218"/>
+  </table>
 </doclang>

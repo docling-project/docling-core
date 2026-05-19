@@ -62,6 +62,7 @@ from docling_core.types.doc.labels import (
     GraphCellLabel,
     GraphLinkLabel,
     GroupLabel,
+    HumanLanguageLabel,
     PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
@@ -72,6 +73,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
+CharSpan = Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
 CURRENT_VERSION: Final = "1.10.0"
 
 DEFAULT_EXPORT_LABELS = {
@@ -1209,7 +1211,7 @@ class ProvenanceItem(BaseModel):
 
     page_no: Annotated[int, Field(description="Page number")]
     bbox: Annotated[BoundingBox, Field(description="Bounding box")]
-    charspan: Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
+    charspan: CharSpan
 
 
 class BaseSource(BaseModel):
@@ -1361,21 +1363,80 @@ class SummaryMetaField(BasePrediction):
     text: str
 
 
+class LanguageMetaField(BasePrediction):
+    """Detected human language."""
+
+    code: HumanLanguageLabel
+
+
 # NOTE: must be manually kept in sync with top-level BaseMeta hierarchy fields
 class MetaFieldName(str, Enum):
     """Standard meta field names."""
 
     SUMMARY = "summary"  # a summary of the tree under this node
+    LANGUAGE = "language"  # detected language of the node content
+    ENTITIES = "entities"  # named entities extracted from the node content
     DESCRIPTION = "description"  # a description of the node (e.g. for images)
     CLASSIFICATION = "classification"  # a classification of the node content
     MOLECULE = "molecule"  # molecule data
     TABULAR_CHART = "tabular_chart"  # tabular chart data
 
 
+class EntityMention(BasePrediction):
+    """Entity mention extracted from text."""
+
+    text: Annotated[
+        str,
+        Field(description="Normalized text of the entity mention."),
+    ]
+    orig: Annotated[
+        Optional[str],
+        Field(
+            description=(
+                "Exact source text extracted from the original charspan, "
+                "analogous to TextItem.orig. This may differ from 'text' when the "
+                "mention has been normalized."
+            )
+        ),
+    ] = None
+    label: Annotated[
+        Optional[str],
+        Field(description="Entity type or category."),
+    ] = None
+    charspan: Annotated[
+        Optional[CharSpan],
+        Field(description="Character span (0-indexed) of the entity mention in the source text."),
+    ] = None
+
+
+class EntitiesMetaField(_ExtraAllowingModel):
+    """Container for extracted entity mentions."""
+
+    mentions: Annotated[list[EntityMention], Field(min_length=1)]
+
+
 class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
     summary: Optional[SummaryMetaField] = None
+    language: Optional[LanguageMetaField] = None
+    entities: Optional[EntitiesMetaField] = None
+
+    def has_content(self) -> bool:
+        """Return True if this metadata contains any meaningful content."""
+        return any(self._value_has_content(value) for value in self.model_dump(exclude_none=True).values())
+
+    @staticmethod
+    def _value_has_content(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, list):
+            return any(BaseMeta._value_has_content(v) for v in value)
+        if isinstance(value, dict):
+            return any(BaseMeta._value_has_content(v) for v in value.values())
+        if isinstance(value, BaseModel):
+            return any(BaseMeta._value_has_content(v) for v in value.model_dump(exclude_none=True).values())
+        return True
 
 
 class DescriptionMetaField(BasePrediction):

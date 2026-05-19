@@ -1,5 +1,3 @@
-[Summary] This document talks about various topics.
-
 [Summary] This chapter discusses foo and bar.
 
 [Summary] This section talks about foo.
@@ -13,3 +11,5 @@
 [Summary] This section talks about bar.
 
 [My Corp Test 2] custom field value 2
+
+[Summary] This document talks about various topics.

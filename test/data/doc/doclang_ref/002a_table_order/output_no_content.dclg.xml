@@ -1,4 +1,4 @@
-<doclang version="1.0.0">
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
   <text>
     <location value="61"/>
     <location value="24"/>
@@ -13,26 +13,31 @@
     <location value="29"/>
     <layer class="furniture"/>
   </text>
-  <floating_group class="picture">
-    <picture>
-      <location value="432"/>
-      <location value="10"/>
-      <location value="476"/>
-      <location value="39"/>
-      <layer class="furniture"/>
-    </picture>
-  </floating_group>
-  <floating_group class="table">
-    <otsl>
+  <picture>
+    <meta>
+      <classification/>
+    </meta>
+    <location value="432"/>
+    <location value="10"/>
+    <location value="476"/>
+    <location value="39"/>
+    <layer class="furniture"/>
+  </picture>
+  <group>
+    <table>
       <location value="103"/>
       <location value="51"/>
       <location value="452"/>
       <location value="192"/>
       <ched/>
+      <text></text>
       <ched/>
+      <text></text>
       <ched/>
+      <text></text>
       <nl/>
       <rhed/>
+      <text></text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -40,41 +45,48 @@
         <location value="195"/>
         <location value="98"/>
       </text>
-      <list ordered="false">
-        <list_text>
+      <list class="unordered">
+        <ldiv/>
+        <text>
           <location value="136"/>
           <location value="100"/>
           <location value="255"/>
           <location value="104"/>
-        </list_text>
-        <list_text>
+        </text>
+        <ldiv/>
+        <text>
           <location value="136"/>
           <location value="106"/>
           <location value="296"/>
           <location value="111"/>
-        </list_text>
-        <list_text>
+        </text>
+        <ldiv/>
+        <text>
           <location value="136"/>
           <location value="113"/>
           <location value="191"/>
           <location value="117"/>
-        </list_text>
-        <list_text>
+        </text>
+        <ldiv/>
+        <text>
           <location value="136"/>
           <location value="119"/>
           <location value="195"/>
           <location value="124"/>
-        </list_text>
-        <list_text>
+        </text>
+        <ldiv/>
+        <text>
           <location value="136"/>
           <location value="125"/>
           <location value="318"/>
           <location value="136"/>
-        </list_text>
+        </text>
       </list>
       <fcel/>
+      <text></text>
       <nl/>
       <rhed/>
+      <text></text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -82,29 +94,34 @@
         <location value="195"/>
         <location value="145"/>
       </text>
-      <list ordered="false">
-        <list_text>
+      <list class="unordered">
+        <ldiv/>
+        <text>
           <location value="136"/>
           <location value="147"/>
           <location value="224"/>
           <location value="152"/>
-        </list_text>
-        <list_text>
+        </text>
+        <ldiv/>
+        <text>
           <location value="136"/>
           <location value="153"/>
           <location value="204"/>
           <location value="157"/>
-        </list_text>
-        <list_text>
+        </text>
+        <ldiv/>
+        <text>
           <location value="136"/>
           <location value="159"/>
           <location value="361"/>
           <location value="171"/>
-        </list_text>
+        </text>
       </list>
       <fcel/>
+      <text></text>
       <nl/>
       <rhed/>
+      <text></text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -113,8 +130,10 @@
         <location value="179"/>
       </text>
       <fcel/>
+      <text></text>
       <nl/>
       <rhed/>
+      <text></text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -123,22 +142,24 @@
         <location value="189"/>
       </text>
       <fcel/>
+      <text></text>
       <nl/>
-    </otsl>
+    </table>
     <footnote>
       <location value="104"/>
       <location value="203"/>
       <location value="395"/>
       <location value="210"/>
     </footnote>
-  </floating_group>
-  <list ordered="false">
-    <list_text>
+  </group>
+  <list class="unordered">
+    <ldiv/>
+    <text>
       <location value="60"/>
       <location value="236"/>
       <location value="452"/>
       <location value="254"/>
-    </list_text>
+    </text>
   </list>
   <text>
     <location value="103"/>
@@ -146,38 +167,51 @@
     <location value="451"/>
     <location value="301"/>
   </text>
-  <floating_group class="table">
-    <otsl>
+  <group>
+    <table>
       <location value="103"/>
       <location value="316"/>
       <location value="452"/>
       <location value="386"/>
       <ched/>
+      <text></text>
       <ched/>
+      <text></text>
       <ched/>
+      <text></text>
       <ched/>
+      <text></text>
       <nl/>
       <srow/>
+      <text></text>
       <lcel/>
       <lcel/>
       <lcel/>
       <nl/>
       <rhed/>
+      <text></text>
       <fcel/>
+      <text></text>
       <fcel/>
+      <text></text>
       <fcel/>
+      <text></text>
       <nl/>
       <rhed/>
+      <text></text>
       <fcel/>
+      <text></text>
       <fcel/>
+      <text></text>
       <fcel/>
+      <text></text>
       <nl/>
-    </otsl>
+    </table>
     <footnote>
       <location value="104"/>
       <location value="397"/>
       <location value="451"/>
       <location value="410"/>
     </footnote>
-  </floating_group>
+  </group>
 </doclang>

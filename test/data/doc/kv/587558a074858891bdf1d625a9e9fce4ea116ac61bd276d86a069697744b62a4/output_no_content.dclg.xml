@@ -1,18 +1,19 @@
-<doclang version="1.0.0">
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
   <text>
     <location value="336"/>
     <location value="14"/>
     <location value="464"/>
     <location value="21"/>
   </text>
-  <floating_group class="picture">
-    <picture>
-      <location value="49"/>
-      <location value="34"/>
-      <location value="139"/>
-      <location value="53"/>
-    </picture>
-  </floating_group>
+  <picture>
+    <meta>
+      <classification/>
+    </meta>
+    <location value="49"/>
+    <location value="34"/>
+    <location value="139"/>
+    <location value="53"/>
+  </picture>
   <field_region>
     <field_item>
       <value class="read_only">
@@ -42,7 +43,7 @@
     <location value="80"/>
     <location value="484"/>
     <location value="471"/>
-    <heading level="2">
+    <heading level="3">
       <location value="49"/>
       <location value="83"/>
       <location value="119"/>
@@ -90,7 +91,7 @@
         <location value="116"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="164"/>
       <location value="83"/>
       <location value="227"/>
@@ -314,7 +315,7 @@
         <location value="324"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="324"/>
       <location value="83"/>
       <location value="378"/>
@@ -371,7 +372,7 @@
         <checkbox class="unselected"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="323"/>
       <location value="135"/>
       <location value="368"/>
@@ -449,7 +450,7 @@
         <checkbox class="unselected"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="324"/>
       <location value="214"/>
       <location value="345"/>
@@ -576,7 +577,7 @@
         <checkbox class="unselected"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="407"/>
       <location value="83"/>
       <location value="447"/>
@@ -647,7 +648,7 @@
         <checkbox class="unselected"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="407"/>
       <location value="162"/>
       <location value="456"/>
@@ -697,7 +698,7 @@
         <checkbox class="unselected"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="407"/>
       <location value="207"/>
       <location value="433"/>
@@ -761,7 +762,7 @@
         <checkbox class="unselected"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="407"/>
       <location value="272"/>
       <location value="436"/>
@@ -831,25 +832,28 @@
       <location value="308"/>
       <location value="339"/>
     </text>
-    <list ordered="false">
-      <list_text>
+    <list class="unordered">
+      <ldiv/>
+      <text>
         <location value="49"/>
         <location value="340"/>
         <location value="181"/>
         <location value="344"/>
-      </list_text>
-      <list_text>
+      </text>
+      <ldiv/>
+      <text>
         <location value="49"/>
         <location value="346"/>
         <location value="301"/>
         <location value="350"/>
-      </list_text>
-      <list_text>
+      </text>
+      <ldiv/>
+      <text>
         <location value="49"/>
         <location value="352"/>
         <location value="166"/>
         <location value="356"/>
-      </list_text>
+      </text>
     </list>
     <field_item>
       <value class="read_only">
@@ -880,14 +884,15 @@
         <location value="336"/>
         <location value="359"/>
       </key>
-      <floating_group class="picture">
-        <picture>
-          <location value="319"/>
-          <location value="350"/>
-          <location value="336"/>
-          <location value="359"/>
-        </picture>
-      </floating_group>
+      <picture>
+        <meta>
+          <classification/>
+        </meta>
+        <location value="319"/>
+        <location value="350"/>
+        <location value="336"/>
+        <location value="359"/>
+      </picture>
       <value class="read_only">
         <location value="337"/>
         <location value="351"/>

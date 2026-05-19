@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel
 from typing_extensions import override
 
+from docling_core.transforms.serializer.html import HTMLDocSerializer, HTMLParams
 from docling_core.transforms.serializer.base import SerializationResult
 from docling_core.transforms.serializer.common import create_ser_result
 from docling_core.transforms.serializer.markdown import (
@@ -17,7 +18,11 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    EntitiesMetaField,
+    EntityMention,
     GroupLabel,
+    HumanLanguageLabel,
+    LanguageMetaField,
     MetaFieldName,
     MetaUtils,
     NodeItem,
@@ -269,3 +274,57 @@ def test_document_level_metadata(dummy_doc_with_meta: DoclingDocument) -> None:
     assert first_text.meta is not None
     assert first_text.meta.summary is not None
     assert first_text.meta.summary.text == "This is a title."
+
+
+def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
+    doc = DoclingDocument(name="semantic-meta")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
+    item.meta = BaseMeta(
+        summary=SummaryMetaField(text="A short company/location statement."),
+        language=LanguageMetaField(code=HumanLanguageLabel.EN),
+        entities=EntitiesMetaField(
+            mentions=[
+                EntityMention(text="IBM", label="ORG", charspan=(0, 3)),
+                EntityMention(text="Zurich", label="LOC", charspan=(16, 22)),
+            ]
+        ),
+    )
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    meta = roundtrip.texts[0].meta
+    assert meta is not None
+    assert meta.language is not None
+    assert meta.language.code == HumanLanguageLabel.EN
+    assert meta.entities is not None
+    assert [mention.text for mention in meta.entities.mentions] == ["IBM", "Zurich"]
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "data-meta-language" in html
+    assert "data-meta-entities" in html
+    assert ">en<" in html
+    assert "IBM (ORG, [0,3]), Zurich (LOC, [16,22])" in html
+
+
+def test_html_escapes_entity_text() -> None:
+    doc = DoclingDocument(name="escaped-entity-meta")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="A<B & C> appears here.")
+    item.meta = BaseMeta(
+        entities=EntitiesMetaField(
+            mentions=[
+                EntityMention(text="A<B & C>", label="TAG", charspan=(0, 7)),
+            ]
+        ),
+    )
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "A&lt;B &amp; C&gt; (TAG, [0,7])" in html
+
+
+def test_html_skips_empty_base_meta() -> None:
+    doc = DoclingDocument(name="empty-meta")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
+    item.meta = BaseMeta()
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert '<details class="docling-meta">' not in html
+    assert "data-meta-entities" not in html

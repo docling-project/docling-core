@@ -120,12 +120,63 @@
         color: #666;
         margin-top: 0.5em;
     }
+    details.docling-meta {
+        margin: 0.5em 0;
+        font-size: 0.9em;
+        text-align: left;
+    }
+    figure details.docling-meta {
+        text-align: left;
+    }
+    details.docling-meta > summary {
+        cursor: pointer;
+        color: #555;
+        font-style: italic;
+        padding: 2px 6px;
+    }
+    .docling-meta-field {
+        background-color: #f0f0f0;
+        border-left: 3px solid #ccc;
+        padding: 6px 10px;
+        margin: 4px 0 4px 1em;
+        border-radius: 3px;
+        text-align: left;
+    }
+    .docling-meta-field-label {
+        font-weight: bold;
+        color: #444;
+    }
+    .docling-meta-field[data-meta-classification] {
+        text-align: left;
+    }
+    pre.docling-meta-code {
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        border-radius: 4px;
+        padding: 10px 12px;
+        margin: 6px 0;
+        overflow-x: auto;
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.85em;
+        line-height: 1.45;
+        white-space: pre;
+        tab-size: 4;
+    }
+    pre.docling-meta-code code {
+        background: transparent;
+        border: none;
+        padding: 0;
+        color: inherit;
+        font-family: inherit;
+        font-size: inherit;
+        display: block;
+        white-space: pre;
+    }
 </style>
 </head>
 <body>
 <div class='page'>
-<figure><details><summary>Meta</summary><div data-meta-classification>Bar chart</div>
-<div data-meta-tabular_chart><table><tbody><tr><td>Number of impellers</td><td>single-frequency</td><td>multi-frequency</td></tr><tr><td>1</td><td>0.06</td><td>0.16</td></tr><tr><td>2</td><td>0.12</td><td>0.26</td></tr><tr><td>3</td><td>0.16</td><td>0.27</td></tr><tr><td>4</td><td>0.14</td><td>0.26</td></tr><tr><td>5</td><td>0.16</td><td>0.25</td></tr><tr><td>6</td><td>0.24</td><td>0.24</td></tr></tbody></table></div></details></figure>
+<figure><details class="docling-meta"><summary>Meta</summary><div class="docling-meta-field" data-meta-classification><span class="docling-meta-field-label">classification:</span> <span class="docling-meta-field-value">Bar chart</span></div><div class="docling-meta-field" data-meta-tabular_chart><span class="docling-meta-field-label">tabular_chart:</span> <span class="docling-meta-field-value"><table><tbody><tr><td>Number of impellers</td><td>single-frequency</td><td>multi-frequency</td></tr><tr><td>1</td><td>0.06</td><td>0.16</td></tr><tr><td>2</td><td>0.12</td><td>0.26</td></tr><tr><td>3</td><td>0.16</td><td>0.27</td></tr><tr><td>4</td><td>0.14</td><td>0.26</td></tr><tr><td>5</td><td>0.16</td><td>0.25</td></tr><tr><td>6</td><td>0.24</td><td>0.24</td></tr></tbody></table></span></div></details></figure>
 </div>
 </body>
 </html>

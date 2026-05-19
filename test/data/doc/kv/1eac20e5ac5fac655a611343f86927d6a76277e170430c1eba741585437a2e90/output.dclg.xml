@@ -1,5 +1,5 @@
-<doclang version="1.0.0">
-  <heading level="1">
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <heading level="2">
     <location value="118"/>
     <location value="30"/>
     <location value="394"/>
@@ -13,7 +13,7 @@
     <location value="44"/>
     Washington , D.C. 20549
   </text>
-  <heading level="2">
+  <heading level="3">
     <location value="226"/>
     <location value="44"/>
     <location value="287"/>
@@ -68,7 +68,7 @@
       </value>
     </field_item>
   </field_region>
-  <heading level="2">
+  <heading level="3">
     <location value="153"/>
     <location value="91"/>
     <location value="358"/>
@@ -82,17 +82,15 @@
     <location value="105"/>
     (Exact name of registrant as specified in its charter)
   </text>
-  <floating_group class="picture">
-    <picture>
-      <meta>
-        <classification>Logo</classification>
-      </meta>
-      <location value="221"/>
-      <location value="112"/>
-      <location value="282"/>
-      <location value="128"/>
-    </picture>
-  </floating_group>
+  <picture>
+    <meta>
+      <classification>Logo</classification>
+    </meta>
+    <location value="221"/>
+    <location value="112"/>
+    <location value="282"/>
+    <location value="128"/>
+  </picture>
   <field_region>
     <field_item>
       <key>
@@ -502,7 +500,7 @@
     <location value="297"/>
     <location value="326"/>
 <![CDATA[Number of the registrant's common shares outstanding as of February 17, 2021 was 130,276,070.]]>  </text>
-  <heading level="3">
+  <heading level="4">
     <location value="181"/>
     <location value="334"/>
     <location value="330"/>

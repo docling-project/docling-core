@@ -1,0 +1,38 @@
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <list class="unordered">
+    <ldiv/>
+    <location value="51"/>
+    <location value="384"/>
+    <location value="154"/>
+    <location value="410"/>
+    Regular item
+    <ldiv/>
+    <code class="Python"><![CDATA[print('hello')]]></code>
+    <ldiv/>
+    <location value="51"/>
+    <location value="333"/>
+    <location value="154"/>
+    <location value="358"/>
+    Another item
+  </list>
+  <table>
+    <location value="10"/>
+    <location value="102"/>
+    <location value="461"/>
+    <location value="307"/>
+    <fcel/>
+    <location value="51"/>
+    <location value="333"/>
+    <location value="154"/>
+    <location value="358"/>
+    Cell 1
+    <fcel/>
+    Cell 2
+    <nl/>
+    <fcel/>
+    Cell 3
+    <fcel/>
+    <formula>E=mc^2</formula>
+    <nl/>
+  </table>
+</doclang>

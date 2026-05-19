@@ -1,102 +1,166 @@
-<doclang version="1.0.0">
-  <list ordered="false">
-    <list_text></list_text>
+<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+  <list class="unordered">
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
   </list>
-  <title></title>
-  <text></text>
-  <text></text>
   <heading level="1"></heading>
   <text></text>
-  <list ordered="false">
-    <list_text></list_text>
-    <list_text></list_text>
-    <list_text></list_text>
-    <list ordered="true">
-      <list_text></list_text>
-      <list_text></list_text>
-      <list_text></list_text>
-      <list ordered="true">
-        <list_text></list_text>
+  <text></text>
+  <heading level="2"></heading>
+  <text></text>
+  <list class="unordered">
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
+    <list class="ordered">
+      <ldiv/>
+      <text></text>
+      <ldiv/>
+      <text></text>
+      <ldiv/>
+      <text></text>
+      <list class="ordered">
+        <ldiv/>
+        <text></text>
       </list>
     </list>
-    <list_text></list_text>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
   </list>
-  <floating_group class="table">
+  <group>
     <caption>This is the caption of table 1.</caption>
-    <otsl>
+    <table>
       <fcel/>
-      Product
+      <text>Product</text>
       <fcel/>
-      Years
+      <text>Years</text>
       <lcel/>
       <nl/>
       <ucel/>
       <fcel/>
-      2016
+      <text>2016</text>
       <fcel/>
-      2017
+      <text>2017</text>
       <nl/>
       <fcel/>
-      Apple
+      <text>Apple</text>
       <fcel/>
-      49823
+      <text>49823</text>
       <fcel/>
-      695944
+      <text>695944</text>
       <nl/>
-    </otsl>
-  </floating_group>
-  <floating_group class="picture">
+    </table>
+  </group>
+  <group>
     <caption>This is the caption of figure 1.</caption>
-  </floating_group>
-  <floating_group class="picture">
+    <picture></picture>
+  </group>
+  <group>
     <caption>This is the caption of figure 2.</caption>
     <picture>
       <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
     </picture>
-  </floating_group>
-  <list ordered="false">
-    <list_text></list_text>
+  </group>
+  <list class="unordered">
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
   </list>
-  <list ordered="false">
-    <list_text></list_text>
-    <list_text></list_text>
+  <list class="unordered">
+    <ldiv>
+      <marker>*</marker>
+    </ldiv>
+    <text></text>
+    <ldiv/>
+    <text></text>
   </list>
-  <list ordered="false">
-    <list_text></list_text>
-    <list_text></list_text>
-    <list ordered="false">
-      <list_text></list_text>
-      <list_text></list_text>
-      <list_text></list_text>
+  <list class="unordered">
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
+    <list class="unordered">
+      <ldiv>
+        <marker>□</marker>
+      </ldiv>
+      <text></text>
+      <ldiv>
+        <marker>□</marker>
+      </ldiv>
+      <ldiv>
+        <marker>□</marker>
+      </ldiv>
     </list>
   </list>
-  <code class="Python"><![CDATA[print("Hello world")]]></code>
-  <formula></formula>
+  <text>
+    <code class="Python"><![CDATA[print("Hello world")]]></code>
+  </text>
+  <text>
+    <formula></formula>
+  </text>
   <text></text>
   <code class="Python"><![CDATA[print("Hello world")]]></code>
   <text></text>
   <formula></formula>
   <text></text>
-  <list ordered="true">
-    <list_text></list_text>
-    <list_text></list_text>
-    <list_text></list_text>
-    <list ordered="true">
-      <list_text></list_text>
-      <list_text></list_text>
-      <list ordered="true">
-        <list_text></list_text>
-        <list_text></list_text>
+  <list class="ordered">
+    <ldiv>
+      <marker>(i)</marker>
+    </ldiv>
+    <text></text>
+    <ldiv>
+      <marker>(ii)</marker>
+    </ldiv>
+    <text></text>
+    <ldiv>
+      <marker>(iii)</marker>
+    </ldiv>
+    <text></text>
+    <list class="ordered">
+      <ldiv/>
+      <text></text>
+      <ldiv>
+        <marker>42.</marker>
+      </ldiv>
+      <text></text>
+      <list class="ordered">
+        <ldiv/>
+        <text></text>
+        <ldiv/>
+        <text></text>
       </list>
-      <list_text></list_text>
+      <ldiv/>
+      <text></text>
     </list>
-    <list_text></list_text>
+    <ldiv>
+      <marker>(iv)</marker>
+    </ldiv>
+    <text></text>
   </list>
-  <list ordered="false">
-    <list_text></list_text>
+  <list class="unordered">
+    <ldiv/>
+    <text></text>
   </list>
   <text></text>
-  <floating_group class="picture">
+  <group>
     <caption>Picture Caption</caption>
     <picture>
       <meta>
@@ -108,8 +172,8 @@
       <location value="15"/>
       <location value="502"/>
     </picture>
-  </floating_group>
-  <floating_group class="picture">
+  </group>
+  <group>
     <caption>Picture Caption</caption>
     <picture>
       <meta>
@@ -120,7 +184,7 @@
       <location value="15"/>
       <location value="502"/>
     </picture>
-  </floating_group>
+  </group>
   <code>0 == 0</code>
   <code>
     <location value="5"/>
