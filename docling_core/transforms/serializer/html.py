@@ -53,6 +53,7 @@ from docling_core.types.doc.document import (
     DescriptionMetaField,
     DocItem,
     DoclingDocument,
+    EntitiesMetaField,
     FloatingItem,
     FormItem,
     FormulaItem,
@@ -61,6 +62,7 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    LanguageMetaField,
     ListGroup,
     ListItem,
     MoleculeMetaField,
@@ -927,7 +929,7 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                     and (tmp := self._serialize_meta_field(item.meta, key))
                 )
             ]
-            if item.meta
+            if item.meta is not None and item.meta.has_content()
             else []
         )
         if not field_parts:
@@ -945,6 +947,22 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
+            elif isinstance(field_val, LanguageMetaField):
+                txt = field_val.code.value
+            elif isinstance(field_val, EntitiesMetaField):
+                txt = ", ".join(
+                    (
+                        f"{html.escape(mention.text)} "
+                        f"({html.escape(mention.label)}, [{mention.charspan[0]},{mention.charspan[1]}])"
+                        if mention.label is not None and mention.charspan
+                        else f"{html.escape(mention.text)} ({html.escape(mention.label)})"
+                        if mention.label is not None
+                        else f"{html.escape(mention.text)} ([{mention.charspan[0]},{mention.charspan[1]}])"
+                        if mention.charspan
+                        else html.escape(mention.text)
+                    )
+                    for mention in field_val.mentions
+                )
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
             elif isinstance(field_val, PictureClassificationMetaField):
