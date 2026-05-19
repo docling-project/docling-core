@@ -951,7 +951,16 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                 txt = field_val.code.value
             elif isinstance(field_val, EntitiesMetaField):
                 txt = ", ".join(
-                    mention.text if mention.label is None else f"{mention.text} ({mention.label})"
+                    (
+                        f"{html.escape(mention.text)} "
+                        f"({html.escape(mention.label)}, [{mention.charspan[0]},{mention.charspan[1]}])"
+                        if mention.label is not None and mention.charspan
+                        else f"{html.escape(mention.text)} ({html.escape(mention.label)})"
+                        if mention.label is not None
+                        else f"{html.escape(mention.text)} ([{mention.charspan[0]},{mention.charspan[1]}])"
+                        if mention.charspan
+                        else html.escape(mention.text)
+                    )
                     for mention in field_val.mentions
                 )
             elif isinstance(field_val, DescriptionMetaField):

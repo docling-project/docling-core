@@ -284,8 +284,8 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
         language=LanguageMetaField(code=HumanLanguageLabel.EN),
         entities=EntitiesMetaField(
             mentions=[
-                EntityMention(text="IBM", label="ORG"),
-                EntityMention(text="Zurich", label="LOC"),
+                EntityMention(text="IBM", label="ORG", charspan=(0, 3)),
+                EntityMention(text="Zurich", label="LOC", charspan=(16, 22)),
             ]
         ),
     )
@@ -302,15 +302,28 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
     assert "data-meta-language" in html
     assert "data-meta-entities" in html
     assert ">en<" in html
-    assert "IBM (ORG), Zurich (LOC)" in html
+    assert "IBM (ORG, [0,3]), Zurich (LOC, [16,22])" in html
+
+
+def test_html_escapes_entity_text() -> None:
+    doc = DoclingDocument(name="escaped-entity-meta")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="A<B & C> appears here.")
+    item.meta = BaseMeta(
+        entities=EntitiesMetaField(
+            mentions=[
+                EntityMention(text="A<B & C>", label="TAG", charspan=(0, 7)),
+            ]
+        ),
+    )
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "A&lt;B &amp; C&gt; (TAG, [0,7])" in html
 
 
 def test_html_skips_empty_base_meta() -> None:
     doc = DoclingDocument(name="empty-meta")
     item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
-    item.meta = BaseMeta(
-        entities=EntitiesMetaField.model_construct(mentions=[]),
-    )
+    item.meta = BaseMeta()
 
     html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
     assert '<details class="docling-meta">' not in html

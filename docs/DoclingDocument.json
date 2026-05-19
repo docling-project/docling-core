@@ -650,6 +650,9 @@
           "type": "array"
         }
       },
+      "required": [
+        "mentions"
+      ],
       "title": "EntitiesMetaField",
       "type": "object"
     },
@@ -693,10 +696,11 @@
           "title": "Created By"
         },
         "text": {
+          "description": "Normalized text of the entity mention.",
           "title": "Text",
           "type": "string"
         },
-        "original": {
+        "orig": {
           "anyOf": [
             {
               "type": "string"
@@ -706,7 +710,8 @@
             }
           ],
           "default": null,
-          "title": "Original"
+          "description": "Exact source text extracted from the original charspan, analogous to TextItem.orig. This may differ from 'text' when the mention has been normalized.",
+          "title": "Orig"
         },
         "label": {
           "anyOf": [
@@ -718,11 +723,13 @@
             }
           ],
           "default": null,
+          "description": "Entity type or category.",
           "title": "Label"
         },
-        "span": {
+        "charspan": {
           "anyOf": [
             {
+              "description": "Character span (0-indexed)",
               "maxItems": 2,
               "minItems": 2,
               "prefixItems": [
@@ -740,7 +747,8 @@
             }
           ],
           "default": null,
-          "title": "Span"
+          "description": "Character span (0-indexed) of the entity mention in the source text.",
+          "title": "Charspan"
         }
       },
       "required": [

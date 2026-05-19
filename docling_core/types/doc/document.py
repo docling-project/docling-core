@@ -73,6 +73,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
+CharSpan = Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
 CURRENT_VERSION: Final = "1.10.0"
 
 DEFAULT_EXPORT_LABELS = {
@@ -1210,7 +1211,7 @@ class ProvenanceItem(BaseModel):
 
     page_no: Annotated[int, Field(description="Page number")]
     bbox: Annotated[BoundingBox, Field(description="Bounding box")]
-    charspan: Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
+    charspan: CharSpan
 
 
 class BaseSource(BaseModel):
@@ -1384,16 +1385,34 @@ class MetaFieldName(str, Enum):
 class EntityMention(BasePrediction):
     """Entity mention extracted from text."""
 
-    text: str
-    original: Optional[str] = None
-    label: Optional[str] = None
-    span: Optional[tuple[int, int]] = None
+    text: Annotated[
+        str,
+        Field(description="Normalized text of the entity mention."),
+    ]
+    orig: Annotated[
+        Optional[str],
+        Field(
+            description=(
+                "Exact source text extracted from the original charspan, "
+                "analogous to TextItem.orig. This may differ from 'text' when the "
+                "mention has been normalized."
+            )
+        ),
+    ] = None
+    label: Annotated[
+        Optional[str],
+        Field(description="Entity type or category."),
+    ] = None
+    charspan: Annotated[
+        Optional[CharSpan],
+        Field(description="Character span (0-indexed) of the entity mention in the source text."),
+    ] = None
 
 
 class EntitiesMetaField(_ExtraAllowingModel):
     """Container for extracted entity mentions."""
 
-    mentions: list[EntityMention] = Field(default_factory=list, min_length=1)
+    mentions: Annotated[list[EntityMention], Field(min_length=1)]
 
 
 class BaseMeta(_ExtraAllowingModel):
