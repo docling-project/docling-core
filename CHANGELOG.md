@@ -1,3 +1,9 @@
+## [v2.77.0](https://github.com/docling-project/docling-core/releases/tag/v2.77.0) - 2026-05-19
+
+### Feature
+
+* Extending BaseMeta with language and entities for docling-agent ([#611](https://github.com/docling-project/docling-core/issues/611)) ([`9187158`](https://github.com/docling-project/docling-core/commit/9187158ef81fc4ae8e38c02e8466c78ad03dfd31))
+
 ## [v2.76.0](https://github.com/docling-project/docling-core/releases/tag/v2.76.0) - 2026-05-18
 
 ### Feature
