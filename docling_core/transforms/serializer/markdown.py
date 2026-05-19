@@ -212,7 +212,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             raise ValueError("Footnote identifier cannot be empty")
 
         if "\t" in identifier or " " in identifier:
-            raise ValueError(f"Footnote identifier '{identifier}' cannot contain whitespace")
+            raise ValueError(f"Footnote identifier '{identifier}' contains invalid characters")
 
         if len(parts) == 2:
             return f"[^{identifier}]: {parts[1]}"

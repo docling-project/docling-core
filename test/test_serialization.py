@@ -655,6 +655,25 @@ def test_md_table_with_footnotes():
     assert "| Data 1" in actual
     assert "[^table]:" in actual and "footnote" in actual
 
+def test_md_footnote_validation():
+    from docling_core.transforms.serializer.markdown import MarkdownTextSerializer
+    
+    # Test empty footnote raises error
+    with pytest.raises(ValueError, match="Footnote cannot be empty"):
+        MarkdownTextSerializer._format_footnote_text("")
+    
+    # Test space raises error
+    with pytest.raises(ValueError, match="Footnote cannot be empty"):
+        MarkdownTextSerializer._format_footnote_text(" ")
+    
+    # Test identifier with tab character
+    with pytest.raises(ValueError, match="contains invalid characters"):
+        MarkdownTextSerializer._format_footnote_text("id\t")
+    
+    # Test identifier without definition is valid
+    result = MarkdownTextSerializer._format_footnote_text("id")
+    assert result == "[^id]:"
+
 # ===============================
 # HTML tests
 # ===============================
