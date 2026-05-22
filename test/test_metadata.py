@@ -18,16 +18,19 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    DocumentMeta,
     EntitiesMetaField,
     EntityMention,
     GroupLabel,
     HumanLanguageLabel,
+    KeywordsMetaField,
     LanguageMetaField,
     MetaFieldName,
     MetaUtils,
     NodeItem,
     RefItem,
     SummaryMetaField,
+    TopicsMetaField,
 )
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -328,3 +331,90 @@ def test_html_skips_empty_base_meta() -> None:
     html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
     assert '<details class="docling-meta">' not in html
     assert "data-meta-entities" not in html
+
+
+def test_keywords_field_dedupes_preserving_order() -> None:
+    field = KeywordsMetaField(values=["ai", "ml", "ai", "rag", "ml"])
+    assert field.values == ["ai", "ml", "rag"]
+
+
+def test_topics_field_dedupes_preserving_order() -> None:
+    field = TopicsMetaField(values=["nlp", "vision", "nlp"])
+    assert field.values == ["nlp", "vision"]
+
+
+def test_keywords_and_topics_in_base_meta_roundtrip() -> None:
+    doc = DoclingDocument(name="kw-topics")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
+    item.meta = BaseMeta(
+        keywords=KeywordsMetaField(values=["ibm", "zurich", "company"]),
+        topics=TopicsMetaField(values=["business", "geography"]),
+    )
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    meta = roundtrip.texts[0].meta
+    assert meta is not None
+    assert meta.keywords is not None and meta.keywords.values == ["ibm", "zurich", "company"]
+    assert meta.topics is not None and meta.topics.values == ["business", "geography"]
+    assert meta.has_content()
+
+
+def test_document_meta_roundtrip_and_optional_fields() -> None:
+    doc = DoclingDocument(
+        name="doc-meta",
+        meta=DocumentMeta(
+            keywords=KeywordsMetaField(values=["llm", "rag"]),
+            topics=TopicsMetaField(values=["ai"]),
+        ),
+    )
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    assert roundtrip.meta is not None
+    assert roundtrip.meta.keywords is not None and roundtrip.meta.keywords.values == ["llm", "rag"]
+    assert roundtrip.meta.topics is not None and roundtrip.meta.topics.values == ["ai"]
+
+    # meta is optional and absent by default
+    bare = DoclingDocument(name="bare")
+    assert bare.meta is None
+
+
+def test_html_renders_keywords_and_topics() -> None:
+    doc = DoclingDocument(name="kw-html")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
+    item.meta = BaseMeta(
+        keywords=KeywordsMetaField(values=["ibm", "zurich"]),
+        topics=TopicsMetaField(values=["business"]),
+    )
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "data-meta-keywords" in html
+    assert "data-meta-topics" in html
+    assert "ibm, zurich" in html
+    assert ">business<" in html
+
+
+def test_html_escapes_keywords() -> None:
+    doc = DoclingDocument(name="kw-escape")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="x")
+    item.meta = BaseMeta(keywords=KeywordsMetaField(values=["A<B & C>"]))
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "A&lt;B &amp; C&gt;" in html
+
+
+def test_md_marked_renders_keywords_and_topics() -> None:
+    doc = DoclingDocument(name="kw-md")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
+    item.meta = BaseMeta(
+        keywords=KeywordsMetaField(values=["ibm", "zurich"]),
+        topics=TopicsMetaField(values=["business"]),
+    )
+    md = MarkdownDocSerializer(doc=doc, params=MarkdownParams(mark_meta=True)).serialize().text
+    assert "[Keywords] ibm, zurich" in md
+    assert "[Topics] business" in md
+
+
+def test_keywords_values_required_non_empty() -> None:
+    with pytest.raises(Exception):
+        KeywordsMetaField(values=[])
+    with pytest.raises(Exception):
+        TopicsMetaField(values=[])
