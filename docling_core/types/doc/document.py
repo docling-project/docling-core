@@ -1448,6 +1448,8 @@ class MetaFieldName(str, Enum):
     SUMMARY = "summary"  # a summary of the tree under this node
     LANGUAGE = "language"  # detected language of the node content
     ENTITIES = "entities"  # named entities extracted from the node content
+    KEYWORDS = "keywords"  # unique keywords / keyphrases for the node content
+    TOPICS = "topics"  # unique topics / subjects for the node content
     DESCRIPTION = "description"  # a description of the node (e.g. for images)
     CLASSIFICATION = "classification"  # a classification of the node content
     MOLECULE = "molecule"  # molecule data
@@ -1487,12 +1489,40 @@ class EntitiesMetaField(_ExtraAllowingModel):
     mentions: Annotated[list[EntityMention], Field(min_length=1)]
 
 
+def _unique_preserving_order(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(values))
+
+
+class KeywordsMetaField(_ExtraAllowingModel):
+    """Container for a list of unique keywords / keyphrases."""
+
+    values: Annotated[list[str], Field(min_length=1)]
+
+    @field_validator("values", mode="after")
+    @classmethod
+    def _dedupe(cls, v: list[str]) -> list[str]:
+        return _unique_preserving_order(v)
+
+
+class TopicsMetaField(_ExtraAllowingModel):
+    """Container for a list of unique topics / subjects."""
+
+    values: Annotated[list[str], Field(min_length=1)]
+
+    @field_validator("values", mode="after")
+    @classmethod
+    def _dedupe(cls, v: list[str]) -> list[str]:
+        return _unique_preserving_order(v)
+
+
 class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
     summary: Optional[SummaryMetaField] = None
     language: Optional[LanguageMetaField] = None
     entities: Optional[EntitiesMetaField] = None
+    keywords: Optional[KeywordsMetaField] = None
+    topics: Optional[TopicsMetaField] = None
 
     def has_content(self) -> bool:
         """Return True if this metadata contains any meaningful content."""
@@ -2754,6 +2784,13 @@ class PageItem(BaseModel):
     page_no: int
 
 
+class DocumentMeta(_ExtraAllowingModel):
+    """Document-level metadata for DoclingDocument."""
+
+    keywords: Optional[KeywordsMetaField] = None
+    topics: Optional[TopicsMetaField] = None
+
+
 class DoclingDocument(BaseModel):
     """DoclingDocument."""
 
@@ -2766,6 +2803,7 @@ class DoclingDocument(BaseModel):
         # This is optional, e.g. a DoclingDocument could also be entirely
         # generated from synthetic data.
     )
+    meta: Optional[DocumentMeta] = None
 
     furniture: Annotated[GroupItem, Field(deprecated=True)] = GroupItem(
         name="_root_",

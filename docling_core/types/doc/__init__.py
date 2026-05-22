@@ -19,6 +19,7 @@ from .document import (
     DoclingDocument,
     DocTagsDocument,
     DocTagsPage,
+    DocumentMeta,
     DocumentOrigin,
     EntitiesMetaField,
     EntityMention,
@@ -34,6 +35,7 @@ from .document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    KeywordsMetaField,
     LanguageMetaField,
     ListGroup,
     ListItem,
@@ -74,6 +76,7 @@ from .document import (
     TabularChartMetaField,
     TextItem,
     TitleItem,
+    TopicsMetaField,
     TrackSource,
     UnorderedList,
 )

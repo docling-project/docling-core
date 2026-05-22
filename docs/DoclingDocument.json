@@ -36,6 +36,28 @@
             }
           ],
           "default": null
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "topics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "BaseMeta",
@@ -595,6 +617,36 @@
         "text"
       ],
       "title": "DescriptionMetaField",
+      "type": "object"
+    },
+    "DocumentMeta": {
+      "additionalProperties": true,
+      "description": "Document-level metadata for DoclingDocument.",
+      "properties": {
+        "keywords": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "topics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "DocumentMeta",
       "type": "object"
     },
     "DocumentOrigin": {
@@ -1278,6 +1330,28 @@
           "anyOf": [
             {
               "$ref": "#/$defs/EntitiesMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "topics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicsMetaField"
             },
             {
               "type": "null"
@@ -2207,6 +2281,25 @@
       "title": "KeyValueItem",
       "type": "object"
     },
+    "KeywordsMetaField": {
+      "additionalProperties": true,
+      "description": "Container for a list of unique keywords / keyphrases.",
+      "properties": {
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "values"
+      ],
+      "title": "KeywordsMetaField",
+      "type": "object"
+    },
     "LanguageMetaField": {
       "additionalProperties": true,
       "description": "Detected human language.",
@@ -2972,6 +3065,28 @@
           "anyOf": [
             {
               "$ref": "#/$defs/EntitiesMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "topics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicsMetaField"
             },
             {
               "type": "null"
@@ -4166,6 +4281,25 @@
       "title": "TitleItem",
       "type": "object"
     },
+    "TopicsMetaField": {
+      "additionalProperties": true,
+      "description": "Container for a list of unique topics / subjects.",
+      "properties": {
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "values"
+      ],
+      "title": "TopicsMetaField",
+      "type": "object"
+    },
     "TrackSource": {
       "description": "Source metadata for a cue extracted from a media track.\n\nA `TrackSource` instance identifies a cue in a media track (audio, video, subtitles, screen-recording captions,\netc.). A *cue* here refers to any discrete segment that was pulled out of the original asset, e.g., a subtitle\nblock, an audio clip, or a timed marker in a screen-recording.",
       "properties": {
@@ -4263,6 +4397,17 @@
       "anyOf": [
         {
           "$ref": "#/$defs/DocumentOrigin"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "meta": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DocumentMeta"
         },
         {
           "type": "null"
