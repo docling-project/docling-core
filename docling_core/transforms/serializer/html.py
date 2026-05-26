@@ -230,13 +230,30 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             # Regular text item
             text = get_html_tag_with_text_direction(html_tag="p", text=text)
 
-        # Apply formatting and hyperlinks
+        # Apply formatting and hyperlinks to the parent's own text+tag.
         if not post_processed:
             text = doc_serializer.post_process(
                 text=text,
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
             )
+
+        # Recurse into children for branches that don't already consume them.
+        # has_inline_repr already consumed the single InlineGroup child; ListItem
+        # recursion is handled inline in its branch above.
+        if not has_inline_repr and not isinstance(item, ListItem) and item.children:
+            nested_text = "\n".join(
+                r.text
+                for r in doc_serializer.get_parts(
+                    item=item,
+                    is_inline_scope=is_inline_scope,
+                    visited=my_visited,
+                    **kwargs,
+                )
+                if r.text
+            )
+            if nested_text:
+                text = f"{text}\n{nested_text}" if text else nested_text
 
         if text:
             text_res = create_ser_result(text=text, span_source=item)
