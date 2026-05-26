@@ -185,11 +185,7 @@ def resolve_source_to_stream(
         if isinstance(source, str) and "://" in source:
             scheme = source.split("://", 1)[0].lower()
             if scheme not in ("http", "https"):
-                raise ValueError(
-                    "Unsupported URL scheme: '{scheme}'. Only http:// and https:// are supported.".format(
-                        scheme=scheme
-                    )
-                )
+                raise ValueError(f"Unsupported URL scheme: '{scheme}'. Only http:// and https:// are supported.")
         try:
             local_path = TypeAdapter(Path).validate_python(source)
             stream = BytesIO(local_path.read_bytes())
