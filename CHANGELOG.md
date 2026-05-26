@@ -1,3 +1,9 @@
+## [v2.77.1](https://github.com/docling-project/docling-core/releases/tag/v2.77.1) - 2026-05-26
+
+### Fix
+
+* Render RichTableCell descendants inside the cell ([#621](https://github.com/docling-project/docling-core/issues/621)) ([`01f8d03`](https://github.com/docling-project/docling-core/commit/01f8d03cda09ccb5ea0ba2c8c65cffd1858bdada))
+
 ## [v2.77.0](https://github.com/docling-project/docling-core/releases/tag/v2.77.0) - 2026-05-19
 
 ### Feature
