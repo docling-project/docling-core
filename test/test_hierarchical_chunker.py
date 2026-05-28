@@ -10,6 +10,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.types.doc.document import TableCell
 
 from .test_utils import assert_or_generate_json_ground_truth
 
@@ -142,16 +143,33 @@ def test_triplet_table_serializer_single_column():
 
     # Create a document with a single-column table
     doc = DoclingDocument(name="test_single_column")
-    table_data = TableData(num_cols=1)
-    table_data.add_row(["Country"])  # Header row
-    table_data.add_row(["Italy"])
-    table_data.add_row(["Canada"])
-    table_data.add_row(["Switzerland"])
-    doc.add_table(data=table_data)
+    table_data = TableData(num_rows=4, num_cols=1)
+    table_item = doc.add_table(data=table_data)
+    doc.add_table_cell(
+        table_item=table_item,
+        cell=TableCell(
+            text="Country",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            column_header=True,
+        ),
+    )
+    for i, name in enumerate(["Italy", "Canada", "Switzerland"], start=1):
+        doc.add_table_cell(
+            table_item=table_item,
+            cell=TableCell(
+                text=name,
+                start_row_offset_idx=i,
+                end_row_offset_idx=i + 1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            ),
+        )
 
     serializer = ChunkingDocSerializer(doc=doc)
     table_serializer = TripletTableSerializer()
-    table_item = next(iter(doc.iterate_items()))[0]
 
     result = table_serializer.serialize(
         item=table_item,

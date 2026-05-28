@@ -1288,7 +1288,7 @@
             }
         },
         {
-            "text": "2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income",
+            "text": "row_0, Year = 2014. row_0, Revenue  (US$ bn) = 92.7. row_0, Net income  (US$ bn) = 12.0. row_0, Employees = 379,592. row_1, Year = 2015. row_1, Revenue",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -1327,7 +1327,7 @@
             }
         },
         {
-            "text": "(US$ bn) = 13.1. 2015, Employees = 377,757",
+            "text": "(US$ bn) = 81.7. row_1, Net income  (US$ bn) = 13.1. row_1, Employees = 377,757",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",

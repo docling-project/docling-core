@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Iterator
 from typing import Annotated, Any, Optional, Union
 
+import pandas as pd
 from pydantic import ConfigDict, Field
 from typing_extensions import override
 
@@ -64,45 +66,167 @@ class TripletTableSerializer(BaseTableSerializer):
         if cap_res.text:
             parts.append(cap_res)
 
-        if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            table_df = item._export_to_dataframe_with_options(
-                doc,
-                doc_serializer=doc_serializer,
-                **kwargs,
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return create_ser_result(
+                text="\n\n".join([r.text for r in parts]),
+                span_source=parts,
             )
-            if table_df.shape[0] >= 1 and table_df.shape[1] >= 1:
-                # Handle single-column tables
-                if table_df.shape[1] == 1:
-                    # For single-column tables, use first row as column name
-                    # and remaining rows as values
-                    col_name = str(table_df.iloc[0, 0]).strip()
-                    values = [str(val).strip() for val in table_df.iloc[1:, 0].to_list()]
-                    table_text_parts = [f"{col_name} = {val}" for val in values]
-                    table_text = ". ".join(table_text_parts)
-                    parts.append(create_ser_result(text=table_text, span_source=item))
-                else:
-                    # For multi-column tables
-                    # copy header as first row and shift all rows by one
-                    table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
-                    table_df.index = table_df.index + 1
-                    table_df = table_df.sort_index()
 
-                    rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
-                    cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
+        table_df = item._export_to_dataframe_with_options(
+            doc,
+            doc_serializer=doc_serializer,
+            **kwargs,
+        )
 
-                    nrows = table_df.shape[0]
-                    ncols = table_df.shape[1]
-                    table_text_parts = [
-                        f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
-                        for i in range(1, nrows)
-                        for j in range(1, ncols)
-                    ]
-                    table_text = ". ".join(table_text_parts)
-                    parts.append(create_ser_result(text=table_text, span_source=item))
+        if table_df.shape[0] == 0 or table_df.shape[1] == 0:
+            return create_ser_result(
+                text="\n\n".join([r.text for r in parts]),
+                span_source=parts,
+            )
+
+        # Header Detection (metadata-first, fallback-safe)
+        has_row_headers = any(getattr(cell, "row_header", False) for row in item.data.grid for cell in row)
+
+        has_col_headers = any(getattr(cell, "col_header", False) for row in item.data.grid for cell in row)
+
+        # Fallback if metadata missing
+        if not has_col_headers:
+            has_col_headers = not isinstance(table_df.columns, pd.RangeIndex) and any(
+                str(c).strip() for c in table_df.columns
+            )
+
+        # Build Triplets
+        triplets = self._build_triplets(
+            table_df,
+            has_row_headers=has_row_headers,
+            has_col_headers=has_col_headers,
+        )
+
+        if triplets:
+            table_text = ". ".join(triplets)
+            parts.append(create_ser_result(text=table_text, span_source=item))
 
         text_res = "\n\n".join([r.text for r in parts])
 
         return create_ser_result(text=text_res, span_source=parts)
+
+    @staticmethod
+    def _build_triplets(
+        table_df: pd.DataFrame,
+        *,
+        has_row_headers: bool,
+        has_col_headers: bool,
+        depth: int = 0,
+        max_depth: int = 3,
+    ) -> list[str]:
+        """
+        Convert table into triplets of form:
+            (row_label, col_label) = value
+        """
+
+        table_data_df = table_df.copy()
+        nrows, ncols = table_data_df.shape
+
+        # Extract headers safely
+        row_headers: Optional[list[str]] = None
+        if has_row_headers:
+            row_headers = [str(v).strip() for v in table_data_df.iloc[:, 0]]
+
+        col_headers: Optional[list[str]] = None
+        data_start_row = 0
+
+        if has_col_headers:
+            if isinstance(table_data_df.columns, pd.RangeIndex) and nrows > 0:
+                # Some exporters keep the header row in the table body when
+                # DataFrame columns are still a RangeIndex.
+                col_headers = [str(v).strip() for v in table_data_df.iloc[0, :]]
+                data_start_row = 1
+            else:
+                col_headers = [str(c).strip() for c in table_data_df.columns]
+
+        # Label helpers
+        def get_row_label(i: int) -> str:
+            if row_headers:
+                return row_headers[i] or f"row_{i}"
+            return f"row_{i}"
+
+        def get_col_label(j: int) -> str:
+            if col_headers:
+                return col_headers[j] or f"col_{j}"
+            return f"col_{j}"
+
+        triplets: list[str] = []
+
+        # For single-column tables, emit "column = value" only when a real
+        # column header is detected; otherwise fall back to generic triplets.
+        if ncols == 1 and nrows > 0 and has_col_headers and not has_row_headers:
+            col_name = col_headers[0] if col_headers else "col_0"
+            col_name = col_name or "col_0"
+            # Header is sourced from DataFrame columns, so all rows are values.
+            for value in table_data_df.iloc[:, 0].to_list():
+                if pd.isna(value) or str(value).strip() == "":
+                    continue
+                triplets.append(f"{col_name} = {str(value).strip()}")
+            if triplets:
+                return triplets
+
+        def is_empty_cell_value(cell_value: Any) -> bool:
+            # Avoid pd.isna(DataFrame) truth-value ambiguity for nested tables.
+            return pd.isna(cell_value) or str(cell_value).strip() == ""
+
+        def is_serialized_inner_table(cell_value: Any) -> bool:
+            if not isinstance(cell_value, str):
+                return False
+            return re.match(r"^\s*row_\d+,\s*col_\d+\s*=", cell_value) is not None
+
+        # Main extraction loop
+        for i in range(data_start_row, nrows):
+            for j in range(ncols):
+                # Skip header cells themselves
+                if has_row_headers and j == 0:
+                    continue
+                row_label = get_row_label(i)
+                col_label = get_col_label(j)
+
+                cell_value = table_data_df.iloc[i, j]
+
+                # Nested table handling
+                if isinstance(cell_value, pd.DataFrame):
+                    if depth >= max_depth:
+                        continue
+
+                    nested_df = cell_value
+
+                    nested_has_col_headers = not isinstance(nested_df.columns, pd.RangeIndex) and any(
+                        str(c).strip() for c in nested_df.columns
+                    )
+                    nested_has_row_headers = False  # safe default
+
+                    nested_triplets = TripletTableSerializer._build_triplets(
+                        nested_df,
+                        has_row_headers=nested_has_row_headers,
+                        has_col_headers=nested_has_col_headers,
+                        depth=depth + 1,
+                        max_depth=max_depth,
+                    )
+
+                    for nt in nested_triplets:
+                        triplets.append(f"{row_label}, {col_label} -> {nt}")
+
+                    continue
+
+                if is_serialized_inner_table(cell_value):
+                    triplets.append(f"{row_label}, {col_label} -> {str(cell_value).strip()}")
+                    continue
+
+                # Skip empty / NaN scalar cells
+                if is_empty_cell_value(cell_value):
+                    continue
+
+                # Normal scalar cell
+                triplets.append(f"{row_label}, {col_label} = {str(cell_value).strip()}")
+
+        return triplets
 
 
 class ChunkingDocSerializer(MarkdownDocSerializer):
