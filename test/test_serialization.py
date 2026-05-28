@@ -24,12 +24,21 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
+from docling_core.types.doc import DoclingDocument
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    BaseMeta,
+    CharSpan,
     DescriptionAnnotation,
-    DoclingDocument,
+    EntitiesMetaField,
+    EntityMention,
+    LanguageMetaField,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureMeta,
     RefItem,
     RichTableCell,
+    SummaryMetaField,
     TableCell,
     TableData,
     TextItem,
@@ -1047,25 +1056,7 @@ def test_webvtt_params():
 
 
 def test_html_meta_emits_xhtml_compatible_attributes():
-    """Regression test for #598: metadata attributes must be name=value pairs.
-
-    Previously HTMLMetaSerializer emitted valueless ``data-meta-<name>``
-    attributes (e.g. ``<div data-meta-classification>``) which are accepted
-    by lenient HTML parsers but invalid XHTML/XML. This broke downstream
-    consumers that parse exported HTML as XML (such as TEDS table
-    evaluation). After the fix, the serializer must emit
-    ``data-meta-name="<name>"`` and the output must round-trip through a
-    strict XML parser.
-    """
-    from docling_core.types.doc import DoclingDocument
-    from docling_core.types.doc.document import (
-        PictureClassificationMetaField,
-        PictureClassificationPrediction,
-        PictureMeta,
-        RichTableCell,
-        TableCell,
-        TableData,
-    )
+    """Test that metadata attributes are name=value pairs."""
 
     doc = DoclingDocument(name="x")
 
@@ -1096,12 +1087,35 @@ def test_html_meta_emits_xhtml_compatible_attributes():
         )
     ]
 
-    html_out = table.export_to_html(doc)
+    text = doc.add_text(label=DocItemLabel.TEXT, text="Output of HTML serializer must be parseable by a strict XML parser")
+    text.meta = BaseMeta(
+        summary=SummaryMetaField(text="XHTML-compliant"),
+        language=LanguageMetaField(code="en"),
+        entities=EntitiesMetaField(
+            mentions=[
+                EntityMention(
+                    text="HTML serializer",
+                    label="software",
+                    charspan=CharSpan((10, 25)),
+                ),
+                EntityMention(
+                    text="XML parser",
+                    label="software",
+                    charspan=CharSpan((56, 66)),
+                )
+            ]
+        ),
+    )
 
+    html_out = table.export_to_html(doc)
     # No bare valueless attribute like `data-meta-classification` (must be
     # followed by `=` to be XHTML-compliant).
     assert "data-meta-classification>" not in html_out
     assert 'data-meta-name="classification"' in html_out
 
+    html_out = doc.export_to_html()
+    print(html_out)
+    assert 'data-meta-name="language"' in html_out
+    assert 'data-meta-name="entities"' in html_out
     # Output must be parseable by a strict XML parser.
     ET.fromstring(html_out)

@@ -299,8 +299,8 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
     assert [mention.text for mention in meta.entities.mentions] == ["IBM", "Zurich"]
 
     html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
-    assert "data-meta-language" in html
-    assert "data-meta-entities" in html
+    assert 'data-meta-name="language"' in html
+    assert 'data-meta-name="entities"' in html
     assert ">en<" in html
     assert "IBM (ORG, [0,3]), Zurich (LOC, [16,22])" in html
 

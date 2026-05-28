@@ -962,6 +962,8 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
 
     def _serialize_meta_field(self, meta: BaseMeta, name: str) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
+            is_html_markup = False
+
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
             elif isinstance(field_val, LanguageMetaField):
@@ -969,14 +971,13 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
             elif isinstance(field_val, EntitiesMetaField):
                 txt = ", ".join(
                     (
-                        f"{html.escape(mention.text)} "
-                        f"({html.escape(mention.label)}, [{mention.charspan[0]},{mention.charspan[1]}])"
+                        f"{mention.text} ({mention.label}, [{mention.charspan[0]},{mention.charspan[1]}])"
                         if mention.label is not None and mention.charspan
-                        else f"{html.escape(mention.text)} ({html.escape(mention.label)})"
+                        else f"{mention.text} ({mention.label})"
                         if mention.label is not None
-                        else f"{html.escape(mention.text)} ([{mention.charspan[0]},{mention.charspan[1]}])"
+                        else f"{mention.text} ([{mention.charspan[0]},{mention.charspan[1]}])"
                         if mention.charspan
-                        else html.escape(mention.text)
+                        else mention.text
                     )
                     for mention in field_val.mentions
                 )
@@ -992,22 +993,26 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                 table_content = temp_table.export_to_html(temp_doc).strip()
                 if table_content:
                     txt = table_content
+                    is_html_markup = True
                 else:
                     return None
             elif isinstance(field_val, CodeMetaField):
                 lang = field_val.language.value.lower() if field_val.language else ""
-                code_class = f' class="language-{html.escape(lang)}"' if lang else ""
-                txt = f'<pre class="docling-meta-code"><code{code_class}>{html.escape(field_val.text)}</code></pre>'
+                escaped_lang = html.escape(lang)
+                escaped_code = html.escape(field_val.text)
+                code_class = f' class="language-{escaped_lang}"' if lang else ""
+                txt = f'<pre class="docling-meta-code"><code{code_class}>{escaped_code}</code></pre>'
+                is_html_markup = True
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:
                 return None
-            # NOTE: TabularChartMetaField intentionally produces HTML markup
-            # (a nested table) and must not be HTML-escaped here. All other
-            # branches above produce plain text that needs escaping for safe
-            # XHTML output.
-            if not isinstance(field_val, TabularChartMetaField):
+
+            # Escape plain text content for safe HTML output.
+            # HTML markup fields (TabularChartMetaField, CodeMetaField) are already properly formatted.
+            if not is_html_markup:
                 txt = html.escape(txt, quote=False)
+
             escaped_name = html.escape(name, quote=True)
             return (
                 f'<div class="docling-meta-field" data-meta-name="{escaped_name}">'
