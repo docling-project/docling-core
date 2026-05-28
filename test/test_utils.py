@@ -6,10 +6,32 @@ from pathlib import Path
 from pydantic import Field
 from requests import Response
 
+from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
+from docling_core.types.doc.document import GroupLabel, RichTableCell
 from docling_core.utils.alias import AliasModel
 from docling_core.utils.file import resolve_source_to_path, resolve_source_to_stream
 
 from .test_data_gen_flag import GEN_TEST_DATA
+
+
+def build_single_cell_rich_table_doc(text: str) -> DoclingDocument:
+    """Build a doc with a single-cell table whose cell is a RichTableCell ref to a text group."""
+    doc = DoclingDocument(name="single_cell_rich_table")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    wrapper = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(parent=wrapper, label=DocItemLabel.TEXT, text=text)
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            ref=wrapper.get_ref(),
+            text="",
+        ),
+    )
+    return doc
 
 
 def assert_or_generate_ground_truth(

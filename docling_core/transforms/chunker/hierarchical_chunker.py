@@ -6,6 +6,7 @@ import logging
 from collections.abc import Iterator
 from typing import Annotated, Any, Optional, Union
 
+import pandas as pd
 from pydantic import ConfigDict, Field
 from typing_extensions import override
 
@@ -45,6 +46,25 @@ _logger = logging.getLogger(__name__)
 class TripletTableSerializer(BaseTableSerializer):
     """Triplet-based table item serializer."""
 
+    @staticmethod
+    def _flatten_table_text(table_df: pd.DataFrame) -> str:
+        """Last-resort fallback that turns a table into plain text.
+
+        The preferred output of this serializer is the triplet form
+        'row, column = value'. When that comes out empty - for example on
+        single-cell RichTableCell layout tables where the header and row
+        labels are blank - we fall back to this helper so the table still
+        contributes something chunkable and does not end up consuming its
+        sibling refs.
+
+        Cells are read row by row, blanks are skipped, and the remaining
+        values are joined with '. '. So a table like [['A', ''], ['B', 'C']]
+        becomes 'A. B. C'.
+        """
+        return ". ".join(
+            text for row in table_df.itertuples(index=False, name=None) for value in row if (text := str(value).strip())
+        )
+
     @override
     def serialize(
         self,
@@ -56,6 +76,7 @@ class TripletTableSerializer(BaseTableSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         parts: list[SerializationResult] = []
+        shared_visited = kwargs.get("visited")
 
         cap_res = doc_serializer.serialize_captions(
             item=item,
@@ -65,40 +86,60 @@ class TripletTableSerializer(BaseTableSerializer):
             parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+            table_text = ""
+            local_kwargs = {**kwargs, "visited": set(shared_visited)} if shared_visited is not None else kwargs
             table_df = item._export_to_dataframe_with_options(
                 doc,
                 doc_serializer=doc_serializer,
-                **kwargs,
+                **local_kwargs,
             )
+
+            # Header-only tables produce a dataframe with 0 rows. Emit the
+            # header text directly instead of dropping the table on the floor.
+            if table_df.shape[0] == 0 and len(table_df.columns) > 0:
+                table_text = ". ".join(text for col in table_df.columns if (text := str(col).strip()))
+
             if table_df.shape[0] >= 1 and table_df.shape[1] >= 1:
+                fallback_df = table_df
                 # Handle single-column tables
                 if table_df.shape[1] == 1:
                     # For single-column tables, use first row as column name
                     # and remaining rows as values
                     col_name = str(table_df.iloc[0, 0]).strip()
                     values = [str(val).strip() for val in table_df.iloc[1:, 0].to_list()]
-                    table_text_parts = [f"{col_name} = {val}" for val in values]
-                    table_text = ". ".join(table_text_parts)
-                    parts.append(create_ser_result(text=table_text, span_source=item))
+                    if values:
+                        table_text_parts = [f"{col_name} = {val}" for val in values]
+                        table_text = ". ".join(table_text_parts)
+                    else:
+                        # Single-row single-column table: emit the cell text
+                        table_text = col_name
                 else:
                     # For multi-column tables
                     # copy header as first row and shift all rows by one
-                    table_df.loc[-1] = table_df.columns  # type: ignore[call-overload]
-                    table_df.index = table_df.index + 1
-                    table_df = table_df.sort_index()
+                    triplet_df = table_df.copy()
+                    triplet_df.loc[-1] = triplet_df.columns  # type: ignore[call-overload]
+                    triplet_df.index = triplet_df.index + 1
+                    triplet_df = triplet_df.sort_index()
 
-                    rows = [str(item).strip() for item in table_df.iloc[:, 0].to_list()]
-                    cols = [str(item).strip() for item in table_df.iloc[0, :].to_list()]
+                    rows = [str(item).strip() for item in triplet_df.iloc[:, 0].to_list()]
+                    cols = [str(item).strip() for item in triplet_df.iloc[0, :].to_list()]
 
-                    nrows = table_df.shape[0]
-                    ncols = table_df.shape[1]
+                    nrows = triplet_df.shape[0]
+                    ncols = triplet_df.shape[1]
                     table_text_parts = [
-                        f"{rows[i]}, {cols[j]} = {str(table_df.iloc[i, j]).strip()}"
+                        f"{rows[i]}, {cols[j]} = {str(triplet_df.iloc[i, j]).strip()}"
                         for i in range(1, nrows)
                         for j in range(1, ncols)
                     ]
                     table_text = ". ".join(table_text_parts)
-                    parts.append(create_ser_result(text=table_text, span_source=item))
+
+                if not table_text:
+                    table_text = self._flatten_table_text(fallback_df)
+
+            if table_text:
+                if shared_visited is not None:
+                    shared_visited.update(local_kwargs["visited"])
+                parts.append(create_ser_result(text=table_text, span_source=item))
 
         text_res = "\n\n".join([r.text for r in parts])
 
