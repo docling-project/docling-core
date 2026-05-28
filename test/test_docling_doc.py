@@ -2384,3 +2384,89 @@ def test_docitem_comments_delete_updates_refs():
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
+
+
+def test_table_data_vertical_bounding_boxes():
+    """Vertical table: rows are vertical stripes, columns are horizontal stripes.
+
+    When `horizontal=False` and `minimal=False`, rows should share a common
+    vertical (t/b) extent and columns should share a common horizontal (l/r) extent.
+    """
+    # 2 rows x 3 cols vertical table (logical rows run top-to-bottom on page).
+    # Row 0 cells sit on the page-left (l=0..10), row 1 on the page-right (l=10..20).
+    # Col 0 cells sit at the page-top, col 2 at the page-bottom.
+    cells = [
+        TableCell(
+            text="r0c0",
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=0, end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=2, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c0",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=0, end_col_offset_idx=1,
+            bbox=BoundingBox(l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r0c1",
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=1, end_col_offset_idx=2,
+            bbox=BoundingBox(l=0, t=10, r=10, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c1",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=1, end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=10, r=18, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r0c2",
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=2, end_col_offset_idx=3,
+            bbox=BoundingBox(l=0, t=20, r=10, b=28, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c2",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=2, end_col_offset_idx=3,
+            bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+    ]
+    table = TableData(num_rows=2, num_cols=3, table_cells=cells)
+
+    # Minimal mode is orientation-agnostic — sanity-check the per-row/col enclosing bbox.
+    rows_min = table.get_row_bounding_boxes(minimal=True, horizontal=False)
+    assert rows_min[0].l == 0 and rows_min[0].r == 10
+    assert rows_min[0].t == 2 and rows_min[0].b == 28
+    assert rows_min[1].l == 10 and rows_min[1].r == 20
+    assert rows_min[1].t == 0 and rows_min[1].b == 30
+
+    cols_min = table.get_column_bounding_boxes(minimal=True, horizontal=False)
+    assert cols_min[0].t == 0 and cols_min[0].b == 10
+    assert cols_min[1].t == 10 and cols_min[1].b == 20
+    assert cols_min[2].t == 20 and cols_min[2].b == 30
+
+    # Non-minimal + vertical: rows share t/b, columns share l/r.
+    rows = table.get_row_bounding_boxes(minimal=False, horizontal=False)
+    assert rows[0].t == 0 and rows[0].b == 30
+    assert rows[1].t == 0 and rows[1].b == 30
+    # Per-row l/r extents must remain distinct (rows are vertical stripes).
+    assert rows[0].l == 0 and rows[0].r == 10
+    assert rows[1].l == 10 and rows[1].r == 20
+
+    cols = table.get_column_bounding_boxes(minimal=False, horizontal=False)
+    for c in cols.values():
+        assert c.l == 0 and c.r == 20
+    # Per-col t/b extents must remain distinct (cols are horizontal stripes).
+    assert (cols[0].t, cols[0].b) == (0, 10)
+    assert (cols[1].t, cols[1].b) == (10, 20)
+    assert (cols[2].t, cols[2].b) == (20, 30)
+
+    # Sanity: with the default horizontal=True, the equalized axes flip.
+    rows_h = table.get_row_bounding_boxes(minimal=False, horizontal=True)
+    for r in rows_h.values():
+        assert r.l == 0 and r.r == 20
+    cols_h = table.get_column_bounding_boxes(minimal=False, horizontal=True)
+    for c in cols_h.values():
+        assert c.t == 0 and c.b == 30

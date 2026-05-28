@@ -574,13 +574,21 @@ class TableData(BaseModel):  # TBD
         """
         self.insert_row(row_index=self.num_rows - 1, row=row, after=True)
 
-    def get_row_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
+    def get_row_bounding_boxes(
+        self, *, minimal: bool = True, horizontal: bool = True
+    ) -> dict[int, BoundingBox]:
         """Get the bounding box for each row in the table.
 
         Args:
             minimal: If True (default), returns the minimal bounding box for each
-                row based on its cells. If False, all rows will have uniform
-                horizontal extent (same x0/x1 values) spanning the full table width.
+                row based on its cells. If False, all rows will have a uniform
+                extent perpendicular to the row direction: horizontal extent
+                (same x0/x1) for horizontal tables, vertical extent (same y0/y1)
+                for vertical tables.
+            horizontal: If True (default), rows are laid out horizontally on the
+                page (the usual case). If False, the table is vertical and rows
+                are vertical stripes; the uniform extent applied when
+                ``minimal=False`` switches to the y-axis accordingly.
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping row indices to their
@@ -623,23 +631,46 @@ class TableData(BaseModel):  # TBD
 
                 row_bboxes[row_idx] = row_bbox
 
-        # If not minimal, make all rows have uniform horizontal extent
+        # If not minimal, make all rows have uniform extent on the axis
+        # perpendicular to the row direction.
         if not minimal and row_bboxes:
-            global_l = min(bbox.l for bbox in row_bboxes.values())
-            global_r = max(bbox.r for bbox in row_bboxes.values())
-            for bbox in row_bboxes.values():
-                bbox.l = global_l
-                bbox.r = global_r
+            if horizontal:
+                # Rows run left-to-right; equalize horizontal extent.
+                global_l = min(bbox.l for bbox in row_bboxes.values())
+                global_r = max(bbox.r for bbox in row_bboxes.values())
+                for bbox in row_bboxes.values():
+                    bbox.l = global_l
+                    bbox.r = global_r
+            else:
+                # Vertical table: rows are vertical stripes; equalize vertical extent.
+                first_bbox = next(iter(row_bboxes.values()))
+                if first_bbox.coord_origin == CoordOrigin.TOPLEFT:
+                    global_t = min(bbox.t for bbox in row_bboxes.values())
+                    global_b = max(bbox.b for bbox in row_bboxes.values())
+                else:  # BOTTOMLEFT
+                    global_t = max(bbox.t for bbox in row_bboxes.values())
+                    global_b = min(bbox.b for bbox in row_bboxes.values())
+                for bbox in row_bboxes.values():
+                    bbox.t = global_t
+                    bbox.b = global_b
 
         return row_bboxes
 
-    def get_column_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
+    def get_column_bounding_boxes(
+        self, *, minimal: bool = True, horizontal: bool = True
+    ) -> dict[int, BoundingBox]:
         """Get the bounding box for each column in the table.
 
         Args:
             minimal: If True (default), returns the minimal bounding box for each
-                column based on its cells. If False, all columns will have uniform
-                vertical extent (same y0/y1 values) spanning the full table height.
+                column based on its cells. If False, all columns will have a
+                uniform extent perpendicular to the column direction: vertical
+                extent (same y0/y1) for horizontal tables, horizontal extent
+                (same x0/x1) for vertical tables.
+            horizontal: If True (default), columns run top-to-bottom on the page
+                (the usual case). If False, the table is vertical and columns
+                are horizontal stripes; the uniform extent applied when
+                ``minimal=False`` switches to the x-axis accordingly.
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping column indices to their
@@ -687,19 +718,29 @@ class TableData(BaseModel):  # TBD
 
                 col_bboxes[col_idx] = col_bbox
 
-        # If not minimal, make all columns have uniform vertical extent
+        # If not minimal, make all columns have uniform extent on the axis
+        # perpendicular to the column direction.
         if not minimal and col_bboxes:
-            # Get the coord_origin from the first bbox (they're all the same)
-            first_bbox = next(iter(col_bboxes.values()))
-            if first_bbox.coord_origin == CoordOrigin.TOPLEFT:
-                global_t = min(bbox.t for bbox in col_bboxes.values())
-                global_b = max(bbox.b for bbox in col_bboxes.values())
-            else:  # BOTTOMLEFT
-                global_t = max(bbox.t for bbox in col_bboxes.values())
-                global_b = min(bbox.b for bbox in col_bboxes.values())
-            for bbox in col_bboxes.values():
-                bbox.t = global_t
-                bbox.b = global_b
+            if horizontal:
+                # Columns run top-to-bottom; equalize vertical extent.
+                # Get the coord_origin from the first bbox (they're all the same)
+                first_bbox = next(iter(col_bboxes.values()))
+                if first_bbox.coord_origin == CoordOrigin.TOPLEFT:
+                    global_t = min(bbox.t for bbox in col_bboxes.values())
+                    global_b = max(bbox.b for bbox in col_bboxes.values())
+                else:  # BOTTOMLEFT
+                    global_t = max(bbox.t for bbox in col_bboxes.values())
+                    global_b = min(bbox.b for bbox in col_bboxes.values())
+                for bbox in col_bboxes.values():
+                    bbox.t = global_t
+                    bbox.b = global_b
+            else:
+                # Vertical table: columns are horizontal stripes; equalize horizontal extent.
+                global_l = min(bbox.l for bbox in col_bboxes.values())
+                global_r = max(bbox.r for bbox in col_bboxes.values())
+                for bbox in col_bboxes.values():
+                    bbox.l = global_l
+                    bbox.r = global_r
 
         return col_bboxes
 
