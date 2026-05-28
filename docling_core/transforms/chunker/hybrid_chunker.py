@@ -3,10 +3,11 @@
 import warnings
 from collections.abc import Iterable, Iterator
 from functools import cached_property
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
+from docling_core.transforms.chunker._semantic_splitter import chunk_text
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
@@ -18,7 +19,6 @@ from docling_core.transforms.serializer.base import BaseDocSerializer
 from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
 
 try:
-    import semchunk
     from transformers import PreTrainedTokenizerBase
 except ImportError:
     raise RuntimeError(
@@ -261,9 +261,11 @@ class HybridChunker(BaseChunker):
             )
             segments = line_chunker.chunk_text(lines=body_lines)
         else:
-            sem_chunker = semchunk.chunkerify(self.tokenizer.get_tokenizer(), chunk_size=available_length)
-            sem_segments = sem_chunker(doc_chunk.text)
-            segments = cast(list[str], sem_segments)
+            segments = chunk_text(
+                text=doc_chunk.text,
+                chunk_size=available_length,
+                token_counter=self.tokenizer.count_tokens,
+            )
         return segments
 
     def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]):

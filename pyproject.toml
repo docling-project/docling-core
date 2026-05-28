@@ -69,7 +69,6 @@ docling-serialize = "docling_core.cli.serialize:app"
 [project.optional-dependencies]
 chunking = [
     # common:
-    'semchunk (>=2.2.0,<4.0.0)',
     'tree-sitter (>=0.25.0,<0.27.0)',
     'tree-sitter-python >=0.23.6',
     'tree-sitter-c >=0.23.4',
@@ -81,7 +80,6 @@ chunking = [
 ]
 chunking-openai = [
     # common:
-    'semchunk (>=2.2.0,<4.0.0)',
     'tree-sitter (>=0.25.0,<0.27.0)',
     'tree-sitter-python >=0.23.6',
     'tree-sitter-c >=0.23.4',
@@ -222,7 +220,6 @@ module = [
     "jsonref.*",
     "jsonschema.*",
     "requests.*",
-    "semchunk.*",
     "tabulate.*",
     "transformers.*",
     "tree_sitter_java_orchard.*",
