@@ -113,9 +113,6 @@ def _get_css_for_split_page() -> str:
         font-weight: bold;
         color: #444;
     }
-    .docling-meta-field[data-meta-name="classification"] {
-        text-align: left;
-    }
     pre.docling-meta-code {
         background-color: #1e1e1e;
         color: #d4d4d4;
@@ -286,9 +283,6 @@ def _get_css_for_single_column() -> str:
     .docling-meta-field-label {
         font-weight: bold;
         color: #444;
-    }
-    .docling-meta-field[data-meta-name="classification"] {
-        text-align: left;
     }
     pre.docling-meta-code {
         background-color: #1e1e1e;
