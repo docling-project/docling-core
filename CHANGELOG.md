@@ -1,3 +1,14 @@
+## [v2.78.0](https://github.com/docling-project/docling-core/releases/tag/v2.78.0) - 2026-05-29
+
+### Feature
+
+* Support vertical orientation in TableData row/column bounding boxes ([#622](https://github.com/docling-project/docling-core/issues/622)) ([`c1c9ea8`](https://github.com/docling-project/docling-core/commit/c1c9ea80a58feea6c11378d9c54ea02479da0c78))
+
+### Fix
+
+* **html-serializer:** Emit XHTML-compatible metadata attributes ([#613](https://github.com/docling-project/docling-core/issues/613)) ([`b20b567`](https://github.com/docling-project/docling-core/commit/b20b5677c06ea8cd5b025737e4621f92c6c6c020))
+* **chunking:** Handle empty TripletTableSerializer output without consuming children ([#596](https://github.com/docling-project/docling-core/issues/596)) ([`507df71`](https://github.com/docling-project/docling-core/commit/507df717c1e63e54de693cc164a2ae051e00e7f6))
+
 ## [v2.77.1](https://github.com/docling-project/docling-core/releases/tag/v2.77.1) - 2026-05-26
 
 ### Fix
