@@ -574,9 +574,7 @@ class TableData(BaseModel):  # TBD
         """
         self.insert_row(row_index=self.num_rows - 1, row=row, after=True)
 
-    def get_row_bounding_boxes(
-        self, *, minimal: bool = True, horizontal: bool = True
-    ) -> dict[int, BoundingBox]:
+    def get_row_bounding_boxes(self, *, minimal: bool = True, horizontal: bool = True) -> dict[int, BoundingBox]:
         """Get the bounding box for each row in the table.
 
         Args:
@@ -656,9 +654,7 @@ class TableData(BaseModel):  # TBD
 
         return row_bboxes
 
-    def get_column_bounding_boxes(
-        self, *, minimal: bool = True, horizontal: bool = True
-    ) -> dict[int, BoundingBox]:
+    def get_column_bounding_boxes(self, *, minimal: bool = True, horizontal: bool = True) -> dict[int, BoundingBox]:
         """Get the bounding box for each column in the table.
 
         Args:
