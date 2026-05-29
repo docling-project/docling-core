@@ -1,13 +1,14 @@
+import base64
 import os
 import re
 import warnings
 from collections import deque
 from copy import deepcopy
+from io import BytesIO
 from pathlib import Path
 from typing import Optional, Union
 from unittest.mock import Mock
-from io import BytesIO
-import base64
+
 import pytest
 import yaml
 from PIL import Image as PILImage
@@ -49,8 +50,14 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
-from docling_core.types.doc.document import CURRENT_VERSION, PageItem
+from docling_core.types.doc.document import (
+    CURRENT_VERSION,
+    FieldHeadingItem,
+    FieldItem,
+    FieldRegionItem,
+    FieldValueItem,
+    PageItem,
+)
 from docling_core.types.doc.webvtt import WebVTTFile
 from docling_core.utils.settings import settings
 
