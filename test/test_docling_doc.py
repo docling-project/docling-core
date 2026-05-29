@@ -2443,7 +2443,7 @@ def test_table_data_vertical_bounding_boxes():
         ),
     ]
     table = TableData(
-        num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.VERTICAL
+        num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90
     )
 
     # Minimal mode — sanity-check the per-row/col enclosing bbox.
@@ -2474,8 +2474,8 @@ def test_table_data_vertical_bounding_boxes():
     assert (cols[1].t, cols[1].b) == (10, 20)
     assert (cols[2].t, cols[2].b) == (20, 30)
 
-    # Sanity: with HORIZONTAL orientation the equalized axes flip.
-    table.orientation = Orientation.HORIZONTAL
+    # Sanity: with ROT_0 orientation the equalized axes flip back.
+    table.orientation = Orientation.ROT_0
     rows_h = table.get_row_bounding_boxes(minimal=False)
     for r in rows_h.values():
         assert r.l == 0 and r.r == 20
@@ -2528,7 +2528,7 @@ def test_table_data_vertical_bounding_boxes_with_spans():
         ),
     ]
     table = TableData(
-        num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.VERTICAL
+        num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90
     )
 
     # COLUMNS — col_span=2 cell must NOT stretch col 1 / col 2 along t/b.

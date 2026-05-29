@@ -2530,10 +2530,12 @@
       "type": "object"
     },
     "Orientation": {
-      "description": "Orientation of a table on the page.",
+      "description": "Clockwise rotation of a table on the page, in degrees.\n\n``ROT_0`` / ``ROT_180`` have rows running horizontally on the page;\n``ROT_90`` / ``ROT_270`` have rows running vertically (rotated table).",
       "enum": [
-        "horizontal",
-        "vertical"
+        "rot_0",
+        "rot_90",
+        "rot_180",
+        "rot_270"
       ],
       "title": "Orientation",
       "type": "string"
@@ -3666,7 +3668,7 @@
         },
         "orientation": {
           "$ref": "#/$defs/Orientation",
-          "default": "horizontal"
+          "default": "rot_0"
         }
       },
       "title": "TableData",

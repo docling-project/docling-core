@@ -184,7 +184,7 @@ data:
       text: ''
   num_cols: 5
   num_rows: 3
-  orientation: horizontal
+  orientation: rot_0
   table_cells: []
 footnotes: []
 image: null

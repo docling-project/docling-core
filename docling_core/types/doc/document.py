@@ -386,10 +386,16 @@ AnyTableCell = Annotated[
 
 
 class Orientation(str, Enum):
-    """Orientation of a table on the page."""
+    """Clockwise rotation of a table on the page, in degrees.
 
-    HORIZONTAL = "horizontal"
-    VERTICAL = "vertical"
+    ``ROT_0`` / ``ROT_180`` have rows running horizontally on the page;
+    ``ROT_90`` / ``ROT_270`` have rows running vertically (rotated table).
+    """
+
+    ROT_0 = "rot_0"
+    ROT_90 = "rot_90"
+    ROT_180 = "rot_180"
+    ROT_270 = "rot_270"
 
 
 class TableData(BaseModel):  # TBD
@@ -398,7 +404,7 @@ class TableData(BaseModel):  # TBD
     table_cells: list[AnyTableCell] = []
     num_rows: int = 0
     num_cols: int = 0
-    orientation: Orientation = Orientation.HORIZONTAL
+    orientation: Orientation = Orientation.ROT_0
 
     @computed_field  # type: ignore
     @property
@@ -585,22 +591,23 @@ class TableData(BaseModel):  # TBD
     def get_row_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
         """Get the bounding box for each row in the table.
 
-        Layout follows the table's ``orientation`` field: for ``HORIZONTAL``
-        tables rows run left-to-right; for ``VERTICAL`` tables rows are vertical
-        stripes. This affects both the axis along which span cells extend a
-        row's bbox and, when ``minimal=False``, the axis equalized across rows.
+        Layout follows the table's ``orientation`` field: ``ROT_0`` / ``ROT_180``
+        keep rows running left-to-right on the page; ``ROT_90`` / ``ROT_270``
+        turn rows into vertical stripes. This affects both the axis along which
+        span cells extend a row's bbox and, when ``minimal=False``, the axis
+        equalized across rows.
 
         Args:
             minimal: If True (default), returns the minimal bounding box for each
                 row based on its cells. If False, all rows will have a uniform
-                extent perpendicular to the row direction (l/r for horizontal
-                tables, t/b for vertical tables).
+                extent perpendicular to the row direction (l/r for ROT_0/ROT_180,
+                t/b for ROT_90/ROT_270).
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping row indices to their
             bounding boxes. Only rows with cells that have bounding boxes are included.
         """
-        horizontal = self.orientation == Orientation.HORIZONTAL
+        horizontal = self.orientation in (Orientation.ROT_0, Orientation.ROT_180)
         coords = []
         for cell in self.table_cells:
             if cell.bbox is not None:
@@ -676,23 +683,23 @@ class TableData(BaseModel):  # TBD
     def get_column_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
         """Get the bounding box for each column in the table.
 
-        Layout follows the table's ``orientation`` field: for ``HORIZONTAL``
-        tables columns run top-to-bottom; for ``VERTICAL`` tables columns are
-        horizontal stripes. This affects both the axis along which span cells
-        extend a column's bbox and, when ``minimal=False``, the axis equalized
-        across columns.
+        Layout follows the table's ``orientation`` field: ``ROT_0`` / ``ROT_180``
+        keep columns running top-to-bottom on the page; ``ROT_90`` / ``ROT_270``
+        turn columns into horizontal stripes. This affects both the axis along
+        which span cells extend a column's bbox and, when ``minimal=False``, the
+        axis equalized across columns.
 
         Args:
             minimal: If True (default), returns the minimal bounding box for each
                 column based on its cells. If False, all columns will have a
                 uniform extent perpendicular to the column direction (t/b for
-                horizontal tables, l/r for vertical tables).
+                ROT_0/ROT_180, l/r for ROT_90/ROT_270).
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping column indices to their
             bounding boxes. Only columns with cells that have bounding boxes are included.
         """
-        horizontal = self.orientation == Orientation.HORIZONTAL
+        horizontal = self.orientation in (Orientation.ROT_0, Orientation.ROT_180)
         coords = []
         for cell in self.table_cells:
             if cell.bbox is not None:

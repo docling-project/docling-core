@@ -399,7 +399,7 @@ tables:
         text: '695944'
     num_cols: 3
     num_rows: 3
-    orientation: horizontal
+    orientation: rot_0
     table_cells:
     - col_span: 1
       column_header: false

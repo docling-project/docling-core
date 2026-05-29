@@ -1395,7 +1395,7 @@
         ],
         "num_rows": 3,
         "num_cols": 3,
-        "orientation": "horizontal",
+        "orientation": "rot_0",
         "grid": [
           [
             {
