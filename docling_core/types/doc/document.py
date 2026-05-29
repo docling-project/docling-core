@@ -385,12 +385,20 @@ AnyTableCell = Annotated[
 ]
 
 
+class Orientation(str, Enum):
+    """Orientation of a table on the page."""
+
+    HORIZONTAL = "horizontal"
+    VERTICAL = "vertical"
+
+
 class TableData(BaseModel):  # TBD
     """BaseTableData."""
 
     table_cells: list[AnyTableCell] = []
     num_rows: int = 0
     num_cols: int = 0
+    orientation: Orientation = Orientation.HORIZONTAL
 
     @computed_field  # type: ignore
     @property
@@ -574,24 +582,25 @@ class TableData(BaseModel):  # TBD
         """
         self.insert_row(row_index=self.num_rows - 1, row=row, after=True)
 
-    def get_row_bounding_boxes(self, *, minimal: bool = True, horizontal: bool = True) -> dict[int, BoundingBox]:
+    def get_row_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
         """Get the bounding box for each row in the table.
+
+        Layout follows the table's ``orientation`` field: for ``HORIZONTAL``
+        tables rows run left-to-right; for ``VERTICAL`` tables rows are vertical
+        stripes. This affects both the axis along which span cells extend a
+        row's bbox and, when ``minimal=False``, the axis equalized across rows.
 
         Args:
             minimal: If True (default), returns the minimal bounding box for each
                 row based on its cells. If False, all rows will have a uniform
-                extent perpendicular to the row direction: horizontal extent
-                (same x0/x1) for horizontal tables, vertical extent (same y0/y1)
-                for vertical tables.
-            horizontal: If True (default), rows are laid out horizontally on the
-                page (the usual case). If False, the table is vertical and rows
-                are vertical stripes; the uniform extent applied when
-                ``minimal=False`` switches to the y-axis accordingly.
+                extent perpendicular to the row direction (l/r for horizontal
+                tables, t/b for vertical tables).
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping row indices to their
             bounding boxes. Only rows with cells that have bounding boxes are included.
         """
+        horizontal = self.orientation == Orientation.HORIZONTAL
         coords = []
         for cell in self.table_cells:
             if cell.bbox is not None:
@@ -622,10 +631,20 @@ class TableData(BaseModel):  # TBD
                 min_row_span = min(row_cells_with_bbox.keys())
                 row_bbox: BoundingBox = BoundingBox.enclosing_bbox(row_cells_with_bbox[min_row_span])
 
+                # Spanning cells extend along the row's natural axis:
+                # horizontal table → row runs l/r; vertical table → row runs t/b.
                 for rspan, bboxs in row_cells_with_bbox.items():
                     for bbox in bboxs:
-                        row_bbox.l = min(row_bbox.l, bbox.l)
-                        row_bbox.r = max(row_bbox.r, bbox.r)
+                        if horizontal:
+                            row_bbox.l = min(row_bbox.l, bbox.l)
+                            row_bbox.r = max(row_bbox.r, bbox.r)
+                        else:
+                            if bbox.coord_origin == CoordOrigin.TOPLEFT:
+                                row_bbox.t = min(row_bbox.t, bbox.t)
+                                row_bbox.b = max(row_bbox.b, bbox.b)
+                            else:  # BOTTOMLEFT
+                                row_bbox.t = max(row_bbox.t, bbox.t)
+                                row_bbox.b = min(row_bbox.b, bbox.b)
 
                 row_bboxes[row_idx] = row_bbox
 
@@ -654,24 +673,26 @@ class TableData(BaseModel):  # TBD
 
         return row_bboxes
 
-    def get_column_bounding_boxes(self, *, minimal: bool = True, horizontal: bool = True) -> dict[int, BoundingBox]:
+    def get_column_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
         """Get the bounding box for each column in the table.
+
+        Layout follows the table's ``orientation`` field: for ``HORIZONTAL``
+        tables columns run top-to-bottom; for ``VERTICAL`` tables columns are
+        horizontal stripes. This affects both the axis along which span cells
+        extend a column's bbox and, when ``minimal=False``, the axis equalized
+        across columns.
 
         Args:
             minimal: If True (default), returns the minimal bounding box for each
                 column based on its cells. If False, all columns will have a
-                uniform extent perpendicular to the column direction: vertical
-                extent (same y0/y1) for horizontal tables, horizontal extent
-                (same x0/x1) for vertical tables.
-            horizontal: If True (default), columns run top-to-bottom on the page
-                (the usual case). If False, the table is vertical and columns
-                are horizontal stripes; the uniform extent applied when
-                ``minimal=False`` switches to the x-axis accordingly.
+                uniform extent perpendicular to the column direction (t/b for
+                horizontal tables, l/r for vertical tables).
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping column indices to their
             bounding boxes. Only columns with cells that have bounding boxes are included.
         """
+        horizontal = self.orientation == Orientation.HORIZONTAL
         coords = []
         for cell in self.table_cells:
             if cell.bbox is not None:
@@ -702,15 +723,20 @@ class TableData(BaseModel):  # TBD
                 min_col_span = min(col_cells_with_bbox.keys())
                 col_bbox: BoundingBox = BoundingBox.enclosing_bbox(col_cells_with_bbox[min_col_span])
 
+                # Spanning cells extend along the column's natural axis:
+                # horizontal table → column runs t/b; vertical table → column runs l/r.
                 for rspan, bboxs in col_cells_with_bbox.items():
                     for bbox in bboxs:
-                        if bbox.coord_origin == CoordOrigin.TOPLEFT:
-                            col_bbox.b = max(col_bbox.b, bbox.b)
-                            col_bbox.t = min(col_bbox.t, bbox.t)
-
-                        elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
-                            col_bbox.b = min(col_bbox.b, bbox.b)
-                            col_bbox.t = max(col_bbox.t, bbox.t)
+                        if horizontal:
+                            if bbox.coord_origin == CoordOrigin.TOPLEFT:
+                                col_bbox.b = max(col_bbox.b, bbox.b)
+                                col_bbox.t = min(col_bbox.t, bbox.t)
+                            elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
+                                col_bbox.b = min(col_bbox.b, bbox.b)
+                                col_bbox.t = max(col_bbox.t, bbox.t)
+                        else:
+                            col_bbox.l = min(col_bbox.l, bbox.l)
+                            col_bbox.r = max(col_bbox.r, bbox.r)
 
                 col_bboxes[col_idx] = col_bbox
 

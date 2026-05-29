@@ -43,6 +43,7 @@ from .document import (
     MoleculeMetaField,
     NodeItem,
     OrderedList,
+    Orientation,
     PageItem,
     PictureBarChartData,
     PictureChartData,

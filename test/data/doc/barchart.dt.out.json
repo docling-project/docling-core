@@ -351,6 +351,7 @@
             ],
             "num_rows": 7,
             "num_cols": 3,
+            "orientation": "horizontal",
             "grid": [
               [
                 {
