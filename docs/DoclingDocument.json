@@ -2529,6 +2529,15 @@
       "title": "MoleculeMetaField",
       "type": "object"
     },
+    "Orientation": {
+      "description": "Orientation of a table on the page.",
+      "enum": [
+        "horizontal",
+        "vertical"
+      ],
+      "title": "Orientation",
+      "type": "string"
+    },
     "PageItem": {
       "description": "PageItem.",
       "properties": {
@@ -3654,6 +3663,10 @@
           "default": 0,
           "title": "Num Cols",
           "type": "integer"
+        },
+        "orientation": {
+          "$ref": "#/$defs/Orientation",
+          "default": "horizontal"
         }
       },
       "title": "TableData",
