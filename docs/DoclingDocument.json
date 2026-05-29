@@ -2530,7 +2530,7 @@
       "type": "object"
     },
     "Orientation": {
-      "description": "Clockwise rotation of a table on the page, in degrees.\n\n``ROT_0`` / ``ROT_180`` have rows running horizontally on the page;\n``ROT_90`` / ``ROT_270`` have rows running vertically (rotated table).",
+      "description": "Counter-clockwise rotation of a table on the page, in degrees.\n\nFollows the convention used by PIL/Pillow's ``Image.rotate``: positive\nangles rotate the table counter-clockwise. ``ROT_0`` / ``ROT_180`` keep\nrows running horizontally on the page; ``ROT_90`` / ``ROT_270`` turn\nrows into vertical stripes.",
       "enum": [
         "rot_0",
         "rot_90",

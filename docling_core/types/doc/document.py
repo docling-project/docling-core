@@ -386,16 +386,18 @@ AnyTableCell = Annotated[
 
 
 class Orientation(str, Enum):
-    """Clockwise rotation of a table on the page, in degrees.
+    """Counter-clockwise rotation of a table on the page, in degrees.
 
-    ``ROT_0`` / ``ROT_180`` have rows running horizontally on the page;
-    ``ROT_90`` / ``ROT_270`` have rows running vertically (rotated table).
+    Follows the convention used by PIL/Pillow's ``Image.rotate``: positive
+    angles rotate the table counter-clockwise. ``ROT_0`` / ``ROT_180`` keep
+    rows running horizontally on the page; ``ROT_90`` / ``ROT_270`` turn
+    rows into vertical stripes.
     """
 
-    ROT_0 = "rot_0"
-    ROT_90 = "rot_90"
-    ROT_180 = "rot_180"
-    ROT_270 = "rot_270"
+    ROT_0 = "rot_0"  # no rotation; row 0 at top, rows horizontal
+    ROT_90 = "rot_90"  # 90° CCW; row 0 on the left, rows are vertical stripes
+    ROT_180 = "rot_180"  # 180°; row 0 at bottom (upside-down), rows horizontal
+    ROT_270 = "rot_270"  # 270° CCW (= 90° CW); row 0 on the right, rows are vertical stripes
 
 
 class TableData(BaseModel):  # TBD
