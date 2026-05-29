@@ -2529,6 +2529,17 @@
       "title": "MoleculeMetaField",
       "type": "object"
     },
+    "Orientation": {
+      "description": "Counter-clockwise rotation of a table on the page, in degrees.\n\nFollows the convention used by PIL/Pillow's ``Image.rotate``: positive\nangles rotate the table counter-clockwise. ``ROT_0`` / ``ROT_180`` keep\nrows running horizontally on the page; ``ROT_90`` / ``ROT_270`` turn\nrows into vertical stripes.",
+      "enum": [
+        "rot_0",
+        "rot_90",
+        "rot_180",
+        "rot_270"
+      ],
+      "title": "Orientation",
+      "type": "string"
+    },
     "PageItem": {
       "description": "PageItem.",
       "properties": {
@@ -3654,6 +3665,10 @@
           "default": 0,
           "title": "Num Cols",
           "type": "integer"
+        },
+        "orientation": {
+          "$ref": "#/$defs/Orientation",
+          "default": "rot_0"
         }
       },
       "title": "TableData",
