@@ -252,7 +252,9 @@ def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocumen
     params = MarkdownParams(
         include_non_meta=False,
     )
-    ser = MarkdownDocSerializer(doc=doc_with_group_with_metadata, params=params, meta_serializer=SummaryMarkdownMetaSerializer())
+    ser = MarkdownDocSerializer(
+        doc=doc_with_group_with_metadata, params=params, meta_serializer=SummaryMarkdownMetaSerializer()
+    )
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_summaries.md")
@@ -264,7 +266,9 @@ def test_document_level_metadata(dummy_doc_with_meta: DoclingDocument) -> None:
     # Verify document-level metadata exists
     assert dummy_doc_with_meta.body.meta is not None
     assert dummy_doc_with_meta.body.meta.summary is not None
-    assert dummy_doc_with_meta.body.meta.summary.text == "This is a document-level summary describing the entire document."
+    assert (
+        dummy_doc_with_meta.body.meta.summary.text == "This is a document-level summary describing the entire document."
+    )
     assert dummy_doc_with_meta.body.meta.summary.confidence == 0.98
 
     # Verify custom metadata fields at document level
@@ -386,8 +390,8 @@ def test_html_renders_keywords_and_topics() -> None:
     )
 
     html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
-    assert "data-meta-keywords" in html
-    assert "data-meta-topics" in html
+    assert 'data-meta-name="keywords"' in html
+    assert 'data-meta-name="topics"' in html
     assert "ibm, zurich" in html
     assert ">business<" in html
 
