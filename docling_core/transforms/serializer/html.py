@@ -983,7 +983,7 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                     )
                     for mention in field_val.mentions
                 )
-            elif isinstance(field_val, (KeywordsMetaField, TopicsMetaField)):
+            elif isinstance(field_val, KeywordsMetaField | TopicsMetaField):
                 txt = ", ".join(html.escape(v) for v in field_val.values)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text

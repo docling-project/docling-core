@@ -366,7 +366,7 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
-            elif isinstance(field_val, (KeywordsMetaField, TopicsMetaField)):
+            elif isinstance(field_val, KeywordsMetaField | TopicsMetaField):
                 txt = ", ".join(field_val.values)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
