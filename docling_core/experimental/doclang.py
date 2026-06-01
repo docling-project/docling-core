@@ -46,7 +46,6 @@ from docling_core.types.doc import (
     FormItem,
     InlineGroup,
     KeyValueItem,
-    KeywordsMetaField,
     ListGroup,
     ListItem,
     MetaFieldName,
@@ -65,7 +64,6 @@ from docling_core.types.doc import (
     TableItem,
     TabularChartMetaField,
     TextItem,
-    TopicsMetaField,
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.document import (
@@ -1717,12 +1715,6 @@ class DoclangMetaSerializer(BaseModel, BaseMetaSerializer):
             elif name == MetaFieldName.TABULAR_CHART and isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
                 return None
-            elif name == MetaFieldName.KEYWORDS and isinstance(field_val, KeywordsMetaField):
-                escaped = ", ".join(_escape_text(v, params) for v in field_val.values)
-                txt = f"<keywords>{escaped}</keywords>"
-            elif name == MetaFieldName.TOPICS and isinstance(field_val, TopicsMetaField):
-                escaped = ", ".join(_escape_text(v, params) for v in field_val.values)
-                txt = f"<topics>{escaped}</topics>"
             # elif tmp := str(field_val or ""):
             #     txt = tmp
             elif name not in {v.value for v in MetaFieldName}:
