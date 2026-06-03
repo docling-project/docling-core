@@ -218,8 +218,9 @@ def test_is_safe_url_rejects_private_networks():
 
 def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
     """Test filename normalization from Content-Disposition."""
-    from docling_core.utils.file import resolve_source_to_stream
     from requests import Response
+
+    from docling_core.utils.file import resolve_source_to_stream
 
     def get_response(*args, **kwargs):
         r = Response()
@@ -236,8 +237,9 @@ def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
 
 def test_resolve_source_rejects_non_public_urls(monkeypatch):
     """Test that non-public URLs are rejected."""
-    from docling_core.utils.file import resolve_source_to_stream
     import pytest
+
+    from docling_core.utils.file import resolve_source_to_stream
 
     with pytest.raises(ValueError, match="URL is not allowed"):
         resolve_source_to_stream("http://127.0.0.1/file")
@@ -252,10 +254,21 @@ def test_resolve_source_rejects_non_public_urls(monkeypatch):
         resolve_source_to_stream("http://169.254.169.254/latest/meta-data/")
 
 
+def test_resolve_source_rejects_unsupported_scheme():
+    """Test that unsupported URL schemes are rejected before file fallback."""
+    import pytest
+
+    from docling_core.utils.file import resolve_source_to_stream
+
+    with pytest.raises(ValueError, match="Unsupported URL scheme"):
+        resolve_source_to_stream("ftp://some-server/file.pdf")
+
+
 def test_resolve_source_to_path_sanitizes_filename(monkeypatch, tmp_path):
     """Test that saved filenames stay within the target directory."""
-    from docling_core.utils.file import resolve_source_to_path
     from requests import Response
+
+    from docling_core.utils.file import resolve_source_to_path
 
     def get_response(*args, **kwargs):
         r = Response()
@@ -280,8 +293,9 @@ def test_resolve_source_to_path_sanitizes_filename(monkeypatch, tmp_path):
 
 def test_redirect_limit_enforced(monkeypatch):
     """Test that redirect limits are configured on the session."""
+    from requests import Response, Session
+
     from docling_core.utils.file import _MAX_REDIRECTS
-    from requests import Session, Response
 
     session_created = []
 
@@ -313,23 +327,21 @@ def test_redirect_limit_enforced(monkeypatch):
     assert session.max_redirects == _MAX_REDIRECTS
 
 
-
 def test_redirect_to_non_public_ip_rejected(monkeypatch):
     """Test that redirects to non-public addresses are rejected."""
-    from docling_core.utils.file import resolve_source_to_stream
-    from requests import Response, Session
     import pytest
+    from requests import Response, Session
 
-    original_get = Session.get
+    from docling_core.utils.file import resolve_source_to_stream
 
     def mock_get_with_redirect(self, *args, **kwargs):
         r = Response()
         r.status_code = 302
-        r.headers['location'] = 'http://192.168.1.1/private-file'
-        r.url = args[0] if args else kwargs.get('url', 'http://example.com')
+        r.headers["location"] = "http://192.168.1.1/private-file"
+        r.url = args[0] if args else kwargs.get("url", "http://example.com")
 
-        if hasattr(self, 'hooks') and 'response' in self.hooks:
-            for hook in self.hooks['response']:
+        if hasattr(self, "hooks") and "response" in self.hooks:
+            for hook in self.hooks["response"]:
                 hook(r)
 
         return r
