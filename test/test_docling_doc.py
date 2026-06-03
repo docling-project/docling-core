@@ -1,5 +1,5 @@
-import itertools
 import base64
+import itertools
 import os
 import re
 import warnings
@@ -41,6 +41,7 @@ from docling_core.types.doc import (
     NodeItem,
     Orientation,
     PictureItem,
+    PictureMeta,
     ProvenanceItem,
     RefItem,
     RichTableCell,
@@ -49,6 +50,7 @@ from docling_core.types.doc import (
     TableCell,
     TableData,
     TableItem,
+    TabularChartMetaField,
     TextItem,
     TitleItem,
 )
@@ -133,6 +135,106 @@ def test_overlaps_vertically():
     # Different CoordOrigin
     with pytest.raises(ValueError):
         bbox1.overlaps_vertically(bbox4)
+
+
+def test_add_picture_supports_chart_label():
+    doc = DoclingDocument(name="Chart Doc")
+
+    chart = doc.add_picture(label=DocItemLabel.CHART)
+    picture = doc.add_picture()
+
+    assert chart.label == DocItemLabel.CHART
+    assert picture.label == DocItemLabel.PICTURE
+    assert doc.pictures == [chart, picture]
+
+
+def test_insert_picture_supports_chart_label():
+    doc = DoclingDocument(name="Chart Doc")
+    text = doc.add_text(label=DocItemLabel.TEXT, text="before chart")
+
+    chart = doc.insert_picture(sibling=text, label=DocItemLabel.CHART)
+
+    assert chart.label == DocItemLabel.CHART
+    assert doc.pictures == [chart]
+    assert doc.body.children[1] == chart.get_ref()
+
+
+def test_chart_picture_tabular_meta_exports_to_markdown_by_default():
+    doc = DoclingDocument(name="Chart Doc")
+    chart = doc.add_picture(label=DocItemLabel.CHART)
+    chart.meta = PictureMeta(
+        tabular_chart=TabularChartMetaField(
+            chart_data=TableData(
+                num_rows=3,
+                num_cols=2,
+                table_cells=[
+                    TableCell(
+                        text="Quarter",
+                        start_row_offset_idx=0,
+                        end_row_offset_idx=1,
+                        start_col_offset_idx=0,
+                        end_col_offset_idx=1,
+                        column_header=True,
+                    ),
+                    TableCell(
+                        text="Revenue",
+                        start_row_offset_idx=0,
+                        end_row_offset_idx=1,
+                        start_col_offset_idx=1,
+                        end_col_offset_idx=2,
+                        column_header=True,
+                    ),
+                    TableCell(
+                        text="Q1",
+                        start_row_offset_idx=1,
+                        end_row_offset_idx=2,
+                        start_col_offset_idx=0,
+                        end_col_offset_idx=1,
+                    ),
+                    TableCell(
+                        text="12.3",
+                        start_row_offset_idx=1,
+                        end_row_offset_idx=2,
+                        start_col_offset_idx=1,
+                        end_col_offset_idx=2,
+                    ),
+                    TableCell(
+                        text="Q2",
+                        start_row_offset_idx=2,
+                        end_row_offset_idx=3,
+                        start_col_offset_idx=0,
+                        end_col_offset_idx=1,
+                    ),
+                    TableCell(
+                        text="14.2",
+                        start_row_offset_idx=2,
+                        end_row_offset_idx=3,
+                        start_col_offset_idx=1,
+                        end_col_offset_idx=2,
+                    ),
+                ],
+            )
+        )
+    )
+
+    markdown = doc.export_to_markdown()
+
+    assert "<!-- image -->" in markdown
+    assert "| Quarter   |   Revenue |" in markdown
+    assert "| Q1        |      12.3 |" in markdown
+    assert "| Q2        |      14.2 |" in markdown
+
+    markdown_without_chart_table = doc.export_to_markdown(enable_chart_tables=False)
+    assert "| Quarter   |   Revenue |" not in markdown_without_chart_table
+    assert "| Q1        |      12.3 |" not in markdown_without_chart_table
+
+    html = doc.export_to_html()
+    assert "<th>Quarter</th><th>Revenue</th>" in html
+    assert "<td>12.3</td>" in html
+
+    html_without_chart_table = doc.export_to_html(enable_chart_tables=False)
+    assert "<th>Quarter</th><th>Revenue</th>" not in html_without_chart_table
+    assert "<td>12.3</td>" not in html_without_chart_table
 
 
 def test_intersection_area_with():
@@ -824,7 +926,7 @@ def test_image_ref_blocks_oversized_base64():
     import base64
 
     large_bytes = b"X" * (28 * 1024 * 1024)
-    large_data = base64.b64encode(large_bytes).decode('ascii')
+    large_data = base64.b64encode(large_bytes).decode("ascii")
     data_uri = f"data:image/png;base64,{large_data}"
 
     image_ref = ImageRef(
@@ -850,7 +952,7 @@ def test_image_ref_accepts_valid_base64():
     buffer = BytesIO()
     fig_image.save(buffer, format="PNG")
     img_bytes = buffer.getvalue()
-    img_base64 = base64.b64encode(img_bytes).decode('ascii')
+    img_base64 = base64.b64encode(img_bytes).decode("ascii")
     data_uri = f"data:image/png;base64,{img_base64}"
 
     # Create ImageRef with data URI

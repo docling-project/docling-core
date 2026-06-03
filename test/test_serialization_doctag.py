@@ -6,7 +6,13 @@ from docling_core.transforms.serializer.doctags import (
     DocTagsDocSerializer,
     DocTagsParams,
 )
-from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
+from docling_core.types.doc import (
+    DocItemLabel,
+    DoclingDocument,
+    PictureMeta,
+    TableData,
+    TabularChartMetaField,
+)
 
 from .test_serialization import verify
 
@@ -53,6 +59,26 @@ def test_no_content_suppresses_figure_caption_text():
 
     txt = serialize_doctags(doc, add_content=False)
     assert "Figure Caption Text" not in txt
+
+
+def test_chart_labeled_picture_serializes_as_chart_without_classification():
+    doc = DoclingDocument(name="t")
+    chart = doc.add_picture(label=DocItemLabel.CHART)
+
+    table_data = TableData(num_rows=0, num_cols=2)
+    table_data.add_row(["Quarter", "Revenue"])
+    table_data.add_row(["Q1", "12.3"])
+    chart.meta = PictureMeta(
+        tabular_chart=TabularChartMetaField(chart_data=table_data)
+    )
+
+    txt = serialize_doctags(doc)
+
+    assert "<chart>" in txt
+    assert "</chart>" in txt
+    assert "<picture>" not in txt
+    assert "Quarter" in txt
+    assert "12.3" in txt
 
 
 def test_list_items_not_double_wrapped_when_no_content():

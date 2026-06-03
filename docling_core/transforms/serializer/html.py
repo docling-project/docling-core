@@ -943,7 +943,13 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                 if (
                     (params.allowed_meta_names is None or key in params.allowed_meta_names)
                     and (key not in params.blocked_meta_names)
-                    and (tmp := self._serialize_meta_field(item.meta, key))
+                    and (
+                        tmp := self._serialize_meta_field(
+                            item.meta,
+                            key,
+                            params.enable_chart_tables,
+                        )
+                    )
                 )
             ]
             if item.meta is not None and item.meta.has_content()
@@ -960,7 +966,12 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
             # NOTE for now using an empty span source for GroupItems
         )
 
-    def _serialize_meta_field(self, meta: BaseMeta, name: str) -> Optional[str]:
+    def _serialize_meta_field(
+        self,
+        meta: BaseMeta,
+        name: str,
+        enable_chart_tables: bool,
+    ) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
             is_html_markup = False
 
@@ -988,6 +999,8 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
             elif isinstance(field_val, MoleculeMetaField):
                 txt = field_val.smi
             elif isinstance(field_val, TabularChartMetaField):
+                if not enable_chart_tables:
+                    return None
                 temp_doc = DoclingDocument(name="temp")
                 temp_table = temp_doc.add_table(data=field_val.chart_data)
                 table_content = temp_table.export_to_html(temp_doc).strip()

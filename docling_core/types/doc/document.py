@@ -83,6 +83,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.PARAGRAPH,
     DocItemLabel.TABLE,
     DocItemLabel.PICTURE,
+    DocItemLabel.CHART,
     DocItemLabel.FORMULA,
     DocItemLabel.CHECKBOX_UNSELECTED,
     DocItemLabel.CHECKBOX_SELECTED,
@@ -4139,6 +4140,7 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
+        label: Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = DocItemLabel.PICTURE,
     ):
         """add_picture.
 
@@ -4147,6 +4149,7 @@ class DoclingDocument(BaseModel):
         :param RefItem]]:  (Default value = None)
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param parent: Optional[NodeItem]:  (Default value = None)
+        :param label: Label for the picture item. (Default value = DocItemLabel.PICTURE)
         """
         if not parent:
             parent = self.body
@@ -4155,7 +4158,7 @@ class DoclingDocument(BaseModel):
         cref = f"#/pictures/{picture_index}"
 
         fig_item = PictureItem(
-            label=DocItemLabel.PICTURE,
+            label=label,
             annotations=annotations or [],
             image=image,
             self_ref=cref,
@@ -5073,6 +5076,7 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         content_layer: Optional[ContentLayer] = None,
         after: bool = True,
+        label: Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = DocItemLabel.PICTURE,
     ) -> PictureItem:
         """Creates a new PictureItem item and inserts it into the document.
 
@@ -5083,6 +5087,7 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]:  (Default value = None)
         :param content_layer: Optional[ContentLayer]:  (Default value = None)
         :param after: bool:  (Default value = True)
+        :param label: Label for the picture item. (Default value = DocItemLabel.PICTURE)
 
         :returns: PictureItem: The newly created PictureItem item.
         """
@@ -5091,7 +5096,7 @@ class DoclingDocument(BaseModel):
 
         # Create a new PictureItem NodeItem
         picture_item = PictureItem(
-            label=DocItemLabel.PICTURE,
+            label=label,
             annotations=annotations or [],
             image=image,
             self_ref="#",
