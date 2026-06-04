@@ -87,7 +87,7 @@ from docling_core.types.doc.labels import (
 # Doclang uses only its own token vocabulary.
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-DOCLANG_VERSION: Final = "0.2"
+_DOCLANG_VERSION: Final = "0.5"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()
@@ -978,8 +978,8 @@ class DoclangParams(CommonParams):
     escape_mode: EscapeMode = EscapeMode.CDATA_WHEN_NEEDED
     content_wrapping_mode: WrapMode = WrapMode.WRAP_WHEN_NEEDED
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
-    include_namespace: bool = True
-    include_version: bool = True
+    include_namespace: bool = False
+    include_version: bool = False
     # Virtual text mode: when True, list items and table cells omit <text> wrapper
     use_virtual_texts: bool = False
 
@@ -2395,7 +2395,7 @@ class DoclangDocSerializer(DocSerializer):
 
         open_token: str = DoclangVocabulary._create_doclang_root(
             namespace=DOCLANG_NAMESPACE if self.params.include_namespace else None,
-            version=DOCLANG_VERSION if self.params.include_version else None,
+            version=_DOCLANG_VERSION if self.params.include_version else None,
         )
         head = self._create_head()
         close_token: str = DoclangVocabulary._create_doclang_root(closing=True)

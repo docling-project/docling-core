@@ -6,15 +6,11 @@ from docling_core.experimental.doclang import (
     DoclangDeserializer,
     DoclangDocSerializer,
     DoclangParams,
-    DOCLANG_NAMESPACE,
-    DOCLANG_VERSION,
 )
 from docling_core.types.doc import (
     BoundingBox,
     DocItemLabel,
     DoclingDocument,
-    PictureClassificationClass,
-    PictureClassificationData,
     ProvenanceItem,
     RichTableCell,
     Size,
@@ -60,7 +56,7 @@ def test_roundtrip_text():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <text>Hello world</text>
 </doclang>
     """
@@ -75,7 +71,7 @@ def test_roundtrip_title():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <heading level="1">My Title</heading>
 </doclang>
     """
@@ -90,7 +86,7 @@ def test_roundtrip_heading():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <heading level="3">Section A</heading>
 </doclang>
     """
@@ -105,7 +101,7 @@ def test_roundtrip_caption():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <caption>Cap text</caption>
 </doclang>
     """
@@ -157,7 +153,7 @@ def test_roundtrip_code():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <code class="Python"><![CDATA[print('hi')]]></code>
   <code class="MATLAB"><![CDATA[disp("Hello world!")]]></code>
 </doclang>
@@ -293,7 +289,7 @@ def test_roundtrip_title_prov():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <heading level="1">
     <location value="51"/>
     <location value="51"/>
@@ -414,7 +410,7 @@ def test_roundtrip_list_unordered_prov():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <list class="unordered">
     <ldiv/>
     <text>
@@ -639,7 +635,7 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <list class="unordered">
     <ldiv/>
     <text>Step 1</text>
@@ -1132,7 +1128,7 @@ def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
 
 def test_wrapping():
     dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <text>simple</text>
   <text>
     <content>  leading</content>
@@ -1186,7 +1182,7 @@ def test_wrapping():
 
 def test_rich_table_cells():
     dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <table>
     <fcel/>
     <text>foo</text>
@@ -1224,7 +1220,7 @@ def test_rich_table_cells():
 
 def test_picture_tabular_chart_content_cdata_cells():
     """Deserializer must extract text from <content><![CDATA[...]]></content> in OTSL cells."""
-    doclang = f"""<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}"><group><picture><location value="0"/><location value="0"/><location value="511"/><location value="511"/><table><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></table></picture></group></doclang>"""
+    doclang = f"""<doclang><group><picture><location value="0"/><location value="0"/><location value="511"/><location value="511"/><table><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></table></picture></group></doclang>"""
     doc = _deserialize(doclang)
     first_cell_text = doc.pictures[0].meta.tabular_chart.chart_data.grid[0][0].text
     assert first_cell_text == "Characteristic"
@@ -1264,7 +1260,7 @@ def test_roundtrip_with_layers():
 
 def test_roundtrip_with_newlines():
     doclang_str = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <text>
     <content>foo
 bar</content>
@@ -1286,7 +1282,7 @@ def test_roundtrip_document_index_table():
     """Test that DOCUMENT_INDEX label is preserved through serialization/deserialization."""
     doc = DoclingDocument(name="test")
     _add_default_page(doc)
-    
+
     # Add a regular table
     table_data = TableData(num_cols=2)
     table_data.add_row(['Header 1', 'Header 2'])
@@ -1294,29 +1290,29 @@ def test_roundtrip_document_index_table():
     table_data.grid[0][1].column_header = True
     table_data.add_row(['Data 1', 'Data 2'])
     doc.add_table(data=table_data, label=DocItemLabel.TABLE, prov=_default_prov())
-    
+
     # Add a DOCUMENT_INDEX table
     index_data = TableData(num_cols=2)
     index_data.add_row(['Index 1', 'Page 1'])
     index_data.add_row(['Index 2', 'Page 2'])
     doc.add_table(data=index_data, label=DocItemLabel.DOCUMENT_INDEX, prov=_default_prov())
-    
+
     # Serialize
     xml_str = _serialize(doc)
-    
+
     # Verify serialization contains class="index"
     assert '<table class="index">' in xml_str
-    
+
     # Deserialize
     doc2 = _deserialize(xml_str)
-    
+
     # Verify we have 2 tables
     assert len(doc2.tables) == 2
-    
+
     # Verify labels are preserved
     assert doc2.tables[0].label == DocItemLabel.TABLE
     assert doc2.tables[1].label == DocItemLabel.DOCUMENT_INDEX
-    
+
     # Verify table data is preserved
     assert doc2.tables[0].data.num_rows == 2
     assert doc2.tables[0].data.num_cols == 2
@@ -1327,7 +1323,7 @@ def test_roundtrip_document_index_table():
 def test_roundtrip_table_with_data_class():
     """Test that tables with class='data' are correctly deserialized as TABLE label."""
     # Create XML with explicit class="data"
-    xml_str = """<doclang xmlns="https://www.doclang.ai/ns/v0">
+    xml_str = """<doclang>
   <table class="data">
     <ched/>
     <text>Header 1</text>
@@ -1341,10 +1337,10 @@ def test_roundtrip_table_with_data_class():
     <nl/>
   </table>
 </doclang>"""
-    
+
     # Deserialize
     doc = _deserialize(xml_str)
-    
+
     # Verify we have 1 table with TABLE label
     assert len(doc.tables) == 1
     assert doc.tables[0].label == DocItemLabel.TABLE
@@ -1353,14 +1349,14 @@ def test_roundtrip_table_with_data_class():
 def test_table_with_invalid_class_raises_error():
     """Test that tables with invalid class values raise an error."""
     # Create XML with invalid class="invalid"
-    xml_str = """<doclang xmlns="https://www.doclang.ai/ns/v0">
+    xml_str = """<doclang>
   <table class="invalid">
     <fcel/>
     <text>Data 1</text>
     <nl/>
   </table>
 </doclang>"""
-    
+
     # Deserialize should raise ValueError
     with pytest.raises(ValueError, match="Invalid class attribute value 'invalid' for table element"):
         _deserialize(xml_str)

@@ -1,4 +1,4 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <text>
     <location value="61"/>
     <location value="24"/>
@@ -14,9 +14,6 @@
     <layer class="furniture"/>
   </text>
   <picture>
-    <meta>
-      <classification/>
-    </meta>
     <location value="432"/>
     <location value="10"/>
     <location value="476"/>
