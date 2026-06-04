@@ -1,3 +1,10 @@
+## [v2.78.1](https://github.com/docling-project/docling-core/releases/tag/v2.78.1) - 2026-06-04
+
+### Fix
+
+* Pin transformers<5.9.0 to solve MPS issue ([#625](https://github.com/docling-project/docling-core/issues/625)) ([`d441e6e`](https://github.com/docling-project/docling-core/commit/d441e6ece33f1534c207fca19aa519f370c68d40))
+* Reject unsupported URL schemes ([#604](https://github.com/docling-project/docling-core/issues/604)) ([`701c0ce`](https://github.com/docling-project/docling-core/commit/701c0ce5d14e57c19e030aff8fb1d335bf2431a7))
+
 ## [v2.78.0](https://github.com/docling-project/docling-core/releases/tag/v2.78.0) - 2026-05-29
 
 ### Feature
