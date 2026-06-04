@@ -1,4 +1,4 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <text>
     <location value="61"/>
     <location value="27"/>
@@ -6,18 +6,12 @@
     <location value="33"/>
   </text>
   <picture>
-    <meta>
-      <classification/>
-    </meta>
     <location value="80"/>
     <location value="26"/>
     <location value="167"/>
     <location value="57"/>
   </picture>
   <picture>
-    <meta>
-      <classification/>
-    </meta>
     <location value="332"/>
     <location value="26"/>
     <location value="462"/>
@@ -300,9 +294,6 @@
       <location value="458"/>
     </caption>
     <picture>
-      <meta>
-        <classification/>
-      </meta>
       <location value="286"/>
       <location value="286"/>
       <location value="450"/>

@@ -4,11 +4,7 @@ from itertools import chain
 from pathlib import Path
 from typing import Optional
 
-import pytest
-
 from docling_core.experimental.doclang import (
-    DOCLANG_NAMESPACE,
-    DOCLANG_VERSION,
     ContentType,
     EscapeMode,
     DoclangDocSerializer,
@@ -155,7 +151,7 @@ def test_list_items_not_double_wrapped_when_no_content():
 
     txt = serialize_doclang(doc, params=DoclangParams(content_types=set()))
     exp_txt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <list class="unordered">
     <ldiv/>
     <text></text>
@@ -227,7 +223,7 @@ def test_doclang_crop_embedded():
 
     # verifying everything except base64 data as the latter seems to be flaky across runs/platforms
     exp_prefix = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <picture>
     <meta>
       <classification>Other</classification>
@@ -1308,7 +1304,7 @@ def test_empty_table_preserved_by_default():
 def test_document_index_serialization():
     """Test that DOCUMENT_INDEX tables are serialized with class='index' attribute."""
     doc = DoclingDocument(name="test")
-    
+
     # Add a regular table
     table_data = TableData(num_cols=2)
     table_data.add_row(['Header 1', 'Header 2'])
@@ -1316,15 +1312,15 @@ def test_document_index_serialization():
     table_data.grid[0][1].column_header = True
     table_data.add_row(['Data 1', 'Data 2'])
     doc.add_table(data=table_data, label=DocItemLabel.TABLE)
-    
+
     # Add a DOCUMENT_INDEX table
     index_data = TableData(num_cols=2)
     index_data.add_row(['Index 1', 'Page 1'])
     index_data.add_row(['Index 2', 'Page 2'])
     doc.add_table(data=index_data, label=DocItemLabel.DOCUMENT_INDEX)
-    
+
     result = serialize_doclang(doc)
-    
+
     # Verify against expected output
     exp_file = Path("./test/data/doc/document_index.gt.dclg.xml")
     verify(exp_file=exp_file, actual=result)
@@ -1588,22 +1584,22 @@ def test_list_item_with_code_child_and_bbox():
 
 def _create_virtual_text_test_doc(add_location: bool = False) -> DoclingDocument:
     """Helper to create a test document for virtual text testing.
-    
+
     Args:
         add_location: If True, add provenance/location info to items.
-    
+
     Returns:
         DoclingDocument with list items and table cells for testing.
     """
     doc = DoclingDocument(name="test_virtual_texts")
-    
+
     # Add page if we need location
     if add_location:
         doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
-    
+
     # Add a list with various item types
     lg = doc.add_list_group()
-    
+
     # Regular list item with text
     prov = None
     if add_location:
@@ -1613,7 +1609,7 @@ def _create_virtual_text_test_doc(add_location: bool = False) -> DoclingDocument
             charspan=(0, 12),
         )
     doc.add_list_item(text="Regular item", parent=lg, prov=prov)
-    
+
     # List item with empty text and CodeItem child
     li_with_code = doc.add_list_item(text="", parent=lg)
     doc.add_code(
@@ -1621,7 +1617,7 @@ def _create_virtual_text_test_doc(add_location: bool = False) -> DoclingDocument
         parent=li_with_code,
         code_language=CodeLanguageLabel.PYTHON,
     )
-    
+
     # List item with text
     prov2 = None
     if add_location:
@@ -1631,7 +1627,7 @@ def _create_virtual_text_test_doc(add_location: bool = False) -> DoclingDocument
             charspan=(0, 12),
         )
     doc.add_list_item(text="Another item", parent=lg, prov=prov2)
-    
+
     # Add a table with cells (mix of regular and rich cells)
     # Add provenance to the table so cell locations can be serialized
     table_prov = None
@@ -1642,7 +1638,7 @@ def _create_virtual_text_test_doc(add_location: bool = False) -> DoclingDocument
             charspan=(0, 50),
         )
     table = doc.add_table(data=TableData(num_rows=2, num_cols=2), prov=table_prov)
-    
+
     cell: TableCell
     # Add cells to the table
     for i in range(2):
@@ -1668,21 +1664,21 @@ def _create_virtual_text_test_doc(add_location: bool = False) -> DoclingDocument
                     bbox=prov2.bbox if prov2 and i + j == 0 else None,
                 )
             doc.add_table_cell(table_item=table, cell=cell)
-    
+
     return doc
 
 
 def test_virtual_texts_true_no_location():
     """Test use_virtual_texts=True without location info."""
     doc = _create_virtual_text_test_doc(add_location=False)
-    
+
     params = DoclangParams(
         use_virtual_texts=True,
         add_location=False,
     )
     serializer = DoclangDocSerializer(doc=doc, params=params)
     ser_txt = serializer.serialize().text
-    
+
     exp_file = Path("./test/data/doc/virtual_texts_true_no_loc.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
@@ -1690,7 +1686,7 @@ def test_virtual_texts_true_no_location():
 def test_virtual_texts_true_with_location():
     """Test use_virtual_texts=True with location info."""
     doc = _create_virtual_text_test_doc(add_location=True)
-    
+
     params = DoclangParams(
         use_virtual_texts=True,
         add_location=True,
@@ -1698,7 +1694,7 @@ def test_virtual_texts_true_with_location():
     )
     serializer = DoclangDocSerializer(doc=doc, params=params)
     ser_txt = serializer.serialize().text
-    
+
     exp_file = Path("./test/data/doc/virtual_texts_true_with_loc.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
@@ -1706,14 +1702,14 @@ def test_virtual_texts_true_with_location():
 def test_virtual_texts_false_no_location():
     """Test use_virtual_texts=False (default) without location info."""
     doc = _create_virtual_text_test_doc(add_location=False)
-    
+
     params = DoclangParams(
         use_virtual_texts=False,
         add_location=False,
     )
     serializer = DoclangDocSerializer(doc=doc, params=params)
     ser_txt = serializer.serialize().text
-    
+
     exp_file = Path("./test/data/doc/virtual_texts_false_no_loc.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
 
@@ -1721,7 +1717,7 @@ def test_virtual_texts_false_no_location():
 def test_virtual_texts_false_with_location():
     """Test use_virtual_texts=False (default) with location info."""
     doc = _create_virtual_text_test_doc(add_location=True)
-    
+
     params = DoclangParams(
         use_virtual_texts=False,
         add_location=True,
@@ -1729,6 +1725,18 @@ def test_virtual_texts_false_with_location():
     )
     serializer = DoclangDocSerializer(doc=doc, params=params)
     ser_txt = serializer.serialize().text
-    
+
     exp_file = Path("./test/data/doc/virtual_texts_false_with_loc.gt.dclg.xml")
+    verify(exp_file=exp_file, actual=ser_txt)
+
+def test_include_namespace_and_version():
+    """Test that include_namespace and include_version parameters work."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello world")
+
+    params = DoclangParams(include_namespace=True, include_version=True)
+    serializer = DoclangDocSerializer(doc=doc, params=params)
+    ser_txt = serializer.serialize().text
+
+    exp_file = Path("./test/data/doc/include_namespace_and_version.gt.dclg.xml")
     verify(exp_file=exp_file, actual=ser_txt)
