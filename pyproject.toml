@@ -77,7 +77,9 @@ chunking = [
     'tree-sitter-typescript >=0.23.2',
 
     # specific:
-    'transformers (>=4.34.0,<6.0.0)',
+    # temporary solution until huggingface/transformers#46159 is resolved
+    'transformers (>=4.34.0,<5.9.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform == "darwin"',
+    'transformers (>=4.34.0,<6.0.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform != "darwin"',
 ]
 chunking-openai = [
     # common:
