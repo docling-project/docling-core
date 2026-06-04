@@ -46,40 +46,35 @@ Affiliation 2]]></content>
     </ldiv>
     <text><![CDATA[list item 4]]></text>
   </list>
-  <group>
+  <table>
     <caption><![CDATA[This is the caption of table 1.]]></caption>
-    <table>
-      <fcel/>
-      <text><![CDATA[Product]]></text>
-      <fcel/>
-      <text><![CDATA[Years]]></text>
-      <lcel/>
-      <nl/>
-      <ucel/>
-      <fcel/>
-      <text><![CDATA[2016]]></text>
-      <fcel/>
-      <text><![CDATA[2017]]></text>
-      <nl/>
-      <fcel/>
-      <text><![CDATA[Apple]]></text>
-      <fcel/>
-      <text><![CDATA[49823]]></text>
-      <fcel/>
-      <text><![CDATA[695944]]></text>
-      <nl/>
-    </table>
-  </group>
-  <group>
+    <fcel/>
+    <text><![CDATA[Product]]></text>
+    <fcel/>
+    <text><![CDATA[Years]]></text>
+    <lcel/>
+    <nl/>
+    <ucel/>
+    <fcel/>
+    <text><![CDATA[2016]]></text>
+    <fcel/>
+    <text><![CDATA[2017]]></text>
+    <nl/>
+    <fcel/>
+    <text><![CDATA[Apple]]></text>
+    <fcel/>
+    <text><![CDATA[49823]]></text>
+    <fcel/>
+    <text><![CDATA[695944]]></text>
+    <nl/>
+  </table>
+  <picture>
     <caption><![CDATA[This is the caption of figure 1.]]></caption>
-    <picture></picture>
-  </group>
-  <group>
+  </picture>
+  <picture>
     <caption><![CDATA[This is the caption of figure 2.]]></caption>
-    <picture>
-      <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
-    </picture>
-  </group>
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
+  </picture>
   <list class="unordered">
     <ldiv>
       <marker><![CDATA[■]]></marker>
@@ -113,7 +108,9 @@ Affiliation 2]]></content>
       </ldiv>
       <text>
 <![CDATA[Here a code snippet:]]>        
-        <code class="Python"><![CDATA[print("Hello world")]]></code>
+        <code>
+          <label value="Python"/>
+<![CDATA[print("Hello world")]]>        </code>
 <![CDATA[(to be displayed inline)]]>        
       </text>
       <ldiv>
@@ -127,7 +124,9 @@ Affiliation 2]]></content>
     </list>
   </list>
   <text><![CDATA[Here a code block:]]></text>
-  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <code>
+    <label value="Python"/>
+<![CDATA[print("Hello world")]]>  </code>
   <text><![CDATA[Here a formula block:]]></text>
   <formula><![CDATA[E=mc^2]]></formula>
   <text>
@@ -194,18 +193,22 @@ Affiliation 2]]></content>
   <text><![CDATA[Some 'single' quotes]]></text>
   <text><![CDATA[Some "double" quotes]]></text>
   <text>
-    <meta>
-      <summary><![CDATA[Summary with <tags> & ampersands]]></summary>
-      <description><![CDATA[Description content]]></description>
-    </meta>
+    <custom>
+      <docling__summary><![CDATA[Summary with <tags> & ampersands]]></docling__summary>
+      <docling__description><![CDATA[Description content]]></docling__description>
+    </custom>
 <![CDATA[An ampersand: &]]>  </text>
   <code><![CDATA[0 == 0]]></code>
   <code>
     <content><![CDATA[ 1 leading space, 4 trailing    ]]></content>
   </code>
   <code><![CDATA[0 < 1]]></code>
-  <code class="Python"><![CDATA[42 == 42]]></code>
-  <code class="Python"><![CDATA[42 < 1337]]></code>
+  <code>
+    <label value="Python"/>
+<![CDATA[42 == 42]]>  </code>
+  <code>
+    <label value="Python"/>
+<![CDATA[42 < 1337]]>  </code>
   <table>
     <fcel/>
     <text><![CDATA[Foo]]></text>

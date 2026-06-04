@@ -4,7 +4,6 @@
     <location value="24"/>
     <location value="101"/>
     <location value="29"/>
-    <layer class="furniture"/>
     13040.19
   </text>
   <text>
@@ -12,18 +11,14 @@
     <location value="24"/>
     <location value="267"/>
     <location value="29"/>
-    <layer class="furniture"/>
     - 16 -
   </text>
   <picture>
-    <meta>
-      <classification>Other</classification>
-    </meta>
+    <label value="other"/>
     <location value="432"/>
     <location value="10"/>
     <location value="476"/>
     <location value="39"/>
-    <layer class="furniture"/>
   </picture>
   <group>
     <table>

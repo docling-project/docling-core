@@ -1,5 +1,6 @@
 <doclang>
   <picture>
+    <label value="bar_code"/>
     <location value="255"/>
     <location value="3"/>
     <location value="448"/>
@@ -543,6 +544,7 @@
     <location value="259"/>
   </text>
   <picture>
+    <label value="illustration"/>
     <location value="285"/>
     <location value="268"/>
     <location value="450"/>
@@ -565,6 +567,5 @@
     <location value="191"/>
     <location value="281"/>
     <location value="197"/>
-    <layer class="background"/>
   </text>
 </doclang>

@@ -72,6 +72,7 @@
     <location value="105"/>
   </text>
   <picture>
+    <label value="logo"/>
     <location value="221"/>
     <location value="112"/>
     <location value="282"/>

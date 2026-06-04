@@ -3,7 +3,9 @@
     <ldiv/>
     Regular item
     <ldiv/>
-    <code class="Python"><![CDATA[print('hello')]]></code>
+    <code>
+      <label value="Python"/>
+<![CDATA[print('hello')]]>    </code>
     <ldiv/>
     Another item
   </list>

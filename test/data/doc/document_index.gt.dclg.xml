@@ -11,7 +11,7 @@
     <text>Data 2</text>
     <nl/>
   </table>
-  <table class="index">
+  <index>
     <fcel/>
     <text>Index 1</text>
     <fcel/>
@@ -22,5 +22,5 @@
     <fcel/>
     <text>Page 2</text>
     <nl/>
-  </table>
+  </index>
 </doclang>

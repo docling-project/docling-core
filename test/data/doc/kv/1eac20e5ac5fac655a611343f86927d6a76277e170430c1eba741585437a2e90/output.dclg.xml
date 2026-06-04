@@ -83,9 +83,7 @@
     (Exact name of registrant as specified in its charter)
   </text>
   <picture>
-    <meta>
-      <classification>Logo</classification>
-    </meta>
+    <label value="logo"/>
     <location value="221"/>
     <location value="112"/>
     <location value="282"/>

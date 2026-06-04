@@ -40,10 +40,10 @@
     </ldiv>
     <text></text>
   </list>
-  <group></group>
+  <table></table>
   <picture></picture>
   <picture>
-    <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
   </picture>
   <list class="unordered">
     <ldiv>
@@ -82,13 +82,17 @@
     </list>
   </list>
   <text>
-    <code class="Python"></code>
+    <code>
+      <label value="Python"/>
+    </code>
   </text>
   <text>
     <formula></formula>
   </text>
   <text></text>
-  <code class="Python"></code>
+  <code>
+    <label value="Python"/>
+  </code>
   <text></text>
   <formula></formula>
   <text></text>
@@ -138,6 +142,7 @@
     <location value="502"/>
   </picture>
   <picture>
+    <label value="pie_chart"/>
     <location value="5"/>
     <location value="492"/>
     <location value="15"/>

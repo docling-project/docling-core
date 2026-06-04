@@ -7,18 +7,14 @@
     (19)
   </text>
   <picture>
-    <meta>
-      <classification>Logo</classification>
-    </meta>
+    <label value="logo"/>
     <location value="80"/>
     <location value="26"/>
     <location value="167"/>
     <location value="57"/>
   </picture>
   <picture>
-    <meta>
-      <classification>Bar code</classification>
-    </meta>
+    <label value="bar_code"/>
     <location value="332"/>
     <location value="26"/>
     <location value="462"/>
@@ -319,7 +315,12 @@
       </field_region>
     </group>
   </list>
-  <group>
+  <picture>
+    <label value="illustration"/>
+    <location value="286"/>
+    <location value="286"/>
+    <location value="450"/>
+    <location value="458"/>
     <caption>
       <location value="409"/>
       <location value="450"/>
@@ -327,16 +328,7 @@
       <location value="458"/>
       Fig.1
     </caption>
-    <picture>
-      <meta>
-        <classification>Illustration</classification>
-      </meta>
-      <location value="286"/>
-      <location value="286"/>
-      <location value="450"/>
-      <location value="458"/>
-    </picture>
-  </group>
+  </picture>
   <field_region>
     <field_item>
       <key>
@@ -359,7 +351,6 @@
     <location value="412"/>
     <location value="45"/>
     <location value="484"/>
-    <layer class="furniture"/>
     EP3800018A1
   </text>
 </doclang>

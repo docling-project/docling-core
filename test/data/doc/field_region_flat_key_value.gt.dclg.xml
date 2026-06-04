@@ -1,0 +1,10 @@
+<doclang>
+  <field_region>
+    <field_item>
+      <key>Key</key>
+    </field_item>
+    <field_item>
+      <value class="read_only">Value</value>
+    </field_item>
+  </field_region>
+</doclang>

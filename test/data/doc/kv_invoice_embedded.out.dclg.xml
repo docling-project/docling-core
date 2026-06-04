@@ -7,7 +7,7 @@
     <field_item>
       <key>
         <picture>
-          <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=</uri>
+          <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="/>
         </picture>
       </key>
       <value class="read_only">+123-456-7890</value>
@@ -15,7 +15,7 @@
     <field_item>
       <key>
         <picture>
-          <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=</uri>
+          <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="/>
         </picture>
       </key>
       <value class="read_only">hello@example.com</value>

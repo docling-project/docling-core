@@ -2,7 +2,12 @@
   <text>Simple text</text>
   <text>
     <content>Here a code snippet: </content>
-    <code class="Python">help()</code>
+    <code>
+      <label value="Python"/>
+      <content>
+      help()
+    </content>
+    </code>
     <content> (to be shown)</content>
   </text>
   <list class="unordered">
