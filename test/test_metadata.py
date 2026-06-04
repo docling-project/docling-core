@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from typing_extensions import override
 
-from docling_core.transforms.serializer.html import HTMLDocSerializer, HTMLParams
 from docling_core.transforms.serializer.base import SerializationResult
 from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.transforms.serializer.html import HTMLDocSerializer, HTMLParams
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownMetaSerializer,
@@ -319,11 +319,9 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
     assert "ibm, zurich, company" in html
     assert ">business, geography<" in html
 
-    # duplicate values must be rejected
-    with pytest.raises(Exception):
-        KeywordsMetaField(values=["ai", "ml", "ai"])
-    with pytest.raises(Exception):
-        TopicsMetaField(values=["nlp", "nlp"])
+    # duplicate values are removed without rejection
+    assert KeywordsMetaField(values=["ai", "ml", "ai"]).values == ["ai", "ml"]
+    assert TopicsMetaField(values=["nlp", "nlp"]).values == ["nlp"]
 
 
 def test_html_escapes_entity_text() -> None:
@@ -372,8 +370,12 @@ def test_md_marked_renders_keywords_and_topics() -> None:
     assert "[Topics] business" in md
 
 
-def test_keywords_values_required_non_empty() -> None:
-    with pytest.raises(Exception):
+def test_keywords_topics_required_values() -> None:
+    with pytest.raises(ValidationError, match="at least 1 item"):
         KeywordsMetaField(values=[])
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError, match="at least 1 item"):
         TopicsMetaField(values=[])
+    with pytest.raises(ValidationError, match="list of strings"):
+        TopicsMetaField(values=34)
+    with pytest.raises(ValidationError, match="valid string"):
+        TopicsMetaField(values=[34])
