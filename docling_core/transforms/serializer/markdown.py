@@ -30,6 +30,7 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _get_annotation_text,
+    _join_inline_parts,
     _should_use_legacy_annotations,
     create_ser_result,
 )
@@ -806,7 +807,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
             visited=my_visited,
             **kwargs,
         )
-        text_res = " ".join([p.text for p in parts if p.text])
+        text_res = _join_inline_parts(parts)
         return create_ser_result(text=text_res, span_source=parts)
 
 

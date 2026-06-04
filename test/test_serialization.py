@@ -7,7 +7,18 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
-from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.common import (
+    _DEFAULT_LABELS,
+    InlineBoundary,
+    _classify_ambiguous_word_boundary,
+    _classify_inline_boundary,
+    _classify_provenance_boundary,
+    _classify_text_boundary,
+    _is_semantic_inline_atom,
+    _is_styled_text,
+    _join_inline_parts,
+    create_ser_result,
+)
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLMetaSerializer,
@@ -24,18 +35,22 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
+
 from docling_core.types.doc import DoclingDocument
-from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.base import BoundingBox, ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
     DescriptionAnnotation,
+    DoclingDocument,
     EntitiesMetaField,
     EntityMention,
+    Formatting,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
     PictureMeta,
+    ProvenanceItem,
     RefItem,
     RichTableCell,
     SummaryMetaField,
@@ -67,6 +82,36 @@ def verify(exp_file: Path, actual: str):
             actual = _normalize_quotes(actual)
 
         assert actual == expected
+
+
+def _make_inline_doc() -> tuple[DoclingDocument, object]:
+    doc = DoclingDocument(name="test")
+    return doc, doc.add_inline_group()
+
+
+def _add_inline_text(
+    doc: DoclingDocument,
+    group,
+    text: str,
+    *,
+    label: DocItemLabel = DocItemLabel.TEXT,
+    **kwargs,
+):
+    return doc.add_text(label=label, parent=group, text=text, **kwargs)
+
+
+def _extract_body_content(html: str) -> str:
+    start = html.find("<body>") + 6
+    end = html.find("</body>")
+    return html[start:end].strip()
+
+
+def _make_prov(start: int, end: int, *, page_no: int = 1) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=page_no,
+        bbox=BoundingBox(l=0.0, t=0.0, r=1.0, b=1.0),
+        charspan=(start, end),
+    )
 
 
 # ===============================
@@ -1103,3 +1148,313 @@ def test_html_meta_emits_xhtml_compatible_attributes():
     assert 'data-meta-name="entities"' in html_out
     # Output must be parseable by a strict XML parser.
     ET.fromstring(html_out)
+
+
+# ===============================
+# Tests for inline group join behavior without spaces
+# ===============================
+
+
+def test_md_inline_group_no_spaces():
+    """Test that inline groups join text parts without spaces for continuous text."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="D",
+        formatting=Formatting(
+            bold=True,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="ocling",
+        formatting=Formatting(
+            bold=False,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+
+    # This should serialize as "**D**ocling" without space
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "**D**ocling"
+    assert actual == expected
+
+
+def test_html_inline_group_no_spaces():
+    """Test that inline groups join text parts without spaces for continuous text."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="Project",
+        formatting=Formatting(
+            bold=True,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="ing",
+        formatting=Formatting(
+            bold=False,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+
+    # This should serialize as <strong>Project</strong>ing without space
+    ser = HTMLDocSerializer(
+        doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False)
+    )
+    actual = ser.serialize().text
+
+    body_content = _extract_body_content(actual)
+    assert "<strong>Project</strong>ing" in body_content
+
+
+def test_md_inline_group_mixed_formatting_mid_word():
+    """Test inline group with different formatting mid-word."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Pars")
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="ing",
+        formatting=Formatting(
+            bold=False,
+            italic=True,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "Pars*ing*"
+    assert actual == expected
+
+
+def test_html_inline_group_mixed_formatting_mid_word():
+    """Test inline group with different formatting mid-word."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Pars")
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="ing",
+        formatting=Formatting(
+            bold=False,
+            italic=True,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+
+    ser = HTMLDocSerializer(
+        doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False)
+    )
+    actual = ser.serialize().text
+
+    body_content = _extract_body_content(actual)
+    assert "Pars<em>ing</em>" in body_content.replace("\n", " ")
+
+
+def test_md_inline_group_single_part():
+    """Test inline group with single text part (no joining needed)."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Single")
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "Single"
+    assert actual == expected
+
+
+def test_html_inline_group_single_part():
+    """Test inline group with single text part (no joining needed)."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Single")
+
+    ser = HTMLDocSerializer(
+        doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False)
+    )
+    actual = ser.serialize().text
+
+    body_content = _extract_body_content(actual)
+    assert "Single" in body_content
+
+
+def test_join_inline_parts_filters_empty_parts_and_inserts_spacing():
+    doc, group = _make_inline_doc()
+    text_item = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="A hyperlink on")
+    code_item = doc.add_code(text="code in a line", parent=group, hyperlink="#link")
+
+    parts = [
+        create_ser_result(text="", span_source=text_item),
+        create_ser_result(text="A hyperlink on", span_source=text_item),
+        create_ser_result(text="[`code in a line`](#link)", span_source=code_item),
+    ]
+
+    assert _join_inline_parts(parts) == "A hyperlink on [`code in a line`](#link)"
+
+
+@pytest.mark.parametrize(
+    ("prev_orig", "curr_orig", "prev_prov", "curr_prov", "expected"),
+    [
+        ("Hello ", "world", None, None, InlineBoundary.SPACE),
+        ("Hello", "world", _make_prov(0, 5), _make_prov(5, 10), InlineBoundary.JOIN),
+        ("Hello", "world", _make_prov(0, 5), _make_prov(6, 11), InlineBoundary.SPACE),
+        ("Hello", "world", _make_prov(0, 5, page_no=1), _make_prov(0, 5, page_no=2), InlineBoundary.UNKNOWN),
+    ],
+)
+def test_classify_source_boundary(prev_orig, curr_orig, prev_prov, curr_prov, expected):
+    doc, group = _make_inline_doc()
+    prev_item = _add_inline_text(
+        doc, group, label=DocItemLabel.TEXT, text=prev_orig.strip(), orig=prev_orig, prov=prev_prov
+    )
+    curr_item = _add_inline_text(
+        doc, group, label=DocItemLabel.TEXT, text=curr_orig.strip(), orig=curr_orig, prov=curr_prov
+    )
+
+    assert _classify_provenance_boundary(prev_item=prev_item, item=curr_item) == expected
+
+
+def test_classify_inline_boundary_handles_missing_items_and_whitespace():
+    assert (
+        _classify_inline_boundary(prev_text="foo ", prev_item=None, text="bar", item=None)
+        == InlineBoundary.JOIN
+    )
+    assert (
+        _classify_inline_boundary(prev_text="foo", prev_item=None, text="bar", item=None)
+        == InlineBoundary.UNKNOWN
+    )
+
+
+@pytest.mark.parametrize(
+    ("prev_text", "prev_formatting", "prev_hyperlink", "curr_text", "curr_formatting", "curr_hyperlink", "expected"),
+    [
+        ("snippet:", None, None, "bold", Formatting(bold=True), None, InlineBoundary.SPACE),
+        ("D", Formatting(bold=True), None, "ocling", None, None, InlineBoundary.JOIN),
+        ("Pars", None, None, "ing", Formatting(italic=True), None, InlineBoundary.JOIN),
+        ("Foo", None, None, "emphasis", Formatting(italic=True), None, InlineBoundary.SPACE),
+        ("strong emphasis", Formatting(bold=True), None, "tail", None, None, InlineBoundary.SPACE),
+        ("bold", Formatting(bold=True), None, "italic", Formatting(italic=True), None, InlineBoundary.SPACE),
+        ("bold", Formatting(bold=True), None, "&", None, None, InlineBoundary.SPACE),
+        ("hello-", None, None, "world", Formatting(italic=True), None, InlineBoundary.UNKNOWN),
+    ],
+)
+def test_classify_text_boundary(
+    prev_text,
+    prev_formatting,
+    prev_hyperlink,
+    curr_text,
+    curr_formatting,
+    curr_hyperlink,
+    expected,
+):
+    doc, group = _make_inline_doc()
+    prev_item = _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text=prev_text,
+        formatting=prev_formatting,
+        hyperlink=prev_hyperlink,
+    )
+    curr_item = _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text=curr_text,
+        formatting=curr_formatting,
+        hyperlink=curr_hyperlink,
+    )
+
+    assert _classify_text_boundary(prev_item=prev_item, item=curr_item) == expected
+
+
+def test_inline_boundary_separates_semantic_atoms_from_text():
+    doc, group = _make_inline_doc()
+    prev_item = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="A hyperlink on")
+    code_item = doc.add_code(text="code in a line", parent=group, hyperlink="#link")
+    formula_item = doc.add_formula(text="E=mc^2", parent=group)
+    next_item = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="(inline)")
+
+    assert (
+        _classify_inline_boundary(
+            prev_text="A hyperlink on",
+            prev_item=prev_item,
+            text="[`code in a line`](#link)",
+            item=code_item,
+        )
+        == InlineBoundary.SPACE
+    )
+    assert (
+        _classify_inline_boundary(
+            prev_text="$E=mc^2$",
+            prev_item=formula_item,
+            text="(inline)",
+            item=next_item,
+        )
+        == InlineBoundary.SPACE
+    )
+
+
+def test_common_inline_helper_flags():
+    doc, group = _make_inline_doc()
+    plain = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="plain")
+    bold = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    linked = _add_inline_text(
+        doc, group, label=DocItemLabel.TEXT, text="link", hyperlink="https://example.com"
+    )
+    code = doc.add_code(text="print()", parent=group)
+    formula = doc.add_formula(text="E=mc^2", parent=group)
+
+    assert _is_styled_text(plain) is False
+    assert _is_styled_text(bold) is True
+    assert _is_styled_text(linked) is True
+
+    assert _is_semantic_inline_atom(plain) is False
+    assert _is_semantic_inline_atom(linked) is True
+    assert _is_semantic_inline_atom(code) is True
+    assert _is_semantic_inline_atom(formula) is True
+
+
+@pytest.mark.parametrize(
+    ("curr_raw_text", "expected"),
+    [
+        ("ing", InlineBoundary.JOIN),
+        ("emphasis", InlineBoundary.SPACE),
+        ("XYZ", InlineBoundary.SPACE),
+        ("42", InlineBoundary.SPACE),
+    ],
+)
+def test_classify_ambiguous_word_boundary(curr_raw_text, expected):
+    assert _classify_ambiguous_word_boundary(curr_raw_text=curr_raw_text) == expected
