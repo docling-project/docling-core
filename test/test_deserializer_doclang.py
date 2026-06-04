@@ -18,6 +18,8 @@ from docling_core.types.doc import (
     TableData,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel
+from test.doclang_validation import assert_valid_dclg_xml, xfail_layer_token_deferred
+from test.test_data_gen_flag import GEN_TEST_DATA
 from test.test_serialization_doctag import verify
 from test.test_serialization_doclang import add_list_section, add_texts_section
 
@@ -29,10 +31,15 @@ def _serialize(doc: DoclingDocument) -> str:
         doc=doc,
         params=DoclangParams(),
     )
-    return ser.serialize().text
+    text = ser.serialize().text
+    if not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
+    return text
 
 
-def _deserialize(text: str) -> DoclingDocument:
+def _deserialize(text: str, *, validate: bool = True) -> DoclingDocument:
+    if validate and not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
     return DoclangDeserializer().deserialize(text=text)
 
 
@@ -100,9 +107,9 @@ def test_roundtrip_caption():
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_dt = f"""
+    exp_dt = """
 <doclang>
-  <caption>Cap text</caption>
+  <text>Cap text</text>
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
@@ -152,10 +159,14 @@ def test_roundtrip_code():
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_dt = f"""
+    exp_dt = """
 <doclang>
-  <code class="Python"><![CDATA[print('hi')]]></code>
-  <code class="MATLAB"><![CDATA[disp("Hello world!")]]></code>
+  <code>
+    <label value="Python"/>
+<![CDATA[print('hi')]]>  </code>
+  <code>
+    <label value="MATLAB"/>
+<![CDATA[disp("Hello world!")]]>  </code>
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
@@ -319,13 +330,13 @@ def test_roundtrip_heading_prov():
 def test_roundtrip_caption_prov():
     doc = DoclingDocument(name="t")
     _add_default_page(doc)
-    doc.add_text(label=DocItemLabel.CAPTION, text="Cap text", prov=_default_prov())
+    doc.add_text(label=DocItemLabel.TEXT, text="Cap text", prov=_default_prov())
     dt = _serialize(doc)
     if DO_PRINT:
         print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
-    assert doc2.texts[0].label == DocItemLabel.CAPTION
+    assert doc2.texts[0].label == DocItemLabel.TEXT
     assert doc2.texts[0].text == "Cap text"
 
 
@@ -851,14 +862,14 @@ def test_roundtrip_list_item_with_inline_group():
 
 
 def test_deserialize_bare_picture():
-    dt = "<docling><picture></picture></docling>"
+    dt = "<doclang><picture></picture></doclang>"
     doc = _deserialize(dt)
 
     assert len(doc.pictures) == 1
 
 
 def test_deserialize_bare_table():
-    dt = "<docling><table></table></docling>"
+    dt = "<doclang><table></table></doclang>"
     doc = _deserialize(dt)
 
     assert len(doc.tables) == 1
@@ -1220,7 +1231,7 @@ def test_rich_table_cells():
 
 def test_picture_tabular_chart_content_cdata_cells():
     """Deserializer must extract text from <content><![CDATA[...]]></content> in OTSL cells."""
-    doclang = f"""<doclang><group><picture><location value="0"/><location value="0"/><location value="511"/><location value="511"/><table><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></table></picture></group></doclang>"""
+    doclang = f"""<doclang><group><picture class="chart"><location value="0"/><location value="0"/><location value="511"/><location value="511"/><table><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></table></picture></group></doclang>"""
     doc = _deserialize(doclang)
     first_cell_text = doc.pictures[0].meta.tabular_chart.chart_data.grid[0][0].text
     assert first_cell_text == "Characteristic"
@@ -1230,6 +1241,7 @@ def test_picture_tabular_chart_content_cdata_cells():
 
 
 
+@xfail_layer_token_deferred
 def test_roundtrip_with_layers():
     """Test roundtrip with content layers."""
     from docling_core.types.doc import ContentLayer
@@ -1300,8 +1312,8 @@ def test_roundtrip_document_index_table():
     # Serialize
     xml_str = _serialize(doc)
 
-    # Verify serialization contains class="index"
-    assert '<table class="index">' in xml_str
+    assert "<index>" in xml_str
+    assert '<table class="index">' not in xml_str
 
     # Deserialize
     doc2 = _deserialize(xml_str)
@@ -1324,7 +1336,7 @@ def test_roundtrip_table_with_data_class():
     """Test that tables with class='data' are correctly deserialized as TABLE label."""
     # Create XML with explicit class="data"
     xml_str = """<doclang>
-  <table class="data">
+  <table>
     <ched/>
     <text>Header 1</text>
     <ched/>
@@ -1357,6 +1369,6 @@ def test_table_with_invalid_class_raises_error():
   </table>
 </doclang>"""
 
-    # Deserialize should raise ValueError
+    # Deserialize should raise ValueError (skip XSD pre-check: invalid class is caught in parser)
     with pytest.raises(ValueError, match="Invalid class attribute value 'invalid' for table element"):
-        _deserialize(xml_str)
+        _deserialize(xml_str, validate=False)

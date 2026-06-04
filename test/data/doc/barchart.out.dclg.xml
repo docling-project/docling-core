@@ -4,13 +4,10 @@
     <location value="14"/>
     <location value="222"/>
     <location value="20"/>
-    <layer class="furniture"/>
     Probability, Combinatorics and Control
   </page_header>
-  <picture>
-    <meta>
-      <classification>Bar chart</classification>
-    </meta>
+  <picture class="chart">
+    <label value="bar_chart"/>
     <location value="104"/>
     <location value="38"/>
     <location value="401"/>

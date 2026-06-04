@@ -7,7 +7,9 @@
     <location value="410"/>
     Regular item
     <ldiv/>
-    <code class="Python"><![CDATA[print('hello')]]></code>
+    <code>
+      <label value="Python"/>
+<![CDATA[print('hello')]]>    </code>
     <ldiv/>
     <location value="51"/>
     <location value="333"/>

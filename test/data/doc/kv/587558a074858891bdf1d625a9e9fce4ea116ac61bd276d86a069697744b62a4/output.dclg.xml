@@ -6,9 +6,7 @@
     <location value="21"/>
 <![CDATA[Appendice 5 de l'Annexe VII]]>  </text>
   <picture>
-    <meta>
-      <classification>Logo</classification>
-    </meta>
+    <label value="logo"/>
     <location value="49"/>
     <location value="34"/>
     <location value="139"/>
@@ -997,9 +995,7 @@
         <location value="359"/>
 <![CDATA[<img>red telephone icon</img>]]>      </key>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="319"/>
         <location value="350"/>
         <location value="336"/>
@@ -1397,7 +1393,6 @@
     <location value="489"/>
     <location value="90"/>
     <location value="494"/>
-    <layer class="furniture"/>
     ANNEX VII
   </text>
   <text>
@@ -1405,7 +1400,6 @@
     <location value="480"/>
     <location value="470"/>
     <location value="485"/>
-    <layer class="furniture"/>
     96
   </text>
   <text>
@@ -1413,7 +1407,6 @@
     <location value="489"/>
     <location value="471"/>
     <location value="497"/>
-    <layer class="furniture"/>
     FR
   </text>
 </doclang>

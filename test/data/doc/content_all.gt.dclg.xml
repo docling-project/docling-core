@@ -46,40 +46,35 @@ Affiliation 2</content>
     </ldiv>
     <text>list item 4</text>
   </list>
-  <group>
+  <table>
     <caption>This is the caption of table 1.</caption>
-    <table>
-      <fcel/>
-      <text>Product</text>
-      <fcel/>
-      <text>Years</text>
-      <lcel/>
-      <nl/>
-      <ucel/>
-      <fcel/>
-      <text>2016</text>
-      <fcel/>
-      <text>2017</text>
-      <nl/>
-      <fcel/>
-      <text>Apple</text>
-      <fcel/>
-      <text>49823</text>
-      <fcel/>
-      <text>695944</text>
-      <nl/>
-    </table>
-  </group>
-  <group>
+    <fcel/>
+    <text>Product</text>
+    <fcel/>
+    <text>Years</text>
+    <lcel/>
+    <nl/>
+    <ucel/>
+    <fcel/>
+    <text>2016</text>
+    <fcel/>
+    <text>2017</text>
+    <nl/>
+    <fcel/>
+    <text>Apple</text>
+    <fcel/>
+    <text>49823</text>
+    <fcel/>
+    <text>695944</text>
+    <nl/>
+  </table>
+  <picture>
     <caption>This is the caption of figure 1.</caption>
-    <picture></picture>
-  </group>
-  <group>
+  </picture>
+  <picture>
     <caption>This is the caption of figure 2.</caption>
-    <picture>
-      <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
-    </picture>
-  </group>
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
+  </picture>
   <list class="unordered">
     <ldiv>
       <marker>■</marker>
@@ -113,7 +108,9 @@ Affiliation 2</content>
       </ldiv>
       <text>
         Here a code snippet:
-        <code class="Python"><![CDATA[print("Hello world")]]></code>
+        <code>
+          <label value="Python"/>
+<![CDATA[print("Hello world")]]>        </code>
 (to be displayed inline)
       </text>
       <ldiv>
@@ -127,7 +124,9 @@ Affiliation 2</content>
     </list>
   </list>
   <text>Here a code block:</text>
-  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <code>
+    <label value="Python"/>
+<![CDATA[print("Hello world")]]>  </code>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
   <text>
@@ -187,45 +186,41 @@ hyperlink
     <text>List item without parent list group</text>
   </list>
   <text>The end.</text>
-  <group>
+  <picture>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <caption>Picture Caption</caption>
-    <picture>
-      <meta>
-        <summary>Picture Summary</summary>
-        <description>Picture Description</description>
-      </meta>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-    </picture>
-  </group>
-  <group>
+    <custom>
+      <docling__summary>Picture Summary</docling__summary>
+      <docling__description>Picture Description</docling__description>
+    </custom>
+  </picture>
+  <picture class="chart">
+    <label value="pie_chart"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <caption>Picture Caption</caption>
-    <picture>
-      <meta>
-        <summary>Picture Summary</summary>
-        <description>Picture Description</description>
-        <classification>Pie chart</classification>
-      </meta>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-      <table>
-        <fcel/>
-        <text>Foo</text>
-        <fcel/>
-        <text>Bar</text>
-        <nl/>
-        <fcel/>
-        <text>One</text>
-        <fcel/>
-        <text>Two</text>
-        <nl/>
-      </table>
-    </picture>
-  </group>
+    <custom>
+      <docling__summary>Picture Summary</docling__summary>
+      <docling__description>Picture Description</docling__description>
+    </custom>
+    <table>
+      <fcel/>
+      <text>Foo</text>
+      <fcel/>
+      <text>Bar</text>
+      <nl/>
+      <fcel/>
+      <text>One</text>
+      <fcel/>
+      <text>Two</text>
+      <nl/>
+    </table>
+  </picture>
   <code>0 == 0</code>
   <code>
     <location value="5"/>

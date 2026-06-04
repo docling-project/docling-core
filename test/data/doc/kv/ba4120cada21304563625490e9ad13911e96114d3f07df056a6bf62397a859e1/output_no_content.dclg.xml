@@ -4,14 +4,12 @@
     <location value="23"/>
     <location value="186"/>
     <location value="29"/>
-    <layer class="furniture"/>
   </text>
   <text>
     <location value="317"/>
     <location value="25"/>
     <location value="479"/>
     <location value="30"/>
-    <layer class="furniture"/>
   </text>
   <heading level="2">
     <location value="30"/>
@@ -1407,13 +1405,11 @@
     <location value="483"/>
     <location value="162"/>
     <location value="491"/>
-    <layer class="furniture"/>
   </text>
   <text>
     <location value="187"/>
     <location value="484"/>
     <location value="483"/>
     <location value="491"/>
-    <layer class="furniture"/>
   </text>
 </doclang>

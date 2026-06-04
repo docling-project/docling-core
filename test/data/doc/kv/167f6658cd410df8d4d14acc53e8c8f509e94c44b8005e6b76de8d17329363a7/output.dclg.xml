@@ -1,8 +1,6 @@
 <doclang>
   <picture>
-    <meta>
-      <classification>Bar code</classification>
-    </meta>
+    <label value="bar_code"/>
     <location value="255"/>
     <location value="3"/>
     <location value="448"/>
@@ -585,9 +583,7 @@
     The present invention relates to a cross-linker for use in a photoresist which is suitable for a photolithography process using KrF (248 ru), ArF (193 nm), E-beam, ion beam or EUV light source. According to the present invention, preferred cross-linkers comprise a copolymer having repeating units derived from: (i) a compound represented by following Chemical Formula 1 and/or (ii) one or more compound(s) selected from the group consisting of acrylic acid, meth-acrylic acid and maleic anhydride.
   </text>
   <picture>
-    <meta>
-      <classification>Illustration</classification>
-    </meta>
+    <label value="illustration"/>
     <location value="285"/>
     <location value="268"/>
     <location value="450"/>
@@ -612,7 +608,6 @@
     <location value="191"/>
     <location value="281"/>
     <location value="197"/>
-    <layer class="background"/>
     (57)
   </text>
 </doclang>

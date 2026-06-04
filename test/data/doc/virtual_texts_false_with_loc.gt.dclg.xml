@@ -9,7 +9,9 @@
       Regular item
     </text>
     <ldiv/>
-    <code class="Python"><![CDATA[print('hello')]]></code>
+    <code>
+      <label value="Python"/>
+<![CDATA[print('hello')]]>    </code>
     <ldiv/>
     <text>
       <location value="51"/>
