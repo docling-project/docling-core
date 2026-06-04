@@ -13,7 +13,13 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "A condensed natural-language summary of the content rooted at this node.",
+          "examples": [
+            {
+              "text": "A short company/location statement."
+            }
+          ]
         },
         "language": {
           "anyOf": [
@@ -24,7 +30,13 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "The detected human language of the node content, expressed as a BCP 47 code.",
+          "examples": [
+            {
+              "code": "en"
+            }
+          ]
         },
         "entities": {
           "anyOf": [
@@ -35,7 +47,22 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Named entities extracted from the node text (persons, organisations, locations, etc.). Each mention carries the entity text, an optional type label, and an optional character span.",
+          "examples": [
+            {
+              "mentions": [
+                {
+                  "charspan": [
+                    0,
+                    3
+                  ],
+                  "label": "ORG",
+                  "text": "IBM"
+                }
+              ]
+            }
+          ]
         },
         "keywords": {
           "anyOf": [
@@ -46,7 +73,17 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Salient terms or short keyphrases that characterise the node content. Keywords are more specific than topics and typically correspond to individual words or short multi-word expressions found in or closely related to the text. Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "transformer",
+                "attention mechanism",
+                "BERT"
+              ]
+            }
+          ]
         },
         "topics": {
           "anyOf": [
@@ -57,7 +94,16 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Higher-level subject categories or thematic labels inferred for the node content. Topics are broader than keywords and describe the domain or theme rather than specific terms (e.g. 'machine learning' rather than 'gradient descent'). Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "natural language processing",
+                "computer vision"
+              ]
+            }
+          ]
         }
       },
       "title": "BaseMeta",
@@ -617,36 +663,6 @@
         "text"
       ],
       "title": "DescriptionMetaField",
-      "type": "object"
-    },
-    "DocumentMeta": {
-      "additionalProperties": true,
-      "description": "Document-level metadata for DoclingDocument.",
-      "properties": {
-        "keywords": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/KeywordsMetaField"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "topics": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/TopicsMetaField"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        }
-      },
-      "title": "DocumentMeta",
       "type": "object"
     },
     "DocumentOrigin": {
@@ -1313,7 +1329,13 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "A condensed natural-language summary of the content rooted at this node.",
+          "examples": [
+            {
+              "text": "A short company/location statement."
+            }
+          ]
         },
         "language": {
           "anyOf": [
@@ -1324,7 +1346,13 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "The detected human language of the node content, expressed as a BCP 47 code.",
+          "examples": [
+            {
+              "code": "en"
+            }
+          ]
         },
         "entities": {
           "anyOf": [
@@ -1335,7 +1363,22 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Named entities extracted from the node text (persons, organisations, locations, etc.). Each mention carries the entity text, an optional type label, and an optional character span.",
+          "examples": [
+            {
+              "mentions": [
+                {
+                  "charspan": [
+                    0,
+                    3
+                  ],
+                  "label": "ORG",
+                  "text": "IBM"
+                }
+              ]
+            }
+          ]
         },
         "keywords": {
           "anyOf": [
@@ -1346,7 +1389,17 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Salient terms or short keyphrases that characterise the node content. Keywords are more specific than topics and typically correspond to individual words or short multi-word expressions found in or closely related to the text. Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "transformer",
+                "attention mechanism",
+                "BERT"
+              ]
+            }
+          ]
         },
         "topics": {
           "anyOf": [
@@ -1357,7 +1410,16 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Higher-level subject categories or thematic labels inferred for the node content. Topics are broader than keywords and describe the domain or theme rather than specific terms (e.g. 'machine learning' rather than 'gradient descent'). Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "natural language processing",
+                "computer vision"
+              ]
+            }
+          ]
         },
         "description": {
           "anyOf": [
@@ -2291,7 +2353,8 @@
           },
           "minItems": 1,
           "title": "Values",
-          "type": "array"
+          "type": "array",
+          "uniqueItems": true
         }
       },
       "required": [
@@ -3048,7 +3111,13 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "A condensed natural-language summary of the content rooted at this node.",
+          "examples": [
+            {
+              "text": "A short company/location statement."
+            }
+          ]
         },
         "language": {
           "anyOf": [
@@ -3059,7 +3128,13 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "The detected human language of the node content, expressed as a BCP 47 code.",
+          "examples": [
+            {
+              "code": "en"
+            }
+          ]
         },
         "entities": {
           "anyOf": [
@@ -3070,7 +3145,22 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Named entities extracted from the node text (persons, organisations, locations, etc.). Each mention carries the entity text, an optional type label, and an optional character span.",
+          "examples": [
+            {
+              "mentions": [
+                {
+                  "charspan": [
+                    0,
+                    3
+                  ],
+                  "label": "ORG",
+                  "text": "IBM"
+                }
+              ]
+            }
+          ]
         },
         "keywords": {
           "anyOf": [
@@ -3081,7 +3171,17 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Salient terms or short keyphrases that characterise the node content. Keywords are more specific than topics and typically correspond to individual words or short multi-word expressions found in or closely related to the text. Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "transformer",
+                "attention mechanism",
+                "BERT"
+              ]
+            }
+          ]
         },
         "topics": {
           "anyOf": [
@@ -3092,7 +3192,16 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Higher-level subject categories or thematic labels inferred for the node content. Topics are broader than keywords and describe the domain or theme rather than specific terms (e.g. 'machine learning' rather than 'gradient descent'). Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "natural language processing",
+                "computer vision"
+              ]
+            }
+          ]
         },
         "description": {
           "anyOf": [
@@ -4291,7 +4400,8 @@
           },
           "minItems": 1,
           "title": "Values",
-          "type": "array"
+          "type": "array",
+          "uniqueItems": true
         }
       },
       "required": [
@@ -4397,17 +4507,6 @@
       "anyOf": [
         {
           "$ref": "#/$defs/DocumentOrigin"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
-    },
-    "meta": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/DocumentMeta"
         },
         {
           "type": "null"

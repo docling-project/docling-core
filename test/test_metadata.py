@@ -18,7 +18,6 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
-    DocumentMeta,
     EntitiesMetaField,
     EntityMention,
     GroupLabel,
@@ -295,6 +294,8 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
                 EntityMention(text="Zurich", label="LOC", charspan=(16, 22)),
             ]
         ),
+        keywords=KeywordsMetaField(values=["ibm", "zurich", "company"]),
+        topics=TopicsMetaField(values=["business", "geography"]),
     )
 
     roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
@@ -304,12 +305,25 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
     assert meta.language.code == HumanLanguageLabel.EN
     assert meta.entities is not None
     assert [mention.text for mention in meta.entities.mentions] == ["IBM", "Zurich"]
+    assert meta.keywords is not None and meta.keywords.values == ["ibm", "zurich", "company"]
+    assert meta.topics is not None and meta.topics.values == ["business", "geography"]
+    assert meta.has_content()
 
     html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
     assert 'data-meta-name="language"' in html
     assert 'data-meta-name="entities"' in html
+    assert 'data-meta-name="keywords"' in html
+    assert 'data-meta-name="topics"' in html
     assert ">en<" in html
     assert "IBM (ORG, [0,3]), Zurich (LOC, [16,22])" in html
+    assert "ibm, zurich, company" in html
+    assert ">business, geography<" in html
+
+    # duplicate values must be rejected
+    with pytest.raises(Exception):
+        KeywordsMetaField(values=["ai", "ml", "ai"])
+    with pytest.raises(Exception):
+        TopicsMetaField(values=["nlp", "nlp"])
 
 
 def test_html_escapes_entity_text() -> None:
@@ -335,65 +349,6 @@ def test_html_skips_empty_base_meta() -> None:
     html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
     assert '<details class="docling-meta">' not in html
     assert "data-meta-entities" not in html
-
-
-def test_keywords_field_dedupes_preserving_order() -> None:
-    field = KeywordsMetaField(values=["ai", "ml", "ai", "rag", "ml"])
-    assert field.values == ["ai", "ml", "rag"]
-
-
-def test_topics_field_dedupes_preserving_order() -> None:
-    field = TopicsMetaField(values=["nlp", "vision", "nlp"])
-    assert field.values == ["nlp", "vision"]
-
-
-def test_keywords_and_topics_in_base_meta_roundtrip() -> None:
-    doc = DoclingDocument(name="kw-topics")
-    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
-    item.meta = BaseMeta(
-        keywords=KeywordsMetaField(values=["ibm", "zurich", "company"]),
-        topics=TopicsMetaField(values=["business", "geography"]),
-    )
-
-    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
-    meta = roundtrip.texts[0].meta
-    assert meta is not None
-    assert meta.keywords is not None and meta.keywords.values == ["ibm", "zurich", "company"]
-    assert meta.topics is not None and meta.topics.values == ["business", "geography"]
-    assert meta.has_content()
-
-
-def test_document_meta_roundtrip_and_optional_fields() -> None:
-    doc = DoclingDocument(
-        name="doc-meta",
-        meta=DocumentMeta(
-            keywords=KeywordsMetaField(values=["llm", "rag"]),
-            topics=TopicsMetaField(values=["ai"]),
-        ),
-    )
-    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
-    assert roundtrip.meta is not None
-    assert roundtrip.meta.keywords is not None and roundtrip.meta.keywords.values == ["llm", "rag"]
-    assert roundtrip.meta.topics is not None and roundtrip.meta.topics.values == ["ai"]
-
-    # meta is optional and absent by default
-    bare = DoclingDocument(name="bare")
-    assert bare.meta is None
-
-
-def test_html_renders_keywords_and_topics() -> None:
-    doc = DoclingDocument(name="kw-html")
-    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
-    item.meta = BaseMeta(
-        keywords=KeywordsMetaField(values=["ibm", "zurich"]),
-        topics=TopicsMetaField(values=["business"]),
-    )
-
-    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
-    assert 'data-meta-name="keywords"' in html
-    assert 'data-meta-name="topics"' in html
-    assert "ibm, zurich" in html
-    assert ">business<" in html
 
 
 def test_html_escapes_keywords() -> None:

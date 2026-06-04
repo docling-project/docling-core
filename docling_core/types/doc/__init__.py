@@ -19,7 +19,6 @@ from .document import (
     DoclingDocument,
     DocTagsDocument,
     DocTagsPage,
-    DocumentMeta,
     DocumentOrigin,
     EntitiesMetaField,
     EntityMention,
