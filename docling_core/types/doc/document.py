@@ -6091,8 +6091,6 @@ class DoclingDocument(BaseModel):
         img_count = 0
         image_dir.mkdir(parents=True, exist_ok=True)
 
-        # Note: Skip is_dir() check for remote paths since S3/cloud storage
-        # doesn't have real directories - mkdir() is a no-op for remote paths
         for item, _ in result.iterate_items(page_no=page_no, with_groups=False):
             if isinstance(item, PictureItem):
                 img = item.get_image(doc=self)
