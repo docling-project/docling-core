@@ -6090,10 +6090,9 @@ class DoclingDocument(BaseModel):
                         loc_path.write_bytes(buf.getvalue())
 
                         # For remote paths, use absolute URI string; for local, compute relative
-                        obj_path: Union[str, Path]
+                        obj_path: Union[AnyUrl, Path]
                         if is_remote_path(loc_path) or is_remote_path(reference_path):
-                            # Convert to string URI for remote paths (Pydantic can't serialize UPath)
-                            obj_path = str(loc_path)
+                            obj_path = AnyUrl(str(loc_path))
                         elif reference_path is not None:
                             obj_path = relative_path(
                                 reference_path.resolve(),
@@ -6106,9 +6105,7 @@ class DoclingDocument(BaseModel):
                             scale = img.size[0] / item.prov[0].bbox.width
                             item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
                         else:
-                            # For remote paths, store as string URI; for local, store as Path
-                            # Pydantic coerces str to AnyUrl at runtime
-                            item.image.uri = obj_path  # type: ignore[assignment]
+                            item.image.uri = obj_path
 
                     # if item.image._pil is not None:
                     #    item.image._pil.close()
