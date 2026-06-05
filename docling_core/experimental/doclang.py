@@ -1043,8 +1043,9 @@ class DoclangParams(CommonParams):
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     include_namespace: bool = False
     include_version: bool = False
-    # Virtual text mode: when True, list items and table cells omit <text> wrapper
-    use_virtual_texts: bool = False
+    # Virtual text mode (DocLang v0.4): when True, list items and table/index cells
+    # omit the <text> wrapper and emit content as virtual <text>.
+    use_virtual_text: bool = True
 
 
 def _create_layer_token(
@@ -1573,22 +1574,22 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         return False
 
     def _determine_list_item_wrapper(
-        self, *, item: ListItem, doc: DoclingDocument, use_virtual_texts: bool = False
+        self, *, item: ListItem, doc: DoclingDocument, use_virtual_text: bool = True
     ) -> tuple[Optional[str], Optional[DoclangToken]]:
         """Determine the wrapper token for a ListItem.
 
         Args:
             item: The ListItem to determine wrapper for.
             doc: The document containing the item.
-            use_virtual_texts: If True, skip <text> wrapper for list items (virtual text mode).
+            use_virtual_text: If True, skip <text> wrapper for list items (virtual text mode).
 
         Returns:
             Tuple of (wrap_open_token, tok) where wrap_open_token is the opening tag
             string or None, and tok is the DoclangToken or None.
         """
         if item.text:
-            # Virtual text mode: no wrapper if use_virtual_texts=True
-            if use_virtual_texts:
+            # Virtual text mode: no wrapper if use_virtual_text=True
+            if use_virtual_text:
                 return None, None
             else:
                 tok = DoclangToken.TEXT
@@ -1652,7 +1653,7 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             wrap_open_token = DoclangVocabulary._create_heading_token(level=item.level + 1)
         elif isinstance(item, ListItem):
             wrap_open_token, tok = self._determine_list_item_wrapper(
-                item=item, doc=doc, use_virtual_texts=params.use_virtual_texts
+                item=item, doc=doc, use_virtual_text=params.use_virtual_text
             )
         elif isinstance(item, CodeItem):
             tok = DoclangToken.CODE
@@ -2110,8 +2111,8 @@ class DoclangTableSerializer(BaseTableSerializer):
                             # Apply XML escaping to table cell content
                             if not isinstance(cell, RichTableCell):
                                 content = _escape_text(content, params)
-                                # Wrap in <text> tags unless use_virtual_texts is True
-                                if not params.use_virtual_texts:
+                                # Wrap in <text> tags unless use_virtual_text is True
+                                if not params.use_virtual_text:
                                     content = _wrap(text=content, wrap_tag=DoclangToken.TEXT.value)
                             parts.append(content)
                     else:
@@ -2925,22 +2926,247 @@ class DoclangDeserializer(BaseModel):
             for p in prov_list[1:]:
                 item.prov.append(p)
 
-    def _has_virtual_text_content(self, nodes: Any) -> bool:
-        """Check if a list of nodes contains raw text or <content> elements.
+    def _first_non_whitespace_node(self, nodes: Sequence[Node]) -> Optional[Node]:
+        """Return the first node that is not whitespace-only text."""
+        for node in nodes:
+            if isinstance(node, Text) and not node.data.strip():
+                continue
+            return node
+        return None
 
-        This indicates virtual text mode where content should be treated as a text element.
+    def _token_category(self, tag: str) -> Optional[DoclangCategory]:
+        try:
+            return DoclangVocabulary._get_category(DoclangToken(tag))
+        except ValueError:
+            return None
 
-        Args:
-            nodes: List of DOM nodes (can be Text or Element nodes)
+    _LIST_ITEM_HEAD_TAGS: ClassVar[frozenset[str]] = frozenset(
+        {
+            DoclangToken.LOCATION.value,
+            DoclangToken.LAYER.value,
+            DoclangToken.LABEL.value,
+            DoclangToken.HREF.value,
+            DoclangToken.HOUR.value,
+            DoclangToken.MINUTE.value,
+            DoclangToken.SECOND.value,
+            DoclangToken.CENTISECOND.value,
+            DoclangToken.CUSTOM.value,
+            DoclangToken.THREAD.value,
+            DoclangToken.H_THREAD.value,
+        }
+    )
+
+    _LIST_ITEM_VIRTUAL_TEXT_CONTENT_TAGS: ClassVar[frozenset[str]] = frozenset(
+        {
+            DoclangToken.CONTENT.value,
+            DoclangToken.BOLD.value,
+            DoclangToken.ITALIC.value,
+            DoclangToken.UNDERLINE.value,
+            DoclangToken.STRIKETHROUGH.value,
+            DoclangToken.SUPERSCRIPT.value,
+            DoclangToken.SUBSCRIPT.value,
+            DoclangToken.HANDWRITING.value,
+            DoclangToken.RTL.value,
+            DoclangToken.BR.value,
+            DoclangToken.CHECKBOX.value,
+        }
+    )
+
+    def _is_list_item_head_element(self, el: Element) -> bool:
+        """Return True when ``el`` is a property token allowed in element head."""
+        return el.tagName in self._LIST_ITEM_HEAD_TAGS
+
+    def _is_list_item_virtual_text(self, nodes: Sequence[Node]) -> bool:
+        """Decide whether list-item content after ``<ldiv>`` is virtual ``<text>``.
+
+        Inspect the first non-whitespace node after the delimiter:
+        - property/head tokens, raw text, ``<content>``, or inline formatting → virtual text
+        - semantic/grouping elements (``<text>``, ``<code>``, ``<list>``, …) → not virtual text
         """
+        first = self._first_non_whitespace_node(nodes)
+        if first is None:
+            return False
+        if isinstance(first, Text):
+            return True
+        if not isinstance(first, Element):
+            return False
+        if self._is_list_item_head_element(first):
+            return True
+        if first.tagName in self._LIST_ITEM_VIRTUAL_TEXT_CONTENT_TAGS:
+            return True
+        category = self._token_category(first.tagName)
+        if category in {DoclangCategory.FORMATTING, DoclangCategory.CONTENT}:
+            return True
+        return category not in {DoclangCategory.SEMANTIC, DoclangCategory.GROUPING}
+
+    def _content_nodes_after_list_item_head(self, nodes: Sequence[Node]) -> list[Node]:
+        """Drop leading property/head tokens; keep virtual-text body nodes."""
+        content_nodes: list[Node] = []
+        skipping_head = True
+        for node in nodes:
+            if skipping_head:
+                if isinstance(node, Text) and not node.data.strip():
+                    continue
+                if isinstance(node, Element) and self._is_list_item_head_element(node):
+                    continue
+                skipping_head = False
+            content_nodes.append(node)
+        return content_nodes
+
+    def _split_virtual_text_leading_text(self, nodes: Sequence[Node]) -> tuple[str, list[Node]]:
+        """Split virtual-text body into leading plain text and remaining nodes."""
+        text_parts: list[str] = []
+        rest_start = 0
+        for i, node in enumerate(nodes):
+            if isinstance(node, Text):
+                text_parts.append(node.data)
+                rest_start = i + 1
+            elif isinstance(node, Element) and node.tagName == DoclangToken.CONTENT.value:
+                text_parts.append(self._get_text(node))
+                rest_start = i + 1
+            else:
+                break
+        leading = "".join(text_parts).strip()
+        rest = [node for node in nodes[rest_start:] if not (isinstance(node, Text) and not node.data.strip())]
+        return leading, rest
+
+    def _parse_list_item_virtual_text(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        li_group: ListGroup,
+        ordered: bool,
+        marker_text: str,
+        all_content_nodes: Sequence[Node],
+    ) -> None:
+        """Parse list-item body emitted as virtual ``<text>`` after ``<ldiv>``."""
+        prov_list = self._extract_provenance_from_nodes(doc=doc, nodes=all_content_nodes)
+        body_nodes = self._content_nodes_after_list_item_head(all_content_nodes)
+        leading_text, rest_nodes = self._split_virtual_text_leading_text(body_nodes)
+        rest_elements = [node for node in rest_nodes if isinstance(node, Element)]
+
+        if leading_text and rest_elements and all(el.tagName == DoclangToken.LIST.value for el in rest_elements):
+            li = self._add_list_item_with_provenance(
+                doc=doc,
+                text=leading_text,
+                parent=li_group,
+                enumerated=ordered,
+                marker=marker_text,
+                prov_list=prov_list,
+            )
+            for content_el in rest_elements:
+                self._dispatch_element(doc=doc, el=content_el, parent=li)
+        elif not rest_nodes and leading_text:
+            self._add_list_item_with_provenance(
+                doc=doc,
+                text=leading_text,
+                parent=li_group,
+                enumerated=ordered,
+                marker=marker_text,
+                prov_list=prov_list,
+            )
+        elif self._is_simple_virtual_text_nodes(body_nodes):
+            text = self._get_text_from_nodes(body_nodes).strip()
+            self._add_list_item_with_provenance(
+                doc=doc,
+                text=text,
+                parent=li_group,
+                enumerated=ordered,
+                marker=marker_text,
+                prov_list=prov_list,
+            )
+        else:
+            li = self._add_list_item_with_provenance(
+                doc=doc,
+                text="",
+                parent=li_group,
+                enumerated=ordered,
+                marker=marker_text,
+                prov_list=prov_list,
+            )
+            self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes)
+
+    def _is_simple_virtual_text_nodes(self, nodes: Sequence[Node]) -> bool:
+        """True when virtual-text body is plain text (optionally via ``<content>``)."""
         for node in nodes:
             if isinstance(node, Text):
-                # Check if it's not just whitespace
-                if node.data.strip():
-                    return True
+                continue
+            if isinstance(node, Element):
+                if node.tagName == DoclangToken.CONTENT.value:
+                    continue
+                return False
+        return any(
+            (isinstance(node, Text) and node.data.strip())
+            or (isinstance(node, Element) and node.tagName == DoclangToken.CONTENT.value)
+            for node in nodes
+        )
+
+    def _get_text_from_nodes(self, nodes: Sequence[Node]) -> str:
+        parts: list[str] = []
+        for node in nodes:
+            if isinstance(node, Text):
+                parts.append(node.data)
             elif isinstance(node, Element) and node.tagName == DoclangToken.CONTENT.value:
-                return True
-        return False
+                parts.append(self._get_text(node))
+        return "".join(parts)
+
+    def _extract_provenance_from_nodes(self, *, doc: DoclingDocument, nodes: Sequence[Node]) -> list[ProvenanceItem]:
+        """Collect ``<location>`` tokens from a flat node sequence (virtual-text head)."""
+        values: list[int] = []
+        res_for_group: Optional[int] = None
+        provs: list[ProvenanceItem] = []
+
+        for node in nodes:
+            if not isinstance(node, Element) or node.tagName != DoclangToken.LOCATION.value:
+                continue
+            try:
+                v = int(node.getAttribute(DoclangAttributeKey.VALUE.value) or "0")
+            except Exception:
+                v = 0
+            try:
+                r = int(node.getAttribute(DoclangAttributeKey.RESOLUTION.value) or str(self._default_resolution))
+            except Exception:
+                r = self._default_resolution
+            values.append(v)
+            res_for_group = r
+            if len(values) == 4:
+                self._ensure_page_exists(
+                    doc=doc,
+                    page_no=self._page_no,
+                    resolution=res_for_group or self._default_resolution,
+                )
+                l = float(min(values[0], values[2]))
+                t = float(min(values[1], values[3]))
+                rgt = float(max(values[0], values[2]))
+                btm = float(max(values[1], values[3]))
+                bbox = BoundingBox.from_tuple((l, t, rgt, btm), origin=CoordOrigin.TOPLEFT)
+                provs.append(ProvenanceItem(page_no=self._page_no, bbox=bbox, charspan=(0, 0)))
+                values = []
+                res_for_group = None
+
+        return provs
+
+    def _add_list_item_with_provenance(
+        self,
+        *,
+        doc: DoclingDocument,
+        text: str,
+        parent: NodeItem,
+        enumerated: bool,
+        marker: str,
+        prov_list: list[ProvenanceItem],
+    ) -> ListItem:
+        item = doc.add_list_item(
+            text=text,
+            parent=parent,
+            enumerated=enumerated,
+            marker=marker,
+            prov=(prov_list[0] if prov_list else None),
+        )
+        for prov in prov_list[1:]:
+            item.prov.append(prov)
+        return item
 
     def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         ordered = el.getAttribute(DoclangAttributeKey.CLASS.value) == DoclangAttributeValue.ORDERED.value
@@ -2981,32 +3207,38 @@ class DoclangDeserializer(BaseModel):
             if end < len(actual_children):
                 next_ldiv_index = list(el.childNodes).index(actual_children[end])
 
-            # Get all nodes between ldivs (including Text nodes)
+            # Get all nodes between ldivs (including Text nodes and head tokens)
             if next_ldiv_index is not None:
                 all_content_nodes = list(el.childNodes)[ldiv_index_in_all + 1 : next_ldiv_index]
             else:
                 all_content_nodes = list(el.childNodes)[ldiv_index_in_all + 1 :]
 
-            # Filter out location elements from all_content_nodes
-            all_content_nodes = [
-                n
-                for n in all_content_nodes
-                if not (isinstance(n, Element) and n.tagName == DoclangToken.LOCATION.value)
+            # Content elements come after the ldiv (start+1 to end) - only Element nodes,
+            # excluding property tokens that may appear between ldiv and body content.
+            content_elements = [
+                node
+                for node in actual_children[start + 1 : end]
+                if not (isinstance(node, Element) and self._is_list_item_head_element(node))
             ]
 
-            # Content elements come after the ldiv (start+1 to end) - only Element nodes
-            content_elements = actual_children[start + 1 : end]
+            is_virtual_text = self._is_list_item_virtual_text(all_content_nodes)
 
-            # Check if we have virtual text content (raw text or <content> elements)
-            has_virtual_text = self._has_virtual_text_content(all_content_nodes)
-
-            if len(content_elements) == 0 and not has_virtual_text:
+            if not all_content_nodes:
                 # Empty list item (just ldiv, no content)
                 doc.add_list_item(
                     text="",
                     parent=li_group,
                     enumerated=ordered,
                     marker=marker_text,
+                )
+            elif is_virtual_text:
+                self._parse_list_item_virtual_text(
+                    doc=doc,
+                    el=el,
+                    li_group=li_group,
+                    ordered=ordered,
+                    marker_text=marker_text,
+                    all_content_nodes=all_content_nodes,
                 )
             elif len(content_elements) == 1 and isinstance(content_elements[0], Element):
                 # Single element after ldiv
@@ -3050,14 +3282,6 @@ class DoclangDeserializer(BaseModel):
                         marker=marker_text,
                     )
                     self._dispatch_element(doc=doc, el=content_el, parent=li)
-            elif has_virtual_text:
-                li = doc.add_list_item(
-                    text="",
-                    parent=li_group,
-                    enumerated=ordered,
-                    marker=marker_text,
-                )
-                self._parse_inline_group(doc=doc, el=el, parent=li, nodes=all_content_nodes)
             else:
                 # Multiple content elements after ldiv
                 # Special case: if first element is a simple <text> and remaining are <list> elements,

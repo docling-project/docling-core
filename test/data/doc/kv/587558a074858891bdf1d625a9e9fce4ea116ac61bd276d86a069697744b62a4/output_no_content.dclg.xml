@@ -832,26 +832,20 @@
     </text>
     <list class="unordered">
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="340"/>
-        <location value="181"/>
-        <location value="344"/>
-      </text>
+      <location value="49"/>
+      <location value="340"/>
+      <location value="181"/>
+      <location value="344"/>
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="346"/>
-        <location value="301"/>
-        <location value="350"/>
-      </text>
+      <location value="49"/>
+      <location value="346"/>
+      <location value="301"/>
+      <location value="350"/>
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="352"/>
-        <location value="166"/>
-        <location value="356"/>
-      </text>
+      <location value="49"/>
+      <location value="352"/>
+      <location value="166"/>
+      <location value="356"/>
     </list>
     <field_item>
       <value class="read_only">

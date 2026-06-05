@@ -3,7 +3,7 @@
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>item of leading list</text>
+    item of leading list
   </list>
   <heading level="1">Title of the Document</heading>
   <text>
@@ -20,52 +20,52 @@ Affiliation 2</content>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>list item 1</text>
+    list item 1
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>list item 2</text>
+    list item 2
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>list item 3</text>
+    list item 3
     <list class="ordered">
       <ldiv/>
-      <text>list item 3.a</text>
+      list item 3.a
       <ldiv/>
-      <text>list item 3.b</text>
+      list item 3.b
       <ldiv/>
-      <text>list item 3.c</text>
+      list item 3.c
       <list class="ordered">
         <ldiv/>
-        <text>list item 3.c.i</text>
+        list item 3.c.i
       </list>
     </list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>list item 4</text>
+    list item 4
   </list>
   <table>
     <caption>This is the caption of table 1.</caption>
     <fcel/>
-    <text>Product</text>
+    Product
     <fcel/>
-    <text>Years</text>
+    Years
     <lcel/>
     <nl/>
     <ucel/>
     <fcel/>
-    <text>2016</text>
+    2016
     <fcel/>
-    <text>2017</text>
+    2017
     <nl/>
     <fcel/>
-    <text>Apple</text>
+    Apple
     <fcel/>
-    <text>49823</text>
+    49823
     <fcel/>
-    <text>695944</text>
+    695944
     <nl/>
   </table>
   <picture>
@@ -78,30 +78,30 @@ Affiliation 2</content>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>item 1 of list</text>
+    item 1 of list
   </list>
   <list class="unordered">
     <ldiv>
       <marker>*</marker>
     </ldiv>
-    <text>item 1 of list after empty list</text>
+    item 1 of list after empty list
     <ldiv/>
-    <text>item 2 of list after empty list</text>
+    item 2 of list after empty list
   </list>
   <list class="unordered">
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>item 1 of neighboring list</text>
+    item 1 of neighboring list
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>item 2 of neighboring list</text>
+    item 2 of neighboring list
     <list class="unordered">
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <text>item 1 of sub list</text>
+      item 1 of sub list
       <ldiv>
         <marker>□</marker>
       </ldiv>
@@ -150,39 +150,39 @@ hyperlink
     <ldiv>
       <marker>(i)</marker>
     </ldiv>
-    <text>Item 1 in A</text>
+    Item 1 in A
     <ldiv>
       <marker>(ii)</marker>
     </ldiv>
-    <text>Item 2 in A</text>
+    Item 2 in A
     <ldiv>
       <marker>(iii)</marker>
     </ldiv>
-    <text>Item 3 in A</text>
+    Item 3 in A
     <list class="ordered">
       <ldiv/>
-      <text>Item 1 in B</text>
+      Item 1 in B
       <ldiv>
         <marker>42.</marker>
       </ldiv>
-      <text>Item 2 in B</text>
+      Item 2 in B
       <list class="ordered">
         <ldiv/>
-        <text>Item 1 in C</text>
+        Item 1 in C
         <ldiv/>
-        <text>Item 2 in C</text>
+        Item 2 in C
       </list>
       <ldiv/>
-      <text>Item 3 in B</text>
+      Item 3 in B
     </list>
     <ldiv>
       <marker>(iv)</marker>
     </ldiv>
-    <text>Item 4 in A</text>
+    Item 4 in A
   </list>
   <list class="unordered">
     <ldiv/>
-    <text>List item without parent list group</text>
+    List item without parent list group
   </list>
   <text>The end.</text>
 </doclang>

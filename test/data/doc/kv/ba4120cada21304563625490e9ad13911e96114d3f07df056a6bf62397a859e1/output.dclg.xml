@@ -381,13 +381,11 @@
 <![CDATA[* If you check box "b" or "c," you must complete and include Schedule NR.]]>    </text>
     <list class="unordered">
       <ldiv/>
-      <text>
-        <location value="35"/>
-        <location value="211"/>
-        <location value="481"/>
-        <location value="218"/>
-        9. EXEMPTIONS. NOTE: If someone else can claim you as a dependent, check box 9e, enter 0 on line 9a and enter $1,500 on line 9e (see instr.).
-      </text>
+      <location value="35"/>
+      <location value="211"/>
+      <location value="481"/>
+      <location value="218"/>
+      9. EXEMPTIONS. NOTE: If someone else can claim you as a dependent, check box 9e, enter 0 on line 9a and enter $1,500 on line 9e (see instr.).
       <list class="unordered">
         <ldiv/>
         <field_item>

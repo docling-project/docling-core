@@ -420,29 +420,7 @@ def test_roundtrip_list_unordered_prov():
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_dt = f"""
-<doclang>
-  <list class="unordered">
-    <ldiv/>
-    <text>
-      <location value="51"/>
-      <location value="51"/>
-      <location value="154"/>
-      <location value="102"/>
-      A
-    </text>
-    <ldiv/>
-    <text>
-      <location value="51"/>
-      <location value="51"/>
-      <location value="154"/>
-      <location value="102"/>
-      B
-    </text>
-  </list>
-</doclang>
-    """
-    assert dt2.strip() == exp_dt.strip()
+    assert dt2.strip() == dt.strip()
 
 
 def test_roundtrip_list_ordered_prov():
@@ -645,24 +623,7 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_dt = f"""
-<doclang>
-  <list class="unordered">
-    <ldiv/>
-    <text>Step 1</text>
-    <list class="ordered">
-      <ldiv/>
-      <text>Step 1.1</text>
-      <ldiv/>
-      <text>Step 1.2</text>
-    </list>
-    <ldiv/>
-    <text>Step 2</text>
-  </list>
-</doclang>
-
-    """
-    assert dt2.strip() == exp_dt.strip()
+    assert dt2.strip() == dt.strip()
 
 
 def test_roundtrip_nested_list_ordered_in_unordered():

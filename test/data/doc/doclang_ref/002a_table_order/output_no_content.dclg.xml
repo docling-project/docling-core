@@ -25,14 +25,10 @@
       <location value="452"/>
       <location value="192"/>
       <ched/>
-      <text></text>
       <ched/>
-      <text></text>
       <ched/>
-      <text></text>
       <nl/>
       <rhed/>
-      <text></text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -42,46 +38,34 @@
       </text>
       <list class="unordered">
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="100"/>
-          <location value="255"/>
-          <location value="104"/>
-        </text>
+        <location value="136"/>
+        <location value="100"/>
+        <location value="255"/>
+        <location value="104"/>
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="106"/>
-          <location value="296"/>
-          <location value="111"/>
-        </text>
+        <location value="136"/>
+        <location value="106"/>
+        <location value="296"/>
+        <location value="111"/>
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="113"/>
-          <location value="191"/>
-          <location value="117"/>
-        </text>
+        <location value="136"/>
+        <location value="113"/>
+        <location value="191"/>
+        <location value="117"/>
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="119"/>
-          <location value="195"/>
-          <location value="124"/>
-        </text>
+        <location value="136"/>
+        <location value="119"/>
+        <location value="195"/>
+        <location value="124"/>
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="125"/>
-          <location value="318"/>
-          <location value="136"/>
-        </text>
+        <location value="136"/>
+        <location value="125"/>
+        <location value="318"/>
+        <location value="136"/>
       </list>
       <fcel/>
-      <text></text>
       <nl/>
       <rhed/>
-      <text></text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -91,32 +75,24 @@
       </text>
       <list class="unordered">
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="147"/>
-          <location value="224"/>
-          <location value="152"/>
-        </text>
+        <location value="136"/>
+        <location value="147"/>
+        <location value="224"/>
+        <location value="152"/>
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="153"/>
-          <location value="204"/>
-          <location value="157"/>
-        </text>
+        <location value="136"/>
+        <location value="153"/>
+        <location value="204"/>
+        <location value="157"/>
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="159"/>
-          <location value="361"/>
-          <location value="171"/>
-        </text>
+        <location value="136"/>
+        <location value="159"/>
+        <location value="361"/>
+        <location value="171"/>
       </list>
       <fcel/>
-      <text></text>
       <nl/>
       <rhed/>
-      <text></text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -125,10 +101,8 @@
         <location value="179"/>
       </text>
       <fcel/>
-      <text></text>
       <nl/>
       <rhed/>
-      <text></text>
       <fcel/>
       <text>
         <location value="136"/>
@@ -137,7 +111,6 @@
         <location value="189"/>
       </text>
       <fcel/>
-      <text></text>
       <nl/>
     </table>
     <footnote>
@@ -149,12 +122,10 @@
   </group>
   <list class="unordered">
     <ldiv/>
-    <text>
-      <location value="60"/>
-      <location value="236"/>
-      <location value="452"/>
-      <location value="254"/>
-    </text>
+    <location value="60"/>
+    <location value="236"/>
+    <location value="452"/>
+    <location value="254"/>
   </list>
   <text>
     <location value="103"/>
@@ -169,37 +140,24 @@
       <location value="452"/>
       <location value="386"/>
       <ched/>
-      <text></text>
       <ched/>
-      <text></text>
       <ched/>
-      <text></text>
       <ched/>
-      <text></text>
       <nl/>
       <srow/>
-      <text></text>
       <lcel/>
       <lcel/>
       <lcel/>
       <nl/>
       <rhed/>
-      <text></text>
       <fcel/>
-      <text></text>
       <fcel/>
-      <text></text>
       <fcel/>
-      <text></text>
       <nl/>
       <rhed/>
-      <text></text>
       <fcel/>
-      <text></text>
       <fcel/>
-      <text></text>
       <fcel/>
-      <text></text>
       <nl/>
     </table>
     <footnote>

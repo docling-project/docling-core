@@ -939,28 +939,23 @@
 <![CDATA[La présente autorisation est accordée par l'UP du CUE sous réserve de l'application stricte :]]>    </text>
     <list class="unordered">
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="340"/>
-        <location value="181"/>
-        <location value="344"/>
-        1. des consignes de sécurité indiquées au verso
-      </text>
+      <location value="49"/>
+      <location value="340"/>
+      <location value="181"/>
+      <location value="344"/>
+      1. des consignes de sécurité indiquées au verso
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="346"/>
-        <location value="301"/>
-        <location value="350"/>
-<![CDATA[2. d'avoir averti chaque jour le CDI (02/281 9100) avant le début et après la fin des travaux]]>      </text>
+      <location value="49"/>
+      <location value="346"/>
+      <location value="301"/>
+      <location value="350"/>
+<![CDATA[2. d'avoir averti chaque jour le CDI (02/281 9100) avant le début et après la fin des travaux]]>      
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="352"/>
-        <location value="166"/>
-        <location value="356"/>
-        3. des mesures de prévention spécifiques:
-      </text>
+      <location value="49"/>
+      <location value="352"/>
+      <location value="166"/>
+      <location value="356"/>
+      3. des mesures de prévention spécifiques:
     </list>
     <field_item>
       <value class="read_only">

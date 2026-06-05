@@ -12,9 +12,9 @@
   </text>
   <list class="unordered">
     <ldiv/>
-    <text>foo</text>
+    foo
     <ldiv/>
-    <text>bar</text>
+    bar
     <ldiv/>
     <text>
       <content>Here a formula: </content>
@@ -30,12 +30,12 @@ in line
       <content> text</content>
     </text>
     <ldiv/>
-    <text>will contain sublist</text>
+    will contain sublist
     <list class="unordered">
       <ldiv/>
-      <text>sublist item 1</text>
+      sublist item 1
       <ldiv/>
-      <text>sublist item 2</text>
+      sublist item 2
     </list>
     <ldiv/>
     <text>
@@ -47,11 +47,11 @@ in line
     </text>
     <list class="unordered">
       <ldiv/>
-      <text>sublist item a</text>
+      sublist item a
       <ldiv/>
-      <text>sublist item b</text>
+      sublist item b
     </list>
     <ldiv/>
-    <text>final element</text>
+    final element
   </list>
 </doclang>
