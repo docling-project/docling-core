@@ -28,14 +28,14 @@ Affiliation 2]]></content>
     <ldiv>
       <marker><![CDATA[■]]></marker>
     </ldiv>
-<![CDATA[list item 3]]>    
+    <text><![CDATA[list item 3]]></text>
     <list class="ordered">
       <ldiv/>
 <![CDATA[list item 3.a]]>      
       <ldiv/>
 <![CDATA[list item 3.b]]>      
       <ldiv/>
-<![CDATA[list item 3.c]]>      
+      <text><![CDATA[list item 3.c]]></text>
       <list class="ordered">
         <ldiv/>
 <![CDATA[list item 3.c.i]]>        
@@ -90,7 +90,7 @@ Affiliation 2]]></content>
     <ldiv>
       <marker><![CDATA[■]]></marker>
     </ldiv>
-<![CDATA[item 2 of neighboring list]]>    
+    <text><![CDATA[item 2 of neighboring list]]></text>
     <list class="unordered">
       <ldiv>
         <marker><![CDATA[□]]></marker>
@@ -99,21 +99,17 @@ Affiliation 2]]></content>
       <ldiv>
         <marker><![CDATA[□]]></marker>
       </ldiv>
-      <text>
-<![CDATA[Here a code snippet:]]>        
-        <code>
-          <label value="Python"/>
-<![CDATA[print("Hello world")]]>        </code>
-<![CDATA[(to be displayed inline)]]>        
-      </text>
+<![CDATA[Here a code snippet:]]>      
+      <code>
+        <label value="Python"/>
+<![CDATA[print("Hello world")]]>      </code>
+<![CDATA[(to be displayed inline)]]>      
       <ldiv>
         <marker><![CDATA[□]]></marker>
       </ldiv>
-      <text>
-<![CDATA[Here a formula:]]>        
-        <formula><![CDATA[E=mc^2]]></formula>
-<![CDATA[(to be displayed inline)]]>        
-      </text>
+<![CDATA[Here a formula:]]>      
+      <formula><![CDATA[E=mc^2]]></formula>
+<![CDATA[(to be displayed inline)]]>      
     </list>
   </list>
   <text><![CDATA[Here a code block:]]></text>
@@ -152,14 +148,14 @@ Affiliation 2]]></content>
     <ldiv>
       <marker><![CDATA[(iii)]]></marker>
     </ldiv>
-<![CDATA[Item 3 in A]]>    
+    <text><![CDATA[Item 3 in A]]></text>
     <list class="ordered">
       <ldiv/>
 <![CDATA[Item 1 in B]]>      
       <ldiv>
         <marker><![CDATA[42.]]></marker>
       </ldiv>
-<![CDATA[Item 2 in B]]>      
+      <text><![CDATA[Item 2 in B]]></text>
       <list class="ordered">
         <ldiv/>
 <![CDATA[Item 1 in C]]>        

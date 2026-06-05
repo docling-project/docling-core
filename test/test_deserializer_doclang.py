@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pytest
 
@@ -9,8 +10,10 @@ from docling_core.experimental.doclang import (
 )
 from docling_core.types.doc import (
     BoundingBox,
+    CoordOrigin,
     DocItemLabel,
     DoclingDocument,
+    Formatting,
     ProvenanceItem,
     RichTableCell,
     Size,
@@ -18,10 +21,11 @@ from docling_core.types.doc import (
     TableData,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel
-from test.doclang_validation import assert_valid_dclg_xml, xfail_layer_token_deferred
+from docling_core.types.doc.document import GroupLabel
+from test.doclang_validation import assert_valid_dclg_xml, doclang_validator, xfail_layer_token_deferred
 from test.test_data_gen_flag import GEN_TEST_DATA
 from test.test_serialization_doctag import verify
-from test.test_serialization_doclang import add_list_section, add_texts_section
+from test.test_serialization_doclang import _verify_doc, add_list_section, add_texts_section
 
 DO_PRINT: bool = False
 
@@ -53,6 +57,46 @@ def _default_prov() -> ProvenanceItem:
         bbox=BoundingBox(l=100, t=100, r=300, b=200),
         charspan=(0, 0),
     )
+
+
+class _VirtualTextMixedBboxFactory:
+    """Assign distinct page bboxes for the virtual-text mixed fixture."""
+
+    def __init__(self, *, page_no: int = 0, page_w: float = 1000, page_h: float = 1000) -> None:
+        self.page_no = page_no
+        self.page_w = page_w
+        self.page_h = page_h
+        self._slot = 0
+
+    def next_prov(self) -> ProvenanceItem:
+        row, col = divmod(self._slot, 4)
+        self._slot += 1
+        cell_w = self.page_w / 5
+        cell_h = self.page_h / 20
+        left = 20 + col * cell_w
+        top = self.page_h - 40 - row * cell_h
+        return ProvenanceItem(
+            page_no=self.page_no,
+            bbox=BoundingBox.from_tuple(
+                (left, top - cell_h, left + cell_w - 10, top),
+                origin=CoordOrigin.BOTTOMLEFT,
+            ),
+            charspan=(0, 0),
+        )
+
+    def next_bbox(self) -> BoundingBox:
+        return self.next_prov().bbox
+
+
+def _serialize_virtual_text_mixed(doc: DoclingDocument, *, add_location: bool = True) -> str:
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(add_table_cell_location=True, add_location=add_location),
+    )
+    text = ser.serialize().text
+    if not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
+    return text
 
 
 def test_roundtrip_text():
@@ -1064,6 +1108,307 @@ def test_roundtrip_table_with_rich_cells():
         print("\ndt:", dt)
         print("\ndt2:", dt2)
     assert dt2 == dt
+
+
+def _create_virtual_text_list_doc() -> DoclingDocument:
+    """Document exercising virtual vs explicit ``<text>`` in list items."""
+    doc = DoclingDocument(name="virtual_text_list")
+    _add_default_page(doc)
+    bbox = _VirtualTextMixedBboxFactory()
+
+    lg = doc.add_list_group()
+    doc.add_list_item(text="plain list item", parent=lg, prov=bbox.next_prov())
+
+    li_inline = doc.add_list_item(text="", parent=lg, prov=bbox.next_prov())
+    inline = doc.add_inline_group(parent=li_inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="this is a ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bold",
+        parent=inline,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text=" text", parent=inline)
+
+    li_nested = doc.add_list_item(
+        text="list item with nested list",
+        parent=lg,
+        prov=bbox.next_prov(),
+    )
+    lg_sub = doc.add_list_group(parent=li_nested)
+    doc.add_list_item(text="nested list item", parent=lg_sub, prov=bbox.next_prov())
+
+    li_picture = doc.add_list_item(
+        text="list item with picture",
+        parent=lg,
+        prov=bbox.next_prov(),
+    )
+    doc.add_picture(parent=li_picture, prov=bbox.next_prov())
+
+    return doc
+
+
+def _assert_virtual_text_list_dclg(dclg: str) -> None:
+    """Sanity-check virtual vs explicit ``<text>`` in list output."""
+    assert "<ldiv/>" in dclg
+    assert "plain list item" in dclg
+    assert "<text>plain list item</text>" not in dclg
+    assert "<text>" in dclg
+    assert "this is a " in dclg
+    assert "<bold>bold</bold>" in dclg
+    assert " text" in dclg
+    assert re.search(
+        r"<ldiv/>\s*(?:<location[^>]*/>\s*)*<content>this is a </content>\s*<bold>bold</bold>\s*<content> text</content>",
+        dclg,
+    )
+    assert not re.search(
+        r"<text>\s*(?:<location[^>]*/>\s*)*<content>this is a </content>\s*<bold>bold</bold>",
+        dclg,
+    )
+    assert "list item with nested list" in dclg
+    assert "list item with picture" in dclg
+    assert re.search(
+        r"<text>\s*(?:<location[^>]*/>\s*)*list item with picture\s*</text>",
+        dclg,
+    )
+    assert "<picture" in dclg
+    assert "<location value=" in dclg
+
+
+@doclang_validator
+def test_virtual_text_list_roundtrip():
+    """Round-trip list virtual-text edge cases through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "virtual_text_list"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_virtual_text_list_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize_virtual_text_mixed(doc)
+    verify(serialized_dclg, dt)
+    _assert_virtual_text_list_dclg(dt)
+    assert_valid_dclg_xml(dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=True)
+    verify(reserialized_dclg, dt2)
+    _assert_virtual_text_list_dclg(dt2)
+    assert_valid_dclg_xml(dt2)
+
+
+@pytest.mark.skip(reason="Table virtual-text round-trip pending location handling fix")
+@doclang_validator
+def test_virtual_text_table_roundtrip():
+    """Round-trip table virtual-text edge cases through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "virtual_text_table"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_virtual_text_table_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize_virtual_text_mixed(doc)
+    verify(serialized_dclg, dt)
+    _assert_virtual_text_table_dclg(dt)
+    assert_valid_dclg_xml(dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=False)
+    verify(reserialized_dclg, dt2)
+    _assert_virtual_text_table_dclg(dt2)
+    assert_valid_dclg_xml(dt2)
+
+
+@pytest.mark.skip(reason="Index virtual-text round-trip pending location handling fix")
+@doclang_validator
+def test_virtual_text_index_roundtrip():
+    """Round-trip index virtual-text edge cases through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "virtual_text_index"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_virtual_text_index_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize_virtual_text_mixed(doc)
+    verify(serialized_dclg, dt)
+    _assert_virtual_text_index_dclg(dt)
+    assert_valid_dclg_xml(dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=False)
+    verify(reserialized_dclg, dt2)
+    _assert_virtual_text_index_dclg(dt2)
+    assert_valid_dclg_xml(dt2)
+
+
+def _create_virtual_text_table_doc() -> DoclingDocument:
+    """Document exercising virtual vs explicit ``<text>`` in table cells."""
+    doc = DoclingDocument(name="virtual_text_table")
+    _add_default_page(doc)
+    bbox = _VirtualTextMixedBboxFactory()
+
+    def _add_row_table(*, label: DocItemLabel) -> None:
+        table = doc.add_table(data=TableData(num_rows=1, num_cols=3), label=label, prov=bbox.next_prov())
+
+        cell_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="cell with list:",
+            parent=cell_group,
+            prov=bbox.next_prov(),
+        )
+        cell_list = doc.add_list_group(parent=cell_group)
+        doc.add_list_item(text="nested in cell", parent=cell_list, prov=bbox.next_prov())
+
+        rich_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="group text",
+            parent=rich_group,
+            prov=bbox.next_prov(),
+        )
+        doc.add_picture(parent=rich_group, prov=bbox.next_prov())
+
+        doc.add_table_cell(
+            table_item=table,
+            cell=TableCell(
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+                text="plain cell",
+                bbox=bbox.next_bbox(),
+            ),
+        )
+        doc.add_table_cell(
+            table_item=table,
+            cell=RichTableCell(
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+                ref=cell_group.get_ref(),
+                text="cell with list:",
+                bbox=bbox.next_bbox(),
+            ),
+        )
+        doc.add_table_cell(
+            table_item=table,
+            cell=RichTableCell(
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=2,
+                end_col_offset_idx=3,
+                ref=rich_group.get_ref(),
+                text="group cell",
+                bbox=bbox.next_bbox(),
+            ),
+        )
+
+    _add_row_table(label=DocItemLabel.TABLE)
+    return doc
+
+
+def _create_virtual_text_index_doc() -> DoclingDocument:
+    """Document exercising virtual vs explicit ``<text>`` in index cells."""
+    doc = DoclingDocument(name="virtual_text_index")
+    _add_default_page(doc)
+    bbox = _VirtualTextMixedBboxFactory()
+
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=3), label=DocItemLabel.DOCUMENT_INDEX, prov=bbox.next_prov())
+
+    cell_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="cell with list:",
+        parent=cell_group,
+        prov=bbox.next_prov(),
+    )
+    cell_list = doc.add_list_group(parent=cell_group)
+    doc.add_list_item(text="nested in cell", parent=cell_list, prov=bbox.next_prov())
+
+    rich_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="group text",
+        parent=rich_group,
+        prov=bbox.next_prov(),
+    )
+    doc.add_picture(parent=rich_group, prov=bbox.next_prov())
+
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="plain cell",
+            bbox=bbox.next_bbox(),
+        ),
+    )
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            ref=cell_group.get_ref(),
+            text="cell with list:",
+            bbox=bbox.next_bbox(),
+        ),
+    )
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
+            ref=rich_group.get_ref(),
+            text="group cell",
+            bbox=bbox.next_bbox(),
+        ),
+    )
+
+    return doc
+
+
+def _assert_virtual_text_table_dclg(dclg: str) -> None:
+    host_block = dclg.split("<table>", 1)[1].split("</table>", 1)[0]
+    assert "plain cell" in host_block
+    assert "<text>plain cell</text>" not in host_block
+    assert "cell with list:" in host_block
+    assert "<text>" in host_block
+    assert "group text" in host_block
+    assert "<picture" in host_block
+    assert "<location value=" in host_block
+
+
+def _assert_virtual_text_index_dclg(dclg: str) -> None:
+    host_block = dclg.split("<index>", 1)[1].split("</index>", 1)[0]
+    assert "plain cell" in host_block
+    assert "<text>plain cell</text>" not in host_block
+    assert "cell with list:" in host_block
+    assert "<text>" in host_block
+    assert "group text" in host_block
+    assert "<picture" in host_block
+    assert "<location value=" in host_block
 
 
 ############################################

@@ -19,10 +19,12 @@
     <ldiv>
       <marker>■</marker>
     </ldiv>
+    <text></text>
     <list class="ordered">
       <ldiv/>
       <ldiv/>
       <ldiv/>
+      <text></text>
       <list class="ordered">
         <ldiv/>
       </list>
@@ -54,6 +56,7 @@
     <ldiv>
       <marker>■</marker>
     </ldiv>
+    <text></text>
     <list class="unordered">
       <ldiv>
         <marker>□</marker>
@@ -66,14 +69,10 @@
       </ldiv>
     </list>
   </list>
-  <text>
-    <code>
-      <label value="Python"/>
-    </code>
-  </text>
-  <text>
-    <formula></formula>
-  </text>
+  <code>
+    <label value="Python"/>
+  </code>
+  <formula></formula>
   <text></text>
   <code>
     <label value="Python"/>
@@ -91,11 +90,13 @@
     <ldiv>
       <marker>(iii)</marker>
     </ldiv>
+    <text></text>
     <list class="ordered">
       <ldiv/>
       <ldiv>
         <marker>42.</marker>
       </ldiv>
+      <text></text>
       <list class="ordered">
         <ldiv/>
         <ldiv/>
