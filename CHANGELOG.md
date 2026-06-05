@@ -1,3 +1,9 @@
+## [v2.79.0](https://github.com/docling-project/docling-core/releases/tag/v2.79.0) - 2026-06-05
+
+### Feature
+
+* **meta:** Add keywords and topics metadata fields ([#617](https://github.com/docling-project/docling-core/issues/617)) ([`129507e`](https://github.com/docling-project/docling-core/commit/129507ebd2c5f5f68364e6fa6caecca936e2cbf3))
+
 ## [v2.78.1](https://github.com/docling-project/docling-core/releases/tag/v2.78.1) - 2026-06-04
 
 ### Fix
