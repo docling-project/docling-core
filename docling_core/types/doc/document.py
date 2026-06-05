@@ -32,6 +32,7 @@ from PIL import Image as PILImage
 from pydantic import (
     AnyUrl,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     FieldSerializationInfo,
@@ -48,7 +49,7 @@ from tabulate import _column_type, tabulate
 from typing_extensions import Self, deprecated, override
 
 from docling_core.search.package import VERSION_PATTERN
-from docling_core.types.base import _JSON_POINTER_REGEX
+from docling_core.types.base import _JSON_POINTER_REGEX, UniqueList
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
     CoordOrigin,
@@ -1441,17 +1442,39 @@ class LanguageMetaField(BasePrediction):
     code: HumanLanguageLabel
 
 
-# NOTE: must be manually kept in sync with top-level BaseMeta hierarchy fields
 class MetaFieldName(str, Enum):
-    """Standard meta field names."""
+    """Standard meta field names attached to document nodes.
 
-    SUMMARY = "summary"  # a summary of the tree under this node
-    LANGUAGE = "language"  # detected language of the node content
-    ENTITIES = "entities"  # named entities extracted from the node content
-    DESCRIPTION = "description"  # a description of the node (e.g. for images)
-    CLASSIFICATION = "classification"  # a classification of the node content
-    MOLECULE = "molecule"  # molecule data
-    TABULAR_CHART = "tabular_chart"  # tabular chart data
+    Note:
+        These enum members must be kept in sync with the fields of the `BaseMeta` class or its subclasses.
+    """
+
+    SUMMARY = "summary"
+    """A condensed natural-language summary of the content rooted at this node (e.g. a paragraph summary or section abstract)."""
+
+    LANGUAGE = "language"
+    """The detected human language of the node content, expressed as a BCP 47 code (e.g. ``"en"``, ``"de"``)."""
+
+    ENTITIES = "entities"
+    """Named entities extracted from the node text, such as persons, organisations, and locations."""
+
+    KEYWORDS = "keywords"
+    """Salient terms or short keyphrases that characterise the node content. Values are order-preserving and unique."""
+
+    TOPICS = "topics"
+    """Higher-level subject categories or thematic labels inferred for the node. Values are order-preserving and unique."""
+
+    DESCRIPTION = "description"
+    """A free-text description of the node, typically used for non-textual items such as figures and images."""
+
+    CLASSIFICATION = "classification"
+    """A classification label or category assigned to the node content (e.g. picture type, document genre)."""
+
+    MOLECULE = "molecule"
+    """Structured chemical / molecule data associated with the node."""
+
+    TABULAR_CHART = "tabular_chart"
+    """Tabular data extracted from a chart element."""
 
 
 class EntityMention(BasePrediction):
@@ -1487,12 +1510,75 @@ class EntitiesMetaField(_ExtraAllowingModel):
     mentions: Annotated[list[EntityMention], Field(min_length=1)]
 
 
+def _ensure_unique_list(values: Any) -> Any:
+    if not isinstance(values, list):
+        raise ValueError("values must be a list of strings")
+    return list(dict.fromkeys(values))
+
+
+class KeywordsMetaField(_ExtraAllowingModel):
+    """Container for a list of unique keywords / keyphrases."""
+
+    values: Annotated[UniqueList[str], BeforeValidator(_ensure_unique_list), Field(min_length=1)]
+
+
+class TopicsMetaField(_ExtraAllowingModel):
+    """Container for a list of unique topics / subjects."""
+
+    values: Annotated[UniqueList[str], BeforeValidator(_ensure_unique_list), Field(min_length=1)]
+
+
 class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
-    summary: Optional[SummaryMetaField] = None
-    language: Optional[LanguageMetaField] = None
-    entities: Optional[EntitiesMetaField] = None
+    summary: Annotated[
+        Optional[SummaryMetaField],
+        Field(
+            description="A condensed natural-language summary of the content rooted at this node.",
+            examples=[{"text": "A short company/location statement."}],
+        ),
+    ] = None
+    language: Annotated[
+        Optional[LanguageMetaField],
+        Field(
+            description="The detected human language of the node content, expressed as a BCP 47 code.",
+            examples=[{"code": "en"}],
+        ),
+    ] = None
+    entities: Annotated[
+        Optional[EntitiesMetaField],
+        Field(
+            description=(
+                "Named entities extracted from the node text (persons, organisations, locations, etc.). "
+                "Each mention carries the entity text, an optional type label, and an optional character span."
+            ),
+            examples=[{"mentions": [{"text": "IBM", "label": "ORG", "charspan": [0, 3]}]}],
+        ),
+    ] = None
+    keywords: Annotated[
+        Optional[KeywordsMetaField],
+        Field(
+            description=(
+                "Salient terms or short keyphrases that characterise the node content. "
+                "Keywords are more specific than topics and typically correspond to individual words or "
+                "short multi-word expressions found in or closely related to the text. "
+                "Values are order-preserving and deduplicated."
+            ),
+            examples=[{"values": ["transformer", "attention mechanism", "BERT"]}],
+        ),
+    ] = None
+    topics: Annotated[
+        Optional[TopicsMetaField],
+        Field(
+            description=(
+                "Higher-level subject categories or thematic labels inferred for the node content. "
+                "Topics are broader than keywords and describe the domain or theme rather than specific terms "
+                "(e.g., 'machine learning' rather than 'gradient descent'). "
+                "Values are order-preserving and deduplicated."
+            ),
+            examples=[{"values": ["natural language processing", "computer vision"]}],
+        ),
+    ] = None
 
     def has_content(self) -> bool:
         """Return True if this metadata contains any meaningful content."""
@@ -2766,7 +2852,6 @@ class DoclingDocument(BaseModel):
         # This is optional, e.g. a DoclingDocument could also be entirely
         # generated from synthetic data.
     )
-
     furniture: Annotated[GroupItem, Field(deprecated=True)] = GroupItem(
         name="_root_",
         self_ref="#/furniture",

@@ -62,6 +62,7 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    KeywordsMetaField,
     LanguageMetaField,
     ListGroup,
     ListItem,
@@ -79,6 +80,7 @@ from docling_core.types.doc.document import (
     TabularChartMetaField,
     TextItem,
     TitleItem,
+    TopicsMetaField,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
@@ -981,6 +983,8 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                     )
                     for mention in field_val.mentions
                 )
+            elif isinstance(field_val, KeywordsMetaField | TopicsMetaField):
+                txt = ", ".join(field_val.values)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
             elif isinstance(field_val, PictureClassificationMetaField):
