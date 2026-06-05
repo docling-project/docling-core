@@ -7,6 +7,7 @@ from docling_core.experimental.doclang import (
     DoclangDeserializer,
     DoclangDocSerializer,
     DoclangParams,
+    LabelMode,
 )
 from docling_core.types.doc import (
     BoundingBox,
@@ -14,13 +15,17 @@ from docling_core.types.doc import (
     DocItemLabel,
     DoclingDocument,
     Formatting,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureItem,
+    PictureMeta,
     ProvenanceItem,
     RichTableCell,
     Size,
     TableCell,
     TableData,
 )
-from docling_core.types.doc.labels import CodeLanguageLabel
+from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 from docling_core.types.doc.document import GroupLabel
 from test.doclang_validation import assert_valid_dclg_xml, doclang_validator, xfail_layer_token_deferred
 from test.test_data_gen_flag import GEN_TEST_DATA
@@ -214,6 +219,101 @@ def test_roundtrip_code():
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
+
+
+def test_roundtrip_code_python_and_unknown():
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="x = 1", code_language=CodeLanguageLabel.PYTHON)
+    doc.add_code(text="y = 2")  # CodeLanguageLabel.UNKNOWN by default
+
+    xml = _serialize(doc)
+    assert '<label value="Python"/>' in xml
+    assert '<label value="other"/>' not in xml
+    assert '<label value="undefined"/>' not in xml
+    assert '<label value="unknown"/>' not in xml
+
+    doc2 = _deserialize(xml)
+    codes = [t for t in doc2.texts if t.label == DocItemLabel.CODE]
+    assert len(codes) == 2
+    assert codes[0].code_language == CodeLanguageLabel.PYTHON
+    assert codes[1].code_language == CodeLanguageLabel.UNKNOWN
+    assert codes[0].text.strip() == "x = 1"
+    assert codes[1].text.strip() == "y = 2"
+
+
+@pytest.mark.parametrize(
+    ("docling_lang", "linguist_label", "roundtrip_lang"),
+    [
+        (CodeLanguageLabel.BASH, "Shell", CodeLanguageLabel.BASH),
+        (CodeLanguageLabel.LATEX, "TeX", CodeLanguageLabel.LATEX),
+        (CodeLanguageLabel.LISP, "Common Lisp", CodeLanguageLabel.LISP),
+        (CodeLanguageLabel.OBJECTIVEC, "Objective-C", CodeLanguageLabel.OBJECTIVEC),
+        (CodeLanguageLabel.SML, "Standard ML", CodeLanguageLabel.SML),
+        (CodeLanguageLabel.VISUALBASIC, "Visual Basic .NET", CodeLanguageLabel.VISUALBASIC),
+        (CodeLanguageLabel.OCTAVE, "MATLAB", CodeLanguageLabel.MATLAB),
+        (CodeLanguageLabel.BC, "other", CodeLanguageLabel.UNKNOWN),
+        (CodeLanguageLabel.DOCLANG, "XML", CodeLanguageLabel.XML),
+    ],
+)
+def test_code_language_linguist_mapping(docling_lang, linguist_label, roundtrip_lang):
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="snippet", code_language=docling_lang)
+
+    xml = DoclangDocSerializer(doc=doc, params=DoclangParams()).serialize().text
+    assert f'<label value="{linguist_label}"/>' in xml
+
+    doc2 = _deserialize(xml)
+    assert doc2.texts[0].code_language == roundtrip_lang
+
+
+def test_roundtrip_code_unknown_as_other_when_enabled():
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="y = 2")
+    xml = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(interpret_code_unknown_as_other=True),
+    ).serialize().text
+    assert '<label value="other"/>' in xml
+    doc2 = _deserialize(xml)
+    assert doc2.texts[0].code_language == CodeLanguageLabel.UNKNOWN
+
+
+def test_roundtrip_picture_other_and_unknown_labels():
+    doc = DoclingDocument(name="t")
+    classified = doc.add_picture()
+    classified.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    class_name=PictureClassificationLabel.OTHER.value,
+                    confidence=1.0,
+                )
+            ]
+        )
+    )
+    doc.add_picture()
+
+    xml = _serialize(doc)
+    assert '<label value="other"/>' in xml
+    assert '<label value="unknown"/>' not in xml
+
+    doc2 = _deserialize(xml)
+    pics = [item for item, _ in doc2.iterate_items() if isinstance(item, PictureItem)]
+    assert pics[0].meta.classification.get_main_prediction().class_name == "other"
+    assert pics[1].meta is None or pics[1].meta.classification is None
+
+    xml_always = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(label_mode=LabelMode.ALWAYS, add_location=False),
+    ).serialize().text
+    assert xml_always.count('<label value="unknown"/>') == 1
+
+
+def test_code_language_unmapped_linguist_deserializes_to_unknown():
+    xml = '<doclang><code><label value="CoffeeScript"/>foo</code></doclang>'
+    doc = _deserialize(xml, validate=False)
+    assert doc.texts[0].code_language == CodeLanguageLabel.UNKNOWN
+
 
 def test_roundtrip_formula():
     doc = DoclingDocument(name="t")

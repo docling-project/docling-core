@@ -11,6 +11,7 @@ from docling_core.experimental.doclang import (
     EscapeMode,
     DoclangDocSerializer,
     DoclangParams,
+    LabelMode,
     LayerMode,
     WrapMode,
 )
@@ -639,7 +640,17 @@ def test_vlm_mode():
     doc = DoclingDocument(name="test")
     add_texts_section(doc)
     add_list_section(doc)
-
+    doc.add_picture(
+        image=ImageRef(
+            mimetype="image/png",
+            uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=",
+            dpi=300,
+            size=Size(width=100, height=100),
+        ),
+        caption=doc.add_text(label=DocItemLabel.CAPTION, text="""Picture
+Caption"""),
+    )
+    doc.add_code(text="0 == 0")
     ser = DoclangDocSerializer(
         doc=doc,
         params=DoclangParams(
@@ -650,6 +661,8 @@ def test_vlm_mode():
             include_namespace=False,
             include_version=False,
             use_virtual_text=True,
+            label_mode=LabelMode.ALWAYS,
+            interpret_code_unknown_as_other=True,
         ),
     )
     ser_res = ser.serialize()
@@ -1262,7 +1275,7 @@ def test_suppress_empty_heading():
 
 
 def test_suppress_empty_code():
-    """An empty code block is suppressed."""
+    """An empty code block is suppressed when ``UNKNOWN`` maps to ``undefined``."""
     doc = DoclingDocument(name="test")
     doc.add_code(text="")
 
@@ -1513,6 +1526,110 @@ def test_layer_filter_body_only(doc_with_layers):
 
     exp_file = Path("./test/data/doc/layer_only_body.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
+
+
+def _doc_with_labeled_code_and_pictures() -> DoclingDocument:
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="x = 1", code_language=CodeLanguageLabel.PYTHON)
+    doc.add_code(text="y = 2")
+    classified = doc.add_picture()
+    classified.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    class_name=PictureClassificationLabel.OTHER.value,
+                    confidence=1.0,
+                )
+            ]
+        )
+    )
+    doc.add_picture()
+    return doc
+
+
+def test_label_mode_when_defined():
+    result = serialize_doclang(
+        _doc_with_labeled_code_and_pictures(),
+        params=DoclangParams(label_mode=LabelMode.WHEN_DEFINED, add_location=False),
+    )
+    assert result.count('<label value="Python"/>') == 1
+    assert result.count('<label value="other"/>') == 1
+    assert '<label value="unknown"/>' not in result
+    assert '<label value="undefined"/>' not in result
+
+
+def test_label_mode_always():
+    result = serialize_doclang(
+        _doc_with_labeled_code_and_pictures(),
+        params=DoclangParams(label_mode=LabelMode.ALWAYS, add_location=False),
+    )
+    assert result.count('<label value="Python"/>') == 1
+    assert result.count('<label value="other"/>') == 1
+    assert result.count('<label value="undefined"/>') == 1
+    assert result.count('<label value="unknown"/>') == 1
+
+
+def test_label_mode_always_empty_code_emits_undefined_by_default():
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="")
+    result = serialize_doclang(
+        doc,
+        params=DoclangParams(label_mode=LabelMode.ALWAYS, add_location=False),
+    )
+    assert '<label value="undefined"/>' in result
+    assert '<label value="other"/>' not in result
+
+
+def test_interpret_code_unknown_as_other_true():
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="x = 1")
+    result = serialize_doclang(
+        doc,
+        params=DoclangParams(
+            interpret_code_unknown_as_other=True,
+            label_mode=LabelMode.WHEN_DEFINED,
+            add_location=False,
+        ),
+    )
+    assert '<label value="other"/>' in result
+    assert '<label value="undefined"/>' not in result
+
+
+def test_interpret_code_unknown_as_other_false():
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="x = 1")
+    result = serialize_doclang(
+        doc,
+        params=DoclangParams(
+            interpret_code_unknown_as_other=False,
+            label_mode=LabelMode.ALWAYS,
+            add_location=False,
+        ),
+    )
+    assert '<label value="undefined"/>' in result
+    assert '<label value="other"/>' not in result
+
+
+def test_label_mode_never():
+    result = serialize_doclang(
+        _doc_with_labeled_code_and_pictures(),
+        params=DoclangParams(label_mode=LabelMode.NEVER, add_location=False),
+    )
+    assert "<label" not in result
+
+
+def test_label_mode_when_defined_suppresses_empty_unknown_code():
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="")
+    result = serialize_doclang(
+        doc,
+        params=DoclangParams(
+            label_mode=LabelMode.WHEN_DEFINED,
+            suppress_empty_elements=True,
+            add_location=False,
+        ),
+    )
+    assert "<code" not in result
 
 
 def test_newline_to_br():
