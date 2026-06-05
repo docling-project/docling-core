@@ -28,12 +28,10 @@
   </text>
   <list class="unordered">
     <ldiv/>
-    <text>
-      <location value="86"/>
-      <location value="101"/>
-      <location value="189"/>
-      <location value="108"/>
-    </text>
+    <location value="86"/>
+    <location value="101"/>
+    <location value="189"/>
+    <location value="108"/>
   </list>
   <table>
     <location value="93"/>
@@ -58,12 +56,10 @@
   </text>
   <list class="unordered">
     <ldiv/>
-    <text>
-      <location value="86"/>
-      <location value="184"/>
-      <location value="169"/>
-      <location value="190"/>
-    </text>
+    <location value="86"/>
+    <location value="184"/>
+    <location value="169"/>
+    <location value="190"/>
   </list>
   <table>
     <location value="93"/>
@@ -88,12 +84,10 @@
   </text>
   <list class="unordered">
     <ldiv/>
-    <text>
-      <location value="85"/>
-      <location value="259"/>
-      <location value="154"/>
-      <location value="263"/>
-    </text>
+    <location value="85"/>
+    <location value="259"/>
+    <location value="154"/>
+    <location value="263"/>
   </list>
   <table>
     <location value="93"/>
@@ -118,12 +112,10 @@
   </text>
   <list class="unordered">
     <ldiv/>
-    <text>
-      <location value="86"/>
-      <location value="333"/>
-      <location value="245"/>
-      <location value="338"/>
-    </text>
+    <location value="86"/>
+    <location value="333"/>
+    <location value="245"/>
+    <location value="338"/>
   </list>
   <table>
     <location value="94"/>
@@ -142,12 +134,10 @@
   </text>
   <list class="unordered">
     <ldiv/>
-    <text>
-      <location value="85"/>
-      <location value="394"/>
-      <location value="158"/>
-      <location value="399"/>
-    </text>
+    <location value="85"/>
+    <location value="394"/>
+    <location value="158"/>
+    <location value="399"/>
   </list>
   <table>
     <location value="93"/>
@@ -166,12 +156,10 @@
   </text>
   <list class="unordered">
     <ldiv/>
-    <text>
-      <location value="86"/>
-      <location value="448"/>
-      <location value="173"/>
-      <location value="454"/>
-    </text>
+    <location value="86"/>
+    <location value="448"/>
+    <location value="173"/>
+    <location value="454"/>
   </list>
   <table>
     <location value="94"/>

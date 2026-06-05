@@ -173,9 +173,7 @@ def test_list_items_not_double_wrapped_when_no_content():
 <doclang>
   <list class="unordered">
     <ldiv/>
-    <text></text>
     <ldiv/>
-    <text></text>
   </list>
 </doclang>
     """
@@ -651,7 +649,7 @@ def test_vlm_mode():
             traverse_pictures=True,
             include_namespace=False,
             include_version=False,
-            use_virtual_texts=True,
+            use_virtual_text=True,
         ),
     )
     ser_res = ser.serialize()
@@ -1685,12 +1683,11 @@ def _create_virtual_text_test_doc(add_location: bool = False) -> DoclingDocument
     return doc
 
 
-def test_virtual_texts_true_no_location():
-    """Test use_virtual_texts=True without location info."""
+def test_virtual_text_true_no_location():
+    """Test use_virtual_text=True (default) without location info."""
     doc = _create_virtual_text_test_doc(add_location=False)
 
     params = DoclangParams(
-        use_virtual_texts=True,
         add_location=False,
     )
     serializer = DoclangDocSerializer(doc=doc, params=params)
@@ -1700,12 +1697,11 @@ def test_virtual_texts_true_no_location():
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
 
-def test_virtual_texts_true_with_location():
-    """Test use_virtual_texts=True with location info."""
+def test_virtual_text_true_with_location():
+    """Test use_virtual_text=True (default) with location info."""
     doc = _create_virtual_text_test_doc(add_location=True)
 
     params = DoclangParams(
-        use_virtual_texts=True,
         add_location=True,
         add_table_cell_location=True,
     )
@@ -1716,12 +1712,12 @@ def test_virtual_texts_true_with_location():
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
 
-def test_virtual_texts_false_no_location():
-    """Test use_virtual_texts=False (default) without location info."""
+def test_virtual_text_false_no_location():
+    """Test use_virtual_text=False without location info."""
     doc = _create_virtual_text_test_doc(add_location=False)
 
     params = DoclangParams(
-        use_virtual_texts=False,
+        use_virtual_text=False,
         add_location=False,
     )
     serializer = DoclangDocSerializer(doc=doc, params=params)
@@ -1731,12 +1727,12 @@ def test_virtual_texts_false_no_location():
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
 
-def test_virtual_texts_false_with_location():
-    """Test use_virtual_texts=False (default) with location info."""
+def test_virtual_text_false_with_location():
+    """Test use_virtual_text=False with location info."""
     doc = _create_virtual_text_test_doc(add_location=True)
 
     params = DoclangParams(
-        use_virtual_texts=False,
+        use_virtual_text=False,
         add_location=True,
         add_table_cell_location=True,
     )

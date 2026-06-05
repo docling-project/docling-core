@@ -343,12 +343,10 @@
     </text>
     <list class="unordered">
       <ldiv/>
-      <text>
-        <location value="35"/>
-        <location value="211"/>
-        <location value="481"/>
-        <location value="218"/>
-      </text>
+      <location value="35"/>
+      <location value="211"/>
+      <location value="481"/>
+      <location value="218"/>
       <list class="unordered">
         <ldiv/>
         <field_item>

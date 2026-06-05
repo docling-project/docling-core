@@ -3,7 +3,6 @@
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
   <heading level="1"></heading>
   <text></text>
@@ -14,31 +13,23 @@
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <list class="ordered">
       <ldiv/>
-      <text></text>
       <ldiv/>
-      <text></text>
       <ldiv/>
-      <text></text>
       <list class="ordered">
         <ldiv/>
-        <text></text>
       </list>
     </list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
   <table></table>
   <picture></picture>
@@ -49,30 +40,24 @@
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
   <list class="unordered">
     <ldiv>
       <marker>*</marker>
     </ldiv>
-    <text></text>
     <ldiv/>
-    <text></text>
   </list>
   <list class="unordered">
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <list class="unordered">
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <text></text>
       <ldiv>
         <marker>□</marker>
       </ldiv>
@@ -100,39 +85,29 @@
     <ldiv>
       <marker>(i)</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>(ii)</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>(iii)</marker>
     </ldiv>
-    <text></text>
     <list class="ordered">
       <ldiv/>
-      <text></text>
       <ldiv>
         <marker>42.</marker>
       </ldiv>
-      <text></text>
       <list class="ordered">
         <ldiv/>
-        <text></text>
         <ldiv/>
-        <text></text>
       </list>
       <ldiv/>
-      <text></text>
     </list>
     <ldiv>
       <marker>(iv)</marker>
     </ldiv>
-    <text></text>
   </list>
   <list class="unordered">
     <ldiv/>
-    <text></text>
   </list>
   <text></text>
   <picture>

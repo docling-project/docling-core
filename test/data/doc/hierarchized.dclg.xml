@@ -25,25 +25,25 @@ other children besides the inline
   <text>Bar</text>
   <list class="unordered">
     <ldiv/>
-    <text>List item</text>
+    List item
     <ldiv/>
-    <text>List item</text>
+    List item
     <list class="unordered">
       <ldiv/>
-      <text>List item</text>
+      List item
       <ldiv/>
-      <text>List item</text>
+      List item
     </list>
   </list>
   <heading level="3">Heading</heading>
   <table>
     <fcel/>
-    <text>cell 0,0</text>
+    cell 0,0
     <fcel/>
-    <text>cell 0,1</text>
+    cell 0,1
     <nl/>
     <fcel/>
-    <text>cell 1,0</text>
+    cell 1,0
     <fcel/>
     <text>
       <italic>
@@ -53,14 +53,14 @@ other children besides the inline
     </text>
     <nl/>
     <fcel/>
-    <text>cell 2,0</text>
+    cell 2,0
     <fcel/>
-    <text>cell 2,1</text>
+    cell 2,1
     <nl/>
     <fcel/>
-    <text>cell 3,0</text>
+    cell 3,0
     <fcel/>
-    <text>cell 3,1</text>
+    cell 3,1
     <nl/>
   </table>
   <heading level="2">Heading</heading>

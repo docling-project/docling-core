@@ -2,12 +2,12 @@
   <heading level="1">Rich tables</heading>
   <table>
     <fcel/>
-    <text>cell 0,0</text>
+    cell 0,0
     <fcel/>
-    <text>cell 0,1</text>
+    cell 0,1
     <nl/>
     <fcel/>
-    <text>cell 1,0</text>
+    cell 1,0
     <fcel/>
     <text>
       <italic>text in italic</italic>
@@ -16,30 +16,30 @@
     <fcel/>
     <list class="unordered">
       <ldiv/>
-      <text>list item 1</text>
+      list item 1
       <ldiv/>
-      <text>list item 2</text>
+      list item 2
     </list>
     <fcel/>
-    <text>cell 2,1</text>
+    cell 2,1
     <nl/>
     <fcel/>
-    <text>cell 3,0</text>
+    cell 3,0
     <fcel/>
     <table>
       <fcel/>
-      <text>inner cell 0,0</text>
+      inner cell 0,0
       <fcel/>
-      <text>inner cell 0,1</text>
+      inner cell 0,1
       <fcel/>
-      <text>inner cell 0,2</text>
+      inner cell 0,2
       <nl/>
       <fcel/>
-      <text>inner cell 1,0</text>
+      inner cell 1,0
       <fcel/>
-      <text>inner cell 1,1</text>
+      inner cell 1,1
       <fcel/>
-      <text>inner cell 1,2</text>
+      inner cell 1,2
       <nl/>
     </table>
     <nl/>
@@ -47,7 +47,7 @@
     <text>Some text in a generic group.</text>
     <text>More text in the group.</text>
     <fcel/>
-    <text>cell 4,1</text>
+    cell 4,1
     <nl/>
   </table>
 </doclang>
