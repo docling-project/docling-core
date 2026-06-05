@@ -4,17 +4,10 @@ import uuid
 from pathlib import Path
 
 import pytest
+from upath import UPath
 
 from docling_core.types.doc import DoclingDocument, ImageRefMode
 from docling_core.types.doc.utils import is_remote_path, relative_path
-
-# Check if universal-pathlib is available
-try:
-    from upath import UPath
-
-    HAS_UPATH = True
-except ImportError:
-    HAS_UPATH = False
 
 
 @pytest.fixture
@@ -26,7 +19,6 @@ def memory_base():
 # =============================================================================
 # Tests for is_remote_path()
 # =============================================================================
-
 
 def test_is_remote_path_local_paths_return_false():
     assert is_remote_path(Path("/local/path")) is False
@@ -56,11 +48,9 @@ def test_is_remote_path_cloud_protocols_return_true(protocol):
     assert is_remote_path(MockCloudPath()) is True
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_is_remote_path_real_upath():
     assert is_remote_path(UPath("/tmp/test")) is False
     assert is_remote_path(UPath("memory://test/path")) is True
-
 
 # =============================================================================
 # Tests for relative_path()
@@ -79,19 +69,16 @@ def test_relative_path_navigation():
     assert relative_path(Path("/a/b/c/d"), Path("/a/b/e.txt")) == Path("../../e.txt")
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_relative_path_with_upath():
     src = UPath("/home/user/docs")
     target = UPath("/home/user/docs/images/img.png")
     assert relative_path(src, target) == Path("images/img.png")
-
 
 # =============================================================================
 # UPath integration tests (memory filesystem)
 # =============================================================================
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_json_roundtrip(sample_doc, memory_base):
     path = memory_base / "doc.json"
     sample_doc.save_as_json(path)
@@ -101,7 +88,6 @@ def test_upath_json_roundtrip(sample_doc, memory_base):
     assert sample_doc.export_to_dict() == loaded.export_to_dict()
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_yaml_roundtrip(sample_doc, memory_base):
     path = memory_base / "doc.yaml"
     sample_doc.save_as_yaml(path)
@@ -111,7 +97,6 @@ def test_upath_yaml_roundtrip(sample_doc, memory_base):
     assert sample_doc.export_to_dict() == loaded.export_to_dict()
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_markdown(sample_doc, memory_base):
     path = memory_base / "doc.md"
     sample_doc.save_as_markdown(path)
@@ -119,7 +104,6 @@ def test_upath_markdown(sample_doc, memory_base):
     assert len(path.read_text()) > 0
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_html(sample_doc, memory_base):
     path = memory_base / "doc.html"
     sample_doc.save_as_html(path)
@@ -127,14 +111,12 @@ def test_upath_html(sample_doc, memory_base):
     assert "<html" in path.read_text().lower()
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_doctags(sample_doc, memory_base):
     path = memory_base / "doc.dt"
     sample_doc.save_as_doctags(path)
     assert path.exists()
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_referenced_mode(sample_doc, memory_base):
     json_path = memory_base / "doc.json"
     artifacts_dir = memory_base / "artifacts"
@@ -145,7 +127,6 @@ def test_upath_referenced_mode(sample_doc, memory_base):
     assert json_path.exists()
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_referenced_images_use_string_uri(sample_doc, memory_base):
     image_dir = memory_base / "images"
     doc_with_refs = sample_doc._with_pictures_refs(image_dir=image_dir, page_no=None)
@@ -156,14 +137,12 @@ def test_upath_referenced_images_use_string_uri(sample_doc, memory_base):
             assert not is_remote_path(pic.image.uri)
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_nested_path(sample_doc, memory_base):
     path = memory_base / "a" / "b" / "c" / "doc.json"
     sample_doc.save_as_json(path)
     assert path.exists()
 
 
-@pytest.mark.skipif(not HAS_UPATH, reason="universal-pathlib not installed")
 def test_upath_empty_document(memory_base):
     doc = DoclingDocument(name="Empty")
     path = memory_base / "empty.json"
