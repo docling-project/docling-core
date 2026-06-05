@@ -1043,8 +1043,7 @@ class DoclangParams(CommonParams):
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     include_namespace: bool = False
     include_version: bool = False
-    # Virtual text mode (DocLang v0.4): when True, list items and table/index cells
-    # omit the <text> wrapper and emit content as virtual <text>.
+    # when True, the <text> wrapper is omitted whenever allowed
     use_virtual_text: bool = True
 
 
@@ -1180,6 +1179,29 @@ def _escape_text(text: str, params: DoclangParams) -> str:
     return text
 
 
+def _list_item_segment_sibling(child: NodeItem) -> bool:
+    """True when ``child`` is serialized as a sibling in the same ``<ldiv>`` segment."""
+    return isinstance(child, ListGroup | PictureItem)
+
+
+def _list_item_has_segment_siblings(*, item: ListItem, doc: DoclingDocument) -> bool:
+    """True when markup besides the list item text is emitted in the same ldiv segment."""
+    for child_ref in item.children:
+        if _list_item_segment_sibling(child_ref.resolve(doc)):
+            return True
+    parent = item.parent.resolve(doc) if item.parent else None
+    if isinstance(parent, ListGroup):
+        seen_self = False
+        for child_ref in parent.children:
+            child = child_ref.resolve(doc)
+            if child is item:
+                seen_self = True
+                continue
+            if seen_self and isinstance(child, ListGroup):
+                return True
+    return False
+
+
 class DoclangListSerializer(BaseModel, BaseListSerializer):
     """Doclang-specific list serializer."""
 
@@ -1272,22 +1294,25 @@ class DoclangListSerializer(BaseModel, BaseListSerializer):
             if child_res.text:
                 child_texts.append(child_res.text)
 
-            # After the <ldiv>, append any nested lists (children of this ListItem)
-            # as siblings at the same level (not wrapped in <ldiv>).
+            # After the <ldiv>, append nested lists and pictures (children of this
+            # ListItem) as siblings at the same level (not wrapped in <ldiv>).
             for subref in child.children:
                 sub = subref.resolve(doc)
-                if isinstance(sub, ListGroup) and sub.self_ref not in my_visited and sub.self_ref not in excluded:
-                    my_visited.add(sub.self_ref)
-                    sub_res = doc_serializer.serialize(
-                        item=sub,
-                        list_level=list_level + 1,
-                        is_inline_scope=is_inline_scope,
-                        visited=my_visited,
-                        **kwargs,
-                    )
-                    if sub_res.text:
-                        child_texts.append(sub_res.text)
-                    item_results.append(sub_res)
+                if not _list_item_segment_sibling(sub):
+                    continue
+                if sub.self_ref in my_visited or sub.self_ref in excluded:
+                    continue
+                my_visited.add(sub.self_ref)
+                sub_res = doc_serializer.serialize(
+                    item=sub,
+                    list_level=list_level + 1,
+                    is_inline_scope=is_inline_scope,
+                    visited=my_visited,
+                    **kwargs,
+                )
+                if sub_res.text:
+                    child_texts.append(sub_res.text)
+                item_results.append(sub_res)
 
         delim = _get_delim(params=params)
         if child_texts:
@@ -1573,6 +1598,10 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             return isinstance(first_child_item, InlineGroup)
         return False
 
+    def _list_item_has_segment_siblings(self, *, item: ListItem, doc: DoclingDocument) -> bool:
+        """True when markup besides the list item text is emitted in the same ldiv segment."""
+        return _list_item_has_segment_siblings(item=item, doc=doc)
+
     def _determine_list_item_wrapper(
         self, *, item: ListItem, doc: DoclingDocument, use_virtual_text: bool = True
     ) -> tuple[Optional[str], Optional[DoclangToken]]:
@@ -1581,19 +1610,18 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         Args:
             item: The ListItem to determine wrapper for.
             doc: The document containing the item.
-            use_virtual_text: If True, skip <text> wrapper for list items (virtual text mode).
+            use_virtual_text: If True, omit ``<text>`` when the ldiv segment contains
+                only that text (DocLang v0.4 virtual text mode).
 
         Returns:
             Tuple of (wrap_open_token, tok) where wrap_open_token is the opening tag
             string or None, and tok is the DoclangToken or None.
         """
         if item.text:
-            # Virtual text mode: no wrapper if use_virtual_text=True
-            if use_virtual_text:
+            if use_virtual_text and not self._list_item_has_segment_siblings(item=item, doc=doc):
                 return None, None
-            else:
-                tok = DoclangToken.TEXT
-                return f"<{tok.value}>", tok
+            tok = DoclangToken.TEXT
+            return f"<{tok.value}>", tok
         elif not item.text and item.prov and item.children:
             # Check if first child is InlineGroup (rich text case)
             first_child_ref = item.children[0]
@@ -1770,14 +1798,12 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                     text_part = doc_serializer.serialize(item=first_child_item, visited=my_visited, **kwargs).text
                 else:
                     # Serialize all children as text content
-                    sub_parts = [
-                        doc_serializer.serialize(item=child_item, visited=my_visited, **kwargs).text
-                        for child_ref in item.children
-                        # special case: nested lists are serialized as siblings, not children
-                        if not (
-                            isinstance(child_item := child_ref.resolve(doc), ListGroup) and isinstance(item, ListItem)
-                        )
-                    ]
+                    sub_parts: list[str] = []
+                    for child_ref in item.children:
+                        child_item = child_ref.resolve(doc)
+                        if isinstance(item, ListItem) and _list_item_segment_sibling(child_item):
+                            continue
+                        sub_parts.append(doc_serializer.serialize(item=child_item, visited=my_visited, **kwargs).text)
                     text_part = _get_delim(params=params).join(sub_parts)
             else:
                 text_part = _escape_text(item.text, params)
@@ -2269,7 +2295,14 @@ class DoclangInlineSerializer(BaseInlineSerializer):
             text_res = f"{text_res}{delim}"
 
         parent_item = item.parent.resolve(doc) if item.parent else None
-        should_wrap = parent_item is None or isinstance(parent_item, ListItem) or not isinstance(parent_item, TextItem)
+        if parent_item is None:
+            should_wrap = True
+        elif isinstance(parent_item, ListItem):
+            should_wrap = not params.use_virtual_text or _list_item_has_segment_siblings(item=parent_item, doc=doc)
+        elif isinstance(parent_item, TextItem):
+            should_wrap = False
+        else:
+            should_wrap = True
         if should_wrap:
             # if "unwrapped", wrap in <text>...</text>
             if text_res or not params.suppress_empty_elements:
@@ -2972,6 +3005,13 @@ class DoclangDeserializer(BaseModel):
         }
     )
 
+    _LIST_ITEM_SEGMENT_SIBLING_TAGS: ClassVar[frozenset[str]] = frozenset(
+        {
+            DoclangToken.LIST.value,
+            DoclangToken.PICTURE.value,
+        }
+    )
+
     def _is_list_item_head_element(self, el: Element) -> bool:
         """Return True when ``el`` is a property token allowed in element head."""
         return el.tagName in self._LIST_ITEM_HEAD_TAGS
@@ -3046,7 +3086,11 @@ class DoclangDeserializer(BaseModel):
         leading_text, rest_nodes = self._split_virtual_text_leading_text(body_nodes)
         rest_elements = [node for node in rest_nodes if isinstance(node, Element)]
 
-        if leading_text and rest_elements and all(el.tagName == DoclangToken.LIST.value for el in rest_elements):
+        if (
+            leading_text
+            and rest_elements
+            and all(el.tagName in self._LIST_ITEM_SEGMENT_SIBLING_TAGS for el in rest_elements)
+        ):
             li = self._add_list_item_with_provenance(
                 doc=doc,
                 text=leading_text,
@@ -3292,7 +3336,10 @@ class DoclangDeserializer(BaseModel):
                 if (
                     isinstance(first_el, Element)
                     and first_el.tagName == DoclangToken.TEXT.value
-                    and all(isinstance(el, Element) and el.tagName == DoclangToken.LIST.value for el in remaining_els)
+                    and all(
+                        isinstance(el, Element) and el.tagName in self._LIST_ITEM_SEGMENT_SIBLING_TAGS
+                        for el in remaining_els
+                    )
                 ):
                     # Check if the text element is simple (no complex content)
                     element_children = [

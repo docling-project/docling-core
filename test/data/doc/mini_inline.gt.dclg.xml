@@ -1,9 +1,7 @@
 <doclang>
   <list class="unordered">
     <ldiv/>
-    <text>
-      foo
-      <bold>bar</bold>
-    </text>
+    foo
+    <bold>bar</bold>
   </list>
 </doclang>

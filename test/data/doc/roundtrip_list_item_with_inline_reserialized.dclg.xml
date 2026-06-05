@@ -16,21 +16,17 @@
     <ldiv/>
     bar
     <ldiv/>
-    <text>
-      <content>Here a formula: </content>
-      <formula>
-        <content>E=mc^2 </content>
-      </formula>
+    <content>Here a formula: </content>
+    <formula>
+      <content>E=mc^2 </content>
+    </formula>
 in line
-    </text>
     <ldiv/>
-    <text>
-      <content>Here a </content>
-      <bold>bold</bold>
-      <content> text</content>
-    </text>
+    <content>Here a </content>
+    <bold>bold</bold>
+    <content> text</content>
     <ldiv/>
-    will contain sublist
+    <text>will contain sublist</text>
     <list class="unordered">
       <ldiv/>
       sublist item 1

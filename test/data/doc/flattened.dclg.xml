@@ -27,7 +27,7 @@ other children besides the inline
     <ldiv/>
     List item
     <ldiv/>
-    List item
+    <text>List item</text>
     <list class="unordered">
       <ldiv/>
       List item

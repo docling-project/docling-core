@@ -12,10 +12,8 @@ Three
     <ldiv/>
     Item 1
     <ldiv/>
-    <text>
-      Four
-      <bold>Five</bold>
+    Four
+    <bold>Five</bold>
 Six
-    </text>
   </list>
 </doclang>
