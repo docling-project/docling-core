@@ -20,6 +20,7 @@ def memory_base():
 # Tests for is_remote_path()
 # =============================================================================
 
+
 def test_is_remote_path_local_paths_return_false():
     assert is_remote_path(Path("/local/path")) is False
     assert is_remote_path(Path(".")) is False
@@ -52,6 +53,7 @@ def test_is_remote_path_real_upath():
     assert is_remote_path(UPath("/tmp/test")) is False
     assert is_remote_path(UPath("memory://test/path")) is True
 
+
 # =============================================================================
 # Tests for relative_path()
 # =============================================================================
@@ -73,6 +75,7 @@ def test_relative_path_with_upath():
     src = UPath("/home/user/docs")
     target = UPath("/home/user/docs/images/img.png")
     assert relative_path(src, target) == Path("images/img.png")
+
 
 # =============================================================================
 # UPath integration tests (memory filesystem)
