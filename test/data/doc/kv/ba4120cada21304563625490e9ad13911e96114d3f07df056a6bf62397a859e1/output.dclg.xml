@@ -33,7 +33,7 @@
     <location value="472"/>
     <location value="52"/>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="383"/>
         <location value="39"/>
         <location value="471"/>
@@ -57,7 +57,7 @@
           <location value="87"/>
           <location value="61"/>
 <![CDATA[1. Filer's First Name]]>        </key>
-        <value class="read_only">
+        <value>
           <location value="66"/>
           <location value="62"/>
           <location value="86"/>
@@ -74,7 +74,7 @@
         <location value="60"/>
         M.I.
       </key>
-      <value class="read_only">
+      <value>
         <location value="157"/>
         <location value="62"/>
         <location value="163"/>
@@ -90,7 +90,7 @@
         <location value="61"/>
         Last Name
       </key>
-      <value class="read_only">
+      <value>
         <location value="220"/>
         <location value="62"/>
         <location value="240"/>
@@ -122,7 +122,7 @@
         <location value="92"/>
         Home Address (Number, Street, or P.O. Box)
       </key>
-      <value class="read_only">
+      <value>
         <location value="117"/>
         <location value="92"/>
         <location value="173"/>
@@ -138,7 +138,7 @@
         <location value="108"/>
         City or Town
       </key>
-      <value class="read_only">
+      <value>
         <location value="110"/>
         <location value="108"/>
         <location value="157"/>
@@ -154,7 +154,7 @@
         <location value="107"/>
         State
       </key>
-      <value class="read_only">
+      <value>
         <location value="222"/>
         <location value="106"/>
         <location value="232"/>
@@ -170,7 +170,7 @@
         <location value="107"/>
         ZIP Code
       </key>
-      <value class="read_only">
+      <value>
         <location value="262"/>
         <location value="106"/>
         <location value="285"/>
@@ -187,7 +187,7 @@
           <location value="473"/>
           <location value="63"/>
 <![CDATA[2. Filer's Full Social Security No. (Example: 123-45-6789)]]>        </key>
-        <value class="read_only">
+        <value>
           <location value="340"/>
           <location value="66"/>
           <location value="452"/>
@@ -224,7 +224,7 @@
           <location value="125"/>
           5. STATE CAMPAIGN FUND
         </key>
-        <value class="read_only">
+        <value>
           <location value="47"/>
           <location value="125"/>
           <location value="169"/>
@@ -241,7 +241,7 @@
         <location value="151"/>
         Check if you (and/or your spouse, if filing a joint return) want $3 of your taxes to go to this fund. This will not increase your tax or reduce your refund.
       </key>
-      <value class="read_only">
+      <value>
         <location value="189"/>
         <location value="123"/>
         <location value="227"/>
@@ -249,7 +249,7 @@
         <checkbox class="selected"/>
         a. ☑ Filer
       </value>
-      <value class="read_only">
+      <value>
         <location value="190"/>
         <location value="139"/>
         <location value="235"/>
@@ -268,7 +268,7 @@
           <location value="125"/>
           6. FARMERS, FISHERMEN, OR SEAFARERS
         </key>
-        <value class="read_only">
+        <value>
           <location value="293"/>
           <location value="131"/>
           <location value="466"/>
@@ -288,7 +288,7 @@
           <location value="163"/>
           7. 2019 FILING STATUS . Check one.
         </key>
-        <value class="read_only">
+        <value>
           <location value="38"/>
           <location value="162"/>
           <location value="86"/>
@@ -296,7 +296,7 @@
           <checkbox class="selected"/>
           a. [X] Single
         </value>
-        <value class="read_only">
+        <value>
           <location value="39"/>
           <location value="178"/>
           <location value="125"/>
@@ -314,7 +314,7 @@
         <location value="172"/>
         a. [X] Single
       </key>
-      <value class="read_only">
+      <value>
         <location value="39"/>
         <location value="194"/>
         <location value="141"/>
@@ -347,7 +347,7 @@
           <location value="164"/>
           8. 2019 RESIDENCY STATUS . Check all that apply.
         </key>
-        <value class="read_only">
+        <value>
           <location value="285"/>
           <location value="163"/>
           <location value="341"/>
@@ -355,7 +355,7 @@
           <checkbox class="selected"/>
           a. ☑ Resident
         </value>
-        <value class="read_only">
+        <value>
           <location value="286"/>
           <location value="178"/>
           <location value="355"/>
@@ -363,7 +363,7 @@
           <checkbox class="unselected"/>
           b. ☐ Nonresident *
         </value>
-        <value class="read_only">
+        <value>
           <location value="285"/>
           <location value="193"/>
           <location value="375"/>
@@ -398,7 +398,7 @@
             <location value="234"/>
             a. Number of exemptions (see instructions) 94
           </key>
-          <value class="read_only">
+          <value>
             <location value="302"/>
             <location value="228"/>
             <location value="312"/>
@@ -415,7 +415,7 @@
             <location value="249"/>
             b. Number of individuals who qualify for one of the following special exemptions: deaf, blind, hemiplegic, paraplegic, quadriplegic, or totally and permanently disabled 9b.
           </key>
-          <value class="read_only">
+          <value>
             <location value="302"/>
             <location value="243"/>
             <location value="312"/>
@@ -432,7 +432,7 @@
             <location value="257"/>
             c. Number of qualified disabled veterans ... 9
           </key>
-          <value class="read_only">
+          <value>
             <location value="302"/>
             <location value="251"/>
             <location value="312"/>
@@ -449,7 +449,7 @@
             <location value="264"/>
             d. Number of Certificates of Stillbirth from MDHHS (see instructions) 90
           </key>
-          <value class="read_only">
+          <value>
             <location value="302"/>
             <location value="259"/>
             <location value="312"/>
@@ -466,7 +466,7 @@
             <location value="280"/>
             e. Claimed as dependent , see line 9 NOTE above ... ......... 90
           </key>
-          <value class="read_only">
+          <value>
             <location value="301"/>
             <location value="274"/>
             <location value="312"/>
@@ -482,7 +482,7 @@
             <location value="380"/>
             <location value="295"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="388"/>
             <location value="289"/>
             <location value="397"/>
@@ -516,7 +516,7 @@
         <location value="233"/>
         $\square$
       </key>
-      <value class="read_only">
+      <value>
         <location value="348"/>
         <location value="227"/>
         <location value="382"/>
@@ -532,7 +532,7 @@
         <location value="233"/>
         x $4,400
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="227"/>
         <location value="397"/>
@@ -564,7 +564,7 @@
         <location value="233"/>
         | |
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="227"/>
         <location value="481"/>
@@ -596,7 +596,7 @@
         <location value="249"/>
         $\square$
       </key>
-      <value class="read_only">
+      <value>
         <location value="348"/>
         <location value="243"/>
         <location value="382"/>
@@ -612,7 +612,7 @@
         <location value="249"/>
         x $2,700
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="243"/>
         <location value="397"/>
@@ -644,7 +644,7 @@
         <location value="249"/>
         0.
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="242"/>
         <location value="481"/>
@@ -674,7 +674,7 @@
         <location value="343"/>
         <location value="256"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="348"/>
         <location value="250"/>
         <location value="379"/>
@@ -690,7 +690,7 @@
         <location value="256"/>
         x $400
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="250"/>
         <location value="397"/>
@@ -722,7 +722,7 @@
         <location value="257"/>
         C1
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="250"/>
         <location value="481"/>
@@ -754,7 +754,7 @@
         <location value="264"/>
         $\square$
       </key>
-      <value class="read_only">
+      <value>
         <location value="347"/>
         <location value="259"/>
         <location value="382"/>
@@ -770,7 +770,7 @@
         <location value="264"/>
         x $4,400
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="258"/>
         <location value="397"/>
@@ -802,7 +802,7 @@
         <location value="264"/>
         14
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="258"/>
         <location value="481"/>
@@ -834,7 +834,7 @@
         <location value="280"/>
         $\square$
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="274"/>
         <location value="397"/>
@@ -850,7 +850,7 @@
         <location value="280"/>
         9e.
       </key>
-      <value class="read_only">
+      <value>
         <location value="441"/>
         <location value="270"/>
         <location value="462"/>
@@ -866,7 +866,7 @@
         <location value="277"/>
         1,500
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="274"/>
         <location value="481"/>
@@ -882,7 +882,7 @@
         <location value="295"/>
         9f.
       </key>
-      <value class="read_only">
+      <value>
         <location value="442"/>
         <location value="285"/>
         <location value="463"/>
@@ -898,7 +898,7 @@
         <location value="292"/>
         1,500
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="289"/>
         <location value="481"/>
@@ -916,7 +916,7 @@
           <location value="310"/>
           10. Adjusted Gross Income from your U.S. Forms 1040 or 1040NR (see instructions) ... 10
         </key>
-        <value class="read_only">
+        <value>
           <location value="368"/>
           <location value="305"/>
           <location value="378"/>
@@ -933,7 +933,7 @@
         <location value="311"/>
         10 .
       </key>
-      <value class="read_only">
+      <value>
         <location value="444"/>
         <location value="302"/>
         <location value="458"/>
@@ -949,7 +949,7 @@
         <location value="308"/>
         400
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="305"/>
         <location value="481"/>
@@ -967,7 +967,7 @@
           <location value="326"/>
           11. Additions from Schedule 1 , line 9 . Include Schedule 1 ...
         </key>
-        <value class="read_only">
+        <value>
           <location value="368"/>
           <location value="320"/>
           <location value="378"/>
@@ -984,7 +984,7 @@
         <location value="326"/>
         11 .
       </key>
-      <value class="read_only">
+      <value>
         <location value="442"/>
         <location value="318"/>
         <location value="463"/>
@@ -1000,7 +1000,7 @@
         <location value="324"/>
         1,500
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="320"/>
         <location value="481"/>
@@ -1018,7 +1018,7 @@
           <location value="343"/>
           12. Total . Add lines 10 and 11 ...
         </key>
-        <value class="read_only">
+        <value>
           <location value="368"/>
           <location value="336"/>
           <location value="378"/>
@@ -1035,7 +1035,7 @@
         <location value="341"/>
         12 .
       </key>
-      <value class="read_only">
+      <value>
         <location value="444"/>
         <location value="330"/>
         <location value="464"/>
@@ -1051,7 +1051,7 @@
         <location value="337"/>
         1,900
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="336"/>
         <location value="481"/>
@@ -1069,7 +1069,7 @@
           <location value="358"/>
           13. Subtractions from Schedule 1 , line 28 . Include Schedule 1 .........
         </key>
-        <value class="read_only">
+        <value>
           <location value="368"/>
           <location value="351"/>
           <location value="378"/>
@@ -1086,7 +1086,7 @@
         <location value="357"/>
         13 .
       </key>
-      <value class="read_only">
+      <value>
         <location value="445"/>
         <location value="349"/>
         <location value="465"/>
@@ -1102,7 +1102,7 @@
         <location value="356"/>
         2,500
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="351"/>
         <location value="481"/>
@@ -1119,7 +1119,7 @@
           <location value="359"/>
           <location value="373"/>
 <![CDATA[14. Income subject to tax . Subtract line 13 from line 12 . If line 13 is greater than line 12 , enter "0" .........]]>        </key>
-        <value class="read_only">
+        <value>
           <location value="368"/>
           <location value="367"/>
           <location value="378"/>
@@ -1152,7 +1152,7 @@
         <location value="373"/>
         a .
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="366"/>
         <location value="481"/>
@@ -1170,7 +1170,7 @@
           <location value="389"/>
           15. Exemption allowance . Enter amount from line 9f or Schedule NR , line 19 . ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... 15
         </key>
-        <value class="read_only">
+        <value>
           <location value="368"/>
           <location value="382"/>
           <location value="378"/>
@@ -1187,7 +1187,7 @@
         <location value="388"/>
         15.
       </key>
-      <value class="read_only">
+      <value>
         <location value="440"/>
         <location value="378"/>
         <location value="460"/>
@@ -1203,7 +1203,7 @@
         <location value="384"/>
         1,500
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="382"/>
         <location value="481"/>
@@ -1220,7 +1220,7 @@
           <location value="357"/>
           <location value="405"/>
 <![CDATA[16. Taxable income . Subtract line 15 from line 14 . If line 15 is greater than line 14 , enter "0" ... .........]]>        </key>
-        <value class="read_only">
+        <value>
           <location value="368"/>
           <location value="398"/>
           <location value="378"/>
@@ -1253,7 +1253,7 @@
         <location value="404"/>
         a.
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="398"/>
         <location value="481"/>
@@ -1271,7 +1271,7 @@
           <location value="420"/>
           17. Tax. Multiply line 16 by 4.25% (0.0425) ............... 17
         </key>
-        <value class="read_only">
+        <value>
           <location value="368"/>
           <location value="414"/>
           <location value="378"/>
@@ -1304,7 +1304,7 @@
         <location value="420"/>
         :
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="413"/>
         <location value="481"/>
@@ -1343,7 +1343,7 @@
           <location value="444"/>
           18. Income Tax Imposed by government units outside Michigan. Include a copy of the return (see instructions)....................... 1
         </key>
-        <value class="read_only">
+        <value>
           <location value="237"/>
           <location value="437"/>
           <location value="251"/>
@@ -1360,7 +1360,7 @@
           <location value="459"/>
           19. Michigan Historic Preservation Tax Credit carryforward (see instructions) 1
         </key>
-        <value class="read_only">
+        <value>
           <location value="237"/>
           <location value="452"/>
           <location value="251"/>
@@ -1376,7 +1376,7 @@
           <location value="358"/>
           <location value="475"/>
 <![CDATA[20. Income Tax. Subtract the sum of lines 18b and 19b from line 17. If the sum of lines 18b and 19b is greater than line 17, enter "0".....]]>        </key>
-        <value class="read_only">
+        <value>
           <location value="367"/>
           <location value="467"/>
           <location value="378"/>
@@ -1393,7 +1393,7 @@
         <location value="442"/>
         18a.
       </key>
-      <value class="read_only">
+      <value>
         <location value="297"/>
         <location value="432"/>
         <location value="311"/>
@@ -1409,7 +1409,7 @@
         <location value="439"/>
         900
       </key>
-      <value class="read_only">
+      <value>
         <location value="345"/>
         <location value="437"/>
         <location value="354"/>
@@ -1425,7 +1425,7 @@
         <location value="442"/>
         00
       </key>
-      <value class="read_only">
+      <value>
         <location value="363"/>
         <location value="436"/>
         <location value="378"/>
@@ -1441,7 +1441,7 @@
         <location value="442"/>
         18b. .
       </key>
-      <value class="read_only">
+      <value>
         <location value="438"/>
         <location value="433"/>
         <location value="453"/>
@@ -1457,7 +1457,7 @@
         <location value="439"/>
         900
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="436"/>
         <location value="481"/>
@@ -1473,7 +1473,7 @@
         <location value="458"/>
         19a.
       </key>
-      <value class="read_only">
+      <value>
         <location value="300"/>
         <location value="449"/>
         <location value="314"/>
@@ -1489,7 +1489,7 @@
         <location value="455"/>
         500
       </key>
-      <value class="read_only">
+      <value>
         <location value="345"/>
         <location value="452"/>
         <location value="354"/>
@@ -1505,7 +1505,7 @@
         <location value="458"/>
         00
       </key>
-      <value class="read_only">
+      <value>
         <location value="363"/>
         <location value="452"/>
         <location value="378"/>
@@ -1521,7 +1521,7 @@
         <location value="458"/>
         19b.
       </key>
-      <value class="read_only">
+      <value>
         <location value="440"/>
         <location value="449"/>
         <location value="455"/>
@@ -1537,7 +1537,7 @@
         <location value="455"/>
         500
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="452"/>
         <location value="481"/>
@@ -1569,7 +1569,7 @@
         <location value="474"/>
         a.
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="467"/>
         <location value="481"/>

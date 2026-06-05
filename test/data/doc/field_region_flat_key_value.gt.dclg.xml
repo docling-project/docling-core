@@ -4,7 +4,7 @@
       <key>Key</key>
     </field_item>
     <field_item>
-      <value class="read_only">Value</value>
+      <value>Value</value>
     </field_item>
   </field_region>
 </doclang>

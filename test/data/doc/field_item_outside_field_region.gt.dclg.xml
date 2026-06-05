@@ -2,7 +2,7 @@
   <field_region>
     <field_item>
       <key>K</key>
-      <value class="read_only">V</value>
+      <value>V</value>
     </field_item>
   </field_region>
 </doclang>

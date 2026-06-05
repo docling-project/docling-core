@@ -3,7 +3,7 @@
     <field_heading level="1">KV heading</field_heading>
     <field_item>
       <key>simple key</key>
-      <value class="read_only">simple value</value>
+      <value>simple value</value>
     </field_item>
     <field_heading level="2">KV sub-heading</field_heading>
     <text>
@@ -24,7 +24,7 @@
         <bold>Kent</bold>
         <hint>Select this if you are a Superman fan</hint>
       </value>
-      <value class="read_only"></value>
+      <value></value>
       <text>
         <content>My first input </content>
         <value class="fillable"></value>

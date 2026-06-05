@@ -26,7 +26,7 @@
             <location value="344"/>
             <location value="37"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="365"/>
             <location value="31"/>
             <location value="448"/>
@@ -49,7 +49,7 @@
             <location value="360"/>
             <location value="47"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="390"/>
             <location value="41"/>
             <location value="447"/>
@@ -79,7 +79,7 @@
             <location value="123"/>
             <location value="100"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="127"/>
             <location value="94"/>
             <location value="247"/>
@@ -102,7 +102,7 @@
             <location value="114"/>
             <location value="149"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="145"/>
             <location value="253"/>
@@ -118,7 +118,7 @@
             <location value="122"/>
             <location value="132"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="126"/>
             <location value="245"/>
@@ -141,7 +141,7 @@
             <location value="125"/>
             <location value="177"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="172"/>
             <location value="162"/>
@@ -164,7 +164,7 @@
             <location value="111"/>
             <location value="187"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="182"/>
             <location value="172"/>
@@ -192,7 +192,7 @@
             <location value="120"/>
             <location value="223"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="216"/>
             <location value="218"/>
             <location value="254"/>
@@ -215,7 +215,7 @@
             <location value="118"/>
             <location value="230"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="112"/>
             <location value="226"/>
             <location value="253"/>
@@ -238,7 +238,7 @@
             <location value="143"/>
             <location value="243"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="137"/>
             <location value="239"/>
             <location value="253"/>
@@ -292,7 +292,7 @@
         <location value="204"/>
         <location value="376"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="73"/>
         <location value="382"/>
         <location value="253"/>
@@ -320,7 +320,7 @@
         <location value="338"/>
         <location value="103"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="342"/>
         <location value="99"/>
         <location value="428"/>
@@ -336,7 +336,7 @@
         <location value="338"/>
         <location value="111"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="341"/>
         <location value="107"/>
         <location value="428"/>
@@ -352,7 +352,7 @@
         <location value="338"/>
         <location value="119"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="269"/>
         <location value="115"/>
         <location value="449"/>

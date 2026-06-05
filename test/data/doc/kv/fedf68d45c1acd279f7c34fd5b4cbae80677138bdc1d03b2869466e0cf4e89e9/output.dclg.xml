@@ -19,7 +19,7 @@
         <location value="22"/>
         International application No
       </key>
-      <value class="read_only">
+      <value>
         <location value="339"/>
         <location value="27"/>
         <location value="420"/>
@@ -232,7 +232,7 @@
         <location value="432"/>
         Date of the actual completion of the international search
       </key>
-      <value class="read_only">
+      <value>
         <location value="80"/>
         <location value="442"/>
         <location value="141"/>
@@ -248,7 +248,7 @@
         <location value="459"/>
         Name and mailing address of the ISA/
       </key>
-      <value class="read_only">
+      <value>
         <location value="97"/>
         <location value="461"/>
         <location value="224"/>
@@ -264,7 +264,7 @@
         <location value="469"/>
         NL-
       </key>
-      <value class="read_only">
+      <value>
         <location value="111"/>
         <location value="465"/>
         <location value="157"/>
@@ -280,7 +280,7 @@
         <location value="473"/>
         Tel.
       </key>
-      <value class="read_only">
+      <value>
         <location value="109"/>
         <location value="470"/>
         <location value="160"/>
@@ -296,7 +296,7 @@
         <location value="478"/>
         Fax:
       </key>
-      <value class="read_only">
+      <value>
         <location value="110"/>
         <location value="474"/>
         <location value="160"/>
@@ -344,7 +344,7 @@
         <location value="433"/>
         Date of mailing of the international search report
       </key>
-      <value class="read_only">
+      <value>
         <location value="296"/>
         <location value="442"/>
         <location value="348"/>
@@ -360,7 +360,7 @@
         <location value="458"/>
         Authorized officer
       </key>
-      <value class="read_only">
+      <value>
         <location value="297"/>
         <location value="471"/>
         <location value="374"/>
