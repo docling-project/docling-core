@@ -265,10 +265,10 @@ def test_roundtrip_picture_with_caption():
         print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.pictures) == 1
-    # Caption added as a separate text item referenced by the picture
-    assert len(doc2.texts) >= 1
-    cap_texts = [t for t in doc2.texts if t.label == DocItemLabel.CAPTION]
-    assert len(cap_texts) == 1 and cap_texts[0].text == "Fig 1"
+    pic = doc2.pictures[0]
+    assert len(pic.captions) == 1
+    cap_item = pic.captions[0].resolve(doc2)
+    assert cap_item.label == DocItemLabel.CAPTION and cap_item.text == "Fig 1"
 
 
 def test_roundtrip_table_simple():
@@ -493,9 +493,10 @@ def test_roundtrip_picture_with_caption_prov():
         print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.pictures) == 1
-    assert len(doc2.texts) >= 1
-    cap_texts = [t for t in doc2.texts if t.label == DocItemLabel.CAPTION]
-    assert len(cap_texts) == 1 and cap_texts[0].text == "Fig 1"
+    pic = doc2.pictures[0]
+    assert len(pic.captions) == 1
+    cap_item = pic.captions[0].resolve(doc2)
+    assert cap_item.label == DocItemLabel.CAPTION and cap_item.text == "Fig 1"
 
 
 def test_roundtrip_table_simple_prov():
@@ -1201,7 +1202,6 @@ def test_virtual_text_list_roundtrip():
     assert_valid_dclg_xml(dt2)
 
 
-@pytest.mark.skip(reason="Table virtual-text round-trip pending location handling fix")
 @doclang_validator
 def test_virtual_text_table_roundtrip():
     """Round-trip table virtual-text edge cases through DocLang."""
@@ -1222,13 +1222,12 @@ def test_virtual_text_table_roundtrip():
     doc2 = _deserialize(dt)
     _verify_doc(doc=doc2, exp_json=deserialized_json)
 
-    dt2 = _serialize_virtual_text_mixed(doc2, add_location=False)
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=True)
     verify(reserialized_dclg, dt2)
     _assert_virtual_text_table_dclg(dt2)
     assert_valid_dclg_xml(dt2)
 
 
-@pytest.mark.skip(reason="Index virtual-text round-trip pending location handling fix")
 @doclang_validator
 def test_virtual_text_index_roundtrip():
     """Round-trip index virtual-text edge cases through DocLang."""
@@ -1249,7 +1248,7 @@ def test_virtual_text_index_roundtrip():
     doc2 = _deserialize(dt)
     _verify_doc(doc=doc2, exp_json=deserialized_json)
 
-    dt2 = _serialize_virtual_text_mixed(doc2, add_location=False)
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=True)
     verify(reserialized_dclg, dt2)
     _assert_virtual_text_index_dclg(dt2)
     assert_valid_dclg_xml(dt2)
@@ -1329,7 +1328,11 @@ def _create_virtual_text_index_doc() -> DoclingDocument:
     _add_default_page(doc)
     bbox = _VirtualTextMixedBboxFactory()
 
-    table = doc.add_table(data=TableData(num_rows=1, num_cols=3), label=DocItemLabel.DOCUMENT_INDEX, prov=bbox.next_prov())
+    table = doc.add_table(
+        data=TableData(num_rows=1, num_cols=3),
+        label=DocItemLabel.DOCUMENT_INDEX,
+        prov=bbox.next_prov(),
+    )
 
     cell_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
     doc.add_text(
@@ -1409,6 +1412,94 @@ def _assert_virtual_text_index_dclg(dclg: str) -> None:
     assert "group text" in host_block
     assert "<picture" in host_block
     assert "<location value=" in host_block
+
+
+def _create_referenced_caption_doc() -> DoclingDocument:
+    """Document with picture and table, each with an associated caption."""
+    doc = DoclingDocument(name="referenced_caption")
+    _add_default_page(doc)
+    bbox = _VirtualTextMixedBboxFactory()
+
+    cap_pic = doc.add_text(
+        label=DocItemLabel.CAPTION,
+        text="Figure 1",
+        prov=bbox.next_prov(),
+    )
+    doc.add_picture(caption=cap_pic, prov=bbox.next_prov())
+
+    cap_tbl = doc.add_text(
+        label=DocItemLabel.CAPTION,
+        text="Table 1",
+        prov=bbox.next_prov(),
+    )
+    td = TableData(num_rows=0, num_cols=2)
+    td.add_row(["H1", "H2"])
+    td.add_row(["C1", "C2"])
+    doc.add_table(data=td, caption=cap_tbl, prov=bbox.next_prov())
+
+    return doc
+
+
+def _assert_referenced_caption_doc(doc: DoclingDocument) -> None:
+    """Verify picture/table caption refs are preserved in the document model."""
+    assert len(doc.pictures) == 1
+    pic = doc.pictures[0]
+    assert len(pic.captions) == 1
+    pic_cap = pic.captions[0].resolve(doc)
+    assert pic_cap.label == DocItemLabel.CAPTION
+    assert pic_cap.text == "Figure 1"
+
+    assert len(doc.tables) == 1
+    tbl = doc.tables[0]
+    assert len(tbl.captions) == 1
+    tbl_cap = tbl.captions[0].resolve(doc)
+    assert tbl_cap.label == DocItemLabel.CAPTION
+    assert tbl_cap.text == "Table 1"
+    grid_texts = [[cell.text for cell in row] for row in tbl.data.grid]
+    assert grid_texts == [["H1", "H2"], ["C1", "C2"]]
+
+
+def _assert_referenced_caption_dclg(dclg: str, *, with_location: bool) -> None:
+    """Sanity-check referenced captions appear in host element heads."""
+    pic_block = dclg.split("<picture>", 1)[1].split("</picture>", 1)[0]
+    assert "Figure 1" in pic_block
+    assert re.search(r"<caption>\s*(?:<location[^>]*/>\s*)*Figure 1\s*</caption>", pic_block)
+
+    tbl_block = dclg.split("<table>", 1)[1].split("</table>", 1)[0]
+    assert "Table 1" in tbl_block
+    assert re.search(r"<caption>\s*(?:<location[^>]*/>\s*)*Table 1\s*</caption>", tbl_block)
+    assert "H1" in tbl_block and "C2" in tbl_block
+
+    if with_location:
+        assert "<location value=" in dclg
+
+
+@doclang_validator
+def test_referenced_caption_roundtrip():
+    """Round-trip picture/table with associated captions through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "referenced_caption"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_referenced_caption_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+    _assert_referenced_caption_doc(doc)
+
+    dt = _serialize_virtual_text_mixed(doc)
+    verify(serialized_dclg, dt)
+    _assert_referenced_caption_dclg(dt, with_location=True)
+    assert_valid_dclg_xml(dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+    _assert_referenced_caption_doc(doc2)
+
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=True)
+    verify(reserialized_dclg, dt2)
+    _assert_referenced_caption_dclg(dt2, with_location=True)
+    assert_valid_dclg_xml(dt2)
 
 
 ############################################

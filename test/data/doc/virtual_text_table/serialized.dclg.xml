@@ -1,0 +1,53 @@
+<doclang>
+  <table>
+    <location value="10"/>
+    <location value="20"/>
+    <location value="108"/>
+    <location value="46"/>
+    <fcel/>
+    <location value="113"/>
+    <location value="46"/>
+    <location value="210"/>
+    <location value="72"/>
+    plain cell
+    <fcel/>
+    <location value="215"/>
+    <location value="46"/>
+    <location value="312"/>
+    <location value="72"/>
+    <text>
+      <location value="113"/>
+      <location value="20"/>
+      <location value="210"/>
+      <location value="46"/>
+      cell with list:
+    </text>
+    <list class="unordered">
+      <ldiv/>
+      <location value="215"/>
+      <location value="20"/>
+      <location value="312"/>
+      <location value="46"/>
+      nested in cell
+    </list>
+    <fcel/>
+    <location value="317"/>
+    <location value="46"/>
+    <location value="415"/>
+    <location value="72"/>
+    <text>
+      <location value="317"/>
+      <location value="20"/>
+      <location value="415"/>
+      <location value="46"/>
+      group text
+    </text>
+    <picture>
+      <location value="10"/>
+      <location value="46"/>
+      <location value="108"/>
+      <location value="72"/>
+    </picture>
+    <nl/>
+  </table>
+</doclang>
