@@ -6491,7 +6491,11 @@ class DoclingDocument(BaseModel):
 
         def extract_inner_text(text_chunk: str) -> str:
             """Strip all <...> tags (except <_..._>) to get the raw text content."""
-            return re.sub(r"<(?!_.*?_>).*?>", "", text_chunk, flags=re.DOTALL).strip()
+            # The tag name must start with a letter or "/", and the match must
+            # not cross a ">" boundary. This avoids deleting spans of plain text
+            # that merely contain "<" followed by a later ">" (e.g. statistical
+            # notation like "P < 0.05 ... P > 0.05"). See #618.
+            return re.sub(r"<(?!_.*?_>)[a-zA-Z/][^>]*>", "", text_chunk).strip()
 
         def extract_caption(
             text_chunk: str,

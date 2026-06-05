@@ -139,6 +139,19 @@ def test_doctags_picture_provenances_and_captions():
         assert len(picture.captions) > 0
 
 
+def test_doctags_load_preserves_angle_brackets_in_text():
+    # Regression for #618: text nodes containing a "<" followed by a later ">"
+    # (e.g. statistical notation like "P < 0.05 ... P > 0.05") had the whole
+    # span between the two characters silently deleted by extract_inner_text.
+    original = "We found (r = -0.36, P < 0.05), but not (r = -0.08, P > 0.05), lending support."
+    doctags = f"<doctag><text><loc_10><loc_10><loc_400><loc_20>{original}</text></doctag>"
+
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
+    doc = DoclingDocument.load_from_doctags(doctags_doc)
+
+    assert [t.text for t in doc.texts] == [original]
+
+
 def test_doctags_inline():
     src_path = Path("test/data/doc/2408.09869v3_enriched.dt")
     with open(src_path) as f:
