@@ -1690,7 +1690,7 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             }.get(item.label)
         ):
             wrap_open_token = f"<{tok.value}>"
-            if isinstance(item, FieldValueItem):
+            if isinstance(item, FieldValueItem) and item.kind != "read_only":
                 wrap_open_token = f'<{tok.value} class="{item.kind}">'
             elif isinstance(item, FieldHeadingItem):
                 wrap_open_token = f'<{tok.value} level="{item.level}">'

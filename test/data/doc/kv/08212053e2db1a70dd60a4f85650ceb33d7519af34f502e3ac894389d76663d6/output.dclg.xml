@@ -92,7 +92,7 @@
         <location value="299"/>
         Arrival
       </key>
-      <value class="read_only">
+      <value>
         <location value="132"/>
         <location value="292"/>
         <location value="251"/>
@@ -117,7 +117,7 @@
         <location value="335"/>
         Departure
       </key>
-      <value class="read_only">
+      <value>
         <location value="161"/>
         <location value="330"/>
         <location value="232"/>
@@ -142,7 +142,7 @@
         <location value="356"/>
         Arrival/Departure
       </key>
-      <value class="read_only">
+      <value>
         <location value="147"/>
         <location value="354"/>
         <location value="243"/>
@@ -230,7 +230,7 @@
         <location value="450"/>
         <location value="278"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="260"/>
         <location value="271"/>
         <location value="340"/>
@@ -255,7 +255,7 @@
         <location value="449"/>
         <location value="306"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="299"/>
         <location value="320"/>
@@ -280,7 +280,7 @@
         <location value="451"/>
         <location value="336"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="328"/>
         <location value="327"/>
@@ -304,7 +304,7 @@
         <location value="451"/>
         <location value="361"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="355"/>
         <location value="317"/>
@@ -329,7 +329,7 @@
         <location value="451"/>
         <location value="385"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="377"/>
         <location value="349"/>
@@ -354,7 +354,7 @@
         <location value="450"/>
         <location value="410"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="404"/>
         <location value="397"/>
@@ -379,7 +379,7 @@
         <location value="443"/>
         <location value="457"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="446"/>
         <location value="352"/>

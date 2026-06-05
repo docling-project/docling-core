@@ -48,7 +48,7 @@
             <location value="87"/>
             Veröffentlichungstag:
           </key>
-          <value class="read_only">
+          <value>
             <location value="81"/>
             <location value="89"/>
             <location value="196"/>
@@ -73,7 +73,7 @@
             <location value="108"/>
             Anmeldenummer:
           </key>
-          <value class="read_only">
+          <value>
             <location value="143"/>
             <location value="103"/>
             <location value="184"/>
@@ -98,7 +98,7 @@
             <location value="123"/>
             Anmeldetag:
           </key>
-          <value class="read_only">
+          <value>
             <location value="125"/>
             <location value="118"/>
             <location value="164"/>
@@ -123,7 +123,7 @@
             <location value="86"/>
             Int Cl.:
           </key>
-          <value class="read_only">
+          <value>
             <location value="286"/>
             <location value="88"/>
             <location value="435"/>
@@ -148,7 +148,7 @@
             <location value="139"/>
             Benannte Vertragsstaaten:
           </key>
-          <value class="read_only">
+          <value>
             <location value="80"/>
             <location value="140"/>
             <location value="255"/>
@@ -164,7 +164,7 @@
             <location value="168"/>
             Benannte Erstreckungsstaaten:
           </key>
-          <value class="read_only">
+          <value>
             <location value="80"/>
             <location value="169"/>
             <location value="105"/>
@@ -180,7 +180,7 @@
             <location value="182"/>
             Benannte Validierungsstaaten:
           </key>
-          <value class="read_only">
+          <value>
             <location value="81"/>
             <location value="183"/>
             <location value="132"/>
@@ -205,7 +205,7 @@
             <location value="203"/>
             Anmelder:
           </key>
-          <value class="read_only">
+          <value>
             <location value="81"/>
             <location value="198"/>
             <location value="238"/>
@@ -229,14 +229,14 @@
             <location value="231"/>
             Erfinder:
           </key>
-          <value class="read_only">
+          <value>
             <location value="80"/>
             <location value="233"/>
             <location value="139"/>
             <location value="247"/>
             Thielen, Rolf 50733 Köln (DE)
           </value>
-          <value class="read_only">
+          <value>
             <location value="287"/>
             <location value="134"/>
             <location value="345"/>
@@ -279,7 +279,7 @@
             <location value="160"/>
             Vertreter:
           </key>
-          <value class="read_only">
+          <value>
             <location value="286"/>
             <location value="155"/>
             <location value="412"/>
@@ -294,7 +294,7 @@
             <location value="203"/>
             Bemerkungen:
           </key>
-          <value class="read_only">
+          <value>
             <location value="286"/>
             <location value="205"/>
             <location value="459"/>

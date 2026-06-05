@@ -69,7 +69,7 @@ other children besides the inline
     <field_item>
       <text>Some text</text>
       <key>Key</key>
-      <value class="read_only">Value</value>
+      <value>Value</value>
     </field_item>
   </field_region>
 </doclang>
