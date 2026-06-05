@@ -4,7 +4,7 @@ import copy
 import re
 import warnings
 import xml.etree.ElementTree as ET
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import Enum
 from itertools import groupby
 from pathlib import Path
@@ -1200,6 +1200,26 @@ def _list_item_has_segment_siblings(*, item: ListItem, doc: DoclingDocument) -> 
             if seen_self and isinstance(child, ListGroup):
                 return True
     return False
+
+
+# Tokens allowed in an element head (before body content). Mirrors
+# ``_element_head_prefix`` serialization order plus continuation/temporal tokens.
+_ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
+    {
+        DoclangToken.LABEL.value,
+        DoclangToken.LAYER.value,
+        DoclangToken.HREF.value,
+        DoclangToken.LOCATION.value,
+        DoclangToken.CAPTION.value,
+        DoclangToken.CUSTOM.value,
+        DoclangToken.THREAD.value,
+        DoclangToken.H_THREAD.value,
+        DoclangToken.HOUR.value,
+        DoclangToken.MINUTE.value,
+        DoclangToken.SECOND.value,
+        DoclangToken.CENTISECOND.value,
+    }
+)
 
 
 class DoclangListSerializer(BaseModel, BaseListSerializer):
@@ -2788,10 +2808,7 @@ class DoclangDeserializer(BaseModel):
     def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         """Parse text-like tokens (text, caption, footnotes, code, formula)."""
         element_children = [
-            node
-            for node in el.childNodes
-            if isinstance(node, Element)
-            and node.tagName not in {DoclangToken.LOCATION.value, DoclangToken.LAYER.value, DoclangToken.LABEL.value}
+            node for node in el.childNodes if isinstance(node, Element) and not self._is_element_head_tag(node)
         ]
 
         if len(element_children) > 1 or self._get_children_simple_text_block(el) is None:
@@ -2973,21 +2990,55 @@ class DoclangDeserializer(BaseModel):
         except ValueError:
             return None
 
-    _LIST_ITEM_HEAD_TAGS: ClassVar[frozenset[str]] = frozenset(
-        {
-            DoclangToken.LOCATION.value,
-            DoclangToken.LAYER.value,
-            DoclangToken.LABEL.value,
-            DoclangToken.HREF.value,
-            DoclangToken.HOUR.value,
-            DoclangToken.MINUTE.value,
-            DoclangToken.SECOND.value,
-            DoclangToken.CENTISECOND.value,
-            DoclangToken.CUSTOM.value,
-            DoclangToken.THREAD.value,
-            DoclangToken.H_THREAD.value,
-        }
-    )
+    def _is_element_head_tag(self, el: Element) -> bool:
+        """Return True when ``el`` is an element allowed in an element head."""
+        return el.tagName in _ELEMENT_HEAD_TAGS
+
+    def _is_ignorable_head_whitespace(self, node: Node) -> bool:
+        return isinstance(node, Text) and not node.data.strip()
+
+    def _split_element_children_head_body(
+        self,
+        el: Element,
+        *,
+        body_starts_at: Optional[Callable[[Node], bool]] = None,
+    ) -> tuple[list[Node], list[Node]]:
+        """Split immediate children into element-head prefix and body."""
+        head_nodes: list[Node] = []
+        body_nodes: list[Node] = []
+        in_body = False
+
+        for node in el.childNodes:
+            if not in_body:
+                if body_starts_at is not None and body_starts_at(node):
+                    in_body = True
+                    body_nodes.append(node)
+                    continue
+                if self._is_ignorable_head_whitespace(node):
+                    head_nodes.append(node)
+                    continue
+                if isinstance(node, Element) and self._is_element_head_tag(node):
+                    head_nodes.append(node)
+                    continue
+                in_body = True
+                body_nodes.append(node)
+            else:
+                body_nodes.append(node)
+
+        return head_nodes, body_nodes
+
+    def _nodes_to_xml(self, nodes: Sequence[Node]) -> str:
+        """Serialize a node sequence to XML/text (unwrap ``<content>`` elements)."""
+        parts: list[str] = []
+        for node in nodes:
+            if isinstance(node, Text):
+                parts.append(node.data)
+            elif isinstance(node, Element):
+                if node.tagName == DoclangToken.CONTENT.value:
+                    parts.append(self._nodes_to_xml(node.childNodes))
+                else:
+                    parts.append(node.toxml())
+        return "".join(parts)
 
     _LIST_ITEM_VIRTUAL_TEXT_CONTENT_TAGS: ClassVar[frozenset[str]] = frozenset(
         {
@@ -3012,15 +3063,11 @@ class DoclangDeserializer(BaseModel):
         }
     )
 
-    def _is_list_item_head_element(self, el: Element) -> bool:
-        """Return True when ``el`` is a property token allowed in element head."""
-        return el.tagName in self._LIST_ITEM_HEAD_TAGS
-
     def _is_list_item_virtual_text(self, nodes: Sequence[Node]) -> bool:
         """Decide whether list-item content after ``<ldiv>`` is virtual ``<text>``.
 
         Inspect the first non-whitespace node after the delimiter:
-        - property/head tokens, raw text, ``<content>``, or inline formatting → virtual text
+        - element head tokens, raw text, ``<content>``, or inline formatting → virtual text
         - semantic/grouping elements (``<text>``, ``<code>``, ``<list>``, …) → not virtual text
         """
         first = self._first_non_whitespace_node(nodes)
@@ -3030,7 +3077,7 @@ class DoclangDeserializer(BaseModel):
             return True
         if not isinstance(first, Element):
             return False
-        if self._is_list_item_head_element(first):
+        if self._is_element_head_tag(first):
             return True
         if first.tagName in self._LIST_ITEM_VIRTUAL_TEXT_CONTENT_TAGS:
             return True
@@ -3047,7 +3094,7 @@ class DoclangDeserializer(BaseModel):
             if skipping_head:
                 if isinstance(node, Text) and not node.data.strip():
                     continue
-                if isinstance(node, Element) and self._is_list_item_head_element(node):
+                if isinstance(node, Element) and self._is_element_head_tag(node):
                     continue
                 skipping_head = False
             content_nodes.append(node)
@@ -3081,7 +3128,7 @@ class DoclangDeserializer(BaseModel):
         all_content_nodes: Sequence[Node],
     ) -> None:
         """Parse list-item body emitted as virtual ``<text>`` after ``<ldiv>``."""
-        prov_list = self._extract_provenance_from_nodes(doc=doc, nodes=all_content_nodes)
+        prov_list = self._provenance_from_location_nodes(doc=doc, nodes=all_content_nodes)
         body_nodes = self._content_nodes_after_list_item_head(all_content_nodes)
         leading_text, rest_nodes = self._split_virtual_text_leading_text(body_nodes)
         rest_elements = [node for node in rest_nodes if isinstance(node, Element)]
@@ -3155,8 +3202,8 @@ class DoclangDeserializer(BaseModel):
                 parts.append(self._get_text(node))
         return "".join(parts)
 
-    def _extract_provenance_from_nodes(self, *, doc: DoclingDocument, nodes: Sequence[Node]) -> list[ProvenanceItem]:
-        """Collect ``<location>`` tokens from a flat node sequence (virtual-text head)."""
+    def _provenance_from_location_nodes(self, *, doc: DoclingDocument, nodes: Sequence[Node]) -> list[ProvenanceItem]:
+        """Collect ``<location>`` quartets from a flat node sequence (element head)."""
         values: list[int] = []
         res_for_group: Optional[int] = None
         provs: list[ProvenanceItem] = []
@@ -3262,7 +3309,7 @@ class DoclangDeserializer(BaseModel):
             content_elements = [
                 node
                 for node in actual_children[start + 1 : end]
-                if not (isinstance(node, Element) and self._is_list_item_head_element(node))
+                if not (isinstance(node, Element) and self._is_element_head_tag(node))
             ]
 
             is_virtual_text = self._is_list_item_virtual_text(all_content_nodes)
@@ -3455,12 +3502,10 @@ class DoclangDeserializer(BaseModel):
                 elif cls_val and cls_val != DoclangAttributeValue.DATA.value:
                     raise ValueError(f"Invalid class attribute value '{cls_val}' for table element.")
 
-        tbl_provs = self._extract_provenance(doc=doc, el=otsl_el)
-        content_layer = self._extract_layer(el=otsl_el)
-        inner = self._inner_xml(
-            otsl_el,
-            exclude_tags={"location", "layer", "label", "caption", "custom", "thread", "src"},
-        )
+        head_nodes, body_nodes = self._split_element_children_head_body(otsl_el)
+        tbl_provs = self._provenance_from_location_nodes(doc=doc, nodes=head_nodes)
+        content_layer = self._layer_from_nodes(head_nodes)
+        inner = self._nodes_to_xml(body_nodes)
         tbl = doc.add_table(
             data=TableData(),
             caption=caption,
@@ -3517,10 +3562,8 @@ class DoclangDeserializer(BaseModel):
                 )
             otsl_el = self._first_child(picture_el, DoclangToken.TABLE.value)
             if otsl_el is not None:
-                inner = self._inner_xml(
-                    otsl_el,
-                    exclude_tags={"location", "layer", "label", "caption", "custom"},
-                )
+                head_nodes, body_nodes = self._split_element_children_head_body(otsl_el)
+                inner = self._nodes_to_xml(body_nodes)
                 td = self._parse_otsl_table_content(_wrap(inner, DoclangToken.TABLE.value))
                 if pic.meta is None:
                     pic.meta = PictureMeta()
@@ -3588,13 +3631,119 @@ class DoclangDeserializer(BaseModel):
                     parts.append(node.toxml())
         return "".join(parts)
 
+    def _layer_from_nodes(self, nodes: Sequence[Node]) -> Optional[ContentLayer]:
+        """Extract content layer from ``<layer value=\"...\"/>`` in element head nodes."""
+        for node in nodes:
+            if isinstance(node, Element) and node.tagName == DoclangToken.LAYER.value:
+                if layer_value := node.getAttribute(DoclangAttributeKey.VALUE.value):
+                    try:
+                        return ContentLayer(layer_value)
+                    except ValueError:
+                        pass
+        return None
+
+    def _label_value_from_nodes(self, nodes: Sequence[Node]) -> Optional[str]:
+        """Extract ``<label value=\"...\"/>`` from element head nodes."""
+        for node in nodes:
+            if isinstance(node, Element) and node.tagName == DoclangToken.LABEL.value:
+                if label_val := node.getAttribute(DoclangAttributeKey.VALUE.value):
+                    return label_val
+        return None
+
     # --------- OTSL table parsing (inlined) ---------
+    _OTSL_STRUCTURAL_TAGS: ClassVar[frozenset[str]] = frozenset(
+        {
+            DoclangToken.FCEL.value,
+            DoclangToken.ECEL.value,
+            DoclangToken.LCEL.value,
+            DoclangToken.UCEL.value,
+            DoclangToken.XCEL.value,
+            DoclangToken.NL.value,
+            DoclangToken.CHED.value,
+            DoclangToken.RHED.value,
+            DoclangToken.SROW.value,
+        }
+    )
+
+    def _bbox_from_location_text_fragments(
+        self, *, doc: DoclingDocument, fragments: list[str]
+    ) -> Optional[BoundingBox]:
+        """Build a TOPLEFT bbox from four ``<location value=\"...\"/>`` XML fragments."""
+        if len(fragments) != 4:
+            return None
+        values: list[int] = []
+        res_for_group: Optional[int] = None
+        for fragment in fragments:
+            frag_dom = parseString(fragment)
+            loc_el = frag_dom.documentElement
+            if loc_el is None or loc_el.tagName != DoclangToken.LOCATION.value:
+                return None
+            try:
+                v = int(loc_el.getAttribute(DoclangAttributeKey.VALUE.value) or "0")
+            except Exception:
+                v = 0
+            try:
+                r = int(loc_el.getAttribute(DoclangAttributeKey.RESOLUTION.value) or str(self._default_resolution))
+            except Exception:
+                r = self._default_resolution
+            values.append(v)
+            res_for_group = r
+        self._ensure_page_exists(
+            doc=doc,
+            page_no=self._page_no,
+            resolution=res_for_group or self._default_resolution,
+        )
+        l = float(min(values[0], values[2]))
+        t = float(min(values[1], values[3]))
+        rgt = float(max(values[0], values[2]))
+        btm = float(max(values[1], values[3]))
+        return BoundingBox.from_tuple((l, t, rgt, btm), origin=CoordOrigin.TOPLEFT)
+
+    def _consume_leading_location_fragments(
+        self,
+        *,
+        doc: Optional[DoclingDocument],
+        texts: list[str],
+        start: int,
+    ) -> tuple[int, Optional[BoundingBox]]:
+        """Consume a leading quartet of location fragments; return next index and bbox."""
+        frags: list[str] = []
+        idx = start
+        loc_tag = f"<{DoclangToken.LOCATION.value}"
+        while idx < len(texts) and texts[idx].strip().startswith(loc_tag):
+            frags.append(texts[idx])
+            idx += 1
+            if len(frags) == 4:
+                bbox = self._bbox_from_location_text_fragments(doc=doc, fragments=frags) if doc is not None else None
+                return idx, bbox
+        return start, None
+
+    def _consume_otsl_cell_body_parts(self, texts: list[str], start: int) -> tuple[int, list[str]]:
+        """Collect OTSL cell body fragments until the next structural token."""
+        structural = {
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.FCEL),
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.ECEL),
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.LCEL),
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.UCEL),
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.XCEL),
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.NL),
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CHED),
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.RHED),
+            DoclangVocabulary._create_selfclosing_token(token=DoclangToken.SROW),
+        }
+        parts: list[str] = []
+        idx = start
+        while idx < len(texts) and texts[idx] not in structural:
+            parts.append(texts[idx])
+            idx += 1
+        return idx, parts
+
     def _otsl_extract_tokens_and_text(self, s: str) -> tuple[list[str], list[str]]:
         """Extract OTSL structural tokens and interleaved text.
 
-        Strips the outer <otsl> wrapper and ignores location tokens (expected
-        to be removed before). Handles nested XML elements (like <text><italic>...</italic></text>)
-        by keeping them as single units.
+        Strips the outer wrapper and preserves OTSL body content including per-cell
+        ``<location>`` tokens. Handles nested XML elements (like
+        ``<text><italic>...</italic></text>``) by keeping them as single units.
         """
 
         tokens: list[str] = []
@@ -3691,12 +3840,19 @@ class DoclangDeserializer(BaseModel):
             if t in [fcel, ecel, ched, rhed, srow]:
                 row_span = 1
                 col_span = 1
-                right_offset = 1
-                if t != ecel and (i + 1) < len(texts):
-                    cell_text = texts[i + 1]
-                    right_offset = 2
+                cell_bbox: Optional[BoundingBox] = None
+                content_idx = i + 1
+                cell_parts: list[str] = []
+                if t != ecel and content_idx < len(texts):
+                    content_idx, cell_bbox = self._consume_leading_location_fragments(
+                        doc=doc,
+                        texts=texts,
+                        start=content_idx,
+                    )
+                    content_idx, cell_parts = self._consume_otsl_cell_body_parts(texts, content_idx)
+                    cell_text = "".join(cell_parts)
 
-                next_right = texts[i + right_offset] if i + right_offset < len(texts) else ""
+                next_right = texts[content_idx] if content_idx < len(texts) else ""
                 next_bottom = (
                     split_row_tokens[r_idx + 1][c_idx]
                     if (r_idx + 1) < len(split_row_tokens) and c_idx < len(split_row_tokens[r_idx + 1])
@@ -3708,55 +3864,40 @@ class DoclangDeserializer(BaseModel):
                 if next_bottom in [ucel, xcel]:
                     row_span += count_down(split_row_tokens, c_idx, r_idx + 1, [ucel, xcel])
 
-                # Check if cell_text contains XML content (rich cell)
                 cell_text_stripped = cell_text.strip()
+                # Rich cell: one or more XML fragments (e.g. <text> + <list>)
+                xml_parts = [
+                    part.strip() for part in cell_parts if part.strip().startswith("<") and part.strip().endswith(">")
+                ]
                 cell_added = False
-                if (
-                    cell_text_stripped.startswith("<")
-                    and cell_text_stripped.endswith(">")
-                    and doc is not None
-                    and parent is not None
-                ):
-                    # Wrap in a root element to ensure valid XML
-                    wrapped_xml = f"<root>{cell_text_stripped}</root>"
-                    dom = parseString(wrapped_xml)
-                    root_el = dom.documentElement
-
-                    if root_el is None:
-                        raise ValueError("No document element found")
-
-                    # Get the number of children before parsing
-                    children_before = len(parent.children)
-
-                    # Parse the child elements and create document items
-                    parsed_element = None
-                    for child_node in root_el.childNodes:
-                        if isinstance(child_node, Element):
-                            parsed_element = child_node
-                            # Dispatch to parse this element (creates items as side effect)
-                            self._dispatch_element(doc=doc, el=child_node, parent=parent)
-                            break  # Only process first element
-
-                    # Check if a new child was added
-                    if len(parent.children) > children_before:
-                        # Get the newly created item
-                        child_item = parent.children[-1].resolve(doc=doc)
-                        # Extract the actual text content from the parsed element
-                        actual_text = self._get_text(parsed_element) if parsed_element else cell_text_stripped
-                        # Create a RichTableCell with reference to the parsed content
-                        table_cells.append(
-                            RichTableCell(
-                                text=actual_text,
-                                row_span=row_span,
-                                col_span=col_span,
-                                start_row_offset_idx=r_idx,
-                                end_row_offset_idx=r_idx + row_span,
-                                start_col_offset_idx=c_idx,
-                                end_col_offset_idx=c_idx + col_span,
-                                ref=child_item.get_ref(),
-                            )
+                if xml_parts and doc is not None and parent is not None:
+                    cell_group = doc.add_group(parent=parent, label=GroupLabel.UNSPECIFIED)
+                    text_parts: list[str] = []
+                    for part in xml_parts:
+                        wrapped_xml = f"<root>{part}</root>"
+                        dom = parseString(wrapped_xml)
+                        root_el = dom.documentElement
+                        if root_el is None:
+                            raise ValueError("No document element found")
+                        for child_node in root_el.childNodes:
+                            if isinstance(child_node, Element):
+                                self._dispatch_element(doc=doc, el=child_node, parent=cell_group)
+                                text_parts.append(self._get_text(child_node))
+                    actual_text = "".join(text_parts).strip() or cell_text_stripped
+                    table_cells.append(
+                        RichTableCell(
+                            text=actual_text,
+                            row_span=row_span,
+                            col_span=col_span,
+                            start_row_offset_idx=r_idx,
+                            end_row_offset_idx=r_idx + row_span,
+                            start_col_offset_idx=c_idx,
+                            end_col_offset_idx=c_idx + col_span,
+                            ref=cell_group.get_ref(),
+                            bbox=cell_bbox,
                         )
-                        cell_added = True
+                    )
+                    cell_added = True
 
                 if not cell_added:
                     # Regular text cell
@@ -3769,6 +3910,7 @@ class DoclangDeserializer(BaseModel):
                             end_row_offset_idx=r_idx + row_span,
                             start_col_offset_idx=c_idx,
                             end_col_offset_idx=c_idx + col_span,
+                            bbox=cell_bbox,
                         )
                     )
 
@@ -3877,60 +4019,15 @@ class DoclangDeserializer(BaseModel):
             doc.add_page(page_no=page_no, size=Size(width=resolution, height=resolution))
 
     def _extract_provenance(self, *, doc: DoclingDocument, el: Element) -> list[ProvenanceItem]:
-        # Collect immediate child <location value=.. resolution=.. /> tokens in groups of 4
-        values: list[int] = []
-        res_for_group: Optional[int] = None
-        provs: list[ProvenanceItem] = []
-
-        for node in el.childNodes:
-            if not isinstance(node, Element):
-                continue
-            if node.tagName != DoclangToken.LOCATION.value:
-                continue
-            try:
-                v = int(node.getAttribute(DoclangAttributeKey.VALUE.value) or "0")
-            except Exception:
-                v = 0
-            try:
-                r = int(node.getAttribute(DoclangAttributeKey.RESOLUTION.value) or str(self._default_resolution))
-            except Exception:
-                r = self._default_resolution
-            values.append(v)
-            # For a group, remember the last seen resolution
-            res_for_group = r
-            if len(values) == 4:
-                # Ensure page exists (and set consistent default size for this page)
-                self._ensure_page_exists(
-                    doc=doc,
-                    page_no=self._page_no,
-                    resolution=res_for_group or self._default_resolution,
-                )
-                l = float(min(values[0], values[2]))
-                t = float(min(values[1], values[3]))
-                rgt = float(max(values[0], values[2]))
-                btm = float(max(values[1], values[3]))
-                bbox = BoundingBox.from_tuple((l, t, rgt, btm), origin=CoordOrigin.TOPLEFT)
-                provs.append(ProvenanceItem(page_no=self._page_no, bbox=bbox, charspan=(0, 0)))
-                values = []
-                res_for_group = None
-
-        return provs
+        head_nodes, _ = self._split_element_children_head_body(el)
+        return self._provenance_from_location_nodes(doc=doc, nodes=head_nodes)
 
     def _extract_layer(self, *, el: Element) -> Optional[ContentLayer]:
-        """Extract content layer from <layer value="..."/> token if present."""
-        for node in el.childNodes:
-            if isinstance(node, Element) and node.tagName == DoclangToken.LAYER.value:
-                if layer_value := node.getAttribute(DoclangAttributeKey.VALUE.value):
-                    try:
-                        return ContentLayer(layer_value)
-                    except ValueError:
-                        pass
-        return None
+        """Extract content layer from element-head ``<layer value=\"...\"/>``."""
+        head_nodes, _ = self._split_element_children_head_body(el)
+        return self._layer_from_nodes(head_nodes)
 
     def _extract_label_value(self, *, el: Element) -> Optional[str]:
-        """Extract ``<label value=\"...\"/>`` from element head (e.g. picture classification)."""
-        for node in el.childNodes:
-            if isinstance(node, Element) and node.tagName == DoclangToken.LABEL.value:
-                if label_val := node.getAttribute(DoclangAttributeKey.VALUE.value):
-                    return label_val
-        return None
+        """Extract ``<label value=\"...\"/>`` from element head."""
+        head_nodes, _ = self._split_element_children_head_body(el)
+        return self._label_value_from_nodes(head_nodes)

@@ -1,0 +1,38 @@
+<doclang>
+  <picture>
+    <location value="113"/>
+    <location value="20"/>
+    <location value="210"/>
+    <location value="46"/>
+    <caption>
+      <location value="10"/>
+      <location value="20"/>
+      <location value="108"/>
+      <location value="46"/>
+      Figure 1
+    </caption>
+  </picture>
+  <table>
+    <location value="317"/>
+    <location value="20"/>
+    <location value="415"/>
+    <location value="46"/>
+    <caption>
+      <location value="215"/>
+      <location value="20"/>
+      <location value="312"/>
+      <location value="46"/>
+      Table 1
+    </caption>
+    <fcel/>
+    H1
+    <fcel/>
+    H2
+    <nl/>
+    <fcel/>
+    C1
+    <fcel/>
+    C2
+    <nl/>
+  </table>
+</doclang>
