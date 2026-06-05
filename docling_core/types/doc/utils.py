@@ -56,8 +56,14 @@ def relative_path(src: str | Path, target: str | Path) -> Path:
     if isinstance(target, str):
         target = Path(target)
 
-    src = src.resolve()
-    target = target.resolve()
+    try:
+        src = src.resolve()
+        target = target.resolve()
+    except (AttributeError, NotImplementedError, OSError) as e:
+        raise ValueError(
+            f"Cannot resolve paths. This function only supports local filesystem paths. "
+            f"Remote paths should use absolute URIs. Error: {e}"
+        ) from e
 
     # Ensure both paths are absolute
     if not src.is_absolute():
