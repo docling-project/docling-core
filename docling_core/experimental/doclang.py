@@ -985,6 +985,14 @@ class LayerMode(str, Enum):
     MINIMAL = "minimal"  # include layer element only when it differs from default
 
 
+class LabelMode(str, Enum):
+    """Label mode for DocLang output."""
+
+    WHEN_DEFINED = "when_defined"  # emit label when present and not ``unknown``
+    ALWAYS = "always"  # always emit label
+    NEVER = "never"  # never emit label
+
+
 class ContentType(str, Enum):
     """Content type for Doclang output."""
 
@@ -1045,6 +1053,9 @@ class DoclangParams(CommonParams):
     include_version: bool = False
     # when True, the <text> wrapper is omitted whenever allowed
     use_virtual_text: bool = True
+    label_mode: LabelMode = LabelMode.WHEN_DEFINED
+    # When False, ``CodeLanguageLabel.UNKNOWN`` maps to ``undefined``; when True, to ``other``.
+    interpret_code_unknown_as_other: bool = False
 
 
 def _create_layer_token(
@@ -1139,10 +1150,49 @@ def _serialize_floating_caption_head(
     return cap_res.text or ""
 
 
+_DOCLANG_LABEL_UNKNOWN = "unknown"
+_DOCLANG_LABEL_OTHER = "other"
+# Legacy v0.4 fallback label; treated like ``unknown`` on input.
+_DOCLANG_LABEL_UNDEFINED_LEGACY = "undefined"
+
+
+def _element_label_for_serialization(
+    *,
+    raw_label: Optional[str],
+    params: DoclangParams,
+) -> Optional[str]:
+    """Resolve element-head ``<label>`` emission per ``params.label_mode``."""
+    if params.label_mode == LabelMode.NEVER:
+        return None
+    if params.label_mode == LabelMode.ALWAYS:
+        return raw_label if raw_label is not None else _DOCLANG_LABEL_UNKNOWN
+    # WHEN_DEFINED: emit only when a label is present and not ``unknown``.
+    if raw_label is None or raw_label in {_DOCLANG_LABEL_UNKNOWN, _DOCLANG_LABEL_UNDEFINED_LEGACY}:
+        return None
+    return raw_label
+
+
+def _picture_classification_label_to_doclang(class_name: str) -> str:
+    """Map Docling picture classification label to DocLang recommended label."""
+    if class_name == PictureClassificationLabel.OTHER.value:
+        return _DOCLANG_LABEL_OTHER
+    return class_name
+
+
+def _picture_classification_label_from_doclang(label_val: str) -> Optional[str]:
+    """Map DocLang picture label to Docling picture classification label."""
+    if label_val in {_DOCLANG_LABEL_UNKNOWN, _DOCLANG_LABEL_UNDEFINED_LEGACY}:
+        return None
+    if label_val == _DOCLANG_LABEL_OTHER:
+        return PictureClassificationLabel.OTHER.value
+    return label_val
+
+
 def _picture_classification_label_value(item: PictureItem) -> Optional[str]:
     """Picture type label for element head (raw ``class_name`` from the main prediction)."""
     if item.meta and item.meta.classification:
-        return item.meta.classification.get_main_prediction().class_name
+        class_name = item.meta.classification.get_main_prediction().class_name
+        return _picture_classification_label_to_doclang(class_name)
     return None
 
 
@@ -1349,190 +1399,100 @@ class DoclangListSerializer(BaseModel, BaseListSerializer):
         return create_ser_result(text=text_res, span_source=item_results)
 
 
-class _LinguistLabel(str, Enum):
-    """Linguist-compatible labels for Doclang output."""
+# Linguist v9.5.0 language keys for DocLang code labels:
+# https://github.com/doclang-project/doclang/blob/v0.4.0/spec.md#appendix-b-recommendations
+# https://github.com/github-linguist/linguist/blob/v9.5.0/lib/linguist/languages.yml
+_CODE_LANGUAGE_TO_LINGUIST: Final[dict[CodeLanguageLabel, str]] = {
+    CodeLanguageLabel.ADA: "Ada",
+    CodeLanguageLabel.AWK: "Awk",
+    CodeLanguageLabel.BASH: "Shell",
+    CodeLanguageLabel.C: "C",
+    CodeLanguageLabel.C_SHARP: "C#",
+    CodeLanguageLabel.C_PLUS_PLUS: "C++",
+    CodeLanguageLabel.CMAKE: "CMake",
+    CodeLanguageLabel.COBOL: "COBOL",
+    CodeLanguageLabel.CSS: "CSS",
+    CodeLanguageLabel.CEYLON: "Ceylon",
+    CodeLanguageLabel.CLOJURE: "Clojure",
+    CodeLanguageLabel.CRYSTAL: "Crystal",
+    CodeLanguageLabel.CUDA: "Cuda",
+    CodeLanguageLabel.CYTHON: "Cython",
+    CodeLanguageLabel.D: "D",
+    CodeLanguageLabel.DART: "Dart",
+    CodeLanguageLabel.DOCKERFILE: "Dockerfile",
+    CodeLanguageLabel.DOCLANG: "XML",
+    CodeLanguageLabel.ELIXIR: "Elixir",
+    CodeLanguageLabel.ERLANG: "Erlang",
+    CodeLanguageLabel.FORTRAN: "Fortran",
+    CodeLanguageLabel.FORTH: "Forth",
+    CodeLanguageLabel.GO: "Go",
+    CodeLanguageLabel.HTML: "HTML",
+    CodeLanguageLabel.HASKELL: "Haskell",
+    CodeLanguageLabel.HAXE: "Haxe",
+    CodeLanguageLabel.JAVA: "Java",
+    CodeLanguageLabel.JAVASCRIPT: "JavaScript",
+    CodeLanguageLabel.JSON: "JSON",
+    CodeLanguageLabel.JULIA: "Julia",
+    CodeLanguageLabel.KOTLIN: "Kotlin",
+    CodeLanguageLabel.LATEX: "TeX",
+    CodeLanguageLabel.LISP: "Common Lisp",
+    CodeLanguageLabel.LUA: "Lua",
+    CodeLanguageLabel.MATLAB: "MATLAB",
+    CodeLanguageLabel.MOONSCRIPT: "MoonScript",
+    CodeLanguageLabel.NIM: "Nim",
+    CodeLanguageLabel.OCAML: "OCaml",
+    CodeLanguageLabel.OBJECTIVEC: "Objective-C",
+    CodeLanguageLabel.OCTAVE: "MATLAB",
+    CodeLanguageLabel.PHP: "PHP",
+    CodeLanguageLabel.PASCAL: "Pascal",
+    CodeLanguageLabel.PERL: "Perl",
+    CodeLanguageLabel.PROLOG: "Prolog",
+    CodeLanguageLabel.PYTHON: "Python",
+    CodeLanguageLabel.RACKET: "Racket",
+    CodeLanguageLabel.RUBY: "Ruby",
+    CodeLanguageLabel.RUST: "Rust",
+    CodeLanguageLabel.SML: "Standard ML",
+    CodeLanguageLabel.SQL: "SQL",
+    CodeLanguageLabel.SCALA: "Scala",
+    CodeLanguageLabel.SCHEME: "Scheme",
+    CodeLanguageLabel.SWIFT: "Swift",
+    CodeLanguageLabel.TYPESCRIPT: "TypeScript",
+    CodeLanguageLabel.VISUALBASIC: "Visual Basic .NET",
+    CodeLanguageLabel.XML: "XML",
+    CodeLanguageLabel.YAML: "YAML",
+}
+# Docling labels without a Linguist key (BC, DC, TIKZ) map to ``other``.
+# OCTAVE/DOCLANG share a Linguist key with MATLAB/XML; reverse mapping prefers the latter.
+_LINGUIST_TO_CODE_LANGUAGE: Final[dict[str, CodeLanguageLabel]] = {
+    linguist_key: docling_lang
+    for docling_lang, linguist_key in _CODE_LANGUAGE_TO_LINGUIST.items()
+    if docling_lang not in {CodeLanguageLabel.OCTAVE, CodeLanguageLabel.DOCLANG}
+}
 
-    # compatible with GitHub Linguist v9.4.0:
-    # https://github.com/github-linguist/linguist/blob/v9.4.0/lib/linguist/languages.yml
 
-    ADA = "Ada"
-    AWK = "Awk"
-    C = "C"
-    C_SHARP = "C#"
-    C_PLUS_PLUS = "C++"
-    CMAKE = "CMake"
-    COBOL = "COBOL"
-    CSS = "CSS"
-    CEYLON = "Ceylon"
-    CLOJURE = "Clojure"
-    CRYSTAL = "Crystal"
-    CUDA = "Cuda"
-    CYTHON = "Cython"
-    D = "D"
-    DART = "Dart"
-    DOCKERFILE = "Dockerfile"
-    ELIXIR = "Elixir"
-    ERLANG = "Erlang"
-    FORTRAN = "Fortran"
-    FORTH = "Forth"
-    GO = "Go"
-    HTML = "HTML"
-    HASKELL = "Haskell"
-    HAXE = "Haxe"
-    JAVA = "Java"
-    JAVASCRIPT = "JavaScript"
-    JSON = "JSON"
-    JULIA = "Julia"
-    KOTLIN = "Kotlin"
-    COMMON_LISP = "Common Lisp"
-    LUA = "Lua"
-    MATLAB = "MATLAB"
-    MOONSCRIPT = "MoonScript"
-    NIM = "Nim"
-    OCAML = "OCaml"
-    OBJECTIVE_C = "Objective-C"
-    PHP = "PHP"
-    PASCAL = "Pascal"
-    PERL = "Perl"
-    PROLOG = "Prolog"
-    PYTHON = "Python"
-    RACKET = "Racket"
-    RUBY = "Ruby"
-    RUST = "Rust"
-    SHELL = "Shell"
-    STANDARD_ML = "Standard ML"
-    SQL = "SQL"
-    SCALA = "Scala"
-    SCHEME = "Scheme"
-    SWIFT = "Swift"
-    TYPESCRIPT = "TypeScript"
-    VISUAL_BASIC_DOT_NET = "Visual Basic .NET"
-    XML = "XML"
-    YAML = "YAML"
+def _code_language_label_to_doclang(
+    lang: CodeLanguageLabel,
+    *,
+    interpret_unknown_as_other: bool,
+) -> str:
+    """Map Docling code language label to DocLang recommended label."""
+    if lang == CodeLanguageLabel.UNKNOWN:
+        return _DOCLANG_LABEL_OTHER if interpret_unknown_as_other else _DOCLANG_LABEL_UNDEFINED_LEGACY
+    if linguist_key := _CODE_LANGUAGE_TO_LINGUIST.get(lang):
+        return linguist_key
+    return _DOCLANG_LABEL_OTHER
 
-    @classmethod
-    def from_code_language_label(self, lang: CodeLanguageLabel) -> Optional["_LinguistLabel"]:
-        mapping: dict[CodeLanguageLabel, Optional[_LinguistLabel]] = {
-            CodeLanguageLabel.ADA: _LinguistLabel.ADA,
-            CodeLanguageLabel.AWK: _LinguistLabel.AWK,
-            CodeLanguageLabel.BASH: _LinguistLabel.SHELL,
-            CodeLanguageLabel.BC: None,
-            CodeLanguageLabel.C: _LinguistLabel.C,
-            CodeLanguageLabel.C_SHARP: _LinguistLabel.C_SHARP,
-            CodeLanguageLabel.C_PLUS_PLUS: _LinguistLabel.C_PLUS_PLUS,
-            CodeLanguageLabel.CMAKE: _LinguistLabel.CMAKE,
-            CodeLanguageLabel.COBOL: _LinguistLabel.COBOL,
-            CodeLanguageLabel.CSS: _LinguistLabel.CSS,
-            CodeLanguageLabel.CEYLON: _LinguistLabel.CEYLON,
-            CodeLanguageLabel.CLOJURE: _LinguistLabel.CLOJURE,
-            CodeLanguageLabel.CRYSTAL: _LinguistLabel.CRYSTAL,
-            CodeLanguageLabel.CUDA: _LinguistLabel.CUDA,
-            CodeLanguageLabel.CYTHON: _LinguistLabel.CYTHON,
-            CodeLanguageLabel.D: _LinguistLabel.D,
-            CodeLanguageLabel.DART: _LinguistLabel.DART,
-            CodeLanguageLabel.DC: None,
-            CodeLanguageLabel.DOCKERFILE: _LinguistLabel.DOCKERFILE,
-            CodeLanguageLabel.ELIXIR: _LinguistLabel.ELIXIR,
-            CodeLanguageLabel.ERLANG: _LinguistLabel.ERLANG,
-            CodeLanguageLabel.FORTRAN: _LinguistLabel.FORTRAN,
-            CodeLanguageLabel.FORTH: _LinguistLabel.FORTH,
-            CodeLanguageLabel.GO: _LinguistLabel.GO,
-            CodeLanguageLabel.HTML: _LinguistLabel.HTML,
-            CodeLanguageLabel.HASKELL: _LinguistLabel.HASKELL,
-            CodeLanguageLabel.HAXE: _LinguistLabel.HAXE,
-            CodeLanguageLabel.JAVA: _LinguistLabel.JAVA,
-            CodeLanguageLabel.JAVASCRIPT: _LinguistLabel.JAVASCRIPT,
-            CodeLanguageLabel.JSON: _LinguistLabel.JSON,
-            CodeLanguageLabel.JULIA: _LinguistLabel.JULIA,
-            CodeLanguageLabel.KOTLIN: _LinguistLabel.KOTLIN,
-            CodeLanguageLabel.LISP: _LinguistLabel.COMMON_LISP,
-            CodeLanguageLabel.LUA: _LinguistLabel.LUA,
-            CodeLanguageLabel.MATLAB: _LinguistLabel.MATLAB,
-            CodeLanguageLabel.MOONSCRIPT: _LinguistLabel.MOONSCRIPT,
-            CodeLanguageLabel.NIM: _LinguistLabel.NIM,
-            CodeLanguageLabel.OCAML: _LinguistLabel.OCAML,
-            CodeLanguageLabel.OBJECTIVEC: _LinguistLabel.OBJECTIVE_C,
-            CodeLanguageLabel.OCTAVE: _LinguistLabel.MATLAB,
-            CodeLanguageLabel.PHP: _LinguistLabel.PHP,
-            CodeLanguageLabel.PASCAL: _LinguistLabel.PASCAL,
-            CodeLanguageLabel.PERL: _LinguistLabel.PERL,
-            CodeLanguageLabel.PROLOG: _LinguistLabel.PROLOG,
-            CodeLanguageLabel.PYTHON: _LinguistLabel.PYTHON,
-            CodeLanguageLabel.RACKET: _LinguistLabel.RACKET,
-            CodeLanguageLabel.RUBY: _LinguistLabel.RUBY,
-            CodeLanguageLabel.RUST: _LinguistLabel.RUST,
-            CodeLanguageLabel.SML: _LinguistLabel.STANDARD_ML,
-            CodeLanguageLabel.SQL: _LinguistLabel.SQL,
-            CodeLanguageLabel.SCALA: _LinguistLabel.SCALA,
-            CodeLanguageLabel.SCHEME: _LinguistLabel.SCHEME,
-            CodeLanguageLabel.SWIFT: _LinguistLabel.SWIFT,
-            CodeLanguageLabel.TYPESCRIPT: _LinguistLabel.TYPESCRIPT,
-            CodeLanguageLabel.UNKNOWN: None,
-            CodeLanguageLabel.VISUALBASIC: _LinguistLabel.VISUAL_BASIC_DOT_NET,
-            CodeLanguageLabel.XML: _LinguistLabel.XML,
-            CodeLanguageLabel.YAML: _LinguistLabel.YAML,
-        }
-        return mapping.get(lang)
 
-    @classmethod
-    def to_code_language_label(cls, lang: "_LinguistLabel") -> CodeLanguageLabel:
-        mapping: dict[_LinguistLabel, CodeLanguageLabel] = {
-            _LinguistLabel.ADA: CodeLanguageLabel.ADA,
-            _LinguistLabel.AWK: CodeLanguageLabel.AWK,
-            _LinguistLabel.C: CodeLanguageLabel.C,
-            _LinguistLabel.C_SHARP: CodeLanguageLabel.C_SHARP,
-            _LinguistLabel.C_PLUS_PLUS: CodeLanguageLabel.C_PLUS_PLUS,
-            _LinguistLabel.CMAKE: CodeLanguageLabel.CMAKE,
-            _LinguistLabel.COBOL: CodeLanguageLabel.COBOL,
-            _LinguistLabel.CSS: CodeLanguageLabel.CSS,
-            _LinguistLabel.CEYLON: CodeLanguageLabel.CEYLON,
-            _LinguistLabel.CLOJURE: CodeLanguageLabel.CLOJURE,
-            _LinguistLabel.CRYSTAL: CodeLanguageLabel.CRYSTAL,
-            _LinguistLabel.CUDA: CodeLanguageLabel.CUDA,
-            _LinguistLabel.CYTHON: CodeLanguageLabel.CYTHON,
-            _LinguistLabel.D: CodeLanguageLabel.D,
-            _LinguistLabel.DART: CodeLanguageLabel.DART,
-            _LinguistLabel.DOCKERFILE: CodeLanguageLabel.DOCKERFILE,
-            _LinguistLabel.ELIXIR: CodeLanguageLabel.ELIXIR,
-            _LinguistLabel.ERLANG: CodeLanguageLabel.ERLANG,
-            _LinguistLabel.FORTRAN: CodeLanguageLabel.FORTRAN,
-            _LinguistLabel.FORTH: CodeLanguageLabel.FORTH,
-            _LinguistLabel.GO: CodeLanguageLabel.GO,
-            _LinguistLabel.HTML: CodeLanguageLabel.HTML,
-            _LinguistLabel.HASKELL: CodeLanguageLabel.HASKELL,
-            _LinguistLabel.HAXE: CodeLanguageLabel.HAXE,
-            _LinguistLabel.JAVA: CodeLanguageLabel.JAVA,
-            _LinguistLabel.JAVASCRIPT: CodeLanguageLabel.JAVASCRIPT,
-            _LinguistLabel.JSON: CodeLanguageLabel.JSON,
-            _LinguistLabel.JULIA: CodeLanguageLabel.JULIA,
-            _LinguistLabel.KOTLIN: CodeLanguageLabel.KOTLIN,
-            _LinguistLabel.COMMON_LISP: CodeLanguageLabel.LISP,
-            _LinguistLabel.LUA: CodeLanguageLabel.LUA,
-            _LinguistLabel.MATLAB: CodeLanguageLabel.MATLAB,
-            _LinguistLabel.MOONSCRIPT: CodeLanguageLabel.MOONSCRIPT,
-            _LinguistLabel.NIM: CodeLanguageLabel.NIM,
-            _LinguistLabel.OCAML: CodeLanguageLabel.OCAML,
-            _LinguistLabel.OBJECTIVE_C: CodeLanguageLabel.OBJECTIVEC,
-            _LinguistLabel.PHP: CodeLanguageLabel.PHP,
-            _LinguistLabel.PASCAL: CodeLanguageLabel.PASCAL,
-            _LinguistLabel.PERL: CodeLanguageLabel.PERL,
-            _LinguistLabel.PROLOG: CodeLanguageLabel.PROLOG,
-            _LinguistLabel.PYTHON: CodeLanguageLabel.PYTHON,
-            _LinguistLabel.RACKET: CodeLanguageLabel.RACKET,
-            _LinguistLabel.RUBY: CodeLanguageLabel.RUBY,
-            _LinguistLabel.RUST: CodeLanguageLabel.RUST,
-            _LinguistLabel.SHELL: CodeLanguageLabel.BASH,
-            _LinguistLabel.STANDARD_ML: CodeLanguageLabel.SML,
-            _LinguistLabel.SQL: CodeLanguageLabel.SQL,
-            _LinguistLabel.SCALA: CodeLanguageLabel.SCALA,
-            _LinguistLabel.SCHEME: CodeLanguageLabel.SCHEME,
-            _LinguistLabel.SWIFT: CodeLanguageLabel.SWIFT,
-            _LinguistLabel.TYPESCRIPT: CodeLanguageLabel.TYPESCRIPT,
-            _LinguistLabel.VISUAL_BASIC_DOT_NET: CodeLanguageLabel.VISUALBASIC,
-            _LinguistLabel.XML: CodeLanguageLabel.XML,
-            _LinguistLabel.YAML: CodeLanguageLabel.YAML,
-        }
-        return mapping.get(lang, CodeLanguageLabel.UNKNOWN)
+def _code_language_label_from_doclang(label_val: str) -> CodeLanguageLabel:
+    """Map DocLang code label to Docling code language label."""
+    if label_val in {
+        _DOCLANG_LABEL_OTHER,
+        _DOCLANG_LABEL_UNKNOWN,
+        _DOCLANG_LABEL_UNDEFINED_LEGACY,
+        CodeLanguageLabel.UNKNOWN.value,
+    }:
+        return CodeLanguageLabel.UNKNOWN
+    return _LINGUIST_TO_CODE_LANGUAGE.get(label_val, CodeLanguageLabel.UNKNOWN)
 
 
 class DoclangTextSerializer(BaseModel, BaseTextSerializer):
@@ -1774,11 +1734,14 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         skip_location = isinstance(item, ListItem) and self._should_skip_location_for_list_item(item=item, doc=doc)
 
         code_label: Optional[str] = None
-        if (
-            isinstance(item, CodeItem)
-            and (linguist_lang := _LinguistLabel.from_code_language_label(item.code_language)) is not None
-        ):
-            code_label = linguist_lang.value
+        if isinstance(item, CodeItem):
+            code_label = _element_label_for_serialization(
+                raw_label=_code_language_label_to_doclang(
+                    item.code_language,
+                    interpret_unknown_as_other=params.interpret_code_unknown_as_other,
+                ),
+                params=params,
+            )
 
         include_href = not is_inline_scope
         if not skip_location:
@@ -1802,6 +1765,7 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             if custom_head:
                 parts.append(custom_head)
 
+        text_part = ""
         if (
             (isinstance(item, CodeItem) and ContentType.TEXT_CODE in params.content_types)
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
@@ -2006,7 +1970,10 @@ class DoclangPictureSerializer(BasePictureSerializer):
         )
         any_match = has_picture_ct or specific_match
 
-        picture_label = _picture_classification_label_value(item)
+        picture_label = _element_label_for_serialization(
+            raw_label=_picture_classification_label_value(item),
+            params=params,
+        )
         custom_head = ""
         if any_match and item.meta:
             meta_kwargs = dict(**kwargs)
@@ -2920,10 +2887,7 @@ class DoclangDeserializer(BaseModel):
             if isinstance(node, Element) and node.tagName == DoclangToken.LABEL.value:
                 label_val = node.getAttribute(DoclangAttributeKey.VALUE.value)
                 if label_val:
-                    try:
-                        lang_label = _LinguistLabel.to_code_language_label(_LinguistLabel(label_val))
-                    except ValueError:
-                        pass
+                    lang_label = _code_language_label_from_doclang(label_val)
                 break
         parts: list[str] = []
         for node in el.childNodes:
@@ -3555,11 +3519,17 @@ class DoclangDeserializer(BaseModel):
 
         if picture_el is not None:
             if label_val := self._extract_label_value(el=picture_el):
-                if pic.meta is None:
-                    pic.meta = PictureMeta()
-                pic.meta.classification = PictureClassificationMetaField(
-                    predictions=[PictureClassificationPrediction(class_name=label_val, confidence=1.0)]
-                )
+                if class_name := _picture_classification_label_from_doclang(label_val):
+                    if pic.meta is None:
+                        pic.meta = PictureMeta()
+                    pic.meta.classification = PictureClassificationMetaField(
+                        predictions=[
+                            PictureClassificationPrediction(
+                                class_name=class_name,
+                                confidence=1.0,
+                            )
+                        ]
+                    )
             otsl_el = self._first_child(picture_el, DoclangToken.TABLE.value)
             if otsl_el is not None:
                 head_nodes, body_nodes = self._split_element_children_head_body(otsl_el)
