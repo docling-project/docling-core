@@ -1,11 +1,11 @@
 <doclang>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
     item of leading list
   </list>
-  <heading level="1">Title of the Document</heading>
+  <heading>Title of the Document</heading>
   <text>
     <content>Author 1
 Affiliation 1</content>
@@ -16,7 +16,7 @@ Affiliation 2</content>
   </text>
   <heading level="2">1. Introduction</heading>
   <text>This paper introduces the biggest invention ever made. ...</text>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
@@ -74,13 +74,13 @@ Affiliation 2</content>
   <picture>
     <caption>This is the caption of figure 2.</caption>
   </picture>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
     item 1 of list
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>*</marker>
     </ldiv>
@@ -88,7 +88,7 @@ Affiliation 2</content>
     <ldiv/>
     item 2 of list after empty list
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
@@ -97,7 +97,7 @@ Affiliation 2</content>
       <marker>■</marker>
     </ldiv>
     <text>item 2 of neighboring list</text>
-    <list class="unordered">
+    <list>
       <ldiv>
         <marker>□</marker>
       </ldiv>
@@ -176,7 +176,7 @@ hyperlink
     </ldiv>
     Item 4 in A
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
     List item without parent list group
   </list>

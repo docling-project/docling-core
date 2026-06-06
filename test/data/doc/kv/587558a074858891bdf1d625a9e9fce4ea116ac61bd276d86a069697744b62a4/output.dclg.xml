@@ -937,7 +937,7 @@
       <location value="308"/>
       <location value="339"/>
 <![CDATA[La présente autorisation est accordée par l'UP du CUE sous réserve de l'application stricte :]]>    </text>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <location value="49"/>
       <location value="340"/>
@@ -1384,6 +1384,7 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="41"/>
     <location value="489"/>
     <location value="90"/>
@@ -1391,6 +1392,7 @@
     ANNEX VII
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="460"/>
     <location value="480"/>
     <location value="470"/>
@@ -1398,6 +1400,7 @@
     96
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="452"/>
     <location value="489"/>
     <location value="471"/>

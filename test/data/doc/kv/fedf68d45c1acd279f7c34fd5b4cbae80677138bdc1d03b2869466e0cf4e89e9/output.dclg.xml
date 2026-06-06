@@ -370,6 +370,7 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="49"/>
     <location value="486"/>
     <location value="156"/>
@@ -377,6 +378,7 @@
     Form PCT/ISA/210 (second sheet) (April 2005)
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="30"/>
     <location value="471"/>
     <location value="34"/>

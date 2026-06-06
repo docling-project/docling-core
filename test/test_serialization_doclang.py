@@ -40,7 +40,6 @@ from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
 from test.doclang_validation import (
     doclang_validator,
     validate_dclg_xml,
-    xfail_layer_token_deferred,
 )
 from test.test_data_gen_flag import GEN_TEST_DATA
 from test.test_serialization import verify
@@ -172,7 +171,7 @@ def test_list_items_not_double_wrapped_when_no_content():
     txt = serialize_doclang(doc, params=DoclangParams(content_types=set()))
     exp_txt = f"""
 <doclang>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <ldiv/>
   </list>
@@ -1397,7 +1396,7 @@ def test_suppress_list_keeps_nonempty_items():
         add_location=False,
     )
     result = serialize_doclang(doc, params=params)
-    assert "<list " in result
+    assert "<list>" in result
     assert result.count("<ldiv/>") == 1
     assert "Keep me" in result
 
@@ -1493,7 +1492,6 @@ def test_suppress_empty_picture_with_nonempty_caption():
     assert "<group" not in result
 
 
-@xfail_layer_token_deferred
 def test_layer_minimal_mode(doc_with_layers):
     """Test MINIMAL mode omits default layer, includes non-default."""
     params = DoclangParams(layer_mode=LayerMode.MINIMAL)
@@ -1504,7 +1502,6 @@ def test_layer_minimal_mode(doc_with_layers):
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
 
-@xfail_layer_token_deferred
 def test_layer_always_mode(doc_with_layers):
     """Test ALWAYS mode includes layer element for all items."""
     params = DoclangParams(layer_mode=LayerMode.ALWAYS)

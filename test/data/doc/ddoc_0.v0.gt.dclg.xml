@@ -1,5 +1,6 @@
 <doclang>
   <text>
+    <layer value="furniture"/>
     <location value="172"/>
     <location value="24"/>
     <location value="355"/>
@@ -34,7 +35,7 @@
     <location value="94"/>
     This option sets the number of times to execute the select. Use  --delay  to set the time between loops.
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="86"/>
     <location value="101"/>
@@ -69,7 +70,7 @@
     <location value="478"/>
     <location value="176"/>
 <![CDATA[Set connect string for connecting to ndb_mgmd. Syntax: "[nodeid=id;][host=]hostname[:port]". Overrides entries in NDB_CONNECTSTRING and my.cnf.]]>  </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="86"/>
     <location value="184"/>
@@ -105,7 +106,7 @@
     <location value="251"/>
     Same as  --ndb-connectstring .
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="85"/>
     <location value="259"/>
@@ -141,7 +142,7 @@
     <location value="325"/>
     Set node ID for this node, overriding any ID set by --ndb-connectstring.
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="86"/>
     <location value="333"/>
@@ -167,7 +168,7 @@
     <location value="386"/>
     Enable optimizations for selection of nodes for transactions. Enabled by default; use  --skip-ndb- optimized-node-selection  to disable.
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="85"/>
     <location value="394"/>
@@ -193,7 +194,7 @@
     <location value="439"/>
     Do not read default options from any option file other than login file.
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="86"/>
     <location value="448"/>
@@ -213,6 +214,7 @@
     <nl/>
   </table>
   <text>
+    <layer value="furniture"/>
     <location value="94"/>
     <location value="486"/>
     <location value="228"/>
@@ -220,6 +222,7 @@
     Print program argument list and exit.
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="463"/>
     <location value="482"/>
     <location value="482"/>

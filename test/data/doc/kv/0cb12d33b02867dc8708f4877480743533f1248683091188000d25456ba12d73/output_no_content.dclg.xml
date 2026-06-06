@@ -19,7 +19,7 @@
     <location value="462"/>
     <location value="41"/>
   </picture>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="312"/>
     <location value="48"/>
@@ -308,6 +308,7 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="34"/>
     <location value="412"/>
     <location value="45"/>

@@ -32,12 +32,6 @@ xfail_invalid_dclg_xml = pytest.mark.xfail(
     strict=False,
 )
 
-xfail_layer_token_deferred = pytest.mark.xfail(
-    reason="<layer> emission deferred until doclang>=0.5",
-    strict=False,
-)
-
-
 def assert_valid_dclg_xml(
     xml_text: str,
     *,

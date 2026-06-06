@@ -1,6 +1,6 @@
 <doclang>
   <field_region>
-    <field_heading level="1">KV heading</field_heading>
+    <field_heading>KV heading</field_heading>
     <field_item>
       <key>simple key</key>
       <value>simple value</value>

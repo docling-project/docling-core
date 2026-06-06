@@ -1,15 +1,15 @@
 <doclang>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
   </list>
-  <heading level="1"></heading>
+  <heading></heading>
   <text></text>
   <text></text>
   <heading level="2"></heading>
   <text></text>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
@@ -62,18 +62,18 @@
     <caption>This is the caption of figure 2.</caption>
     <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
   </picture>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>*</marker>
     </ldiv>
     <ldiv/>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
@@ -81,7 +81,7 @@
       <marker>■</marker>
     </ldiv>
     <text></text>
-    <list class="unordered">
+    <list>
       <ldiv>
         <marker>□</marker>
       </ldiv>
@@ -131,7 +131,7 @@
       <marker>(iv)</marker>
     </ldiv>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
   </list>
   <text></text>

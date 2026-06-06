@@ -27,7 +27,7 @@ from docling_core.types.doc import (
 )
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 from docling_core.types.doc.document import GroupLabel
-from test.doclang_validation import assert_valid_dclg_xml, doclang_validator, xfail_layer_token_deferred
+from test.doclang_validation import assert_valid_dclg_xml, doclang_validator
 from test.test_data_gen_flag import GEN_TEST_DATA
 from test.test_serialization_doctag import verify
 from test.test_serialization_doclang import _verify_doc, add_list_section, add_texts_section
@@ -128,7 +128,7 @@ def test_roundtrip_title():
 
     exp_dt = f"""
 <doclang>
-  <heading level="1">My Title</heading>
+  <heading>My Title</heading>
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
@@ -445,7 +445,7 @@ def test_roundtrip_title_prov():
 
     exp_dt = f"""
 <doclang>
-  <heading level="1">
+  <heading>
     <location value="51"/>
     <location value="51"/>
     <location value="154"/>
@@ -1738,7 +1738,6 @@ def test_picture_tabular_chart_content_cdata_cells():
 
 
 
-@xfail_layer_token_deferred
 def test_roundtrip_with_layers():
     """Test roundtrip with content layers."""
     from docling_core.types.doc import ContentLayer

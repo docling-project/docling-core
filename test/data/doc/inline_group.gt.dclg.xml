@@ -8,7 +8,7 @@
     <bold>Two</bold>
 Three
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     Item 1
     <ldiv/>

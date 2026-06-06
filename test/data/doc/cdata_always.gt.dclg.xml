@@ -1,11 +1,11 @@
 <doclang>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker><![CDATA[■]]></marker>
     </ldiv>
 <![CDATA[item of leading list]]>    
   </list>
-  <heading level="1"><![CDATA[Title of the Document]]></heading>
+  <heading><![CDATA[Title of the Document]]></heading>
   <text>
     <content><![CDATA[Author 1
 Affiliation 1]]></content>
@@ -16,7 +16,7 @@ Affiliation 2]]></content>
   </text>
   <heading level="2"><![CDATA[1. Introduction]]></heading>
   <text><![CDATA[This paper introduces the biggest invention ever made. ...]]></text>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker><![CDATA[■]]></marker>
     </ldiv>
@@ -68,13 +68,13 @@ Affiliation 2]]></content>
     <caption><![CDATA[This is the caption of figure 2.]]></caption>
     <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
   </picture>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker><![CDATA[■]]></marker>
     </ldiv>
 <![CDATA[item 1 of list]]>    
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker><![CDATA[*]]></marker>
     </ldiv>
@@ -82,7 +82,7 @@ Affiliation 2]]></content>
     <ldiv/>
 <![CDATA[item 2 of list after empty list]]>    
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker><![CDATA[■]]></marker>
     </ldiv>
@@ -91,7 +91,7 @@ Affiliation 2]]></content>
       <marker><![CDATA[■]]></marker>
     </ldiv>
     <text><![CDATA[item 2 of neighboring list]]></text>
-    <list class="unordered">
+    <list>
       <ldiv>
         <marker><![CDATA[□]]></marker>
       </ldiv>
@@ -170,7 +170,7 @@ Affiliation 2]]></content>
     </ldiv>
 <![CDATA[Item 4 in A]]>    
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
 <![CDATA[List item without parent list group]]>    
   </list>

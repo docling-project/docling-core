@@ -2,7 +2,7 @@
   <head>
     <default_resolution width="256" height="256"/>
   </head>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>•</marker>
     </ldiv>

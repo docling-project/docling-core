@@ -1,5 +1,5 @@
 <doclang>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="10"/>
     <location value="20"/>
@@ -22,7 +22,7 @@
       <location value="46"/>
       list item with nested list
     </text>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <location value="317"/>
       <location value="20"/>
