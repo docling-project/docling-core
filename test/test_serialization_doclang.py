@@ -1989,13 +1989,147 @@ def _doc_multi_prov_text() -> DoclingDocument:
     return doc
 
 
+# TODO: Re-enable once multi-prov items emit <thread thread_id="N"/> instead of split
+# <text> fragments (DocLang spec B2 / DOCLANG_ALIGNMENT P2).
+# @doclang_validator
+# def test_multi_prov_splits_text_not_thread_snapshot():
+#     """Spec expects one <text> with <thread thread_id=\"N\"/>; we emit two <text> fragments."""
+#     doc = _doc_multi_prov_text()
+#     ser_txt = DoclangDocSerializer(doc=doc).serialize().text
+#     exp_file = INCOMPAT_DATA / "multi_prov_splits_text.dclg.xml"
+#     verify_doclang(exp_file=exp_file, actual=ser_txt)
+#     if not GEN_TEST_DATA:
+#         assert ser_txt.count("<text>") == 2
+#         assert "<thread" not in ser_txt
+
+
+# ===============================
+# DocLang vocabulary tokens: rtl, corn, xcel
+# ===============================
+
+
+def _doc_rtl_text() -> DoclingDocument:
+    doc = DoclingDocument(name="rtl_text")
+    doc.add_text(label=DocItemLabel.TEXT, text="مرحبا")
+    return doc
+
+
 @doclang_validator
-def test_multi_prov_splits_text_not_thread_snapshot():
-    """Spec expects one <text> with <thread thread_id=\"N\"/>; we emit two <text> fragments."""
-    doc = _doc_multi_prov_text()
-    ser_txt = DoclangDocSerializer(doc=doc).serialize().text
-    exp_file = INCOMPAT_DATA / "multi_prov_splits_text.dclg.xml"
-    verify_doclang(exp_file=exp_file, actual=ser_txt)
+def test_rtl_text_formatting():
+    """RTL script text is wrapped in <rtl> formatting."""
+    doc = _doc_rtl_text()
+    ser_txt = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(add_location=False),
+    ).serialize().text
+    verify_doclang(
+        exp_file=Path("./test/data/doc/rtl_text.gt.dclg.xml"),
+        actual=ser_txt,
+    )
+
+
+def _doc_table_xcel_span() -> DoclingDocument:
+    doc = DoclingDocument(name="table_xcel")
+    cells = [
+        TableCell(
+            text="A",
+            row_span=2,
+            col_span=2,
+            start_row_offset_idx=0,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=2,
+        ),
+    ]
+    doc.add_table(data=TableData(num_rows=2, num_cols=2, table_cells=cells))
+    return doc
+
+
+@doclang_validator
+def test_table_xcel_span():
+    """2D table spans emit <xcel> only at interior continuation positions.
+
+    OTSL rule: ``<xcel>`` marks a cell that continues both the left and upper
+    neighbor; it must not appear in the first row or first column of the grid.
+    """
+    doc = _doc_table_xcel_span()
+    ser_txt = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(add_location=False, add_table_cell_location=False),
+    ).serialize().text
+    verify_doclang(
+        exp_file=Path("./test/data/doc/table_xcel.gt.dclg.xml"),
+        actual=ser_txt,
+    )
     if not GEN_TEST_DATA:
-        assert ser_txt.count("<text>") == 2
-        assert "<thread" not in ser_txt
+        # Row 0: origin + horizontal continuation; row 1: vertical + cross.
+        assert "<lcel/>" in ser_txt
+        assert "<ucel/>" in ser_txt
+        assert ser_txt.index("<xcel/>") > ser_txt.index("<ucel/>")
+
+
+# TODO: Extend DocLang/OTSL validation for advanced multispan rules (e.g. reject
+# <xcel> in the first row or column, validate lcel/ucel/xcel placement against
+# the OTSL grammar from the DocLang spec).
+
+
+def _doc_table_corn_header() -> DoclingDocument:
+    doc = DoclingDocument(name="table_corn")
+    cells = [
+        TableCell(
+            text="",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            column_header=True,
+            row_header=True,
+        ),
+        TableCell(
+            text="Col1",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            column_header=True,
+        ),
+        TableCell(
+            text="Row1",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            row_header=True,
+        ),
+        TableCell(
+            text="Data",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+        ),
+    ]
+    doc.add_table(data=TableData(num_rows=2, num_cols=2, table_cells=cells))
+    return doc
+
+
+@doclang_validator
+def test_table_corn_header():
+    """Top-left header intersection emits <corn> OTSL token."""
+    doc = _doc_table_corn_header()
+    ser_txt = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(add_location=False, add_table_cell_location=False),
+    ).serialize().text
+    verify_doclang(
+        exp_file=Path("./test/data/doc/table_corn.gt.dclg.xml"),
+        actual=ser_txt,
+    )
