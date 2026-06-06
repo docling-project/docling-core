@@ -1,0 +1,53 @@
+<doclang>
+  <heading>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="200"/>
+    <location value="40"/>
+    Document Title
+  </heading>
+  <page_break/>
+  <index>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="120"/>
+    <fcel/>
+    Chapter
+    <fcel/>
+    Page
+    <nl/>
+    <fcel/>
+    Intro
+    <fcel/>
+    1
+    <nl/>
+    <fcel/>
+    Body
+    <fcel/>
+    3
+    <nl/>
+  </index>
+  <page_break/>
+  <text>
+    <location value="10"/>
+    <location value="70"/>
+    <location value="400"/>
+    <location value="90"/>
+    First paragraph.
+  </text>
+  <text>
+    <location value="10"/>
+    <location value="100"/>
+    <location value="400"/>
+    <location value="120"/>
+    Second paragraph.
+  </text>
+  <text>
+    <location value="10"/>
+    <location value="130"/>
+    <location value="400"/>
+    <location value="150"/>
+    Third paragraph.
+  </text>
+</doclang>

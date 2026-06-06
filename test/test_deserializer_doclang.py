@@ -1354,6 +1354,75 @@ def test_virtual_text_index_roundtrip():
     assert_valid_dclg_xml(dt2)
 
 
+@doclang_validator
+def test_multi_page_roundtrip():
+    """Round-trip a programmatic multi-page document through DocLang.
+
+    Page 1: title; page 2: document index; page 3: three text paragraphs.
+    Materializes serialized/reserialized XML and input/deserialized JSON goldens.
+    """
+    data_dir = Path(__file__).parent / "data" / "doc" / "multi_page_roundtrip"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_multi_page_roundtrip_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize(doc)
+    verify(serialized_dclg, dt)
+    assert_valid_dclg_xml(dt)
+    assert dt.count("<page_break") == 2
+    assert "<index>" in dt
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize(doc2)
+    verify(reserialized_dclg, dt2)
+    assert_valid_dclg_xml(dt2)
+
+
+def _create_multi_page_roundtrip_doc() -> DoclingDocument:
+    """Build a three-page document with title, index, and body paragraphs."""
+    page_size = Size(width=512, height=512)
+    doc = DoclingDocument(name="multi_page_roundtrip")
+    for page_no in (1, 2, 3):
+        doc.add_page(page_no=page_no, size=page_size, image=None)
+
+    doc.add_title(
+        text="Document Title",
+        prov=_page_prov(page_no=1, bbox=(10, 10, 200, 40)),
+    )
+
+    index_data = TableData(num_cols=2)
+    index_data.add_row(["Chapter", "Page"])
+    index_data.add_row(["Intro", "1"])
+    index_data.add_row(["Body", "3"])
+    doc.add_table(
+        data=index_data,
+        label=DocItemLabel.DOCUMENT_INDEX,
+        prov=_page_prov(page_no=2, bbox=(10, 10, 400, 120)),
+    )
+
+    for i, text in enumerate(["First paragraph.", "Second paragraph.", "Third paragraph."], start=1):
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=text,
+            prov=_page_prov(page_no=3, bbox=(10, 40 + i * 30, 400, 60 + i * 30)),
+        )
+    return doc
+
+
+def _page_prov(*, page_no: int, bbox: tuple[float, float, float, float]) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=page_no,
+        bbox=BoundingBox.from_tuple(bbox, origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+
+
 def _create_virtual_text_table_doc() -> DoclingDocument:
     """Document exercising virtual vs explicit ``<text>`` in table cells."""
     doc = DoclingDocument(name="virtual_text_table")
