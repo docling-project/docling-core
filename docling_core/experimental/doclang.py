@@ -86,6 +86,7 @@ from docling_core.types.doc.labels import (
     GroupLabel,
     PictureClassificationLabel,
 )
+from docling_core.types.doc.utils import get_text_direction
 
 # Note: Intentionally avoid importing DocumentToken here to ensure
 # Doclang uses only its own token vocabulary.
@@ -2124,8 +2125,8 @@ class DoclangTableSerializer(BaseTableSerializer):
                 cell = item.data.grid[i][j]
                 content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
 
-                rowspan, rowstart = cell.row_span, cell.start_row_offset_idx
-                colspan, colstart = cell.col_span, cell.start_col_offset_idx
+                rowstart = cell.start_row_offset_idx
+                colstart = cell.start_col_offset_idx
 
                 # Optional per-cell location
                 cell_loc = ""
@@ -2141,7 +2142,9 @@ class DoclangTableSerializer(BaseTableSerializer):
 
                 if rowstart == i and colstart == j:
                     if content:
-                        if cell.column_header:
+                        if cell.column_header and cell.row_header:
+                            parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CORN))
+                        elif cell.column_header:
                             parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CHED))
                         elif cell.row_header:
                             parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.RHED))
@@ -2160,14 +2163,16 @@ class DoclangTableSerializer(BaseTableSerializer):
                                 if not params.use_virtual_text:
                                     content = _wrap(text=content, wrap_tag=DoclangToken.TEXT.value)
                             parts.append(content)
+                    elif cell.column_header and cell.row_header:
+                        parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CORN))
                     else:
                         parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.ECEL))
-                elif rowstart != i and colspan == 1:  # FIXME: I believe we should have colstart == j
-                    parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.UCEL))
-                elif colstart != j and rowspan == 1:  # FIXME: I believe we should have rowstart == i
-                    parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.LCEL))
-                else:
+                elif rowstart != i and colstart != j:
                     parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.XCEL))
+                elif rowstart != i:
+                    parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.UCEL))
+                elif colstart != j:
+                    parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.LCEL))
 
             parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.NL))
 
@@ -2661,6 +2666,31 @@ class DoclangDocSerializer(DocSerializer):
         """Apply Doclang-specific superscript serialization."""
         return _wrap(text=text, wrap_tag=DoclangToken.SUPERSCRIPT.value)
 
+    def serialize_rtl(self, text: str, **kwargs: Any) -> str:
+        """Apply Doclang-specific right-to-left text serialization."""
+        return _wrap(text=text, wrap_tag=DoclangToken.RTL.value)
+
+    @override
+    def post_process(
+        self,
+        text: str,
+        *,
+        formatting: Optional[Formatting] = None,
+        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Apply Doclang text post-processing including RTL direction."""
+        res = super().post_process(
+            text=text,
+            formatting=formatting,
+            hyperlink=hyperlink,
+            **kwargs,
+        )
+        params = self.params.merge_with_patch(patch=kwargs)
+        if params.include_formatting and get_text_direction(text) == "rtl":
+            res = self.serialize_rtl(text=res, **kwargs)
+        return res
+
 
 class DoclangDeserializer(BaseModel):
     """Doclang deserializer."""
@@ -2792,6 +2822,7 @@ class DoclangDeserializer(BaseModel):
                     DoclangToken.STRIKETHROUGH.value,
                     DoclangToken.SUBSCRIPT.value,
                     DoclangToken.SUPERSCRIPT.value,
+                    DoclangToken.RTL.value,
                     DoclangToken.HANDWRITING.value,
                     DoclangToken.CHECKBOX.value,
                     DoclangToken.CONTENT.value,
@@ -2853,6 +2884,7 @@ class DoclangDeserializer(BaseModel):
                 DoclangToken.STRIKETHROUGH.value: DocItemLabel.TEXT,
                 DoclangToken.SUBSCRIPT.value: DocItemLabel.TEXT,
                 DoclangToken.SUPERSCRIPT.value: DocItemLabel.TEXT,
+                DoclangToken.RTL.value: DocItemLabel.TEXT,
                 DoclangToken.CONTENT.value: DocItemLabel.TEXT,
             }
         ):
@@ -3687,6 +3719,7 @@ class DoclangDeserializer(BaseModel):
             DoclangToken.CHED.value,
             DoclangToken.RHED.value,
             DoclangToken.SROW.value,
+            DoclangToken.CORN.value,
         }
     )
 
@@ -3789,6 +3822,7 @@ class DoclangDeserializer(BaseModel):
             DoclangToken.CHED.value,
             DoclangToken.RHED.value,
             DoclangToken.SROW.value,
+            DoclangToken.CORN.value,
         }
 
         for node in otsl_el.childNodes:
@@ -3829,11 +3863,12 @@ class DoclangDeserializer(BaseModel):
         ched = DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CHED)
         rhed = DoclangVocabulary._create_selfclosing_token(token=DoclangToken.RHED)
         srow = DoclangVocabulary._create_selfclosing_token(token=DoclangToken.SROW)
+        corn = DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CORN)
 
         # Clean tokens to only structural OTSL markers
         clean_tokens: list[str] = []
         for t in tokens:
-            if t in [ecel, fcel, lcel, ucel, xcel, nl, ched, rhed, srow]:
+            if t in [ecel, fcel, lcel, ucel, xcel, nl, ched, rhed, srow, corn]:
                 clean_tokens.append(t)
         tokens = clean_tokens
 
@@ -3862,7 +3897,7 @@ class DoclangDeserializer(BaseModel):
 
         for i, t in enumerate(texts):
             cell_text = ""
-            if t in [fcel, ecel, ched, rhed, srow]:
+            if t in [fcel, ecel, ched, rhed, srow, corn]:
                 row_span = 1
                 col_span = 1
                 cell_bbox: Optional[BoundingBox] = None
@@ -3935,11 +3970,14 @@ class DoclangDeserializer(BaseModel):
                             end_row_offset_idx=r_idx + row_span,
                             start_col_offset_idx=c_idx,
                             end_col_offset_idx=c_idx + col_span,
+                            column_header=t in [ched, corn],
+                            row_header=t in [rhed, corn],
+                            row_section=t == srow,
                             bbox=cell_bbox,
                         )
                     )
 
-            if t in [fcel, ecel, ched, rhed, srow, lcel, ucel, xcel]:
+            if t in [fcel, ecel, ched, rhed, srow, corn, lcel, ucel, xcel]:
                 c_idx += 1
             if t == nl:
                 r_idx += 1
@@ -3991,6 +4029,7 @@ class DoclangDeserializer(BaseModel):
                 DoclangToken.UNDERLINE,
                 DoclangToken.SUPERSCRIPT,
                 DoclangToken.SUBSCRIPT,
+                DoclangToken.RTL,
             }
 
             if tag_name in format_tags:
