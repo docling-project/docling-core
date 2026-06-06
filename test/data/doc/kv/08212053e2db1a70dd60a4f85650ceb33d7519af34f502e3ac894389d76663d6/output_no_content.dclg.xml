@@ -356,12 +356,14 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="250"/>
     <location value="491"/>
     <location value="260"/>
     <location value="497"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="492"/>
     <location value="164"/>
     <location value="500"/>

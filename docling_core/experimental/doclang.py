@@ -91,7 +91,7 @@ from docling_core.types.doc.labels import (
 # Doclang uses only its own token vocabulary.
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-_DOCLANG_VERSION: Final = "0.4"
+_DOCLANG_VERSION: Final = "0.5"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()
@@ -773,22 +773,37 @@ class DoclangVocabulary(BaseModel):
                 f'<{DoclangToken.LIST.value} {DoclangAttributeKey.CLASS.value}="{DoclangAttributeValue.ORDERED.value}">'
             )
         else:
-            return f'<{DoclangToken.LIST.value} {DoclangAttributeKey.CLASS.value}="{DoclangAttributeValue.UNORDERED.value}">'
+            return f"<{DoclangToken.LIST.value}>"
+
+    @classmethod
+    def _create_level_open_token(cls, *, token: DoclangToken, level: int) -> str:
+        """Create an opening tag; level 1 omits the ``level`` attribute."""
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token][DoclangAttributeKey.LEVEL]
+        if not (lo <= level <= hi):
+            raise ValueError(f"level must be in [{lo}, {hi}]")
+        if level == 1:
+            return f"<{token.value}>"
+        return f'<{token.value} {DoclangAttributeKey.LEVEL.value}="{level}">'
 
     @classmethod
     def _create_heading_token(cls, *, level: int, closing: bool = False) -> str:
         """Create a heading tag with validated level.
 
-        When `closing` is False, emits an opening tag with level attribute.
-        When `closing` is True, emits the corresponding closing tag.
+        Level 1 is emitted as bare ``<heading>``; levels 2-6 use ``level="N"``.
         """
-        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[DoclangToken.HEADING][DoclangAttributeKey.LEVEL]
-        if not (lo <= level <= hi):
-            raise ValueError(f"level must be in [{lo}, {hi}]")
-
         if closing:
             return f"</{DoclangToken.HEADING.value}>"
-        return f'<{DoclangToken.HEADING.value} {DoclangAttributeKey.LEVEL.value}="{level}">'
+        return cls._create_level_open_token(token=DoclangToken.HEADING, level=level)
+
+    @classmethod
+    def _create_field_heading_token(cls, *, level: int, closing: bool = False) -> str:
+        """Create a field-heading tag with validated level.
+
+        Level 1 is emitted as bare ``<field_heading>``; levels 2-6 use ``level="N"``.
+        """
+        if closing:
+            return f"</{DoclangToken.FIELD_HEADING.value}>"
+        return cls._create_level_open_token(token=DoclangToken.FIELD_HEADING, level=level)
 
     @classmethod
     def _create_location_token(cls, *, value: int, resolution: int) -> str:
@@ -842,6 +857,23 @@ class DoclangVocabulary(BaseModel):
             # Attribute-aware emission
             attrs = cls.ALLOWED_ATTRIBUTES.get(token, set())
             if attrs:
+                if token is DoclangToken.LIST:
+                    special_tokens.append(f"<{name}>")
+                    special_tokens.append(f"</{name}>")
+                    special_tokens.append(
+                        f'<{name} {DoclangAttributeKey.CLASS.value}="{DoclangAttributeValue.ORDERED.value}">'
+                    )
+                    special_tokens.append(f"</{name}>")
+                    continue
+                if token in {DoclangToken.HEADING, DoclangToken.FIELD_HEADING}:
+                    level_attr = DoclangAttributeKey.LEVEL
+                    lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token][level_attr]
+                    special_tokens.append(f"<{name}>")
+                    special_tokens.append(f"</{name}>")
+                    for n in range(max(lo + 1, 2), hi + 1):
+                        special_tokens.append(f'<{name} {level_attr.value}="{n}">')
+                        special_tokens.append(f"</{name}>")
+                    continue
                 # Enumerated attribute values
                 enum_map = cls.ALLOWED_ATTRIBUTE_VALUES.get(token, {})
                 for attr_name, allowed_vals in enum_map.items():
@@ -1063,14 +1095,14 @@ def _create_layer_token(
     item: DocItem,
     params: DoclangParams,
 ) -> str:
-    """Create `<layer value="..."/>` in element head (deferred until doclang XSD ≥0.5)."""
-    # if params.layer_mode == LayerMode.ALWAYS or (
-    #     params.layer_mode == LayerMode.MINIMAL and item.content_layer != ContentLayer.BODY
-    # ):
-    #     return DoclangVocabulary._create_selfclosing_token(
-    #         token=DoclangToken.LAYER,
-    #         attrs={DoclangAttributeKey.VALUE: item.content_layer.value},
-    #     )
+    """Create `<layer value="..."/>` in element head."""
+    if params.layer_mode == LayerMode.ALWAYS or (
+        params.layer_mode == LayerMode.MINIMAL and item.content_layer != ContentLayer.BODY
+    ):
+        return DoclangVocabulary._create_selfclosing_token(
+            token=DoclangToken.LAYER,
+            attrs={DoclangAttributeKey.VALUE: item.content_layer.value},
+        )
     return ""
 
 
@@ -1693,7 +1725,7 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
             if isinstance(item, FieldValueItem) and item.kind != "read_only":
                 wrap_open_token = f'<{tok.value} class="{item.kind}">'
             elif isinstance(item, FieldHeadingItem):
-                wrap_open_token = f'<{tok.value} level="{item.level}">'
+                wrap_open_token = DoclangVocabulary._create_field_heading_token(level=item.level)
         elif isinstance(item, TextItem) and (
             item.label
             in [  # FIXME: Catch all ...
@@ -2704,6 +2736,8 @@ class DoclangDeserializer(BaseModel):
             self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
         elif name == DoclangToken.HEADING.value:
             self._parse_heading(doc=doc, el=el, parent=parent)
+        elif name == DoclangToken.FIELD_HEADING.value:
+            self._parse_field_heading(doc=doc, el=el, parent=parent)
         elif name == DoclangToken.LIST.value:
             self._parse_list(doc=doc, el=el, parent=parent)
         elif name == DoclangToken.GROUP.value:
@@ -2937,6 +2971,27 @@ class DoclangDeserializer(BaseModel):
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
                 )
+            for p in prov_list[1:]:
+                item.prov.append(p)
+
+    def _parse_field_heading(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        lvl_txt = el.getAttribute(DoclangAttributeKey.LEVEL.value) or "1"
+        try:
+            level = int(lvl_txt)
+        except Exception:
+            level = 1
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
+        text = self._get_text(el)
+        text_stripped = text.strip()
+        if text_stripped:
+            item = doc.add_field_heading(
+                text=text_stripped,
+                level=level,
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+                content_layer=content_layer,
+            )
             for p in prov_list[1:]:
                 item.prov.append(p)
 

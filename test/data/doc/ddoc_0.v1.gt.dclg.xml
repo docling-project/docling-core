@@ -1,5 +1,6 @@
 <doclang>
   <text>
+    <layer value="furniture"/>
     <location value="172"/>
     <location value="24"/>
     <location value="355"/>
@@ -26,7 +27,7 @@
     <location value="479"/>
     <location value="94"/>
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="86"/>
     <location value="101"/>
@@ -54,7 +55,7 @@
     <location value="478"/>
     <location value="176"/>
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="86"/>
     <location value="184"/>
@@ -82,7 +83,7 @@
     <location value="227"/>
     <location value="251"/>
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="85"/>
     <location value="259"/>
@@ -110,7 +111,7 @@
     <location value="355"/>
     <location value="325"/>
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="86"/>
     <location value="333"/>
@@ -132,7 +133,7 @@
     <location value="461"/>
     <location value="386"/>
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="85"/>
     <location value="394"/>
@@ -154,7 +155,7 @@
     <location value="342"/>
     <location value="439"/>
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="86"/>
     <location value="448"/>
@@ -171,12 +172,14 @@
     <nl/>
   </table>
   <text>
+    <layer value="furniture"/>
     <location value="94"/>
     <location value="486"/>
     <location value="228"/>
     <location value="493"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="463"/>
     <location value="482"/>
     <location value="482"/>

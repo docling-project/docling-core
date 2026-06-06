@@ -1,5 +1,5 @@
 <doclang>
-  <heading level="1">Rich tables</heading>
+  <heading>Rich tables</heading>
   <table>
     <fcel/>
     cell 0,0
@@ -14,7 +14,7 @@
     </text>
     <nl/>
     <fcel/>
-    <list class="unordered">
+    <list>
       <ldiv/>
       list item 1
       <ldiv/>

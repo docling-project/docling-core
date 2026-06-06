@@ -8,7 +8,7 @@
     </code>
     <content> (to be shown)</content>
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     foo
     <ldiv/>
@@ -25,7 +25,7 @@ in line
     <content> text</content>
     <ldiv/>
     <text>will contain sublist</text>
-    <list class="unordered">
+    <list>
       <ldiv/>
       sublist item 1
       <ldiv/>
@@ -43,7 +43,7 @@ in line
       </italic>
       <content> text and a sublist:</content>
     </text>
-    <list class="unordered">
+    <list>
       <ldiv/>
       sublist item a
       <ldiv/>

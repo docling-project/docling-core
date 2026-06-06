@@ -1,5 +1,6 @@
 <doclang>
   <text>
+    <layer value="furniture"/>
     <location value="61"/>
     <location value="24"/>
     <location value="101"/>
@@ -7,6 +8,7 @@
     13040.19
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="245"/>
     <location value="24"/>
     <location value="267"/>
@@ -15,6 +17,7 @@
   </text>
   <picture>
     <label value="other"/>
+    <layer value="furniture"/>
     <location value="432"/>
     <location value="10"/>
     <location value="476"/>
@@ -43,7 +46,7 @@
         <location value="98"/>
         Wände zwischen
       </text>
-      <list class="unordered">
+      <list>
         <ldiv/>
         <location value="136"/>
         <location value="100"/>
@@ -88,7 +91,7 @@
         <location value="145"/>
         Wände zwischen
       </text>
-      <list class="unordered">
+      <list>
         <ldiv/>
         <location value="136"/>
         <location value="147"/>
@@ -146,7 +149,7 @@
       1) Bei Türen gilt nach Tabelle 1 der DIN 4109-1 erforderliches Schalldämm-Maß Rw.
     </footnote>
   </group>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="60"/>
     <location value="236"/>

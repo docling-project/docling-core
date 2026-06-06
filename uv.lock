@@ -978,16 +978,16 @@ wheels = [
 
 [[package]]
 name = "doclang"
-version = "0.4.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "lxml" },
     { name = "saxonche" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/61/f8/f706c135c6610f378713f11bab201faf10ca5794a3993121651415b26b5d/doclang-0.4.0.tar.gz", hash = "sha256:612a820480300205aca1fefc8e44483b106fa2b25e580d341be5cd0e794a7057", size = 22207, upload-time = "2026-06-02T14:48:00.822Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/fd/f2f0fa592bef3e76af9e3326cfa9a64e14fa7eceed6eaaa98ba22b706303/doclang-0.5.0.tar.gz", hash = "sha256:fd95f91d2d0611043257dae5192cc4a5f7856ff34fb45970deec7dd8bdb61bf9", size = 24917, upload-time = "2026-06-05T15:22:57.457Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2e/cc/b7d77c1943638aac00cb84dcc4a2d9ccc0415d6fc31f6572e156f920637f/doclang-0.4.0-py3-none-any.whl", hash = "sha256:37e45ea12673c8f97a8b38e47a5534ea99c0d9952d54184f9c60296573a9131f", size = 23281, upload-time = "2026-06-02T14:47:59.596Z" },
+    { url = "https://files.pythonhosted.org/packages/56/1e/797fbb4d22703ff637318e7b015cbdb68930cd905ecf299388d888e6477f/doclang-0.5.0-py3-none-any.whl", hash = "sha256:73b5edc9da374da7ac4c07db0f3148a26e21c1b51ca96c307a7075ced7d9773a", size = 24624, upload-time = "2026-06-05T15:22:56.516Z" },
 ]
 
 [[package]]
@@ -1072,7 +1072,7 @@ dev = [
 requires-dist = [
     { name = "datasets", marker = "extra == 'examples'", specifier = ">=4.0.0" },
     { name = "defusedxml", specifier = ">=0.7.1,<0.8.0" },
-    { name = "doclang", marker = "extra == 'doclang-validation'", specifier = ">=0.4,<0.5" },
+    { name = "doclang", marker = "extra == 'doclang-validation'", specifier = ">=0.5,<0.6" },
     { name = "jsonref", specifier = ">=1.1.0,<2.0.0" },
     { name = "jsonschema", specifier = ">=4.16.0,<5.0.0" },
     { name = "latex2mathml", specifier = ">=3.77.0,<4.0.0" },
@@ -1113,7 +1113,7 @@ dev = [
     { name = "autoflake", specifier = "~=2.0" },
     { name = "black", specifier = "~=26.3.1" },
     { name = "coverage", specifier = "~=7.6" },
-    { name = "doclang", specifier = ">=0.4,<0.5" },
+    { name = "doclang", specifier = ">=0.5,<0.6" },
     { name = "flake8", specifier = "~=7.1" },
     { name = "flake8-docstrings", specifier = "~=1.6" },
     { name = "ipykernel", specifier = "~=6.29" },

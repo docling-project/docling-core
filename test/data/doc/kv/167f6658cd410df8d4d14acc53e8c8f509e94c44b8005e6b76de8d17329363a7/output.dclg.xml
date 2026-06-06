@@ -6,7 +6,7 @@
     <location value="448"/>
     <location value="24"/>
   </picture>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="73"/>
     <location value="29"/>
@@ -64,7 +64,7 @@
       </field_region>
     </group>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="73"/>
     <location value="69"/>
@@ -594,6 +594,7 @@
     16 Claims, 5 Drawing Sheets
   </text>
   <text>
+    <layer value="background"/>
     <location value="268"/>
     <location value="191"/>
     <location value="281"/>

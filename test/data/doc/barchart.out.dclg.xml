@@ -1,5 +1,6 @@
 <doclang>
   <page_header>
+    <layer value="furniture"/>
     <location value="73"/>
     <location value="14"/>
     <location value="222"/>

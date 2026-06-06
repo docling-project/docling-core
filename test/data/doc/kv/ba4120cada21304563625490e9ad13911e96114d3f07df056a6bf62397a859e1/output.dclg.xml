@@ -1,5 +1,6 @@
 <doclang>
   <text>
+    <layer value="furniture"/>
     <location value="30"/>
     <location value="23"/>
     <location value="186"/>
@@ -7,6 +8,7 @@
     Michigan Department of Treasury (Rev. 05-19), Page 1 of 2
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="317"/>
     <location value="25"/>
     <location value="479"/>
@@ -48,7 +50,7 @@
     <location value="54"/>
     <location value="483"/>
     <location value="476"/>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -178,7 +180,7 @@
         49503
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -196,7 +198,7 @@
         </value>
       </field_item>
     </list>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -214,7 +216,7 @@
         </value>
       </field_item>
     </list>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -258,7 +260,7 @@
         b. Spouse
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -278,7 +280,7 @@
         </value>
       </field_item>
     </list>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -337,7 +339,7 @@
         <location value="203"/>
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -379,7 +381,7 @@
       <location value="471"/>
       <location value="197"/>
 <![CDATA[* If you check box "b" or "c," you must complete and include Schedule NR.]]>    </text>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <text>
         <location value="35"/>
@@ -388,7 +390,7 @@
         <location value="218"/>
         9. EXEMPTIONS. NOTE: If someone else can claim you as a dependent, check box 9e, enter 0 on line 9a and enter $1,500 on line 9e (see instr.).
       </text>
-      <list class="unordered">
+      <list>
         <ldiv/>
         <field_item>
           <key>
@@ -906,7 +908,7 @@
         00
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -957,7 +959,7 @@
         00
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -1008,7 +1010,7 @@
         00
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -1059,7 +1061,7 @@
         00
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -1110,7 +1112,7 @@
         00
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -1160,7 +1162,7 @@
         00
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -1211,7 +1213,7 @@
         00
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -1261,7 +1263,7 @@
         00
       </value>
     </field_item>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -1333,7 +1335,7 @@
       <location value="426"/>
       CREDIT
     </heading>
-    <list class="unordered">
+    <list>
       <ldiv/>
       <field_item>
         <key>
@@ -1579,6 +1581,7 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="30"/>
     <location value="483"/>
     <location value="162"/>
@@ -1586,6 +1589,7 @@
     + 0000 2019 05 01 27 1
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="187"/>
     <location value="484"/>
     <location value="483"/>

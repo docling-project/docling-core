@@ -1,5 +1,5 @@
 <doclang>
-  <heading level="1">Title</heading>
+  <heading>Title</heading>
   <text>Some intro</text>
   <heading level="2">Foo</heading>
   <text>Foo stuff</text>
@@ -23,12 +23,12 @@ other children besides the inline
   <text>Section content as sibling of the heading.</text>
   <heading level="2">Heading</heading>
   <text>Bar</text>
-  <list class="unordered">
+  <list>
     <ldiv/>
     List item
     <ldiv/>
     <text>List item</text>
-    <list class="unordered">
+    <list>
       <ldiv/>
       List item
       <ldiv/>

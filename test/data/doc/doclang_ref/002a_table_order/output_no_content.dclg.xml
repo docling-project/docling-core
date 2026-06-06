@@ -1,11 +1,13 @@
 <doclang>
   <text>
+    <layer value="furniture"/>
     <location value="61"/>
     <location value="24"/>
     <location value="101"/>
     <location value="29"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="245"/>
     <location value="24"/>
     <location value="267"/>
@@ -13,6 +15,7 @@
   </text>
   <picture>
     <label value="other"/>
+    <layer value="furniture"/>
     <location value="432"/>
     <location value="10"/>
     <location value="476"/>
@@ -36,7 +39,7 @@
         <location value="195"/>
         <location value="98"/>
       </text>
-      <list class="unordered">
+      <list>
         <ldiv/>
         <location value="136"/>
         <location value="100"/>
@@ -73,7 +76,7 @@
         <location value="195"/>
         <location value="145"/>
       </text>
-      <list class="unordered">
+      <list>
         <ldiv/>
         <location value="136"/>
         <location value="147"/>
@@ -120,7 +123,7 @@
       <location value="210"/>
     </footnote>
   </group>
-  <list class="unordered">
+  <list>
     <ldiv/>
     <location value="60"/>
     <location value="236"/>

@@ -8,12 +8,14 @@
     <nl/>
   </index>
   <text>
+    <layer value="furniture"/>
     <location value="420"/>
     <location value="484"/>
     <location value="438"/>
     <location value="490"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="446"/>
     <location value="483"/>
     <location value="461"/>
