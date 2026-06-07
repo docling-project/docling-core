@@ -6085,8 +6085,13 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,
         include_annotations: bool = True,
         compact_tables: bool = False,
+        enable_chart_tables: bool = True,
+        mark_annotations: bool = False,
+        traverse_pictures: bool = False,
         *,
         mark_meta: bool = False,
+        allowed_meta_names: Optional[set[str]] = None,
+        blocked_meta_names: Optional[set[str]] = None,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
     ):
         """Save to markdown."""
@@ -6116,8 +6121,13 @@ class DoclingDocument(BaseModel):
             page_break_placeholder=page_break_placeholder,
             include_annotations=include_annotations,
             compact_tables=compact_tables,
+            enable_chart_tables=enable_chart_tables,
+            mark_annotations=mark_annotations,
+            traverse_pictures=traverse_pictures,
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
+            allowed_meta_names=allowed_meta_names,
+            blocked_meta_names=blocked_meta_names,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
