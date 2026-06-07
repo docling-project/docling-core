@@ -271,46 +271,7 @@ def _create_location_tokens_for_item(
 
 
 class DoclangCategory(str, Enum):
-    """DoclangCtegory.
-
-    Doclang defines the following categories of elements:
-
-    - **root**: Elements that establish document scope such as
-      `doclang`.
-    - **special**: Elements that establish document pagination, such as
-      `page_break`, and `time_break`.
-    - **geometric**: Elements that capture geometric position as normalized
-      coordinates/bounding boxes (via repeated `location`) anchoring
-      block-level content to the page.
-    - **temporal**: Elements that capture temporal positions using
-      `<hour value={integer}/><minute value={integer}/><second value={integer}/>`
-      and `<centisecond value={integer}/>` for a timestamp and a double
-      timestamp for time intervals.
-    - **semantic**: Block-level elements that convey document meaning
-      (e.g., headings, paragraphs, captions, lists, forms, tables, formulas,
-      code, pictures), optionally preceded by location tokens.
-    - **formatting**: Inline elements that modify textual presentation within
-      semantic content (e.g., `bold`, `italic`, `strikethrough`,
-      `superscript`, `subscript`, `rtl`, `inline class="formula|code|picture"`,
-      `br`).
-    - **grouping**: Elements that organize semantic blocks into logical
-      hierarchies and composites (e.g., `section`, `list`, `group type=*`)
-      and never carry location tokens.
-    - **structural**: Sequence tokens that define internal structure for
-      complex constructs (primarily OTSL table layout: `otsl`, `fcel`,
-      `ecel`, `lcel`, `ucel`, `xcel`, `nl`, `ched`, `rhed`, `corn`, `srow`;
-      and form parts like `key`/`value`).
-    - **content**: Lightweight content helpers used inside semantic blocks for
-      explicit payload and annotations (e.g., `marker`).
-    - **binary data**: Elements that embed or reference non-text payloads for
-      media—either inline as `base64` or via `uri`—allowed under `picture`,
-      `inline class="picture"`, or at page level.
-    - **metadata**: Elements that provide metadata about the document or its
-      components, contained within `head` and `meta` respectively.
-    - **continuation** tokens: Markers that indicate content spanning pages or
-      table boundaries (e.g., `thread`, `h_thread`, each with a required
-      `id` attribute) to stitch split content (e.g., across columns or pages).
-    """
+    """DoclangCategory."""
 
     ROOT = "root"
     SPECIAL = "special"
@@ -331,12 +292,10 @@ class DoclangToken(str, Enum):
     # Root and metadata
     DOCUMENT = "doclang"
     HEAD = "head"
-    META = "meta"
     LABEL = "label"
 
     # Special
     PAGE_BREAK = "page_break"
-    TIME_BREAK = "time_break"
 
     # Geometric and temporal
     LOCATION = "location"
@@ -353,7 +312,6 @@ class DoclangToken(str, Enum):
     FOOTNOTE = "footnote"
     PAGE_HEADER = "page_header"
     PAGE_FOOTER = "page_footer"
-    WATERMARK = "watermark"
     PICTURE = "picture"
     FORMULA = "formula"
     CODE = "code"
@@ -368,7 +326,6 @@ class DoclangToken(str, Enum):
     FIELD_HINT = "hint"
 
     # Grouping
-    SECTION = "section"
     LIST = "list"
     GROUP = "group"
 
@@ -406,11 +363,9 @@ class DoclangToken(str, Enum):
 
     # Binary data / content helpers
     SRC = "src"
-    URI = "uri"  # legacy; prefer SRC
     CUSTOM = "custom"
     INDEX = "index"
     MARKER = "marker"
-    FACETS = "facets"
     CONTENT = "content"  # TODO: review element name
 
 
@@ -449,10 +404,6 @@ class DoclangAttributeValue(str, Enum):
     CODE = "code"
     PICTURE = "picture"
 
-    # Table class values
-    INDEX = "index"
-    DATA = "data"
-
 
 class DoclangVocabulary(BaseModel):
     """DoclangVocabulary."""
@@ -479,8 +430,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.CHECKBOX: {DoclangAttributeKey.CLASS},
         DoclangToken.LIST: {DoclangAttributeKey.CLASS},
-        DoclangToken.TABLE: {DoclangAttributeKey.CLASS},
-        DoclangToken.GROUP: {DoclangAttributeKey.TYPE},
         DoclangToken.THREAD: {DoclangAttributeKey.ID},
         DoclangToken.H_THREAD: {DoclangAttributeKey.ID},
     }
@@ -504,12 +453,6 @@ class DoclangVocabulary(BaseModel):
             DoclangAttributeKey.CLASS: {
                 DoclangAttributeValue.SELECTED,
                 DoclangAttributeValue.UNSELECTED,
-            }
-        },
-        DoclangToken.TABLE: {
-            DoclangAttributeKey.CLASS: {
-                DoclangAttributeValue.INDEX,
-                DoclangAttributeValue.DATA,
             }
         },
         # Other attributes (e.g., level, type, id) are not enumerated here
@@ -541,7 +484,6 @@ class DoclangVocabulary(BaseModel):
     # Self-closing tokens set
     IS_SELFCLOSING: ClassVar[set[DoclangToken]] = {
         DoclangToken.PAGE_BREAK,
-        DoclangToken.TIME_BREAK,
         DoclangToken.LOCATION,
         DoclangToken.LAYER,
         DoclangToken.LABEL,
@@ -576,10 +518,8 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.DOCUMENT: DoclangCategory.ROOT,
         # Metadata
         DoclangToken.HEAD: DoclangCategory.METADATA,
-        DoclangToken.META: DoclangCategory.METADATA,
         # Special
         DoclangToken.PAGE_BREAK: DoclangCategory.SPECIAL,
-        DoclangToken.TIME_BREAK: DoclangCategory.SPECIAL,
         # Geometric
         DoclangToken.LOCATION: DoclangCategory.GEOMETRIC,
         DoclangToken.LAYER: DoclangCategory.GEOMETRIC,
@@ -595,7 +535,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.FOOTNOTE: DoclangCategory.SEMANTIC,
         DoclangToken.PAGE_HEADER: DoclangCategory.SEMANTIC,
         DoclangToken.PAGE_FOOTER: DoclangCategory.SEMANTIC,
-        DoclangToken.WATERMARK: DoclangCategory.SEMANTIC,
         DoclangToken.PICTURE: DoclangCategory.SEMANTIC,
         DoclangToken.FIELD_REGION: DoclangCategory.SEMANTIC,
         DoclangToken.FIELD_ITEM: DoclangCategory.SEMANTIC,
@@ -635,11 +574,9 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.THREAD: DoclangCategory.CONTINUATION,
         DoclangToken.H_THREAD: DoclangCategory.CONTINUATION,
         # Content/Binary data
-        DoclangToken.URI: DoclangCategory.CONTENT,
         DoclangToken.HREF: DoclangCategory.CONTENT,
         DoclangToken.XREF: DoclangCategory.CONTENT,
         DoclangToken.MARKER: DoclangCategory.CONTENT,
-        DoclangToken.FACETS: DoclangCategory.CONTENT,
         DoclangToken.CONTENT: DoclangCategory.CONTENT,
     }
 
@@ -1008,7 +945,7 @@ class WrapMode(str, Enum):
     """Wrap mode for Doclang output."""
 
     WRAP_ALWAYS = "wrap_always"  # wrap all text in explicit wrapper element
-    WRAP_WHEN_NEEDED = "wrap_when_needed"  # wrap text only if it has leading or trailing whitespace
+    WRAP_WHEN_NEEDED = "wrap_when_needed"  # wrap text if it has leading/trailing whitespace or contains newlines
 
 
 class LayerMode(str, Enum):
@@ -2508,7 +2445,7 @@ class DoclangDocSerializer(DocSerializer):
         return _wrap(text="".join(parts), wrap_tag=DoclangToken.HEAD.value) if parts else ""
 
     def _is_content_tag(self, tag: str) -> bool:
-        return tag in {DoclangToken.CONTENT.value, DoclangToken.META.value}
+        return tag in {DoclangToken.CONTENT.value}
 
     def _remove_content_subtrees(self, element: ET.Element) -> None:
         """Remove any child that is a regarded as content element and its entire subtree."""
@@ -2791,7 +2728,6 @@ class DoclangDeserializer(BaseModel):
                 # Ignore geometry/meta containers at this level; pass through page breaks
                 if node.tagName in {
                     DoclangToken.HEAD.value,
-                    DoclangToken.META.value,
                     DoclangToken.LOCATION.value,
                     DoclangToken.LAYER.value,
                     DoclangToken.LABEL.value,
@@ -3513,25 +3449,25 @@ class DoclangDeserializer(BaseModel):
 
     # ------------- Floating items (table / picture) -------------
 
+    @staticmethod
+    def _table_label_from_otsl_element(el: Element) -> DocItemLabel:
+        """Resolve table label from ``<table>`` or ``<index>`` (v0.5: no ``class`` on ``<table>``)."""
+        if el.tagName == DoclangToken.INDEX.value:
+            return DocItemLabel.DOCUMENT_INDEX
+        if el.tagName != DoclangToken.TABLE.value:
+            raise ValueError(f"Expected table or index element, got '{el.tagName}'.")
+        if el.getAttribute(DoclangAttributeKey.CLASS.value):
+            raise ValueError("table element must not have a class attribute.")
+        return DocItemLabel.TABLE
+
     def _parse_table(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         """Parse ``<table>``, ``<index>``, or a ``<group>`` wrapping them (with footnotes)."""
-        from docling_core.types.doc.labels import DocItemLabel
-
         otsl_el: Optional[Element]
         footnotes: list[TextItem] = []
         if el.tagName in {DoclangToken.TABLE.value, DoclangToken.INDEX.value}:
             caption = self._extract_caption(doc=doc, el=el)
             otsl_el = el
-            if el.tagName == DoclangToken.INDEX.value:
-                table_label = DocItemLabel.DOCUMENT_INDEX
-            else:
-                cls_val = el.getAttribute(DoclangAttributeKey.CLASS.value)
-                if cls_val == DoclangAttributeValue.INDEX.value:
-                    table_label = DocItemLabel.DOCUMENT_INDEX
-                elif cls_val and cls_val != DoclangAttributeValue.DATA.value:
-                    raise ValueError(f"Invalid class attribute value '{cls_val}' for table element.")
-                else:
-                    table_label = DocItemLabel.TABLE
+            table_label = self._table_label_from_otsl_element(el)
         else:
             footnotes = self._extract_footnotes(doc=doc, el=el)
             otsl_el = self._first_child(el, DoclangToken.TABLE.value) or self._first_child(el, DoclangToken.INDEX.value)
@@ -3543,15 +3479,7 @@ class DoclangDeserializer(BaseModel):
                 for ftn in footnotes:
                     tbl.footnotes.append(ftn.get_ref())
                 return
-            table_label = DocItemLabel.TABLE
-            if otsl_el.tagName == DoclangToken.INDEX.value:
-                table_label = DocItemLabel.DOCUMENT_INDEX
-            else:
-                cls_val = otsl_el.getAttribute(DoclangAttributeKey.CLASS.value)
-                if cls_val == DoclangAttributeValue.INDEX.value:
-                    table_label = DocItemLabel.DOCUMENT_INDEX
-                elif cls_val and cls_val != DoclangAttributeValue.DATA.value:
-                    raise ValueError(f"Invalid class attribute value '{cls_val}' for table element.")
+            table_label = self._table_label_from_otsl_element(otsl_el)
 
         head_nodes, body_nodes = self._split_element_children_head_body(otsl_el)
         tbl_provs = self._provenance_from_location_nodes(doc=doc, nodes=head_nodes)

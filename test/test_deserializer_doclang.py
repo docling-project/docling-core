@@ -1809,7 +1809,6 @@ def test_roundtrip_document_index_table():
     xml_str = _serialize(doc)
 
     assert "<index>" in xml_str
-    assert '<table class="index">' not in xml_str
 
     # Deserialize
     doc2 = _deserialize(xml_str)
@@ -1828,43 +1827,15 @@ def test_roundtrip_document_index_table():
     assert doc2.tables[1].data.num_cols == 2
 
 
-def test_roundtrip_table_with_data_class():
-    """Test that tables with class='data' are correctly deserialized as TABLE label."""
-    # Create XML with explicit class="data"
+def test_table_with_class_raises_error():
+    """Test that ``<table class=\"…\">`` is rejected (v0.5: use ``<index>`` for document indexes)."""
     xml_str = """<doclang>
-  <table>
-    <ched/>
-    <text>Header 1</text>
-    <ched/>
-    <text>Header 2</text>
-    <nl/>
-    <fcel/>
-    <text>Data 1</text>
-    <fcel/>
-    <text>Data 2</text>
-    <nl/>
-  </table>
-</doclang>"""
-
-    # Deserialize
-    doc = _deserialize(xml_str)
-
-    # Verify we have 1 table with TABLE label
-    assert len(doc.tables) == 1
-    assert doc.tables[0].label == DocItemLabel.TABLE
-
-
-def test_table_with_invalid_class_raises_error():
-    """Test that tables with invalid class values raise an error."""
-    # Create XML with invalid class="invalid"
-    xml_str = """<doclang>
-  <table class="invalid">
+  <table class="index">
     <fcel/>
     <text>Data 1</text>
     <nl/>
   </table>
 </doclang>"""
 
-    # Deserialize should raise ValueError (skip XSD pre-check: invalid class is caught in parser)
-    with pytest.raises(ValueError, match="Invalid class attribute value 'invalid' for table element"):
+    with pytest.raises(ValueError, match="table element must not have a class attribute"):
         _deserialize(xml_str, validate=False)
