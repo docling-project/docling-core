@@ -6075,7 +6075,8 @@ class DoclingDocument(BaseModel):
         labels: Optional[set[DocItemLabel]] = None,
         strict_text: bool = False,
         escape_html: bool = True,
-        escaping_underscores: bool = True,
+        escape_underscores: bool = True,
+        escaping_underscores: Optional[bool] = None,  # deprecated, use escape_underscores
         image_placeholder: str = "<!-- image -->",
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
@@ -6095,6 +6096,15 @@ class DoclingDocument(BaseModel):
         use_legacy_annotations: Optional[bool] = None,  # deprecated
     ):
         """Save to markdown."""
+        if escaping_underscores is not None:
+            import warnings
+            warnings.warn(
+                "Parameter `escaping_underscores` is deprecated, use `escape_underscores` instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            escape_underscores = escaping_underscores
+
         if isinstance(filename, str):
             filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
@@ -6111,7 +6121,7 @@ class DoclingDocument(BaseModel):
             labels=labels,
             strict_text=strict_text,
             escape_html=escape_html,
-            escape_underscores=escaping_underscores,
+            escape_underscores=escape_underscores,
             image_placeholder=image_placeholder,
             image_mode=image_mode,
             indent=indent,
