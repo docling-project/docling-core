@@ -13,19 +13,7 @@
     "self_ref": "#/body",
     "children": [
       {
-        "$ref": "#/texts/0"
-      },
-      {
         "$ref": "#/tables/0"
-      },
-      {
-        "$ref": "#/texts/1"
-      },
-      {
-        "$ref": "#/texts/2"
-      },
-      {
-        "$ref": "#/texts/3"
       }
     ],
     "content_layer": "body",
@@ -33,116 +21,7 @@
     "label": "unspecified"
   },
   "groups": [],
-  "texts": [
-    {
-      "self_ref": "#/texts/0",
-      "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "title",
-      "prov": [
-        {
-          "page_no": 1,
-          "bbox": {
-            "l": 10.0,
-            "t": 10.0,
-            "r": 200.0,
-            "b": 40.0,
-            "coord_origin": "TOPLEFT"
-          },
-          "charspan": [
-            0,
-            14
-          ]
-        }
-      ],
-      "orig": "Document Title",
-      "text": "Document Title"
-    },
-    {
-      "self_ref": "#/texts/1",
-      "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [
-        {
-          "page_no": 3,
-          "bbox": {
-            "l": 10.0,
-            "t": 70.0,
-            "r": 400.0,
-            "b": 90.0,
-            "coord_origin": "TOPLEFT"
-          },
-          "charspan": [
-            0,
-            16
-          ]
-        }
-      ],
-      "orig": "First paragraph.",
-      "text": "First paragraph."
-    },
-    {
-      "self_ref": "#/texts/2",
-      "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [
-        {
-          "page_no": 3,
-          "bbox": {
-            "l": 10.0,
-            "t": 100.0,
-            "r": 400.0,
-            "b": 120.0,
-            "coord_origin": "TOPLEFT"
-          },
-          "charspan": [
-            0,
-            17
-          ]
-        }
-      ],
-      "orig": "Second paragraph.",
-      "text": "Second paragraph."
-    },
-    {
-      "self_ref": "#/texts/3",
-      "parent": {
-        "$ref": "#/body"
-      },
-      "children": [],
-      "content_layer": "body",
-      "label": "text",
-      "prov": [
-        {
-          "page_no": 3,
-          "bbox": {
-            "l": 10.0,
-            "t": 130.0,
-            "r": 400.0,
-            "b": 150.0,
-            "coord_origin": "TOPLEFT"
-          },
-          "charspan": [
-            0,
-            16
-          ]
-        }
-      ],
-      "orig": "Third paragraph.",
-      "text": "Third paragraph."
-    }
-  ],
+  "texts": [],
   "pictures": [],
   "tables": [
     {
@@ -152,15 +31,29 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "document_index",
+      "label": "table",
       "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 10.0,
+            "t": 10.0,
+            "r": 400.0,
+            "b": 200.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        },
         {
           "page_no": 2,
           "bbox": {
             "l": 10.0,
             "t": 10.0,
             "r": 400.0,
-            "b": 120.0,
+            "b": 200.0,
             "coord_origin": "TOPLEFT"
           },
           "charspan": [
@@ -181,8 +74,8 @@
             "end_row_offset_idx": 1,
             "start_col_offset_idx": 0,
             "end_col_offset_idx": 1,
-            "text": "Chapter",
-            "column_header": false,
+            "text": "H1",
+            "column_header": true,
             "row_header": false,
             "row_section": false,
             "fillable": false
@@ -194,8 +87,8 @@
             "end_row_offset_idx": 1,
             "start_col_offset_idx": 1,
             "end_col_offset_idx": 2,
-            "text": "Page",
-            "column_header": false,
+            "text": "H2",
+            "column_header": true,
             "row_header": false,
             "row_section": false,
             "fillable": false
@@ -207,7 +100,7 @@
             "end_row_offset_idx": 2,
             "start_col_offset_idx": 0,
             "end_col_offset_idx": 1,
-            "text": "Intro",
+            "text": "A",
             "column_header": false,
             "row_header": false,
             "row_section": false,
@@ -220,7 +113,7 @@
             "end_row_offset_idx": 2,
             "start_col_offset_idx": 1,
             "end_col_offset_idx": 2,
-            "text": "1",
+            "text": "B",
             "column_header": false,
             "row_header": false,
             "row_section": false,
@@ -233,7 +126,7 @@
             "end_row_offset_idx": 3,
             "start_col_offset_idx": 0,
             "end_col_offset_idx": 1,
-            "text": "Body",
+            "text": "",
             "column_header": false,
             "row_header": false,
             "row_section": false,
@@ -246,14 +139,40 @@
             "end_row_offset_idx": 3,
             "start_col_offset_idx": 1,
             "end_col_offset_idx": 2,
-            "text": "3",
+            "text": "",
+            "column_header": false,
+            "row_header": false,
+            "row_section": false,
+            "fillable": false
+          },
+          {
+            "row_span": 1,
+            "col_span": 1,
+            "start_row_offset_idx": 3,
+            "end_row_offset_idx": 4,
+            "start_col_offset_idx": 0,
+            "end_col_offset_idx": 1,
+            "text": "",
+            "column_header": false,
+            "row_header": false,
+            "row_section": false,
+            "fillable": false
+          },
+          {
+            "row_span": 1,
+            "col_span": 1,
+            "start_row_offset_idx": 3,
+            "end_row_offset_idx": 4,
+            "start_col_offset_idx": 1,
+            "end_col_offset_idx": 2,
+            "text": "",
             "column_header": false,
             "row_header": false,
             "row_section": false,
             "fillable": false
           }
         ],
-        "num_rows": 3,
+        "num_rows": 4,
         "num_cols": 2,
         "orientation": "rot_0",
         "grid": [
@@ -265,8 +184,8 @@
               "end_row_offset_idx": 1,
               "start_col_offset_idx": 0,
               "end_col_offset_idx": 1,
-              "text": "Chapter",
-              "column_header": false,
+              "text": "H1",
+              "column_header": true,
               "row_header": false,
               "row_section": false,
               "fillable": false
@@ -278,8 +197,8 @@
               "end_row_offset_idx": 1,
               "start_col_offset_idx": 1,
               "end_col_offset_idx": 2,
-              "text": "Page",
-              "column_header": false,
+              "text": "H2",
+              "column_header": true,
               "row_header": false,
               "row_section": false,
               "fillable": false
@@ -293,7 +212,7 @@
               "end_row_offset_idx": 2,
               "start_col_offset_idx": 0,
               "end_col_offset_idx": 1,
-              "text": "Intro",
+              "text": "A",
               "column_header": false,
               "row_header": false,
               "row_section": false,
@@ -306,7 +225,7 @@
               "end_row_offset_idx": 2,
               "start_col_offset_idx": 1,
               "end_col_offset_idx": 2,
-              "text": "1",
+              "text": "B",
               "column_header": false,
               "row_header": false,
               "row_section": false,
@@ -321,7 +240,7 @@
               "end_row_offset_idx": 3,
               "start_col_offset_idx": 0,
               "end_col_offset_idx": 1,
-              "text": "Body",
+              "text": "",
               "column_header": false,
               "row_header": false,
               "row_section": false,
@@ -334,7 +253,35 @@
               "end_row_offset_idx": 3,
               "start_col_offset_idx": 1,
               "end_col_offset_idx": 2,
-              "text": "3",
+              "text": "",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            }
+          ],
+          [
+            {
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 3,
+              "end_row_offset_idx": 4,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 3,
+              "end_row_offset_idx": 4,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "",
               "column_header": false,
               "row_header": false,
               "row_section": false,
@@ -362,13 +309,6 @@
         "height": 512.0
       },
       "page_no": 2
-    },
-    "3": {
-      "size": {
-        "width": 512.0,
-        "height": 512.0
-      },
-      "page_no": 3
     }
   }
 }

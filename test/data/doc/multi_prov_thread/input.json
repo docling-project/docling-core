@@ -1,0 +1,80 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.10.0",
+  "name": "multi_prov_thread",
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/texts/0"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 10.0,
+            "t": 10.0,
+            "r": 400.0,
+            "b": 50.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            45
+          ]
+        },
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 420.0,
+            "t": 10.0,
+            "r": 810.0,
+            "b": 50.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            45,
+            72
+          ]
+        }
+      ],
+      "orig": "This paragraph starts on the left column and continues in the right one.",
+      "text": "This paragraph starts on the left column and continues in the right one."
+    }
+  ],
+  "pictures": [],
+  "tables": [],
+  "key_value_items": [],
+  "form_items": [],
+  "pages": {
+    "1": {
+      "size": {
+        "width": 100.0,
+        "height": 100.0
+      },
+      "page_no": 1
+    }
+  }
+}

@@ -1697,7 +1697,7 @@ def test_list_item_with_code_child_and_bbox():
         parent=li,
         prov=ProvenanceItem(
             page_no=0,
-            bbox=BoundingBox.from_tuple((100, 200, 300, 250), origin=CoordOrigin.TOPLEFT),
+            bbox=BoundingBox.from_tuple((10, 20, 80, 60), origin=CoordOrigin.TOPLEFT),
             charspan=(0, 0),
         ),
     )
@@ -1969,38 +1969,247 @@ def test_text_with_hyperlink():
 
 
 def _doc_multi_prov_text() -> DoclingDocument:
-    """Single text item with two provenance spans (split across pages/columns)."""
-    doc = DoclingDocument(name="multi_prov")
+    """Single text item with two provenance spans (same page, two bboxes)."""
+    doc = DoclingDocument(name="multi_prov_thread")
     _default_page(doc)
+    part1 = "This paragraph starts on the left column and "
+    part2 = "continues in the right one."
+    text = part1 + part2
     prov = ProvenanceItem(
         page_no=1,
-        bbox=BoundingBox.from_tuple((0, 0, 10, 10), origin=CoordOrigin.TOPLEFT),
-        charspan=(0, 5),
+        bbox=BoundingBox.from_tuple((10, 10, 400, 50), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, len(part1)),
     )
-    item = doc.add_text(label=DocItemLabel.TEXT, text="split", prov=prov)
-    item.orig = "split"
+    item = doc.add_text(label=DocItemLabel.TEXT, text=text, prov=prov)
+    item.orig = text
     item.prov.append(
         ProvenanceItem(
             page_no=1,
-            bbox=BoundingBox.from_tuple((20, 20, 30, 30), origin=CoordOrigin.TOPLEFT),
-            charspan=(5, 10),
+            bbox=BoundingBox.from_tuple((420, 10, 810, 50), origin=CoordOrigin.TOPLEFT),
+            charspan=(len(part1), len(text)),
         )
     )
     return doc
 
 
-# TODO: Re-enable once multi-prov items emit <thread thread_id="N"/> instead of split
-# <text> fragments (DocLang spec B2 / DOCLANG_ALIGNMENT P2).
-# @doclang_validator
-# def test_multi_prov_splits_text_not_thread_snapshot():
-#     """Spec expects one <text> with <thread thread_id=\"N\"/>; we emit two <text> fragments."""
-#     doc = _doc_multi_prov_text()
-#     ser_txt = DoclangDocSerializer(doc=doc).serialize().text
-#     exp_file = INCOMPAT_DATA / "multi_prov_splits_text.dclg.xml"
-#     verify_doclang(exp_file=exp_file, actual=ser_txt)
-#     if not GEN_TEST_DATA:
-#         assert ser_txt.count("<text>") == 2
-#         assert "<thread" not in ser_txt
+@doclang_validator
+def test_multi_prov_text_emits_thread():
+    """Multi-prov text fragments share a ``thread_id`` in each element head.
+
+    Materializes ``input.json`` and ``serialized.dclg.xml`` under
+    ``test/data/doc/multi_prov_thread/``.
+    """
+    data_dir = Path("./test/data/doc/multi_prov_thread")
+    doc = _doc_multi_prov_text()
+    _verify_doc(doc=doc, exp_json=data_dir / "input.json")
+
+    ser_txt = DoclangDocSerializer(doc=doc).serialize().text
+    verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
+    if not GEN_TEST_DATA:
+        assert ser_txt.count("<thread thread_id=") == 2
+        assert "<page_break" not in ser_txt
+
+
+@doclang_validator
+def test_thread_ids_unique_across_fragmented_components():
+    """Each fragmented component receives a distinct document-scoped ``thread_id``."""
+    doc = _doc_cross_page_paragraph()
+    lg = doc.add_list_group(parent=doc.body)
+    doc.add_list_item(
+        text="First list item on page one.",
+        parent=lg,
+        marker="•",
+        enumerated=False,
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((10, 60, 400, 100), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 30),
+        ),
+    )
+    doc.add_list_item(
+        text="Second list item on page two.",
+        parent=lg,
+        marker="•",
+        enumerated=False,
+        prov=ProvenanceItem(
+            page_no=2,
+            bbox=BoundingBox.from_tuple((10, 60, 400, 100), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 31),
+        ),
+    )
+
+    ser_txt = DoclangDocSerializer(doc=doc).serialize().text
+    assert ser_txt.count('thread_id="1"') == 2  # cross-page paragraph fragments
+    assert ser_txt.count('thread_id="2"') == 2  # cross-page list fragments
+    assert 'thread_id="3"' not in ser_txt
+
+
+def _doc_cross_page_paragraph() -> DoclingDocument:
+    """Single text item split across two pages via multi-prov charspans."""
+    doc = DoclingDocument(name="cross_page_paragraph")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=512, height=512), image=None)
+    part1 = "This paragraph starts on page one and "
+    part2 = "continues on page two."
+    text = part1 + part2
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 400, 50), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, len(part1)),
+    )
+    item = doc.add_text(label=DocItemLabel.TEXT, text=text, prov=prov)
+    item.orig = text
+    item.prov.append(
+        ProvenanceItem(
+            page_no=2,
+            bbox=BoundingBox.from_tuple((10, 10, 400, 50), origin=CoordOrigin.TOPLEFT),
+            charspan=(len(part1), len(text)),
+        )
+    )
+    return doc
+
+
+@doclang_validator
+def test_cross_page_paragraph_emits_thread_and_page_break():
+    """Cross-page paragraph: threaded ``<text>`` fragments with ``<page_break/>`` between pages.
+
+    Materializes ``input.json`` and ``serialized.dclg.xml`` under
+    ``test/data/doc/cross_page_paragraph/``.
+    """
+    data_dir = Path("./test/data/doc/cross_page_paragraph")
+    doc = _doc_cross_page_paragraph()
+    _verify_doc(doc=doc, exp_json=data_dir / "input.json")
+
+    ser_txt = DoclangDocSerializer(doc=doc).serialize().text
+    verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
+    if not GEN_TEST_DATA:
+        assert ser_txt.count("<thread thread_id=") == 2
+        assert ser_txt.count("<page_break") == 1
+
+
+def _doc_cross_page_list() -> DoclingDocument:
+    """List group with whole items on page 1 and page 2 (list-level fragmentation)."""
+    doc = DoclingDocument(name="cross_page_list")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=512, height=512), image=None)
+    lg = doc.add_list_group(parent=doc.body)
+    doc.add_list_item(
+        text="First item on page one.",
+        parent=lg,
+        marker="•",
+        enumerated=False,
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((10, 10, 400, 50), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 24),
+        ),
+    )
+    doc.add_list_item(
+        text="Second item on page two.",
+        parent=lg,
+        marker="•",
+        enumerated=False,
+        prov=ProvenanceItem(
+            page_no=2,
+            bbox=BoundingBox.from_tuple((10, 10, 400, 50), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 25),
+        ),
+    )
+    return doc
+
+
+@doclang_validator
+def test_cross_page_list_emits_thread_and_page_break():
+    """Cross-page list: threaded ``<list>`` blocks with ``<page_break/>`` between pages."""
+    data_dir = Path("./test/data/doc/cross_page_list")
+    doc = _doc_cross_page_list()
+    _verify_doc(doc=doc, exp_json=data_dir / "input.json")
+
+    ser_txt = DoclangDocSerializer(doc=doc).serialize().text
+    verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
+    if not GEN_TEST_DATA:
+        assert ser_txt.count("<thread thread_id=") == 2
+        assert ser_txt.count("<page_break") == 1
+        assert ser_txt.count("<list") == 2
+
+
+def _doc_cross_page_table() -> DoclingDocument:
+    """Single table split across two pages via multi-prov bounding boxes."""
+    doc = DoclingDocument(name="cross_page_table")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=512, height=512), image=None)
+    data = TableData(num_rows=2, num_cols=2)
+    data.add_row(["H1", "H2"])
+    data.add_row(["A", "B"])
+    data.grid[0][0].column_header = True
+    data.grid[0][1].column_header = True
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 400, 200), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+    item = doc.add_table(data=data, prov=prov)
+    item.prov.append(
+        ProvenanceItem(
+            page_no=2,
+            bbox=BoundingBox.from_tuple((10, 10, 400, 200), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 0),
+        )
+    )
+    return doc
+
+
+def _doc_cross_column_table() -> DoclingDocument:
+    """Single table with two provenance boxes on the same page (cross-column)."""
+    doc = DoclingDocument(name="cross_column_table")
+    doc.add_page(page_no=1, size=Size(width=512, height=512), image=None)
+    data = TableData(num_rows=2, num_cols=2)
+    data.add_row(["X", "Y"])
+    data.add_row(["1", "2"])
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 200, 200), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+    item = doc.add_table(data=data, prov=prov)
+    item.prov.append(
+        ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((220, 10, 400, 200), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 0),
+        )
+    )
+    return doc
+
+
+@doclang_validator
+def test_cross_page_table_emits_thread_and_page_break():
+    """Cross-page table: threaded ``<table>`` fragments with ``<page_break/>`` between pages."""
+    data_dir = Path("./test/data/doc/cross_page_table")
+    doc = _doc_cross_page_table()
+    _verify_doc(doc=doc, exp_json=data_dir / "input.json")
+
+    ser_txt = DoclangDocSerializer(doc=doc).serialize().text
+    verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
+    if not GEN_TEST_DATA:
+        assert ser_txt.count("<thread thread_id=") == 2
+        assert ser_txt.count("<page_break") == 1
+        assert ser_txt.count("<table") == 2
+
+
+@doclang_validator
+def test_cross_column_table_emits_thread():
+    """Cross-column table: threaded ``<table>`` fragments on the same page."""
+    data_dir = Path("./test/data/doc/cross_column_table")
+    doc = _doc_cross_column_table()
+    _verify_doc(doc=doc, exp_json=data_dir / "input.json")
+
+    ser_txt = DoclangDocSerializer(doc=doc).serialize().text
+    verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
+    if not GEN_TEST_DATA:
+        assert ser_txt.count("<thread thread_id=") == 2
+        assert "<page_break" not in ser_txt
+        assert ser_txt.count("<table") == 2
 
 
 # ===============================
@@ -2133,3 +2342,14 @@ def test_table_corn_header():
         exp_file=Path("./test/data/doc/table_corn.gt.dclg.xml"),
         actual=ser_txt,
     )
+
+
+def test_create_threading_token_emits_thread_id():
+    """Continuation tokens use ``thread_id`` per DocLang v0.5."""
+    import pytest
+
+    from docling_core.experimental.doclang import DoclangVocabulary
+
+    assert DoclangVocabulary._create_threading_token(thread_id="42") == '<thread thread_id="42"/>'
+    with pytest.raises(ValueError, match="thread_id length"):
+        DoclangVocabulary._create_threading_token(thread_id="")
