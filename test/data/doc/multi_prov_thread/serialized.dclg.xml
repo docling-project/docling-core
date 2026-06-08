@@ -1,17 +1,17 @@
 <doclang>
   <text>
     <thread thread_id="1"/>
+    <location value="6"/>
     <location value="51"/>
-    <location value="51"/>
-    <location value="511"/>
+    <location value="250"/>
     <location value="256"/>
     <content>This paragraph starts on the left column and </content>
   </text>
   <text>
     <thread thread_id="1"/>
-    <location value="511"/>
+    <location value="262"/>
     <location value="51"/>
-    <location value="511"/>
+    <location value="506"/>
     <location value="256"/>
     continues in the right one.
   </text>

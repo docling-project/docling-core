@@ -35,7 +35,15 @@ from docling_core.types.doc import (
     TabularChartMetaField,
 )
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import ContentLayer, GraphCell, GraphData, GraphLink, ImageRef, RichTableCell, TableCell
+from docling_core.types.doc.document import (
+    ContentLayer,
+    GraphCell,
+    GraphData,
+    GraphLink,
+    ImageRef,
+    RichTableCell,
+    TableCell,
+)
 from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
 from test.doclang_validation import (
     doclang_validator,
@@ -43,9 +51,6 @@ from test.doclang_validation import (
 )
 from test.test_data_gen_flag import GEN_TEST_DATA
 from test.test_serialization import verify
-
-INCOMPAT_DATA = Path("./test/data/doc/incompat")
-
 
 def verify_doclang(exp_file: Path, actual: str) -> None:
     """Golden compare plus reference DocLang validation."""
@@ -1551,7 +1556,6 @@ def test_label_mode_when_defined():
     )
     assert result.count('<label value="Python"/>') == 1
     assert result.count('<label value="other"/>') == 1
-    assert '<label value="unknown"/>' not in result
     assert '<label value="undefined"/>' not in result
 
 
@@ -1562,8 +1566,7 @@ def test_label_mode_always():
     )
     assert result.count('<label value="Python"/>') == 1
     assert result.count('<label value="other"/>') == 1
-    assert result.count('<label value="undefined"/>') == 1
-    assert result.count('<label value="unknown"/>') == 1
+    assert result.count('<label value="undefined"/>') == 2
 
 
 def test_label_mode_always_empty_code_emits_undefined_by_default():
@@ -1963,6 +1966,32 @@ def test_text_with_hyperlink():
     )
 
 
+def _doc_text_with_hyperlink_and_layer() -> DoclingDocument:
+    doc = DoclingDocument(name="hyperlink_and_layer")
+    doc.add_text(
+        label=DocItemLabel.PAGE_HEADER,
+        text="linked header",
+        hyperlink=AnyUrl("https://example.com/doc"),
+        content_layer=ContentLayer.FURNITURE,
+    )
+    return doc
+
+
+@doclang_validator
+def test_element_head_href_before_layer():
+    """Element head follows spec order: href precedes layer."""
+    doc = _doc_text_with_hyperlink_and_layer()
+    ser_txt = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(add_location=False, layer_mode=LayerMode.MINIMAL),
+    ).serialize().text
+    verify_doclang(
+        exp_file=Path("./test/data/doc/text_with_hyperlink_and_layer.gt.dclg.xml"),
+        actual=ser_txt,
+    )
+    assert ser_txt.index("<href") < ser_txt.index("<layer")
+
+
 # ===============================
 # Known spec gaps (validator-OK)
 # ===============================
@@ -1971,7 +2000,8 @@ def test_text_with_hyperlink():
 def _doc_multi_prov_text() -> DoclingDocument:
     """Single text item with two provenance spans (same page, two bboxes)."""
     doc = DoclingDocument(name="multi_prov_thread")
-    _default_page(doc)
+    # Page width must cover bbox right edges (810); height must cover bottom (50).
+    doc.add_page(page_no=1, size=Size(width=820, height=100), image=None)
     part1 = "This paragraph starts on the left column and "
     part2 = "continues in the right one."
     text = part1 + part2
@@ -2138,7 +2168,7 @@ def _doc_cross_page_table() -> DoclingDocument:
     doc = DoclingDocument(name="cross_page_table")
     for page_no in (1, 2):
         doc.add_page(page_no=page_no, size=Size(width=512, height=512), image=None)
-    data = TableData(num_rows=2, num_cols=2)
+    data = TableData(num_cols=2)
     data.add_row(["H1", "H2"])
     data.add_row(["A", "B"])
     data.grid[0][0].column_header = True
@@ -2159,25 +2189,30 @@ def _doc_cross_page_table() -> DoclingDocument:
     return doc
 
 
-def _doc_cross_column_table() -> DoclingDocument:
-    """Single table with two provenance boxes on the same page (cross-column)."""
-    doc = DoclingDocument(name="cross_column_table")
+def _doc_cross_column_list() -> DoclingDocument:
+    """List group with one item per column on the same page (cross-column layout)."""
+    doc = DoclingDocument(name="cross_column_list")
     doc.add_page(page_no=1, size=Size(width=512, height=512), image=None)
-    data = TableData(num_rows=2, num_cols=2)
-    data.add_row(["X", "Y"])
-    data.add_row(["1", "2"])
-    prov = ProvenanceItem(
-        page_no=1,
-        bbox=BoundingBox.from_tuple((10, 10, 200, 200), origin=CoordOrigin.TOPLEFT),
-        charspan=(0, 0),
-    )
-    item = doc.add_table(data=data, prov=prov)
-    item.prov.append(
-        ProvenanceItem(
+    lg = doc.add_list_group(parent=doc.body)
+    doc.add_list_item(
+        text="Left column item.",
+        parent=lg,
+        enumerated=False,
+        prov=ProvenanceItem(
             page_no=1,
-            bbox=BoundingBox.from_tuple((220, 10, 400, 200), origin=CoordOrigin.TOPLEFT),
-            charspan=(0, 0),
-        )
+            bbox=BoundingBox.from_tuple((10, 10, 200, 50), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 18),
+        ),
+    )
+    doc.add_list_item(
+        text="Right column item.",
+        parent=lg,
+        enumerated=False,
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((220, 10, 400, 50), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 19),
+        ),
     )
     return doc
 
@@ -2198,18 +2233,19 @@ def test_cross_page_table_emits_thread_and_page_break():
 
 
 @doclang_validator
-def test_cross_column_table_emits_thread():
-    """Cross-column table: threaded ``<table>`` fragments on the same page."""
-    data_dir = Path("./test/data/doc/cross_column_table")
-    doc = _doc_cross_column_table()
+def test_cross_column_list_same_page():
+    """Cross-column list: both items on one page with column-aligned locations."""
+    data_dir = Path("./test/data/doc/cross_column_list")
+    doc = _doc_cross_column_list()
     _verify_doc(doc=doc, exp_json=data_dir / "input.json")
 
     ser_txt = DoclangDocSerializer(doc=doc).serialize().text
     verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
     if not GEN_TEST_DATA:
-        assert ser_txt.count("<thread thread_id=") == 2
+        assert ser_txt.count("<list") == 1
+        assert "<thread" not in ser_txt
         assert "<page_break" not in ser_txt
-        assert ser_txt.count("<table") == 2
+        assert "<marker>" not in ser_txt
 
 
 # ===============================

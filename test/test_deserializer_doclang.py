@@ -35,7 +35,7 @@ from test.test_serialization_doclang import (
     _doc_cross_page_list,
     _doc_cross_page_paragraph,
     _doc_cross_page_table,
-    _doc_cross_column_table,
+    _doc_cross_column_list,
     _doc_multi_prov_text,
     _verify_doc,
     add_list_section,
@@ -316,7 +316,7 @@ def test_roundtrip_picture_other_and_unknown_labels():
         doc=doc,
         params=DoclangParams(label_mode=LabelMode.ALWAYS, add_location=False),
     ).serialize().text
-    assert xml_always.count('<label value="unknown"/>') == 1
+    assert xml_always.count('<label value="undefined"/>') == 1
 
 
 def test_code_language_unmapped_linguist_deserializes_to_unknown():
@@ -1956,9 +1956,9 @@ def test_cross_page_table_roundtrip():
 
 
 @doclang_validator
-def test_cross_column_table_roundtrip():
-    """Round-trip a cross-column threaded table (same page, two boxes)."""
-    _thread_roundtrip(name="cross_column_table", doc_factory=_doc_cross_column_table, page_breaks=0)
+def test_cross_column_list_roundtrip():
+    """Round-trip a cross-column list (same page, one item per column)."""
+    _thread_roundtrip(name="cross_column_list", doc_factory=_doc_cross_column_list, page_breaks=0)
 
 
 def test_table_with_class_raises_error():

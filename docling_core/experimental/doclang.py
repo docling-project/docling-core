@@ -258,7 +258,7 @@ def _create_location_tokens_for_item(
         bbox = prov.bbox.to_top_left_origin(page_h).as_tuple()
         out.append(_create_location_tokens_for_bbox(bbox=bbox, page_w=page_w, page_h=page_h, xres=xres, yres=yres))
 
-    # Multi-provocation items emit one location set per fragment; callers thread fragments.
+    # Multi-provenance items emit one location set per fragment
     if len(out) > 1:
         res = []
         for i, _ in enumerate(item.prov):
@@ -1005,7 +1005,7 @@ class LayerMode(str, Enum):
 class LabelMode(str, Enum):
     """Label mode for DocLang output."""
 
-    WHEN_DEFINED = "when_defined"  # emit label when present and not ``unknown``
+    WHEN_DEFINED = "when_defined"  # emit label when present and not ``undefined``
     ALWAYS = "always"  # always emit label
     NEVER = "never"  # never emit label
 
@@ -1141,10 +1141,10 @@ def _element_head_prefix(
         parts.append(_create_label_token(value=label_value))
     if thread_id:
         parts.append(DoclangVocabulary._create_threading_token(thread_id=thread_id))
-    if layer_token := _create_layer_token(item=item, params=params):
-        parts.append(layer_token)
     if include_href and (href_uri := _text_item_hyperlink_uri(item)):
         parts.append(_create_href_token(uri=href_uri))
+    if layer_token := _create_layer_token(item=item, params=params):
+        parts.append(layer_token)
     if params.add_location:
         if loc := _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize):
             parts.append(loc)
@@ -1170,10 +1170,8 @@ def _serialize_floating_caption_head(
     return cap_res.text or ""
 
 
-_DOCLANG_LABEL_UNKNOWN = "unknown"
+_DOCLANG_LABEL_UNDEFINED = "undefined"
 _DOCLANG_LABEL_OTHER = "other"
-# Legacy v0.4 fallback label; treated like ``unknown`` on input.
-_DOCLANG_LABEL_UNDEFINED_LEGACY = "undefined"
 
 
 def _element_label_for_serialization(
@@ -1185,9 +1183,9 @@ def _element_label_for_serialization(
     if params.label_mode == LabelMode.NEVER:
         return None
     if params.label_mode == LabelMode.ALWAYS:
-        return raw_label if raw_label is not None else _DOCLANG_LABEL_UNKNOWN
-    # WHEN_DEFINED: emit only when a label is present and not ``unknown``.
-    if raw_label is None or raw_label in {_DOCLANG_LABEL_UNKNOWN, _DOCLANG_LABEL_UNDEFINED_LEGACY}:
+        return raw_label if raw_label is not None else _DOCLANG_LABEL_UNDEFINED
+    # WHEN_DEFINED: emit only when a label is present and not ``undefined``.
+    if raw_label is None or raw_label == _DOCLANG_LABEL_UNDEFINED:
         return None
     return raw_label
 
@@ -1201,7 +1199,7 @@ def _picture_classification_label_to_doclang(class_name: str) -> str:
 
 def _picture_classification_label_from_doclang(label_val: str) -> Optional[str]:
     """Map DocLang picture label to Docling picture classification label."""
-    if label_val in {_DOCLANG_LABEL_UNKNOWN, _DOCLANG_LABEL_UNDEFINED_LEGACY}:
+    if label_val == _DOCLANG_LABEL_UNDEFINED:
         return None
     if label_val == _DOCLANG_LABEL_OTHER:
         return PictureClassificationLabel.OTHER.value
@@ -1545,7 +1543,7 @@ def _code_language_label_to_doclang(
 ) -> str:
     """Map Docling code language label to DocLang recommended label."""
     if lang == CodeLanguageLabel.UNKNOWN:
-        return _DOCLANG_LABEL_OTHER if interpret_unknown_as_other else _DOCLANG_LABEL_UNDEFINED_LEGACY
+        return _DOCLANG_LABEL_OTHER if interpret_unknown_as_other else _DOCLANG_LABEL_UNDEFINED
     if linguist_key := _CODE_LANGUAGE_TO_LINGUIST.get(lang):
         return linguist_key
     return _DOCLANG_LABEL_OTHER
@@ -1555,8 +1553,7 @@ def _code_language_label_from_doclang(label_val: str) -> CodeLanguageLabel:
     """Map DocLang code label to Docling code language label."""
     if label_val in {
         _DOCLANG_LABEL_OTHER,
-        _DOCLANG_LABEL_UNKNOWN,
-        _DOCLANG_LABEL_UNDEFINED_LEGACY,
+        _DOCLANG_LABEL_UNDEFINED,
         CodeLanguageLabel.UNKNOWN.value,
     }:
         return CodeLanguageLabel.UNKNOWN
@@ -1844,10 +1841,10 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(_create_label_token(value=code_label))
             if thread_id:
                 parts.append(DoclangVocabulary._create_threading_token(thread_id=thread_id))
-            if layer_token := _create_layer_token(item=item, params=params):
-                parts.append(layer_token)
             if include_href and (href_uri := _text_item_hyperlink_uri(item)):
                 parts.append(_create_href_token(uri=href_uri))
+            if layer_token := _create_layer_token(item=item, params=params):
+                parts.append(layer_token)
             if custom_head:
                 parts.append(custom_head)
 
@@ -2130,10 +2127,86 @@ class DoclangPictureSerializer(BasePictureSerializer):
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
+def _table_fragment_bounds(item: TableItem, prov_index: int) -> tuple[int, int, int, int]:
+    """Return half-open ``(row_start, row_end, col_start, col_end)`` for a prov fragment."""
+    nprov = len(item.prov)
+    if not item.data:
+        return 0, 0, 0, 0
+    nrows, ncols = item.data.num_rows, item.data.num_cols
+    if nprov <= 1:
+        return 0, nrows, 0, ncols
+    page_nos = [p.page_no for p in item.prov]
+    if len(set(page_nos)) == 1:
+        c0 = prov_index * ncols // nprov
+        c1 = (prov_index + 1) * ncols // nprov
+        return 0, nrows, c0, c1
+    r0 = prov_index * nrows // nprov
+    r1 = (prov_index + 1) * nrows // nprov
+    return r0, r1, 0, ncols
+
+
+def _thread_table_merge_offset(existing: TableItem, prov: ProvenanceItem) -> tuple[int, int]:
+    """Row/column offsets when merging a threaded table fragment into ``existing``."""
+    if not existing.prov or not existing.data:
+        return 0, 0
+    last_page = existing.prov[-1].page_no
+    if prov.page_no == last_page:
+        return 0, existing.data.num_cols
+    return existing.data.num_rows, 0
+
+
+def _merge_table_data(
+    *,
+    base: TableData,
+    fragment: TableData,
+    row_offset: int = 0,
+    col_offset: int = 0,
+) -> None:
+    """Merge ``fragment`` table cells into ``base`` (indices must already be offset)."""
+    base.table_cells.extend(fragment.table_cells)
+    base.num_rows = max(base.num_rows, row_offset + fragment.num_rows)
+    base.num_cols = max(base.num_cols, col_offset + fragment.num_cols)
+
+
 class DoclangTableSerializer(BaseTableSerializer):
     """Doclang-specific table item serializer."""
 
     # _get_table_token no longer needed; OTSL tokens are emitted via vocabulary
+
+    @staticmethod
+    def _otsl_origin_token_for_slice(
+        *,
+        cell: TableCell,
+        row_idx: int,
+        col_idx: int,
+        rowstart: int,
+        colstart: int,
+        row_start: int,
+        col_start: int,
+        has_content: bool,
+    ) -> DoclangToken:
+        """Pick OTSL origin token for a cell origin inside a table fragment slice."""
+        cont_left = col_idx == col_start and col_start > 0
+        cont_up = rowstart < row_start and row_idx == row_start
+        if cont_left and cont_up:
+            return DoclangToken.XCEL
+        if cont_up:
+            return DoclangToken.UCEL
+        if cont_left:
+            return DoclangToken.LCEL
+        if has_content:
+            if cell.column_header and cell.row_header:
+                return DoclangToken.CORN
+            if cell.column_header:
+                return DoclangToken.CHED
+            if cell.row_header:
+                return DoclangToken.RHED
+            if cell.row_section:
+                return DoclangToken.SROW
+            return DoclangToken.FCEL
+        if cell.column_header and cell.row_header:
+            return DoclangToken.CORN
+        return DoclangToken.ECEL
 
     def _emit_otsl(
         self,
@@ -2142,6 +2215,10 @@ class DoclangTableSerializer(BaseTableSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         params: "DoclangParams",
+        row_start: int = 0,
+        row_end: Optional[int] = None,
+        col_start: int = 0,
+        col_end: Optional[int] = None,
         **kwargs: Any,
     ) -> str:
         """Emit OTSL payload using Doclang tokens and location semantics.
@@ -2149,11 +2226,17 @@ class DoclangTableSerializer(BaseTableSerializer):
         Location tokens are included only when all required information is available
         (cell bboxes, provenance, page info, valid page size). Otherwise, location
         tokens are omitted without raising errors.
+
+        Optional ``row_*`` / ``col_*`` bounds restrict output to a table fragment slice
+        (for multi-prov threading); continuation tokens (``lcel``/``ucel``/``xcel``)
+        are used at slice edges per the DocLang OTSL rules.
         """
         if not item.data or not item.data.table_cells:
             return ""
 
         nrows, ncols = item.data.num_rows, item.data.num_cols
+        row_end = nrows if row_end is None else row_end
+        col_end = ncols if col_end is None else col_end
 
         # Determine if we need page context for location serialization
         # Only proceed if all required information is available
@@ -2173,8 +2256,8 @@ class DoclangTableSerializer(BaseTableSerializer):
                         need_cell_loc = True
 
         parts: list[str] = []
-        for i in range(nrows):
-            for j in range(ncols):
+        for i in range(row_start, row_end):
+            for j in range(col_start, col_end):
                 cell = item.data.grid[i][j]
                 content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
 
@@ -2194,32 +2277,26 @@ class DoclangTableSerializer(BaseTableSerializer):
                     )
 
                 if rowstart == i and colstart == j:
-                    if content:
-                        if cell.column_header and cell.row_header:
-                            parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CORN))
-                        elif cell.column_header:
-                            parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CHED))
-                        elif cell.row_header:
-                            parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.RHED))
-                        elif cell.row_section:
-                            parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.SROW))
-                        else:
-                            parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.FCEL))
-
+                    origin = self._otsl_origin_token_for_slice(
+                        cell=cell,
+                        row_idx=i,
+                        col_idx=j,
+                        rowstart=rowstart,
+                        colstart=colstart,
+                        row_start=row_start,
+                        col_start=col_start,
+                        has_content=bool(content),
+                    )
+                    parts.append(DoclangVocabulary._create_selfclosing_token(token=origin))
+                    if content and origin != DoclangToken.ECEL:
                         if cell_loc:
                             parts.append(cell_loc)
                         if ContentType.TABLE_CELL in params.content_types:
-                            # Apply XML escaping to table cell content
                             if not isinstance(cell, RichTableCell):
                                 content = _escape_text(content, params)
-                                # Wrap in <text> tags unless use_virtual_text is True
                                 if not params.use_virtual_text:
                                     content = _wrap(text=content, wrap_tag=DoclangToken.TEXT.value)
                             parts.append(content)
-                    elif cell.column_header and cell.row_header:
-                        parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.CORN))
-                    else:
-                        parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.ECEL))
                 elif rowstart != i and colstart != j:
                     parts.append(DoclangVocabulary._create_selfclosing_token(token=DoclangToken.XCEL))
                 elif rowstart != i:
@@ -2241,6 +2318,10 @@ class DoclangTableSerializer(BaseTableSerializer):
         visited: Optional[set[str]] = None,
         thread_id: Optional[str] = None,
         include_caption_head: bool = True,
+        row_start: int = 0,
+        row_end: Optional[int] = None,
+        col_start: int = 0,
+        col_end: Optional[int] = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize one table fragment (single provenance span)."""
@@ -2264,6 +2345,10 @@ class DoclangTableSerializer(BaseTableSerializer):
                 doc_serializer=doc_serializer,
                 doc=doc,
                 params=params,
+                row_start=row_start,
+                row_end=row_end,
+                col_start=col_start,
+                col_end=col_end,
                 visited=visited,
                 **kwargs,
             )
@@ -2318,6 +2403,7 @@ class DoclangTableSerializer(BaseTableSerializer):
             thread_id = _allocate_thread_id(doc_serializer, item)
             res: list[SerializationResult] = []
             for idp, prov_ in enumerate(item.prov):
+                row_start, row_end, col_start, col_end = _table_fragment_bounds(item, idp)
                 item_ = copy.deepcopy(item)
                 item_.prov = [prov_]
                 tres = self._serialize_single_table(
@@ -2328,6 +2414,10 @@ class DoclangTableSerializer(BaseTableSerializer):
                     visited=visited,
                     thread_id=thread_id,
                     include_caption_head=idp == 0,
+                    row_start=row_start,
+                    row_end=row_end,
+                    col_start=col_start,
+                    col_end=col_end,
                     **kwargs,
                 )
                 res.append(tres)
@@ -3859,8 +3949,28 @@ class DoclangDeserializer(BaseModel):
             and (existing := self._get_thread_item(thread_id, host=table_host)) is not None
             and isinstance(existing, TableItem)
         ):
+            row_offset, col_offset = _thread_table_merge_offset(existing, tbl_provs[0]) if tbl_provs else (0, 0)
             for prov in tbl_provs:
                 existing.prov.append(prov)
+            inner = self._nodes_to_xml(body_nodes)
+            if inner.strip():
+                tbl_content = _wrap(text=inner, wrap_tag=DoclangToken.TABLE.value)
+                fragment_td = self._parse_otsl_table_content(
+                    otsl_content=tbl_content,
+                    doc=doc,
+                    parent=existing,
+                    row_offset=row_offset,
+                    col_offset=col_offset,
+                )
+                if existing.data is None:
+                    existing.data = fragment_td
+                else:
+                    _merge_table_data(
+                        base=existing.data,
+                        fragment=fragment_td,
+                        row_offset=row_offset,
+                        col_offset=col_offset,
+                    )
             return
         inner = self._nodes_to_xml(body_nodes)
         tbl = doc.add_table(
@@ -4158,6 +4268,8 @@ class DoclangDeserializer(BaseModel):
         tokens: list[str],
         doc: Optional["DoclingDocument"] = None,
         parent: Optional[NodeItem] = None,
+        row_offset: int = 0,
+        col_offset: int = 0,
     ) -> tuple[list[TableCell], list[list[str]]]:
         """Parse OTSL interleaved texts+tokens into TableCell list and row tokens."""
         # Token strings used in the stream (normalized to <name>)
@@ -4203,9 +4315,12 @@ class DoclangDeserializer(BaseModel):
                 span += 1
             return span
 
+        origin_tokens = [fcel, ecel, ched, rhed, srow, corn]
+        continuation_origin_tokens = [lcel, ucel, xcel]
+
         for i, t in enumerate(texts):
             cell_text = ""
-            if t in [fcel, ecel, ched, rhed, srow, corn]:
+            if t in origin_tokens + continuation_origin_tokens:
                 row_span = 1
                 col_span = 1
                 cell_bbox: Optional[BoundingBox] = None
@@ -4220,72 +4335,76 @@ class DoclangDeserializer(BaseModel):
                     content_idx, cell_parts = self._consume_otsl_cell_body_parts(texts, content_idx)
                     cell_text = "".join(cell_parts)
 
-                next_right = texts[content_idx] if content_idx < len(texts) else ""
-                next_bottom = (
-                    split_row_tokens[r_idx + 1][c_idx]
-                    if (r_idx + 1) < len(split_row_tokens) and c_idx < len(split_row_tokens[r_idx + 1])
-                    else ""
-                )
-
-                if next_right in [lcel, xcel]:
-                    col_span += count_right(split_row_tokens, c_idx + 1, r_idx, [lcel, xcel])
-                if next_bottom in [ucel, xcel]:
-                    row_span += count_down(split_row_tokens, c_idx, r_idx + 1, [ucel, xcel])
-
-                cell_text_stripped = cell_text.strip()
-                # Rich cell: one or more XML fragments (e.g. <text> + <list>)
-                xml_parts = [
-                    part.strip() for part in cell_parts if part.strip().startswith("<") and part.strip().endswith(">")
-                ]
-                cell_added = False
-                if xml_parts and doc is not None and parent is not None:
-                    cell_group = doc.add_group(parent=parent, label=GroupLabel.UNSPECIFIED)
-                    text_parts: list[str] = []
-                    for part in xml_parts:
-                        wrapped_xml = f"<root>{part}</root>"
-                        dom = parseString(wrapped_xml)
-                        root_el = dom.documentElement
-                        if root_el is None:
-                            raise ValueError("No document element found")
-                        for child_node in root_el.childNodes:
-                            if isinstance(child_node, Element):
-                                self._dispatch_element(doc=doc, el=child_node, parent=cell_group)
-                                text_parts.append(self._get_text(child_node))
-                    actual_text = "".join(text_parts).strip() or cell_text_stripped
-                    table_cells.append(
-                        RichTableCell(
-                            text=actual_text,
-                            row_span=row_span,
-                            col_span=col_span,
-                            start_row_offset_idx=r_idx,
-                            end_row_offset_idx=r_idx + row_span,
-                            start_col_offset_idx=c_idx,
-                            end_col_offset_idx=c_idx + col_span,
-                            ref=cell_group.get_ref(),
-                            bbox=cell_bbox,
-                        )
-                    )
-                    cell_added = True
-
-                if not cell_added:
-                    # Regular text cell
-                    table_cells.append(
-                        TableCell(
-                            text=cell_text_stripped,
-                            row_span=row_span,
-                            col_span=col_span,
-                            start_row_offset_idx=r_idx,
-                            end_row_offset_idx=r_idx + row_span,
-                            start_col_offset_idx=c_idx,
-                            end_col_offset_idx=c_idx + col_span,
-                            column_header=t in [ched, corn],
-                            row_header=t in [rhed, corn],
-                            row_section=t == srow,
-                            bbox=cell_bbox,
-                        )
+                is_continuation_origin = t in continuation_origin_tokens
+                if is_continuation_origin and not cell_text.strip() and not cell_parts:
+                    pass
+                else:
+                    next_right = texts[content_idx] if content_idx < len(texts) else ""
+                    next_bottom = (
+                        split_row_tokens[r_idx + 1][c_idx]
+                        if (r_idx + 1) < len(split_row_tokens) and c_idx < len(split_row_tokens[r_idx + 1])
+                        else ""
                     )
 
-            if t in [fcel, ecel, ched, rhed, srow, corn, lcel, ucel, xcel]:
+                    if next_right in [lcel, xcel]:
+                        col_span += count_right(split_row_tokens, c_idx + 1, r_idx, [lcel, xcel])
+                    if next_bottom in [ucel, xcel]:
+                        row_span += count_down(split_row_tokens, c_idx, r_idx + 1, [ucel, xcel])
+
+                    cell_text_stripped = cell_text.strip()
+                    xml_parts = [
+                        part.strip()
+                        for part in cell_parts
+                        if part.strip().startswith("<") and part.strip().endswith(">")
+                    ]
+                    cell_added = False
+                    if xml_parts and doc is not None and parent is not None:
+                        cell_group = doc.add_group(parent=parent, label=GroupLabel.UNSPECIFIED)
+                        text_parts: list[str] = []
+                        for part in xml_parts:
+                            wrapped_xml = f"<root>{part}</root>"
+                            dom = parseString(wrapped_xml)
+                            root_el = dom.documentElement
+                            if root_el is None:
+                                raise ValueError("No document element found")
+                            for child_node in root_el.childNodes:
+                                if isinstance(child_node, Element):
+                                    self._dispatch_element(doc=doc, el=child_node, parent=cell_group)
+                                    text_parts.append(self._get_text(child_node))
+                        actual_text = "".join(text_parts).strip() or cell_text_stripped
+                        table_cells.append(
+                            RichTableCell(
+                                text=actual_text,
+                                row_span=row_span,
+                                col_span=col_span,
+                                start_row_offset_idx=r_idx + row_offset,
+                                end_row_offset_idx=r_idx + row_span + row_offset,
+                                start_col_offset_idx=c_idx + col_offset,
+                                end_col_offset_idx=c_idx + col_span + col_offset,
+                                ref=cell_group.get_ref(),
+                                bbox=cell_bbox,
+                            )
+                        )
+                        cell_added = True
+
+                    if not cell_added:
+                        table_cells.append(
+                            TableCell(
+                                text=cell_text_stripped,
+                                row_span=row_span,
+                                col_span=col_span,
+                                start_row_offset_idx=r_idx + row_offset,
+                                end_row_offset_idx=r_idx + row_span + row_offset,
+                                start_col_offset_idx=c_idx + col_offset,
+                                end_col_offset_idx=c_idx + col_span + col_offset,
+                                column_header=t in [ched, corn],
+                                row_header=t in [rhed, corn],
+                                row_section=t == srow,
+                                bbox=cell_bbox,
+                            )
+                        )
+
+            if t in origin_tokens + continuation_origin_tokens:
                 c_idx += 1
             if t == nl:
                 r_idx += 1
@@ -4298,10 +4417,19 @@ class DoclangDeserializer(BaseModel):
         otsl_content: str,
         doc: Optional["DoclingDocument"] = None,
         parent: Optional[NodeItem] = None,
+        row_offset: int = 0,
+        col_offset: int = 0,
     ) -> TableData:
         """Parse OTSL content into TableData (inlined from utils)."""
         tokens, mixed = self._otsl_extract_tokens_and_text(otsl_content)
-        table_cells, split_rows = self._otsl_parse_texts(mixed, tokens, doc=doc, parent=parent)
+        table_cells, split_rows = self._otsl_parse_texts(
+            mixed,
+            tokens,
+            doc=doc,
+            parent=parent,
+            row_offset=row_offset,
+            col_offset=col_offset,
+        )
         return TableData(
             num_rows=len(split_rows),
             num_cols=(max(len(r) for r in split_rows) if split_rows else 0),
