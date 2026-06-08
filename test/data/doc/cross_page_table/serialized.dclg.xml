@@ -10,17 +10,6 @@
     <ched/>
     H2
     <nl/>
-    <fcel/>
-    A
-    <fcel/>
-    B
-    <nl/>
-    <ecel/>
-    <ecel/>
-    <nl/>
-    <ecel/>
-    <ecel/>
-    <nl/>
   </table>
   <page_break/>
   <table>
@@ -29,21 +18,10 @@
     <location value="10"/>
     <location value="400"/>
     <location value="200"/>
-    <ched/>
-    H1
-    <ched/>
-    H2
-    <nl/>
     <fcel/>
     A
     <fcel/>
     B
-    <nl/>
-    <ecel/>
-    <ecel/>
-    <nl/>
-    <ecel/>
-    <ecel/>
     <nl/>
   </table>
 </doclang>
