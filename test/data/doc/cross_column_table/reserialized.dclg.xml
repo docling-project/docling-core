@@ -1,0 +1,48 @@
+<doclang>
+  <table>
+    <thread thread_id="1"/>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="200"/>
+    <location value="200"/>
+    <fcel/>
+    X
+    <fcel/>
+    Y
+    <nl/>
+    <fcel/>
+    1
+    <fcel/>
+    2
+    <nl/>
+    <ecel/>
+    <ecel/>
+    <nl/>
+    <ecel/>
+    <ecel/>
+    <nl/>
+  </table>
+  <table>
+    <thread thread_id="1"/>
+    <location value="220"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="200"/>
+    <fcel/>
+    X
+    <fcel/>
+    Y
+    <nl/>
+    <fcel/>
+    1
+    <fcel/>
+    2
+    <nl/>
+    <ecel/>
+    <ecel/>
+    <nl/>
+    <ecel/>
+    <ecel/>
+    <nl/>
+  </table>
+</doclang>

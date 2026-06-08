@@ -34,6 +34,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _PageBreakNode,
     create_ser_result,
 )
 from docling_core.types.doc import (
@@ -257,8 +258,7 @@ def _create_location_tokens_for_item(
         bbox = prov.bbox.to_top_left_origin(page_h).as_tuple()
         out.append(_create_location_tokens_for_bbox(bbox=bbox, page_w=page_w, page_h=page_h, xres=xres, yres=yres))
 
-    # In a proper serialization, we should use <thread id="1|2|3|...|"/> to link different
-    # sections together ...
+    # Multi-provocation items emit one location set per fragment; callers thread fragments.
     if len(out) > 1:
         res = []
         for i, _ in enumerate(item.prov):
@@ -268,6 +268,59 @@ def _create_location_tokens_for_item(
         raise ValueError(f"We have more than 1 location for this item [{item.label}]:\n\n{err}\n\n{out}")
 
     return "".join(out)
+
+
+def _create_page_break_markup(node: _PageBreakNode) -> str:
+    """Return the internal page-break placeholder replaced in ``serialize_doc``."""
+    return f"#_#_DOCLING_DOC_PAGE_BREAK_{node.prev_page}_{node.next_page}_#_#"
+
+
+def _suppress_document_page_break(
+    doc_serializer: BaseDocSerializer,
+    *,
+    prev_page: int,
+    next_page: int,
+) -> None:
+    """Skip a duplicate document-level page break already emitted by list/table threading."""
+    if isinstance(doc_serializer, DoclangDocSerializer):
+        doc_serializer._suppressed_page_breaks.add((prev_page, next_page))
+
+
+def _allocate_thread_id(doc_serializer: BaseDocSerializer, node: NodeItem) -> str:
+    """Allocate a document-scoped positive ``thread_id`` in reading order."""
+    if isinstance(doc_serializer, DoclangDocSerializer):
+        return doc_serializer.allocate_thread_id(node)
+    raise TypeError("Doclang threading requires DoclangDocSerializer")
+
+
+def _primary_page_no(node: NodeItem) -> Optional[int]:
+    """Return the primary page number for a document item, if known."""
+    if isinstance(node, DocItem) and node.prov:
+        return node.prov[0].page_no
+    return None
+
+
+def _provenance_with_charspan(prov_list: list[ProvenanceItem], charspan: tuple[int, int]) -> list[ProvenanceItem]:
+    """Return provenance copies with the given ``charspan``."""
+    return [ProvenanceItem(page_no=prov.page_no, bbox=prov.bbox, charspan=charspan) for prov in prov_list]
+
+
+def _append_textual_fragment(
+    item: TextItem,
+    *,
+    text: str,
+    prov_list: list[ProvenanceItem],
+) -> None:
+    """Append a threaded fragment to a text-like item, updating ``charspan`` offsets."""
+    offset = len(item.orig)
+    if text:
+        item.text += text
+        item.orig += text
+    span = (offset, offset + len(text))
+    for prov in prov_list:
+        item.prov.append(
+            ProvenanceItem(page_no=prov.page_no, bbox=prov.bbox, charspan=span),
+        )
 
 
 class DoclangCategory(str, Enum):
@@ -357,7 +410,6 @@ class DoclangToken(str, Enum):
 
     # Continuation
     THREAD = "thread"
-    H_THREAD = "h_thread"
     HREF = "href"
     XREF = "xref"
 
@@ -380,7 +432,7 @@ class DoclangAttributeKey(str, Enum):
     ORDERED = "ordered"
     TYPE = "type"
     CLASS = "class"
-    ID = "id"
+    THREAD_ID = "thread_id"
     URI = "uri"
 
 
@@ -430,8 +482,8 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL},
         DoclangToken.CHECKBOX: {DoclangAttributeKey.CLASS},
         DoclangToken.LIST: {DoclangAttributeKey.CLASS},
-        DoclangToken.THREAD: {DoclangAttributeKey.ID},
-        DoclangToken.H_THREAD: {DoclangAttributeKey.ID},
+        DoclangToken.THREAD: {DoclangAttributeKey.THREAD_ID},
+        DoclangToken.XREF: {DoclangAttributeKey.THREAD_ID},
     }
 
     # Allowed values for specific attributes (enumerations)
@@ -455,7 +507,7 @@ class DoclangVocabulary(BaseModel):
                 DoclangAttributeValue.UNSELECTED,
             }
         },
-        # Other attributes (e.g., level, type, id) are not enumerated here
+        # Other attributes (e.g., level, type, thread_id) are not enumerated here
     }
 
     ALLOWED_ATTRIBUTE_RANGE: ClassVar[dict[DoclangToken, dict["DoclangAttributeKey", tuple[int, int]]]] = {
@@ -476,9 +528,9 @@ class DoclangVocabulary(BaseModel):
         # Levels (N ≥ 1)
         DoclangToken.HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
         DoclangToken.FIELD_HEADING: {DoclangAttributeKey.LEVEL: (1, 6)},
-        # Continuation markers (id length constraints)
-        DoclangToken.THREAD: {DoclangAttributeKey.ID: (1, 10)},
-        DoclangToken.H_THREAD: {DoclangAttributeKey.ID: (1, 10)},
+        # Continuation markers (thread_id length constraints)
+        DoclangToken.THREAD: {DoclangAttributeKey.THREAD_ID: (1, 10)},
+        DoclangToken.XREF: {DoclangAttributeKey.THREAD_ID: (1, 10)},
     }
 
     # Self-closing tokens set
@@ -509,7 +561,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.NL,
         # Continuation markers
         DoclangToken.THREAD,
-        DoclangToken.H_THREAD,
     }
 
     # Token to category mapping
@@ -572,7 +623,6 @@ class DoclangVocabulary(BaseModel):
         DoclangToken.FIELD_VALUE: DoclangCategory.STRUCTURAL,
         # Continuation
         DoclangToken.THREAD: DoclangCategory.CONTINUATION,
-        DoclangToken.H_THREAD: DoclangCategory.CONTINUATION,
         # Content/Binary data
         DoclangToken.HREF: DoclangCategory.CONTENT,
         DoclangToken.XREF: DoclangCategory.CONTENT,
@@ -666,24 +716,21 @@ class DoclangVocabulary(BaseModel):
             return f"<{' '.join(parts)}>"
 
     @classmethod
-    def _create_threading_token(cls, *, id: str, horizontal: bool = False) -> str:
-        """Create a continuation threading token.
+    def _create_threading_token(cls, *, thread_id: str) -> str:
+        """Create a vertical continuation threading token.
 
-        Emits `<thread id="..."/>` or `<h_thread id="..."/>` depending on
-        the `horizontal` flag. Validates required attributes against the
-        class schema and basic value sanity.
+        Emits `<thread thread_id="..."/>`. Validates required attributes
+        against the class schema and basic value sanity.
         """
-        token = DoclangToken.H_THREAD if horizontal else DoclangToken.THREAD
-        # Ensure the required attribute is declared for this token
-        assert DoclangAttributeKey.ID in cls.ALLOWED_ATTRIBUTES.get(token, set())
+        token = DoclangToken.THREAD
+        assert DoclangAttributeKey.THREAD_ID in cls.ALLOWED_ATTRIBUTES.get(token, set())
 
-        # Validate id length if a range is specified
-        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token][DoclangAttributeKey.ID]
-        length = len(id)
+        lo, hi = cls.ALLOWED_ATTRIBUTE_RANGE[token][DoclangAttributeKey.THREAD_ID]
+        length = len(thread_id)
         if not (lo <= length <= hi):
-            raise ValueError(f"id length must be in [{lo}, {hi}]")
+            raise ValueError(f"thread_id length must be in [{lo}, {hi}]")
 
-        return f'<{token.value} {DoclangAttributeKey.ID.value}="{id}"/>'
+        return f'<{token.value} {DoclangAttributeKey.THREAD_ID.value}="{thread_id}"/>'
 
     @classmethod
     def _create_group_token(cls, *, closing: bool = False) -> str:
@@ -1086,11 +1133,14 @@ def _element_head_prefix(
     caption_text: Optional[str] = None,
     custom_text: Optional[str] = None,
     include_href: bool = True,
+    thread_id: Optional[str] = None,
 ) -> str:
-    """Emit element-head property elements in XSD order (label → layer → href → location → caption → custom)."""
+    """Emit element-head property elements in XSD order (label → thread → href → layer → location → caption → custom)."""
     parts: list[str] = []
     if label_value:
         parts.append(_create_label_token(value=label_value))
+    if thread_id:
+        parts.append(DoclangVocabulary._create_threading_token(thread_id=thread_id))
     if layer_token := _create_layer_token(item=item, params=params):
         parts.append(layer_token)
     if include_href and (href_uri := _text_item_hyperlink_uri(item)):
@@ -1233,7 +1283,7 @@ _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
         DoclangToken.CAPTION.value,
         DoclangToken.CUSTOM.value,
         DoclangToken.THREAD.value,
-        DoclangToken.H_THREAD.value,
+        DoclangToken.XREF.value,
         DoclangToken.HOUR.value,
         DoclangToken.MINUTE.value,
         DoclangToken.SECOND.value,
@@ -1289,7 +1339,7 @@ class DoclangListSerializer(BaseModel, BaseListSerializer):
         # 3) Still ensure structural wrappers are preserved even when
         #    content is suppressed (e.g., add_content=False).
         item_results: list[SerializationResult] = []
-        child_texts: list[str] = []
+        child_segments: list[tuple[str, Optional[int]]] = []
 
         excluded = doc_serializer.get_excluded_refs(**kwargs)
         for child_ref in item.children:
@@ -1309,7 +1359,7 @@ class DoclangListSerializer(BaseModel, BaseListSerializer):
                     **kwargs,
                 )
                 if sub_res.text:
-                    child_texts.append(sub_res.text)
+                    child_segments.append((sub_res.text, None))
                 item_results.append(sub_res)
                 continue
 
@@ -1332,7 +1382,7 @@ class DoclangListSerializer(BaseModel, BaseListSerializer):
             )
             item_results.append(child_res)
             if child_res.text:
-                child_texts.append(child_res.text)
+                child_segments.append((child_res.text, _primary_page_no(child)))
 
             # After the <ldiv>, append nested lists and pictures (children of this
             # ListItem) as siblings at the same level (not wrapped in <ldiv>).
@@ -1351,22 +1401,70 @@ class DoclangListSerializer(BaseModel, BaseListSerializer):
                     **kwargs,
                 )
                 if sub_res.text:
-                    child_texts.append(sub_res.text)
+                    child_segments.append((sub_res.text, _primary_page_no(sub) if isinstance(sub, DocItem) else None))
                 item_results.append(sub_res)
 
         delim = _get_delim(params=params)
-        if child_texts:
+        if not child_segments:
+            return create_ser_result(text="", span_source=item_results)
+
+        ordered = item.first_item_is_enumerated(doc)
+        list_close = f"</{DoclangToken.LIST.value}>"
+        spans_pages = any(
+            child_segments[i][1] is not None
+            and child_segments[i + 1][1] is not None
+            and child_segments[i][1] != child_segments[i + 1][1]
+            for i in range(len(child_segments) - 1)
+        )
+
+        if not spans_pages:
+            child_texts = [text for text, _ in child_segments if text]
             text_res = delim.join(child_texts)
             text_res = f"{text_res}{delim}"
             open_token = (
                 DoclangVocabulary._create_list_token(ordered=True)
-                if item.first_item_is_enumerated(doc)
+                if ordered
                 else DoclangVocabulary._create_list_token(ordered=False)
             )
             text_res = _wrap_token(text=text_res, open_token=open_token)
-        else:
-            text_res = ""
-        return create_ser_result(text=text_res, span_source=item_results)
+            return create_ser_result(text=text_res, span_source=item_results)
+
+        thread_id = _allocate_thread_id(doc_serializer, item)
+        out_parts: list[str] = []
+        current_block: list[str] = []
+        current_page: Optional[int] = None
+        for text, page_no in child_segments:
+            if current_block and page_no is not None and current_page is not None and page_no != current_page:
+                list_open = DoclangVocabulary._create_list_token(
+                    ordered=ordered
+                ) + DoclangVocabulary._create_threading_token(thread_id=thread_id)
+                block_text = delim.join(current_block)
+                out_parts.append(f"{list_open}{block_text}{delim}{list_close}")
+                pb = _PageBreakNode(
+                    self_ref=f"#/pb/{len(out_parts)}",
+                    prev_page=current_page,
+                    next_page=page_no,
+                )
+                _suppress_document_page_break(
+                    doc_serializer,
+                    prev_page=current_page,
+                    next_page=page_no,
+                )
+                out_parts.append(_create_page_break_markup(pb))
+                current_block = []
+            if text:
+                current_block.append(text)
+            if page_no is not None:
+                current_page = page_no
+
+        if current_block:
+            list_open = DoclangVocabulary._create_list_token(
+                ordered=ordered
+            ) + DoclangVocabulary._create_threading_token(thread_id=thread_id)
+            block_text = delim.join(current_block)
+            out_parts.append(f"{list_open}{block_text}{delim}{list_close}")
+
+        return create_ser_result(text="".join(out_parts), span_source=item_results)
 
 
 # Linguist v9.5.0 language keys for DocLang code labels:
@@ -1494,12 +1592,11 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         Returns:
             SerializationResult containing the serialized text and span mappings.
         """
-        if len(item.prov) > 1:
-            # Split multi-provenance items into per-provenance items to preserve
-            # geometry and spans, then merge text while keeping span mapping.
-
-            # FIXME: if we have an inline group with a multi-provenance, then
-            # we will need to do something more complex I believe ...
+        if len(item.prov) > 1 and not isinstance(item, ListItem):
+            # Split multi-provenance items into per-provenance fragments linked by
+            # a shared thread_id; insert page breaks when page_no changes.
+            # List items are not split here; cross-page lists are handled at list-group level.
+            thread_id = _allocate_thread_id(doc_serializer, item)
             res: list[SerializationResult] = []
             for idp, prov_ in enumerate(item.prov):
                 item_ = copy.deepcopy(item)
@@ -1519,12 +1616,27 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                     doc=doc,
                     visited=visited,
                     is_inline_scope=is_inline_scope,
+                    thread_id=thread_id,
                     **kwargs,
                 )
                 res.append(tres)
 
-            out = "".join([t.text for t in res])
-            return create_ser_result(text=out, span_source=res)
+            out_parts: list[str] = []
+            for idp, tres in enumerate(res):
+                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                    pb = _PageBreakNode(
+                        self_ref=f"#/pb/{idp}",
+                        prev_page=item.prov[idp - 1].page_no,
+                        next_page=item.prov[idp].page_no,
+                    )
+                    _suppress_document_page_break(
+                        doc_serializer,
+                        prev_page=item.prov[idp - 1].page_no,
+                        next_page=item.prov[idp].page_no,
+                    )
+                    out_parts.append(_create_page_break_markup(pb))
+                out_parts.append(tres.text)
+            return create_ser_result(text="".join(out_parts), span_source=res)
 
         else:
             return self._serialize_single_item(
@@ -1595,6 +1707,7 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
         doc: DoclingDocument,
         is_inline_scope: bool = False,
         visited: Optional[set[str]] = None,
+        thread_id: Optional[str] = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a ``TextItem`` into Doclang markup.
@@ -1723,11 +1836,14 @@ class DoclangTextSerializer(BaseModel, BaseTextSerializer):
                     label_value=code_label,
                     custom_text=custom_head or None,
                     include_href=include_href,
+                    thread_id=thread_id,
                 )
             )
         else:
             if code_label:
                 parts.append(_create_label_token(value=code_label))
+            if thread_id:
+                parts.append(DoclangVocabulary._create_threading_token(thread_id=thread_id))
             if layer_token := _create_layer_token(item=item, params=params):
                 parts.append(layer_token)
             if include_href and (href_uri := _text_item_hyperlink_uri(item)):
@@ -2115,30 +2231,30 @@ class DoclangTableSerializer(BaseTableSerializer):
 
         return "".join(parts)
 
-    @override
-    def serialize(
+    def _serialize_single_table(
         self,
         *,
         item: TableItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        params: DoclangParams,
         visited: Optional[set[str]] = None,
+        thread_id: Optional[str] = None,
+        include_caption_head: bool = True,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serializes the passed item."""
-        params = DoclangParams(**kwargs)
-
+        """Serialize one table fragment (single provenance span)."""
         from docling_core.types.doc.labels import DocItemLabel
 
         res_parts: list[SerializationResult] = []
-        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
-            return create_ser_result()
 
-        caption_head = _serialize_floating_caption_head(
-            item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
-        )
-        if caption_head:
-            res_parts.append(create_ser_result(text=caption_head))
+        caption_head = ""
+        if include_caption_head:
+            caption_head = _serialize_floating_caption_head(
+                item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+            )
+            if caption_head:
+                res_parts.append(create_ser_result(text=caption_head))
 
         host_token = DoclangToken.INDEX if item.label == DocItemLabel.DOCUMENT_INDEX else DoclangToken.TABLE
         inner_parts: list[str] = []
@@ -2159,12 +2275,13 @@ class DoclangTableSerializer(BaseTableSerializer):
             doc=doc,
             params=params,
             caption_text=caption_head or None,
+            thread_id=thread_id,
         )
         table_text = _wrap(text=head + "".join(inner_parts), wrap_tag=host_token.value)
         res_parts.append(create_ser_result(text=head + "".join(inner_parts), span_source=item))
 
         footnote_text = ""
-        if params.add_referenced_footnote:
+        if include_caption_head and params.add_referenced_footnote:
             ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
             if ftn_res.text:
                 footnote_text = ftn_res.text
@@ -2180,6 +2297,66 @@ class DoclangTableSerializer(BaseTableSerializer):
             text_res = table_text
 
         return create_ser_result(text=text_res, span_source=res_parts)
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        params = DoclangParams(**kwargs)
+
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return create_ser_result()
+
+        if len(item.prov) > 1:
+            thread_id = _allocate_thread_id(doc_serializer, item)
+            res: list[SerializationResult] = []
+            for idp, prov_ in enumerate(item.prov):
+                item_ = copy.deepcopy(item)
+                item_.prov = [prov_]
+                tres = self._serialize_single_table(
+                    item=item_,
+                    doc_serializer=doc_serializer,
+                    doc=doc,
+                    params=params,
+                    visited=visited,
+                    thread_id=thread_id,
+                    include_caption_head=idp == 0,
+                    **kwargs,
+                )
+                res.append(tres)
+
+            out_parts: list[str] = []
+            for idp, tres in enumerate(res):
+                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                    pb = _PageBreakNode(
+                        self_ref=f"#/pb/{idp}",
+                        prev_page=item.prov[idp - 1].page_no,
+                        next_page=item.prov[idp].page_no,
+                    )
+                    _suppress_document_page_break(
+                        doc_serializer,
+                        prev_page=item.prov[idp - 1].page_no,
+                        next_page=item.prov[idp].page_no,
+                    )
+                    out_parts.append(_create_page_break_markup(pb))
+                out_parts.append(tres.text)
+            return create_ser_result(text="".join(out_parts), span_source=res)
+
+        return self._serialize_single_table(
+            item=item,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            params=params,
+            visited=visited,
+            **kwargs,
+        )
 
 
 class DoclangInlineSerializer(BaseInlineSerializer):
@@ -2356,6 +2533,43 @@ class DoclangAnnotationSerializer(BaseAnnotationSerializer):
 class DoclangDocSerializer(DocSerializer):
     """Doclang document serializer."""
 
+    _suppressed_page_breaks: set[tuple[int, int]] = PrivateAttr(default_factory=set)
+    _next_thread_id: int = PrivateAttr(default=1)
+    _thread_id_by_ref: dict[str, str] = PrivateAttr(default_factory=dict)
+
+    def allocate_thread_id(self, node: NodeItem) -> str:
+        """Return a spec-unique positive ``thread_id`` for a fragmented component."""
+        if node.self_ref in self._thread_id_by_ref:
+            return self._thread_id_by_ref[node.self_ref]
+        thread_id = str(self._next_thread_id)
+        self._next_thread_id += 1
+        self._thread_id_by_ref[node.self_ref] = thread_id
+        return thread_id
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: Optional[NodeItem] = None,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: Optional[set[str]] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a node, suppressing redundant page breaks already emitted by list/table threading."""
+        if isinstance(item, _PageBreakNode):
+            key = (item.prev_page, item.next_page)
+            if key in self._suppressed_page_breaks:
+                self._suppressed_page_breaks.discard(key)
+                return create_ser_result()
+        return super().serialize(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=is_inline_scope,
+            visited=visited,
+            **kwargs,
+        )
+
     @override
     def serialize_hyperlink(
         self,
@@ -2474,6 +2688,10 @@ class DoclangDocSerializer(DocSerializer):
 
     def _serialize_body(self, **kwargs) -> SerializationResult:
         """Serialize the document body."""
+
+        self._suppressed_page_breaks = set()
+        self._next_thread_id = 1
+        self._thread_id_by_ref = {}
 
         # intercept from DoclangDocSerializer to update param kwargs:
         my_delta = {}
@@ -2635,6 +2853,10 @@ class DoclangDeserializer(BaseModel):
     # Internal state used while walking the tree (private instance attributes)
     _page_no: int = PrivateAttr(default=1)
     _default_resolution: int = PrivateAttr(default=DOCLANG_DFLT_RESOLUTION)
+    _thread_registry: dict[tuple[str, str], NodeItem] = PrivateAttr(default_factory=dict)
+
+    def _thread_registry_key(self, *, thread_id: str, host: str) -> tuple[str, str]:
+        return (thread_id, host)
 
     def deserialize(
         self,
@@ -2667,9 +2889,92 @@ class DoclangDeserializer(BaseModel):
         doc = DoclingDocument(name="Document")
         self._page_no = page_no
         self._default_resolution = DOCLANG_DFLT_RESOLUTION
+        self._thread_registry = {}
         self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
         self._parse_document_root(doc=doc, root=root)
         return doc
+
+    def _extract_thread_id_from_nodes(self, nodes: Sequence[Node]) -> Optional[str]:
+        """Read ``thread_id`` from a ``<thread/>`` element in a node sequence."""
+        for node in nodes:
+            if isinstance(node, Element) and node.tagName == DoclangToken.THREAD.value:
+                thread_id = node.getAttribute(DoclangAttributeKey.THREAD_ID.value)
+                if thread_id:
+                    return thread_id
+        return None
+
+    def _extract_thread_id(self, el: Element) -> Optional[str]:
+        """Read ``thread_id`` from an element head."""
+        head_nodes, _ = self._split_element_children_head_body(el)
+        return self._extract_thread_id_from_nodes(head_nodes)
+
+    def _register_thread(self, *, thread_id: str, host: str, item: NodeItem) -> None:
+        self._thread_registry[self._thread_registry_key(thread_id=thread_id, host=host)] = item
+
+    def _get_thread_item(self, thread_id: str, *, host: str) -> Optional[NodeItem]:
+        return self._thread_registry.get(self._thread_registry_key(thread_id=thread_id, host=host))
+
+    def _advance_page_break(self, *, doc: DoclingDocument) -> None:
+        self._page_no += 1
+        self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
+
+    def _provenance_from_nodes_with_page_breaks(
+        self,
+        *,
+        doc: DoclingDocument,
+        nodes: Sequence[Node],
+    ) -> list[ProvenanceItem]:
+        """Collect provenance quartets, advancing ``_page_no`` at ``<page_break/>``."""
+        provs: list[ProvenanceItem] = []
+        batch: list[Node] = []
+        for node in nodes:
+            if isinstance(node, Element) and node.tagName == DoclangToken.PAGE_BREAK.value:
+                provs.extend(self._provenance_from_location_nodes(doc=doc, nodes=batch))
+                batch = []
+                self._advance_page_break(doc=doc)
+            elif isinstance(node, Element) and node.tagName == DoclangToken.LOCATION.value:
+                batch.append(node)
+        provs.extend(self._provenance_from_location_nodes(doc=doc, nodes=batch))
+        return provs
+
+    def _virtual_text_from_nodes_with_page_breaks(self, nodes: Sequence[Node]) -> str:
+        """Extract virtual-text payload, ignoring element-head tokens and page breaks."""
+        parts: list[str] = []
+        for node in nodes:
+            if isinstance(node, Element) and node.tagName == DoclangToken.PAGE_BREAK.value:
+                continue
+            if isinstance(node, Element) and self._is_element_head_tag(node):
+                continue
+            if isinstance(node, Text):
+                if not node.data.strip():
+                    continue
+                parts.append(node.data)
+            elif isinstance(node, Element) and node.tagName == DoclangToken.CONTENT.value:
+                parts.append(self._get_text(node))
+        return "".join(parts)
+
+    def _merge_threaded_text_item(
+        self,
+        *,
+        text: str,
+        prov_list: list[ProvenanceItem],
+        existing: TextItem,
+    ) -> TextItem:
+        _append_textual_fragment(existing, text=text, prov_list=prov_list)
+        return existing
+
+    def _apply_initial_text_provenance(
+        self,
+        item: TextItem,
+        *,
+        text: str,
+        prov_list: list[ProvenanceItem],
+    ) -> None:
+        if not prov_list:
+            return
+        item.prov = _provenance_with_charspan(prov_list[:1], (0, len(text)))
+        for prov in prov_list[1:]:
+            item.prov.append(prov)
 
     # ------------- Core walkers -------------
     def _parse_document_root(self, *, doc: DoclingDocument, root: Element) -> None:
@@ -2747,6 +3052,8 @@ class DoclangDeserializer(BaseModel):
         result = None
         for el in element.childNodes:
             if isinstance(el, Element):
+                if self._is_element_head_tag(el):
+                    continue
                 if el.tagName not in {
                     DoclangToken.LOCATION.value,
                     DoclangToken.LAYER.value,
@@ -2779,7 +3086,9 @@ class DoclangDeserializer(BaseModel):
             node for node in el.childNodes if isinstance(node, Element) and not self._is_element_head_tag(node)
         ]
 
-        if len(element_children) > 1 or self._get_children_simple_text_block(el) is None:
+        thread_id = self._extract_thread_id(el)
+        simple_text = self._get_children_simple_text_block(el)
+        if len(element_children) > 1 or (simple_text is None and thread_id is None):
             self._parse_inline_group(doc=doc, el=el, parent=parent)
             return
 
@@ -2787,6 +3096,13 @@ class DoclangDeserializer(BaseModel):
         content_layer = self._extract_layer(el=el)
         text, formatting = self._extract_text_with_formatting(el)
         if not text:
+            if (
+                thread_id
+                and (existing := self._get_thread_item(thread_id, host=el.tagName)) is not None
+                and isinstance(existing, TextItem)
+            ):
+                if prov_list:
+                    self._merge_threaded_text_item(text="", prov_list=prov_list, existing=existing)
             return
 
         nm = el.tagName
@@ -2796,6 +3112,13 @@ class DoclangDeserializer(BaseModel):
             code_text, lang_label = self._extract_code_content_and_language(el)
             if not code_text.strip():
                 return
+            if (
+                thread_id
+                and (existing := self._get_thread_item(thread_id, host=nm)) is not None
+                and isinstance(existing, CodeItem)
+            ):
+                self._merge_threaded_text_item(text=code_text, prov_list=prov_list, existing=existing)
+                return
             item = doc.add_code(
                 text=code_text,
                 code_language=lang_label,
@@ -2803,8 +3126,9 @@ class DoclangDeserializer(BaseModel):
                 prov=(prov_list[0] if prov_list else None),
                 content_layer=content_layer,
             )
-            for p in prov_list[1:]:
-                item.prov.append(p)
+            self._apply_initial_text_provenance(item, text=code_text, prov_list=prov_list)
+            if thread_id:
+                self._register_thread(thread_id=thread_id, host=nm, item=item)
 
         # Map text-like tokens to text item labels
         elif nm in (
@@ -2861,6 +3185,13 @@ class DoclangDeserializer(BaseModel):
                         elif checkbox_class == DoclangAttributeValue.UNSELECTED.value:
                             label = DocItemLabel.CHECKBOX_UNSELECTED
                             break
+            if (
+                thread_id
+                and (existing := self._get_thread_item(thread_id, host=nm)) is not None
+                and isinstance(existing, TextItem)
+            ):
+                self._merge_threaded_text_item(text=text, prov_list=prov_list, existing=existing)
+                return
             item = doc.add_text(
                 label=label,
                 text=text,
@@ -2869,18 +3200,27 @@ class DoclangDeserializer(BaseModel):
                 formatting=formatting,
                 content_layer=content_layer,
             )
-            for p in prov_list[1:]:
-                item.prov.append(p)
+            self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
+            if thread_id:
+                self._register_thread(thread_id=thread_id, host=nm, item=item)
 
         elif nm == DoclangToken.FORMULA.value:
+            if (
+                thread_id
+                and (existing := self._get_thread_item(thread_id, host=nm)) is not None
+                and isinstance(existing, FormulaItem)
+            ):
+                self._merge_threaded_text_item(text=text, prov_list=prov_list, existing=existing)
+                return
             item = doc.add_formula(
                 text=text,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
                 formatting=formatting,
             )
-            for p in prov_list[1:]:
-                item.prov.append(p)
+            self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
+            if thread_id:
+                self._register_thread(thread_id=thread_id, host=nm, item=item)
 
     def _extract_code_content_and_language(self, el: Element) -> tuple[str, CodeLanguageLabel]:
         """Extract code content and language from a <code> element."""
@@ -2923,6 +3263,14 @@ class DoclangDeserializer(BaseModel):
         text = self._get_text(el)
         text_stripped = text.strip()
         if text_stripped:
+            thread_id = self._extract_thread_id(el)
+            if (
+                thread_id
+                and (existing := self._get_thread_item(thread_id, host=DoclangToken.HEADING.value)) is not None
+                and isinstance(existing, TextItem)
+            ):
+                self._merge_threaded_text_item(text=text_stripped, prov_list=prov_list, existing=existing)
+                return
             # Level 1 maps to TitleItem, level > 1 maps to SectionHeaderItem with level-1
             if level == 1:
                 item = doc.add_title(
@@ -2939,8 +3287,9 @@ class DoclangDeserializer(BaseModel):
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
                 )
-            for p in prov_list[1:]:
-                item.prov.append(p)
+            self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
+            if thread_id:
+                self._register_thread(thread_id=thread_id, host=DoclangToken.HEADING.value, item=item)
 
     def _parse_field_heading(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         lvl_txt = el.getAttribute(DoclangAttributeKey.LEVEL.value) or "1"
@@ -2953,6 +3302,14 @@ class DoclangDeserializer(BaseModel):
         text = self._get_text(el)
         text_stripped = text.strip()
         if text_stripped:
+            thread_id = self._extract_thread_id(el)
+            if (
+                thread_id
+                and (existing := self._get_thread_item(thread_id, host=DoclangToken.FIELD_HEADING.value)) is not None
+                and isinstance(existing, TextItem)
+            ):
+                self._merge_threaded_text_item(text=text_stripped, prov_list=prov_list, existing=existing)
+                return
             item = doc.add_field_heading(
                 text=text_stripped,
                 level=level,
@@ -2960,8 +3317,9 @@ class DoclangDeserializer(BaseModel):
                 prov=(prov_list[0] if prov_list else None),
                 content_layer=content_layer,
             )
-            for p in prov_list[1:]:
-                item.prov.append(p)
+            self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
+            if thread_id:
+                self._register_thread(thread_id=thread_id, host=DoclangToken.FIELD_HEADING.value, item=item)
 
     def _first_non_whitespace_node(self, nodes: Sequence[Node]) -> Optional[Node]:
         """Return the first node that is not whitespace-only text."""
@@ -3242,13 +3600,23 @@ class DoclangDeserializer(BaseModel):
             marker=marker,
             prov=(prov_list[0] if prov_list else None),
         )
-        for prov in prov_list[1:]:
-            item.prov.append(prov)
+        self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
         return item
 
     def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         ordered = el.getAttribute(DoclangAttributeKey.CLASS.value) == DoclangAttributeValue.ORDERED.value
-        li_group = doc.add_list_group(parent=parent)
+        list_head_nodes = [node for node in el.childNodes if isinstance(node, Element)]
+        thread_id = self._extract_thread_id_from_nodes(list_head_nodes)
+        if (
+            thread_id
+            and (existing := self._get_thread_item(thread_id, host=DoclangToken.LIST.value)) is not None
+            and isinstance(existing, ListGroup)
+        ):
+            li_group = existing
+        else:
+            li_group = doc.add_list_group(parent=parent)
+            if thread_id:
+                self._register_thread(thread_id=thread_id, host=DoclangToken.LIST.value, item=li_group)
         actual_children = [
             ch for ch in el.childNodes if isinstance(ch, Element) and ch.tagName not in {DoclangToken.LOCATION.value}
         ]
@@ -3484,6 +3852,16 @@ class DoclangDeserializer(BaseModel):
         head_nodes, body_nodes = self._split_element_children_head_body(otsl_el)
         tbl_provs = self._provenance_from_location_nodes(doc=doc, nodes=head_nodes)
         content_layer = self._layer_from_nodes(head_nodes)
+        thread_id = self._extract_thread_id_from_nodes(head_nodes)
+        table_host = otsl_el.tagName
+        if (
+            thread_id
+            and (existing := self._get_thread_item(thread_id, host=table_host)) is not None
+            and isinstance(existing, TableItem)
+        ):
+            for prov in tbl_provs:
+                existing.prov.append(prov)
+            return
         inner = self._nodes_to_xml(body_nodes)
         tbl = doc.add_table(
             data=TableData(),
@@ -3498,6 +3876,8 @@ class DoclangDeserializer(BaseModel):
         tbl.data = td
         for p in tbl_provs[1:]:
             tbl.prov.append(p)
+        if thread_id:
+            self._register_thread(thread_id=thread_id, host=table_host, item=tbl)
         for ftn in footnotes:
             tbl.footnotes.append(ftn.get_ref())
 

@@ -1,0 +1,19 @@
+<doclang>
+  <text>
+    <thread thread_id="1"/>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="50"/>
+    <content>This paragraph starts on page one and </content>
+  </text>
+  <page_break/>
+  <text>
+    <thread thread_id="1"/>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="50"/>
+    continues on page two.
+  </text>
+</doclang>

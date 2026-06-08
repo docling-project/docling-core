@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+from typing import Callable
 
 import pytest
 
@@ -30,7 +31,16 @@ from docling_core.types.doc.document import GroupLabel
 from test.doclang_validation import assert_valid_dclg_xml, doclang_validator
 from test.test_data_gen_flag import GEN_TEST_DATA
 from test.test_serialization_doctag import verify
-from test.test_serialization_doclang import _verify_doc, add_list_section, add_texts_section
+from test.test_serialization_doclang import (
+    _doc_cross_page_list,
+    _doc_cross_page_paragraph,
+    _doc_cross_page_table,
+    _doc_cross_column_table,
+    _doc_multi_prov_text,
+    _verify_doc,
+    add_list_section,
+    add_texts_section,
+)
 
 DO_PRINT: bool = False
 
@@ -1689,9 +1699,6 @@ def test_constructed_doc(sample_doc: DoclingDocument):
     verify(exp_reserialized_dt_file, dt2)
 
 
-@pytest.mark.xfail(
-    reason="Known feature incompletenes in deseralization"
-)
 def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
     doc = rich_table_doc
 
@@ -1894,6 +1901,64 @@ def test_roundtrip_document_index_table():
     assert doc2.tables[0].data.num_cols == 2
     assert doc2.tables[1].data.num_rows == 2
     assert doc2.tables[1].data.num_cols == 2
+
+
+def _thread_roundtrip(
+    *,
+    name: str,
+    doc_factory: Callable[[], DoclingDocument],
+    page_breaks: int = 0,
+) -> None:
+    """Round-trip a threaded document fixture through serialize → deserialize → reserialize."""
+    data_dir = Path(__file__).parent / "data" / "doc" / name
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = doc_factory()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize(doc)
+    verify(serialized_dclg, dt)
+    if page_breaks:
+        assert dt.count("<page_break") == page_breaks
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize(doc2)
+    verify(reserialized_dclg, dt2)
+
+
+@doclang_validator
+def test_cross_page_paragraph_roundtrip():
+    """Round-trip a cross-page threaded paragraph."""
+    _thread_roundtrip(name="cross_page_paragraph", doc_factory=_doc_cross_page_paragraph, page_breaks=1)
+
+
+@doclang_validator
+def test_cross_column_paragraph_roundtrip():
+    """Round-trip a cross-column threaded paragraph (same page, two boxes)."""
+    _thread_roundtrip(name="multi_prov_thread", doc_factory=_doc_multi_prov_text, page_breaks=0)
+
+
+@doclang_validator
+def test_cross_page_list_roundtrip():
+    """Round-trip a cross-page threaded list (whole items per page)."""
+    _thread_roundtrip(name="cross_page_list", doc_factory=_doc_cross_page_list, page_breaks=1)
+
+
+@doclang_validator
+def test_cross_page_table_roundtrip():
+    """Round-trip a cross-page threaded table."""
+    _thread_roundtrip(name="cross_page_table", doc_factory=_doc_cross_page_table, page_breaks=1)
+
+
+@doclang_validator
+def test_cross_column_table_roundtrip():
+    """Round-trip a cross-column threaded table (same page, two boxes)."""
+    _thread_roundtrip(name="cross_column_table", doc_factory=_doc_cross_column_table, page_breaks=0)
 
 
 def test_table_with_class_raises_error():
