@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pytest
 
@@ -6,24 +7,30 @@ from docling_core.experimental.doclang import (
     DoclangDeserializer,
     DoclangDocSerializer,
     DoclangParams,
-    DOCLANG_NAMESPACE,
-    DOCLANG_VERSION,
+    LabelMode,
 )
 from docling_core.types.doc import (
     BoundingBox,
+    CoordOrigin,
     DocItemLabel,
     DoclingDocument,
-    PictureClassificationClass,
-    PictureClassificationData,
+    Formatting,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureItem,
+    PictureMeta,
     ProvenanceItem,
     RichTableCell,
     Size,
     TableCell,
     TableData,
 )
-from docling_core.types.doc.labels import CodeLanguageLabel
+from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
+from docling_core.types.doc.document import GroupLabel
+from test.doclang_validation import assert_valid_dclg_xml, doclang_validator
+from test.test_data_gen_flag import GEN_TEST_DATA
 from test.test_serialization_doctag import verify
-from test.test_serialization_doclang import add_list_section, add_texts_section
+from test.test_serialization_doclang import _verify_doc, add_list_section, add_texts_section
 
 DO_PRINT: bool = False
 
@@ -33,10 +40,15 @@ def _serialize(doc: DoclingDocument) -> str:
         doc=doc,
         params=DoclangParams(),
     )
-    return ser.serialize().text
+    text = ser.serialize().text
+    if not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
+    return text
 
 
-def _deserialize(text: str) -> DoclingDocument:
+def _deserialize(text: str, *, validate: bool = True) -> DoclingDocument:
+    if validate and not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
     return DoclangDeserializer().deserialize(text=text)
 
 
@@ -52,6 +64,46 @@ def _default_prov() -> ProvenanceItem:
     )
 
 
+class _VirtualTextMixedBboxFactory:
+    """Assign distinct page bboxes for the virtual-text mixed fixture."""
+
+    def __init__(self, *, page_no: int = 0, page_w: float = 1000, page_h: float = 1000) -> None:
+        self.page_no = page_no
+        self.page_w = page_w
+        self.page_h = page_h
+        self._slot = 0
+
+    def next_prov(self) -> ProvenanceItem:
+        row, col = divmod(self._slot, 4)
+        self._slot += 1
+        cell_w = self.page_w / 5
+        cell_h = self.page_h / 20
+        left = 20 + col * cell_w
+        top = self.page_h - 40 - row * cell_h
+        return ProvenanceItem(
+            page_no=self.page_no,
+            bbox=BoundingBox.from_tuple(
+                (left, top - cell_h, left + cell_w - 10, top),
+                origin=CoordOrigin.BOTTOMLEFT,
+            ),
+            charspan=(0, 0),
+        )
+
+    def next_bbox(self) -> BoundingBox:
+        return self.next_prov().bbox
+
+
+def _serialize_virtual_text_mixed(doc: DoclingDocument, *, add_location: bool = True) -> str:
+    ser = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(add_table_cell_location=True, add_location=add_location),
+    )
+    text = ser.serialize().text
+    if not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
+    return text
+
+
 def test_roundtrip_text():
     doc = DoclingDocument(name="t")
     doc.add_text(label=DocItemLabel.TEXT, text="Hello world")
@@ -60,7 +112,7 @@ def test_roundtrip_text():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <text>Hello world</text>
 </doclang>
     """
@@ -75,8 +127,8 @@ def test_roundtrip_title():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
-  <heading level="1">My Title</heading>
+<doclang>
+  <heading>My Title</heading>
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
@@ -90,7 +142,7 @@ def test_roundtrip_heading():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <heading level="3">Section A</heading>
 </doclang>
     """
@@ -104,9 +156,9 @@ def test_roundtrip_caption():
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
-  <caption>Cap text</caption>
+    exp_dt = """
+<doclang>
+  <text>Cap text</text>
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
@@ -156,13 +208,112 @@ def test_roundtrip_code():
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
-  <code class="Python"><![CDATA[print('hi')]]></code>
-  <code class="MATLAB"><![CDATA[disp("Hello world!")]]></code>
+    exp_dt = """
+<doclang>
+  <code>
+    <label value="Python"/>
+<![CDATA[print('hi')]]>  </code>
+  <code>
+    <label value="MATLAB"/>
+<![CDATA[disp("Hello world!")]]>  </code>
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
+
+
+def test_roundtrip_code_python_and_unknown():
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="x = 1", code_language=CodeLanguageLabel.PYTHON)
+    doc.add_code(text="y = 2")  # CodeLanguageLabel.UNKNOWN by default
+
+    xml = _serialize(doc)
+    assert '<label value="Python"/>' in xml
+    assert '<label value="other"/>' not in xml
+    assert '<label value="undefined"/>' not in xml
+    assert '<label value="unknown"/>' not in xml
+
+    doc2 = _deserialize(xml)
+    codes = [t for t in doc2.texts if t.label == DocItemLabel.CODE]
+    assert len(codes) == 2
+    assert codes[0].code_language == CodeLanguageLabel.PYTHON
+    assert codes[1].code_language == CodeLanguageLabel.UNKNOWN
+    assert codes[0].text.strip() == "x = 1"
+    assert codes[1].text.strip() == "y = 2"
+
+
+@pytest.mark.parametrize(
+    ("docling_lang", "linguist_label", "roundtrip_lang"),
+    [
+        (CodeLanguageLabel.BASH, "Shell", CodeLanguageLabel.BASH),
+        (CodeLanguageLabel.LATEX, "TeX", CodeLanguageLabel.LATEX),
+        (CodeLanguageLabel.LISP, "Common Lisp", CodeLanguageLabel.LISP),
+        (CodeLanguageLabel.OBJECTIVEC, "Objective-C", CodeLanguageLabel.OBJECTIVEC),
+        (CodeLanguageLabel.SML, "Standard ML", CodeLanguageLabel.SML),
+        (CodeLanguageLabel.VISUALBASIC, "Visual Basic .NET", CodeLanguageLabel.VISUALBASIC),
+        (CodeLanguageLabel.OCTAVE, "MATLAB", CodeLanguageLabel.MATLAB),
+        (CodeLanguageLabel.BC, "other", CodeLanguageLabel.UNKNOWN),
+        (CodeLanguageLabel.DOCLANG, "XML", CodeLanguageLabel.XML),
+    ],
+)
+def test_code_language_linguist_mapping(docling_lang, linguist_label, roundtrip_lang):
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="snippet", code_language=docling_lang)
+
+    xml = DoclangDocSerializer(doc=doc, params=DoclangParams()).serialize().text
+    assert f'<label value="{linguist_label}"/>' in xml
+
+    doc2 = _deserialize(xml)
+    assert doc2.texts[0].code_language == roundtrip_lang
+
+
+def test_roundtrip_code_unknown_as_other_when_enabled():
+    doc = DoclingDocument(name="t")
+    doc.add_code(text="y = 2")
+    xml = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(interpret_code_unknown_as_other=True),
+    ).serialize().text
+    assert '<label value="other"/>' in xml
+    doc2 = _deserialize(xml)
+    assert doc2.texts[0].code_language == CodeLanguageLabel.UNKNOWN
+
+
+def test_roundtrip_picture_other_and_unknown_labels():
+    doc = DoclingDocument(name="t")
+    classified = doc.add_picture()
+    classified.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    class_name=PictureClassificationLabel.OTHER.value,
+                    confidence=1.0,
+                )
+            ]
+        )
+    )
+    doc.add_picture()
+
+    xml = _serialize(doc)
+    assert '<label value="other"/>' in xml
+    assert '<label value="unknown"/>' not in xml
+
+    doc2 = _deserialize(xml)
+    pics = [item for item, _ in doc2.iterate_items() if isinstance(item, PictureItem)]
+    assert pics[0].meta.classification.get_main_prediction().class_name == "other"
+    assert pics[1].meta is None or pics[1].meta.classification is None
+
+    xml_always = DoclangDocSerializer(
+        doc=doc,
+        params=DoclangParams(label_mode=LabelMode.ALWAYS, add_location=False),
+    ).serialize().text
+    assert xml_always.count('<label value="unknown"/>') == 1
+
+
+def test_code_language_unmapped_linguist_deserializes_to_unknown():
+    xml = '<doclang><code><label value="CoffeeScript"/>foo</code></doclang>'
+    doc = _deserialize(xml, validate=False)
+    assert doc.texts[0].code_language == CodeLanguageLabel.UNKNOWN
+
 
 def test_roundtrip_formula():
     doc = DoclingDocument(name="t")
@@ -214,10 +365,10 @@ def test_roundtrip_picture_with_caption():
         print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.pictures) == 1
-    # Caption added as a separate text item referenced by the picture
-    assert len(doc2.texts) >= 1
-    cap_texts = [t for t in doc2.texts if t.label == DocItemLabel.CAPTION]
-    assert len(cap_texts) == 1 and cap_texts[0].text == "Fig 1"
+    pic = doc2.pictures[0]
+    assert len(pic.captions) == 1
+    cap_item = pic.captions[0].resolve(doc2)
+    assert cap_item.label == DocItemLabel.CAPTION and cap_item.text == "Fig 1"
 
 
 def test_roundtrip_table_simple():
@@ -293,8 +444,8 @@ def test_roundtrip_title_prov():
     dt2 = _serialize(doc2)
 
     exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
-  <heading level="1">
+<doclang>
+  <heading>
     <location value="51"/>
     <location value="51"/>
     <location value="154"/>
@@ -323,13 +474,13 @@ def test_roundtrip_heading_prov():
 def test_roundtrip_caption_prov():
     doc = DoclingDocument(name="t")
     _add_default_page(doc)
-    doc.add_text(label=DocItemLabel.CAPTION, text="Cap text", prov=_default_prov())
+    doc.add_text(label=DocItemLabel.TEXT, text="Cap text", prov=_default_prov())
     dt = _serialize(doc)
     if DO_PRINT:
         print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.texts) == 1
-    assert doc2.texts[0].label == DocItemLabel.CAPTION
+    assert doc2.texts[0].label == DocItemLabel.TEXT
     assert doc2.texts[0].text == "Cap text"
 
 
@@ -413,29 +564,7 @@ def test_roundtrip_list_unordered_prov():
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
-  <list class="unordered">
-    <ldiv/>
-    <text>
-      <location value="51"/>
-      <location value="51"/>
-      <location value="154"/>
-      <location value="102"/>
-      A
-    </text>
-    <ldiv/>
-    <text>
-      <location value="51"/>
-      <location value="51"/>
-      <location value="154"/>
-      <location value="102"/>
-      B
-    </text>
-  </list>
-</doclang>
-    """
-    assert dt2.strip() == exp_dt.strip()
+    assert dt2.strip() == dt.strip()
 
 
 def test_roundtrip_list_ordered_prov():
@@ -464,9 +593,10 @@ def test_roundtrip_picture_with_caption_prov():
         print("\n", dt)
     doc2 = _deserialize(dt)
     assert len(doc2.pictures) == 1
-    assert len(doc2.texts) >= 1
-    cap_texts = [t for t in doc2.texts if t.label == DocItemLabel.CAPTION]
-    assert len(cap_texts) == 1 and cap_texts[0].text == "Fig 1"
+    pic = doc2.pictures[0]
+    assert len(pic.captions) == 1
+    cap_item = pic.captions[0].resolve(doc2)
+    assert cap_item.label == DocItemLabel.CAPTION and cap_item.text == "Fig 1"
 
 
 def test_roundtrip_table_simple_prov():
@@ -638,24 +768,7 @@ def test_roundtrip_nested_list_ordered_in_ordered():
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
-  <list class="unordered">
-    <ldiv/>
-    <text>Step 1</text>
-    <list class="ordered">
-      <ldiv/>
-      <text>Step 1.1</text>
-      <ldiv/>
-      <text>Step 1.2</text>
-    </list>
-    <ldiv/>
-    <text>Step 2</text>
-  </list>
-</doclang>
-
-    """
-    assert dt2.strip() == exp_dt.strip()
+    assert dt2.strip() == dt.strip()
 
 
 def test_roundtrip_nested_list_ordered_in_unordered():
@@ -855,14 +968,14 @@ def test_roundtrip_list_item_with_inline_group():
 
 
 def test_deserialize_bare_picture():
-    dt = "<docling><picture></picture></docling>"
+    dt = "<doclang><picture></picture></doclang>"
     doc = _deserialize(dt)
 
     assert len(doc.pictures) == 1
 
 
 def test_deserialize_bare_table():
-    dt = "<docling><table></table></docling>"
+    dt = "<doclang><table></table></doclang>"
     doc = _deserialize(dt)
 
     assert len(doc.tables) == 1
@@ -1098,6 +1211,397 @@ def test_roundtrip_table_with_rich_cells():
     assert dt2 == dt
 
 
+def _create_virtual_text_list_doc() -> DoclingDocument:
+    """Document exercising virtual vs explicit ``<text>`` in list items."""
+    doc = DoclingDocument(name="virtual_text_list")
+    _add_default_page(doc)
+    bbox = _VirtualTextMixedBboxFactory()
+
+    lg = doc.add_list_group()
+    doc.add_list_item(text="plain list item", parent=lg, prov=bbox.next_prov())
+
+    li_inline = doc.add_list_item(text="", parent=lg, prov=bbox.next_prov())
+    inline = doc.add_inline_group(parent=li_inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="this is a ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bold",
+        parent=inline,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text=" text", parent=inline)
+
+    li_nested = doc.add_list_item(
+        text="list item with nested list",
+        parent=lg,
+        prov=bbox.next_prov(),
+    )
+    lg_sub = doc.add_list_group(parent=li_nested)
+    doc.add_list_item(text="nested list item", parent=lg_sub, prov=bbox.next_prov())
+
+    li_picture = doc.add_list_item(
+        text="list item with picture",
+        parent=lg,
+        prov=bbox.next_prov(),
+    )
+    doc.add_picture(parent=li_picture, prov=bbox.next_prov())
+
+    return doc
+
+
+def _assert_virtual_text_list_dclg(dclg: str) -> None:
+    """Sanity-check virtual vs explicit ``<text>`` in list output."""
+    assert "<ldiv/>" in dclg
+    assert "plain list item" in dclg
+    assert "<text>plain list item</text>" not in dclg
+    assert "<text>" in dclg
+    assert "this is a " in dclg
+    assert "<bold>bold</bold>" in dclg
+    assert " text" in dclg
+    assert re.search(
+        r"<ldiv/>\s*(?:<location[^>]*/>\s*)*<content>this is a </content>\s*<bold>bold</bold>\s*<content> text</content>",
+        dclg,
+    )
+    assert not re.search(
+        r"<text>\s*(?:<location[^>]*/>\s*)*<content>this is a </content>\s*<bold>bold</bold>",
+        dclg,
+    )
+    assert "list item with nested list" in dclg
+    assert "list item with picture" in dclg
+    assert re.search(
+        r"<text>\s*(?:<location[^>]*/>\s*)*list item with picture\s*</text>",
+        dclg,
+    )
+    assert "<picture" in dclg
+    assert "<location value=" in dclg
+
+
+@doclang_validator
+def test_virtual_text_list_roundtrip():
+    """Round-trip list virtual-text edge cases through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "virtual_text_list"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_virtual_text_list_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize_virtual_text_mixed(doc)
+    verify(serialized_dclg, dt)
+    _assert_virtual_text_list_dclg(dt)
+    assert_valid_dclg_xml(dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=True)
+    verify(reserialized_dclg, dt2)
+    _assert_virtual_text_list_dclg(dt2)
+    assert_valid_dclg_xml(dt2)
+
+
+@doclang_validator
+def test_virtual_text_table_roundtrip():
+    """Round-trip table virtual-text edge cases through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "virtual_text_table"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_virtual_text_table_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize_virtual_text_mixed(doc)
+    verify(serialized_dclg, dt)
+    _assert_virtual_text_table_dclg(dt)
+    assert_valid_dclg_xml(dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=True)
+    verify(reserialized_dclg, dt2)
+    _assert_virtual_text_table_dclg(dt2)
+    assert_valid_dclg_xml(dt2)
+
+
+@doclang_validator
+def test_virtual_text_index_roundtrip():
+    """Round-trip index virtual-text edge cases through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "virtual_text_index"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_virtual_text_index_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize_virtual_text_mixed(doc)
+    verify(serialized_dclg, dt)
+    _assert_virtual_text_index_dclg(dt)
+    assert_valid_dclg_xml(dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=True)
+    verify(reserialized_dclg, dt2)
+    _assert_virtual_text_index_dclg(dt2)
+    assert_valid_dclg_xml(dt2)
+
+
+def _create_virtual_text_table_doc() -> DoclingDocument:
+    """Document exercising virtual vs explicit ``<text>`` in table cells."""
+    doc = DoclingDocument(name="virtual_text_table")
+    _add_default_page(doc)
+    bbox = _VirtualTextMixedBboxFactory()
+
+    def _add_row_table(*, label: DocItemLabel) -> None:
+        table = doc.add_table(data=TableData(num_rows=1, num_cols=3), label=label, prov=bbox.next_prov())
+
+        cell_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="cell with list:",
+            parent=cell_group,
+            prov=bbox.next_prov(),
+        )
+        cell_list = doc.add_list_group(parent=cell_group)
+        doc.add_list_item(text="nested in cell", parent=cell_list, prov=bbox.next_prov())
+
+        rich_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text="group text",
+            parent=rich_group,
+            prov=bbox.next_prov(),
+        )
+        doc.add_picture(parent=rich_group, prov=bbox.next_prov())
+
+        doc.add_table_cell(
+            table_item=table,
+            cell=TableCell(
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+                text="plain cell",
+                bbox=bbox.next_bbox(),
+            ),
+        )
+        doc.add_table_cell(
+            table_item=table,
+            cell=RichTableCell(
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+                ref=cell_group.get_ref(),
+                text="cell with list:",
+                bbox=bbox.next_bbox(),
+            ),
+        )
+        doc.add_table_cell(
+            table_item=table,
+            cell=RichTableCell(
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=2,
+                end_col_offset_idx=3,
+                ref=rich_group.get_ref(),
+                text="group cell",
+                bbox=bbox.next_bbox(),
+            ),
+        )
+
+    _add_row_table(label=DocItemLabel.TABLE)
+    return doc
+
+
+def _create_virtual_text_index_doc() -> DoclingDocument:
+    """Document exercising virtual vs explicit ``<text>`` in index cells."""
+    doc = DoclingDocument(name="virtual_text_index")
+    _add_default_page(doc)
+    bbox = _VirtualTextMixedBboxFactory()
+
+    table = doc.add_table(
+        data=TableData(num_rows=1, num_cols=3),
+        label=DocItemLabel.DOCUMENT_INDEX,
+        prov=bbox.next_prov(),
+    )
+
+    cell_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="cell with list:",
+        parent=cell_group,
+        prov=bbox.next_prov(),
+    )
+    cell_list = doc.add_list_group(parent=cell_group)
+    doc.add_list_item(text="nested in cell", parent=cell_list, prov=bbox.next_prov())
+
+    rich_group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="group text",
+        parent=rich_group,
+        prov=bbox.next_prov(),
+    )
+    doc.add_picture(parent=rich_group, prov=bbox.next_prov())
+
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="plain cell",
+            bbox=bbox.next_bbox(),
+        ),
+    )
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            ref=cell_group.get_ref(),
+            text="cell with list:",
+            bbox=bbox.next_bbox(),
+        ),
+    )
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
+            ref=rich_group.get_ref(),
+            text="group cell",
+            bbox=bbox.next_bbox(),
+        ),
+    )
+
+    return doc
+
+
+def _assert_virtual_text_table_dclg(dclg: str) -> None:
+    host_block = dclg.split("<table>", 1)[1].split("</table>", 1)[0]
+    assert "plain cell" in host_block
+    assert "<text>plain cell</text>" not in host_block
+    assert "cell with list:" in host_block
+    assert "<text>" in host_block
+    assert "group text" in host_block
+    assert "<picture" in host_block
+    assert "<location value=" in host_block
+
+
+def _assert_virtual_text_index_dclg(dclg: str) -> None:
+    host_block = dclg.split("<index>", 1)[1].split("</index>", 1)[0]
+    assert "plain cell" in host_block
+    assert "<text>plain cell</text>" not in host_block
+    assert "cell with list:" in host_block
+    assert "<text>" in host_block
+    assert "group text" in host_block
+    assert "<picture" in host_block
+    assert "<location value=" in host_block
+
+
+def _create_referenced_caption_doc() -> DoclingDocument:
+    """Document with picture and table, each with an associated caption."""
+    doc = DoclingDocument(name="referenced_caption")
+    _add_default_page(doc)
+    bbox = _VirtualTextMixedBboxFactory()
+
+    cap_pic = doc.add_text(
+        label=DocItemLabel.CAPTION,
+        text="Figure 1",
+        prov=bbox.next_prov(),
+    )
+    doc.add_picture(caption=cap_pic, prov=bbox.next_prov())
+
+    cap_tbl = doc.add_text(
+        label=DocItemLabel.CAPTION,
+        text="Table 1",
+        prov=bbox.next_prov(),
+    )
+    td = TableData(num_rows=0, num_cols=2)
+    td.add_row(["H1", "H2"])
+    td.add_row(["C1", "C2"])
+    doc.add_table(data=td, caption=cap_tbl, prov=bbox.next_prov())
+
+    return doc
+
+
+def _assert_referenced_caption_doc(doc: DoclingDocument) -> None:
+    """Verify picture/table caption refs are preserved in the document model."""
+    assert len(doc.pictures) == 1
+    pic = doc.pictures[0]
+    assert len(pic.captions) == 1
+    pic_cap = pic.captions[0].resolve(doc)
+    assert pic_cap.label == DocItemLabel.CAPTION
+    assert pic_cap.text == "Figure 1"
+
+    assert len(doc.tables) == 1
+    tbl = doc.tables[0]
+    assert len(tbl.captions) == 1
+    tbl_cap = tbl.captions[0].resolve(doc)
+    assert tbl_cap.label == DocItemLabel.CAPTION
+    assert tbl_cap.text == "Table 1"
+    grid_texts = [[cell.text for cell in row] for row in tbl.data.grid]
+    assert grid_texts == [["H1", "H2"], ["C1", "C2"]]
+
+
+def _assert_referenced_caption_dclg(dclg: str, *, with_location: bool) -> None:
+    """Sanity-check referenced captions appear in host element heads."""
+    pic_block = dclg.split("<picture>", 1)[1].split("</picture>", 1)[0]
+    assert "Figure 1" in pic_block
+    assert re.search(r"<caption>\s*(?:<location[^>]*/>\s*)*Figure 1\s*</caption>", pic_block)
+
+    tbl_block = dclg.split("<table>", 1)[1].split("</table>", 1)[0]
+    assert "Table 1" in tbl_block
+    assert re.search(r"<caption>\s*(?:<location[^>]*/>\s*)*Table 1\s*</caption>", tbl_block)
+    assert "H1" in tbl_block and "C2" in tbl_block
+
+    if with_location:
+        assert "<location value=" in dclg
+
+
+@doclang_validator
+def test_referenced_caption_roundtrip():
+    """Round-trip picture/table with associated captions through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "referenced_caption"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_referenced_caption_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+    _assert_referenced_caption_doc(doc)
+
+    dt = _serialize_virtual_text_mixed(doc)
+    verify(serialized_dclg, dt)
+    _assert_referenced_caption_dclg(dt, with_location=True)
+    assert_valid_dclg_xml(dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+    _assert_referenced_caption_doc(doc2)
+
+    dt2 = _serialize_virtual_text_mixed(doc2, add_location=True)
+    verify(reserialized_dclg, dt2)
+    _assert_referenced_caption_dclg(dt2, with_location=True)
+    assert_valid_dclg_xml(dt2)
+
+
 ############################################
 ### Feature complete document test-cases ###
 ############################################
@@ -1132,7 +1636,7 @@ def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
 
 def test_wrapping():
     dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <text>simple</text>
   <text>
     <content>  leading</content>
@@ -1186,7 +1690,7 @@ def test_wrapping():
 
 def test_rich_table_cells():
     dt = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <table>
     <fcel/>
     <text>foo</text>
@@ -1224,7 +1728,7 @@ def test_rich_table_cells():
 
 def test_picture_tabular_chart_content_cdata_cells():
     """Deserializer must extract text from <content><![CDATA[...]]></content> in OTSL cells."""
-    doclang = f"""<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}"><group><picture><location value="0"/><location value="0"/><location value="511"/><location value="511"/><table><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></table></picture></group></doclang>"""
+    doclang = f"""<doclang><group><picture class="chart"><location value="0"/><location value="0"/><location value="511"/><location value="511"/><table><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></table></picture></group></doclang>"""
     doc = _deserialize(doclang)
     first_cell_text = doc.pictures[0].meta.tabular_chart.chart_data.grid[0][0].text
     assert first_cell_text == "Characteristic"
@@ -1264,7 +1768,7 @@ def test_roundtrip_with_layers():
 
 def test_roundtrip_with_newlines():
     doclang_str = f"""
-<doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
+<doclang>
   <text>
     <content>foo
 bar</content>
@@ -1286,7 +1790,7 @@ def test_roundtrip_document_index_table():
     """Test that DOCUMENT_INDEX label is preserved through serialization/deserialization."""
     doc = DoclingDocument(name="test")
     _add_default_page(doc)
-    
+
     # Add a regular table
     table_data = TableData(num_cols=2)
     table_data.add_row(['Header 1', 'Header 2'])
@@ -1294,29 +1798,28 @@ def test_roundtrip_document_index_table():
     table_data.grid[0][1].column_header = True
     table_data.add_row(['Data 1', 'Data 2'])
     doc.add_table(data=table_data, label=DocItemLabel.TABLE, prov=_default_prov())
-    
+
     # Add a DOCUMENT_INDEX table
     index_data = TableData(num_cols=2)
     index_data.add_row(['Index 1', 'Page 1'])
     index_data.add_row(['Index 2', 'Page 2'])
     doc.add_table(data=index_data, label=DocItemLabel.DOCUMENT_INDEX, prov=_default_prov())
-    
+
     # Serialize
     xml_str = _serialize(doc)
-    
-    # Verify serialization contains class="index"
-    assert '<table class="index">' in xml_str
-    
+
+    assert "<index>" in xml_str
+
     # Deserialize
     doc2 = _deserialize(xml_str)
-    
+
     # Verify we have 2 tables
     assert len(doc2.tables) == 2
-    
+
     # Verify labels are preserved
     assert doc2.tables[0].label == DocItemLabel.TABLE
     assert doc2.tables[1].label == DocItemLabel.DOCUMENT_INDEX
-    
+
     # Verify table data is preserved
     assert doc2.tables[0].data.num_rows == 2
     assert doc2.tables[0].data.num_cols == 2
@@ -1324,43 +1827,15 @@ def test_roundtrip_document_index_table():
     assert doc2.tables[1].data.num_cols == 2
 
 
-def test_roundtrip_table_with_data_class():
-    """Test that tables with class='data' are correctly deserialized as TABLE label."""
-    # Create XML with explicit class="data"
-    xml_str = """<doclang xmlns="https://www.doclang.ai/ns/v0">
-  <table class="data">
-    <ched/>
-    <text>Header 1</text>
-    <ched/>
-    <text>Header 2</text>
-    <nl/>
-    <fcel/>
-    <text>Data 1</text>
-    <fcel/>
-    <text>Data 2</text>
-    <nl/>
-  </table>
-</doclang>"""
-    
-    # Deserialize
-    doc = _deserialize(xml_str)
-    
-    # Verify we have 1 table with TABLE label
-    assert len(doc.tables) == 1
-    assert doc.tables[0].label == DocItemLabel.TABLE
-
-
-def test_table_with_invalid_class_raises_error():
-    """Test that tables with invalid class values raise an error."""
-    # Create XML with invalid class="invalid"
-    xml_str = """<doclang xmlns="https://www.doclang.ai/ns/v0">
-  <table class="invalid">
+def test_table_with_class_raises_error():
+    """Test that ``<table class=\"…\">`` is rejected (v0.5: use ``<index>`` for document indexes)."""
+    xml_str = """<doclang>
+  <table class="index">
     <fcel/>
     <text>Data 1</text>
     <nl/>
   </table>
 </doclang>"""
-    
-    # Deserialize should raise ValueError
-    with pytest.raises(ValueError, match="Invalid class attribute value 'invalid' for table element"):
-        _deserialize(xml_str)
+
+    with pytest.raises(ValueError, match="table element must not have a class attribute"):
+        _deserialize(xml_str, validate=False)

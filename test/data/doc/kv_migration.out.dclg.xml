@@ -1,14 +1,14 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <text>Hello, world!</text>
   <field_region>
     <field_item>
       <key>Common name</key>
-      <value class="read_only">Duck</value>
+      <value>Duck</value>
     </field_item>
     <field_item>
       <key>Distribution package</key>
-      <value class="read_only">docling</value>
-      <value class="read_only">
+      <value>docling</value>
+      <value>
         <location value="5"/>
         <location value="492"/>
         <location value="15"/>
@@ -25,9 +25,9 @@
     <location value="502"/>
     <field_item>
       <key>Color</key>
-      <value class="read_only">Orange</value>
-      <value class="read_only">Black</value>
-      <value class="read_only">White</value>
+      <value>Orange</value>
+      <value>Black</value>
+      <value>White</value>
     </field_item>
   </field_region>
   <text>The end.</text>

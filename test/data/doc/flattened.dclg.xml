@@ -1,5 +1,5 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
-  <heading level="1">Title</heading>
+<doclang>
+  <heading>Title</heading>
   <text>Some intro</text>
   <heading level="2">Foo</heading>
   <text>Foo stuff</text>
@@ -23,27 +23,27 @@ other children besides the inline
   <text>Section content as sibling of the heading.</text>
   <heading level="2">Heading</heading>
   <text>Bar</text>
-  <list class="unordered">
+  <list>
+    <ldiv/>
+    List item
     <ldiv/>
     <text>List item</text>
-    <ldiv/>
-    <text>List item</text>
-    <list class="unordered">
+    <list>
       <ldiv/>
-      <text>List item</text>
+      List item
       <ldiv/>
-      <text>List item</text>
+      List item
     </list>
   </list>
   <heading level="3">Heading</heading>
   <table>
     <fcel/>
-    <text>cell 0,0</text>
+    cell 0,0
     <fcel/>
-    <text>cell 0,1</text>
+    cell 0,1
     <nl/>
     <fcel/>
-    <text>cell 1,0</text>
+    cell 1,0
     <fcel/>
     <text>
       <italic>
@@ -53,14 +53,14 @@ other children besides the inline
     </text>
     <nl/>
     <fcel/>
-    <text>cell 2,0</text>
+    cell 2,0
     <fcel/>
-    <text>cell 2,1</text>
+    cell 2,1
     <nl/>
     <fcel/>
-    <text>cell 3,0</text>
+    cell 3,0
     <fcel/>
-    <text>cell 3,1</text>
+    cell 3,1
     <nl/>
   </table>
   <heading level="2">Heading</heading>
@@ -69,7 +69,7 @@ other children besides the inline
     <field_item>
       <text>Some text</text>
       <key>Key</key>
-      <value class="read_only">Value</value>
+      <value>Value</value>
     </field_item>
   </field_region>
 </doclang>

@@ -1,8 +1,8 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <head>
     <default_resolution width="256" height="256"/>
   </head>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>•</marker>
     </ldiv>

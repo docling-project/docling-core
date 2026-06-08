@@ -1,36 +1,37 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <text>Simple text</text>
   <text>
     <content>Here a code snippet: </content>
-    <code class="Python">help()</code>
+    <code>
+      <label value="Python"/>
+      <content>
+      help()
+    </content>
+    </code>
     <content> (to be shown)</content>
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text>foo</text>
+    foo
     <ldiv/>
-    <text>bar</text>
+    bar
     <ldiv/>
-    <text>
-      <content>Here a formula: </content>
-      <formula>
-        <content>E=mc^2 </content>
-      </formula>
+    <content>Here a formula: </content>
+    <formula>
+      <content>E=mc^2 </content>
+    </formula>
 in line
-    </text>
     <ldiv/>
-    <text>
-      <content>Here a </content>
-      <bold>bold</bold>
-      <content> text</content>
-    </text>
+    <content>Here a </content>
+    <bold>bold</bold>
+    <content> text</content>
     <ldiv/>
     <text>will contain sublist</text>
-    <list class="unordered">
+    <list>
       <ldiv/>
-      <text>sublist item 1</text>
+      sublist item 1
       <ldiv/>
-      <text>sublist item 2</text>
+      sublist item 2
     </list>
     <ldiv/>
     <text>
@@ -40,13 +41,13 @@ in line
       </italic>
       <content> text and a sublist:</content>
     </text>
-    <list class="unordered">
+    <list>
       <ldiv/>
-      <text>sublist item a</text>
+      sublist item a
       <ldiv/>
-      <text>sublist item b</text>
+      sublist item b
     </list>
     <ldiv/>
-    <text>final element</text>
+    final element
   </list>
 </doclang>

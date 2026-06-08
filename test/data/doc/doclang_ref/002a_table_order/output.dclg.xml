@@ -1,29 +1,27 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <text>
+    <layer value="furniture"/>
     <location value="61"/>
     <location value="24"/>
     <location value="101"/>
     <location value="29"/>
-    <layer class="furniture"/>
     13040.19
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="245"/>
     <location value="24"/>
     <location value="267"/>
     <location value="29"/>
-    <layer class="furniture"/>
     - 16 -
   </text>
   <picture>
-    <meta>
-      <classification>Other</classification>
-    </meta>
+    <label value="other"/>
+    <layer value="furniture"/>
     <location value="432"/>
     <location value="10"/>
     <location value="476"/>
     <location value="39"/>
-    <layer class="furniture"/>
   </picture>
   <group>
     <table>
@@ -32,14 +30,14 @@
       <location value="452"/>
       <location value="192"/>
       <ched/>
-      <text>Zeile</text>
+      Zeile
       <ched/>
-      <text>Bauteil</text>
+      Bauteil
       <ched/>
-      <text>Empfehlungen für normalen Schall- schutz erf. bew. Schall- dämm-Maß Gn w in dB</text>
+      Empfehlungen für normalen Schall- schutz erf. bew. Schall- dämm-Maß Gn w in dB
       <nl/>
       <rhed/>
-      <text>1</text>
+      1
       <fcel/>
       <text>
         <location value="136"/>
@@ -48,53 +46,43 @@
         <location value="98"/>
         Wände zwischen
       </text>
-      <list class="unordered">
+      <list>
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="100"/>
-          <location value="255"/>
-          <location value="104"/>
-          - Arztzimmern bzw. U+B-Räume
-        </text>
+        <location value="136"/>
+        <location value="100"/>
+        <location value="255"/>
+        <location value="104"/>
+        - Arztzimmern bzw. U+B-Räume
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="106"/>
-          <location value="296"/>
-          <location value="111"/>
-          - Personal- und Patientenaufenthaltsräumen
-        </text>
+        <location value="136"/>
+        <location value="106"/>
+        <location value="296"/>
+        <location value="111"/>
+        - Personal- und Patientenaufenthaltsräumen
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="113"/>
-          <location value="191"/>
-          <location value="117"/>
-          - Büroräumen
-        </text>
+        <location value="136"/>
+        <location value="113"/>
+        <location value="191"/>
+        <location value="117"/>
+        - Büroräumen
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="119"/>
-          <location value="195"/>
-          <location value="124"/>
-          - Laborräumen
-        </text>
+        <location value="136"/>
+        <location value="119"/>
+        <location value="195"/>
+        <location value="124"/>
+        - Laborräumen
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="125"/>
-          <location value="318"/>
-          <location value="136"/>
-          - Fluren und Arztzimmern bzw. Aufenthaltsräumen, Büroräumen, Laborräumen
-        </text>
+        <location value="136"/>
+        <location value="125"/>
+        <location value="318"/>
+        <location value="136"/>
+        - Fluren und Arztzimmern bzw. Aufenthaltsräumen, Büroräumen, Laborräumen
       </list>
       <fcel/>
-      <text>+ 42</text>
+      + 42
       <nl/>
       <rhed/>
-      <text>2</text>
+      2
       <fcel/>
       <text>
         <location value="136"/>
@@ -103,37 +91,31 @@
         <location value="145"/>
         Wände zwischen
       </text>
-      <list class="unordered">
+      <list>
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="147"/>
-          <location value="224"/>
-          <location value="152"/>
-          - Besprechungsräumen
-        </text>
+        <location value="136"/>
+        <location value="147"/>
+        <location value="224"/>
+        <location value="152"/>
+        - Besprechungsräumen
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="153"/>
-          <location value="204"/>
-          <location value="157"/>
-          - Chefarzträumen
-        </text>
+        <location value="136"/>
+        <location value="153"/>
+        <location value="204"/>
+        <location value="157"/>
+        - Chefarzträumen
         <ldiv/>
-        <text>
-          <location value="136"/>
-          <location value="159"/>
-          <location value="361"/>
-          <location value="171"/>
-          - Fluren und Besprechungsräumen bzw. Chefarzträumen sowie Räumen zur Behandlung vertraulicher Angelegenheiten
-        </text>
+        <location value="136"/>
+        <location value="159"/>
+        <location value="361"/>
+        <location value="171"/>
+        - Fluren und Besprechungsräumen bzw. Chefarzträumen sowie Räumen zur Behandlung vertraulicher Angelegenheiten
       </list>
       <fcel/>
-      <text>+ 47</text>
+      + 47
       <nl/>
       <rhed/>
-      <text>3</text>
+      3
       <fcel/>
       <text>
         <location value="136"/>
@@ -143,10 +125,10 @@
         Türen in Wänden nach Zeile 1
       </text>
       <fcel/>
-      <text>+ 32 1)</text>
+      + 32 1)
       <nl/>
       <rhed/>
-      <text>4</text>
+      4
       <fcel/>
       <text>
         <location value="136"/>
@@ -156,7 +138,7 @@
         Türen in Wänden nach Zeile 2
       </text>
       <fcel/>
-      <text>+ 37 1)</text>
+      + 37 1)
       <nl/>
     </table>
     <footnote>
@@ -167,15 +149,13 @@
       1) Bei Türen gilt nach Tabelle 1 der DIN 4109-1 erforderliches Schalldämm-Maß Rw.
     </footnote>
   </group>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text>
-      <location value="60"/>
-      <location value="236"/>
-      <location value="452"/>
-      <location value="254"/>
-      Schalldämmung zwischen besonders lauten Räumen und schutzbedürftigen 4.2.4 Räumen
-    </text>
+    <location value="60"/>
+    <location value="236"/>
+    <location value="452"/>
+    <location value="254"/>
+    Schalldämmung zwischen besonders lauten Räumen und schutzbedürftigen 4.2.4 Räumen
   </list>
   <text>
     <location value="103"/>
@@ -191,37 +171,35 @@
       <location value="452"/>
       <location value="386"/>
       <ched/>
-      <text>Nr.</text>
+      Nr.
       <ched/>
-      <text>Bauteil</text>
+      Bauteil
       <ched/>
-      <text><![CDATA[erf. bew. Schall- dämm-Maß erf. R'w [dB]]]></text>
-      <ched/>
-      <text><![CDATA[erf. Norm- Trittschallpegel erf. L'n,w [dB]]]></text>
-      <nl/>
+<![CDATA[erf. bew. Schall- dämm-Maß erf. R'w [dB]]]>      <ched/>
+<![CDATA[erf. Norm- Trittschallpegel erf. L'n,w [dB]]]>      <nl/>
       <srow/>
-      <text>Technikräume (Innenpegel Li,max | 75 dB(A))</text>
+      Technikräume (Innenpegel Li,max | 75 dB(A))
       <lcel/>
       <lcel/>
       <lcel/>
       <nl/>
       <rhed/>
-      <text>1</text>
+      1
       <fcel/>
-      <text>Wände und Decken</text>
+      Wände und Decken
       <fcel/>
-      <text>57</text>
+      57
       <fcel/>
-      <text>-</text>
+      -
       <nl/>
       <rhed/>
-      <text>2</text>
+      2
       <fcel/>
-      <text>Fußböden</text>
+      Fußböden
       <fcel/>
-      <text>-</text>
+      -
       <fcel/>
-      <text>43 1)</text>
+      43 1)
       <nl/>
     </table>
     <footnote>

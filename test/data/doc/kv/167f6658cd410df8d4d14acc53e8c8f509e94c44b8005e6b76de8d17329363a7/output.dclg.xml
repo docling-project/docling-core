@@ -1,22 +1,18 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <picture>
-    <meta>
-      <classification>Bar code</classification>
-    </meta>
+    <label value="bar_code"/>
     <location value="255"/>
     <location value="3"/>
     <location value="448"/>
     <location value="24"/>
   </picture>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text>
-      <location value="73"/>
-      <location value="29"/>
-      <location value="223"/>
-      <location value="48"/>
-      (12) United States Patent Jung et al.
-    </text>
+    <location value="73"/>
+    <location value="29"/>
+    <location value="223"/>
+    <location value="48"/>
+    (12) United States Patent Jung et al.
     <ldiv/>
     <group>
       <location value="279"/>
@@ -32,7 +28,7 @@
             <location value="37"/>
             Patent No.:
           </key>
-          <value class="read_only">
+          <value>
             <location value="365"/>
             <location value="31"/>
             <location value="448"/>
@@ -57,7 +53,7 @@
             <location value="47"/>
             Date of Patent:
           </key>
-          <value class="read_only">
+          <value>
             <location value="390"/>
             <location value="41"/>
             <location value="447"/>
@@ -68,15 +64,13 @@
       </field_region>
     </group>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text>
-      <location value="73"/>
-      <location value="69"/>
-      <location value="225"/>
-      <location value="87"/>
-      (54) PHOTORESIST CROSS-LINKER AND
-    </text>
+    <location value="73"/>
+    <location value="69"/>
+    <location value="225"/>
+    <location value="87"/>
+    (54) PHOTORESIST CROSS-LINKER AND
     <ldiv/>
     <group>
       <location value="72"/>
@@ -92,7 +86,7 @@
             <location value="100"/>
             Inventors:
           </key>
-          <value class="read_only">
+          <value>
             <location value="127"/>
             <location value="94"/>
             <location value="247"/>
@@ -117,7 +111,7 @@
             <location value="149"/>
             Notice:
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="145"/>
             <location value="253"/>
@@ -135,7 +129,7 @@
             <location value="132"/>
             Assignee:
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="126"/>
             <location value="245"/>
@@ -160,7 +154,7 @@
             <location value="177"/>
             Appl. No.:
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="172"/>
             <location value="162"/>
@@ -185,7 +179,7 @@
             <location value="187"/>
             Filed:
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="182"/>
             <location value="172"/>
@@ -196,13 +190,11 @@
       </field_region>
     </group>
     <ldiv/>
-    <text>
-      <location value="73"/>
-      <location value="192"/>
-      <location value="219"/>
-      <location value="198"/>
-      (30) Foreign Application Priority Data
-    </text>
+    <location value="73"/>
+    <location value="192"/>
+    <location value="219"/>
+    <location value="198"/>
+    (30) Foreign Application Priority Data
     <ldiv/>
     <group>
       <location value="73"/>
@@ -218,7 +210,7 @@
             <location value="223"/>
             \mathbf{Int.\ Cl.}^{7}
           </key>
-          <value class="read_only">
+          <value>
             <location value="216"/>
             <location value="218"/>
             <location value="254"/>
@@ -243,7 +235,7 @@
             <location value="230"/>
             U.S.\ Cl.
           </key>
-          <value class="read_only">
+          <value>
             <location value="112"/>
             <location value="226"/>
             <location value="253"/>
@@ -268,7 +260,7 @@
             <location value="243"/>
             Field of Search
           </key>
-          <value class="read_only">
+          <value>
             <location value="137"/>
             <location value="239"/>
             <location value="253"/>
@@ -279,21 +271,17 @@
       </field_region>
     </group>
     <ldiv/>
-    <text>
-      <location value="73"/>
-      <location value="257"/>
-      <location value="191"/>
-      <location value="264"/>
-      (56) References Cited
-    </text>
+    <location value="73"/>
+    <location value="257"/>
+    <location value="191"/>
+    <location value="264"/>
+    (56) References Cited
     <ldiv/>
-    <text>
-      <location value="268"/>
-      <location value="174"/>
-      <location value="449"/>
-      <location value="186"/>
-      (74) Attorney , Agent , or Firm—Townsend and Townsend
-    </text>
+    <location value="268"/>
+    <location value="174"/>
+    <location value="449"/>
+    <location value="186"/>
+    (74) Attorney , Agent , or Firm—Townsend and Townsend
   </list>
   <table>
     <location value="77"/>
@@ -301,18 +289,18 @@
     <location value="253"/>
     <location value="213"/>
     <fcel/>
-    <text>Nov. 27, 1998</text>
+    Nov. 27, 1998
     <fcel/>
-    <text>(KR)</text>
+    (KR)
     <fcel/>
-    <text>98-51356</text>
+    98-51356
     <nl/>
     <fcel/>
-    <text>Feb. 22, 1999</text>
+    Feb. 22, 1999
     <fcel/>
-    <text>(KR) ...</text>
+    (KR) ...
     <fcel/>
-    <text>．99-5825</text>
+    ．99-5825
     <nl/>
   </table>
   <heading level="3">
@@ -338,7 +326,7 @@
         <location value="376"/>
         OTHER PUBLICATIONS
       </key>
-      <value class="read_only">
+      <value>
         <location value="73"/>
         <location value="382"/>
         <location value="253"/>
@@ -370,7 +358,7 @@
         <location value="103"/>
         Chemical Abstract No.
       </key>
-      <value class="read_only">
+      <value>
         <location value="342"/>
         <location value="99"/>
         <location value="428"/>
@@ -387,7 +375,7 @@
         <location value="111"/>
         Chemical Abstract No.
       </key>
-      <value class="read_only">
+      <value>
         <location value="341"/>
         <location value="107"/>
         <location value="428"/>
@@ -404,7 +392,7 @@
         <location value="119"/>
         Chemical Abstract No.
       </key>
-      <value class="read_only">
+      <value>
         <location value="269"/>
         <location value="115"/>
         <location value="449"/>
@@ -439,59 +427,59 @@
     <location value="254"/>
     <location value="307"/>
     <fcel/>
-    <text>3,468,857</text>
+    3,468,857
     <fcel/>
-    <text>A</text>
+    A
     <fcel/>
-    <text>9/1969</text>
+    9/1969
     <fcel/>
-    <text>Graver ... ... ... ... ...</text>
+    Graver ... ... ... ... ...
     <fcel/>
-    <text>260/80.3</text>
+    260/80.3
     <nl/>
     <fcel/>
-    <text>5,049,463</text>
+    5,049,463
     <fcel/>
-    <text>A*</text>
+    A*
     <fcel/>
-    <text>9/1991</text>
+    9/1991
     <fcel/>
-    <text>Kato et al. ...........</text>
+    Kato et al. ...........
     <fcel/>
-    <text>... 430/49</text>
+    ... 430/49
     <nl/>
     <fcel/>
-    <text>5,059,698</text>
+    5,059,698
     <fcel/>
-    <text>A</text>
+    A
     <fcel/>
-    <text>10/1991</text>
+    10/1991
     <fcel/>
-    <text>Schulthess et al. ...</text>
+    Schulthess et al. ...
     <fcel/>
-    <text>..549/375</text>
+    ..549/375
     <nl/>
     <fcel/>
-    <text>5,412,041</text>
+    5,412,041
     <fcel/>
-    <text>A*</text>
+    A*
     <fcel/>
-    <text>5/1995</text>
+    5/1995
     <fcel/>
-    <text>Lesko et al. ...........</text>
+    Lesko et al. ...........
     <fcel/>
-    <text>..525/340</text>
+    ..525/340
     <nl/>
     <fcel/>
-    <text>6,060,212</text>
+    6,060,212
     <fcel/>
-    <text>A*</text>
+    A*
     <fcel/>
-    <text>5/2000</text>
+    5/2000
     <fcel/>
-    <text>McCulloch et al. ......</text>
+    McCulloch et al. ......
     <fcel/>
-    <text>430/270.1</text>
+    430/270.1
     <nl/>
   </table>
   <table>
@@ -500,74 +488,74 @@
     <location value="189"/>
     <location value="367"/>
     <fcel/>
-    <text>DE</text>
+    DE
     <fcel/>
-    <text>3714276</text>
+    3714276
     <fcel/>
-    <text>A1</text>
+    A1
     <fcel/>
-    <text>11/1988</text>
+    11/1988
     <nl/>
     <fcel/>
-    <text>EP</text>
+    EP
     <fcel/>
-    <text>0347381</text>
+    0347381
     <fcel/>
-    <text>A1</text>
+    A1
     <fcel/>
-    <text>12/1989</text>
+    12/1989
     <nl/>
     <fcel/>
-    <text>EP</text>
+    EP
     <fcel/>
-    <text>0422888</text>
+    0422888
     <fcel/>
-    <text>A2</text>
+    A2
     <fcel/>
-    <text>4/1991</text>
+    4/1991
     <nl/>
     <fcel/>
-    <text>EP</text>
+    EP
     <fcel/>
-    <text>875 789</text>
+    875 789
     <fcel/>
-    <text>A1</text>
+    A1
     <fcel/>
-    <text>11/1998</text>
+    11/1998
     <nl/>
     <fcel/>
-    <text>GB</text>
+    GB
     <fcel/>
-    <text>922747</text>
+    922747
     <ecel/>
     <fcel/>
-    <text>4/1963</text>
+    4/1963
     <nl/>
     <fcel/>
-    <text>JP</text>
+    JP
     <fcel/>
-    <text>4-5040054</text>
+    4-5040054
     <fcel/>
-    <text>*</text>
+    *
     <fcel/>
-    <text>12/1970</text>
+    12/1970
     <nl/>
     <fcel/>
-    <text>JP</text>
+    JP
     <fcel/>
-    <text>5-216294</text>
+    5-216294
     <fcel/>
-    <text>*</text>
+    *
     <fcel/>
-    <text>8/1993</text>
+    8/1993
     <nl/>
     <fcel/>
-    <text>WO</text>
+    WO
     <fcel/>
-    <text>WO 99/61497</text>
+    WO 99/61497
     <ecel/>
     <fcel/>
-    <text>12/1999</text>
+    12/1999
     <nl/>
   </table>
   <heading level="3">
@@ -585,9 +573,7 @@
     The present invention relates to a cross-linker for use in a photoresist which is suitable for a photolithography process using KrF (248 ru), ArF (193 nm), E-beam, ion beam or EUV light source. According to the present invention, preferred cross-linkers comprise a copolymer having repeating units derived from: (i) a compound represented by following Chemical Formula 1 and/or (ii) one or more compound(s) selected from the group consisting of acrylic acid, meth-acrylic acid and maleic anhydride.
   </text>
   <picture>
-    <meta>
-      <classification>Illustration</classification>
-    </meta>
+    <label value="illustration"/>
     <location value="285"/>
     <location value="268"/>
     <location value="450"/>
@@ -608,11 +594,11 @@
     16 Claims, 5 Drawing Sheets
   </text>
   <text>
+    <layer value="background"/>
     <location value="268"/>
     <location value="191"/>
     <location value="281"/>
     <location value="197"/>
-    <layer class="background"/>
     (57)
   </text>
 </doclang>

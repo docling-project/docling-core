@@ -1,4 +1,4 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <field_region>
     <location value="48"/>
     <location value="12"/>
@@ -17,7 +17,7 @@
         <location value="413"/>
         <location value="22"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="339"/>
         <location value="27"/>
         <location value="420"/>
@@ -144,18 +144,12 @@
       <location value="477"/>
       <location value="342"/>
       <ched/>
-      <text></text>
       <ched/>
-      <text></text>
       <ched/>
-      <text></text>
       <nl/>
       <fcel/>
-      <text></text>
       <fcel/>
-      <text></text>
       <fcel/>
-      <text></text>
       <nl/>
     </table>
     <text>
@@ -208,7 +202,7 @@
         <location value="201"/>
         <location value="432"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="80"/>
         <location value="442"/>
         <location value="141"/>
@@ -222,7 +216,7 @@
         <location value="155"/>
         <location value="459"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="97"/>
         <location value="461"/>
         <location value="224"/>
@@ -236,7 +230,7 @@
         <location value="110"/>
         <location value="469"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="111"/>
         <location value="465"/>
         <location value="157"/>
@@ -250,7 +244,7 @@
         <location value="107"/>
         <location value="473"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="109"/>
         <location value="470"/>
         <location value="160"/>
@@ -264,7 +258,7 @@
         <location value="109"/>
         <location value="478"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="110"/>
         <location value="474"/>
         <location value="160"/>
@@ -309,7 +303,7 @@
         <location value="408"/>
         <location value="433"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="296"/>
         <location value="442"/>
         <location value="348"/>
@@ -323,7 +317,7 @@
         <location value="328"/>
         <location value="458"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="297"/>
         <location value="471"/>
         <location value="374"/>
@@ -332,17 +326,17 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="49"/>
     <location value="486"/>
     <location value="156"/>
     <location value="489"/>
-    <layer class="furniture"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="30"/>
     <location value="471"/>
     <location value="34"/>
     <location value="476"/>
-    <layer class="furniture"/>
   </text>
 </doclang>

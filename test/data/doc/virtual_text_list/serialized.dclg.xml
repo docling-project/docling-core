@@ -1,0 +1,48 @@
+<doclang>
+  <list>
+    <ldiv/>
+    <location value="10"/>
+    <location value="20"/>
+    <location value="108"/>
+    <location value="46"/>
+    plain list item
+    <ldiv/>
+    <location value="113"/>
+    <location value="20"/>
+    <location value="210"/>
+    <location value="46"/>
+    <content>this is a </content>
+    <bold>bold</bold>
+    <content> text</content>
+    <ldiv/>
+    <text>
+      <location value="215"/>
+      <location value="20"/>
+      <location value="312"/>
+      <location value="46"/>
+      list item with nested list
+    </text>
+    <list>
+      <ldiv/>
+      <location value="317"/>
+      <location value="20"/>
+      <location value="415"/>
+      <location value="46"/>
+      nested list item
+    </list>
+    <ldiv/>
+    <text>
+      <location value="10"/>
+      <location value="46"/>
+      <location value="108"/>
+      <location value="72"/>
+      list item with picture
+    </text>
+    <picture>
+      <location value="113"/>
+      <location value="46"/>
+      <location value="210"/>
+      <location value="72"/>
+    </picture>
+  </list>
+</doclang>

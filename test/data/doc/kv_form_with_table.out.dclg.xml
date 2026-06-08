@@ -1,12 +1,12 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <field_region>
     <table>
       <ched/>
-      <text>Description of property</text>
+      Description of property
       <ched/>
-      <text>Cost or other basis, plus improvements and expense of sale</text>
+      Cost or other basis, plus improvements and expense of sale
       <ched/>
-      <text>Gain or loss</text>
+      Gain or loss
       <nl/>
       <fcel/>
       <field_item>

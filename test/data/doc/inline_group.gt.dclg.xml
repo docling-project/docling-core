@@ -1,4 +1,4 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <text>
     <location value="5"/>
     <location value="492"/>
@@ -8,14 +8,12 @@
     <bold>Two</bold>
 Three
   </text>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text>Item 1</text>
+    Item 1
     <ldiv/>
-    <text>
-      Four
-      <bold>Five</bold>
+    Four
+    <bold>Five</bold>
 Six
-    </text>
   </list>
 </doclang>

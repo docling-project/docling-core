@@ -1,9 +1,11 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
-  <list class="unordered">
+<doclang>
+  <list>
     <ldiv/>
     Regular item
     <ldiv/>
-    <code class="Python"><![CDATA[print('hello')]]></code>
+    <code>
+      <label value="Python"/>
+<![CDATA[print('hello')]]>    </code>
     <ldiv/>
     Another item
   </list>

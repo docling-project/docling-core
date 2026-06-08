@@ -1,21 +1,17 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <picture>
-    <meta>
-      <classification/>
-    </meta>
+    <label value="bar_code"/>
     <location value="255"/>
     <location value="3"/>
     <location value="448"/>
     <location value="24"/>
   </picture>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text>
-      <location value="73"/>
-      <location value="29"/>
-      <location value="223"/>
-      <location value="48"/>
-    </text>
+    <location value="73"/>
+    <location value="29"/>
+    <location value="223"/>
+    <location value="48"/>
     <ldiv/>
     <group>
       <location value="279"/>
@@ -30,7 +26,7 @@
             <location value="344"/>
             <location value="37"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="365"/>
             <location value="31"/>
             <location value="448"/>
@@ -53,7 +49,7 @@
             <location value="360"/>
             <location value="47"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="390"/>
             <location value="41"/>
             <location value="447"/>
@@ -63,14 +59,12 @@
       </field_region>
     </group>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text>
-      <location value="73"/>
-      <location value="69"/>
-      <location value="225"/>
-      <location value="87"/>
-    </text>
+    <location value="73"/>
+    <location value="69"/>
+    <location value="225"/>
+    <location value="87"/>
     <ldiv/>
     <group>
       <location value="72"/>
@@ -85,7 +79,7 @@
             <location value="123"/>
             <location value="100"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="127"/>
             <location value="94"/>
             <location value="247"/>
@@ -108,7 +102,7 @@
             <location value="114"/>
             <location value="149"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="145"/>
             <location value="253"/>
@@ -124,7 +118,7 @@
             <location value="122"/>
             <location value="132"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="126"/>
             <location value="245"/>
@@ -147,7 +141,7 @@
             <location value="125"/>
             <location value="177"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="172"/>
             <location value="162"/>
@@ -170,7 +164,7 @@
             <location value="111"/>
             <location value="187"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="128"/>
             <location value="182"/>
             <location value="172"/>
@@ -180,12 +174,10 @@
       </field_region>
     </group>
     <ldiv/>
-    <text>
-      <location value="73"/>
-      <location value="192"/>
-      <location value="219"/>
-      <location value="198"/>
-    </text>
+    <location value="73"/>
+    <location value="192"/>
+    <location value="219"/>
+    <location value="198"/>
     <ldiv/>
     <group>
       <location value="73"/>
@@ -200,7 +192,7 @@
             <location value="120"/>
             <location value="223"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="216"/>
             <location value="218"/>
             <location value="254"/>
@@ -223,7 +215,7 @@
             <location value="118"/>
             <location value="230"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="112"/>
             <location value="226"/>
             <location value="253"/>
@@ -246,7 +238,7 @@
             <location value="143"/>
             <location value="243"/>
           </key>
-          <value class="read_only">
+          <value>
             <location value="137"/>
             <location value="239"/>
             <location value="253"/>
@@ -256,19 +248,15 @@
       </field_region>
     </group>
     <ldiv/>
-    <text>
-      <location value="73"/>
-      <location value="257"/>
-      <location value="191"/>
-      <location value="264"/>
-    </text>
+    <location value="73"/>
+    <location value="257"/>
+    <location value="191"/>
+    <location value="264"/>
     <ldiv/>
-    <text>
-      <location value="268"/>
-      <location value="174"/>
-      <location value="449"/>
-      <location value="186"/>
-    </text>
+    <location value="268"/>
+    <location value="174"/>
+    <location value="449"/>
+    <location value="186"/>
   </list>
   <table>
     <location value="77"/>
@@ -276,18 +264,12 @@
     <location value="253"/>
     <location value="213"/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
   </table>
   <heading level="3">
@@ -310,7 +292,7 @@
         <location value="204"/>
         <location value="376"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="73"/>
         <location value="382"/>
         <location value="253"/>
@@ -338,7 +320,7 @@
         <location value="338"/>
         <location value="103"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="342"/>
         <location value="99"/>
         <location value="428"/>
@@ -354,7 +336,7 @@
         <location value="338"/>
         <location value="111"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="341"/>
         <location value="107"/>
         <location value="428"/>
@@ -370,7 +352,7 @@
         <location value="338"/>
         <location value="119"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="269"/>
         <location value="115"/>
         <location value="449"/>
@@ -402,59 +384,34 @@
     <location value="254"/>
     <location value="307"/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
   </table>
   <table>
@@ -463,74 +420,44 @@
     <location value="189"/>
     <location value="367"/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <ecel/>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <nl/>
     <fcel/>
-    <text></text>
     <fcel/>
-    <text></text>
     <ecel/>
     <fcel/>
-    <text></text>
     <nl/>
   </table>
   <heading level="3">
@@ -546,9 +473,7 @@
     <location value="259"/>
   </text>
   <picture>
-    <meta>
-      <classification/>
-    </meta>
+    <label value="illustration"/>
     <location value="285"/>
     <location value="268"/>
     <location value="450"/>
@@ -567,10 +492,10 @@
     <location value="446"/>
   </text>
   <text>
+    <layer value="background"/>
     <location value="268"/>
     <location value="191"/>
     <location value="281"/>
     <location value="197"/>
-    <layer class="background"/>
   </text>
 </doclang>

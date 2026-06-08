@@ -1,4 +1,4 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <heading level="2">
     <location value="30"/>
     <location value="23"/>
@@ -14,9 +14,7 @@
     High Energy Radiation Areas
   </heading>
   <picture>
-    <meta>
-      <classification>Illustration</classification>
-    </meta>
+    <label value="illustration"/>
     <location value="140"/>
     <location value="48"/>
     <location value="237"/>
@@ -37,9 +35,7 @@
     Military Training Routes (MTR)
   </heading>
   <picture>
-    <meta>
-      <classification>Illustration</classification>
-    </meta>
+    <label value="illustration"/>
     <location value="139"/>
     <location value="159"/>
     <location value="248"/>
@@ -53,9 +49,7 @@
     Special Military Activity Routes (SMAR)
   </heading>
   <picture>
-    <meta>
-      <classification>Illustration</classification>
-    </meta>
+    <label value="illustration"/>
     <location value="137"/>
     <location value="180"/>
     <location value="248"/>
@@ -98,7 +92,7 @@
         <location value="299"/>
         Arrival
       </key>
-      <value class="read_only">
+      <value>
         <location value="132"/>
         <location value="292"/>
         <location value="251"/>
@@ -106,9 +100,7 @@
         15,000 - 7000
       </value>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="132"/>
         <location value="292"/>
         <location value="251"/>
@@ -125,7 +117,7 @@
         <location value="335"/>
         Departure
       </key>
-      <value class="read_only">
+      <value>
         <location value="161"/>
         <location value="330"/>
         <location value="232"/>
@@ -133,9 +125,7 @@
         8000-12000
       </value>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="161"/>
         <location value="330"/>
         <location value="232"/>
@@ -152,7 +142,7 @@
         <location value="356"/>
         Arrival/Departure
       </key>
-      <value class="read_only">
+      <value>
         <location value="147"/>
         <location value="354"/>
         <location value="243"/>
@@ -160,9 +150,7 @@
         IFR ARRIVALS IFR DEPARTURES 8000 - 5000 5000 - 8000
       </value>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="147"/>
         <location value="354"/>
         <location value="243"/>
@@ -185,9 +173,7 @@
     Special Security Notice Permanent Continuous Flight Restriction Areas
   </heading>
   <picture>
-    <meta>
-      <classification>Illustration</classification>
-    </meta>
+    <label value="illustration"/>
     <location value="377"/>
     <location value="57"/>
     <location value="459"/>
@@ -201,9 +187,7 @@
     Sporting Event Temporary Flight Restriction (TFR) Sites
   </heading>
   <picture>
-    <meta>
-      <classification>Illustration</classification>
-    </meta>
+    <label value="illustration"/>
     <location value="397"/>
     <location value="165"/>
     <location value="432"/>
@@ -217,9 +201,7 @@
     Space Operations Area (FAR Part 91.143)
   </heading>
   <picture>
-    <meta>
-      <classification>Illustration</classification>
-    </meta>
+    <label value="illustration"/>
     <location value="377"/>
     <location value="197"/>
     <location value="475"/>
@@ -242,15 +224,13 @@
         A
       </key>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="419"/>
         <location value="265"/>
         <location value="450"/>
         <location value="278"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="260"/>
         <location value="271"/>
         <location value="340"/>
@@ -269,15 +249,13 @@
         G
       </key>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="419"/>
         <location value="292"/>
         <location value="449"/>
         <location value="306"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="299"/>
         <location value="320"/>
@@ -296,15 +274,13 @@
         H
       </key>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="421"/>
         <location value="322"/>
         <location value="451"/>
         <location value="336"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="328"/>
         <location value="327"/>
@@ -322,15 +298,13 @@
         <location value="361"/>
 <![CDATA[<img>U</img>]]>      </key>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="421"/>
         <location value="347"/>
         <location value="451"/>
         <location value="361"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="355"/>
         <location value="317"/>
@@ -349,15 +323,13 @@
         UA
       </key>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="421"/>
         <location value="371"/>
         <location value="451"/>
         <location value="385"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="377"/>
         <location value="349"/>
@@ -376,15 +348,13 @@
         parachute 122.9
       </key>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="417"/>
         <location value="401"/>
         <location value="450"/>
         <location value="410"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="404"/>
         <location value="397"/>
@@ -403,15 +373,13 @@
         ✿
       </key>
       <picture>
-        <meta>
-          <classification>Icon</classification>
-        </meta>
+        <label value="icon"/>
         <location value="431"/>
         <location value="441"/>
         <location value="443"/>
         <location value="457"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="261"/>
         <location value="446"/>
         <location value="352"/>
@@ -421,19 +389,19 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="250"/>
     <location value="491"/>
     <location value="260"/>
     <location value="497"/>
-    <layer class="furniture"/>
     31
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="492"/>
     <location value="164"/>
     <location value="500"/>
     <location value="347"/>
-    <layer class="furniture"/>
     FAA Chart Users Guide VFR Symbology - Sectional and Terminal Area Charts
   </text>
 </doclang>

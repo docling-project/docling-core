@@ -1,69 +1,67 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <page_header>
+    <layer value="furniture"/>
     <location value="73"/>
     <location value="14"/>
     <location value="222"/>
     <location value="20"/>
-    <layer class="furniture"/>
     Probability, Combinatorics and Control
   </page_header>
-  <picture>
-    <meta>
-      <classification>Bar chart</classification>
-    </meta>
+  <picture class="chart">
+    <label value="bar_chart"/>
     <location value="104"/>
     <location value="38"/>
     <location value="401"/>
     <location value="152"/>
     <table>
       <fcel/>
-      <text>Number of impellers</text>
+      Number of impellers
       <fcel/>
-      <text>single-frequency</text>
+      single-frequency
       <fcel/>
-      <text>multi-frequency</text>
+      multi-frequency
       <nl/>
       <fcel/>
-      <text>1</text>
+      1
       <fcel/>
-      <text>0.06</text>
+      0.06
       <fcel/>
-      <text>0.16</text>
+      0.16
       <nl/>
       <fcel/>
-      <text>2</text>
+      2
       <fcel/>
-      <text>0.12</text>
+      0.12
       <fcel/>
-      <text>0.26</text>
+      0.26
       <nl/>
       <fcel/>
-      <text>3</text>
+      3
       <fcel/>
-      <text>0.16</text>
+      0.16
       <fcel/>
-      <text>0.27</text>
+      0.27
       <nl/>
       <fcel/>
-      <text>4</text>
+      4
       <fcel/>
-      <text>0.14</text>
+      0.14
       <fcel/>
-      <text>0.26</text>
+      0.26
       <nl/>
       <fcel/>
-      <text>5</text>
+      5
       <fcel/>
-      <text>0.16</text>
+      0.16
       <fcel/>
-      <text>0.25</text>
+      0.25
       <nl/>
       <fcel/>
-      <text>6</text>
+      6
       <fcel/>
-      <text>0.24</text>
+      0.24
       <fcel/>
-      <text>0.24</text>
+      0.24
       <nl/>
     </table>
   </picture>
