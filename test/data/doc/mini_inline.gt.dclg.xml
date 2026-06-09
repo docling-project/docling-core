@@ -1,9 +1,7 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
-  <list class="unordered">
+<doclang>
+  <list>
     <ldiv/>
-    <text>
-      foo
-      <bold>bar</bold>
-    </text>
+    foo
+    <bold>bar</bold>
   </list>
 </doclang>

@@ -3,12 +3,14 @@
 import threading
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+from xml.etree import ElementTree as ET
 
 import pytest
 
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
+    HTMLMetaSerializer,
     HTMLOutputStyle,
     HTMLParams,
     HTMLTableSerializer,
@@ -22,12 +24,21 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
+from docling_core.types.doc import DoclingDocument
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    BaseMeta,
+    CharSpan,
     DescriptionAnnotation,
-    DoclingDocument,
+    EntitiesMetaField,
+    EntityMention,
+    LanguageMetaField,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureMeta,
     RefItem,
     RichTableCell,
+    SummaryMetaField,
     TableCell,
     TableData,
     TextItem,
@@ -678,6 +689,7 @@ def test_md_footnote_validation():
 # HTML tests
 # ===============================
 
+
 def test_html_table_serializer_get_header_and_body_lines():
     """Test HTMLTableSerializer.get_header_and_body_lines() method."""
 
@@ -774,7 +786,6 @@ def test_html_table_serializer_get_header_and_body_lines():
     assert isinstance(body, list)
     # Footer should be in body
     assert "Footer" in str(body)
-
 
 
 def test_html_charts():
@@ -980,6 +991,87 @@ def test_html_rich_table(rich_table_doc):
     verify(exp_file=exp_file, actual=actual)
 
 
+def test_html_rich_cell_textitem_ref_subtree_inside_and_not_outside():
+    """Descendants of a RichTableCell's TextItem ref render inside the table.
+
+    With HTMLTextSerializer recursing into its item's children, the parent text
+    (CELL-TEXT) and its child (DEEP-LEAK) both render as siblings inside the
+    rich cell. The outer document iteration must not re-emit either of them as
+    standalone content after the table.
+    """
+    doc = DoclingDocument(name="rich_cell_textitem_subtree")
+
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=2))
+    rich_ref = doc.add_text(label=DocItemLabel.TEXT, text="CELL-TEXT", parent=table)
+    doc.add_text(label=DocItemLabel.TEXT, text="DEEP-LEAK", parent=rich_ref)
+
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            ref=rich_ref.get_ref(),
+            text="cell 0,0",
+        ),
+    )
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            text="plain",
+        ),
+    )
+
+    out = HTMLDocSerializer(doc=doc).serialize().text
+    body = out[out.find("<body>") : out.find("</body>") + len("</body>")]
+    table_end = body.find("</table>") + len("</table>")
+    inside_table = body[:table_end]
+    after_table = body[table_end:]
+
+    assert "CELL-TEXT" in inside_table, (
+        f"RichTableCell ref content missing from the table:\n{body}"
+    )
+    assert "DEEP-LEAK" in inside_table, (
+        f"RichTableCell ref descendant missing from the table:\n{body}"
+    )
+    assert "CELL-TEXT" not in after_table, (
+        f"RichTableCell ref content leaked outside the table:\n{body}"
+    )
+    assert "DEEP-LEAK" not in after_table, (
+        f"RichTableCell ref descendant leaked outside the table:\n{body}"
+    )
+
+
+def test_html_textitem_with_children_at_document_level():
+    """Doc-level parity: TextItem with TextItem child renders both exactly once.
+
+    Once HTMLTextSerializer recurses into children, the child is rendered by
+    the parent's serialize call instead of by the outer iteration. Both must
+    still appear in document order, exactly once each.
+    """
+    doc = DoclingDocument(name="textitem_with_children")
+    parent = doc.add_text(label=DocItemLabel.TEXT, text="PARENT-TEXT")
+    doc.add_text(label=DocItemLabel.TEXT, text="CHILD-TEXT", parent=parent)
+
+    out = HTMLDocSerializer(doc=doc).serialize().text
+    body = out[out.find("<body>") : out.find("</body>") + len("</body>")]
+
+    assert body.count("PARENT-TEXT") == 1, (
+        f"PARENT-TEXT should appear exactly once:\n{body}"
+    )
+    assert body.count("CHILD-TEXT") == 1, (
+        f"CHILD-TEXT should appear exactly once:\n{body}"
+    )
+    assert body.find("PARENT-TEXT") < body.find("CHILD-TEXT"), (
+        f"PARENT-TEXT should appear before CHILD-TEXT:\n{body}"
+    )
+
+
 def test_html_inline_and_formatting():
     src = Path("./test/data/doc/inline_and_formatting.yaml")
     doc = DoclingDocument.load_from_yaml(src)
@@ -992,6 +1084,7 @@ def test_html_inline_and_formatting():
 # ===============================
 # WebVTT tests
 # ===============================
+
 
 @pytest.mark.parametrize(
     "example_num",
@@ -1022,10 +1115,7 @@ def test_webvtt_params():
     assert "</v>" not in actual
 
     # Test with both parameters enabled
-    ser = WebVTTDocSerializer(
-        doc=doc,
-        params=WebVTTParams(omit_hours_if_zero=True, omit_voice_end=True)
-    )
+    ser = WebVTTDocSerializer(doc=doc, params=WebVTTParams(omit_hours_if_zero=True, omit_voice_end=True))
     actual = ser.serialize().text
 
     assert "00:11.000 --> 00:13.000" in actual
@@ -1035,3 +1125,68 @@ def test_webvtt_params():
     actual_default = ser_default.serialize().text
     assert len(actual) <= len(actual_default) or actual != actual_default
 
+
+def test_html_meta_emits_xhtml_compatible_attributes():
+    """Test that metadata attributes are name=value pairs."""
+
+    doc = DoclingDocument(name="x")
+
+    plain = TableCell(
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        text="",
+    )
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[plain]))
+
+    pic = doc.add_picture(parent=table)
+    pic.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[PictureClassificationPrediction(class_name="other", confidence=1.0)]
+        )
+    )
+
+    table.data.table_cells = [
+        RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="",
+            ref=pic.get_ref(),
+        )
+    ]
+
+    text = doc.add_text(label=DocItemLabel.TEXT, text="Output of HTML serializer must be parseable by a strict XML parser")
+    text.meta = BaseMeta(
+        summary=SummaryMetaField(text="XHTML-compliant"),
+        language=LanguageMetaField(code="en"),
+        entities=EntitiesMetaField(
+            mentions=[
+                EntityMention(
+                    text="HTML serializer",
+                    label="software",
+                    charspan=CharSpan((10, 25)),
+                ),
+                EntityMention(
+                    text="XML parser",
+                    label="software",
+                    charspan=CharSpan((56, 66)),
+                )
+            ]
+        ),
+    )
+
+    html_out = table.export_to_html(doc)
+    # No bare valueless attribute like `data-meta-classification` (must be
+    # followed by `=` to be XHTML-compliant).
+    assert "data-meta-classification>" not in html_out
+    assert 'data-meta-name="classification"' in html_out
+
+    html_out = doc.export_to_html()
+    print(html_out)
+    assert 'data-meta-name="language"' in html_out
+    assert 'data-meta-name="entities"' in html_out
+    # Output must be parseable by a strict XML parser.
+    ET.fromstring(html_out)

@@ -27,7 +27,7 @@ def test_meta():
     gold_errors = {
         "error-meta-01.json": ["type", "version"],
         "error-meta-02.json": ["version", "domain", "$ref"],
-        "error-meta-03.json": ["source", "extra"],
+        "error-meta-03.json": ["extra", "source"],
     }
 
     for filename in glob.glob("test/data/search/error-meta-*.json"):

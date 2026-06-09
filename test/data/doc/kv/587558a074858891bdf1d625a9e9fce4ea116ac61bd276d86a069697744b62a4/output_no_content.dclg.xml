@@ -1,4 +1,4 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <text>
     <location value="336"/>
     <location value="14"/>
@@ -6,9 +6,7 @@
     <location value="21"/>
   </text>
   <picture>
-    <meta>
-      <classification/>
-    </meta>
+    <label value="logo"/>
     <location value="49"/>
     <location value="34"/>
     <location value="139"/>
@@ -16,14 +14,14 @@
   </picture>
   <field_region>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="49"/>
         <location value="63"/>
         <location value="183"/>
         <location value="71"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="188"/>
         <location value="63"/>
         <location value="268"/>
@@ -322,49 +320,49 @@
       <location value="87"/>
     </heading>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="89"/>
         <location value="392"/>
         <location value="93"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="94"/>
         <location value="386"/>
         <location value="99"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="100"/>
         <location value="377"/>
         <location value="104"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="105"/>
         <location value="366"/>
         <location value="109"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="110"/>
         <location value="360"/>
         <location value="114"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="115"/>
         <location value="366"/>
         <location value="120"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="121"/>
         <location value="354"/>
@@ -379,70 +377,70 @@
       <location value="140"/>
     </heading>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="145"/>
         <location value="355"/>
         <location value="149"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="151"/>
         <location value="358"/>
         <location value="154"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="156"/>
         <location value="350"/>
         <location value="160"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="161"/>
         <location value="361"/>
         <location value="165"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="166"/>
         <location value="359"/>
         <location value="170"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="172"/>
         <location value="354"/>
         <location value="176"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="177"/>
         <location value="359"/>
         <location value="182"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="183"/>
         <location value="352"/>
         <location value="186"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="188"/>
         <location value="354"/>
         <location value="192"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="193"/>
         <location value="354"/>
@@ -457,119 +455,119 @@
       <location value="219"/>
     </heading>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="220"/>
         <location value="348"/>
         <location value="224"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="226"/>
         <location value="357"/>
         <location value="230"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="231"/>
         <location value="348"/>
         <location value="235"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="236"/>
         <location value="353"/>
         <location value="240"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="242"/>
         <location value="375"/>
         <location value="246"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="247"/>
         <location value="387"/>
         <location value="251"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="252"/>
         <location value="369"/>
         <location value="256"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="258"/>
         <location value="373"/>
         <location value="262"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="263"/>
         <location value="369"/>
         <location value="267"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="269"/>
         <location value="360"/>
         <location value="273"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="274"/>
         <location value="361"/>
         <location value="278"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="279"/>
         <location value="358"/>
         <location value="283"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="285"/>
         <location value="359"/>
         <location value="288"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="290"/>
         <location value="364"/>
         <location value="294"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="295"/>
         <location value="354"/>
         <location value="299"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="300"/>
         <location value="363"/>
         <location value="304"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="324"/>
         <location value="306"/>
         <location value="354"/>
@@ -584,63 +582,63 @@
       <location value="87"/>
     </heading>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="408"/>
         <location value="89"/>
         <location value="471"/>
         <location value="93"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="94"/>
         <location value="447"/>
         <location value="98"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="100"/>
         <location value="456"/>
         <location value="109"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="110"/>
         <location value="474"/>
         <location value="115"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="116"/>
         <location value="451"/>
         <location value="120"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="121"/>
         <location value="450"/>
         <location value="125"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="126"/>
         <location value="468"/>
         <location value="130"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="132"/>
         <location value="450"/>
         <location value="136"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="137"/>
         <location value="440"/>
@@ -655,42 +653,42 @@
       <location value="166"/>
     </heading>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="169"/>
         <location value="428"/>
         <location value="173"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="174"/>
         <location value="430"/>
         <location value="178"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="179"/>
         <location value="447"/>
         <location value="183"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="185"/>
         <location value="430"/>
         <location value="189"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="190"/>
         <location value="471"/>
         <location value="195"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="196"/>
         <location value="440"/>
@@ -705,56 +703,56 @@
       <location value="211"/>
     </heading>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="408"/>
         <location value="215"/>
         <location value="436"/>
         <location value="219"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="220"/>
         <location value="431"/>
         <location value="224"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="225"/>
         <location value="436"/>
         <location value="229"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="231"/>
         <location value="436"/>
         <location value="235"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="236"/>
         <location value="445"/>
         <location value="240"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="241"/>
         <location value="436"/>
         <location value="245"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="247"/>
         <location value="468"/>
         <location value="251"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="408"/>
         <location value="252"/>
         <location value="439"/>
@@ -769,56 +767,56 @@
       <location value="276"/>
     </heading>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="408"/>
         <location value="279"/>
         <location value="464"/>
         <location value="283"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="284"/>
         <location value="440"/>
         <location value="288"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="290"/>
         <location value="439"/>
         <location value="293"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="295"/>
         <location value="440"/>
         <location value="299"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="300"/>
         <location value="440"/>
         <location value="304"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="305"/>
         <location value="441"/>
         <location value="310"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="408"/>
         <location value="311"/>
         <location value="441"/>
         <location value="315"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="407"/>
         <location value="316"/>
         <location value="440"/>
@@ -832,38 +830,32 @@
       <location value="308"/>
       <location value="339"/>
     </text>
-    <list class="unordered">
+    <list>
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="340"/>
-        <location value="181"/>
-        <location value="344"/>
-      </text>
+      <location value="49"/>
+      <location value="340"/>
+      <location value="181"/>
+      <location value="344"/>
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="346"/>
-        <location value="301"/>
-        <location value="350"/>
-      </text>
+      <location value="49"/>
+      <location value="346"/>
+      <location value="301"/>
+      <location value="350"/>
       <ldiv/>
-      <text>
-        <location value="49"/>
-        <location value="352"/>
-        <location value="166"/>
-        <location value="356"/>
-      </text>
+      <location value="49"/>
+      <location value="352"/>
+      <location value="166"/>
+      <location value="356"/>
     </list>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="49"/>
         <location value="358"/>
         <location value="54"/>
         <location value="362"/>
         <checkbox class="unselected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="49"/>
         <location value="364"/>
         <location value="55"/>
@@ -885,15 +877,13 @@
         <location value="359"/>
       </key>
       <picture>
-        <meta>
-          <classification/>
-        </meta>
+        <label value="icon"/>
         <location value="319"/>
         <location value="350"/>
         <location value="336"/>
         <location value="359"/>
       </picture>
-      <value class="read_only">
+      <value>
         <location value="337"/>
         <location value="351"/>
         <location value="371"/>
@@ -1250,24 +1240,24 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="41"/>
     <location value="489"/>
     <location value="90"/>
     <location value="494"/>
-    <layer class="furniture"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="460"/>
     <location value="480"/>
     <location value="470"/>
     <location value="485"/>
-    <layer class="furniture"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="452"/>
     <location value="489"/>
     <location value="471"/>
     <location value="497"/>
-    <layer class="furniture"/>
   </text>
 </doclang>

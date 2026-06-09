@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.77.0"  # DO NOT EDIT, updated automatically
+version = "2.80.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -77,7 +77,9 @@ chunking = [
     'tree-sitter-typescript >=0.23.2',
 
     # specific:
-    'transformers (>=4.34.0,<6.0.0)',
+    # temporary solution until huggingface/transformers#46159 is resolved
+    'transformers (>=4.34.0,<5.9.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform == "darwin"',
+    'transformers (>=4.34.0,<6.0.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform != "darwin"',
 ]
 chunking-openai = [
     # common:
@@ -113,12 +115,13 @@ dev = [
     "pandas-stubs~=2.1",
     "ipykernel~=6.29",
     "coverage~=7.6",
-    "pytest~=8.3",
+    "pytest~=9.0.3",
     "pytest-cov>=6.1.1",
     "python-semantic-release~=7.32",
     'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
     "ruff>=0.14.11",
     "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
+    "doclang>=0.5,<0.6",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
@@ -218,6 +221,7 @@ exclude = "(^|/)test/data/.*"
 
 [[tool.mypy.overrides]]
 module = [
+    "doclang.*",
     "jsondiff.*",
     "jsonref.*",
     "jsonschema.*",

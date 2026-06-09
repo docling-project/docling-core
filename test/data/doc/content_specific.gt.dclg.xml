@@ -1,107 +1,90 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
-  <list class="unordered">
+<doclang>
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
-  <heading level="1"></heading>
+  <heading></heading>
   <text></text>
   <text></text>
   <heading level="2"></heading>
   <text></text>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>■</marker>
     </ldiv>
     <text></text>
     <list class="ordered">
       <ldiv/>
-      <text></text>
       <ldiv/>
-      <text></text>
       <ldiv/>
       <text></text>
       <list class="ordered">
         <ldiv/>
-        <text></text>
       </list>
     </list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
-  <group>
+  <table>
     <caption>This is the caption of table 1.</caption>
-    <table>
-      <fcel/>
-      <text>Product</text>
-      <fcel/>
-      <text>Years</text>
-      <lcel/>
-      <nl/>
-      <ucel/>
-      <fcel/>
-      <text>2016</text>
-      <fcel/>
-      <text>2017</text>
-      <nl/>
-      <fcel/>
-      <text>Apple</text>
-      <fcel/>
-      <text>49823</text>
-      <fcel/>
-      <text>695944</text>
-      <nl/>
-    </table>
-  </group>
-  <group>
+    <fcel/>
+    Product
+    <fcel/>
+    Years
+    <lcel/>
+    <nl/>
+    <ucel/>
+    <fcel/>
+    2016
+    <fcel/>
+    2017
+    <nl/>
+    <fcel/>
+    Apple
+    <fcel/>
+    49823
+    <fcel/>
+    695944
+    <nl/>
+  </table>
+  <picture>
     <caption>This is the caption of figure 1.</caption>
-    <picture></picture>
-  </group>
-  <group>
+  </picture>
+  <picture>
     <caption>This is the caption of figure 2.</caption>
-    <picture>
-      <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
-    </picture>
-  </group>
-  <list class="unordered">
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
+  </picture>
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>*</marker>
     </ldiv>
-    <text></text>
     <ldiv/>
-    <text></text>
   </list>
-  <list class="unordered">
+  <list>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
     <ldiv>
       <marker>■</marker>
     </ldiv>
     <text></text>
-    <ldiv>
-      <marker>■</marker>
-    </ldiv>
-    <text></text>
-    <list class="unordered">
+    <list>
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <text></text>
       <ldiv>
         <marker>□</marker>
       </ldiv>
@@ -110,14 +93,14 @@
       </ldiv>
     </list>
   </list>
-  <text>
-    <code class="Python"><![CDATA[print("Hello world")]]></code>
-  </text>
-  <text>
-    <formula></formula>
-  </text>
+  <code>
+    <label value="Python"/>
+<![CDATA[print("Hello world")]]>  </code>
+  <formula></formula>
   <text></text>
-  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <code>
+    <label value="Python"/>
+<![CDATA[print("Hello world")]]>  </code>
   <text></text>
   <formula></formula>
   <text></text>
@@ -125,66 +108,56 @@
     <ldiv>
       <marker>(i)</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>(ii)</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>(iii)</marker>
     </ldiv>
     <text></text>
     <list class="ordered">
       <ldiv/>
-      <text></text>
       <ldiv>
         <marker>42.</marker>
       </ldiv>
       <text></text>
       <list class="ordered">
         <ldiv/>
-        <text></text>
         <ldiv/>
-        <text></text>
       </list>
       <ldiv/>
-      <text></text>
     </list>
     <ldiv>
       <marker>(iv)</marker>
     </ldiv>
-    <text></text>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text></text>
   </list>
   <text></text>
-  <group>
+  <picture>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <caption>Picture Caption</caption>
-    <picture>
-      <meta>
-        <summary>Picture Summary</summary>
-        <description>Picture Description</description>
-      </meta>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-    </picture>
-  </group>
-  <group>
+    <custom>
+      <docling__summary>Picture Summary</docling__summary>
+      <docling__description>Picture Description</docling__description>
+    </custom>
+  </picture>
+  <picture>
+    <label value="pie_chart"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <caption>Picture Caption</caption>
-    <picture>
-      <meta>
-        <classification>Pie chart</classification>
-      </meta>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-    </picture>
-  </group>
+    <custom>
+      <docling__summary>Picture Summary</docling__summary>
+      <docling__description>Picture Description</docling__description>
+    </custom>
+  </picture>
   <code>0 == 0</code>
   <code>
     <location value="5"/>

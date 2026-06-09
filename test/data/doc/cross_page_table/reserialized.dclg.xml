@@ -1,0 +1,27 @@
+<doclang>
+  <table>
+    <thread thread_id="1"/>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="200"/>
+    <ched/>
+    H1
+    <ched/>
+    H2
+    <nl/>
+  </table>
+  <page_break/>
+  <table>
+    <thread thread_id="1"/>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="200"/>
+    <fcel/>
+    A
+    <fcel/>
+    B
+    <nl/>
+  </table>
+</doclang>

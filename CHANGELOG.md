@@ -1,3 +1,39 @@
+## [v2.80.0](https://github.com/docling-project/docling-core/releases/tag/v2.80.0) - 2026-06-09
+
+### Feature
+
+* **doclang:** Promote serializer and deserializer ([#633](https://github.com/docling-project/docling-core/issues/633)) ([`5d740c2`](https://github.com/docling-project/docling-core/commit/5d740c260ad680d05596bd6f9dfe4eeb73d408e0))
+
+## [v2.79.0](https://github.com/docling-project/docling-core/releases/tag/v2.79.0) - 2026-06-05
+
+### Feature
+
+* **meta:** Add keywords and topics metadata fields ([#617](https://github.com/docling-project/docling-core/issues/617)) ([`129507e`](https://github.com/docling-project/docling-core/commit/129507ebd2c5f5f68364e6fa6caecca936e2cbf3))
+
+## [v2.78.1](https://github.com/docling-project/docling-core/releases/tag/v2.78.1) - 2026-06-04
+
+### Fix
+
+* Pin transformers<5.9.0 to solve MPS issue ([#625](https://github.com/docling-project/docling-core/issues/625)) ([`d441e6e`](https://github.com/docling-project/docling-core/commit/d441e6ece33f1534c207fca19aa519f370c68d40))
+* Reject unsupported URL schemes ([#604](https://github.com/docling-project/docling-core/issues/604)) ([`701c0ce`](https://github.com/docling-project/docling-core/commit/701c0ce5d14e57c19e030aff8fb1d335bf2431a7))
+
+## [v2.78.0](https://github.com/docling-project/docling-core/releases/tag/v2.78.0) - 2026-05-29
+
+### Feature
+
+* Support vertical orientation in TableData row/column bounding boxes ([#622](https://github.com/docling-project/docling-core/issues/622)) ([`c1c9ea8`](https://github.com/docling-project/docling-core/commit/c1c9ea80a58feea6c11378d9c54ea02479da0c78))
+
+### Fix
+
+* **html-serializer:** Emit XHTML-compatible metadata attributes ([#613](https://github.com/docling-project/docling-core/issues/613)) ([`b20b567`](https://github.com/docling-project/docling-core/commit/b20b5677c06ea8cd5b025737e4621f92c6c6c020))
+* **chunking:** Handle empty TripletTableSerializer output without consuming children ([#596](https://github.com/docling-project/docling-core/issues/596)) ([`507df71`](https://github.com/docling-project/docling-core/commit/507df717c1e63e54de693cc164a2ae051e00e7f6))
+
+## [v2.77.1](https://github.com/docling-project/docling-core/releases/tag/v2.77.1) - 2026-05-26
+
+### Fix
+
+* Render RichTableCell descendants inside the cell ([#621](https://github.com/docling-project/docling-core/issues/621)) ([`01f8d03`](https://github.com/docling-project/docling-core/commit/01f8d03cda09ccb5ea0ba2c8c65cffd1858bdada))
+
 ## [v2.77.0](https://github.com/docling-project/docling-core/releases/tag/v2.77.0) - 2026-05-19
 
 ### Feature

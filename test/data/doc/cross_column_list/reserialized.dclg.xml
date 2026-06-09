@@ -1,0 +1,16 @@
+<doclang>
+  <list>
+    <ldiv/>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="200"/>
+    <location value="50"/>
+    Left column item.
+    <ldiv/>
+    <location value="220"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="50"/>
+    Right column item.
+  </list>
+</doclang>

@@ -1,8 +1,6 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <picture>
-    <meta>
-      <classification>Other</classification>
-    </meta>
+    <label value="other"/>
     <location value="43"/>
     <location value="117"/>
     <location value="172"/>

@@ -20,7 +20,7 @@ from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.document import DoclingDocument
 from docling_core.types.doc.labels import DocItemLabel
 
-from .test_utils import assert_or_generate_json_ground_truth
+from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
 MAX_TOKENS = 64
@@ -327,6 +327,24 @@ def test_chunk_default():
     )
 
 
+def test_chunk_single_cell_rich_table():
+    doc = build_single_cell_rich_table_doc("Important body text inside layout table")
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) == 1
+    assert chunks[0].text == "Important body text inside layout table"
+    assert [item.self_ref for item in chunks[0].meta.doc_items] == [doc.tables[0].self_ref]
+
+
 def test_chunk_explicit():
     EXPECTED_OUT_FILE = "test/data/chunker/2g_out_chunks.json"
 
@@ -529,7 +547,7 @@ def test_chunk_html_table_serializer():
 
 
     serializer = chunker.serializer_provider.get_serializer(dl_doc)
-    
+
 # Serialize each table item individually to get expected content
     table_contents = {}
     for table_item in dl_doc.tables:

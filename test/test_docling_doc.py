@@ -1,13 +1,15 @@
+import itertools
+import base64
 import os
 import re
 import warnings
 from collections import deque
 from copy import deepcopy
+from io import BytesIO
 from pathlib import Path
 from typing import Optional, Union
 from unittest.mock import Mock
-from io import BytesIO
-import base64
+
 import pytest
 import yaml
 from PIL import Image as PILImage
@@ -37,6 +39,7 @@ from docling_core.types.doc import (
     KeyValueItem,
     ListItem,
     NodeItem,
+    Orientation,
     PictureItem,
     ProvenanceItem,
     RefItem,
@@ -49,8 +52,14 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
-from docling_core.types.doc.document import CURRENT_VERSION, PageItem
+from docling_core.types.doc.document import (
+    CURRENT_VERSION,
+    FieldHeadingItem,
+    FieldItem,
+    FieldRegionItem,
+    FieldValueItem,
+    PageItem,
+)
 from docling_core.types.doc.webvtt import WebVTTFile
 from docling_core.utils.settings import settings
 
@@ -2384,3 +2393,230 @@ def test_docitem_comments_delete_updates_refs():
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
+
+
+def test_table_data_vertical_bounding_boxes():
+    """Vertical table: rows are vertical stripes, columns are horizontal stripes.
+
+    When `horizontal=False` and `minimal=False`, rows should share a common
+    vertical (t/b) extent and columns should share a common horizontal (l/r) extent.
+    """
+    # 2 rows x 3 cols vertical table (logical rows run top-to-bottom on page).
+    # Row 0 cells sit on the page-left (l=0..10), row 1 on the page-right (l=10..20).
+    # Col 0 cells sit at the page-top, col 2 at the page-bottom.
+    cells = [
+        TableCell(
+            text="r0c0",
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=0, end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=2, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c0",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=0, end_col_offset_idx=1,
+            bbox=BoundingBox(l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r0c1",
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=1, end_col_offset_idx=2,
+            bbox=BoundingBox(l=0, t=10, r=10, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c1",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=1, end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=10, r=18, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r0c2",
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=2, end_col_offset_idx=3,
+            bbox=BoundingBox(l=0, t=20, r=10, b=28, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c2",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=2, end_col_offset_idx=3,
+            bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+    ]
+    table = TableData(
+        num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90
+    )
+
+    # Minimal mode — sanity-check the per-row/col enclosing bbox.
+    rows_min = table.get_row_bounding_boxes(minimal=True)
+    assert rows_min[0].l == 0 and rows_min[0].r == 10
+    assert rows_min[0].t == 2 and rows_min[0].b == 28
+    assert rows_min[1].l == 10 and rows_min[1].r == 20
+    assert rows_min[1].t == 0 and rows_min[1].b == 30
+
+    cols_min = table.get_column_bounding_boxes(minimal=True)
+    assert cols_min[0].t == 0 and cols_min[0].b == 10
+    assert cols_min[1].t == 10 and cols_min[1].b == 20
+    assert cols_min[2].t == 20 and cols_min[2].b == 30
+
+    # Non-minimal + vertical: rows share t/b, columns share l/r.
+    rows = table.get_row_bounding_boxes(minimal=False)
+    assert rows[0].t == 0 and rows[0].b == 30
+    assert rows[1].t == 0 and rows[1].b == 30
+    # Per-row l/r extents must remain distinct (rows are vertical stripes).
+    assert rows[0].l == 0 and rows[0].r == 10
+    assert rows[1].l == 10 and rows[1].r == 20
+
+    cols = table.get_column_bounding_boxes(minimal=False)
+    for c in cols.values():
+        assert c.l == 0 and c.r == 20
+    # Per-col t/b extents must remain distinct (cols are horizontal stripes).
+    assert (cols[0].t, cols[0].b) == (0, 10)
+    assert (cols[1].t, cols[1].b) == (10, 20)
+    assert (cols[2].t, cols[2].b) == (20, 30)
+
+    # Sanity: with ROT_0 orientation the equalized axes flip back.
+    table.orientation = Orientation.ROT_0
+    rows_h = table.get_row_bounding_boxes(minimal=False)
+    for r in rows_h.values():
+        assert r.l == 0 and r.r == 20
+    cols_h = table.get_column_bounding_boxes(minimal=False)
+    for c in cols_h.values():
+        assert c.t == 0 and c.b == 30
+
+
+def test_table_data_vertical_bounding_boxes_with_spans():
+    """Vertical table with spanning cells.
+
+    In a vertical table, a col_span=2 cell occupies two consecutive horizontal
+    column stripes on the page, so it extends across two t/b ranges. Its presence
+    must extend the spanned columns along l/r (the column's natural axis), NOT
+    along t/b — otherwise column N's bbox bleeds into column N+1.
+
+    Symmetric for row_span=2: extends along t/b, not l/r.
+    """
+    # Layout (TOPLEFT, 2 rows x 3 cols, vertical):
+    #   row 0 cells live in l=0..10, row 1 cells in l=10..20
+    #   col 0 stripe is at t=0..10, col 1 at t=10..20, col 2 at t=20..30
+    # Cell (r0, c1+c2) is a col_span=2 cell in row 0 spanning cols 1 and 2:
+    # it lives at l=0..10 (row 0) and t=10..30 (both col 1 and col 2 stripes).
+    # Cell (r0+r1, c0) is a row_span=2 cell in col 0 spanning rows 0 and 1:
+    # it lives at t=0..10 (col 0) and l=0..20 (both row 0 and row 1 stripes).
+    cells = [
+        TableCell(  # row_span=2 in col 0
+            text="r0+r1,c0",
+            start_row_offset_idx=0, end_row_offset_idx=2,
+            start_col_offset_idx=0, end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r0c1+c2",  # col_span=2 in row 0
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=1, end_col_offset_idx=3,
+            bbox=BoundingBox(l=0, t=10, r=10, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c1",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=1, end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=10, r=20, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c2",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=2, end_col_offset_idx=3,
+            bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+    ]
+    table = TableData(
+        num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90
+    )
+
+    # COLUMNS — col_span=2 cell must NOT stretch col 1 / col 2 along t/b.
+    cols = table.get_column_bounding_boxes(minimal=True)
+    # col 1 stripe on page is t=10..20; the col_span cell adds l-extent only.
+    assert (cols[1].t, cols[1].b) == (10, 20)
+    assert cols[1].l == 0 and cols[1].r == 20
+    # col 2 stripe on page is t=20..30; col_span cell again adds only l-extent.
+    assert (cols[2].t, cols[2].b) == (20, 30)
+    assert cols[2].l == 0 and cols[2].r == 20
+
+    # ROWS — row_span=2 cell must NOT stretch row 0 / row 1 along l/r.
+    rows = table.get_row_bounding_boxes(minimal=True)
+    # row 0 stripe on page is l=0..10; the row_span cell adds t-extent only.
+    assert (rows[0].l, rows[0].r) == (0, 10)
+    assert rows[0].t == 0 and rows[0].b == 30
+    # row 1 stripe on page is l=10..20; row_span cell again adds only t-extent.
+    assert (rows[1].l, rows[1].r) == (10, 20)
+    assert rows[1].t == 0 and rows[1].b == 30
+
+    # Non-overlap property: row bboxes (and col bboxes) must be pairwise
+    # disjoint when cell bboxes are sane and separated.
+    for a, b in itertools.combinations(rows.values(), 2):
+        assert a.intersection_area_with(b) == 0
+    for a, b in itertools.combinations(cols.values(), 2):
+        assert a.intersection_area_with(b) == 0
+    # Same check in minimal=False mode.
+    rows_nm = table.get_row_bounding_boxes(minimal=False)
+    cols_nm = table.get_column_bounding_boxes(minimal=False)
+    for a, b in itertools.combinations(rows_nm.values(), 2):
+        assert a.intersection_area_with(b) == 0
+    for a, b in itertools.combinations(cols_nm.values(), 2):
+        assert a.intersection_area_with(b) == 0
+
+
+def test_table_data_horizontal_bounding_boxes_with_spans_no_overlap():
+    """Horizontal table with spanning cells: row/col bboxes must not overlap."""
+    # 3 rows x 3 cols horizontal table with one col_span=2 and one row_span=2 cell.
+    cells = [
+        TableCell(
+            text="r0c0",
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=0, end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(  # col_span=2
+            text="r0c1+c2",
+            start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=1, end_col_offset_idx=3,
+            bbox=BoundingBox(l=10, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(  # row_span=2
+            text="r1+r2,c0",
+            start_row_offset_idx=1, end_row_offset_idx=3,
+            start_col_offset_idx=0, end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=10, r=10, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c1",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=1, end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=10, r=20, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c2",
+            start_row_offset_idx=1, end_row_offset_idx=2,
+            start_col_offset_idx=2, end_col_offset_idx=3,
+            bbox=BoundingBox(l=20, t=10, r=30, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r2c1",
+            start_row_offset_idx=2, end_row_offset_idx=3,
+            start_col_offset_idx=1, end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r2c2",
+            start_row_offset_idx=2, end_row_offset_idx=3,
+            start_col_offset_idx=2, end_col_offset_idx=3,
+            bbox=BoundingBox(l=20, t=20, r=30, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+    ]
+    table = TableData(num_rows=3, num_cols=3, table_cells=cells)
+
+    for minimal in (True, False):
+        rows = table.get_row_bounding_boxes(minimal=minimal)
+        cols = table.get_column_bounding_boxes(minimal=minimal)
+        for a, b in itertools.combinations(rows.values(), 2):
+            assert a.intersection_area_with(b) == 0, f"row overlap (minimal={minimal})"
+        for a, b in itertools.combinations(cols.values(), 2):
+            assert a.intersection_area_with(b) == 0, f"col overlap (minimal={minimal})"

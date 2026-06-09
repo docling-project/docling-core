@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from typing_extensions import override
 
-from docling_core.transforms.serializer.html import HTMLDocSerializer, HTMLParams
 from docling_core.transforms.serializer.base import SerializationResult
 from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.transforms.serializer.html import HTMLDocSerializer, HTMLParams
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownMetaSerializer,
@@ -22,12 +22,14 @@ from docling_core.types.doc import (
     EntityMention,
     GroupLabel,
     HumanLanguageLabel,
+    KeywordsMetaField,
     LanguageMetaField,
     MetaFieldName,
     MetaUtils,
     NodeItem,
     RefItem,
     SummaryMetaField,
+    TopicsMetaField,
 )
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -249,7 +251,9 @@ def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocumen
     params = MarkdownParams(
         include_non_meta=False,
     )
-    ser = MarkdownDocSerializer(doc=doc_with_group_with_metadata, params=params, meta_serializer=SummaryMarkdownMetaSerializer())
+    ser = MarkdownDocSerializer(
+        doc=doc_with_group_with_metadata, params=params, meta_serializer=SummaryMarkdownMetaSerializer()
+    )
     ser_res = ser.serialize()
     actual = ser_res.text
     exp_file = Path("test/data/doc/group_with_metadata_summaries.md")
@@ -261,7 +265,9 @@ def test_document_level_metadata(dummy_doc_with_meta: DoclingDocument) -> None:
     # Verify document-level metadata exists
     assert dummy_doc_with_meta.body.meta is not None
     assert dummy_doc_with_meta.body.meta.summary is not None
-    assert dummy_doc_with_meta.body.meta.summary.text == "This is a document-level summary describing the entire document."
+    assert (
+        dummy_doc_with_meta.body.meta.summary.text == "This is a document-level summary describing the entire document."
+    )
     assert dummy_doc_with_meta.body.meta.summary.confidence == 0.98
 
     # Verify custom metadata fields at document level
@@ -288,6 +294,8 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
                 EntityMention(text="Zurich", label="LOC", charspan=(16, 22)),
             ]
         ),
+        keywords=KeywordsMetaField(values=["ibm", "zurich", "company"]),
+        topics=TopicsMetaField(values=["business", "geography"]),
     )
 
     roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
@@ -297,12 +305,23 @@ def test_semantic_base_meta_fields_roundtrip_and_html_rendering() -> None:
     assert meta.language.code == HumanLanguageLabel.EN
     assert meta.entities is not None
     assert [mention.text for mention in meta.entities.mentions] == ["IBM", "Zurich"]
+    assert meta.keywords is not None and meta.keywords.values == ["ibm", "zurich", "company"]
+    assert meta.topics is not None and meta.topics.values == ["business", "geography"]
+    assert meta.has_content()
 
     html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
-    assert "data-meta-language" in html
-    assert "data-meta-entities" in html
+    assert 'data-meta-name="language"' in html
+    assert 'data-meta-name="entities"' in html
+    assert 'data-meta-name="keywords"' in html
+    assert 'data-meta-name="topics"' in html
     assert ">en<" in html
     assert "IBM (ORG, [0,3]), Zurich (LOC, [16,22])" in html
+    assert "ibm, zurich, company" in html
+    assert ">business, geography<" in html
+
+    # duplicate values are removed without rejection
+    assert KeywordsMetaField(values=["ai", "ml", "ai"]).values == ["ai", "ml"]
+    assert TopicsMetaField(values=["nlp", "nlp"]).values == ["nlp"]
 
 
 def test_html_escapes_entity_text() -> None:
@@ -328,3 +347,35 @@ def test_html_skips_empty_base_meta() -> None:
     html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
     assert '<details class="docling-meta">' not in html
     assert "data-meta-entities" not in html
+
+
+def test_html_escapes_keywords() -> None:
+    doc = DoclingDocument(name="kw-escape")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="x")
+    item.meta = BaseMeta(keywords=KeywordsMetaField(values=["A<B & C>"]))
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert "A&lt;B &amp; C&gt;" in html
+
+
+def test_md_marked_renders_keywords_and_topics() -> None:
+    doc = DoclingDocument(name="kw-md")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM is based in Zurich.")
+    item.meta = BaseMeta(
+        keywords=KeywordsMetaField(values=["ibm", "zurich"]),
+        topics=TopicsMetaField(values=["business"]),
+    )
+    md = MarkdownDocSerializer(doc=doc, params=MarkdownParams(mark_meta=True)).serialize().text
+    assert "[Keywords] ibm, zurich" in md
+    assert "[Topics] business" in md
+
+
+def test_keywords_topics_required_values() -> None:
+    with pytest.raises(ValidationError, match="at least 1 item"):
+        KeywordsMetaField(values=[])
+    with pytest.raises(ValidationError, match="at least 1 item"):
+        TopicsMetaField(values=[])
+    with pytest.raises(ValidationError, match="list of strings"):
+        TopicsMetaField(values=34)
+    with pytest.raises(ValidationError, match="valid string"):
+        TopicsMetaField(values=[34])

@@ -1,4 +1,4 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <field_region>
     <location value="5"/>
     <location value="492"/>
@@ -8,13 +8,13 @@
       <key>
         <picture></picture>
       </key>
-      <value class="read_only">+123-456-7890</value>
+      <value>+123-456-7890</value>
     </field_item>
     <field_item>
       <key>
         <picture></picture>
       </key>
-      <value class="read_only">hello@example.com</value>
+      <value>hello@example.com</value>
     </field_item>
   </field_region>
   <field_region>
@@ -23,7 +23,7 @@
         <key>
           <content>Invoice No: </content>
         </key>
-        <value class="read_only">222</value>
+        <value>222</value>
       </field_item>
     </text>
     <text>
@@ -31,7 +31,7 @@
         <key>
           <content>Date: </content>
         </key>
-        <value class="read_only">02 May, 2021</value>
+        <value>02 May, 2021</value>
       </field_item>
     </text>
   </field_region>
@@ -44,7 +44,7 @@
         <location value="502"/>
         Administrator
       </key>
-      <value class="read_only">
+      <value>
         <location value="5"/>
         <location value="492"/>
         <location value="15"/>

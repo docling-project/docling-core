@@ -62,6 +62,7 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    KeywordsMetaField,
     LanguageMetaField,
     ListGroup,
     ListItem,
@@ -79,6 +80,7 @@ from docling_core.types.doc.document import (
     TabularChartMetaField,
     TextItem,
     TitleItem,
+    TopicsMetaField,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
@@ -230,13 +232,30 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             # Regular text item
             text = get_html_tag_with_text_direction(html_tag="p", text=text)
 
-        # Apply formatting and hyperlinks
+        # Apply formatting and hyperlinks to the parent's own text+tag.
         if not post_processed:
             text = doc_serializer.post_process(
                 text=text,
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
             )
+
+        # Recurse into children for branches that don't already consume them.
+        # has_inline_repr already consumed the single InlineGroup child; ListItem
+        # recursion is handled inline in its branch above.
+        if not has_inline_repr and not isinstance(item, ListItem) and item.children:
+            nested_text = "\n".join(
+                r.text
+                for r in doc_serializer.get_parts(
+                    item=item,
+                    is_inline_scope=is_inline_scope,
+                    visited=my_visited,
+                    **kwargs,
+                )
+                if r.text
+            )
+            if nested_text:
+                text = f"{text}\n{nested_text}" if text else nested_text
 
         if text:
             text_res = create_ser_result(text=text, span_source=item)
@@ -945,6 +964,8 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
 
     def _serialize_meta_field(self, meta: BaseMeta, name: str) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
+            is_html_markup = False
+
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
             elif isinstance(field_val, LanguageMetaField):
@@ -952,17 +973,18 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
             elif isinstance(field_val, EntitiesMetaField):
                 txt = ", ".join(
                     (
-                        f"{html.escape(mention.text)} "
-                        f"({html.escape(mention.label)}, [{mention.charspan[0]},{mention.charspan[1]}])"
+                        f"{mention.text} ({mention.label}, [{mention.charspan[0]},{mention.charspan[1]}])"
                         if mention.label is not None and mention.charspan
-                        else f"{html.escape(mention.text)} ({html.escape(mention.label)})"
+                        else f"{mention.text} ({mention.label})"
                         if mention.label is not None
-                        else f"{html.escape(mention.text)} ([{mention.charspan[0]},{mention.charspan[1]}])"
+                        else f"{mention.text} ([{mention.charspan[0]},{mention.charspan[1]}])"
                         if mention.charspan
-                        else html.escape(mention.text)
+                        else mention.text
                     )
                     for mention in field_val.mentions
                 )
+            elif isinstance(field_val, KeywordsMetaField | TopicsMetaField):
+                txt = ", ".join(field_val.values)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
             elif isinstance(field_val, PictureClassificationMetaField):
@@ -975,19 +997,30 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                 table_content = temp_table.export_to_html(temp_doc).strip()
                 if table_content:
                     txt = table_content
+                    is_html_markup = True
                 else:
                     return None
             elif isinstance(field_val, CodeMetaField):
                 lang = field_val.language.value.lower() if field_val.language else ""
-                code_class = f' class="language-{html.escape(lang)}"' if lang else ""
-                txt = f'<pre class="docling-meta-code"><code{code_class}>{html.escape(field_val.text)}</code></pre>'
+                escaped_lang = html.escape(lang)
+                escaped_code = html.escape(field_val.text)
+                code_class = f' class="language-{escaped_lang}"' if lang else ""
+                txt = f'<pre class="docling-meta-code"><code{code_class}>{escaped_code}</code></pre>'
+                is_html_markup = True
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:
                 return None
+
+            # Escape plain text content for safe HTML output.
+            # HTML markup fields (TabularChartMetaField, CodeMetaField) are already properly formatted.
+            if not is_html_markup:
+                txt = html.escape(txt, quote=False)
+
+            escaped_name = html.escape(name, quote=True)
             return (
-                f'<div class="docling-meta-field" data-meta-{name}>'
-                f'<span class="docling-meta-field-label">{name}:</span> '
+                f'<div class="docling-meta-field" data-meta-name="{escaped_name}">'
+                f'<span class="docling-meta-field-label">{escaped_name}:</span> '
                 f'<span class="docling-meta-field-value">{txt}</span>'
                 f"</div>"
             )

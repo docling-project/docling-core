@@ -1,78 +1,66 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
-  <list class="unordered">
+<doclang>
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
-  <heading level="1"></heading>
+  <heading></heading>
   <text></text>
   <text></text>
   <heading level="2"></heading>
   <text></text>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>■</marker>
     </ldiv>
     <text></text>
     <list class="ordered">
       <ldiv/>
-      <text></text>
       <ldiv/>
-      <text></text>
       <ldiv/>
       <text></text>
       <list class="ordered">
         <ldiv/>
-        <text></text>
       </list>
     </list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
-  <group></group>
+  <table></table>
   <picture></picture>
   <picture>
-    <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
   </picture>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text></text>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>*</marker>
     </ldiv>
-    <text></text>
     <ldiv/>
-    <text></text>
   </list>
-  <list class="unordered">
+  <list>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
     <ldiv>
       <marker>■</marker>
     </ldiv>
     <text></text>
-    <ldiv>
-      <marker>■</marker>
-    </ldiv>
-    <text></text>
-    <list class="unordered">
+    <list>
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <text></text>
       <ldiv>
         <marker>□</marker>
       </ldiv>
@@ -81,14 +69,14 @@
       </ldiv>
     </list>
   </list>
-  <text>
-    <code class="Python"></code>
-  </text>
-  <text>
-    <formula></formula>
-  </text>
+  <code>
+    <label value="Python"/>
+  </code>
+  <formula></formula>
   <text></text>
-  <code class="Python"></code>
+  <code>
+    <label value="Python"/>
+  </code>
   <text></text>
   <formula></formula>
   <text></text>
@@ -96,39 +84,31 @@
     <ldiv>
       <marker>(i)</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>(ii)</marker>
     </ldiv>
-    <text></text>
     <ldiv>
       <marker>(iii)</marker>
     </ldiv>
     <text></text>
     <list class="ordered">
       <ldiv/>
-      <text></text>
       <ldiv>
         <marker>42.</marker>
       </ldiv>
       <text></text>
       <list class="ordered">
         <ldiv/>
-        <text></text>
         <ldiv/>
-        <text></text>
       </list>
       <ldiv/>
-      <text></text>
     </list>
     <ldiv>
       <marker>(iv)</marker>
     </ldiv>
-    <text></text>
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text></text>
   </list>
   <text></text>
   <picture>
@@ -138,6 +118,7 @@
     <location value="502"/>
   </picture>
   <picture>
+    <label value="pie_chart"/>
     <location value="5"/>
     <location value="492"/>
     <location value="15"/>

@@ -1,4 +1,4 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
+<doclang>
   <heading level="2">
     <location value="118"/>
     <location value="30"/>
@@ -59,7 +59,7 @@
         <location value="89"/>
         Commission file number 1
       </key>
-      <value class="read_only">
+      <value>
         <location value="286"/>
         <location value="85"/>
         <location value="315"/>
@@ -83,9 +83,7 @@
     (Exact name of registrant as specified in its charter)
   </text>
   <picture>
-    <meta>
-      <classification>Logo</classification>
-    </meta>
+    <label value="logo"/>
     <location value="221"/>
     <location value="112"/>
     <location value="282"/>
@@ -100,7 +98,7 @@
         <location value="142"/>
         (State or other jurisdiction of incorporation or organization)
       </key>
-      <value class="read_only">
+      <value>
         <location value="99"/>
         <location value="133"/>
         <location value="131"/>
@@ -118,7 +116,7 @@
         <location value="142"/>
         (I.R.S. Employer Identification No.)
       </key>
-      <value class="read_only">
+      <value>
         <location value="361"/>
         <location value="133"/>
         <location value="401"/>
@@ -136,7 +134,7 @@
         <location value="159"/>
         (Address of principal executive offices)
       </key>
-      <value class="read_only">
+      <value>
         <location value="42"/>
         <location value="149"/>
         <location value="260"/>
@@ -153,7 +151,7 @@
         <location value="159"/>
         (Zip Code)
       </key>
-      <value class="read_only">
+      <value>
         <location value="371"/>
         <location value="149"/>
         <location value="391"/>
@@ -170,7 +168,7 @@
         <location value="335"/>
         <location value="171"/>
 <![CDATA[(Registrant's telephone number , including area code)]]>      </key>
-      <value class="read_only">
+      <value>
         <location value="230"/>
         <location value="162"/>
         <location value="281"/>
@@ -195,7 +193,7 @@
         <location value="200"/>
         Common Stock, $1.25 Per Value 1.25% Senior Notes due 2022
       </key>
-      <value class="read_only">
+      <value>
         <location value="90"/>
         <location value="186"/>
         <location value="146"/>
@@ -213,7 +211,7 @@
         <location value="200"/>
         FLS22A
       </key>
-      <value class="read_only">
+      <value>
         <location value="231"/>
         <location value="186"/>
         <location value="280"/>
@@ -231,7 +229,7 @@
         <location value="201"/>
         New York Stock Exchange New York Stock Exchange
       </key>
-      <value class="read_only">
+      <value>
         <location value="323"/>
         <location value="186"/>
         <location value="463"/>
@@ -249,7 +247,7 @@
         <location value="209"/>
         Securities registered pursuant to Section 12(g) of the Act:
       </key>
-      <value class="read_only">
+      <value>
         <location value="247"/>
         <location value="210"/>
         <location value="264"/>
@@ -267,7 +265,7 @@
         <location value="220"/>
         Indicate by check mark if the registrant is a well-known seasoned issuer, as defined in Rule 405 of the Securities Act . Yes
       </key>
-      <value class="read_only">
+      <value>
         <location value="350"/>
         <location value="215"/>
         <location value="366"/>
@@ -275,7 +273,7 @@
         <checkbox class="selected"/>
         Yes ☑
       </value>
-      <value class="read_only">
+      <value>
         <location value="375"/>
         <location value="216"/>
         <location value="390"/>
@@ -294,7 +292,7 @@
         <location value="226"/>
         Indicate by check mark if the registrant is not required to file reports pursuant to Section 13 or Section 15(d) of the Act. Yes
       </key>
-      <value class="read_only">
+      <value>
         <location value="358"/>
         <location value="221"/>
         <location value="374"/>
@@ -302,7 +300,7 @@
         <checkbox class="selected"/>
         Yes ☐
       </value>
-      <value class="read_only">
+      <value>
         <location value="383"/>
         <location value="221"/>
         <location value="397"/>
@@ -321,7 +319,7 @@
         <location value="240"/>
         Indicate by check mark whether the registrant (1) has filed all reports required to be filed by Section 13 or 15(d) of the Securities Exchange Act of 1934 during the preceding 12 months (or for such shorter period that the registrant was required to file such reports), and (2) has been subject to such filing requirements for the past 90 days. Yes ☑ No ☐
       </key>
-      <value class="read_only">
+      <value>
         <location value="39"/>
         <location value="235"/>
         <location value="55"/>
@@ -329,7 +327,7 @@
         <checkbox class="selected"/>
         Yes ☑
       </value>
-      <value class="read_only">
+      <value>
         <location value="63"/>
         <location value="235"/>
         <location value="78"/>
@@ -348,7 +346,7 @@
         <location value="250"/>
         Indicate by check mark whether the registrant has submitted electronically every interactive Data File required to be submitted pursuant to Rule 405 of Regulation S-T ( § 232.405 of this chapter) during the preceding 12 months (or for such shorter period that the registrant was required to submit such files). Yes ☑ No ☐
       </key>
-      <value class="read_only">
+      <value>
         <location value="399"/>
         <location value="245"/>
         <location value="416"/>
@@ -356,7 +354,7 @@
         <checkbox class="selected"/>
         Yes ☑
       </value>
-      <value class="read_only">
+      <value>
         <location value="424"/>
         <location value="245"/>
         <location value="439"/>
@@ -382,7 +380,7 @@
   </text>
   <field_region>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="158"/>
         <location value="266"/>
         <location value="241"/>
@@ -390,7 +388,7 @@
         <checkbox class="unselected"/>
         Accelerated filer ☐
       </value>
-      <value class="read_only">
+      <value>
         <location value="288"/>
         <location value="266"/>
         <location value="380"/>
@@ -398,7 +396,7 @@
         <checkbox class="unselected"/>
         Non-accelerated filer ☐
       </value>
-      <value class="read_only">
+      <value>
         <location value="399"/>
         <location value="266"/>
         <location value="495"/>
@@ -406,7 +404,7 @@
         <checkbox class="unselected"/>
         Smaller reporting company ☐
       </value>
-      <value class="read_only">
+      <value>
         <location value="23"/>
         <location value="271"/>
         <location value="120"/>
@@ -425,7 +423,7 @@
         <location value="285"/>
         If an emerging growth company, indicate by check mark if the registrant has elected not to use the extended transition period for complying with any new or revised financial accounting standards provided pursuant to Section 13(a) of the Exchange Act. ☐
       </key>
-      <value class="read_only">
+      <value>
         <location value="302"/>
         <location value="281"/>
         <location value="307"/>
@@ -443,7 +441,7 @@
         <location value="499"/>
         <location value="301"/>
 <![CDATA[Indicate by check mark whether the registrant has filed a report on and attestation to its management's assessment of the effectiveness of its internal control over financial reporting under Section 404(b) of the Sarbanes-Oxley Act (15 U.S.C. 7262(b)) by the registered public accounting firm that prepared or issued its audit report. Yes ☑ No ☐]]>      </key>
-      <value class="read_only">
+      <value>
         <location value="12"/>
         <location value="297"/>
         <location value="30"/>
@@ -451,7 +449,7 @@
         <checkbox class="selected"/>
         Yes ☑
       </value>
-      <value class="read_only">
+      <value>
         <location value="38"/>
         <location value="297"/>
         <location value="53"/>
@@ -470,7 +468,7 @@
         <location value="307"/>
         Indicate by check mark whether the registrant is a shell company (as defined in Rule 12b-2 of the Exchange Act). Yes
       </key>
-      <value class="read_only">
+      <value>
         <location value="340"/>
         <location value="303"/>
         <location value="357"/>
@@ -478,7 +476,7 @@
         <checkbox class="unselected"/>
         Yes ☐
       </value>
-      <value class="read_only">
+      <value>
         <location value="365"/>
         <location value="303"/>
         <location value="380"/>

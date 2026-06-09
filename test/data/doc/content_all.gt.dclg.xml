@@ -1,11 +1,11 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
-  <list class="unordered">
+<doclang>
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>item of leading list</text>
+    item of leading list
   </list>
-  <heading level="1">Title of the Document</heading>
+  <heading>Title of the Document</heading>
   <text>
     <content>Author 1
 Affiliation 1</content>
@@ -16,118 +16,113 @@ Affiliation 2</content>
   </text>
   <heading level="2">1. Introduction</heading>
   <text>This paper introduces the biggest invention ever made. ...</text>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>list item 1</text>
+    list item 1
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>list item 2</text>
+    list item 2
     <ldiv>
       <marker>■</marker>
     </ldiv>
     <text>list item 3</text>
     <list class="ordered">
       <ldiv/>
-      <text>list item 3.a</text>
+      list item 3.a
       <ldiv/>
-      <text>list item 3.b</text>
+      list item 3.b
       <ldiv/>
       <text>list item 3.c</text>
       <list class="ordered">
         <ldiv/>
-        <text>list item 3.c.i</text>
+        list item 3.c.i
       </list>
     </list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>list item 4</text>
+    list item 4
   </list>
-  <group>
+  <table>
     <caption>This is the caption of table 1.</caption>
-    <table>
-      <fcel/>
-      <text>Product</text>
-      <fcel/>
-      <text>Years</text>
-      <lcel/>
-      <nl/>
-      <ucel/>
-      <fcel/>
-      <text>2016</text>
-      <fcel/>
-      <text>2017</text>
-      <nl/>
-      <fcel/>
-      <text>Apple</text>
-      <fcel/>
-      <text>49823</text>
-      <fcel/>
-      <text>695944</text>
-      <nl/>
-    </table>
-  </group>
-  <group>
+    <fcel/>
+    Product
+    <fcel/>
+    Years
+    <lcel/>
+    <nl/>
+    <ucel/>
+    <fcel/>
+    2016
+    <fcel/>
+    2017
+    <nl/>
+    <fcel/>
+    Apple
+    <fcel/>
+    49823
+    <fcel/>
+    695944
+    <nl/>
+  </table>
+  <picture>
     <caption>This is the caption of figure 1.</caption>
-    <picture></picture>
-  </group>
-  <group>
+  </picture>
+  <picture>
     <caption>This is the caption of figure 2.</caption>
-    <picture>
-      <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
-    </picture>
-  </group>
-  <list class="unordered">
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
+  </picture>
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>item 1 of list</text>
+    item 1 of list
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>*</marker>
     </ldiv>
-    <text>item 1 of list after empty list</text>
+    item 1 of list after empty list
     <ldiv/>
-    <text>item 2 of list after empty list</text>
+    item 2 of list after empty list
   </list>
-  <list class="unordered">
+  <list>
     <ldiv>
       <marker>■</marker>
     </ldiv>
-    <text>item 1 of neighboring list</text>
+    item 1 of neighboring list
     <ldiv>
       <marker>■</marker>
     </ldiv>
     <text>item 2 of neighboring list</text>
-    <list class="unordered">
+    <list>
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <text>item 1 of sub list</text>
+      item 1 of sub list
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <text>
-        Here a code snippet:
-        <code class="Python"><![CDATA[print("Hello world")]]></code>
+      Here a code snippet:
+      <code>
+        <label value="Python"/>
+<![CDATA[print("Hello world")]]>      </code>
 (to be displayed inline)
-      </text>
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <text>
-        Here a formula:
-        <formula>E=mc^2</formula>
+      Here a formula:
+      <formula>E=mc^2</formula>
 (to be displayed inline)
-      </text>
     </list>
   </list>
   <text>Here a code block:</text>
-  <code class="Python"><![CDATA[print("Hello world")]]></code>
+  <code>
+    <label value="Python"/>
+<![CDATA[print("Hello world")]]>  </code>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
   <text>
@@ -152,80 +147,76 @@ hyperlink
     <ldiv>
       <marker>(i)</marker>
     </ldiv>
-    <text>Item 1 in A</text>
+    Item 1 in A
     <ldiv>
       <marker>(ii)</marker>
     </ldiv>
-    <text>Item 2 in A</text>
+    Item 2 in A
     <ldiv>
       <marker>(iii)</marker>
     </ldiv>
     <text>Item 3 in A</text>
     <list class="ordered">
       <ldiv/>
-      <text>Item 1 in B</text>
+      Item 1 in B
       <ldiv>
         <marker>42.</marker>
       </ldiv>
       <text>Item 2 in B</text>
       <list class="ordered">
         <ldiv/>
-        <text>Item 1 in C</text>
+        Item 1 in C
         <ldiv/>
-        <text>Item 2 in C</text>
+        Item 2 in C
       </list>
       <ldiv/>
-      <text>Item 3 in B</text>
+      Item 3 in B
     </list>
     <ldiv>
       <marker>(iv)</marker>
     </ldiv>
-    <text>Item 4 in A</text>
+    Item 4 in A
   </list>
-  <list class="unordered">
+  <list>
     <ldiv/>
-    <text>List item without parent list group</text>
+    List item without parent list group
   </list>
   <text>The end.</text>
-  <group>
+  <picture>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <caption>Picture Caption</caption>
-    <picture>
-      <meta>
-        <summary>Picture Summary</summary>
-        <description>Picture Description</description>
-      </meta>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-    </picture>
-  </group>
-  <group>
+    <custom>
+      <docling__summary>Picture Summary</docling__summary>
+      <docling__description>Picture Description</docling__description>
+    </custom>
+  </picture>
+  <picture class="chart">
+    <label value="pie_chart"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
     <caption>Picture Caption</caption>
-    <picture>
-      <meta>
-        <summary>Picture Summary</summary>
-        <description>Picture Description</description>
-        <classification>Pie chart</classification>
-      </meta>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-      <table>
-        <fcel/>
-        <text>Foo</text>
-        <fcel/>
-        <text>Bar</text>
-        <nl/>
-        <fcel/>
-        <text>One</text>
-        <fcel/>
-        <text>Two</text>
-        <nl/>
-      </table>
-    </picture>
-  </group>
+    <custom>
+      <docling__summary>Picture Summary</docling__summary>
+      <docling__description>Picture Description</docling__description>
+    </custom>
+    <table>
+      <fcel/>
+      Foo
+      <fcel/>
+      Bar
+      <nl/>
+      <fcel/>
+      One
+      <fcel/>
+      Two
+      <nl/>
+    </table>
+  </picture>
   <code>0 == 0</code>
   <code>
     <location value="5"/>

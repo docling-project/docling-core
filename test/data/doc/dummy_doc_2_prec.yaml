@@ -157,6 +157,7 @@ tables:
     grid: []
     num_cols: 0
     num_rows: 0
+    orientation: rot_0
     table_cells: []
   footnotes: []
   image:

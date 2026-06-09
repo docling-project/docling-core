@@ -1,25 +1,24 @@
-<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.2">
-  <table class="index">
+<doclang>
+  <index>
     <location value="67"/>
     <location value="40"/>
     <location value="451"/>
     <location value="473"/>
     <fcel/>
-    <text></text>
     <nl/>
-  </table>
+  </index>
   <text>
+    <layer value="furniture"/>
     <location value="420"/>
     <location value="484"/>
     <location value="438"/>
     <location value="490"/>
-    <layer class="furniture"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="446"/>
     <location value="483"/>
     <location value="461"/>
     <location value="489"/>
-    <layer class="furniture"/>
   </text>
 </doclang>
