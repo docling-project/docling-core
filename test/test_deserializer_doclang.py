@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+from typing import Callable
 
 import pytest
 
@@ -30,7 +31,16 @@ from docling_core.types.doc.document import GroupLabel
 from test.doclang_validation import assert_valid_dclg_xml, doclang_validator
 from test.test_data_gen_flag import GEN_TEST_DATA
 from test.test_serialization_doctag import verify
-from test.test_serialization_doclang import _verify_doc, add_list_section, add_texts_section
+from test.test_serialization_doclang import (
+    _doc_cross_page_list,
+    _doc_cross_page_paragraph,
+    _doc_cross_page_table,
+    _doc_cross_column_list,
+    _doc_multi_prov_text,
+    _verify_doc,
+    add_list_section,
+    add_texts_section,
+)
 
 DO_PRINT: bool = False
 
@@ -306,7 +316,7 @@ def test_roundtrip_picture_other_and_unknown_labels():
         doc=doc,
         params=DoclangParams(label_mode=LabelMode.ALWAYS, add_location=False),
     ).serialize().text
-    assert xml_always.count('<label value="unknown"/>') == 1
+    assert xml_always.count('<label value="undefined"/>') == 1
 
 
 def test_code_language_unmapped_linguist_deserializes_to_unknown():
@@ -1354,6 +1364,75 @@ def test_virtual_text_index_roundtrip():
     assert_valid_dclg_xml(dt2)
 
 
+@doclang_validator
+def test_multi_page_roundtrip():
+    """Round-trip a programmatic multi-page document through DocLang.
+
+    Page 1: title; page 2: document index; page 3: three text paragraphs.
+    Materializes serialized/reserialized XML and input/deserialized JSON goldens.
+    """
+    data_dir = Path(__file__).parent / "data" / "doc" / "multi_page_roundtrip"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_multi_page_roundtrip_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize(doc)
+    verify(serialized_dclg, dt)
+    assert_valid_dclg_xml(dt)
+    assert dt.count("<page_break") == 2
+    assert "<index>" in dt
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize(doc2)
+    verify(reserialized_dclg, dt2)
+    assert_valid_dclg_xml(dt2)
+
+
+def _create_multi_page_roundtrip_doc() -> DoclingDocument:
+    """Build a three-page document with title, index, and body paragraphs."""
+    page_size = Size(width=512, height=512)
+    doc = DoclingDocument(name="multi_page_roundtrip")
+    for page_no in (1, 2, 3):
+        doc.add_page(page_no=page_no, size=page_size, image=None)
+
+    doc.add_title(
+        text="Document Title",
+        prov=_page_prov(page_no=1, bbox=(10, 10, 200, 40)),
+    )
+
+    index_data = TableData(num_cols=2)
+    index_data.add_row(["Chapter", "Page"])
+    index_data.add_row(["Intro", "1"])
+    index_data.add_row(["Body", "3"])
+    doc.add_table(
+        data=index_data,
+        label=DocItemLabel.DOCUMENT_INDEX,
+        prov=_page_prov(page_no=2, bbox=(10, 10, 400, 120)),
+    )
+
+    for i, text in enumerate(["First paragraph.", "Second paragraph.", "Third paragraph."], start=1):
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=text,
+            prov=_page_prov(page_no=3, bbox=(10, 40 + i * 30, 400, 60 + i * 30)),
+        )
+    return doc
+
+
+def _page_prov(*, page_no: int, bbox: tuple[float, float, float, float]) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=page_no,
+        bbox=BoundingBox.from_tuple(bbox, origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+
+
 def _create_virtual_text_table_doc() -> DoclingDocument:
     """Document exercising virtual vs explicit ``<text>`` in table cells."""
     doc = DoclingDocument(name="virtual_text_table")
@@ -1620,9 +1699,6 @@ def test_constructed_doc(sample_doc: DoclingDocument):
     verify(exp_reserialized_dt_file, dt2)
 
 
-@pytest.mark.xfail(
-    reason="Known feature incompletenes in deseralization"
-)
 def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
     doc = rich_table_doc
 
@@ -1825,6 +1901,64 @@ def test_roundtrip_document_index_table():
     assert doc2.tables[0].data.num_cols == 2
     assert doc2.tables[1].data.num_rows == 2
     assert doc2.tables[1].data.num_cols == 2
+
+
+def _thread_roundtrip(
+    *,
+    name: str,
+    doc_factory: Callable[[], DoclingDocument],
+    page_breaks: int = 0,
+) -> None:
+    """Round-trip a threaded document fixture through serialize → deserialize → reserialize."""
+    data_dir = Path(__file__).parent / "data" / "doc" / name
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = doc_factory()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize(doc)
+    verify(serialized_dclg, dt)
+    if page_breaks:
+        assert dt.count("<page_break") == page_breaks
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize(doc2)
+    verify(reserialized_dclg, dt2)
+
+
+@doclang_validator
+def test_cross_page_paragraph_roundtrip():
+    """Round-trip a cross-page threaded paragraph."""
+    _thread_roundtrip(name="cross_page_paragraph", doc_factory=_doc_cross_page_paragraph, page_breaks=1)
+
+
+@doclang_validator
+def test_cross_column_paragraph_roundtrip():
+    """Round-trip a cross-column threaded paragraph (same page, two boxes)."""
+    _thread_roundtrip(name="multi_prov_thread", doc_factory=_doc_multi_prov_text, page_breaks=0)
+
+
+@doclang_validator
+def test_cross_page_list_roundtrip():
+    """Round-trip a cross-page threaded list (whole items per page)."""
+    _thread_roundtrip(name="cross_page_list", doc_factory=_doc_cross_page_list, page_breaks=1)
+
+
+@doclang_validator
+def test_cross_page_table_roundtrip():
+    """Round-trip a cross-page threaded table."""
+    _thread_roundtrip(name="cross_page_table", doc_factory=_doc_cross_page_table, page_breaks=1)
+
+
+@doclang_validator
+def test_cross_column_list_roundtrip():
+    """Round-trip a cross-column list (same page, one item per column)."""
+    _thread_roundtrip(name="cross_column_list", doc_factory=_doc_cross_column_list, page_breaks=0)
 
 
 def test_table_with_class_raises_error():

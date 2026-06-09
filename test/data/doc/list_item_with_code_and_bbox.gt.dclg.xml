@@ -7,10 +7,10 @@
       <marker>•</marker>
     </ldiv>
     <code>
-      <location value="255"/>
-      <location value="255"/>
-      <location value="255"/>
-      <location value="255"/>
+      <location value="26"/>
+      <location value="51"/>
+      <location value="205"/>
+      <location value="154"/>
 <![CDATA[print('hello')]]>    </code>
   </list>
 </doclang>

@@ -1,0 +1,25 @@
+<doclang>
+  <list>
+    <thread thread_id="1"/>
+    <ldiv>
+      <marker>•</marker>
+    </ldiv>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="50"/>
+    First item on page one.
+  </list>
+  <page_break/>
+  <list>
+    <thread thread_id="1"/>
+    <ldiv>
+      <marker>•</marker>
+    </ldiv>
+    <location value="10"/>
+    <location value="10"/>
+    <location value="400"/>
+    <location value="50"/>
+    Second item on page two.
+  </list>
+</doclang>
