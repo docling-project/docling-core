@@ -98,9 +98,6 @@ examples = [
     "matplotlib>=3.7.0",
     "openpyxl>=3.1.5",
 ]
-doclang-validation = [
-    "doclang>=0.5,<0.6",
-]
 
 [dependency-groups]
 dev = [

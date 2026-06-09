@@ -16,12 +16,12 @@ bar</content>
 
 import pytest
 
-from docling_core.experimental.doclang import (
+from docling_core.transforms.serializer.doclang import (
     ContentType,
     EscapeMode,
-    DoclangDocSerializer,
-    DoclangParams,
-    DoclangVocabulary,
+    DocLangDocSerializer,
+    DocLangParams,
+    DocLangVocabulary,
     LayerMode,
     WrapMode,
 )

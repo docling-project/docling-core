@@ -2,6 +2,7 @@ import os
 import json
 import glob
 import argparse
+from enum import Enum
 from pathlib import Path
 from typing import Sequence, Dict, Any, Optional
 from collections import Counter
@@ -17,17 +18,24 @@ from transformers import (
 )
 from docling_core.types.doc import DoclingDocument, ImageRef
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.experimental.doclang import (
+from docling_core.transforms.serializer.doclang import (
     ContentType,
     EscapeMode,
-    DoclangSerializationMode,
-    DoclangParams,
-    DoclangVocabulary,
-    DoclangDocSerializer,
+    DocLangParams,
+    DocLangVocabulary,
+    DocLangDocSerializer,
 )
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+class _SerializationMode(str, Enum):
+    """Report-column labels for human-friendly vs minimized DocLang output."""
+
+    HUMAN_FRIENDLY = "human_friendly"
+    LLM_FRIENDLY = "llm_friendly"
+
 
 # In order to download **before** the datasets library, run
 #
@@ -35,13 +43,13 @@ import numpy as np
 #
 
 def update_tokenizer(tokenizer: PreTrainedTokenizerBase, verbose: bool = False) -> PreTrainedTokenizerBase:
-    """Extend tokenizer with Doclang special tokens.
+    """Extend tokenizer with DocLang special tokens.
 
     Parameters
     - tokenizer: base tokenizer to extend
     - verbose: print added tokens if True
     """
-    special_tokens = DoclangVocabulary.get_special_tokens()
+    special_tokens = DocLangVocabulary.get_special_tokens()
     if verbose:
         for i, tok in enumerate(special_tokens):
             print(i, "\t", tok)
@@ -51,7 +59,7 @@ def update_tokenizer(tokenizer: PreTrainedTokenizerBase, verbose: bool = False) 
     return tokenizer
 
 def run_dump(cfg: dict[str, Any]) -> int:
-    """Dump/serialize documents from a dataset to Doclang strings/files and export a per-row report.
+    """Dump/serialize documents from a dataset to DocLang strings/files and export a per-row report.
 
     Config keys (with defaults):
     - dataset_name: str ("docling-project/doclaynet-set-a")
@@ -153,7 +161,7 @@ def run_dump(cfg: dict[str, Any]) -> int:
         - Row ID
         - Loaded DoclingDocument
         - Loaded DoclingDocument Error
-        - Serialized Doclang (mode, escape_mode, content) for all combinations
+        - Serialized DocLang (mode, escape_mode, content) for all combinations
         - Serialized HTML
         - Serialized HTML Error
 
@@ -169,11 +177,11 @@ def run_dump(cfg: dict[str, Any]) -> int:
         ]
 
         # Add all combinations of mode, escape_mode, and content
-        for mode in DoclangSerializationMode:
+        for mode in _SerializationMode:
             for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    cols.append(f"Serialized Doclang ({mode.value}, escape_mode={esc_mode.value}, content={content})")
-                    cols.append(f"Serialized Doclang ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error")
+                    cols.append(f"Serialized DocLang ({mode.value}, escape_mode={esc_mode.value}, content={content})")
+                    cols.append(f"Serialized DocLang ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error")
 
         cols.extend([
             "Serialized HTML",
@@ -195,10 +203,10 @@ def run_dump(cfg: dict[str, Any]) -> int:
         ]
 
         # Add summary rows for all combinations
-        for mode in DoclangSerializationMode:
+        for mode in _SerializationMode:
             for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    col_name = f"Serialized Doclang ({mode.value}, escape_mode={esc_mode.value}, content={content})"
+                    col_name = f"Serialized DocLang ({mode.value}, escape_mode={esc_mode.value}, content={content})"
                     summary_rows.append({"Metric": col_name, "Count": _count_yes(col_name)})
 
         summary_rows.append({"Metric": "Serialized HTML", "Count": _count_yes("Serialized HTML")})
@@ -320,11 +328,11 @@ def run_dump(cfg: dict[str, Any]) -> int:
             "Serialized HTML Error": "",
         }
 
-        for mode in DoclangSerializationMode:
+        for mode in _SerializationMode:
             for esc_mode in EscapeMode:
                 for content in [True, False]:
-                    row_result[f"Serialized Doclang ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
-                    row_result[f"Serialized Doclang ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
+                    row_result[f"Serialized DocLang ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
+                    row_result[f"Serialized DocLang ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
 
         try:
             doc = DoclingDocument.model_validate_json(text)
@@ -340,11 +348,11 @@ def run_dump(cfg: dict[str, Any]) -> int:
             # Record failure outcome for this row
             row_result["Loaded DoclingDocument Error"] = str(exc)
 
-            for mode in DoclangSerializationMode:
+            for mode in _SerializationMode:
                 for esc_mode in EscapeMode:
                     for content in [True, False]:
-                        row_result[f"Serialized Doclang ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
-                        row_result[f"Serialized Doclang ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error"] = "NA"
+                        row_result[f"Serialized DocLang ({mode.value}, escape_mode={esc_mode.value}, content={content})"] = _yes(False)
+                        row_result[f"Serialized DocLang ({mode.value}, escape_mode={esc_mode.value}, content={content}) Error"] = "NA"
 
             results_rows.append(row_result)
             continue
@@ -358,20 +366,20 @@ def run_dump(cfg: dict[str, Any]) -> int:
             for esc_mode in [True, False]:
                 for content in [True, False]:
                     try:
-                        params_probe = DoclangParams()
+                        params_probe = DocLangParams()
                         params_probe.content_types = set(ContentType) if content else set()
                         params_probe.escape_mode = esc_mode
                         params_probe.pretty_indentation = indent
 
-                        iser_probe = DoclangDocSerializer(doc=doc, params=params_probe)
+                        iser_probe = DocLangDocSerializer(doc=doc, params=params_probe)
                         _ = iser_probe.serialize().text
 
-                        row_result[f"Serialized Doclang ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(True)
-                        row_result[f"Serialized Doclang ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
+                        row_result[f"Serialized DocLang ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(True)
+                        row_result[f"Serialized DocLang ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = ""
 
                     except Exception as exc_:
-                        row_result[f"Serialized Doclang ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(False)
-                        row_result[f"Serialized Doclang ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = str(exc_)
+                        row_result[f"Serialized DocLang ({mode.value}, escape_mode={esc_mode}, content={content})"] = _yes(False)
+                        row_result[f"Serialized DocLang ({mode.value}, escape_mode={esc_mode}, content={content}) Error"] = str(exc_)
 
         # Attempt HTML export (non-writing) to check serialization capability
         try:
@@ -401,10 +409,10 @@ def run_dump(cfg: dict[str, Any]) -> int:
     print("Overview summary:")
     print(f" - Total processed: {len(results_rows)}")
     print(f" - Loaded DoclingDocument: {_count_yes(results_rows, 'Loaded DoclingDocument')}")
-    for mode in [DoclangSerializationMode.HUMAN_FRIENDLY, DoclangSerializationMode.LLM_FRIENDLY]:
+    for mode in [_SerializationMode.HUMAN_FRIENDLY, _SerializationMode.LLM_FRIENDLY]:
         for esc_mode in [True, False]:
             for content in [True, False]:
-                print(f" - Serialized Doclang ({mode.value}, escape_mode={esc_mode}, content={content}): {_count_yes(results_rows, f'Serialized Doclang ({mode.value}, escape_mode={esc_mode}, content={content})')}")
+                print(f" - Serialized DocLang ({mode.value}, escape_mode={esc_mode}, content={content}): {_count_yes(results_rows, f'Serialized DocLang ({mode.value}, escape_mode={esc_mode}, content={content})')}")
     print(f" - Serialized HTML: {_count_yes(results_rows, 'Serialized HTML')}")
 
     if errors:
@@ -417,7 +425,7 @@ def run_dump(cfg: dict[str, Any]) -> int:
 
 
 def run_analyse(cfg: dict[str, Any]) -> int:
-    """Analyse token lengths and special-token usage from Doclang files.
+    """Analyse token lengths and special-token usage from DocLang files.
 
     Config keys (with defaults):
     - tokenizer_name: str ("ibm-granite/granite-docling-258M")
@@ -446,7 +454,7 @@ def run_analyse(cfg: dict[str, Any]) -> int:
     special_counts: Counter[int] = Counter()
 
     # Map special tokens to IDs in the extended tokenizer
-    special_tokens = DoclangVocabulary.get_special_tokens()
+    special_tokens = DocLangVocabulary.get_special_tokens()
     special_token_ids = {ext_tokenizer.convert_tokens_to_ids(tok) for tok in special_tokens}
 
     for filename in tqdm(filenames, desc="Analyse", ncols=128):
@@ -639,12 +647,12 @@ def default_config(mode: str) -> dict[str, Any]:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Convert and analyse Doclang data")
+    parser = argparse.ArgumentParser(description="Convert and analyse DocLang data")
     parser.add_argument(
         "--mode",
         choices=["dump", "analyse"],
         required=True,
-        help="Mode: dump dataset to Doclang or analyse token stats",
+        help="Mode: dump dataset to DocLang or analyse token stats",
     )
     parser.add_argument(
         "--config",

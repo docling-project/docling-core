@@ -7212,12 +7212,12 @@ class DoclingDocument(BaseModel):
     def export_to_doclang(
         self,
     ) -> str:
-        """Export to Doclang."""
-        from docling_core.experimental.doclang import DoclangDocSerializer, DoclangParams
+        """Export to DocLang."""
+        from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
-        serializer = DoclangDocSerializer(
+        serializer = DocLangDocSerializer(
             doc=self,
-            params=DoclangParams(),
+            params=DocLangParams(),
         )
         return serializer.serialize().text
 
@@ -7225,7 +7225,7 @@ class DoclingDocument(BaseModel):
         self,
         filename: Union[str, Path],
     ) -> None:
-        """Save the document as Doclang."""
+        """Save the document as DocLang."""
         out = self.export_to_doclang()
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(f"{out}\n")

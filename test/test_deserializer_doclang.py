@@ -4,10 +4,10 @@ from typing import Callable
 
 import pytest
 
-from docling_core.experimental.doclang import (
-    DoclangDeserializer,
-    DoclangDocSerializer,
-    DoclangParams,
+from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
+from docling_core.transforms.serializer.doclang import (
+    DocLangDocSerializer,
+    DocLangParams,
     LabelMode,
 )
 from docling_core.types.doc import (
@@ -46,9 +46,9 @@ DO_PRINT: bool = False
 
 
 def _serialize(doc: DoclingDocument) -> str:
-    ser = DoclangDocSerializer(
+    ser = DocLangDocSerializer(
         doc=doc,
-        params=DoclangParams(),
+        params=DocLangParams(),
     )
     text = ser.serialize().text
     if not GEN_TEST_DATA:
@@ -59,7 +59,7 @@ def _serialize(doc: DoclingDocument) -> str:
 def _deserialize(text: str, *, validate: bool = True) -> DoclingDocument:
     if validate and not GEN_TEST_DATA:
         assert_valid_dclg_xml(text)
-    return DoclangDeserializer().deserialize(text=text)
+    return DocLangDocDeserializer().deserialize_str(text)
 
 
 def _add_default_page(doc: DoclingDocument):
@@ -104,9 +104,9 @@ class _VirtualTextMixedBboxFactory:
 
 
 def _serialize_virtual_text_mixed(doc: DoclingDocument, *, add_location: bool = True) -> str:
-    ser = DoclangDocSerializer(
+    ser = DocLangDocSerializer(
         doc=doc,
-        params=DoclangParams(add_table_cell_location=True, add_location=add_location),
+        params=DocLangParams(add_table_cell_location=True, add_location=add_location),
     )
     text = ser.serialize().text
     if not GEN_TEST_DATA:
@@ -269,7 +269,7 @@ def test_code_language_linguist_mapping(docling_lang, linguist_label, roundtrip_
     doc = DoclingDocument(name="t")
     doc.add_code(text="snippet", code_language=docling_lang)
 
-    xml = DoclangDocSerializer(doc=doc, params=DoclangParams()).serialize().text
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams()).serialize().text
     assert f'<label value="{linguist_label}"/>' in xml
 
     doc2 = _deserialize(xml)
@@ -279,9 +279,9 @@ def test_code_language_linguist_mapping(docling_lang, linguist_label, roundtrip_
 def test_roundtrip_code_unknown_as_other_when_enabled():
     doc = DoclingDocument(name="t")
     doc.add_code(text="y = 2")
-    xml = DoclangDocSerializer(
+    xml = DocLangDocSerializer(
         doc=doc,
-        params=DoclangParams(interpret_code_unknown_as_other=True),
+        params=DocLangParams(interpret_code_unknown_as_other=True),
     ).serialize().text
     assert '<label value="other"/>' in xml
     doc2 = _deserialize(xml)
@@ -312,9 +312,9 @@ def test_roundtrip_picture_other_and_unknown_labels():
     assert pics[0].meta.classification.get_main_prediction().class_name == "other"
     assert pics[1].meta is None or pics[1].meta.classification is None
 
-    xml_always = DoclangDocSerializer(
+    xml_always = DocLangDocSerializer(
         doc=doc,
-        params=DoclangParams(label_mode=LabelMode.ALWAYS, add_location=False),
+        params=DocLangParams(label_mode=LabelMode.ALWAYS, add_location=False),
     ).serialize().text
     assert xml_always.count('<label value="undefined"/>') == 1
 
@@ -1825,10 +1825,10 @@ def test_roundtrip_with_layers():
     doc.add_text(label=DocItemLabel.PAGE_FOOTER, text="Footer", content_layer=ContentLayer.FURNITURE)
 
     # Serialize with ALWAYS mode to ensure layers are included
-    from docling_core.experimental.doclang import LayerMode
-    ser = DoclangDocSerializer(
+    from docling_core.transforms.serializer.doclang import LayerMode
+    ser = DocLangDocSerializer(
         doc=doc,
-        params=DoclangParams(layer_mode=LayerMode.ALWAYS),
+        params=DocLangParams(layer_mode=LayerMode.ALWAYS),
     )
     dt = ser.serialize().text
 
