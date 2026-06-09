@@ -2590,10 +2590,11 @@ class TableItem(FloatingItem):
                     cell.start_col_offset_idx,
                 )
 
-                if len(doc.pages.keys()):
-                    page_w, page_h = doc.pages[page_no].size.as_tuple()
+                has_page_info = page_no in doc.pages
+
                 cell_loc = ""
-                if cell.bbox is not None:
+                if cell.bbox is not None and has_page_info:
+                    page_w, page_h = doc.pages[page_no].size.as_tuple()
                     cell_loc = DocumentToken.get_location(
                         bbox=cell.bbox.to_bottom_left_origin(page_h).as_tuple(),
                         page_w=page_w,

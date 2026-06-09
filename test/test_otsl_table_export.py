@@ -1,5 +1,5 @@
 from docling_core.types.doc.document import DoclingDocument, TableCell, TableData
-
+from docling_core.types.doc.base import BoundingBox
 
 def test_table_export_to_otsl():
     data_table_cells = []
@@ -283,3 +283,28 @@ def test_table_export_to_otsl():
         otsl_string
         == "<rhed><lcel><rhed><fcel><xcel><xcel><nl><rhed><fcel><fcel><xcel><xcel><xcel><nl><rhed><fcel><fcel><fcel><ecel><ecel><nl><ucel><fcel><fcel><fcel><fcel><fcel><nl><srow><lcel><lcel><lcel><lcel><lcel><nl>"
     )
+
+
+def test_table_export_to_otsl_page_less_document_with_cell_bbox():
+    doc = DoclingDocument(name="page_less_doc")
+
+    data = TableData(
+        num_rows=1,
+        num_cols=1,
+        table_cells=[
+            TableCell(
+                text="cell",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+                bbox=BoundingBox(l=0, t=0, r=10, b=10),
+            )
+        ],
+    )
+
+    table = doc.add_table(data=data)
+
+    assert table.export_to_otsl(doc=doc)
