@@ -1,3 +1,9 @@
+## [v2.80.0](https://github.com/docling-project/docling-core/releases/tag/v2.80.0) - 2026-06-09
+
+### Feature
+
+* **doclang:** Promote serializer and deserializer ([#633](https://github.com/docling-project/docling-core/issues/633)) ([`5d740c2`](https://github.com/docling-project/docling-core/commit/5d740c260ad680d05596bd6f9dfe4eeb73d408e0))
+
 ## [v2.79.0](https://github.com/docling-project/docling-core/releases/tag/v2.79.0) - 2026-06-05
 
 ### Feature
