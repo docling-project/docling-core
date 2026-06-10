@@ -5883,11 +5883,16 @@ class DoclingDocument(BaseModel):
         image_dir: Path,
         page_no: Optional[int],
         reference_path: Optional[Path] = None,
+        include_page_images: bool = False,
     ) -> "DoclingDocument":
         """Document with images as refs.
 
         Creates a copy of this document where all picture data is
         saved to image_dir and referenced through file URIs.
+
+        When ``include_page_images`` is True, the page images are saved to
+        image_dir and referenced through file URIs as well (instead of being
+        kept as embedded base64 blobs).
         """
         result: DoclingDocument = copy.deepcopy(self)
 
@@ -5924,6 +5929,31 @@ class DoclingDocument(BaseModel):
                         #    item.image._pil.close()
 
                     img_count += 1
+
+            if include_page_images:
+                for p_no, page in result.pages.items():
+                    if page_no is not None and p_no != page_no:
+                        continue
+                    if page.image is None:
+                        continue
+                    img = page.image.pil_image
+                    if img is None:
+                        continue
+                    hexhash = PictureItem._image_to_hexhash(img)
+                    if hexhash is None:
+                        continue
+
+                    loc_path = image_dir / f"page_{p_no:06}_{hexhash}.png"
+                    img.save(loc_path)
+                    if reference_path is not None:
+                        obj_path = relative_path(
+                            reference_path.resolve(),
+                            loc_path.resolve(),
+                        )
+                    else:
+                        obj_path = loc_path
+
+                    page.image.uri = Path(obj_path)
 
         return result
 
@@ -5986,7 +6016,13 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir,
+            image_mode,
+            page_no=None,
+            reference_path=reference_path,
+            include_page_images=True,
+        )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         with open(filename, "w", encoding="utf-8") as fw:
@@ -6025,7 +6061,13 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir,
+            image_mode,
+            page_no=None,
+            reference_path=reference_path,
+            include_page_images=True,
+        )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         with open(filename, "w", encoding="utf-8") as fw:
@@ -6401,12 +6443,18 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode,
         page_no: Optional[int],
         reference_path: Optional[Path] = None,
+        include_page_images: bool = False,
     ):
         new_doc = None
         if image_mode == ImageRefMode.PLACEHOLDER:
             new_doc = self
         elif image_mode == ImageRefMode.REFERENCED:
-            new_doc = self._with_pictures_refs(image_dir=artifacts_dir, page_no=page_no, reference_path=reference_path)
+            new_doc = self._with_pictures_refs(
+                image_dir=artifacts_dir,
+                page_no=page_no,
+                reference_path=reference_path,
+                include_page_images=include_page_images,
+            )
         elif image_mode == ImageRefMode.EMBEDDED:
             new_doc = self._with_embedded_pictures()
         else:
