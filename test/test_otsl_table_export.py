@@ -1,5 +1,6 @@
-from docling_core.types.doc.document import DoclingDocument, TableCell, TableData
 from docling_core.types.doc.base import BoundingBox
+from docling_core.types.doc.document import DoclingDocument, TableCell, TableData
+
 
 def test_table_export_to_otsl():
     data_table_cells = []
