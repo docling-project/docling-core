@@ -1,3 +1,13 @@
+## [v2.81.0](https://github.com/docling-project/docling-core/releases/tag/v2.81.0) - 2026-06-10
+
+### Feature
+
+* Make HTTP downloads respect file-size limits and abort early ([#635](https://github.com/docling-project/docling-core/issues/635)) ([`d585a13`](https://github.com/docling-project/docling-core/commit/d585a1377528105b28a0072a587accc27406195f))
+
+### Fix
+
+* Externalize page images in REFERENCED mode for JSON/YAML export ([#634](https://github.com/docling-project/docling-core/issues/634)) ([`7b47b5a`](https://github.com/docling-project/docling-core/commit/7b47b5a50605789d7bfdd72b548cd0d14ea37531))
+
 ## [v2.80.0](https://github.com/docling-project/docling-core/releases/tag/v2.80.0) - 2026-06-09
 
 ### Feature
