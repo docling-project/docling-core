@@ -19,6 +19,13 @@
     <location value="48"/>
     <location value="237"/>
     <location value="141"/>
+    <text>
+      <location value="169"/>
+      <location value="130"/>
+      <location value="206"/>
+      <location value="139"/>
+      Solar Farm- Ocular Glare
+    </text>
   </picture>
   <text>
     <location value="29"/>
@@ -178,6 +185,13 @@
     <location value="57"/>
     <location value="459"/>
     <location value="132"/>
+    <text>
+      <location value="380"/>
+      <location value="121"/>
+      <location value="456"/>
+      <location value="131"/>
+      DISNEYLAND THEME PARK See Note for requirements
+    </text>
   </picture>
   <heading level="3">
     <location value="260"/>

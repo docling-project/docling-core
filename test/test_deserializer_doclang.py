@@ -25,6 +25,7 @@ from docling_core.types.doc import (
     Size,
     TableCell,
     TableData,
+    TableItem,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 from docling_core.types.doc.document import GroupLabel
@@ -1804,7 +1805,7 @@ def test_rich_table_cells():
 
 def test_picture_tabular_chart_content_cdata_cells():
     """Deserializer must extract text from <content><![CDATA[...]]></content> in OTSL cells."""
-    doclang = f"""<doclang><group><picture class="chart"><location value="0"/><location value="0"/><location value="511"/><location value="511"/><table><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></table></picture></group></doclang>"""
+    doclang = f"""<doclang><group><picture class="chart"><location value="0"/><location value="0"/><location value="511"/><location value="511"/><tabular><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></tabular></picture></group></doclang>"""
     doc = _deserialize(doclang)
     first_cell_text = doc.pictures[0].meta.tabular_chart.chart_data.grid[0][0].text
     assert first_cell_text == "Characteristic"
@@ -1812,6 +1813,23 @@ def test_picture_tabular_chart_content_cdata_cells():
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][0].text == "19/20"
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][1].text == "111"
 
+
+def test_picture_body_table_is_semantic_content_not_chart_tabular():
+    """``<table>`` after the preamble is nested picture content, not ``meta.tabular_chart``."""
+    doclang = (
+        '<doclang><picture class="chart">'
+        "<tabular><fcel/>Chart<fcel/>1<nl/></tabular>"
+        "<table><fcel/>Nested<fcel/>Cell<nl/></table>"
+        "</picture></doclang>"
+    )
+    doc = _deserialize(doclang)
+    pic = doc.pictures[0]
+    assert pic.meta is not None
+    assert pic.meta.tabular_chart.chart_data.grid[0][0].text == "Chart"
+    assert len(pic.children) == 1
+    nested = pic.children[0].resolve(doc)
+    assert isinstance(nested, TableItem)
+    assert nested.data.grid[0][0].text == "Nested"
 
 
 def test_roundtrip_with_layers():

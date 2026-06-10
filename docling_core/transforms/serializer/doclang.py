@@ -299,7 +299,7 @@ def _create_label_token(*, value: str) -> str:
 
 
 def _create_src_token(*, uri: str) -> str:
-    """Emit `<src uri="..."/>` for picture body (v0.5)."""
+    """Emit `<src uri="..."/>` in the picture-specific body sequence (v0.6)."""
     safe = uri.replace("&", "&amp;").replace('"', "&quot;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.SRC,
@@ -1060,6 +1060,32 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
         return None
 
 
+def _append_picture_body_children(
+    *,
+    item: PictureItem,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    picture_body_parts: list[str],
+    **kwargs: Any,
+) -> None:
+    """Serialize ``PictureItem`` children into the picture body (after the preamble)."""
+    visited: set[str] = kwargs.get("visited") or set()
+    visited.add(item.self_ref)
+    caption_refs = {c.cref for c in item.captions}
+    footnote_refs = {f.cref for f in item.footnotes}
+    for child_ref in item.children:
+        if child_ref.cref in caption_refs or child_ref.cref in footnote_refs:
+            continue
+        if child_ref.cref in doc_serializer.get_excluded_refs(**kwargs):
+            continue
+        child_res = doc_serializer.serialize(
+            item=child_ref.resolve(doc),
+            **{**kwargs, "visited": visited},
+        )
+        if child_res.text:
+            picture_body_parts.append(child_res.text)
+
+
 class DocLangPictureSerializer(BasePictureSerializer):
     """DocLang-specific picture item serializer."""
 
@@ -1105,7 +1131,8 @@ class DocLangPictureSerializer(BasePictureSerializer):
         if caption_head:
             res_parts.append(create_ser_result(text=caption_head))
 
-        body_parts: list[str] = []
+        picture_body_parts: list[str] = []
+        tabular_body = ""
         is_chart = self._picture_is_chart(item)
         is_chem = self._picture_is_chem(item)
         has_picture_ct = ContentType.PICTURE in params.content_types
@@ -1143,7 +1170,7 @@ class DocLangPictureSerializer(BasePictureSerializer):
                         params=params_chart,
                         **kwargs,
                     )
-                    body_parts.append(_wrap(text=otsl_content, wrap_tag=DocLangToken.TABLE.value))
+                    tabular_body = _wrap(text=otsl_content, wrap_tag=DocLangToken.TABULAR.value)
 
         uri: Optional[str] = None
         if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
@@ -1151,8 +1178,18 @@ class DocLangPictureSerializer(BasePictureSerializer):
         elif params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
             imgb64 = item._image_to_base64(img)
             uri = f"data:image/png;base64,{imgb64}"
+        # v0.6 picture body: preamble (<src>, <tabular>), then semantic children.
         if uri:
-            body_parts.append(_create_src_token(uri=uri))
+            picture_body_parts.append(_create_src_token(uri=uri))
+        if tabular_body:
+            picture_body_parts.append(tabular_body)
+        _append_picture_body_children(
+            item=item,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            picture_body_parts=picture_body_parts,
+            **kwargs,
+        )
 
         head = _element_head_prefix(
             item=item,
@@ -1162,9 +1199,9 @@ class DocLangPictureSerializer(BasePictureSerializer):
             caption_text=caption_head or None,
             custom_text=custom_head or None,
         )
-        inner = head + "".join(body_parts)
+        inner = head + "".join(picture_body_parts)
         picture_open = f"<{DocLangToken.PICTURE.value}"
-        if body_parts and any(p.startswith(f"<{DocLangToken.TABLE.value}") for p in body_parts):
+        if tabular_body:
             picture_open += f' {DocLangAttributeKey.CLASS.value}="chart"'
         picture_open += ">"
         picture_text = f"{picture_open}{inner}</{DocLangToken.PICTURE.value}>"

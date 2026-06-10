@@ -995,16 +995,16 @@ wheels = [
 
 [[package]]
 name = "doclang"
-version = "0.5.0"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "lxml" },
     { name = "saxonche" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/aa/fd/f2f0fa592bef3e76af9e3326cfa9a64e14fa7eceed6eaaa98ba22b706303/doclang-0.5.0.tar.gz", hash = "sha256:fd95f91d2d0611043257dae5192cc4a5f7856ff34fb45970deec7dd8bdb61bf9", size = 24917, upload-time = "2026-06-05T15:22:57.457Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/84/9e/5d2752f782b08bbb1ef30fadf01f0c9b522b8411403c01e7d66d968ca196/doclang-0.6.0.tar.gz", hash = "sha256:e786df5bfb3059283a50c6727d0f63cb44ad9b25b5dff6ab426f56183f65ef45", size = 25142, upload-time = "2026-06-10T14:51:05.734Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/1e/797fbb4d22703ff637318e7b015cbdb68930cd905ecf299388d888e6477f/doclang-0.5.0-py3-none-any.whl", hash = "sha256:73b5edc9da374da7ac4c07db0f3148a26e21c1b51ca96c307a7075ced7d9773a", size = 24624, upload-time = "2026-06-05T15:22:56.516Z" },
+    { url = "https://files.pythonhosted.org/packages/09/fc/58a52c4d3fa9272eee80c36822af865e154629d25d4553559185e21e8209/doclang-0.6.0-py3-none-any.whl", hash = "sha256:5955427e4c3d3fdd49c787d6818ed5ff6a105ff273dceec06515b670732f536b", size = 24745, upload-time = "2026-06-10T14:51:04.749Z" },
 ]
 
 [[package]]
@@ -1126,7 +1126,7 @@ dev = [
     { name = "autoflake", specifier = "~=2.0" },
     { name = "black", specifier = "~=26.3.1" },
     { name = "coverage", specifier = "~=7.6" },
-    { name = "doclang", specifier = ">=0.5,<0.6" },
+    { name = "doclang", specifier = ">=0.6,<0.7" },
     { name = "flake8", specifier = "~=7.1" },
     { name = "flake8-docstrings", specifier = "~=1.6" },
     { name = "ipykernel", specifier = "~=6.29" },

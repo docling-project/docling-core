@@ -1173,14 +1173,40 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                             )
                         ]
                     )
-            otsl_el = self._first_child(picture_el, DocLangToken.TABLE.value)
-            if otsl_el is not None:
-                head_nodes, body_nodes = self._split_element_children_head_body(otsl_el)
-                inner = self._nodes_to_xml(body_nodes)
-                td = self._parse_otsl_table_content(_wrap(inner, DocLangToken.TABLE.value))
+            self._parse_picture_body(doc=doc, picture_el=picture_el, pic=pic)
+
+    def _parse_picture_body(self, *, doc: DoclingDocument, picture_el: Element, pic: PictureItem) -> None:
+        """Parse v0.6 picture body.
+
+        Layout after the element head:
+        - Preamble: optional ``<src>``, then optional ``<tabular>`` (chart data only)
+        - Content: any semantic elements (e.g. nested ``<table>``), as picture children
+        """
+        _, body_nodes = self._split_element_children_head_body(picture_el)
+        idx = 0
+        while idx < len(body_nodes):
+            node = body_nodes[idx]
+            if not isinstance(node, Element):
+                idx += 1
+                continue
+            if node.tagName == DocLangToken.SRC.value:
+                # image URI restoration is not implemented yet
+                idx += 1
+                continue
+            if node.tagName == DocLangToken.TABULAR.value:
+                _, otsl_body_nodes = self._split_element_children_head_body(node)
+                inner = self._nodes_to_xml(otsl_body_nodes)
+                td = self._parse_otsl_table_content(_wrap(inner, DocLangToken.TABULAR.value))
                 if pic.meta is None:
                     pic.meta = PictureMeta()
                 pic.meta.tabular_chart = TabularChartMetaField(chart_data=td)
+                idx += 1
+                continue
+            break
+
+        for node in body_nodes[idx:]:
+            if isinstance(node, Element):
+                self._dispatch_element(doc=doc, el=node, parent=pic)
 
     # ------------- Helpers -------------
     def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> Optional[TextItem]:
