@@ -1,6 +1,7 @@
 """Test the pydantic models in package utils."""
 
 import json
+from io import BytesIO
 from pathlib import Path
 
 from pydantic import Field
@@ -12,6 +13,22 @@ from docling_core.utils.alias import AliasModel
 from docling_core.utils.file import resolve_source_to_path, resolve_source_to_stream
 
 from .test_data_gen_flag import GEN_TEST_DATA
+
+
+def _closeable_response(status_code=200, content=b"", headers=None) -> Response:
+    """Build a Response with a real, closeable ``raw`` like a streamed response.
+
+    ``resolve_source_to_stream`` closes the response (via ``with``) to release the
+    streamed connection, which a bare ``Response()`` (``raw is None``) cannot do.
+    """
+    r = Response()
+    r.status_code = status_code
+    r._content = content
+    r._content_consumed = True
+    r.raw = BytesIO(content)
+    if headers:
+        r.headers.update(headers)
+    return r
 
 
 def build_single_cell_rich_table_doc(text: str) -> DoclingDocument:
@@ -223,11 +240,12 @@ def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
     from docling_core.utils.file import resolve_source_to_stream
 
     def get_response(*args, **kwargs):
-        r = Response()
-        r.status_code = 200
-        r._content = b"test content"
-        r.headers["Content-Disposition"] = 'attachment; filename="../../etc/config.txt"'
-        return r
+        return _closeable_response(
+            content=b"test content",
+            headers={
+                "Content-Disposition": 'attachment; filename="../../etc/config.txt"'
+            },
+        )
 
     monkeypatch.setattr("requests.Session.get", get_response)
 
@@ -271,11 +289,12 @@ def test_resolve_source_to_path_sanitizes_filename(monkeypatch, tmp_path):
     from docling_core.utils.file import resolve_source_to_path
 
     def get_response(*args, **kwargs):
-        r = Response()
-        r.status_code = 200
-        r._content = b"test content"
-        r.headers["Content-Disposition"] = 'attachment; filename="../../../../tmp/output.txt"'
-        return r
+        return _closeable_response(
+            content=b"test content",
+            headers={
+                "Content-Disposition": 'attachment; filename="../../../../tmp/output.txt"'
+            },
+        )
 
     monkeypatch.setattr("requests.Session.get", get_response)
 
@@ -350,3 +369,42 @@ def test_redirect_to_non_public_ip_rejected(monkeypatch):
 
     with pytest.raises(ValueError, match="Redirect target is not allowed"):
         resolve_source_to_stream("https://example.com/redirect")
+
+
+def test_resolve_source_rejects_large_content_length(monkeypatch):
+    import pytest
+    from requests import Response, Session
+
+    from docling_core.utils.file import resolve_source_to_stream
+
+    def mock_get(self, *args, **kwargs):
+        return _closeable_response(
+            content=b"ignored", headers={"Content-Length": "10"}
+        )
+
+    monkeypatch.setattr(Session, "get", mock_get)
+
+    with pytest.raises(ValueError, match="maximum allowed size"):
+        resolve_source_to_stream("https://example.com/file", max_file_size=5)
+
+
+def test_resolve_source_stops_when_stream_exceeds_limit(monkeypatch):
+    import pytest
+    from requests import Response, Session
+
+    from docling_core.utils.file import resolve_source_to_stream
+
+    def mock_get(self, *args, **kwargs):
+        r = _closeable_response(headers={"Content-Length": "4"})
+
+        def iter_content(chunk_size=1):
+            yield b"abcd"
+            yield b"ef"
+
+        r.iter_content = iter_content
+        return r
+
+    monkeypatch.setattr(Session, "get", mock_get)
+
+    with pytest.raises(ValueError, match="maximum allowed size"):
+        resolve_source_to_stream("https://example.com/file", max_file_size=5)
