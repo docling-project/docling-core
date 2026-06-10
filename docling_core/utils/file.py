@@ -17,6 +17,11 @@ from docling_core.types.io import DocumentStream
 
 _MAX_REDIRECTS = 5
 
+# Chunk size for streaming remote downloads. Sized for document payloads (PDFs
+# and similar), which are either small or in the multi-megabyte range, so a
+# large chunk keeps the read loop short without wasting memory.
+_DOWNLOAD_CHUNK_SIZE = 512 * 1024
+
 
 class FileSizeLimitExceededError(ValueError):
     """Raised when a remote file exceeds the configured download size limit."""
@@ -113,12 +118,16 @@ def resolve_source_to_stream(
     """Resolves the source (URL, path) of a file to a binary stream.
 
     Args:
-        source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
-        headers (Optional[dict[str, str]]): Optional set of headers to use for fetching
-            the remote URL.
+        source: The file input source. Can be a path or URL.
+        headers: Optional set of headers to use for fetching the remote URL.
+        max_file_size: Optional maximum size, in bytes, for a remote download.
+            When set, the download is rejected upfront if the declared
+            ``Content-Length`` exceeds it, and aborted while streaming as soon as
+            the received bytes exceed it.
 
     Raises:
         ValueError: If source is of unexpected type.
+        FileSizeLimitExceededError: If a remote download exceeds ``max_file_size``.
 
     Returns:
         DocumentStream: The resolved file loaded as a stream.
@@ -210,7 +219,7 @@ def resolve_source_to_stream(
 
                 stream = BytesIO()
                 downloaded = 0
-                for chunk in res.iter_content(chunk_size=8192):
+                for chunk in res.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
                     if not chunk:
                         continue
                     downloaded += len(chunk)
