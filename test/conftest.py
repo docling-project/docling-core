@@ -457,16 +457,19 @@ def _rich_table_doc_impl() -> DoclingDocument:
 
     return doc
 
+
 @pytest.fixture(scope="session")
 def _rich_table_doc() -> DoclingDocument:
     """Fixture for a rich table document to be reused across the test session."""
     return _rich_table_doc_impl()
+
 
 @pytest.fixture(scope="function")
 def rich_table_doc(_rich_table_doc: DoclingDocument) -> DoclingDocument:
     """Copy of a rich table document for each test function."""
 
     return _rich_table_doc.model_copy(deep=True)
+
 
 def _mixed_hierarchy_doc_impl() -> DoclingDocument:
     doc = DoclingDocument(name="")
@@ -553,16 +556,19 @@ def _mixed_hierarchy_doc_impl() -> DoclingDocument:
 
     return doc
 
+
 @pytest.fixture(scope="session")
 def _mixed_hierarchy_doc() -> DoclingDocument:
     """Fixture for a mixed hierarchy document to be reused across the test session."""
     return _mixed_hierarchy_doc_impl()
+
 
 @pytest.fixture(scope="function")
 def mixed_hierarchy_doc(_mixed_hierarchy_doc: DoclingDocument) -> DoclingDocument:
     """Copy of a mixed hierarchy document for each test function."""
 
     return _mixed_hierarchy_doc.model_copy(deep=True)
+
 
 @pytest.fixture(scope="session")
 def _doc_with_handwritten() -> DoclingDocument:

@@ -286,9 +286,7 @@ class TestTreeChunkExpander:
 
             # Expanded chunk text should contain original chunk text (or be a superset)
             assert check_lines_equal_in_order(chunk.text, expanded.text), (
-                f"Expanded chunk should contain original chunk text. "
-                f"original: {chunk.text} "
-                f"expanded: {expanded.text}"
+                f"Expanded chunk should contain original chunk text. original: {chunk.text} expanded: {expanded.text}"
             )
             assert expanded.meta.origin == chunk.meta.origin, "Origin should be preserved"
 
@@ -366,4 +364,3 @@ class TestPageChunkExpander:
 
             # Should return original chunk when no pages
             assert result == chunk, "Should return original chunk when document has no pages"
-

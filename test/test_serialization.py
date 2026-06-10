@@ -962,18 +962,10 @@ def test_html_rich_cell_textitem_ref_subtree_inside_and_not_outside():
     inside_table = body[:table_end]
     after_table = body[table_end:]
 
-    assert "CELL-TEXT" in inside_table, (
-        f"RichTableCell ref content missing from the table:\n{body}"
-    )
-    assert "DEEP-LEAK" in inside_table, (
-        f"RichTableCell ref descendant missing from the table:\n{body}"
-    )
-    assert "CELL-TEXT" not in after_table, (
-        f"RichTableCell ref content leaked outside the table:\n{body}"
-    )
-    assert "DEEP-LEAK" not in after_table, (
-        f"RichTableCell ref descendant leaked outside the table:\n{body}"
-    )
+    assert "CELL-TEXT" in inside_table, f"RichTableCell ref content missing from the table:\n{body}"
+    assert "DEEP-LEAK" in inside_table, f"RichTableCell ref descendant missing from the table:\n{body}"
+    assert "CELL-TEXT" not in after_table, f"RichTableCell ref content leaked outside the table:\n{body}"
+    assert "DEEP-LEAK" not in after_table, f"RichTableCell ref descendant leaked outside the table:\n{body}"
 
 
 def test_html_textitem_with_children_at_document_level():
@@ -990,15 +982,9 @@ def test_html_textitem_with_children_at_document_level():
     out = HTMLDocSerializer(doc=doc).serialize().text
     body = out[out.find("<body>") : out.find("</body>") + len("</body>")]
 
-    assert body.count("PARENT-TEXT") == 1, (
-        f"PARENT-TEXT should appear exactly once:\n{body}"
-    )
-    assert body.count("CHILD-TEXT") == 1, (
-        f"CHILD-TEXT should appear exactly once:\n{body}"
-    )
-    assert body.find("PARENT-TEXT") < body.find("CHILD-TEXT"), (
-        f"PARENT-TEXT should appear before CHILD-TEXT:\n{body}"
-    )
+    assert body.count("PARENT-TEXT") == 1, f"PARENT-TEXT should appear exactly once:\n{body}"
+    assert body.count("CHILD-TEXT") == 1, f"CHILD-TEXT should appear exactly once:\n{body}"
+    assert body.find("PARENT-TEXT") < body.find("CHILD-TEXT"), f"PARENT-TEXT should appear before CHILD-TEXT:\n{body}"
 
 
 def test_html_inline_and_formatting():
@@ -1087,7 +1073,9 @@ def test_html_meta_emits_xhtml_compatible_attributes():
         )
     ]
 
-    text = doc.add_text(label=DocItemLabel.TEXT, text="Output of HTML serializer must be parseable by a strict XML parser")
+    text = doc.add_text(
+        label=DocItemLabel.TEXT, text="Output of HTML serializer must be parseable by a strict XML parser"
+    )
     text.meta = BaseMeta(
         summary=SummaryMetaField(text="XHTML-compliant"),
         language=LanguageMetaField(code="en"),
@@ -1102,7 +1090,7 @@ def test_html_meta_emits_xhtml_compatible_attributes():
                     text="XML parser",
                     label="software",
                     charspan=CharSpan((56, 66)),
-                )
+                ),
             ]
         ),
     )

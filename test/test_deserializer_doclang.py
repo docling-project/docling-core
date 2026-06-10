@@ -164,6 +164,7 @@ def test_roundtrip_code():
     """
     assert dt2.strip() == exp_dt.strip()
 
+
 def test_roundtrip_formula():
     doc = DoclingDocument(name="t")
     doc.add_formula(text="E=mc^2")
@@ -375,9 +376,7 @@ def test_roundtrip_page_footer_prov():
 def test_roundtrip_code_prov():
     doc = DoclingDocument(name="t")
     _add_default_page(doc)
-    doc.add_code(
-        text="print('hi')", code_language=CodeLanguageLabel.PYTHON, prov=_default_prov()
-    )
+    doc.add_code(text="print('hi')", code_language=CodeLanguageLabel.PYTHON, prov=_default_prov())
     dt = _serialize(doc)
     if DO_PRINT:
         print("\n", dt)
@@ -821,36 +820,20 @@ def test_roundtrip_multiple_nested_lists_same_level():
 
 def test_roundtrip_list_item_with_inline_group():
 
-
     doc = DoclingDocument(name="t")
 
     add_texts_section(doc)
     add_list_section(doc)
 
     dt = _serialize(doc)
-    exp_ser_file = (
-        Path(__file__).parent
-        / "data"
-        / "doc"
-        / "roundtrip_list_item_with_inline_serialized.dclg.xml"
-    )
+    exp_ser_file = Path(__file__).parent / "data" / "doc" / "roundtrip_list_item_with_inline_serialized.dclg.xml"
     verify(exp_ser_file, dt)
     doc2 = _deserialize(dt)
-    deser_yaml_file = (
-        Path(__file__).parent
-        / "data"
-        / "doc"
-        / "roundtrip_list_item_with_inline_deserialized.yaml"
-    )
+    deser_yaml_file = Path(__file__).parent / "data" / "doc" / "roundtrip_list_item_with_inline_deserialized.yaml"
     doc2.save_as_yaml(deser_yaml_file)
     dt2 = _serialize(doc2)
 
-    exp_dt2_file = (
-        Path(__file__).parent
-        / "data"
-        / "doc"
-        / "roundtrip_list_item_with_inline_reserialized.dclg.xml"
-    )
+    exp_dt2_file = Path(__file__).parent / "data" / "doc" / "roundtrip_list_item_with_inline_reserialized.dclg.xml"
     verify(exp_dt2_file, dt2)
 
 
@@ -937,9 +920,7 @@ def test_roundtrip_picture_with_caption_and_footnotes():
 
     # Create caption and footnotes
     cap = doc.add_text(label=DocItemLabel.CAPTION, text="Figure 1: Sample Image")
-    footnote1 = doc.add_text(
-        label=DocItemLabel.FOOTNOTE, text="Image source: Dataset A"
-    )
+    footnote1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Image source: Dataset A")
     footnote2 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Resolution: 1024x768")
 
     # Add picture with caption
@@ -992,12 +973,8 @@ def test_roundtrip_table_with_rich_cells():
 
     # Create content for rich cells
     # Cell (0, 0): Multiple paragraphs
-    para1 = doc.add_text(
-        parent=table, label=DocItemLabel.TEXT, text="First paragraph in cell."
-    )
-    para2 = doc.add_text(
-        parent=table, label=DocItemLabel.TEXT, text="Second paragraph in cell."
-    )
+    para1 = doc.add_text(parent=table, label=DocItemLabel.TEXT, text="First paragraph in cell.")
+    para2 = doc.add_text(parent=table, label=DocItemLabel.TEXT, text="Second paragraph in cell.")
 
     # Cell (1, 0): A list
     list_group = doc.add_list_group(parent=table)
@@ -1085,9 +1062,7 @@ def test_roundtrip_table_with_rich_cells():
     assert main_table.data.num_cols == 2
 
     # Verify that we have rich table cells
-    rich_cells = [
-        cell for cell in main_table.data.table_cells if isinstance(cell, RichTableCell)
-    ]
+    rich_cells = [cell for cell in main_table.data.table_cells if isinstance(cell, RichTableCell)]
     assert len(rich_cells) >= 1  # At least one rich cell should be preserved
 
     # Verify round-trip serialization
@@ -1110,15 +1085,11 @@ def test_constructed_doc(sample_doc: DoclingDocument):
     doc2 = _deserialize(dt)
     dt2 = _serialize(doc2)
 
-    exp_reserialized_dt_file = (
-        Path(__file__).parent / "data" / "doc" / "constr_doc_reserialized.dclg.xml"
-    )
+    exp_reserialized_dt_file = Path(__file__).parent / "data" / "doc" / "constr_doc_reserialized.dclg.xml"
     verify(exp_reserialized_dt_file, dt2)
 
 
-@pytest.mark.xfail(
-    reason="Known feature incompletenes in deseralization"
-)
+@pytest.mark.xfail(reason="Known feature incompletenes in deseralization")
 def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
     doc = rich_table_doc
 
@@ -1129,6 +1100,7 @@ def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
     dt2 = _serialize(doc2)
 
     assert dt2 == dt
+
 
 def test_wrapping():
     dt = f"""
@@ -1184,6 +1156,7 @@ def test_wrapping():
     dt2 = _serialize(doc)
     assert dt2.strip() == dt.strip()
 
+
 def test_rich_table_cells():
     dt = f"""
 <doclang xmlns="{DOCLANG_NAMESPACE}" version="{DOCLANG_VERSION}">
@@ -1233,7 +1206,6 @@ def test_picture_tabular_chart_content_cdata_cells():
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][1].text == "111"
 
 
-
 def test_roundtrip_with_layers():
     """Test roundtrip with content layers."""
     from docling_core.types.doc import ContentLayer
@@ -1246,6 +1218,7 @@ def test_roundtrip_with_layers():
 
     # Serialize with ALWAYS mode to ensure layers are included
     from docling_core.experimental.doclang import LayerMode
+
     ser = DoclangDocSerializer(
         doc=doc,
         params=DoclangParams(layer_mode=LayerMode.ALWAYS),
@@ -1261,6 +1234,7 @@ def test_roundtrip_with_layers():
     assert items[0].content_layer == ContentLayer.FURNITURE
     assert items[1].content_layer == ContentLayer.BODY
     assert items[2].content_layer == ContentLayer.FURNITURE
+
 
 def test_roundtrip_with_newlines():
     doclang_str = f"""
@@ -1281,42 +1255,41 @@ bar</content>
     exp_doclang_str = doc.export_to_doclang()
 
 
-
 def test_roundtrip_document_index_table():
     """Test that DOCUMENT_INDEX label is preserved through serialization/deserialization."""
     doc = DoclingDocument(name="test")
     _add_default_page(doc)
-    
+
     # Add a regular table
     table_data = TableData(num_cols=2)
-    table_data.add_row(['Header 1', 'Header 2'])
+    table_data.add_row(["Header 1", "Header 2"])
     table_data.grid[0][0].column_header = True
     table_data.grid[0][1].column_header = True
-    table_data.add_row(['Data 1', 'Data 2'])
+    table_data.add_row(["Data 1", "Data 2"])
     doc.add_table(data=table_data, label=DocItemLabel.TABLE, prov=_default_prov())
-    
+
     # Add a DOCUMENT_INDEX table
     index_data = TableData(num_cols=2)
-    index_data.add_row(['Index 1', 'Page 1'])
-    index_data.add_row(['Index 2', 'Page 2'])
+    index_data.add_row(["Index 1", "Page 1"])
+    index_data.add_row(["Index 2", "Page 2"])
     doc.add_table(data=index_data, label=DocItemLabel.DOCUMENT_INDEX, prov=_default_prov())
-    
+
     # Serialize
     xml_str = _serialize(doc)
-    
+
     # Verify serialization contains class="index"
     assert '<table class="index">' in xml_str
-    
+
     # Deserialize
     doc2 = _deserialize(xml_str)
-    
+
     # Verify we have 2 tables
     assert len(doc2.tables) == 2
-    
+
     # Verify labels are preserved
     assert doc2.tables[0].label == DocItemLabel.TABLE
     assert doc2.tables[1].label == DocItemLabel.DOCUMENT_INDEX
-    
+
     # Verify table data is preserved
     assert doc2.tables[0].data.num_rows == 2
     assert doc2.tables[0].data.num_cols == 2
@@ -1341,10 +1314,10 @@ def test_roundtrip_table_with_data_class():
     <nl/>
   </table>
 </doclang>"""
-    
+
     # Deserialize
     doc = _deserialize(xml_str)
-    
+
     # Verify we have 1 table with TABLE label
     assert len(doc.tables) == 1
     assert doc.tables[0].label == DocItemLabel.TABLE
@@ -1360,7 +1333,7 @@ def test_table_with_invalid_class_raises_error():
     <nl/>
   </table>
 </doclang>"""
-    
+
     # Deserialize should raise ValueError
     with pytest.raises(ValueError, match="Invalid class attribute value 'invalid' for table element"):
         _deserialize(xml_str)

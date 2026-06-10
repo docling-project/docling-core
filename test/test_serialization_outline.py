@@ -55,8 +55,11 @@ def test_outline_serializer_mode_toc_custom():
     exp_path = doc_path.with_suffix(".custom.gt.md")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
-    params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, labels={
-        DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER, DocItemLabel.TABLE})
+    params = OutlineParams(
+        include_non_meta=True,
+        mode=OutlineMode.TABLE_OF_CONTENTS,
+        labels={DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER, DocItemLabel.TABLE},
+    )
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
 
@@ -113,8 +116,7 @@ def test_outline_serializer_include_non_meta_false():
 
     assert isinstance(result.text, str)
     assert len(result.text) > 0, (
-        "Outline should show structure (references) and metadata (summaries) "
-        "even when include_non_meta=False"
+        "Outline should show structure (references) and metadata (summaries) even when include_non_meta=False"
     )
     assert "\\[ref=" in result.text, "Should include references"
 
@@ -126,9 +128,7 @@ def test_outline_serializer_empty_document():
     # Create a minimal document
     doc = DoclingDocument(name="test_doc")
 
-    params = OutlineParams(
-        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS
-    )
+    params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS)
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
 
@@ -144,11 +144,7 @@ def test_outline_serializer_json_format():
     doc = DoclingDocument.load_from_json(filename=doc_path)
 
     # Test with include_non_meta=True (includes titles)
-    params = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.JSON
-    )
+    params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.JSON)
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
 
@@ -206,11 +202,7 @@ def test_outline_serializer_json_format():
     doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
     exp_path_hier = doc_path.with_suffix(".outline.gt.json")
     doc = DoclingDocument.load_from_json(filename=doc_path)
-    params = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.OUTLINE,
-        format=OutlineFormat.JSON
-    )
+    params = OutlineParams(include_non_meta=True, mode=OutlineMode.OUTLINE, format=OutlineFormat.JSON)
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
 
@@ -228,7 +220,9 @@ def test_outline_serializer_json_format():
     has_table = any(item["item"] == "table" for item in data)
     assert has_table, f"In document {doc_path.name} at least some items should be of type 'table' in outline mode"
     has_table_summary = any(item["item"] == "table" and "summary" in item for item in data)
-    assert has_table_summary, f"In document {doc_path.name} at least a table has a summary and should appear in outline mode"
+    assert has_table_summary, (
+        f"In document {doc_path.name} at least a table has a summary and should appear in outline mode"
+    )
 
     assert_or_generate_ground_truth(result.text, exp_path_hier, is_json=True)
 
@@ -240,11 +234,7 @@ def test_outline_serializer_json_format_without_non_meta():
     doc = DoclingDocument.load_from_json(filename=doc_path)
 
     # Test with include_non_meta=False (no titles, only refs and summaries)
-    params = OutlineParams(
-        include_non_meta=False,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.JSON
-    )
+    params = OutlineParams(include_non_meta=False, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.JSON)
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
 
@@ -273,11 +263,7 @@ def test_outline_serializer_itxt_format():
     doc = DoclingDocument.load_from_json(filename=doc_path)
 
     # Test with include_non_meta=True (includes titles)
-    params = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.ITXT
-    )
+    params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.ITXT)
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
 
@@ -322,11 +308,7 @@ def test_outline_serializer_itxt_format_without_non_meta():
     doc = DoclingDocument.load_from_json(filename=doc_path)
 
     # Test with include_non_meta=False (no titles, only refs and summaries)
-    params = OutlineParams(
-        include_non_meta=False,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.ITXT
-    )
+    params = OutlineParams(include_non_meta=False, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.ITXT)
     ser = OutlineDocSerializer(doc=doc, params=params)
     result = ser.serialize()
 
@@ -345,7 +327,9 @@ def test_outline_serializer_itxt_format_without_non_meta():
             # Format without title: [ref=...] summary
             # Format with title: [ref=...] [Title] summary
             bracket_count = line.count("[")
-            assert bracket_count == 1, f"Should only have ref bracket when include_non_meta=False, got {bracket_count} in: {line}"
+            assert bracket_count == 1, (
+                f"Should only have ref bracket when include_non_meta=False, got {bracket_count} in: {line}"
+            )
 
 
 def test_format_indented_text_line():
@@ -353,11 +337,7 @@ def test_format_indented_text_line():
 
     # Test with short summary (should not be truncated)
     item_short = OutlineItemData(
-        ref="#/texts/0",
-        item="section_header",
-        title="Introduction",
-        summary="This is a short summary.",
-        level=1
+        ref="#/texts/0", item="section_header", title="Introduction", summary="This is a short summary.", level=1
     )
     result = _format_indented_text_line(item_short, indent_size=2, max_summary_length=100)
     assert result == "  [ref=#/texts/0] [Introduction] This is a short summary."
@@ -366,11 +346,7 @@ def test_format_indented_text_line():
     # Test with long summary (should be truncated)
     long_summary = "A" * 150  # 150 characters
     item_long = OutlineItemData(
-        ref="#/texts/1",
-        item="section_header",
-        title="Long Section",
-        summary=long_summary,
-        level=2
+        ref="#/texts/1", item="section_header", title="Long Section", summary=long_summary, level=2
     )
     result = _format_indented_text_line(item_long, indent_size=2, max_summary_length=50)
     assert result.startswith("    [ref=#/texts/1] [Long Section] ")
@@ -378,37 +354,24 @@ def test_format_indented_text_line():
     assert len(result.split("] ")[-1]) == 50, "Truncated summary should be exactly max_summary_length"
 
     # Test without title
-    item_no_title = OutlineItemData(
-        ref="#/texts/2",
-        item="paragraph",
-        summary="Summary without title",
-        level=0
-    )
+    item_no_title = OutlineItemData(ref="#/texts/2", item="paragraph", summary="Summary without title", level=0)
     result = _format_indented_text_line(item_no_title, indent_size=2, max_summary_length=100)
     assert result == "[ref=#/texts/2] Summary without title"
     assert "[" not in result.split("] ", 1)[1], "Should not have title brackets"
 
     # Test without summary
-    item_no_summary = OutlineItemData(
-        ref="#/texts/3",
-        item="title",
-        title="Title Only",
-        level=1
-    )
+    item_no_summary = OutlineItemData(ref="#/texts/3", item="title", title="Title Only", level=1)
     result = _format_indented_text_line(item_no_summary, indent_size=2, max_summary_length=100)
     assert result == "  [ref=#/texts/3] [Title Only]"
 
     # Test with different indent sizes
     item_indent = OutlineItemData(
-        ref="#/texts/4",
-        item="section_header",
-        title="Nested",
-        summary="Nested content",
-        level=3
+        ref="#/texts/4", item="section_header", title="Nested", summary="Nested content", level=3
     )
     result = _format_indented_text_line(item_indent, indent_size=3, max_summary_length=100)
     assert result.startswith(" " * 9)  # 3 spaces * level 3
     assert "[ref=#/texts/4] [Nested] Nested content" in result
+
 
 @pytest.mark.filterwarnings("ignore:Pydantic serializer warnings:UserWarning")
 def test_outline_serialization_from_item():
@@ -416,11 +379,7 @@ def test_outline_serialization_from_item():
 
     doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
     doc = DoclingDocument.load_from_json(filename=doc_path)
-    params = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.JSON
-    )
+    params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.JSON)
 
     ser = OutlineDocSerializer(doc=doc, params=params)
     doc_out = ser.serialize()
@@ -429,10 +388,7 @@ def test_outline_serialization_from_item():
     # Test 1: Serialize from a nested item using start_item parameter
     nested_item = RefItem(cref="#/texts/25").resolve(doc)
     params_with_start = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.JSON,
-        start_item=nested_item
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.JSON, start_item=nested_item
     )
     ser_nested = OutlineDocSerializer(doc=doc, params=params_with_start)
     nested_out = ser_nested.serialize()
@@ -448,8 +404,9 @@ def test_outline_serialization_from_item():
 
     # Check that the nested item is included
     nested_ref = nested_item.self_ref
-    assert any(item_data["ref"] == nested_ref for item_data in nested_data), \
+    assert any(item_data["ref"] == nested_ref for item_data in nested_data), (
         f"Nested item {nested_ref} should be in the output"
+    )
 
     # Verify that all items in nested_data are either the nested_item or its descendants
     # Expected: #/texts/25 (level 2) and its 7 children (all level 3)
@@ -465,10 +422,7 @@ def test_outline_serialization_from_item():
 
     # Test 2: Serialize with maximum level
     params_with_max_level = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.JSON,
-        max_level=2
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.JSON, max_level=2
     )
     ser_max_level = OutlineDocSerializer(doc=doc, params=params_with_max_level)
     max_level_out = ser_max_level.serialize()
@@ -489,7 +443,7 @@ def test_outline_serialization_from_item():
         mode=OutlineMode.TABLE_OF_CONTENTS,
         format=OutlineFormat.JSON,
         start_item=nested_item,
-        max_level=2
+        max_level=2,
     )
     ser_combined = OutlineDocSerializer(doc=doc, params=params_combined)
     combined_out = ser_combined.serialize()
@@ -503,10 +457,7 @@ def test_outline_serialization_from_item():
 
     # Test 4: Test with OUTLINE mode (includes all items, not just headings)
     params_outline_max = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.OUTLINE,
-        format=OutlineFormat.JSON,
-        max_level=2
+        include_non_meta=True, mode=OutlineMode.OUTLINE, format=OutlineFormat.JSON, max_level=2
     )
     ser_outline_max = OutlineDocSerializer(doc=doc, params=params_outline_max)
     outline_max_out = ser_outline_max.serialize()
@@ -519,10 +470,7 @@ def test_outline_serialization_from_item():
 
     # Test 5: Test with Markdown format
     params_md_max = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.MARKDOWN,
-        max_level=2
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.MARKDOWN, max_level=2
     )
     ser_md_max = OutlineDocSerializer(doc=doc, params=params_md_max)
     md_max_out = ser_md_max.serialize()
@@ -534,10 +482,7 @@ def test_outline_serialization_from_item():
     assert "#### OCR\n\\[ref=#/texts/58\\]" not in md_max_out.text
 
     params_md_start = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.MARKDOWN,
-        start_item=nested_item
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.MARKDOWN, start_item=nested_item
     )
     ser_md_start = OutlineDocSerializer(doc=doc, params=params_md_start)
     md_start_out = ser_md_start.serialize()
@@ -552,10 +497,7 @@ def test_outline_serialization_from_item():
 
     # Test 6: Test with ITXT format
     params_itxt_max = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.ITXT,
-        max_level=2
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.ITXT, max_level=2
     )
     ser_itxt_max = OutlineDocSerializer(doc=doc, params=params_itxt_max)
     itxt_max_out = ser_itxt_max.serialize()
@@ -567,10 +509,7 @@ def test_outline_serialization_from_item():
     assert "[ref=#/texts/58]" not in itxt_max_out.text
 
     params_itxt_start = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.ITXT,
-        start_item=nested_item
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.ITXT, start_item=nested_item
     )
     ser_itxt_start = OutlineDocSerializer(doc=doc, params=params_itxt_start)
     itxt_start_out = ser_itxt_start.serialize()
@@ -592,126 +531,106 @@ def test_outline_serialization_from_item():
     assert first_line.startswith("[ref=#/texts/25]"), "First line should be the start_item"
 
 
-
 @pytest.mark.filterwarnings("ignore:Pydantic serializer warnings:UserWarning")
 def test_outline_serialization_spans():
     """Test that serialization results preserve spans for get_unique_doc_items()."""
     doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
     doc = DoclingDocument.load_from_json(filename=doc_path)
-    
+
     # Get a nested item to use as start_item
     nested_item = RefItem(cref="#/texts/25").resolve(doc)
-    
+
     # Test 1: JSON format with start_item
     params_json = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.JSON,
-        start_item=nested_item
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.JSON, start_item=nested_item
     )
     ser_json = OutlineDocSerializer(doc=doc, params=params_json)
     result_json = ser_json.serialize()
-    
+
     # Verify spans are present
     assert len(result_json.spans) > 0, "JSON format should have spans"
-    
+
     # Get unique doc items
     doc_items_json = result_json.get_unique_doc_items()
     assert len(doc_items_json) > 0, "Should have doc items from spans"
-    
+
     # Verify the items match what's in the JSON output
     json_data = json.loads(result_json.text)
     json_refs = {item["ref"] for item in json_data}
     span_refs = {item.self_ref for item in doc_items_json}
-    
+
     # All items in JSON should have corresponding spans
     assert json_refs == span_refs, f"JSON refs {json_refs} should match span refs {span_refs}"
-    
+
     # Test 2: Markdown format with max_level
     params_md = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.MARKDOWN,
-        max_level=2
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.MARKDOWN, max_level=2
     )
     ser_md = OutlineDocSerializer(doc=doc, params=params_md)
     result_md = ser_md.serialize()
-    
+
     # Verify spans are present
     assert len(result_md.spans) > 0, "Markdown format should have spans"
-    
+
     # Get unique doc items
     doc_items_md = result_md.get_unique_doc_items()
     assert len(doc_items_md) > 0, "Should have doc items from spans"
-    
+
     # Verify items are in the markdown text
     for item in doc_items_md:
-        assert f"\\[ref={item.self_ref}\\]" in result_md.text, \
-            f"Item {item.self_ref} should be in markdown text"
-    
+        assert f"\\[ref={item.self_ref}\\]" in result_md.text, f"Item {item.self_ref} should be in markdown text"
+
     # Test 3: ITXT format with start_item
     params_itxt = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.ITXT,
-        start_item=nested_item
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.ITXT, start_item=nested_item
     )
     ser_itxt = OutlineDocSerializer(doc=doc, params=params_itxt)
     result_itxt = ser_itxt.serialize()
-    
+
     # Verify spans are present
     assert len(result_itxt.spans) > 0, "ITXT format should have spans"
-    
+
     # Get unique doc items
     doc_items_itxt = result_itxt.get_unique_doc_items()
     assert len(doc_items_itxt) > 0, "Should have doc items from spans"
-    
+
     # Verify items are in the ITXT text
     for item in doc_items_itxt:
-        assert f"[ref={item.self_ref}]" in result_itxt.text, \
-            f"Item {item.self_ref} should be in ITXT text"
-    
+        assert f"[ref={item.self_ref}]" in result_itxt.text, f"Item {item.self_ref} should be in ITXT text"
+
     # Test 4: Verify filtering consistency across formats
     # All three formats with the same start_item should have the same doc items
     params_json_filtered = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.JSON,
-        start_item=nested_item
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.JSON, start_item=nested_item
     )
     params_md_filtered = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.MARKDOWN,
-        start_item=nested_item
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.MARKDOWN, start_item=nested_item
     )
     params_itxt_filtered = OutlineParams(
-        include_non_meta=True,
-        mode=OutlineMode.TABLE_OF_CONTENTS,
-        format=OutlineFormat.ITXT,
-        start_item=nested_item
+        include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.ITXT, start_item=nested_item
     )
-    
+
     ser_json_f = OutlineDocSerializer(doc=doc, params=params_json_filtered)
     ser_md_f = OutlineDocSerializer(doc=doc, params=params_md_filtered)
     ser_itxt_f = OutlineDocSerializer(doc=doc, params=params_itxt_filtered)
-    
+
     result_json_f = ser_json_f.serialize()
     result_md_f = ser_md_f.serialize()
     result_itxt_f = ser_itxt_f.serialize()
-    
+
     items_json_f = result_json_f.get_unique_doc_items()
     items_md_f = result_md_f.get_unique_doc_items()
     items_itxt_f = result_itxt_f.get_unique_doc_items()
-    
+
     refs_json_f = {item.self_ref for item in items_json_f}
     refs_md_f = {item.self_ref for item in items_md_f}
     refs_itxt_f = {item.self_ref for item in items_itxt_f}
-    
+
     # All formats should have the same set of item references
-    assert refs_json_f == refs_md_f == refs_itxt_f, \
+    assert refs_json_f == refs_md_f == refs_itxt_f, (
         f"All formats should have same items: JSON={refs_json_f}, MD={refs_md_f}, ITXT={refs_itxt_f}"
-    
+    )
+
     # Verify the expected items are present (nested_item and its 7 children)
     assert len(items_json_f) == 8, f"Expected 8 items, got {len(items_json_f)}"
     assert nested_item.self_ref in refs_json_f, "Start item should be included"

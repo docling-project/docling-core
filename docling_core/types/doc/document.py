@@ -6098,6 +6098,7 @@ class DoclingDocument(BaseModel):
         """Save to markdown."""
         if escaping_underscores is not None:
             import warnings
+
             warnings.warn(
                 "Parameter `escaping_underscores` is deprecated, use `escape_underscores` instead.",
                 DeprecationWarning,

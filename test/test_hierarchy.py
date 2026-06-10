@@ -14,8 +14,9 @@ def test_flatten(mixed_hierarchy_doc: DoclingDocument):
     _verify_doc(doc=doc, exp_json=exp_json)
 
     exp_dclg = Path("./test/data/doc/flattened.dclg.xml")
-    actual=doc.export_to_doclang()
+    actual = doc.export_to_doclang()
     verify(actual=actual, exp_file=exp_dclg)
+
 
 def test_hierarchize(mixed_hierarchy_doc):
     doc: DoclingDocument = mixed_hierarchy_doc
@@ -27,5 +28,5 @@ def test_hierarchize(mixed_hierarchy_doc):
     _verify_doc(doc=doc, exp_json=exp_json)
 
     exp_dclg = Path("./test/data/doc/hierarchized.dclg.xml")
-    actual=doc.export_to_doclang()
+    actual = doc.export_to_doclang()
     verify(actual=actual, exp_file=exp_dclg)
