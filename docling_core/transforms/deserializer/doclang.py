@@ -14,6 +14,9 @@ from typing_extensions import override
 
 from docling_core.transforms.deserializer.base import BaseDocDeserializer
 from docling_core.transforms.serializer._doclang_utils import (
+    _DOCLANG_META_TAG_DESCRIPTION,
+    _DOCLANG_META_TAG_SMILES,
+    _DOCLANG_META_TAG_SUMMARY,
     _ELEMENT_HEAD_TAGS,
     DOCLANG_DFLT_RESOLUTION,
     DocLangAttributeKey,
@@ -31,13 +34,16 @@ from docling_core.transforms.serializer._doclang_utils import (
     _xml_error_context,
 )
 from docling_core.types.doc import (
+    BaseMeta,
     BoundingBox,
     CodeItem,
     ContentLayer,
+    DescriptionMetaField,
     DocItem,
     DocItemLabel,
     DoclingDocument,
     FloatingItem,
+    FloatingMeta,
     Formatting,
     FormItem,
     GroupItem,
@@ -45,6 +51,8 @@ from docling_core.types.doc import (
     KeyValueItem,
     ListGroup,
     ListItem,
+    MetaUtils,
+    MoleculeMetaField,
     NodeItem,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -54,6 +62,7 @@ from docling_core.types.doc import (
     Script,
     SectionHeaderItem,
     Size,
+    SummaryMetaField,
     TableCell,
     TableData,
     TableItem,
@@ -357,6 +366,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._apply_initial_text_provenance(item, text=code_text, prov_list=prov_list)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=nm, item=item)
+            self._apply_custom_meta_from_element(item=item, el=el)
 
         # Map text-like tokens to text item labels
         elif nm in (
@@ -431,6 +441,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=nm, item=item)
+            self._apply_custom_meta_from_element(item=item, el=el)
 
         elif nm == DocLangToken.FORMULA.value:
             if (
@@ -449,6 +460,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=nm, item=item)
+            self._apply_custom_meta_from_element(item=item, el=el)
 
     def _extract_code_content_and_language(self, el: Element) -> tuple[str, CodeLanguageLabel]:
         """Extract code content and language from a <code> element."""
@@ -518,6 +530,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=DocLangToken.HEADING.value, item=item)
+            self._apply_custom_meta_from_element(item=item, el=el)
 
     def _parse_field_heading(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         lvl_txt = el.getAttribute(DocLangAttributeKey.LEVEL.value) or "1"
@@ -1173,6 +1186,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                             )
                         ]
                     )
+            self._apply_custom_meta_from_element(item=pic, el=picture_el)
             self._parse_picture_body(doc=doc, picture_el=picture_el, pic=pic)
 
     def _parse_picture_body(self, *, doc: DoclingDocument, picture_el: Element, pic: PictureItem) -> None:
@@ -1207,6 +1221,63 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         for node in body_nodes[idx:]:
             if isinstance(node, Element):
                 self._dispatch_element(doc=doc, el=node, parent=pic)
+
+    def _apply_custom_meta_from_element(self, *, item: NodeItem, el: Element) -> None:
+        """Restore item meta from ``<custom>`` children in the element head."""
+        head_nodes, _ = self._split_element_children_head_body(el)
+        self._apply_custom_meta_from_head_nodes(item=item, head_nodes=head_nodes)
+
+    def _ensure_item_meta(self, item: DocItem) -> BaseMeta:
+        """Return ``item.meta``, creating the appropriate meta model when absent."""
+        if item.meta is None:
+            if isinstance(item, PictureItem):
+                item.meta = PictureMeta()
+            elif isinstance(item, FloatingItem):
+                item.meta = FloatingMeta()
+            else:
+                item.meta = BaseMeta()
+        return item.meta
+
+    @staticmethod
+    def _split_namespace_field_tag(tag: str) -> Optional[tuple[str, str]]:
+        """Parse a ``namespace__field`` custom-vocabulary tag."""
+        if MetaUtils._META_FIELD_NAMESPACE_DELIMITER not in tag:
+            return None
+        namespace, name = tag.split(MetaUtils._META_FIELD_NAMESPACE_DELIMITER, maxsplit=1)
+        if namespace and name:
+            return namespace, name
+        return None
+
+    def _apply_custom_meta_field_element(self, *, item: DocItem, field_el: Element) -> None:
+        """Map one ``<custom>`` child element onto ``item.meta``."""
+        tag = field_el.tagName
+        value = self._get_text(field_el)
+        meta = self._ensure_item_meta(item)
+
+        if tag == _DOCLANG_META_TAG_SUMMARY:
+            if text := value.strip():
+                meta.summary = SummaryMetaField(text=text)
+        elif tag == _DOCLANG_META_TAG_DESCRIPTION:
+            if text := value.strip():
+                meta.description = DescriptionMetaField(text=text)
+        elif tag == _DOCLANG_META_TAG_SMILES:
+            if isinstance(item, PictureItem) and (smi := value.strip()):
+                picture_meta = cast(PictureMeta, self._ensure_item_meta(item))
+                picture_meta.molecule = MoleculeMetaField(smi=smi)
+        elif parsed := self._split_namespace_field_tag(tag):
+            namespace, name = parsed
+            meta.set_custom_field(namespace=namespace, name=name, value=value)
+
+    def _apply_custom_meta_from_head_nodes(self, *, item: NodeItem, head_nodes: Sequence[Node]) -> None:
+        """Restore item meta from ``<custom>`` children in the element head."""
+        if not isinstance(item, DocItem):
+            return
+        for node in head_nodes:
+            if not isinstance(node, Element) or node.tagName != DocLangToken.CUSTOM.value:
+                continue
+            for child in node.childNodes:
+                if isinstance(child, Element):
+                    self._apply_custom_meta_field_element(item=item, field_el=child)
 
     # ------------- Helpers -------------
     def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> Optional[TextItem]:

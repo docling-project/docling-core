@@ -21,6 +21,9 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer._doclang_utils import (
     _DOCLANG_LABEL_UNDEFINED,
+    _DOCLANG_META_TAG_DESCRIPTION,
+    _DOCLANG_META_TAG_SMILES,
+    _DOCLANG_META_TAG_SUMMARY,
     _DOCLANG_VERSION,
     DOCLANG_DFLT_RESOLUTION,
     DOCLANG_NAMESPACE,
@@ -1037,17 +1040,14 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
     def _serialize_meta_field(self, meta: BaseMeta, name: str, params: DocLangParams) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
             if name == MetaFieldName.SUMMARY and isinstance(field_val, SummaryMetaField):
-                escaped_text = _escape_text(field_val.text, params)
-                txt = f"<docling__summary>{escaped_text}</docling__summary>"
+                txt = _wrap(text=_escape_text(field_val.text, params), wrap_tag=_DOCLANG_META_TAG_SUMMARY)
             elif name == MetaFieldName.DESCRIPTION and isinstance(field_val, DescriptionMetaField):
-                escaped_text = _escape_text(field_val.text, params)
-                txt = f"<docling__description>{escaped_text}</docling__description>"
+                txt = _wrap(text=_escape_text(field_val.text, params), wrap_tag=_DOCLANG_META_TAG_DESCRIPTION)
             elif name == MetaFieldName.CLASSIFICATION:
                 # Picture classification is emitted as <label value="..."/> in element head.
                 return None
             elif name == MetaFieldName.MOLECULE and isinstance(field_val, MoleculeMetaField):
-                escaped_smi = _escape_text(field_val.smi, params)
-                txt = f"<docling__smiles>{escaped_smi}</docling__smiles>"
+                txt = _wrap(text=_escape_text(field_val.smi, params), wrap_tag=_DOCLANG_META_TAG_SMILES)
             elif name == MetaFieldName.TABULAR_CHART and isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
                 return None

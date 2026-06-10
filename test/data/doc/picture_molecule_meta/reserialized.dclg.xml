@@ -1,0 +1,23 @@
+<doclang>
+  <picture class="chart">
+    <label value="pie_chart"/>
+    <custom>
+      <docling__summary>Picture meta summary</docling__summary>
+      <docling__description>Picture meta description</docling__description>
+      <docling__smiles>CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1</docling__smiles>
+      <my_corp__note>custom field on picture meta</my_corp__note>
+    </custom>
+    <tabular>
+      <fcel/>
+      Foo
+      <fcel/>
+      Bar
+      <nl/>
+      <fcel/>
+      One
+      <fcel/>
+      Two
+      <nl/>
+    </tabular>
+  </picture>
+</doclang>

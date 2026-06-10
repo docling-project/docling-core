@@ -1012,6 +1012,12 @@ def _code_language_label_from_doclang(label_val: str) -> CodeLanguageLabel:
     return _LINGUIST_TO_CODE_LANGUAGE.get(label_val, CodeLanguageLabel.UNKNOWN)
 
 
+# DocLang custom-vocabulary tags for standard Docling meta fields (``namespace__field``).
+_DOCLANG_META_NAMESPACE: Final = "docling"
+_DOCLANG_META_TAG_SUMMARY: Final = f"{_DOCLANG_META_NAMESPACE}__summary"
+_DOCLANG_META_TAG_DESCRIPTION: Final = f"{_DOCLANG_META_NAMESPACE}__description"
+_DOCLANG_META_TAG_SMILES: Final = f"{_DOCLANG_META_NAMESPACE}__smiles"
+
 # Tokens allowed in an element head (before body content). Mirrors
 # ``_element_head_prefix`` serialization order plus continuation/temporal tokens.
 _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(

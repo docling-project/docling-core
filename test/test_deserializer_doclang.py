@@ -13,9 +13,11 @@ from docling_core.transforms.serializer.doclang import (
 from docling_core.types.doc import (
     BoundingBox,
     CoordOrigin,
+    DescriptionMetaField,
     DocItemLabel,
     DoclingDocument,
     Formatting,
+    MoleculeMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
     PictureItem,
@@ -23,6 +25,8 @@ from docling_core.types.doc import (
     ProvenanceItem,
     RichTableCell,
     Size,
+    SummaryMetaField,
+    TabularChartMetaField,
     TableCell,
     TableData,
     TableItem,
@@ -1830,6 +1834,75 @@ def test_picture_body_table_is_semantic_content_not_chart_tabular():
     nested = pic.children[0].resolve(doc)
     assert isinstance(nested, TableItem)
     assert nested.data.grid[0][0].text == "Nested"
+
+
+# SMILES from test/data/doc/dummy_doc_with_meta.yaml (molecule_data annotation)
+_EXAMPLE_MOLECULE_SMILES = "CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1"
+_PICTURE_META_SUMMARY = "Picture meta summary"
+_PICTURE_META_DESCRIPTION = "Picture meta description"
+_PICTURE_META_CUSTOM_VALUE = "custom field on picture meta"
+_CHART_TITLE = "Chart Title"
+
+
+def _create_picture_molecule_doc() -> DoclingDocument:
+    doc = DoclingDocument(name="picture_molecule_meta")
+    pic = doc.add_picture()
+    pic.meta = PictureMeta(
+        summary=SummaryMetaField(text=_PICTURE_META_SUMMARY),
+        description=DescriptionMetaField(text=_PICTURE_META_DESCRIPTION),
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    class_name=PictureClassificationLabel.PIE_CHART.value,
+                    confidence=1.0,
+                )
+            ]
+        ),
+        molecule=MoleculeMetaField(smi=_EXAMPLE_MOLECULE_SMILES),
+    )
+    pic.meta.set_custom_field(
+        namespace="my_corp",
+        name="note",
+        value=_PICTURE_META_CUSTOM_VALUE,
+    )
+    # Tabular chart data (pattern from test_serialization_doclang._create_content_filtering_doc)
+    chart_data = TableData(num_cols=2)
+    chart_data.add_row(["Foo", "Bar"])
+    chart_data.add_row(["One", "Two"])
+    pic.meta.tabular_chart = TabularChartMetaField(
+        title=_CHART_TITLE,
+        chart_data=chart_data,
+    )
+    return doc
+
+
+def test_picture_molecule_meta_roundtrip():
+    """Round-trip picture meta (molecule, chart/tabular, summary, description, custom) through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "picture_molecule_meta"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_picture_molecule_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize(doc)
+    verify(serialized_dclg, dt)
+    assert f"<docling__summary>{_PICTURE_META_SUMMARY}</docling__summary>" in dt
+    assert f"<docling__description>{_PICTURE_META_DESCRIPTION}</docling__description>" in dt
+    assert f"<docling__smiles>{_EXAMPLE_MOLECULE_SMILES}</docling__smiles>" in dt
+    assert f"<my_corp__note>{_PICTURE_META_CUSTOM_VALUE}</my_corp__note>" in dt
+    assert 'class="chart"' in dt
+    assert 'value="pie_chart"' in dt
+    assert "<tabular>" in dt
+    assert "Foo" in dt and "Bar" in dt and "One" in dt and "Two" in dt
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize(doc2)
+    verify(reserialized_dclg, dt2)
 
 
 def test_roundtrip_with_layers():
