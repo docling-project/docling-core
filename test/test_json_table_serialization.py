@@ -1,7 +1,6 @@
 """Test JSON table serialization."""
 
 import json
-from pathlib import Path
 
 import pandas as pd
 import pytest

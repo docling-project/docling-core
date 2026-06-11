@@ -6,7 +6,7 @@ import re
 from typing import Any, Literal, Optional
 
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -16,20 +16,7 @@ from docling_core.transforms.serializer.base import (
 )
 from docling_core.transforms.serializer.common import (
     CommonParams,
-    DocSerializer,
     create_ser_result,
-)
-from docling_core.transforms.serializer.markdown import (
-    MarkdownDocSerializer,
-    MarkdownFallbackSerializer,
-    MarkdownFormSerializer,
-    MarkdownInlineSerializer,
-    MarkdownKeyValueSerializer,
-    MarkdownListSerializer,
-    MarkdownMetaSerializer,
-    MarkdownParams,
-    MarkdownPictureSerializer,
-    MarkdownTextSerializer,
 )
 from docling_core.types.doc.document import DoclingDocument, TableItem
 
@@ -311,7 +298,7 @@ class JsonTableSerializer(BaseModel, BaseTableSerializer):
             include_metadata: Whether to detect and include metadata
 
         Returns:
-            Dictionary in smart JSON format
+            Dictionary in structured JSON format
         """
         # Detect metadata
         metadata = (

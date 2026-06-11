@@ -6,7 +6,6 @@ embedding models and RAG systems than markdown tables.
 """
 
 from docling_core.transforms.serializer.json_table import (
-    JsonTableParams,
     JsonTableSerializer,
 )
 from docling_core.transforms.serializer.markdown import (
