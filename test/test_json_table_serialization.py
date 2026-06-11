@@ -89,31 +89,31 @@ class TestUtilityFunctions:
         # Top-left is None, should detect as "both"
         assert _detect_header_type(df) == "both"
 
-    def test_detect_table_metadata_with_title(self):
-        """Test metadata detection with title."""
+    def test_detect_table_metadata_with_single_cell_title(self):
+        """Test metadata detection when first row has exactly one non-empty cell."""
         df = pd.DataFrame({
             "A": ["Sales Report", "Apple", "Orange"],
-            "B": ["Sales Report", 100, 80]
+            "B": ["", 100, 80]
         })
         metadata = _detect_table_metadata(df)
         assert metadata["title"] == "Sales Report"
         assert metadata["data_start_row"] == 1
 
-    def test_detect_table_metadata_with_description(self):
-        """Test metadata detection with description."""
+    def test_detect_table_metadata_with_single_cell_description(self):
+        """Test metadata detection when last row has exactly one non-empty cell."""
         df = pd.DataFrame({
             "A": ["Apple", "Orange", "Source: Finance"],
-            "B": [100, 80, "Source: Finance"]
+            "B": [100, 80, ""]
         })
         metadata = _detect_table_metadata(df)
         assert metadata["description"] == "Source: Finance"
         assert metadata["data_end_row"] == 2
 
-    def test_detect_table_metadata_no_metadata(self):
-        """Test metadata detection with no metadata."""
+    def test_detect_table_metadata_no_metadata_when_multiple_non_empty_cells(self):
+        """Test metadata is not detected when a row has multiple non-empty cells."""
         df = pd.DataFrame({
-            "A": ["Apple", "Orange"],
-            "B": [100, 80]
+            "A": ["Sales Report", "Apple"],
+            "B": ["Sales Report", 100]
         })
         metadata = _detect_table_metadata(df)
         assert metadata["title"] is None
@@ -170,18 +170,18 @@ class TestJsonTableSerializer:
         
         # Add cells
         cells_data = [
-            # Title row (merged cells pattern - same text)
+            # Title row (single non-empty cell heuristic)
             (0, 0, "Sales Report"),
-            (0, 1, "Sales Report"),
+            (0, 1, ""),
             # Header row
             (1, 0, "Product"),
             (1, 1, "Price"),
             # Data row
             (2, 0, "Apple"),
             (2, 1, "$1.00"),
-            # Description row (merged cells pattern - same text)
+            # Description row (single non-empty cell heuristic)
             (3, 0, "Source: Finance"),
-            (3, 1, "Source: Finance"),
+            (3, 1, ""),
         ]
         
         for row, col, text in cells_data:
@@ -445,12 +445,12 @@ class TestIntegration:
     def test_json_params_inheritance(self):
         """Test that JsonTableParams inherits from CommonParams."""
         params = JsonTableParams(
-            output_format="smart_json",
+            output_format="structured_json",
             min_rows=3,
             include_metadata=True
         )
         
-        assert params.output_format == "smart_json"
+        assert params.output_format == "structured_json"
         assert params.min_rows == 3
         assert params.include_metadata is True
         # Should also have CommonParams attributes
@@ -462,7 +462,7 @@ class TestIntegration:
         doc = DoclingDocument(name="Empty Table Doc")
         
         # Create empty table
-        table_data = TableData(num_rows=0, num_cols=0, grid=[])
+        table_data = TableData(num_rows=0, num_cols=0)
         table = doc.add_table(data=table_data)
         
         serializer = JsonTableSerializer()

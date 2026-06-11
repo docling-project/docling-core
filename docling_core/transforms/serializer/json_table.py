@@ -45,19 +45,12 @@ def _clean_text(text: str) -> str:
     """Clean and normalize text.
 
     Removes extra whitespace, normalizes newlines, and strips leading/trailing spaces.
-
-    Args:
-        text: Raw text string
-
-    Returns:
-        Cleaned text string
     """
     if not text or not isinstance(text, str):
         return ""
 
     # Replace multiple whitespace with single space
     text = re.sub(r"\s+", " ", text)
-    # Strip leading/trailing whitespace
     text = text.strip()
 
     return text
@@ -93,6 +86,7 @@ def _is_valid_table(table_df: pd.DataFrame, min_rows: int = 2, min_cols: int = 2
     if total_cells == 0:
         return False
 
+    # Count empty cells. Sum column+row
     empty_cells = table_df.isna().sum().sum() + (table_df == "").sum().sum()
     empty_ratio = empty_cells / total_cells
 
@@ -103,11 +97,16 @@ def _is_valid_table(table_df: pd.DataFrame, min_rows: int = 2, min_cols: int = 2
 
 
 def _detect_table_metadata(table_df: pd.DataFrame) -> dict[str, Any]:
-    """Detect title and description from table structure.
+    """Detect title and description from table structure using a simple heuristic.
 
     Detection rules:
-    - Title: First row where all columns have the same value (merged cell pattern)
-    - Description: Last row where all columns have the same value (merged cell pattern)
+    - Title: First row with exactly one non-empty cell
+    - Description: Last row with exactly one non-empty cell
+    - Detected rows are excluded from further header/data processing
+
+    This is a heuristic intended to match the current feature ticket. Since
+    ``export_to_dataframe()`` does not preserve merged-cell semantics directly,
+    detection is based only on the number of non-empty cells in the first/last row.
 
     Args:
         table_df: DataFrame to analyze
@@ -120,19 +119,21 @@ def _detect_table_metadata(table_df: pd.DataFrame) -> dict[str, Any]:
     if table_df.empty:
         return metadata
 
-    # Check first row for title (all columns have same value)
-    first_row = table_df.iloc[0]
-    first_row_values = [_clean_text(str(v)) for v in first_row if pd.notna(v) and str(v).strip()]
-    if len(set(first_row_values)) == 1 and first_row_values:
-        metadata["title"] = first_row_values[0]
+    def _extract_single_non_empty_value(row: pd.Series) -> Optional[str]:
+        values = [_clean_text(str(v)) for v in row if pd.notna(v) and _clean_text(str(v))]
+        if len(values) == 1:
+            return values[0]
+        return None
+
+    first_value = _extract_single_non_empty_value(table_df.iloc[0])
+    if first_value is not None:
+        metadata["title"] = first_value
         metadata["data_start_row"] = 1
 
-    # Check last row for description (all columns have same value)
-    if len(table_df) > 1:
-        last_row = table_df.iloc[-1]
-        last_row_values = [_clean_text(str(v)) for v in last_row if pd.notna(v) and str(v).strip()]
-        if len(set(last_row_values)) == 1 and last_row_values:
-            metadata["description"] = last_row_values[0]
+    if len(table_df) > metadata["data_start_row"]:
+        last_value = _extract_single_non_empty_value(table_df.iloc[-1])
+        if last_value is not None:
+            metadata["description"] = last_value
             metadata["data_end_row"] = len(table_df) - 1
 
     return metadata
@@ -176,7 +177,7 @@ class JsonTableParams(CommonParams):
     """Configuration for JSON table serialization.
 
     Attributes:
-        output_format: Format type - "smart_json" or "simple_json"
+        output_format: Format type - "structured_json" or "simple_json"
         include_table_index: Whether to include table index in output
         include_metadata: Whether to detect and include title/description
         min_rows: Minimum rows for valid table (default: 2)
@@ -187,7 +188,7 @@ class JsonTableParams(CommonParams):
         validate_tables: Whether to validate tables before serialization
     """
 
-    output_format: Literal["smart_json", "simple_json"] = "smart_json"
+    output_format: Literal["structured_json", "simple_json"] = "structured_json"
     include_table_index: bool = True
     include_metadata: bool = True
     min_rows: int = 2
@@ -207,7 +208,7 @@ class JsonTableSerializer(BaseModel, BaseTableSerializer):
     """Serializes tables to JSON format.
 
     Supports two output formats:
-    1. smart_json: Intelligent header detection and structure
+    1. structured_json: Intelligent header detection and structure
     2. simple_json: Basic row-by-row conversion
 
     Example:
@@ -262,8 +263,8 @@ class JsonTableSerializer(BaseModel, BaseTableSerializer):
             table_index = self._get_table_index(item, doc) if params.include_table_index else 0
 
             # Convert to JSON
-            if params.output_format == "smart_json":
-                table_json = self._table_to_smart_json(
+            if params.output_format == "structured_json":
+                table_json = self._table_to_structured_json(
                     table_df, table_index=table_index, include_metadata=params.include_metadata
                 )
             else:  # simple_json
@@ -299,8 +300,10 @@ class JsonTableSerializer(BaseModel, BaseTableSerializer):
                 table_count += 1
         return 0
 
-    def _table_to_smart_json(self, table_df: pd.DataFrame, table_index: int = 0, include_metadata: bool = True) -> dict:
-        """Convert table to smart JSON format with header detection.
+    def _table_to_structured_json(
+        self, table_df: pd.DataFrame, table_index: int = 0, include_metadata: bool = True
+    ) -> dict:
+        """Convert table to structured JSON format with header detection.
 
         Args:
             table_df: DataFrame to convert

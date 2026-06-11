@@ -30,20 +30,20 @@ def create_sample_document() -> DoclingDocument:
         text="This report summarizes the sales performance for Q1 2024."
     )
     
-    # Add a table with title and description
+    # Add a table with heuristic title and description rows
     table1 = doc.add_table(data=TableData(num_rows=5, num_cols=3))
     
     # Add cells for table 1
     table1_cells = [
-        # Title row (merged cells pattern)
-        (0, 0, "Product Sales"), (0, 1, "Product Sales"), (0, 2, "Product Sales"),
+        # Title row (exactly one non-empty cell)
+        (0, 0, "Product Sales"), (0, 1, ""), (0, 2, ""),
         # Header row
         (1, 0, "Product"), (1, 1, "Q1 Sales"), (1, 2, "Growth"),
         # Data rows
         (2, 0, "Apples"), (2, 1, "$150,000"), (2, 2, "+15%"),
         (3, 0, "Oranges"), (3, 1, "$120,000"), (3, 2, "+8%"),
-        # Description row (merged cells pattern)
-        (4, 0, "Source: Finance Department"), (4, 1, "Source: Finance Department"), (4, 2, "Source: Finance Department"),
+        # Description row (exactly one non-empty cell)
+        (4, 0, "Source: Finance Department"), (4, 1, ""), (4, 2, ""),
     ]
     
     for row, col, text in table1_cells:
@@ -219,7 +219,7 @@ def example_6_single_table_serialization():
             item=table,
             doc_serializer=doc_ser,
             doc=doc,
-            output_format="smart_json",
+            output_format="structured_json",
             include_metadata=True,
             indent=2
         )
