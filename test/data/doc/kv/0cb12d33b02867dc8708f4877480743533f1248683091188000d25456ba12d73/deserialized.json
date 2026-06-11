@@ -1,0 +1,1668 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.10.0",
+  "name": "Document",
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/texts/0"
+      },
+      {
+        "$ref": "#/pictures/0"
+      },
+      {
+        "$ref": "#/pictures/1"
+      },
+      {
+        "$ref": "#/groups/0"
+      },
+      {
+        "$ref": "#/texts/38"
+      },
+      {
+        "$ref": "#/pictures/2"
+      },
+      {
+        "$ref": "#/field_regions/8"
+      },
+      {
+        "$ref": "#/texts/41"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [
+    {
+      "self_ref": "#/groups/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/2"
+        },
+        {
+          "$ref": "#/texts/3"
+        },
+        {
+          "$ref": "#/texts/4"
+        },
+        {
+          "$ref": "#/texts/7"
+        },
+        {
+          "$ref": "#/texts/10"
+        },
+        {
+          "$ref": "#/texts/13"
+        },
+        {
+          "$ref": "#/texts/16"
+        },
+        {
+          "$ref": "#/texts/23"
+        },
+        {
+          "$ref": "#/texts/26"
+        },
+        {
+          "$ref": "#/texts/30"
+        },
+        {
+          "$ref": "#/texts/31"
+        },
+        {
+          "$ref": "#/texts/32"
+        },
+        {
+          "$ref": "#/texts/33"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "list"
+    }
+  ],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 61.0,
+            "t": 27.0,
+            "r": 76.0,
+            "b": 33.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            4
+          ]
+        }
+      ],
+      "orig": "(19)",
+      "text": "(19)"
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/pictures/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 126.0,
+            "t": 28.0,
+            "r": 163.0,
+            "b": 54.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            75
+          ]
+        }
+      ],
+      "orig": "Europ\u00e4isches Patentamt European Patent Office Office europ\u00e9enne des brevets",
+      "text": "Europ\u00e4isches Patentamt European Patent Office Office europ\u00e9enne des brevets"
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 312.0,
+            "t": 48.0,
+            "r": 461.0,
+            "b": 57.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            20
+          ]
+        }
+      ],
+      "orig": "(11) EP 3 800 018 A1",
+      "text": "(11) EP 3 800 018 A1",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/3",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 61.0,
+            "t": 63.0,
+            "r": 355.0,
+            "b": 72.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            32
+          ]
+        }
+      ],
+      "orig": "(12) EUROP\u00c4ISCHE PATENTANMELDUNG",
+      "text": "(12) EUROP\u00c4ISCHE PATENTANMELDUNG",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/4",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/0"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/5",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 82.0,
+            "r": 153.0,
+            "b": 87.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            21
+          ]
+        }
+      ],
+      "orig": "Ver\u00f6ffentlichungstag:",
+      "text": "Ver\u00f6ffentlichungstag:"
+    },
+    {
+      "self_ref": "#/texts/6",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 81.0,
+            "t": 89.0,
+            "r": 196.0,
+            "b": 94.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            30
+          ]
+        }
+      ],
+      "orig": "07.04.2021 Patentblatt 2021/14",
+      "text": "07.04.2021 Patentblatt 2021/14",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/7",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/8",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 103.0,
+            "r": 142.0,
+            "b": 108.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        }
+      ],
+      "orig": "Anmeldenummer:",
+      "text": "Anmeldenummer:"
+    },
+    {
+      "self_ref": "#/texts/9",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 143.0,
+            "t": 103.0,
+            "r": 184.0,
+            "b": 108.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "19200966.0",
+      "text": "19200966.0",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/10",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/2"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/11",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 117.0,
+            "r": 124.0,
+            "b": 123.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            11
+          ]
+        }
+      ],
+      "orig": "Anmeldetag:",
+      "text": "Anmeldetag:"
+    },
+    {
+      "self_ref": "#/texts/12",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 125.0,
+            "t": 118.0,
+            "r": 164.0,
+            "b": 122.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "02.10.2019",
+      "text": "02.10.2019",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/13",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/3"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/14",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 287.0,
+            "t": 82.0,
+            "r": 308.0,
+            "b": 86.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "Int Cl.:",
+      "text": "Int Cl.:"
+    },
+    {
+      "self_ref": "#/texts/15",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 286.0,
+            "t": 88.0,
+            "r": 435.0,
+            "b": 106.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            100
+          ]
+        }
+      ],
+      "orig": "B26D 1/16 (2006.01) B26D 1/18 (2006.01) B26D 5/00 (2006.01) B26D 7/26 (2006.01) B23Q 17/09 (2006.01)",
+      "text": "B26D 1/16 (2006.01) B26D 1/18 (2006.01) B26D 5/00 (2006.01) B26D 7/26 (2006.01) B23Q 17/09 (2006.01)",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/16",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/4"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/17",
+      "parent": {
+        "$ref": "#/field_items/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 133.0,
+            "r": 172.0,
+            "b": 139.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "Benannte Vertragsstaaten:",
+      "text": "Benannte Vertragsstaaten:"
+    },
+    {
+      "self_ref": "#/texts/18",
+      "parent": {
+        "$ref": "#/field_items/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 140.0,
+            "r": 255.0,
+            "b": 160.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            113
+          ]
+        }
+      ],
+      "orig": "AL AT BE BG CH CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU LV MC MK MT NL NO PL PT RO RS SE SI SK SM TR",
+      "text": "AL AT BE BG CH CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU LV MC MK MT NL NO PL PT RO RS SE SI SK SM TR",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/19",
+      "parent": {
+        "$ref": "#/field_items/5"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 162.0,
+            "r": 188.0,
+            "b": 168.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            29
+          ]
+        }
+      ],
+      "orig": "Benannte Erstreckungsstaaten:",
+      "text": "Benannte Erstreckungsstaaten:"
+    },
+    {
+      "self_ref": "#/texts/20",
+      "parent": {
+        "$ref": "#/field_items/5"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 169.0,
+            "r": 105.0,
+            "b": 174.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            5
+          ]
+        }
+      ],
+      "orig": "BA ME",
+      "text": "BA ME",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/21",
+      "parent": {
+        "$ref": "#/field_items/6"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 176.0,
+            "r": 185.0,
+            "b": 182.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            29
+          ]
+        }
+      ],
+      "orig": "Benannte Validierungsstaaten:",
+      "text": "Benannte Validierungsstaaten:"
+    },
+    {
+      "self_ref": "#/texts/22",
+      "parent": {
+        "$ref": "#/field_items/6"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 81.0,
+            "t": 183.0,
+            "r": 132.0,
+            "b": 188.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            11
+          ]
+        }
+      ],
+      "orig": "KH MA MD TN",
+      "text": "KH MA MD TN",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/23",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/5"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/24",
+      "parent": {
+        "$ref": "#/field_items/7"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 198.0,
+            "r": 116.0,
+            "b": 203.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "Anmelder:",
+      "text": "Anmelder:"
+    },
+    {
+      "self_ref": "#/texts/25",
+      "parent": {
+        "$ref": "#/field_items/7"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 81.0,
+            "t": 198.0,
+            "r": 238.0,
+            "b": 218.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            74
+          ]
+        }
+      ],
+      "orig": "Anmelder: Dienes Werke f\u00fcr Maschinenteile GmbH & Co. KG 51491 Overath (DE)",
+      "text": "Anmelder: Dienes Werke f\u00fcr Maschinenteile GmbH & Co. KG 51491 Overath (DE)",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/26",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/6"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/27",
+      "parent": {
+        "$ref": "#/field_items/8"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 81.0,
+            "t": 227.0,
+            "r": 109.0,
+            "b": 231.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "Erfinder:",
+      "text": "Erfinder:"
+    },
+    {
+      "self_ref": "#/texts/28",
+      "parent": {
+        "$ref": "#/field_items/8"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 233.0,
+            "r": 139.0,
+            "b": 247.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            29
+          ]
+        }
+      ],
+      "orig": "Thielen, Rolf 50733 K\u00f6ln (DE)",
+      "text": "Thielen, Rolf 50733 K\u00f6ln (DE)",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/29",
+      "parent": {
+        "$ref": "#/field_items/8"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 287.0,
+            "t": 134.0,
+            "r": 345.0,
+            "b": 146.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            29
+          ]
+        }
+      ],
+      "orig": "Kl\u00f6cker, Gerd 51061 K\u00f6ln (DE)",
+      "text": "Kl\u00f6cker, Gerd 51061 K\u00f6ln (DE)",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/30",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 61.0,
+            "t": 256.0,
+            "r": 313.0,
+            "b": 263.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            45
+          ]
+        }
+      ],
+      "orig": "(54) SENSORVORRICHTUNG F\u00dcR EINEN MESSERHALTER",
+      "text": "(54) SENSORVORRICHTUNG F\u00dcR EINEN MESSERHALTER",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/31",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 60.0,
+            "t": 273.0,
+            "r": 250.0,
+            "b": 335.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            419
+          ]
+        }
+      ],
+      "orig": "(57) Die vorliegende Erfindung betrifft eine Sensor- vorrichtung (4) f\u00fcr einen Messerhalter (1), umfassend - einen Grundk\u00f6rper (6) zur Befestigung der Sensorvor- richtung (4) an einem Messerhalter (1), - mindestens einen an dem Grundk\u00f6rper (6) befestigten Sensor (7) zur Erfassung einer Gr\u00f6\u00dfe und - einen an dem Grundk\u00f6rper (6) befestigten Sender (8) zur kabellosen \u00dcbertragung der von dem Sensor (7) er- fassten Gr\u00f6\u00dfe.",
+      "text": "(57) Die vorliegende Erfindung betrifft eine Sensor- vorrichtung (4) f\u00fcr einen Messerhalter (1), umfassend - einen Grundk\u00f6rper (6) zur Befestigung der Sensorvor- richtung (4) an einem Messerhalter (1), - mindestens einen an dem Grundk\u00f6rper (6) befestigten Sensor (7) zur Erfassung einer Gr\u00f6\u00dfe und - einen an dem Grundk\u00f6rper (6) befestigten Sender (8) zur kabellosen \u00dcbertragung der von dem Sensor (7) er- fassten Gr\u00f6\u00dfe.",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/32",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 279.0,
+            "t": 133.0,
+            "r": 345.0,
+            "b": 146.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            31
+          ]
+        }
+      ],
+      "orig": "- Kl\u00f6cker, Gerd 51061 K\u00f6ln (DE)",
+      "text": "- Kl\u00f6cker, Gerd 51061 K\u00f6ln (DE)",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/33",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [
+        {
+          "$ref": "#/field_regions/7"
+        }
+      ],
+      "content_layer": "body",
+      "label": "list_item",
+      "prov": [],
+      "orig": "",
+      "text": "",
+      "enumerated": false,
+      "marker": ""
+    },
+    {
+      "self_ref": "#/texts/34",
+      "parent": {
+        "$ref": "#/field_items/9"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 286.0,
+            "t": 155.0,
+            "r": 318.0,
+            "b": 160.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "Vertreter:",
+      "text": "Vertreter:"
+    },
+    {
+      "self_ref": "#/texts/35",
+      "parent": {
+        "$ref": "#/field_items/9"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 286.0,
+            "t": 155.0,
+            "r": 412.0,
+            "b": 189.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            100
+          ]
+        }
+      ],
+      "orig": "Vertreter: Feucker, Max Martin et al Becker & M\u00fcller Patentanw\u00e4lte Turmstra\u00dfe 22 40878 Ratingen (DE)",
+      "text": "Vertreter: Feucker, Max Martin et al Becker & M\u00fcller Patentanw\u00e4lte Turmstra\u00dfe 22 40878 Ratingen (DE)",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/36",
+      "parent": {
+        "$ref": "#/field_items/10"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 267.0,
+            "t": 198.0,
+            "r": 317.0,
+            "b": 203.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            12
+          ]
+        }
+      ],
+      "orig": "Bemerkungen:",
+      "text": "Bemerkungen:"
+    },
+    {
+      "self_ref": "#/texts/37",
+      "parent": {
+        "$ref": "#/field_items/10"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 286.0,
+            "t": 205.0,
+            "r": 459.0,
+            "b": 217.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            50
+          ]
+        }
+      ],
+      "orig": "Ge\u00e4nderte Patentanspr\u00fcche gem\u00e4ss Regel 137(2) EP\u00dc.",
+      "text": "Ge\u00e4nderte Patentanspr\u00fcche gem\u00e4ss Regel 137(2) EP\u00dc.",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/38",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "caption",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 409.0,
+            "t": 450.0,
+            "r": 436.0,
+            "b": 458.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "Fig.1",
+      "text": "Fig.1"
+    },
+    {
+      "self_ref": "#/texts/39",
+      "parent": {
+        "$ref": "#/field_items/11"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 220.0,
+            "t": 491.0,
+            "r": 304.0,
+            "b": 495.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            34
+          ]
+        }
+      ],
+      "orig": "Printed by Jouve, 75001 PARIS (FR)",
+      "text": "Printed by Jouve, 75001 PARIS (FR)"
+    },
+    {
+      "self_ref": "#/texts/40",
+      "parent": {
+        "$ref": "#/field_items/11"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 201.0,
+            "t": 482.0,
+            "r": 323.0,
+            "b": 488.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "fillable"
+    },
+    {
+      "self_ref": "#/texts/41",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "furniture",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 34.0,
+            "t": 412.0,
+            "r": 45.0,
+            "b": 484.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            11
+          ]
+        }
+      ],
+      "orig": "EP3800018A1",
+      "text": "EP3800018A1"
+    }
+  ],
+  "pictures": [
+    {
+      "self_ref": "#/pictures/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/1"
+        }
+      ],
+      "content_layer": "body",
+      "meta": {
+        "classification": {
+          "predictions": [
+            {
+              "confidence": 1.0,
+              "class_name": "logo"
+            }
+          ]
+        }
+      },
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 80.0,
+            "t": 26.0,
+            "r": 167.0,
+            "b": 57.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "meta": {
+        "classification": {
+          "predictions": [
+            {
+              "confidence": 1.0,
+              "class_name": "bar_code"
+            }
+          ]
+        }
+      },
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 332.0,
+            "t": 26.0,
+            "r": 462.0,
+            "b": 41.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    },
+    {
+      "self_ref": "#/pictures/2",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "meta": {
+        "classification": {
+          "predictions": [
+            {
+              "confidence": 1.0,
+              "class_name": "illustration"
+            }
+          ]
+        }
+      },
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 286.0,
+            "t": 286.0,
+            "r": 450.0,
+            "b": 458.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [
+        {
+          "$ref": "#/texts/38"
+        }
+      ],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    }
+  ],
+  "tables": [],
+  "key_value_items": [],
+  "form_items": [],
+  "field_regions": [
+    {
+      "self_ref": "#/field_regions/0",
+      "parent": {
+        "$ref": "#/texts/4"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/0"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/1",
+      "parent": {
+        "$ref": "#/texts/7"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/2",
+      "parent": {
+        "$ref": "#/texts/10"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/2"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/3",
+      "parent": {
+        "$ref": "#/texts/13"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/3"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/4",
+      "parent": {
+        "$ref": "#/texts/16"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/4"
+        },
+        {
+          "$ref": "#/field_items/5"
+        },
+        {
+          "$ref": "#/field_items/6"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/5",
+      "parent": {
+        "$ref": "#/texts/23"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/7"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/6",
+      "parent": {
+        "$ref": "#/texts/26"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/8"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/7",
+      "parent": {
+        "$ref": "#/texts/33"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/9"
+        },
+        {
+          "$ref": "#/field_items/10"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/8",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/11"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    }
+  ],
+  "field_items": [
+    {
+      "self_ref": "#/field_items/0",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/5"
+        },
+        {
+          "$ref": "#/texts/6"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/1",
+      "parent": {
+        "$ref": "#/field_regions/1"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/8"
+        },
+        {
+          "$ref": "#/texts/9"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/2",
+      "parent": {
+        "$ref": "#/field_regions/2"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/11"
+        },
+        {
+          "$ref": "#/texts/12"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/3",
+      "parent": {
+        "$ref": "#/field_regions/3"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/14"
+        },
+        {
+          "$ref": "#/texts/15"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/4",
+      "parent": {
+        "$ref": "#/field_regions/4"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/17"
+        },
+        {
+          "$ref": "#/texts/18"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/5",
+      "parent": {
+        "$ref": "#/field_regions/4"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/19"
+        },
+        {
+          "$ref": "#/texts/20"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/6",
+      "parent": {
+        "$ref": "#/field_regions/4"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/21"
+        },
+        {
+          "$ref": "#/texts/22"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/7",
+      "parent": {
+        "$ref": "#/field_regions/5"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/24"
+        },
+        {
+          "$ref": "#/texts/25"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/8",
+      "parent": {
+        "$ref": "#/field_regions/6"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/27"
+        },
+        {
+          "$ref": "#/texts/28"
+        },
+        {
+          "$ref": "#/texts/29"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/9",
+      "parent": {
+        "$ref": "#/field_regions/7"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/34"
+        },
+        {
+          "$ref": "#/texts/35"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/10",
+      "parent": {
+        "$ref": "#/field_regions/7"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/36"
+        },
+        {
+          "$ref": "#/texts/37"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/11",
+      "parent": {
+        "$ref": "#/field_regions/8"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/39"
+        },
+        {
+          "$ref": "#/texts/40"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    }
+  ],
+  "pages": {
+    "1": {
+      "size": {
+        "width": 512.0,
+        "height": 512.0
+      },
+      "page_no": 1
+    }
+  }
+}

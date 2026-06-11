@@ -13,9 +13,12 @@ from docling_core.transforms.serializer.doclang import (
 from docling_core.types.doc import (
     BoundingBox,
     CoordOrigin,
+    DescriptionMetaField,
     DocItemLabel,
     DoclingDocument,
+    ImageRefMode,
     Formatting,
+    MoleculeMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
     PictureItem,
@@ -23,8 +26,11 @@ from docling_core.types.doc import (
     ProvenanceItem,
     RichTableCell,
     Size,
+    SummaryMetaField,
+    TabularChartMetaField,
     TableCell,
     TableData,
+    TableItem,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 from docling_core.types.doc.document import GroupLabel
@@ -40,6 +46,7 @@ from test.test_serialization_doclang import (
     _verify_doc,
     add_list_section,
     add_texts_section,
+    verify_doclang,
 )
 
 DO_PRINT: bool = False
@@ -1804,7 +1811,7 @@ def test_rich_table_cells():
 
 def test_picture_tabular_chart_content_cdata_cells():
     """Deserializer must extract text from <content><![CDATA[...]]></content> in OTSL cells."""
-    doclang = f"""<doclang><group><picture class="chart"><location value="0"/><location value="0"/><location value="511"/><location value="511"/><table><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></table></picture></group></doclang>"""
+    doclang = f"""<doclang><group><picture class="chart"><location value="0"/><location value="0"/><location value="511"/><location value="511"/><tabular><fcel/><content><![CDATA[Characteristic]]></content><fcel/><content><![CDATA[Player expenses in million U.S. dollars]]></content><nl/><fcel/><content><![CDATA[19/20]]></content><fcel/><content><![CDATA[111]]></content><nl/></tabular></picture></group></doclang>"""
     doc = _deserialize(doclang)
     first_cell_text = doc.pictures[0].meta.tabular_chart.chart_data.grid[0][0].text
     assert first_cell_text == "Characteristic"
@@ -1812,6 +1819,193 @@ def test_picture_tabular_chart_content_cdata_cells():
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][0].text == "19/20"
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][1].text == "111"
 
+
+def test_picture_body_table_is_semantic_content_not_chart_tabular():
+    """``<table>`` after the preamble is nested picture content, not ``meta.tabular_chart``."""
+    doclang = (
+        '<doclang><picture class="chart">'
+        "<tabular><fcel/>Chart<fcel/>1<nl/></tabular>"
+        "<table><fcel/>Nested<fcel/>Cell<nl/></table>"
+        "</picture></doclang>"
+    )
+    doc = _deserialize(doclang)
+    pic = doc.pictures[0]
+    assert pic.meta is not None
+    assert pic.meta.tabular_chart.chart_data.grid[0][0].text == "Chart"
+    assert len(pic.children) == 1
+    nested = pic.children[0].resolve(doc)
+    assert isinstance(nested, TableItem)
+    assert nested.data.grid[0][0].text == "Nested"
+
+
+# SMILES from test/data/doc/dummy_doc_with_meta.yaml (molecule_data annotation)
+_EXAMPLE_MOLECULE_SMILES = "CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1"
+_PICTURE_META_SUMMARY = "Picture meta summary"
+_PICTURE_META_DESCRIPTION = "Picture meta description"
+_PICTURE_META_CUSTOM_VALUE = "custom field on picture meta"
+_CHART_TITLE = "Chart Title"
+
+
+def _create_picture_molecule_doc() -> DoclingDocument:
+    doc = DoclingDocument(name="picture_molecule_meta")
+    pic = doc.add_picture()
+    pic.meta = PictureMeta(
+        summary=SummaryMetaField(text=_PICTURE_META_SUMMARY),
+        description=DescriptionMetaField(text=_PICTURE_META_DESCRIPTION),
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    class_name=PictureClassificationLabel.PIE_CHART.value,
+                    confidence=1.0,
+                )
+            ]
+        ),
+        molecule=MoleculeMetaField(smi=_EXAMPLE_MOLECULE_SMILES),
+    )
+    pic.meta.set_custom_field(
+        namespace="my_corp",
+        name="note",
+        value=_PICTURE_META_CUSTOM_VALUE,
+    )
+    # Tabular chart data (pattern from test_serialization_doclang._create_content_filtering_doc)
+    chart_data = TableData(num_cols=2)
+    chart_data.add_row(["Foo", "Bar"])
+    chart_data.add_row(["One", "Two"])
+    pic.meta.tabular_chart = TabularChartMetaField(
+        title=_CHART_TITLE,
+        chart_data=chart_data,
+    )
+    return doc
+
+
+_KV_ANNOT_ROOT = Path(__file__).parent / "data" / "doc" / "kv"
+
+# KV annot fixtures with lossless DocLang XML round-trip today.
+_KV_ANNOT_XML_LOSSLESS = frozenset(
+    {
+        "01d07afe1cb54ecd23eedfe4d91b81dd88e61bf4e0dbe2467784db4177a6c691",
+        "08212053e2db1a70dd60a4f85650ceb33d7519af34f502e3ac894389d76663d6",
+        "1eac20e5ac5fac655a611343f86927d6a76277e170430c1eba741585437a2e90",
+        "ba4120cada21304563625490e9ad13911e96114d3f07df056a6bf62397a859e1",
+    }
+)
+
+
+def _kv_annot_fixture_dirs() -> list[Path]:
+    """Return migrated KV annot fixture dirs with serialized DocLang goldens."""
+    return sorted(
+        p
+        for p in _KV_ANNOT_ROOT.iterdir()
+        if p.is_dir() and (p / "output.json").is_file() and (p / "output.dclg.xml").is_file()
+    )
+
+
+def _serialize_kv_annot_fixture(doc: DoclingDocument) -> str:
+    text = DocLangDocSerializer(doc=doc, params=DocLangParams()).serialize().text
+    if not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
+    return text
+
+
+@pytest.mark.parametrize(
+    "fixture_dir",
+    _kv_annot_fixture_dirs(),
+    ids=[p.name for p in _kv_annot_fixture_dirs()],
+)
+def test_kv_annot_doclang_roundtrip(fixture_dir: Path):
+    """Round-trip migrated KV annot fixtures through DocLang (see ``test/data/doc/kv/``)."""
+    output_json = fixture_dir / "output.json"
+    serialized_dclg = fixture_dir / "output.dclg.xml"
+    deserialized_json = fixture_dir / "deserialized.json"
+    reserialized_dclg = fixture_dir / "reserialized.dclg.xml"
+
+    doc = DoclingDocument.load_from_json(output_json)
+
+    dt = _serialize_kv_annot_fixture(doc)
+    verify_doclang(exp_file=serialized_dclg, actual=dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize_kv_annot_fixture(doc2)
+    verify_doclang(exp_file=reserialized_dclg, actual=dt2)
+
+    if fixture_dir.name in _KV_ANNOT_XML_LOSSLESS:
+        assert dt.strip() == dt2.strip()
+
+
+def _serialize_field_region_fixture(doc: DoclingDocument, *, fixture_dir: str) -> str:
+    """Serialize a field-region fixture doc (invoice uses placeholder pictures)."""
+    params = (
+        DocLangParams(image_mode=ImageRefMode.PLACEHOLDER)
+        if fixture_dir == "field_region_kv_invoice"
+        else DocLangParams()
+    )
+    text = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    if not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
+    return text
+
+
+@pytest.mark.parametrize(
+    "fixture_dir",
+    [
+        "field_region_kv_migration",
+        "field_region_kv",
+        "field_region_kv_invoice",
+    ],
+)
+def test_field_region_doclang_roundtrip(fixture_dir: str):
+    """Round-trip field regions/items through DocLang deserialization."""
+    data_dir = Path(__file__).parent / "data" / "doc" / fixture_dir
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = DoclingDocument.load_from_json(input_json)
+    _verify_doc(doc=doc, exp_json=input_json)
+    assert doc.field_regions
+
+    dt = _serialize_field_region_fixture(doc, fixture_dir=fixture_dir)
+    verify_doclang(exp_file=serialized_dclg, actual=dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+    assert doc2.field_regions
+
+    dt2 = _serialize_field_region_fixture(doc2, fixture_dir=fixture_dir)
+    verify_doclang(exp_file=reserialized_dclg, actual=dt2)
+    assert dt.strip() == dt2.strip()
+
+
+def test_picture_molecule_meta_roundtrip():
+    """Round-trip picture meta (molecule, chart/tabular, summary, description, custom) through DocLang."""
+    data_dir = Path(__file__).parent / "data" / "doc" / "picture_molecule_meta"
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = _create_picture_molecule_doc()
+    _verify_doc(doc=doc, exp_json=input_json)
+
+    dt = _serialize(doc)
+    verify(serialized_dclg, dt)
+    assert f"<docling__summary>{_PICTURE_META_SUMMARY}</docling__summary>" in dt
+    assert f"<docling__description>{_PICTURE_META_DESCRIPTION}</docling__description>" in dt
+    assert f"<docling__smiles>{_EXAMPLE_MOLECULE_SMILES}</docling__smiles>" in dt
+    assert f"<my_corp__note>{_PICTURE_META_CUSTOM_VALUE}</my_corp__note>" in dt
+    assert 'class="chart"' in dt
+    assert 'value="pie_chart"' in dt
+    assert "<tabular>" in dt
+    assert "Foo" in dt and "Bar" in dt and "One" in dt and "Two" in dt
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize(doc2)
+    verify(reserialized_dclg, dt2)
 
 
 def test_roundtrip_with_layers():

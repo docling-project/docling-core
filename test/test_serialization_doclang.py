@@ -581,6 +581,34 @@ def test_mini_inline():
     exp_file = Path("./test/data/doc/mini_inline.gt.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
+
+def _doc_picture_body_inline_and_formula() -> DoclingDocument:
+    doc = DoclingDocument(name="picture_body_children")
+    pic = doc.add_picture()
+    inline = doc.add_inline_group(parent=pic)
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="world",
+        parent=inline,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_formula(text=r"E=mc^2", parent=pic)
+    return doc
+
+
+def test_picture_body_children_inline_group_and_formula():
+    """Picture children serialize as picture body content after the preamble."""
+    doc = _doc_picture_body_inline_and_formula()
+    ser = DocLangDocSerializer(
+        doc=doc,
+        params=DocLangParams(),
+    )
+    ser_txt = ser.serialize().text
+    exp_file = Path("./test/data/doc/picture_body_children.gt.dclg.xml")
+    verify_doclang(exp_file=exp_file, actual=ser_txt)
+
+
 def _create_wrapping_test_doc():
     doc = DoclingDocument(name="test")
     doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)

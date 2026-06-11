@@ -29,6 +29,16 @@
       <docling_legacy__misc><![CDATA[{'myanalysis': {'prediction': 'abc'}, 'something_else': {'text': 'aaa'}}]]></docling_legacy__misc>
     </custom>
     <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII="/>
+    <heading level="2">
+      <location value="215"/>
+      <location value="201"/>
+      <location value="251"/>
+      <location value="218"/>
+      <custom>
+        <docling__summary>This is a section header.</docling__summary>
+      </custom>
+      OPERATION (cont.)
+    </heading>
   </picture>
   <table>
     <location value="215"/>

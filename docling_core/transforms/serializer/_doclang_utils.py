@@ -21,7 +21,7 @@ from docling_core.types.doc.document import FieldItem, FieldRegionItem
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-_DOCLANG_VERSION: Final = "0.5"
+_DOCLANG_VERSION: Final = "0.6"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()
@@ -292,6 +292,7 @@ class DocLangToken(str, Enum):
     LDIV = "ldiv"
     CHECKBOX = "checkbox"
     TABLE = "table"
+    TABULAR = "tabular"
     FIELD_REGION = "field_region"
     FIELD_ITEM = "field_item"
     FIELD_KEY = "key"
@@ -517,6 +518,7 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.CHECKBOX: DocLangCategory.SEMANTIC,
         DocLangToken.LIST: DocLangCategory.SEMANTIC,
         DocLangToken.TABLE: DocLangCategory.SEMANTIC,
+        DocLangToken.TABULAR: DocLangCategory.SEMANTIC,
         # Grouping
         DocLangToken.GROUP: DocLangCategory.GROUPING,
         # Formatting
@@ -1009,6 +1011,12 @@ def _code_language_label_from_doclang(label_val: str) -> CodeLanguageLabel:
         return CodeLanguageLabel.UNKNOWN
     return _LINGUIST_TO_CODE_LANGUAGE.get(label_val, CodeLanguageLabel.UNKNOWN)
 
+
+# DocLang custom-vocabulary tags for standard Docling meta fields (``namespace__field``).
+_DOCLANG_META_NAMESPACE: Final = "docling"
+_DOCLANG_META_TAG_SUMMARY: Final = f"{_DOCLANG_META_NAMESPACE}__summary"
+_DOCLANG_META_TAG_DESCRIPTION: Final = f"{_DOCLANG_META_NAMESPACE}__description"
+_DOCLANG_META_TAG_SMILES: Final = f"{_DOCLANG_META_NAMESPACE}__smiles"
 
 # Tokens allowed in an element head (before body content). Mirrors
 # ``_element_head_prefix`` serialization order plus continuation/temporal tokens.

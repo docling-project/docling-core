@@ -185,7 +185,7 @@ hyperlink
       <docling__summary>Picture Summary</docling__summary>
       <docling__description>Picture Description</docling__description>
     </custom>
-    <table>
+    <tabular>
       <fcel/>
       Foo
       <fcel/>
@@ -196,7 +196,7 @@ hyperlink
       <fcel/>
       Two
       <nl/>
-    </table>
+    </tabular>
   </picture>
   <code></code>
   <code>
