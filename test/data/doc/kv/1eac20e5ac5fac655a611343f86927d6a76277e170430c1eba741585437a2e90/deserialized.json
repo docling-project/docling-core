@@ -1,0 +1,2929 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.10.0",
+  "name": "Document",
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/texts/0"
+      },
+      {
+        "$ref": "#/texts/1"
+      },
+      {
+        "$ref": "#/texts/2"
+      },
+      {
+        "$ref": "#/texts/3"
+      },
+      {
+        "$ref": "#/texts/4"
+      },
+      {
+        "$ref": "#/texts/5"
+      },
+      {
+        "$ref": "#/texts/6"
+      },
+      {
+        "$ref": "#/field_regions/0"
+      },
+      {
+        "$ref": "#/texts/9"
+      },
+      {
+        "$ref": "#/texts/10"
+      },
+      {
+        "$ref": "#/pictures/0"
+      },
+      {
+        "$ref": "#/field_regions/1"
+      },
+      {
+        "$ref": "#/field_regions/2"
+      },
+      {
+        "$ref": "#/field_regions/3"
+      },
+      {
+        "$ref": "#/field_regions/4"
+      },
+      {
+        "$ref": "#/field_regions/5"
+      },
+      {
+        "$ref": "#/texts/21"
+      },
+      {
+        "$ref": "#/field_regions/6"
+      },
+      {
+        "$ref": "#/field_regions/7"
+      },
+      {
+        "$ref": "#/field_regions/8"
+      },
+      {
+        "$ref": "#/field_regions/9"
+      },
+      {
+        "$ref": "#/field_regions/10"
+      },
+      {
+        "$ref": "#/field_regions/11"
+      },
+      {
+        "$ref": "#/field_regions/12"
+      },
+      {
+        "$ref": "#/field_regions/13"
+      },
+      {
+        "$ref": "#/texts/50"
+      },
+      {
+        "$ref": "#/texts/51"
+      },
+      {
+        "$ref": "#/field_regions/14"
+      },
+      {
+        "$ref": "#/field_regions/15"
+      },
+      {
+        "$ref": "#/field_regions/16"
+      },
+      {
+        "$ref": "#/field_regions/17"
+      },
+      {
+        "$ref": "#/texts/73"
+      },
+      {
+        "$ref": "#/texts/74"
+      },
+      {
+        "$ref": "#/texts/75"
+      },
+      {
+        "$ref": "#/texts/76"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [
+    {
+      "self_ref": "#/groups/0",
+      "parent": {
+        "$ref": "#/texts/31"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/32"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/1",
+      "parent": {
+        "$ref": "#/texts/33"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/34"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/2",
+      "parent": {
+        "$ref": "#/texts/36"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/37"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/3",
+      "parent": {
+        "$ref": "#/texts/38"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/39"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/4",
+      "parent": {
+        "$ref": "#/texts/41"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/42"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/5",
+      "parent": {
+        "$ref": "#/texts/43"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/44"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/6",
+      "parent": {
+        "$ref": "#/texts/46"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/47"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/7",
+      "parent": {
+        "$ref": "#/texts/48"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/49"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/8",
+      "parent": {
+        "$ref": "#/texts/52"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/53"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/9",
+      "parent": {
+        "$ref": "#/texts/54"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/55"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/10",
+      "parent": {
+        "$ref": "#/texts/56"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/57"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/11",
+      "parent": {
+        "$ref": "#/texts/58"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/59"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/12",
+      "parent": {
+        "$ref": "#/texts/61"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/62"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/13",
+      "parent": {
+        "$ref": "#/texts/64"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/65"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/14",
+      "parent": {
+        "$ref": "#/texts/66"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/67"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/15",
+      "parent": {
+        "$ref": "#/texts/69"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/70"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/16",
+      "parent": {
+        "$ref": "#/texts/71"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/72"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    }
+  ],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "section_header",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 118.0,
+            "t": 30.0,
+            "r": 394.0,
+            "b": 36.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            48
+          ]
+        }
+      ],
+      "orig": "UNITED STATES SECURITIES AND EXCHANGE COMMISSION",
+      "text": "UNITED STATES SECURITIES AND EXCHANGE COMMISSION",
+      "level": 1
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 201.0,
+            "t": 37.0,
+            "r": 309.0,
+            "b": 44.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            23
+          ]
+        }
+      ],
+      "orig": "Washington , D.C. 20549",
+      "text": "Washington , D.C. 20549"
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "section_header",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 226.0,
+            "t": 44.0,
+            "r": 287.0,
+            "b": 51.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            9
+          ]
+        }
+      ],
+      "orig": "Form 10-K",
+      "text": "Form 10-K",
+      "level": 2
+    },
+    {
+      "self_ref": "#/texts/3",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 23.0,
+            "t": 58.0,
+            "r": 363.0,
+            "b": 62.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            86
+          ]
+        }
+      ],
+      "orig": "\u2611 ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934",
+      "text": "\u2611 ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934"
+    },
+    {
+      "self_ref": "#/texts/4",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 32.0,
+            "t": 62.0,
+            "r": 247.0,
+            "b": 68.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            43
+          ]
+        }
+      ],
+      "orig": "FOR THE FISCAL YEAR ENDED DECEMBER 31, 2020",
+      "text": "FOR THE FISCAL YEAR ENDED DECEMBER 31, 2020"
+    },
+    {
+      "self_ref": "#/texts/5",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 32.0,
+            "t": 73.0,
+            "r": 489.0,
+            "b": 81.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            122
+          ]
+        }
+      ],
+      "orig": "TRANSITION REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934 FOR THE TRANSITION PERIOD FROM TO",
+      "text": "TRANSITION REPORT PURSUANT TO SECTION 13 OR 15(d) OF THE SECURITIES EXCHANGE ACT OF 1934 FOR THE TRANSITION PERIOD FROM TO"
+    },
+    {
+      "self_ref": "#/texts/6",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 15.0,
+            "t": 80.0,
+            "r": 24.0,
+            "b": 83.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            2
+          ]
+        }
+      ],
+      "orig": "OR",
+      "text": "OR"
+    },
+    {
+      "self_ref": "#/texts/7",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 196.0,
+            "t": 85.0,
+            "r": 284.0,
+            "b": 89.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            24
+          ]
+        }
+      ],
+      "orig": "Commission file number 1",
+      "text": "Commission file number 1"
+    },
+    {
+      "self_ref": "#/texts/8",
+      "parent": {
+        "$ref": "#/field_items/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 286.0,
+            "t": 85.0,
+            "r": 315.0,
+            "b": 89.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            7
+          ]
+        }
+      ],
+      "orig": "1-13179",
+      "text": "1-13179",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/9",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "section_header",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 153.0,
+            "t": 91.0,
+            "r": 358.0,
+            "b": 99.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            21
+          ]
+        }
+      ],
+      "orig": "FLOWSERVE CORPORATION",
+      "text": "FLOWSERVE CORPORATION",
+      "level": 2
+    },
+    {
+      "self_ref": "#/texts/10",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 185.0,
+            "t": 101.0,
+            "r": 326.0,
+            "b": 105.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            54
+          ]
+        }
+      ],
+      "orig": "(Exact name of registrant as specified in its charter)",
+      "text": "(Exact name of registrant as specified in its charter)"
+    },
+    {
+      "self_ref": "#/texts/11",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 66.0,
+            "t": 138.0,
+            "r": 228.0,
+            "b": 142.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            62
+          ]
+        }
+      ],
+      "orig": "(State or other jurisdiction of incorporation or organization)",
+      "text": "(State or other jurisdiction of incorporation or organization)"
+    },
+    {
+      "self_ref": "#/texts/12",
+      "parent": {
+        "$ref": "#/field_items/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 99.0,
+            "t": 133.0,
+            "r": 131.0,
+            "b": 136.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            8
+          ]
+        }
+      ],
+      "orig": "New York",
+      "text": "New York",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/13",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 334.0,
+            "t": 138.0,
+            "r": 428.0,
+            "b": 142.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            36
+          ]
+        }
+      ],
+      "orig": "(I.R.S. Employer Identification No.)",
+      "text": "(I.R.S. Employer Identification No.)"
+    },
+    {
+      "self_ref": "#/texts/14",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 361.0,
+            "t": 133.0,
+            "r": 401.0,
+            "b": 136.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "31-0267900",
+      "text": "31-0267900",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/15",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 103.0,
+            "t": 155.0,
+            "r": 209.0,
+            "b": 159.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            40
+          ]
+        }
+      ],
+      "orig": "(Address of principal executive offices)",
+      "text": "(Address of principal executive offices)"
+    },
+    {
+      "self_ref": "#/texts/16",
+      "parent": {
+        "$ref": "#/field_items/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 42.0,
+            "t": 149.0,
+            "r": 260.0,
+            "b": 154.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            52
+          ]
+        }
+      ],
+      "orig": "5215 N. O'Connor Boulevard Suite 2300, Irving, Texas",
+      "text": "5215 N. O'Connor Boulevard Suite 2300, Irving, Texas",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/17",
+      "parent": {
+        "$ref": "#/field_items/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 367.0,
+            "t": 155.0,
+            "r": 395.0,
+            "b": 159.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
+      "orig": "(Zip Code)",
+      "text": "(Zip Code)"
+    },
+    {
+      "self_ref": "#/texts/18",
+      "parent": {
+        "$ref": "#/field_items/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 371.0,
+            "t": 149.0,
+            "r": 391.0,
+            "b": 153.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            5
+          ]
+        }
+      ],
+      "orig": "75039",
+      "text": "75039",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/19",
+      "parent": {
+        "$ref": "#/field_items/5"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 176.0,
+            "t": 166.0,
+            "r": 335.0,
+            "b": 171.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            53
+          ]
+        }
+      ],
+      "orig": "(Registrant's telephone number , including area code)",
+      "text": "(Registrant's telephone number , including area code)"
+    },
+    {
+      "self_ref": "#/texts/20",
+      "parent": {
+        "$ref": "#/field_items/5"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 230.0,
+            "t": 162.0,
+            "r": 281.0,
+            "b": 166.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        }
+      ],
+      "orig": "(972) 443-6500",
+      "text": "(972) 443-6500",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/21",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 27.0,
+            "t": 178.0,
+            "r": 223.0,
+            "b": 182.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            59
+          ]
+        }
+      ],
+      "orig": "Securities registered pursuant to Section 12(b) of the Act:",
+      "text": "Securities registered pursuant to Section 12(b) of the Act:"
+    },
+    {
+      "self_ref": "#/texts/22",
+      "parent": {
+        "$ref": "#/field_items/6"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 73.0,
+            "t": 191.0,
+            "r": 163.0,
+            "b": 200.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            57
+          ]
+        }
+      ],
+      "orig": "Common Stock, $1.25 Per Value 1.25% Senior Notes due 2022",
+      "text": "Common Stock, $1.25 Per Value 1.25% Senior Notes due 2022"
+    },
+    {
+      "self_ref": "#/texts/23",
+      "parent": {
+        "$ref": "#/field_items/6"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 90.0,
+            "t": 186.0,
+            "r": 146.0,
+            "b": 190.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            19
+          ]
+        }
+      ],
+      "orig": "Title of Each Class",
+      "text": "Title of Each Class",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/24",
+      "parent": {
+        "$ref": "#/field_items/7"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 245.0,
+            "t": 191.0,
+            "r": 266.0,
+            "b": 200.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            6
+          ]
+        }
+      ],
+      "orig": "FLS22A",
+      "text": "FLS22A"
+    },
+    {
+      "self_ref": "#/texts/25",
+      "parent": {
+        "$ref": "#/field_items/7"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 231.0,
+            "t": 186.0,
+            "r": 280.0,
+            "b": 190.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            14
+          ]
+        }
+      ],
+      "orig": "Trading Symbol",
+      "text": "Trading Symbol",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/26",
+      "parent": {
+        "$ref": "#/field_items/8"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 357.0,
+            "t": 191.0,
+            "r": 429.0,
+            "b": 201.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            47
+          ]
+        }
+      ],
+      "orig": "New York Stock Exchange New York Stock Exchange",
+      "text": "New York Stock Exchange New York Stock Exchange"
+    },
+    {
+      "self_ref": "#/texts/27",
+      "parent": {
+        "$ref": "#/field_items/8"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 323.0,
+            "t": 186.0,
+            "r": 463.0,
+            "b": 190.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            41
+          ]
+        }
+      ],
+      "orig": "Name of Each Exchange on Which Registered",
+      "text": "Name of Each Exchange on Which Registered",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/28",
+      "parent": {
+        "$ref": "#/field_items/9"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 158.0,
+            "t": 205.0,
+            "r": 353.0,
+            "b": 209.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            59
+          ]
+        }
+      ],
+      "orig": "Securities registered pursuant to Section 12(g) of the Act:",
+      "text": "Securities registered pursuant to Section 12(g) of the Act:"
+    },
+    {
+      "self_ref": "#/texts/29",
+      "parent": {
+        "$ref": "#/field_items/9"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 247.0,
+            "t": 210.0,
+            "r": 264.0,
+            "b": 213.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            4
+          ]
+        }
+      ],
+      "orig": "None",
+      "text": "None",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/30",
+      "parent": {
+        "$ref": "#/field_items/10"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 27.0,
+            "t": 216.0,
+            "r": 348.0,
+            "b": 220.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            124
+          ]
+        }
+      ],
+      "orig": "Indicate by check mark if the registrant is a well-known seasoned issuer, as defined in Rule 405 of the Securities Act . Yes",
+      "text": "Indicate by check mark if the registrant is a well-known seasoned issuer, as defined in Rule 405 of the Securities Act . Yes"
+    },
+    {
+      "self_ref": "#/texts/31",
+      "parent": {
+        "$ref": "#/field_items/10"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/0"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 350.0,
+            "t": 215.0,
+            "r": 366.0,
+            "b": 219.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/32",
+      "parent": {
+        "$ref": "#/groups/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [],
+      "orig": "Yes \u2611",
+      "text": "Yes \u2611"
+    },
+    {
+      "self_ref": "#/texts/33",
+      "parent": {
+        "$ref": "#/field_items/10"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 375.0,
+            "t": 216.0,
+            "r": 390.0,
+            "b": 219.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/34",
+      "parent": {
+        "$ref": "#/groups/1"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "No \u2610",
+      "text": "No \u2610"
+    },
+    {
+      "self_ref": "#/texts/35",
+      "parent": {
+        "$ref": "#/field_items/11"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 27.0,
+            "t": 222.0,
+            "r": 354.0,
+            "b": 226.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            128
+          ]
+        }
+      ],
+      "orig": "Indicate by check mark if the registrant is not required to file reports pursuant to Section 13 or Section 15(d) of the Act. Yes",
+      "text": "Indicate by check mark if the registrant is not required to file reports pursuant to Section 13 or Section 15(d) of the Act. Yes"
+    },
+    {
+      "self_ref": "#/texts/36",
+      "parent": {
+        "$ref": "#/field_items/11"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/2"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 358.0,
+            "t": 221.0,
+            "r": 374.0,
+            "b": 225.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/37",
+      "parent": {
+        "$ref": "#/groups/2"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [],
+      "orig": "Yes \u2610",
+      "text": "Yes \u2610"
+    },
+    {
+      "self_ref": "#/texts/38",
+      "parent": {
+        "$ref": "#/field_items/11"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/3"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 383.0,
+            "t": 221.0,
+            "r": 397.0,
+            "b": 225.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/39",
+      "parent": {
+        "$ref": "#/groups/3"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "No \u2611",
+      "text": "No \u2611"
+    },
+    {
+      "self_ref": "#/texts/40",
+      "parent": {
+        "$ref": "#/field_items/12"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 12.0,
+            "t": 227.0,
+            "r": 499.0,
+            "b": 240.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            355
+          ]
+        }
+      ],
+      "orig": "Indicate by check mark whether the registrant (1) has filed all reports required to be filed by Section 13 or 15(d) of the Securities Exchange Act of 1934 during the preceding 12 months (or for such shorter period that the registrant was required to file such reports), and (2) has been subject to such filing requirements for the past 90 days. Yes \u2611 No \u2610",
+      "text": "Indicate by check mark whether the registrant (1) has filed all reports required to be filed by Section 13 or 15(d) of the Securities Exchange Act of 1934 during the preceding 12 months (or for such shorter period that the registrant was required to file such reports), and (2) has been subject to such filing requirements for the past 90 days. Yes \u2611 No \u2610"
+    },
+    {
+      "self_ref": "#/texts/41",
+      "parent": {
+        "$ref": "#/field_items/12"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/4"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 39.0,
+            "t": 235.0,
+            "r": 55.0,
+            "b": 239.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/42",
+      "parent": {
+        "$ref": "#/groups/4"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [],
+      "orig": "Yes \u2611",
+      "text": "Yes \u2611"
+    },
+    {
+      "self_ref": "#/texts/43",
+      "parent": {
+        "$ref": "#/field_items/12"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/5"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 63.0,
+            "t": 235.0,
+            "r": 78.0,
+            "b": 239.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/44",
+      "parent": {
+        "$ref": "#/groups/5"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "No \u2610",
+      "text": "No \u2610"
+    },
+    {
+      "self_ref": "#/texts/45",
+      "parent": {
+        "$ref": "#/field_items/13"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 12.0,
+            "t": 241.0,
+            "r": 499.0,
+            "b": 250.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            321
+          ]
+        }
+      ],
+      "orig": "Indicate by check mark whether the registrant has submitted electronically every interactive Data File required to be submitted pursuant to Rule 405 of Regulation S-T ( \u00a7 232.405 of this chapter) during the preceding 12 months (or for such shorter period that the registrant was required to submit such files). Yes \u2611 No \u2610",
+      "text": "Indicate by check mark whether the registrant has submitted electronically every interactive Data File required to be submitted pursuant to Rule 405 of Regulation S-T ( \u00a7 232.405 of this chapter) during the preceding 12 months (or for such shorter period that the registrant was required to submit such files). Yes \u2611 No \u2610"
+    },
+    {
+      "self_ref": "#/texts/46",
+      "parent": {
+        "$ref": "#/field_items/13"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/6"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 399.0,
+            "t": 245.0,
+            "r": 416.0,
+            "b": 249.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/47",
+      "parent": {
+        "$ref": "#/groups/6"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [],
+      "orig": "Yes \u2611",
+      "text": "Yes \u2611"
+    },
+    {
+      "self_ref": "#/texts/48",
+      "parent": {
+        "$ref": "#/field_items/13"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/7"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 424.0,
+            "t": 245.0,
+            "r": 439.0,
+            "b": 249.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/49",
+      "parent": {
+        "$ref": "#/groups/7"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "No \u2610",
+      "text": "No \u2610"
+    },
+    {
+      "self_ref": "#/texts/50",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 12.0,
+            "t": 256.0,
+            "r": 499.0,
+            "b": 263.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            347
+          ]
+        }
+      ],
+      "orig": "Indicate by check mark whether the registrant is a large accelerated filer, an accelerated filer, a non-accelerated filer, a smaller reporting company, or an emerging growth company . See the definitions of \"large accelerated filer,\" \"accelerated filer,\" \"smaller reporting company\" and \"emerging growth company\" in Rule 12b-2 of the Exchange Act.",
+      "text": "Indicate by check mark whether the registrant is a large accelerated filer, an accelerated filer, a non-accelerated filer, a smaller reporting company, or an emerging growth company . See the definitions of \"large accelerated filer,\" \"accelerated filer,\" \"smaller reporting company\" and \"emerging growth company\" in Rule 12b-2 of the Exchange Act."
+    },
+    {
+      "self_ref": "#/texts/51",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 30.0,
+            "t": 266.0,
+            "r": 120.0,
+            "b": 270.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            25
+          ]
+        }
+      ],
+      "orig": "Large accelerated filer \u2611",
+      "text": "Large accelerated filer \u2611"
+    },
+    {
+      "self_ref": "#/texts/52",
+      "parent": {
+        "$ref": "#/field_items/14"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/8"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 158.0,
+            "t": 266.0,
+            "r": 241.0,
+            "b": 270.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/53",
+      "parent": {
+        "$ref": "#/groups/8"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "Accelerated filer \u2610",
+      "text": "Accelerated filer \u2610"
+    },
+    {
+      "self_ref": "#/texts/54",
+      "parent": {
+        "$ref": "#/field_items/14"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/9"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 288.0,
+            "t": 266.0,
+            "r": 380.0,
+            "b": 270.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/55",
+      "parent": {
+        "$ref": "#/groups/9"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "Non-accelerated filer \u2610",
+      "text": "Non-accelerated filer \u2610"
+    },
+    {
+      "self_ref": "#/texts/56",
+      "parent": {
+        "$ref": "#/field_items/14"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/10"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 399.0,
+            "t": 266.0,
+            "r": 495.0,
+            "b": 270.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/57",
+      "parent": {
+        "$ref": "#/groups/10"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "Smaller reporting company \u2610",
+      "text": "Smaller reporting company \u2610"
+    },
+    {
+      "self_ref": "#/texts/58",
+      "parent": {
+        "$ref": "#/field_items/14"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/11"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 23.0,
+            "t": 271.0,
+            "r": 120.0,
+            "b": 276.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/59",
+      "parent": {
+        "$ref": "#/groups/11"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "Emerging growth company \u2610",
+      "text": "Emerging growth company \u2610"
+    },
+    {
+      "self_ref": "#/texts/60",
+      "parent": {
+        "$ref": "#/field_items/15"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 13.0,
+            "t": 276.0,
+            "r": 444.0,
+            "b": 285.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            252
+          ]
+        }
+      ],
+      "orig": "If an emerging growth company, indicate by check mark if the registrant has elected not to use the extended transition period for complying with any new or revised financial accounting standards provided pursuant to Section 13(a) of the Exchange Act. \u2610",
+      "text": "If an emerging growth company, indicate by check mark if the registrant has elected not to use the extended transition period for complying with any new or revised financial accounting standards provided pursuant to Section 13(a) of the Exchange Act. \u2610"
+    },
+    {
+      "self_ref": "#/texts/61",
+      "parent": {
+        "$ref": "#/field_items/15"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/12"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 302.0,
+            "t": 281.0,
+            "r": 307.0,
+            "b": 284.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/62",
+      "parent": {
+        "$ref": "#/groups/12"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "$\\square$",
+      "text": "$\\square$"
+    },
+    {
+      "self_ref": "#/texts/63",
+      "parent": {
+        "$ref": "#/field_items/16"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 12.0,
+            "t": 289.0,
+            "r": 499.0,
+            "b": 301.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            345
+          ]
+        }
+      ],
+      "orig": "Indicate by check mark whether the registrant has filed a report on and attestation to its management's assessment of the effectiveness of its internal control over financial reporting under Section 404(b) of the Sarbanes-Oxley Act (15 U.S.C. 7262(b)) by the registered public accounting firm that prepared or issued its audit report. Yes \u2611 No \u2610",
+      "text": "Indicate by check mark whether the registrant has filed a report on and attestation to its management's assessment of the effectiveness of its internal control over financial reporting under Section 404(b) of the Sarbanes-Oxley Act (15 U.S.C. 7262(b)) by the registered public accounting firm that prepared or issued its audit report. Yes \u2611 No \u2610"
+    },
+    {
+      "self_ref": "#/texts/64",
+      "parent": {
+        "$ref": "#/field_items/16"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/13"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 12.0,
+            "t": 297.0,
+            "r": 30.0,
+            "b": 301.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/65",
+      "parent": {
+        "$ref": "#/groups/13"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [],
+      "orig": "Yes \u2611",
+      "text": "Yes \u2611"
+    },
+    {
+      "self_ref": "#/texts/66",
+      "parent": {
+        "$ref": "#/field_items/16"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/14"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 38.0,
+            "t": 297.0,
+            "r": 53.0,
+            "b": 301.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/67",
+      "parent": {
+        "$ref": "#/groups/14"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "No \u2610",
+      "text": "No \u2610"
+    },
+    {
+      "self_ref": "#/texts/68",
+      "parent": {
+        "$ref": "#/field_items/17"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "field_key",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 27.0,
+            "t": 303.0,
+            "r": 338.0,
+            "b": 307.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            116
+          ]
+        }
+      ],
+      "orig": "Indicate by check mark whether the registrant is a shell company (as defined in Rule 12b-2 of the Exchange Act). Yes",
+      "text": "Indicate by check mark whether the registrant is a shell company (as defined in Rule 12b-2 of the Exchange Act). Yes"
+    },
+    {
+      "self_ref": "#/texts/69",
+      "parent": {
+        "$ref": "#/field_items/17"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/15"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 340.0,
+            "t": 303.0,
+            "r": 357.0,
+            "b": 307.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/70",
+      "parent": {
+        "$ref": "#/groups/15"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_unselected",
+      "prov": [],
+      "orig": "Yes \u2610",
+      "text": "Yes \u2610"
+    },
+    {
+      "self_ref": "#/texts/71",
+      "parent": {
+        "$ref": "#/field_items/17"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/16"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_value",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 365.0,
+            "t": 303.0,
+            "r": 380.0,
+            "b": 307.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": "",
+      "kind": "read_only"
+    },
+    {
+      "self_ref": "#/texts/72",
+      "parent": {
+        "$ref": "#/groups/16"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "checkbox_selected",
+      "prov": [],
+      "orig": "No",
+      "text": "No"
+    },
+    {
+      "self_ref": "#/texts/73",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 13.0,
+            "t": 309.0,
+            "r": 499.0,
+            "b": 322.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            460
+          ]
+        }
+      ],
+      "orig": "The aggregate market value of the common stock held by non-affiliates of the registrant, computed by reference to the closing price of the registrant's common stock as reported on June 30, 2020 (the last business day of the registrant's most recently completed second fiscal quarter), was approximately $3,069,855,077. For purposes of the foregoing calculation only, all directors, executive officers and known 5% beneficial owners have been deemed affiliates.",
+      "text": "The aggregate market value of the common stock held by non-affiliates of the registrant, computed by reference to the closing price of the registrant's common stock as reported on June 30, 2020 (the last business day of the registrant's most recently completed second fiscal quarter), was approximately $3,069,855,077. For purposes of the foregoing calculation only, all directors, executive officers and known 5% beneficial owners have been deemed affiliates."
+    },
+    {
+      "self_ref": "#/texts/74",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 27.0,
+            "t": 322.0,
+            "r": 297.0,
+            "b": 326.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            93
+          ]
+        }
+      ],
+      "orig": "Number of the registrant's common shares outstanding as of February 17, 2021 was 130,276,070.",
+      "text": "Number of the registrant's common shares outstanding as of February 17, 2021 was 130,276,070."
+    },
+    {
+      "self_ref": "#/texts/75",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "section_header",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 181.0,
+            "t": 334.0,
+            "r": 330.0,
+            "b": 337.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            35
+          ]
+        }
+      ],
+      "orig": "DOCUMENTS INCORPORATED BY REFERENCE",
+      "text": "DOCUMENTS INCORPORATED BY REFERENCE",
+      "level": 3
+    },
+    {
+      "self_ref": "#/texts/76",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 13.0,
+            "t": 339.0,
+            "r": 499.0,
+            "b": 347.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            208
+          ]
+        }
+      ],
+      "orig": "Certain information contained in the definitive proxy statement for the registrant's 2021 Annual Meeting of Shareholders scheduled to be held on May 20, 2021 is incorporated by reference into Part III hereof.",
+      "text": "Certain information contained in the definitive proxy statement for the registrant's 2021 Annual Meeting of Shareholders scheduled to be held on May 20, 2021 is incorporated by reference into Part III hereof."
+    }
+  ],
+  "pictures": [
+    {
+      "self_ref": "#/pictures/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "meta": {
+        "classification": {
+          "predictions": [
+            {
+              "confidence": 1.0,
+              "class_name": "logo"
+            }
+          ]
+        }
+      },
+      "label": "picture",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 221.0,
+            "t": 112.0,
+            "r": 282.0,
+            "b": 128.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "captions": [],
+      "references": [],
+      "footnotes": [],
+      "annotations": []
+    }
+  ],
+  "tables": [],
+  "key_value_items": [],
+  "form_items": [],
+  "field_regions": [
+    {
+      "self_ref": "#/field_regions/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/0"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/2",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/2"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/3",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/3"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/4",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/4"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/5",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/5"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/6",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/6"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/7",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/7"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/8",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/8"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/9",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/9"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/10",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/10"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/11",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/11"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/12",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/12"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/13",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/13"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/14",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/14"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/15",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/15"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/16",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/16"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_regions/17",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/field_items/17"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_region",
+      "prov": []
+    }
+  ],
+  "field_items": [
+    {
+      "self_ref": "#/field_items/0",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/7"
+        },
+        {
+          "$ref": "#/texts/8"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/1",
+      "parent": {
+        "$ref": "#/field_regions/1"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/11"
+        },
+        {
+          "$ref": "#/texts/12"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/2",
+      "parent": {
+        "$ref": "#/field_regions/2"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/13"
+        },
+        {
+          "$ref": "#/texts/14"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/3",
+      "parent": {
+        "$ref": "#/field_regions/3"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/15"
+        },
+        {
+          "$ref": "#/texts/16"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/4",
+      "parent": {
+        "$ref": "#/field_regions/4"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/17"
+        },
+        {
+          "$ref": "#/texts/18"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/5",
+      "parent": {
+        "$ref": "#/field_regions/5"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/19"
+        },
+        {
+          "$ref": "#/texts/20"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/6",
+      "parent": {
+        "$ref": "#/field_regions/6"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/22"
+        },
+        {
+          "$ref": "#/texts/23"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/7",
+      "parent": {
+        "$ref": "#/field_regions/7"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/24"
+        },
+        {
+          "$ref": "#/texts/25"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/8",
+      "parent": {
+        "$ref": "#/field_regions/8"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/26"
+        },
+        {
+          "$ref": "#/texts/27"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/9",
+      "parent": {
+        "$ref": "#/field_regions/9"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/28"
+        },
+        {
+          "$ref": "#/texts/29"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/10",
+      "parent": {
+        "$ref": "#/field_regions/10"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/30"
+        },
+        {
+          "$ref": "#/texts/31"
+        },
+        {
+          "$ref": "#/texts/33"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/11",
+      "parent": {
+        "$ref": "#/field_regions/11"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/35"
+        },
+        {
+          "$ref": "#/texts/36"
+        },
+        {
+          "$ref": "#/texts/38"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/12",
+      "parent": {
+        "$ref": "#/field_regions/12"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/40"
+        },
+        {
+          "$ref": "#/texts/41"
+        },
+        {
+          "$ref": "#/texts/43"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/13",
+      "parent": {
+        "$ref": "#/field_regions/13"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/45"
+        },
+        {
+          "$ref": "#/texts/46"
+        },
+        {
+          "$ref": "#/texts/48"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/14",
+      "parent": {
+        "$ref": "#/field_regions/14"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/52"
+        },
+        {
+          "$ref": "#/texts/54"
+        },
+        {
+          "$ref": "#/texts/56"
+        },
+        {
+          "$ref": "#/texts/58"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/15",
+      "parent": {
+        "$ref": "#/field_regions/15"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/60"
+        },
+        {
+          "$ref": "#/texts/61"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/16",
+      "parent": {
+        "$ref": "#/field_regions/16"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/63"
+        },
+        {
+          "$ref": "#/texts/64"
+        },
+        {
+          "$ref": "#/texts/66"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    },
+    {
+      "self_ref": "#/field_items/17",
+      "parent": {
+        "$ref": "#/field_regions/17"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/68"
+        },
+        {
+          "$ref": "#/texts/69"
+        },
+        {
+          "$ref": "#/texts/71"
+        }
+      ],
+      "content_layer": "body",
+      "label": "field_item",
+      "prov": []
+    }
+  ],
+  "pages": {
+    "1": {
+      "size": {
+        "width": 512.0,
+        "height": 512.0
+      },
+      "page_no": 1
+    }
+  }
+}

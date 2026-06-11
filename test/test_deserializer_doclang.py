@@ -16,6 +16,7 @@ from docling_core.types.doc import (
     DescriptionMetaField,
     DocItemLabel,
     DoclingDocument,
+    ImageRefMode,
     Formatting,
     MoleculeMetaField,
     PictureClassificationMetaField,
@@ -45,6 +46,7 @@ from test.test_serialization_doclang import (
     _verify_doc,
     add_list_section,
     add_texts_section,
+    verify_doclang,
 )
 
 DO_PRINT: bool = False
@@ -1874,6 +1876,107 @@ def _create_picture_molecule_doc() -> DoclingDocument:
         chart_data=chart_data,
     )
     return doc
+
+
+_KV_ANNOT_ROOT = Path(__file__).parent / "data" / "doc" / "kv"
+
+# KV annot fixtures with lossless DocLang XML round-trip today.
+_KV_ANNOT_XML_LOSSLESS = frozenset(
+    {
+        "01d07afe1cb54ecd23eedfe4d91b81dd88e61bf4e0dbe2467784db4177a6c691",
+        "08212053e2db1a70dd60a4f85650ceb33d7519af34f502e3ac894389d76663d6",
+        "1eac20e5ac5fac655a611343f86927d6a76277e170430c1eba741585437a2e90",
+        "ba4120cada21304563625490e9ad13911e96114d3f07df056a6bf62397a859e1",
+    }
+)
+
+
+def _kv_annot_fixture_dirs() -> list[Path]:
+    """Return migrated KV annot fixture dirs with serialized DocLang goldens."""
+    return sorted(
+        p
+        for p in _KV_ANNOT_ROOT.iterdir()
+        if p.is_dir() and (p / "output.json").is_file() and (p / "output.dclg.xml").is_file()
+    )
+
+
+def _serialize_kv_annot_fixture(doc: DoclingDocument) -> str:
+    text = DocLangDocSerializer(doc=doc, params=DocLangParams()).serialize().text
+    if not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
+    return text
+
+
+@pytest.mark.parametrize(
+    "fixture_dir",
+    _kv_annot_fixture_dirs(),
+    ids=[p.name for p in _kv_annot_fixture_dirs()],
+)
+def test_kv_annot_doclang_roundtrip(fixture_dir: Path):
+    """Round-trip migrated KV annot fixtures through DocLang (see ``test/data/doc/kv/``)."""
+    output_json = fixture_dir / "output.json"
+    serialized_dclg = fixture_dir / "output.dclg.xml"
+    deserialized_json = fixture_dir / "deserialized.json"
+    reserialized_dclg = fixture_dir / "reserialized.dclg.xml"
+
+    doc = DoclingDocument.load_from_json(output_json)
+
+    dt = _serialize_kv_annot_fixture(doc)
+    verify_doclang(exp_file=serialized_dclg, actual=dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+
+    dt2 = _serialize_kv_annot_fixture(doc2)
+    verify_doclang(exp_file=reserialized_dclg, actual=dt2)
+
+    if fixture_dir.name in _KV_ANNOT_XML_LOSSLESS:
+        assert dt.strip() == dt2.strip()
+
+
+def _serialize_field_region_fixture(doc: DoclingDocument, *, fixture_dir: str) -> str:
+    """Serialize a field-region fixture doc (invoice uses placeholder pictures)."""
+    params = (
+        DocLangParams(image_mode=ImageRefMode.PLACEHOLDER)
+        if fixture_dir == "field_region_kv_invoice"
+        else DocLangParams()
+    )
+    text = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    if not GEN_TEST_DATA:
+        assert_valid_dclg_xml(text)
+    return text
+
+
+@pytest.mark.parametrize(
+    "fixture_dir",
+    [
+        "field_region_kv_migration",
+        "field_region_kv",
+        "field_region_kv_invoice",
+    ],
+)
+def test_field_region_doclang_roundtrip(fixture_dir: str):
+    """Round-trip field regions/items through DocLang deserialization."""
+    data_dir = Path(__file__).parent / "data" / "doc" / fixture_dir
+    input_json = data_dir / "input.json"
+    serialized_dclg = data_dir / "serialized.dclg.xml"
+    deserialized_json = data_dir / "deserialized.json"
+    reserialized_dclg = data_dir / "reserialized.dclg.xml"
+
+    doc = DoclingDocument.load_from_json(input_json)
+    _verify_doc(doc=doc, exp_json=input_json)
+    assert doc.field_regions
+
+    dt = _serialize_field_region_fixture(doc, fixture_dir=fixture_dir)
+    verify_doclang(exp_file=serialized_dclg, actual=dt)
+
+    doc2 = _deserialize(dt)
+    _verify_doc(doc=doc2, exp_json=deserialized_json)
+    assert doc2.field_regions
+
+    dt2 = _serialize_field_region_fixture(doc2, fixture_dir=fixture_dir)
+    verify_doclang(exp_file=reserialized_dclg, actual=dt2)
+    assert dt.strip() == dt2.strip()
 
 
 def test_picture_molecule_meta_roundtrip():

@@ -5,7 +5,7 @@ Aligned to the DocLang specification version ``_DOCLANG_VERSION``.
 
 from collections.abc import Callable, Sequence
 from itertools import groupby
-from typing import Any, ClassVar, Optional, cast
+from typing import Any, ClassVar, Literal, Optional, cast
 from xml.dom.minidom import Element, Node, Text
 
 from defusedxml.minidom import parseString
@@ -247,6 +247,18 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._parse_heading(doc=doc, el=el, parent=parent)
         elif name == DocLangToken.FIELD_HEADING.value:
             self._parse_field_heading(doc=doc, el=el, parent=parent)
+        elif name == DocLangToken.FIELD_REGION.value:
+            self._parse_field_region(doc=doc, el=el, parent=parent)
+        elif name == DocLangToken.FIELD_ITEM.value:
+            self._parse_field_item(doc=doc, el=el, parent=parent)
+        elif name == DocLangToken.FIELD_KEY.value:
+            self._parse_field_key(doc=doc, el=el, parent=parent)
+        elif name == DocLangToken.FIELD_VALUE.value:
+            self._parse_field_value(doc=doc, el=el, parent=parent)
+        elif name == DocLangToken.FIELD_HINT.value:
+            self._parse_field_hint(doc=doc, el=el, parent=parent)
+        elif name == DocLangToken.CHECKBOX.value:
+            self._parse_checkbox(doc=doc, el=el, parent=parent)
         elif name == DocLangToken.LIST.value:
             self._parse_list(doc=doc, el=el, parent=parent)
         elif name == DocLangToken.GROUP.value:
@@ -561,6 +573,252 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=DocLangToken.FIELD_HEADING.value, item=item)
+
+    _FIELD_INLINE_BODY_TAGS: ClassVar[frozenset[str]] = frozenset(
+        {
+            DocLangToken.CONTENT.value,
+            DocLangToken.BOLD.value,
+            DocLangToken.ITALIC.value,
+            DocLangToken.UNDERLINE.value,
+            DocLangToken.STRIKETHROUGH.value,
+            DocLangToken.SUBSCRIPT.value,
+            DocLangToken.SUPERSCRIPT.value,
+            DocLangToken.HANDWRITING.value,
+            DocLangToken.RTL.value,
+            DocLangToken.BR.value,
+            DocLangToken.CHECKBOX.value,
+            DocLangToken.FIELD_HINT.value,
+        }
+    )
+
+    def _dispatch_body_nodes(
+        self,
+        *,
+        doc: DoclingDocument,
+        body_nodes: Sequence[Node],
+        parent: NodeItem,
+    ) -> None:
+        """Dispatch element-body children under ``parent``."""
+        for node in body_nodes:
+            if isinstance(node, Element):
+                self._dispatch_element(doc=doc, el=node, parent=parent)
+            elif isinstance(node, Text) and node.data.strip():
+                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(), parent=parent)
+
+    def _dispatch_field_inline_body_nodes(
+        self,
+        *,
+        doc: DoclingDocument,
+        body_nodes: Sequence[Node],
+        parent: NodeItem,
+    ) -> None:
+        """Dispatch inline key/value body nodes, merging checkbox labels with following text."""
+        meaningful = self._meaningful_body_nodes(body_nodes)
+        idx = 0
+        while idx < len(meaningful):
+            node = meaningful[idx]
+            if isinstance(node, Element) and node.tagName == DocLangToken.CHECKBOX.value:
+                checkbox_class = node.getAttribute(DocLangAttributeKey.CLASS.value)
+                if checkbox_class == DocLangAttributeValue.SELECTED.value:
+                    label = DocItemLabel.CHECKBOX_SELECTED
+                else:
+                    label = DocItemLabel.CHECKBOX_UNSELECTED
+                text = ""
+                remaining = meaningful[idx + 1 :]
+                if len(remaining) == 1:
+                    nxt = remaining[0]
+                    if isinstance(nxt, Text):
+                        text = nxt.data.strip()
+                        idx += 1
+                    elif isinstance(nxt, Element) and nxt.tagName == DocLangToken.CONTENT.value:
+                        text = self._get_text(nxt)
+                        idx += 1
+                doc.add_text(label=label, text=text, parent=parent)
+                idx += 1
+                continue
+            if isinstance(node, Element):
+                self._dispatch_element(doc=doc, el=node, parent=parent)
+            elif isinstance(node, Text) and node.data.strip():
+                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(), parent=parent)
+            idx += 1
+
+    def _meaningful_body_nodes(self, body_nodes: Sequence[Node]) -> list[Node]:
+        return [
+            node for node in body_nodes if isinstance(node, Element) or (isinstance(node, Text) and node.data.strip())
+        ]
+
+    def _is_field_inline_body(self, body_nodes: Sequence[Node]) -> bool:
+        meaningful = self._meaningful_body_nodes(body_nodes)
+        if not meaningful:
+            return False
+        for node in meaningful:
+            if isinstance(node, Text):
+                continue
+            if isinstance(node, Element) and node.tagName not in self._FIELD_INLINE_BODY_TAGS:
+                return False
+        return True
+
+    @staticmethod
+    def _field_value_kind(el: Element) -> Literal["read_only", "fillable"]:
+        if el.getAttribute(DocLangAttributeKey.CLASS.value) == "fillable":
+            return "fillable"
+        return "read_only"
+
+    def _parse_field_region(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        fri = doc.add_field_region(
+            parent=parent,
+            prov=(prov_list[0] if prov_list else None),
+        )
+        for prov in prov_list[1:]:
+            fri.prov.append(prov)
+        _, body_nodes = self._split_element_children_head_body(el)
+        self._dispatch_body_nodes(doc=doc, body_nodes=body_nodes, parent=fri)
+
+    def _parse_field_item(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
+        fi = doc.add_field_item(
+            parent=parent,
+            prov=(prov_list[0] if prov_list else None),
+            content_layer=content_layer,
+        )
+        for prov in prov_list[1:]:
+            fi.prov.append(prov)
+        _, body_nodes = self._split_element_children_head_body(el)
+        self._dispatch_body_nodes(doc=doc, body_nodes=body_nodes, parent=fi)
+
+    def _parse_field_key(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        self._parse_field_kv(doc=doc, el=el, parent=parent, is_value=False)
+
+    def _parse_field_value(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        self._parse_field_kv(doc=doc, el=el, parent=parent, is_value=True)
+
+    def _parse_checkbox(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        checkbox_class = el.getAttribute(DocLangAttributeKey.CLASS.value)
+        if checkbox_class == DocLangAttributeValue.SELECTED.value:
+            label = DocItemLabel.CHECKBOX_SELECTED
+        else:
+            label = DocItemLabel.CHECKBOX_UNSELECTED
+        doc.add_text(label=label, text="", parent=parent)
+
+    def _parse_field_hint(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
+        text, formatting = self._extract_text_with_formatting(el)
+        text_stripped = text.strip()
+        if not text_stripped:
+            return
+        item = doc.add_field_hint(
+            text=text_stripped,
+            parent=parent,
+            prov=(prov_list[0] if prov_list else None),
+            content_layer=content_layer,
+            formatting=formatting,
+        )
+        self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
+
+    def _field_kv_needs_inline_container(self, body_nodes: Sequence[Node]) -> bool:
+        """True when key/value body must become an inline group, not flat text."""
+        meaningful = self._meaningful_body_nodes(body_nodes)
+        element_children = [node for node in meaningful if isinstance(node, Element)]
+        if not self._is_field_inline_body(body_nodes):
+            return False
+        if len(element_children) > 1:
+            return True
+        if any(node.tagName == DocLangToken.CHECKBOX.value for node in element_children):
+            return True
+        if element_children and any(isinstance(node, Text) for node in meaningful):
+            return True
+        return False
+
+    def _parse_field_kv(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: Optional[NodeItem],
+        is_value: bool,
+    ) -> None:
+        """Parse ``<key>`` / ``<value>`` into field key or value items."""
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
+        kind = self._field_value_kind(el) if is_value else "read_only"
+        _, body_nodes = self._split_element_children_head_body(el)
+        simple_text = self._get_children_simple_text_block(el)
+        needs_inline = self._field_kv_needs_inline_container(body_nodes)
+
+        if simple_text is not None and not needs_inline:
+            text, formatting = self._extract_text_with_formatting(el)
+            if is_value:
+                item = doc.add_field_value(
+                    text=text,
+                    parent=parent,
+                    prov=(prov_list[0] if prov_list else None),
+                    content_layer=content_layer,
+                    formatting=formatting,
+                    kind=kind,
+                )
+            else:
+                item = doc.add_field_key(
+                    text=text,
+                    parent=parent,
+                    prov=(prov_list[0] if prov_list else None),
+                    content_layer=content_layer,
+                    formatting=formatting,
+                )
+            self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
+            self._apply_custom_meta_from_element(item=item, el=el)
+            return
+
+        if needs_inline:
+            if is_value:
+                item = doc.add_field_value(
+                    text="",
+                    parent=parent,
+                    prov=(prov_list[0] if prov_list else None),
+                    content_layer=content_layer,
+                    kind=kind,
+                )
+            else:
+                item = doc.add_field_key(
+                    text="",
+                    parent=parent,
+                    prov=(prov_list[0] if prov_list else None),
+                    content_layer=content_layer,
+                )
+            inline_group = doc.add_inline_group(parent=item)
+            self._dispatch_field_inline_body_nodes(
+                doc=doc,
+                body_nodes=body_nodes,
+                parent=inline_group,
+            )
+            self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
+            self._apply_custom_meta_from_element(item=item, el=el)
+            return
+
+        if is_value:
+            item = doc.add_field_value(
+                text="",
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+                content_layer=content_layer,
+                kind=kind,
+            )
+        else:
+            item = doc.add_field_key(
+                text="",
+                parent=parent,
+                prov=(prov_list[0] if prov_list else None),
+                content_layer=content_layer,
+            )
+        for node in body_nodes:
+            if isinstance(node, Element):
+                self._dispatch_element(doc=doc, el=node, parent=item)
+            elif isinstance(node, Text) and node.data.strip():
+                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(), parent=item)
+        self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
+        self._apply_custom_meta_from_element(item=item, el=el)
 
     def _first_non_whitespace_node(self, nodes: Sequence[Node]) -> Optional[Node]:
         """Return the first node that is not whitespace-only text."""
