@@ -1,3 +1,9 @@
+## [v2.82.0](https://github.com/docling-project/docling-core/releases/tag/v2.82.0) - 2026-06-12
+
+### Feature
+
+* **doclang:** Align with DocLang v0.6, add field region deser. ([#636](https://github.com/docling-project/docling-core/issues/636)) ([`0b76905`](https://github.com/docling-project/docling-core/commit/0b7690509e6e01f4aa342300919e53a115531b51))
+
 ## [v2.81.0](https://github.com/docling-project/docling-core/releases/tag/v2.81.0) - 2026-06-10
 
 ### Feature
