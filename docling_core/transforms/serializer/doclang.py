@@ -1742,7 +1742,7 @@ class DocLangDocSerializer(DocSerializer):
         hyperlink: Union[AnyUrl, Path],
         **kwargs: Any,
     ) -> str:
-        """Hyperlinks are emitted as ``<href uri=\"...\"/>`` in element head, not inline."""
+        r"""Hyperlinks are emitted as ``<href uri=\"...\"/>`` in element head, not inline."""
         return text
 
     text_serializer: BaseTextSerializer = DocLangTextSerializer()
@@ -1853,7 +1853,6 @@ class DocLangDocSerializer(DocSerializer):
 
     def _serialize_body(self, **kwargs) -> SerializationResult:
         """Serialize the document body."""
-
         self._suppressed_page_breaks = set()
         self._next_thread_id = 1
         self._thread_id_by_ref = {}

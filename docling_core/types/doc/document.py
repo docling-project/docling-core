@@ -414,7 +414,7 @@ class TableData(BaseModel):  # TBD
     def grid(
         self,
     ) -> list[list[TableCell]]:
-        """grid."""
+        """Grid."""
         # Initialise empty table data grid (only empty cells)
         table_data = [
             [
@@ -2419,7 +2419,6 @@ class TableItem(FloatingItem):
 
     def export_to_dataframe(self, doc: Optional["DoclingDocument"] = None) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
-
         return self._export_to_dataframe_with_options(doc=doc)
 
     def _export_to_dataframe_with_options(
@@ -2428,7 +2427,6 @@ class TableItem(FloatingItem):
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame with contextual named arguments."""
-
         if doc is None:
             _logger.warning("Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated.")
 
@@ -6317,7 +6315,7 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,
         traverse_pictures: bool = False,
     ) -> str:
-        """Export to plain text.
+        r"""Export to plain text.
 
         Produces clean plain text without any Markdown decoration. Heading
         markers (``#``), bold/italic markers, and hyperlink syntax are all
@@ -6534,7 +6532,6 @@ class DoclingDocument(BaseModel):
         Returns:
             A string representation of the Docling document in WebVTT format.
         """
-
         from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 
         my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
@@ -7497,7 +7494,6 @@ class DoclingDocument(BaseModel):
     @model_validator(mode="after")
     def validate_document(self) -> Self:
         """validate_document."""
-
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)

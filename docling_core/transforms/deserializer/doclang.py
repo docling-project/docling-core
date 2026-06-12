@@ -1600,7 +1600,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return "".join(parts)
 
     def _layer_from_nodes(self, nodes: Sequence[Node]) -> Optional[ContentLayer]:
-        """Extract content layer from ``<layer value=\"...\"/>`` in element head nodes."""
+        r"""Extract content layer from ``<layer value=\"...\"/>`` in element head nodes."""
         for node in nodes:
             if isinstance(node, Element) and node.tagName == DocLangToken.LAYER.value:
                 if layer_value := node.getAttribute(DocLangAttributeKey.VALUE.value):
@@ -1611,7 +1611,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return None
 
     def _label_value_from_nodes(self, nodes: Sequence[Node]) -> Optional[str]:
-        """Extract ``<label value=\"...\"/>`` from element head nodes."""
+        r"""Extract ``<label value=\"...\"/>`` from element head nodes."""
         for node in nodes:
             if isinstance(node, Element) and node.tagName == DocLangToken.LABEL.value:
                 if label_val := node.getAttribute(DocLangAttributeKey.VALUE.value):
@@ -1637,7 +1637,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _bbox_from_location_text_fragments(
         self, *, doc: DoclingDocument, fragments: list[str]
     ) -> Optional[BoundingBox]:
-        """Build a TOPLEFT bbox from four ``<location value=\"...\"/>`` XML fragments."""
+        r"""Build a TOPLEFT bbox from four ``<location value=\"...\"/>`` XML fragments."""
         if len(fragments) != 4:
             return None
         values: list[int] = []
@@ -1714,7 +1714,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         ``<location>`` tokens. Handles nested XML elements (like
         ``<text><italic>...</italic></text>``) by keeping them as single units.
         """
-
         tokens: list[str] = []
         parts: list[str] = []
 
@@ -2016,11 +2015,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return self._provenance_from_location_nodes(doc=doc, nodes=head_nodes)
 
     def _extract_layer(self, *, el: Element) -> Optional[ContentLayer]:
-        """Extract content layer from element-head ``<layer value=\"...\"/>``."""
+        r"""Extract content layer from element-head ``<layer value=\"...\"/>``."""
         head_nodes, _ = self._split_element_children_head_body(el)
         return self._layer_from_nodes(head_nodes)
 
     def _extract_label_value(self, *, el: Element) -> Optional[str]:
-        """Extract ``<label value=\"...\"/>`` from element head."""
+        r"""Extract ``<label value=\"...\"/>`` from element head."""
         head_nodes, _ = self._split_element_children_head_body(el)
         return self._label_value_from_nodes(head_nodes)

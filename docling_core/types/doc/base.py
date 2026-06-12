@@ -63,12 +63,12 @@ class BoundingBox(BaseModel):
 
     @property
     def width(self):
-        """width."""
+        """Width."""
         return self.r - self.l
 
     @property
     def height(self):
-        """height."""
+        """Height."""
         return abs(self.t - self.b)
 
     @field_serializer("l", "t", "r", "b")
@@ -94,12 +94,12 @@ class BoundingBox(BaseModel):
 
     # same as before, but using the implementation above
     def scaled(self, scale: float):
-        """scaled."""
+        """Scaled."""
         return self.resize_by_scale(x_scale=scale, y_scale=scale)
 
     # same as before, but using the implementation above
     def normalized(self, page_size: Size):
-        """normalized."""
+        """Normalized."""
         return self.scale_to_size(old_size=page_size, new_size=Size(height=1.0, width=1.0))
 
     def expand_by_scale(self, x_scale: float, y_scale: float) -> "BoundingBox":
@@ -155,7 +155,7 @@ class BoundingBox(BaseModel):
             return BoundingBox(l=l, t=t, r=r, b=b, coord_origin=origin)
 
     def area(self) -> float:
-        """area."""
+        """Area."""
         return abs(self.r - self.l) * abs(self.b - self.t)
 
     def intersection_area_with(self, other: "BoundingBox") -> float:
@@ -260,7 +260,7 @@ class BoundingBox(BaseModel):
             )
 
     def overlaps(self, other: "BoundingBox") -> bool:
-        """overlaps."""
+        """Overlaps."""
         return self.overlaps_horizontally(other=other) and self.overlaps_vertically(other=other)
 
     def overlaps_horizontally(self, other: "BoundingBox") -> bool:

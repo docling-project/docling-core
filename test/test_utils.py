@@ -242,9 +242,7 @@ def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
     def get_response(*args, **kwargs):
         return _closeable_response(
             content=b"test content",
-            headers={
-                "Content-Disposition": 'attachment; filename="../../etc/config.txt"'
-            },
+            headers={"Content-Disposition": 'attachment; filename="../../etc/config.txt"'},
         )
 
     monkeypatch.setattr("requests.Session.get", get_response)
@@ -280,9 +278,7 @@ def test_resolve_source_to_path_sanitizes_filename(monkeypatch, tmp_path):
     def get_response(*args, **kwargs):
         return _closeable_response(
             content=b"test content",
-            headers={
-                "Content-Disposition": 'attachment; filename="../../../../tmp/output.txt"'
-            },
+            headers={"Content-Disposition": 'attachment; filename="../../../../tmp/output.txt"'},
         )
 
     monkeypatch.setattr("requests.Session.get", get_response)
@@ -352,9 +348,7 @@ def test_redirect_to_non_public_ip_rejected(monkeypatch):
 
 def test_resolve_source_rejects_large_content_length(monkeypatch):
     def mock_get(self, *args, **kwargs):
-        return _closeable_response(
-            content=b"ignored", headers={"Content-Length": "10"}
-        )
+        return _closeable_response(content=b"ignored", headers={"Content-Length": "10"})
 
     monkeypatch.setattr(Session, "get", mock_get)
 

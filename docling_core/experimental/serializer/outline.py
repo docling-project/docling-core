@@ -136,7 +136,7 @@ def _format_indented_text_line(item: OutlineItemData, indent_size: int = 2, max_
 
 
 def _extract_ref_from_markdown(text: str) -> tuple[str | None, int | None]:
-    """Extract reference and level from Markdown outline text.
+    r"""Extract reference and level from Markdown outline text.
 
     Args:
         text: Markdown text containing a reference like \\[ref=#/texts/1\\]

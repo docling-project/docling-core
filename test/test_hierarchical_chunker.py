@@ -48,10 +48,8 @@ def test_chunk_custom_serializer():
     assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0b_out_chunks.json")
 
 
-
 def test_traverse_pictures():
     """Test that traverse_pictures parameter works correctly with HierarchicalChunker."""
-
     # Load a document that has TextItem children of PictureItem
     INPUT_FILE = "test/data/doc/concatenated.json"
     dl_doc = DoclingDocument.load_from_json(Path(INPUT_FILE))
@@ -65,9 +63,7 @@ def test_traverse_pictures():
                 has_non_caption_text_in_picture = True
                 break
 
-    assert has_non_caption_text_in_picture, (
-        "Test document should have non-caption TextItem children of PictureItem"
-    )
+    assert has_non_caption_text_in_picture, "Test document should have non-caption TextItem children of PictureItem"
 
     # Test 1: Default behavior (traverse_pictures=False)
     # Only caption TextItems should be included
@@ -115,9 +111,7 @@ def test_traverse_pictures():
         f"children of PictureItems should NOT be included. Found {non_caption_count_default}"
     )
 
-    assert caption_count_default > 0, (
-        "Caption TextItems should be included even with traverse_pictures=False"
-    )
+    assert caption_count_default > 0, "Caption TextItems should be included even with traverse_pictures=False"
 
     assert non_caption_count_traverse > 0, (
         f"With traverse_pictures=True, non-caption TextItems that are children of "
@@ -139,7 +133,6 @@ def test_traverse_pictures():
 
 def test_triplet_table_serializer_single_column():
     """Test TripletTableSerializer with a single-column table."""
-
     # Create a document with a single-column table
     doc = DoclingDocument(name="test_single_column")
     table_data = TableData(num_cols=1)
@@ -239,18 +232,14 @@ def test_triplet_table_serializer_handles_empty_table_output():
     empty_rich_doc = build_single_cell_rich_table_doc("")
     empty_rich_serializer = ChunkingSerializerProvider().get_serializer(empty_rich_doc)
     empty_visited: set[str] = set()
-    empty_rich_result = empty_rich_serializer.serialize(
-        item=empty_rich_doc.tables[0], visited=empty_visited
-    )
+    empty_rich_result = empty_rich_serializer.serialize(item=empty_rich_doc.tables[0], visited=empty_visited)
     assert empty_rich_result.text == ""
     assert empty_visited == {empty_rich_doc.tables[0].self_ref}
 
     rich_chunks = list(HierarchicalChunker().chunk(dl_doc=rich_doc))
     assert len(rich_chunks) == 1
     assert rich_chunks[0].text == "Important body text inside layout table"
-    assert [item.self_ref for item in rich_chunks[0].meta.doc_items] == [
-        rich_doc.tables[0].self_ref
-    ]
+    assert [item.self_ref for item in rich_chunks[0].meta.doc_items] == [rich_doc.tables[0].self_ref]
 
 
 def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
@@ -269,8 +258,6 @@ def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
     )
 
     chunks = chunker.chunk(dl_doc=doc)
-    act_data = dict(
-        root=[DocChunk.model_validate(n).export_json_dict() for n in chunks]
-    )
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
 
     assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0c_out_chunks.json")

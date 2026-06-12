@@ -81,7 +81,9 @@ def profile_document_collection():
     print(f"  Total: {stats.total_pages}")
     print(f"  Min: {stats.min_pages}, Max: {stats.max_pages}")
     print(f"  Median (d5): {stats.deciles_pages[4]:.1f}, Mean: {stats.mean_pages:.2f}")
-    print(f"  Deciles: d1={stats.deciles_pages[0]:.1f}, d5={stats.deciles_pages[4]:.1f}, d9={stats.deciles_pages[8]:.1f}")
+    print(
+        f"  Deciles: d1={stats.deciles_pages[0]:.1f}, d5={stats.deciles_pages[4]:.1f}, d9={stats.deciles_pages[8]:.1f}"
+    )
     print(f"  Std Dev: {stats.std_pages:.2f}")
     print(f"  Histogram bins: {len(stats.histogram_pages.bins)}, bin width: {stats.histogram_pages.bin_width:.2f}")
 
@@ -89,28 +91,36 @@ def profile_document_collection():
     print(f"  Total: {stats.total_tables}")
     print(f"  Min: {stats.min_tables}, Max: {stats.max_tables}")
     print(f"  Median (d5): {stats.deciles_tables[4]:.1f}, Mean: {stats.mean_tables:.2f}")
-    print(f"  Deciles: d1={stats.deciles_tables[0]:.1f}, d5={stats.deciles_tables[4]:.1f}, d9={stats.deciles_tables[8]:.1f}")
+    print(
+        f"  Deciles: d1={stats.deciles_tables[0]:.1f}, d5={stats.deciles_tables[4]:.1f}, d9={stats.deciles_tables[8]:.1f}"
+    )
     print(f"  Std Dev: {stats.std_tables:.2f}")
 
     print("\nPictures:")
     print(f"  Total: {stats.total_pictures}")
     print(f"  Min: {stats.min_pictures}, Max: {stats.max_pictures}")
     print(f"  Median (d5): {stats.deciles_pictures[4]:.1f}, Mean: {stats.mean_pictures:.2f}")
-    print(f"  Deciles: d1={stats.deciles_pictures[0]:.1f}, d5={stats.deciles_pictures[4]:.1f}, d9={stats.deciles_pictures[8]:.1f}")
+    print(
+        f"  Deciles: d1={stats.deciles_pictures[0]:.1f}, d5={stats.deciles_pictures[4]:.1f}, d9={stats.deciles_pictures[8]:.1f}"
+    )
     print(f"  Std Dev: {stats.std_pictures:.2f}")
 
     print("\nText Items:")
     print(f"  Total: {stats.total_texts}")
     print(f"  Min: {stats.min_texts}, Max: {stats.max_texts}")
     print(f"  Median (d5): {stats.deciles_texts[4]:.1f}, Mean: {stats.mean_texts:.2f}")
-    print(f"  Deciles: d1={stats.deciles_texts[0]:.1f}, d5={stats.deciles_texts[4]:.1f}, d9={stats.deciles_texts[8]:.1f}")
+    print(
+        f"  Deciles: d1={stats.deciles_texts[0]:.1f}, d5={stats.deciles_texts[4]:.1f}, d9={stats.deciles_texts[8]:.1f}"
+    )
     print(f"  Std Dev: {stats.std_texts:.2f}")
 
     print("\nPictures Requiring OCR:")
     print(f"  Total: {stats.total_pictures_for_ocr}")
     print(f"  Min: {stats.min_pictures_for_ocr}, Max: {stats.max_pictures_for_ocr}")
     print(f"  Median (d5): {stats.deciles_pictures_for_ocr[4]:.1f}, Mean: {stats.mean_pictures_for_ocr:.2f}")
-    print(f"  Deciles: d1={stats.deciles_pictures_for_ocr[0]:.1f}, d5={stats.deciles_pictures_for_ocr[4]:.1f}, d9={stats.deciles_pictures_for_ocr[8]:.1f}")
+    print(
+        f"  Deciles: d1={stats.deciles_pictures_for_ocr[0]:.1f}, d5={stats.deciles_pictures_for_ocr[4]:.1f}, d9={stats.deciles_pictures_for_ocr[8]:.1f}"
+    )
     print(f"  Std Dev: {stats.std_pictures_for_ocr:.2f}")
 
     if stats.mimetype_distribution:
@@ -128,8 +138,10 @@ def profile_document_collection():
         print("\nIndividual Document Statistics:")
         for i, doc_stat in enumerate(stats.document_stats[:3], 1):  # Show first 3
             print(f"\n  Document {i}: {doc_stat.name}")
-            print(f"    Pages: {doc_stat.num_pages}, Tables: {doc_stat.num_tables}, "
-                  f"Pictures: {doc_stat.num_pictures}, Texts: {doc_stat.num_texts}")
+            print(
+                f"    Pages: {doc_stat.num_pages}, Tables: {doc_stat.num_tables}, "
+                f"Pictures: {doc_stat.num_pictures}, Texts: {doc_stat.num_texts}"
+            )
 
 
 def profile_with_generator():
@@ -156,7 +168,7 @@ def profile_with_generator():
     start_time = time.time()
     stats = DocumentProfiler.profile_collection(
         document_generator(),
-        include_individual_stats=False  # Don't store individual stats to save memory
+        include_individual_stats=False,  # Don't store individual stats to save memory
     )
     elapsed_time = time.time() - start_time
 
@@ -247,4 +259,3 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("Examples completed!")
     print("=" * 80)
-
