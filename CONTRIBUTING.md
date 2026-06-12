@@ -47,9 +47,7 @@ uv add [OPTIONS] <PACKAGES|--requirements <REQUIREMENTS>>
 
 We use the following tools to enforce code style:
 
-- Ruff, to format and lint code
-- Flake8, to lint code
-- autoflake, to remove unused variables and imports
+- [Ruff](https://docs.astral.sh/ruff/), to format and lint code
 - [MyPy](https://mypy.readthedocs.io), as static type checker
 
 A set of styling checks, as well as regression tests, are defined and managed through the [pre-commit](https://pre-commit.com/) framework. To ensure that those scripts run automatically before a commit is finalized, install `pre-commit` on your local repository:
