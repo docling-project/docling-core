@@ -1163,7 +1163,20 @@ class DocLangPictureSerializer(BasePictureSerializer):
     """DocLang-specific picture item serializer."""
 
     def _picture_is_chart(self, item: PictureItem) -> bool:
-        """Check if predicted class indicates a chart."""
+        """Check if the picture is a chart.
+
+        A picture is a chart if it carries chart metadata (tabular data, axes, a
+        discrete legend, or a continuous colour legend) — this covers chart types
+        beyond the enumerated classification labels — or, failing that, if its
+        classification names one of the known chart labels.
+        """
+        if item.meta and (
+            item.meta.tabular_chart
+            or item.meta.chart_axes
+            or item.meta.chart_series
+            or item.meta.chart_color_legend
+        ):
+            return True
         if item.meta and item.meta.classification:
             return item.meta.classification.get_main_prediction().class_name in {
                 PictureClassificationLabel.PIE_CHART.value,
