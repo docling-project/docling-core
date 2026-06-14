@@ -1002,6 +1002,73 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         return create_ser_result(text=text_res, span_source=item)
 
 
+def _esc_attr(value: Any) -> str:
+    """Escape a string for use as a DocLang attribute value (the self-closing
+    token builder does not escape, so we do it here)."""
+    return (
+        str(value)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+
+
+def _serialize_chart_axes(axes: list) -> Optional[str]:
+    """``<axes><axis role=.. label=.. scale=.. unit=../>...</axes>`` (ChartToDocling)."""
+    toks: list[str] = []
+    for ax in axes or []:
+        attrs: dict = {}
+        if (v := getattr(ax, "role", None)):
+            attrs[DocLangAttributeKey.ROLE] = _esc_attr(v)
+        if (v := getattr(ax, "label", None)):
+            attrs[DocLangAttributeKey.AXIS_LABEL] = _esc_attr(v)
+        if (v := getattr(ax, "scale", None)):
+            attrs[DocLangAttributeKey.SCALE] = _esc_attr(v)
+        if (v := getattr(ax, "unit", None)):
+            attrs[DocLangAttributeKey.UNIT] = _esc_attr(v)
+        if attrs:
+            toks.append(DocLangVocabulary._create_selfclosing_token(
+                token=DocLangToken.AXIS, attrs=attrs))
+    return _wrap(text="".join(toks), wrap_tag=DocLangToken.AXES.value) if toks else None
+
+
+def _serialize_chart_series(series: list) -> Optional[str]:
+    """``<legend><series name=.. color=.. marker=.. line_style=.. mark=../>...</legend>``."""
+    toks: list[str] = []
+    for s in series or []:
+        attrs: dict = {}
+        if (v := getattr(s, "name", None)):
+            attrs[DocLangAttributeKey.NAME] = _esc_attr(v)
+        if (v := getattr(s, "color", None)):
+            attrs[DocLangAttributeKey.COLOR] = _esc_attr(v)
+        if (v := getattr(s, "marker", None)):
+            attrs[DocLangAttributeKey.MARKER] = _esc_attr(v)
+        if (v := getattr(s, "line_style", None)):
+            attrs[DocLangAttributeKey.LINE_STYLE] = _esc_attr(v)
+        if (v := getattr(s, "mark_type", None)):
+            attrs[DocLangAttributeKey.MARK] = _esc_attr(v)
+        if attrs:
+            toks.append(DocLangVocabulary._create_selfclosing_token(
+                token=DocLangToken.SERIES, attrs=attrs))
+    return _wrap(text="".join(toks), wrap_tag=DocLangToken.LEGEND.value) if toks else None
+
+
+def _serialize_chart_color_legend(cl) -> Optional[str]:
+    """``<colorbar encodes=.. range=lo–hi colors=lo,hi levels=../>`` (continuous legend)."""
+    attrs: dict = {}
+    if (v := getattr(cl, "encodes", None)):
+        attrs[DocLangAttributeKey.ENCODES] = _esc_attr(v)
+    if (v := getattr(cl, "value_range", None)):
+        attrs[DocLangAttributeKey.RANGE] = _esc_attr("–".join(str(x) for x in v))
+    if (v := getattr(cl, "range_colors", None)):
+        attrs[DocLangAttributeKey.COLORS] = _esc_attr(",".join(str(x) for x in v))
+    if (v := getattr(cl, "levels", None)):
+        attrs[DocLangAttributeKey.LEVELS] = _esc_attr(",".join(str(x) for x in v))
+    return DocLangVocabulary._create_selfclosing_token(
+        token=DocLangToken.COLORBAR, attrs=attrs) if attrs else None
+
+
 class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
     """DocLang-specific meta serializer."""
 
@@ -1051,6 +1118,12 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
             elif name == MetaFieldName.TABULAR_CHART and isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
                 return None
+            elif name == MetaFieldName.CHART_AXES and isinstance(field_val, list):
+                txt = _serialize_chart_axes(field_val)
+            elif name == MetaFieldName.CHART_SERIES and isinstance(field_val, list):
+                txt = _serialize_chart_series(field_val)
+            elif name == MetaFieldName.CHART_COLOR_LEGEND:
+                txt = _serialize_chart_color_legend(field_val)
             # elif tmp := str(field_val or ""):
             #     txt = tmp
             elif name not in {v.value for v in MetaFieldName}:
@@ -1150,7 +1223,9 @@ class DocLangPictureSerializer(BasePictureSerializer):
             meta_kwargs = dict(**kwargs)
             blocked = set(params.blocked_meta_names) | {MetaFieldName.CLASSIFICATION}
             if not specific_match:
-                blocked |= {MetaFieldName.MOLECULE, MetaFieldName.TABULAR_CHART}
+                blocked |= {MetaFieldName.MOLECULE, MetaFieldName.TABULAR_CHART,
+                            MetaFieldName.CHART_AXES, MetaFieldName.CHART_SERIES,
+                            MetaFieldName.CHART_COLOR_LEGEND}
             meta_kwargs["blocked_meta_names"] = blocked
             meta_res = doc_serializer.serialize_meta(item=item, **meta_kwargs)
             if meta_res.text:

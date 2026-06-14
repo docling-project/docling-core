@@ -341,6 +341,12 @@ class DocLangToken(str, Enum):
     INDEX = "index"
     MARKER = "marker"
     CONTENT = "content"  # TODO: review element name
+    # Chart picture extension (ChartToDocling): axes + legend/series structure.
+    AXES = "axes"
+    AXIS = "axis"
+    LEGEND = "legend"
+    SERIES = "series"
+    COLORBAR = "colorbar"
 
 
 class DocLangAttributeKey(str, Enum):
@@ -356,6 +362,20 @@ class DocLangAttributeKey(str, Enum):
     CLASS = "class"
     THREAD_ID = "thread_id"
     URI = "uri"
+    # Chart picture extension attributes
+    ROLE = "role"
+    SCALE = "scale"
+    UNIT = "unit"
+    AXIS_LABEL = "label"
+    COLOR = "color"
+    MARKER = "marker"
+    LINE_STYLE = "line_style"
+    MARK = "mark"
+    NAME = "name"
+    ENCODES = "encodes"
+    RANGE = "range"
+    COLORS = "colors"
+    LEVELS = "levels"
 
 
 class DocLangAttributeValue(str, Enum):
@@ -406,6 +426,26 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LIST: {DocLangAttributeKey.CLASS},
         DocLangToken.THREAD: {DocLangAttributeKey.THREAD_ID},
         DocLangToken.XREF: {DocLangAttributeKey.THREAD_ID},
+        DocLangToken.AXIS: {
+            DocLangAttributeKey.ROLE,
+            DocLangAttributeKey.AXIS_LABEL,
+            DocLangAttributeKey.SCALE,
+            DocLangAttributeKey.UNIT,
+        },
+        DocLangToken.SERIES: {
+            DocLangAttributeKey.NAME,
+            DocLangAttributeKey.COLOR,
+            DocLangAttributeKey.MARKER,
+            DocLangAttributeKey.LINE_STYLE,
+            DocLangAttributeKey.MARK,
+        },
+        DocLangToken.COLORBAR: {
+            DocLangAttributeKey.ENCODES,
+            DocLangAttributeKey.AXIS_LABEL,
+            DocLangAttributeKey.RANGE,
+            DocLangAttributeKey.COLORS,
+            DocLangAttributeKey.LEVELS,
+        },
     }
 
     # Allowed values for specific attributes (enumerations)
@@ -483,6 +523,10 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.NL,
         # Continuation markers
         DocLangToken.THREAD,
+        # Chart picture extension leaf tokens (axis / series / colorbar carry attrs)
+        DocLangToken.AXIS,
+        DocLangToken.SERIES,
+        DocLangToken.COLORBAR,
     }
 
     # Token to category mapping
