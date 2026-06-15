@@ -103,7 +103,6 @@ def test_azure_serialize_construct_doc_minimal_prov(sample_doc: DoclingDocument)
     single page and minimal bounding boxes to a subset of items to allow Azure JSON
     output to include paragraphs/tables/pictures with boundingRegions.
     """
-
     # Ensure at least one page is present
     if not sample_doc.pages:
         sample_doc.add_page(page_no=1, size=Size(width=600.0, height=800.0), image=None)

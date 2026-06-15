@@ -1,4 +1,4 @@
-"""Test the pydantic models in module data_types.nlp.qa.py"""
+"""Test the pydantic models in module data_types.nlp.qa.py."""
 
 import glob
 import unittest

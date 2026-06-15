@@ -15,7 +15,7 @@ from .test_data_gen_flag import GEN_TEST_DATA
 def test_new_to_old():
     filename = "test/data/doc/2206.01062.yaml"
 
-    with open(filename, "r", encoding="utf-8") as fp:
+    with open(filename, encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
 
     doc = DoclingDocument.model_validate(dict_from_yaml)

@@ -12,6 +12,7 @@ from typing import Literal
 try:
     import matplotlib.figure
     import matplotlib.pyplot as plt
+
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
@@ -27,8 +28,7 @@ class StatsVisualizer:
         """Check if matplotlib is available."""
         if not MATPLOTLIB_AVAILABLE:
             raise ImportError(
-                "matplotlib is required for visualization. "
-                "Install it with: pip install docling-core[examples]"
+                "matplotlib is required for visualization. Install it with: pip install docling-core[examples]"
             )
 
     @staticmethod
@@ -79,7 +79,7 @@ class StatsVisualizer:
         ax.grid(axis="y", alpha=0.3, linestyle="--")
 
         if log_scale:
-            ax.set_yscale('log')
+            ax.set_yscale("log")
             ax.set_ylabel(f"{ylabel} (log scale)", fontsize=12)
 
         plt.tight_layout()
@@ -316,4 +316,3 @@ class StatsVisualizer:
         """
         StatsVisualizer._check_matplotlib()
         plt.show()
-

@@ -38,6 +38,7 @@ def test_plain_text_no_inline_markers(sample_doc):
     assert "~~" not in result
     # single '*' could appear in list markers, so check for italic wrapping pattern
     import re
+
     assert not re.search(r"\*[^*\n]+\*", result), "Unexpected italic markers found"
 
 

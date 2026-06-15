@@ -46,7 +46,7 @@ class MsExcelMarkdownFallbackSerializer(MarkdownFallbackSerializer):
 
 
 class MsExcelMarkdownDocSerializer(MarkdownDocSerializer):
-    """``MarkdownDocSerializer`` variant for Excel-sourced ``DoclingDocument``\\s.
+    r"""``MarkdownDocSerializer`` variant for Excel-sourced ``DoclingDocument``\\s.
 
     Swap in :class:`MsExcelMarkdownFallbackSerializer` so that worksheet
     groups (``GroupLabel.SHEET``) are rendered with their name as a Markdown

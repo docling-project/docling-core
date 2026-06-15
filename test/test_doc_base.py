@@ -42,7 +42,6 @@ def test_prov():
 
 def test_track_source():
     """Test the class TrackSource."""
-
     valid_track = TrackSource(
         start_time=11.0,
         end_time=12.0,

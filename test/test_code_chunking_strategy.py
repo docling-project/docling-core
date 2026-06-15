@@ -110,7 +110,7 @@ def test_hybrid_chunker_with_code_files(test_data_dir):
     doc = DoclingDocument(name="sample.py")
     doc.origin = DocumentOrigin(filename="sample.py", mimetype="text/x-python", binary_hash=12345)
 
-    with open(python_file, "r", encoding="utf-8") as f:
+    with open(python_file, encoding="utf-8") as f:
         content = f.read()
     doc.add_code(text=content)
 
@@ -135,7 +135,7 @@ def test_unsupported_language_fallback(test_data_dir):
         doc = DoclingDocument(name="sample.go")
         doc.origin = DocumentOrigin(filename="sample.go", mimetype="text/plain", binary_hash=12345)
 
-        with open(go_file, "r", encoding="utf-8") as f:
+        with open(go_file, encoding="utf-8") as f:
             content = f.read()
         doc.add_code(text=content)
 
@@ -154,7 +154,7 @@ def test_unsupported_language_fallback(test_data_dir):
         doc = DoclingDocument(name="sample.md")
         doc.origin = DocumentOrigin(filename="sample.md", mimetype="text/plain", binary_hash=12345)
 
-        with open(md_file, "r", encoding="utf-8") as f:
+        with open(md_file, encoding="utf-8") as f:
             content = f.read()
         doc.add_code(text=content)
 
@@ -181,7 +181,7 @@ def test_repository_processing(test_data_dir):
         doc = DoclingDocument(name=file_path.name)
         doc.origin = DocumentOrigin(filename=file_path.name, mimetype="text/plain", binary_hash=12345)
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
         doc.add_code(text=content)
 

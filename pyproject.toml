@@ -101,15 +101,8 @@ examples = [
 
 [dependency-groups]
 dev = [
-    "pre-commit~=3.7",
-    "mypy~=1.6",
-    "black~=26.3.1",
-    "isort~=5.10",
-    "autoflake~=2.0",
-    "flake8~=7.1",
-    "pycodestyle~=2.10",
-    "flake8-docstrings~=1.6",
-    "pep8-naming~=0.13",
+    "pre-commit~=4.6.0",
+    "mypy~=2.1.0",
     "jsondiff~=2.0",
     "types-setuptools~=70.3",
     "pandas-stubs~=2.1",
@@ -117,7 +110,7 @@ dev = [
     "coverage~=7.6",
     "pytest~=9.0.3",
     "pytest-cov>=6.1.1",
-    "python-semantic-release~=7.32",
+    "python-semantic-release~=7.34.6",
     'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
     "ruff>=0.14.11",
     "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
@@ -153,13 +146,14 @@ skip-magic-trailing-comma = false
 [tool.ruff.lint]
 select = [
   "C",     # flake8-comprehensions
+  # "D",     # flake8-docstrings
+  "Q",     # flake8-quotes
   "C9",    # mccabe
-  "E",     # pycodestyle errors (default)
-  "F",     # pyflakes (default)
+  "E",     # pycodestyle errors
+  "F",     # pyflakes
   "I",     # isort
   "PD",    # pandas-vet
   "PIE",   # pie
-  "Q",     # flake8-quotes
   "RUF",   # Enable all ruff-specific checks
   "S307",  # eval
   "W",     # pycodestyle warnings
@@ -192,7 +186,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
-"test/*.py" = ["ASYNC"]         # Disable ASYNC check for tests
+"test/*.py" = ["ASYNC"] # Disable ASYNC check for tests
 "*.ipynb" = ["I"]  # Disable import sorting for notebooks
 
 [tool.ruff.lint.mccabe]
