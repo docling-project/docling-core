@@ -189,17 +189,24 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     """Markdown-specific text item serializer."""
 
     @staticmethod
-    def _format_footnote_text(text: str) -> str:
-        """
-        For formatting footnote definitions, we need validate, then split the text into two parts:
-        - [identifier] and [definition]
+    def _validate_and_format_footnote(text: str, inline: bool = False) -> str:
+        """Validate and format footnote text for markdown output.
 
-        So, if we have something like "this is a footnote", we split it into:
-        - "this" and "is a footnote" -> "[^this]:" and "is a footnote" -> "[^this]: is a footnote"
+        Args:
+            text: The footnote text to format. For markdown format, should be
+                "identifier definition" where identifier is the footnote ID.
+            inline: If True, renders as inline text. If False, renders as
+                markdown footnote definition.
 
-        Validation:
-        - Footnote identifiers must be not include spaces or tabs, word (before a space) and strip it.
-        - If there is only one string before a space, that is an identifier, and the description is empty (valid).
+        Returns:
+            Formatted footnote string. For inline mode: "(Footnote: text)".
+            For markdown mode: "[^identifier]: definition" or "[^identifier]:"
+            if no definition provided.
+
+        Raises:
+            ValueError: If text is empty, or if identifier contains invalid
+                characters (whitespace, newlines, or markdown special characters
+                like '[', ']', ':') in markdown mode.
         """
 
         # Validate input
@@ -256,7 +263,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
             text = f"- [ ] {text}"
         if item.label == DocItemLabel.FOOTNOTE:
-            text = self._format_footnote_text(text)
+            text = self._validate_and_format_footnote(text)
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
@@ -914,7 +921,7 @@ class MarkdownDocSerializer(DocSerializer):
         if DocItemLabel.FOOTNOTE in params.labels:
             for footnote in item.footnotes:
                 if isinstance(ftn := footnote.resolve(self.doc), TextItem):
-                    formatted_text = MarkdownTextSerializer._format_footnote_text(ftn.text)
+                    formatted_text = MarkdownTextSerializer._validate_and_format_footnote(ftn.text)
                     results.append(create_ser_result(text=formatted_text, span_source=ftn))
 
             text_res = "\n".join([r.text for r in results])

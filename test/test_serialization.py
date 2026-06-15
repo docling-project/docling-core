@@ -671,18 +671,18 @@ def test_md_footnote_validation():
     
     # Test empty footnote raises error
     with pytest.raises(ValueError, match="Footnote cannot be empty"):
-        MarkdownTextSerializer._format_footnote_text("")
+        MarkdownTextSerializer._validate_and_format_footnote("")
     
     # Test space raises error
     with pytest.raises(ValueError, match="Footnote cannot be empty"):
-        MarkdownTextSerializer._format_footnote_text(" ")
+        MarkdownTextSerializer._validate_and_format_footnote(" ")
     
     # Test identifier with tab character
     with pytest.raises(ValueError, match="contains invalid characters"):
-        MarkdownTextSerializer._format_footnote_text("id\t")
+        MarkdownTextSerializer._validate_and_format_footnote("id\t")
     
     # Test identifier without definition is valid
-    result = MarkdownTextSerializer._format_footnote_text("id")
+    result = MarkdownTextSerializer._validate_and_format_footnote("id")
     assert result == "[^id]:"
 
 # ===============================
