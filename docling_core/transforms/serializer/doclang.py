@@ -1719,6 +1719,10 @@ class DocLangFallbackSerializer(BaseFallbackSerializer):
         if isinstance(item, GroupItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = delim.join([p.text for p in parts if p.text])
+            # A picture-area group (e.g. the panels of a multi-panel / faceted
+            # figure) is wrapped in <group> so the panels stay one figure.
+            if text_res and item.label == GroupLabel.PICTURE_AREA:
+                text_res = _wrap(text=text_res, wrap_tag=DocLangToken.GROUP.value)
             return create_ser_result(text=text_res, span_source=parts)
         elif isinstance(item, FieldRegionItem | FieldItem):
             parts = []
