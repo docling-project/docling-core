@@ -216,11 +216,12 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         parts = text.split(" ", 1)
         identifier = parts[0]
 
-        # Validate identifier is not empty and doesn't contain tabs or whitespace
+        # Validate identifier is not empty and doesn't contain invalid characters
         if not identifier.strip():
             raise ValueError("Footnote identifier cannot be empty")
 
-        if "\t" in identifier or " " in identifier:
+        # Check for whitespace and newline characters
+        if any(char in identifier for char in {"\t", " ", "\n", "\r"}):
             raise ValueError(f"Footnote identifier '{identifier}' contains invalid characters")
 
         if len(parts) == 2:
@@ -917,8 +918,10 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
-        results: list[SerializationResult] = []
+
         if DocItemLabel.FOOTNOTE in params.labels:
+            results: list[SerializationResult] = []
+
             for footnote in item.footnotes:
                 if isinstance(ftn := footnote.resolve(self.doc), TextItem):
                     formatted_text = MarkdownTextSerializer._validate_and_format_footnote(ftn.text)
