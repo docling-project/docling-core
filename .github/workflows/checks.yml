@@ -95,4 +95,4 @@ jobs:
       - name: Load the DoclingDocument package
         run: python -c 'from docling_core.types.doc import DoclingDocument'
       - name: Check if package data is present
-        run: python -c 'from importlib import resources; from pathlib import Path; p=Path(resources.files("docling_core").joinpath("resources/schemas/doc/DOC.json")); assert p.exists()'
+        run: python -c 'from importlib import resources; from pathlib import Path; p=Path(resources.files("docling_core").joinpath("resources/schemas/generated/minimal_document_schema_flat.json")); assert p.exists()'
