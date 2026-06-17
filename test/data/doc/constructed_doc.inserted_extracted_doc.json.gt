@@ -1702,7 +1702,7 @@
           "width": 64.0,
           "height": 64.0
         },
-        "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="
+        "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAdElEQVRoBdXBAQEAAABAIP6ftkPJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMwFULoAQbykEYoAAAAASUVORK5CYII="
       },
       "annotations": []
     }
@@ -1820,6 +1820,7 @@
         ],
         "num_rows": 3,
         "num_cols": 3,
+        "orientation": "rot_0",
         "grid": [
           [
             {
@@ -2121,6 +2122,7 @@
         ],
         "num_rows": 4,
         "num_cols": 3,
+        "orientation": "rot_0",
         "grid": [
           [
             {
@@ -2463,6 +2465,7 @@
         ],
         "num_rows": 4,
         "num_cols": 3,
+        "orientation": "rot_0",
         "grid": [
           [
             {
