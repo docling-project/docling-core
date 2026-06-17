@@ -616,7 +616,7 @@ def test_md_traverse_pictures():
 def test_md_footnotes_yaml():
     src = Path("./test/data/doc/2206.01062.yaml")
     doc = DoclingDocument.load_from_yaml(src)
-    
+
     ser = MarkdownDocSerializer(
         doc=doc,
         params=MarkdownParams(
@@ -630,7 +630,7 @@ def test_md_footnotes_yaml():
 def test_md_footnotes_json():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
-    
+
     ser = MarkdownDocSerializer(
         doc=doc,
         params=MarkdownParams(
@@ -642,17 +642,17 @@ def test_md_footnotes_json():
 
 def test_md_table_with_footnotes():
     doc = DoclingDocument(name="test_table_footnotes")
-    
+
     td = TableData(num_rows=2, num_cols=1)
     td.add_row(["Header 1"])
     td.add_row(["Data 1"])
-    
+
     table = doc.add_table(data=td)
-    
+
     footnote1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="table footnote")
-    
+
     table.footnotes.append(footnote1.get_ref())
-    
+
     ser = MarkdownDocSerializer(
         doc=doc,
         params=MarkdownParams(
@@ -661,26 +661,26 @@ def test_md_table_with_footnotes():
         ),
     )
     actual = ser.serialize().text
-    
-    assert "| Header 1" in actual 
+
+    assert "| Header 1" in actual
     assert "| Data 1" in actual
     assert "[^table]:" in actual and "footnote" in actual
 
 def test_md_footnote_validation():
     from docling_core.transforms.serializer.markdown import MarkdownTextSerializer
-    
+
     # Test empty footnote raises error
     with pytest.raises(ValueError, match="Footnote cannot be empty"):
         MarkdownTextSerializer._validate_and_format_footnote("")
-    
+
     # Test space raises error
     with pytest.raises(ValueError, match="Footnote cannot be empty"):
         MarkdownTextSerializer._validate_and_format_footnote(" ")
-    
+
     # Test identifier with tab character
     with pytest.raises(ValueError, match="contains invalid characters"):
         MarkdownTextSerializer._validate_and_format_footnote("id\t")
-    
+
     # Test identifier without definition is valid
     result = MarkdownTextSerializer._validate_and_format_footnote("id")
     assert result == "[^id]:"
