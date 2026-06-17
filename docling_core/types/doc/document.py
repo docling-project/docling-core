@@ -1199,9 +1199,22 @@ class ImageRef(BaseModel):
 
     @staticmethod
     def _to_img_str_cv2(image: PILImage.Image) -> str:
-        _, buffered = cv2.imencode(".png", cv2.cvtColor(np.array(image), cv2.COLOR_RGBA2BGRA))
-        img_str = base64.b64encode(buffered.tobytes()).decode("utf-8")
-        return img_str
+        arr = np.ascontiguousarray(np.asarray(image))
+
+        if image.mode == "RGB":
+            encoded = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+        elif image.mode == "RGBA":
+            encoded = cv2.cvtColor(arr, cv2.COLOR_RGBA2BGRA)
+        elif image.mode == "L":
+            encoded = arr
+        else:
+            return ImageRef._to_img_str_pil(image)
+
+        ok, buffered = cv2.imencode(".png", encoded)
+        if not ok:
+            return ImageRef._to_img_str_pil(image)
+
+        return base64.b64encode(buffered.tobytes()).decode("utf-8")
 
     @staticmethod
     def _to_img_str_pil(image: PILImage.Image) -> str:
