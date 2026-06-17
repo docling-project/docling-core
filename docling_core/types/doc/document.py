@@ -7707,7 +7707,13 @@ class DoclingDocument(BaseModel):
                 self._max_page = new_max_page
 
         def get_name(self) -> str:
-            return " + ".join(self._names)
+            if not self._names:
+                return ""
+            squeezed: list[str] = [self._names[0]]
+            for name in self._names[1:]:
+                if name != squeezed[-1]:
+                    squeezed.append(name)
+            return " + ".join(squeezed)
 
     def _update_from_index(self, doc_index: "_DocIndex") -> None:
         if doc_index._body is not None:
@@ -7743,7 +7749,7 @@ class DoclingDocument(BaseModel):
         for doc in docs:
             doc_index.index(doc=doc)
 
-        res_doc = DoclingDocument(name=" + ".join([doc.name for doc in docs]))
+        res_doc = DoclingDocument(name=doc_index.get_name())
         res_doc._update_from_index(doc_index)
         return res_doc
 
