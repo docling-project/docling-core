@@ -1,4 +1,5 @@
 import glob
+import hashlib
 import json
 import os
 import pathlib
@@ -16,9 +17,15 @@ from docling_core.transforms.chunker.code_chunking.standard_code_chunking_strate
 from docling_core.transforms.chunker.hierarchical_chunker import HierarchicalChunker
 from docling_core.types.doc import DoclingDocument, DocumentOrigin
 from docling_core.types.doc.labels import CodeLanguageLabel, DocItemLabel
-from docling_core.utils.legacy import _create_hash
 
 from .test_data_gen_flag import GEN_TEST_DATA
+
+
+def _create_hash(string: str) -> str:
+    """Return a SHA-256 hex digest of the given string."""
+    hasher = hashlib.sha256(usedforsecurity=False)
+    hasher.update(string.encode("utf-8"))
+    return hasher.hexdigest()
 
 
 def get_latest_commit_id(file_dir: str) -> str:

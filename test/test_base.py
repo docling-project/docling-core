@@ -16,8 +16,6 @@ from docling_core.types.base import (
     Log,
     StrictDateTime,
 )
-from docling_core.types.legacy_doc.document import CCSDocumentDescription
-from docling_core.types.rec.record import RecordDescription
 
 
 def test_identifier():
@@ -169,28 +167,6 @@ def test_collection_document_info():
     data = CollectionDocumentInfo(**gold_dict)
     assert data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) == gold_dict
 
-    # within dictionary
-    desc_dict = {
-        "logs": [
-            {
-                "date": "2021-11-03T04:42:54.844631+00:00",
-                "agent": "CXS",
-                "type": "parsing",
-            }
-        ],
-        "collection": {
-            "name": "patent USPTO",
-            "type": "Document",
-            "version": "3.2.0",
-            "alias": ["patent"],
-        },
-    }
-    CCSDocumentDescription(**desc_dict)
-
-    desc_dict["collection"]["type"] = "Record"
-    with pytest.raises(ValidationError, match="collection\\.type"):
-        CCSDocumentDescription(**desc_dict)
-
 
 def test_collection_record_info():
     """Validate data with CollectionRecordInfo model."""
@@ -202,32 +178,6 @@ def test_collection_record_info():
     }
     data = CollectionRecordInfo(**gold_dict)
     assert data.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) == gold_dict
-
-    # within dictionary
-    desc_dict = {
-        "logs": [
-            {
-                "date": "2021-11-03T04:42:54.844631+00:00",
-                "agent": "CXS",
-                "type": "parsing",
-            }
-        ],
-        "collection": {
-            "name": "PubChem",
-            "type": "Record",
-            "version": "3.2.0",
-            "alias": ["chemical", "Material Sciences"],
-        },
-    }
-    RecordDescription(**desc_dict)
-
-    desc_dict["collection"]["type"] = "Document"
-    with pytest.raises(ValidationError, match="collection\\.type"):
-        RecordDescription(**desc_dict)
-
-    desc_dict["collection"]["type"] = "record"
-    with pytest.raises(ValidationError, match="collection\\.type"):
-        RecordDescription(**desc_dict)
 
 
 def test_strict_date_time() -> None:
