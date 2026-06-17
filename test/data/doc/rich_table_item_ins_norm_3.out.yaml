@@ -118,6 +118,7 @@ tables:
         text: cell 3,1
     num_cols: 2
     num_rows: 4
+    orientation: rot_0
     table_cells:
     - col_span: 1
       column_header: false
