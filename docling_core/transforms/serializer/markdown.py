@@ -5,6 +5,7 @@ import logging
 import re
 import textwrap
 from enum import Enum
+from logging import Logger
 from pathlib import Path, PurePath
 from typing import Annotated, Any, ClassVar, Final, Optional, Union
 from urllib.parse import quote, urlsplit, urlunsplit
@@ -369,6 +370,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         # Check for whitespace and newline characters
         if any(char in identifier for char in {"\t", " ", "\n", "\r"}):
             raise ValueError(f"Footnote identifier '{identifier}' contains invalid characters")
+
+        # Check for markdown special characters that would break footnote syntax
+        if any(char in identifier for char in {"[", "]", ":"}):
+            raise ValueError(f"Footnote identifier '{identifier}' contains invalid markdown characters")
 
         if len(parts) == 2:
             return f"[^{identifier}]: {parts[1]}"
@@ -1252,6 +1257,8 @@ class MarkdownDocSerializer(DocSerializer):
     # `**bold ** tail` renders as literal asterisks in CommonMark.
     hoist_decoration_whitespace: ClassVar[bool] = True
 
+    _logger: Logger = logging.getLogger(__name__)
+
     @override
     def serialize_footnotes(
         self,
@@ -1259,17 +1266,22 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
 
         if DocItemLabel.FOOTNOTE in params.labels:
-            results: list[SerializationResult] = []
-
             for footnote in item.footnotes:
-                if isinstance(ftn := footnote.resolve(self.doc), TextItem):
-                    formatted_text = MarkdownTextSerializer._validate_and_format_footnote(ftn.text)
-                    results.append(create_ser_result(text=formatted_text, span_source=ftn))
+                resolved = footnote.resolve(self.doc)
+                if resolved is None:
+                    self._logger.warning(f"Footnote reference {footnote.cref} could not be resolved (returned None)")
+                elif not isinstance(resolved, TextItem):
+                    self._logger.warning(
+                        f"Footnote reference {footnote.cref} resolved to {type(resolved).__name__} instead of TextItem"
+                    )
+                elif isinstance(resolved, TextItem):
+                    formatted_text = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
+                    results.append(create_ser_result(text=formatted_text, span_source=resolved))
 
             text_res = "\n".join([r.text for r in results])
-
         else:
             text_res = ""
 
