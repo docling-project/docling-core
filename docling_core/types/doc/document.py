@@ -33,6 +33,7 @@ from PIL import Image as PILImage
 from pydantic import (
     AnyUrl,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     FieldSerializationInfo,
@@ -49,7 +50,7 @@ from tabulate import _column_type, tabulate
 from typing_extensions import Self, deprecated, override
 
 from docling_core.search.package import VERSION_PATTERN
-from docling_core.types.base import _JSON_POINTER_REGEX
+from docling_core.types.base import _JSON_POINTER_REGEX, UniqueList
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
     CoordOrigin,
@@ -63,10 +64,12 @@ from docling_core.types.doc.labels import (
     GraphCellLabel,
     GraphLinkLabel,
     GroupLabel,
+    HumanLanguageLabel,
     PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
+from docling_core.utils.settings import settings
 
 try:
     import cv2
@@ -79,6 +82,7 @@ _logger = logging.getLogger(__name__)
 
 Uint64 = typing.Annotated[int, Field(ge=0, le=(2**64 - 1))]
 LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
+CharSpan = Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
 CURRENT_VERSION: Final = "1.10.0"
 
 DEFAULT_EXPORT_LABELS = {
@@ -390,19 +394,35 @@ AnyTableCell = Annotated[
 ]
 
 
+class Orientation(str, Enum):
+    """Counter-clockwise rotation of a table on the page, in degrees.
+
+    Follows the convention used by PIL/Pillow's ``Image.rotate``: positive
+    angles rotate the table counter-clockwise. ``ROT_0`` / ``ROT_180`` keep
+    rows running horizontally on the page; ``ROT_90`` / ``ROT_270`` turn
+    rows into vertical stripes.
+    """
+
+    ROT_0 = "rot_0"  # no rotation; row 0 at top, rows horizontal
+    ROT_90 = "rot_90"  # 90° CCW; row 0 on the left, rows are vertical stripes
+    ROT_180 = "rot_180"  # 180°; row 0 at bottom (upside-down), rows horizontal
+    ROT_270 = "rot_270"  # 270° CCW (= 90° CW); row 0 on the right, rows are vertical stripes
+
+
 class TableData(BaseModel):  # TBD
     """BaseTableData."""
 
     table_cells: list[AnyTableCell] = []
     num_rows: int = 0
     num_cols: int = 0
+    orientation: Orientation = Orientation.ROT_0
 
     @computed_field  # type: ignore
     @property
     def grid(
         self,
     ) -> list[list[TableCell]]:
-        """grid."""
+        """Grid."""
         # Initialise empty table data grid (only empty cells)
         table_data = [
             [
@@ -582,15 +602,23 @@ class TableData(BaseModel):  # TBD
     def get_row_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
         """Get the bounding box for each row in the table.
 
+        Layout follows the table's ``orientation`` field: ``ROT_0`` / ``ROT_180``
+        keep rows running left-to-right on the page; ``ROT_90`` / ``ROT_270``
+        turn rows into vertical stripes. This affects both the axis along which
+        span cells extend a row's bbox and, when ``minimal=False``, the axis
+        equalized across rows.
+
         Args:
             minimal: If True (default), returns the minimal bounding box for each
-                row based on its cells. If False, all rows will have uniform
-                horizontal extent (same x0/x1 values) spanning the full table width.
+                row based on its cells. If False, all rows will have a uniform
+                extent perpendicular to the row direction (l/r for ROT_0/ROT_180,
+                t/b for ROT_90/ROT_270).
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping row indices to their
             bounding boxes. Only rows with cells that have bounding boxes are included.
         """
+        horizontal = self.orientation in (Orientation.ROT_0, Orientation.ROT_180)
         coords = []
         for cell in self.table_cells:
             if cell.bbox is not None:
@@ -621,35 +649,68 @@ class TableData(BaseModel):  # TBD
                 min_row_span = min(row_cells_with_bbox.keys())
                 row_bbox: BoundingBox = BoundingBox.enclosing_bbox(row_cells_with_bbox[min_row_span])
 
+                # Spanning cells extend along the row's natural axis:
+                # horizontal table → row runs l/r; vertical table → row runs t/b.
                 for rspan, bboxs in row_cells_with_bbox.items():
                     for bbox in bboxs:
-                        row_bbox.l = min(row_bbox.l, bbox.l)
-                        row_bbox.r = max(row_bbox.r, bbox.r)
+                        if horizontal:
+                            row_bbox.l = min(row_bbox.l, bbox.l)
+                            row_bbox.r = max(row_bbox.r, bbox.r)
+                        else:
+                            if bbox.coord_origin == CoordOrigin.TOPLEFT:
+                                row_bbox.t = min(row_bbox.t, bbox.t)
+                                row_bbox.b = max(row_bbox.b, bbox.b)
+                            else:  # BOTTOMLEFT
+                                row_bbox.t = max(row_bbox.t, bbox.t)
+                                row_bbox.b = min(row_bbox.b, bbox.b)
 
                 row_bboxes[row_idx] = row_bbox
 
-        # If not minimal, make all rows have uniform horizontal extent
+        # If not minimal, make all rows have uniform extent on the axis
+        # perpendicular to the row direction.
         if not minimal and row_bboxes:
-            global_l = min(bbox.l for bbox in row_bboxes.values())
-            global_r = max(bbox.r for bbox in row_bboxes.values())
-            for bbox in row_bboxes.values():
-                bbox.l = global_l
-                bbox.r = global_r
+            if horizontal:
+                # Rows run left-to-right; equalize horizontal extent.
+                global_l = min(bbox.l for bbox in row_bboxes.values())
+                global_r = max(bbox.r for bbox in row_bboxes.values())
+                for bbox in row_bboxes.values():
+                    bbox.l = global_l
+                    bbox.r = global_r
+            else:
+                # Vertical table: rows are vertical stripes; equalize vertical extent.
+                first_bbox = next(iter(row_bboxes.values()))
+                if first_bbox.coord_origin == CoordOrigin.TOPLEFT:
+                    global_t = min(bbox.t for bbox in row_bboxes.values())
+                    global_b = max(bbox.b for bbox in row_bboxes.values())
+                else:  # BOTTOMLEFT
+                    global_t = max(bbox.t for bbox in row_bboxes.values())
+                    global_b = min(bbox.b for bbox in row_bboxes.values())
+                for bbox in row_bboxes.values():
+                    bbox.t = global_t
+                    bbox.b = global_b
 
         return row_bboxes
 
     def get_column_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
         """Get the bounding box for each column in the table.
 
+        Layout follows the table's ``orientation`` field: ``ROT_0`` / ``ROT_180``
+        keep columns running top-to-bottom on the page; ``ROT_90`` / ``ROT_270``
+        turn columns into horizontal stripes. This affects both the axis along
+        which span cells extend a column's bbox and, when ``minimal=False``, the
+        axis equalized across columns.
+
         Args:
             minimal: If True (default), returns the minimal bounding box for each
-                column based on its cells. If False, all columns will have uniform
-                vertical extent (same y0/y1 values) spanning the full table height.
+                column based on its cells. If False, all columns will have a
+                uniform extent perpendicular to the column direction (t/b for
+                ROT_0/ROT_180, l/r for ROT_90/ROT_270).
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping column indices to their
             bounding boxes. Only columns with cells that have bounding boxes are included.
         """
+        horizontal = self.orientation in (Orientation.ROT_0, Orientation.ROT_180)
         coords = []
         for cell in self.table_cells:
             if cell.bbox is not None:
@@ -680,31 +741,46 @@ class TableData(BaseModel):  # TBD
                 min_col_span = min(col_cells_with_bbox.keys())
                 col_bbox: BoundingBox = BoundingBox.enclosing_bbox(col_cells_with_bbox[min_col_span])
 
+                # Spanning cells extend along the column's natural axis:
+                # horizontal table → column runs t/b; vertical table → column runs l/r.
                 for rspan, bboxs in col_cells_with_bbox.items():
                     for bbox in bboxs:
-                        if bbox.coord_origin == CoordOrigin.TOPLEFT:
-                            col_bbox.b = max(col_bbox.b, bbox.b)
-                            col_bbox.t = min(col_bbox.t, bbox.t)
-
-                        elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
-                            col_bbox.b = min(col_bbox.b, bbox.b)
-                            col_bbox.t = max(col_bbox.t, bbox.t)
+                        if horizontal:
+                            if bbox.coord_origin == CoordOrigin.TOPLEFT:
+                                col_bbox.b = max(col_bbox.b, bbox.b)
+                                col_bbox.t = min(col_bbox.t, bbox.t)
+                            elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
+                                col_bbox.b = min(col_bbox.b, bbox.b)
+                                col_bbox.t = max(col_bbox.t, bbox.t)
+                        else:
+                            col_bbox.l = min(col_bbox.l, bbox.l)
+                            col_bbox.r = max(col_bbox.r, bbox.r)
 
                 col_bboxes[col_idx] = col_bbox
 
-        # If not minimal, make all columns have uniform vertical extent
+        # If not minimal, make all columns have uniform extent on the axis
+        # perpendicular to the column direction.
         if not minimal and col_bboxes:
-            # Get the coord_origin from the first bbox (they're all the same)
-            first_bbox = next(iter(col_bboxes.values()))
-            if first_bbox.coord_origin == CoordOrigin.TOPLEFT:
-                global_t = min(bbox.t for bbox in col_bboxes.values())
-                global_b = max(bbox.b for bbox in col_bboxes.values())
-            else:  # BOTTOMLEFT
-                global_t = max(bbox.t for bbox in col_bboxes.values())
-                global_b = min(bbox.b for bbox in col_bboxes.values())
-            for bbox in col_bboxes.values():
-                bbox.t = global_t
-                bbox.b = global_b
+            if horizontal:
+                # Columns run top-to-bottom; equalize vertical extent.
+                # Get the coord_origin from the first bbox (they're all the same)
+                first_bbox = next(iter(col_bboxes.values()))
+                if first_bbox.coord_origin == CoordOrigin.TOPLEFT:
+                    global_t = min(bbox.t for bbox in col_bboxes.values())
+                    global_b = max(bbox.b for bbox in col_bboxes.values())
+                else:  # BOTTOMLEFT
+                    global_t = max(bbox.t for bbox in col_bboxes.values())
+                    global_b = min(bbox.b for bbox in col_bboxes.values())
+                for bbox in col_bboxes.values():
+                    bbox.t = global_t
+                    bbox.b = global_b
+            else:
+                # Vertical table: columns are horizontal stripes; equalize horizontal extent.
+                global_l = min(bbox.l for bbox in col_bboxes.values())
+                global_r = max(bbox.r for bbox in col_bboxes.values())
+                for bbox in col_bboxes.values():
+                    bbox.l = global_l
+                    bbox.r = global_r
 
         return col_bboxes
 
@@ -1094,12 +1170,18 @@ class ImageRef(BaseModel):
             return self._pil
 
         if isinstance(self.uri, AnyUrl):
-            if self.uri.scheme == "data":
+            if self.uri.scheme == "file":
+                if not settings.allow_image_file_uri:
+                    raise ValueError("file:// URI scheme is not enabled.")
+                self._pil = PILImage.open(unquote(str(self.uri.path)))
+            elif self.uri.scheme == "data":
                 encoded_img = str(self.uri).split(",")[1]
                 decoded_img = base64.b64decode(encoded_img)
+
+                if len(decoded_img) > settings.max_image_decoded_size:
+                    raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
+
                 self._pil = PILImage.open(BytesIO(decoded_img))
-            elif self.uri.scheme == "file":
-                self._pil = PILImage.open(unquote(str(self.uri.path)))
             # else: Handle http request or other protocols...
         elif isinstance(self.uri, Path):
             self._pil = PILImage.open(self.uri)
@@ -1224,7 +1306,7 @@ class ProvenanceItem(BaseModel):
 
     page_no: Annotated[int, Field(description="Page number")]
     bbox: Annotated[BoundingBox, Field(description="Bounding box")]
-    charspan: Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
+    charspan: CharSpan
 
 
 class BaseSource(BaseModel):
@@ -1376,21 +1458,165 @@ class SummaryMetaField(BasePrediction):
     text: str
 
 
-# NOTE: must be manually kept in sync with top-level BaseMeta hierarchy fields
-class MetaFieldName(str, Enum):
-    """Standard meta field names."""
+class LanguageMetaField(BasePrediction):
+    """Detected human language."""
 
-    SUMMARY = "summary"  # a summary of the tree under this node
-    DESCRIPTION = "description"  # a description of the node (e.g. for images)
-    CLASSIFICATION = "classification"  # a classification of the node content
-    MOLECULE = "molecule"  # molecule data
-    TABULAR_CHART = "tabular_chart"  # tabular chart data
+    code: HumanLanguageLabel
+
+
+class MetaFieldName(str, Enum):
+    """Standard meta field names attached to document nodes.
+
+    Note:
+        These enum members must be kept in sync with the fields of the `BaseMeta` class or its subclasses.
+    """
+
+    SUMMARY = "summary"
+    """A condensed natural-language summary of the content rooted at this node (e.g. a paragraph summary or section abstract)."""
+
+    LANGUAGE = "language"
+    """The detected human language of the node content, expressed as a BCP 47 code (e.g. ``"en"``, ``"de"``)."""
+
+    ENTITIES = "entities"
+    """Named entities extracted from the node text, such as persons, organisations, and locations."""
+
+    KEYWORDS = "keywords"
+    """Salient terms or short keyphrases that characterise the node content. Values are order-preserving and unique."""
+
+    TOPICS = "topics"
+    """Higher-level subject categories or thematic labels inferred for the node. Values are order-preserving and unique."""
+
+    DESCRIPTION = "description"
+    """A free-text description of the node, typically used for non-textual items such as figures and images."""
+
+    CLASSIFICATION = "classification"
+    """A classification label or category assigned to the node content (e.g. picture type, document genre)."""
+
+    MOLECULE = "molecule"
+    """Structured chemical / molecule data associated with the node."""
+
+    TABULAR_CHART = "tabular_chart"
+    """Tabular data extracted from a chart element."""
+
+
+class EntityMention(BasePrediction):
+    """Entity mention extracted from text."""
+
+    text: Annotated[
+        str,
+        Field(description="Normalized text of the entity mention."),
+    ]
+    orig: Annotated[
+        Optional[str],
+        Field(
+            description=(
+                "Exact source text extracted from the original charspan, "
+                "analogous to TextItem.orig. This may differ from 'text' when the "
+                "mention has been normalized."
+            )
+        ),
+    ] = None
+    label: Annotated[
+        Optional[str],
+        Field(description="Entity type or category."),
+    ] = None
+    charspan: Annotated[
+        Optional[CharSpan],
+        Field(description="Character span (0-indexed) of the entity mention in the source text."),
+    ] = None
+
+
+class EntitiesMetaField(_ExtraAllowingModel):
+    """Container for extracted entity mentions."""
+
+    mentions: Annotated[list[EntityMention], Field(min_length=1)]
+
+
+def _ensure_unique_list(values: Any) -> Any:
+    if not isinstance(values, list):
+        raise ValueError("values must be a list of strings")
+    return list(dict.fromkeys(values))
+
+
+class KeywordsMetaField(_ExtraAllowingModel):
+    """Container for a list of unique keywords / keyphrases."""
+
+    values: Annotated[UniqueList[str], BeforeValidator(_ensure_unique_list), Field(min_length=1)]
+
+
+class TopicsMetaField(_ExtraAllowingModel):
+    """Container for a list of unique topics / subjects."""
+
+    values: Annotated[UniqueList[str], BeforeValidator(_ensure_unique_list), Field(min_length=1)]
 
 
 class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
-    summary: Optional[SummaryMetaField] = None
+    summary: Annotated[
+        Optional[SummaryMetaField],
+        Field(
+            description="A condensed natural-language summary of the content rooted at this node.",
+            examples=[{"text": "A short company/location statement."}],
+        ),
+    ] = None
+    language: Annotated[
+        Optional[LanguageMetaField],
+        Field(
+            description="The detected human language of the node content, expressed as a BCP 47 code.",
+            examples=[{"code": "en"}],
+        ),
+    ] = None
+    entities: Annotated[
+        Optional[EntitiesMetaField],
+        Field(
+            description=(
+                "Named entities extracted from the node text (persons, organisations, locations, etc.). "
+                "Each mention carries the entity text, an optional type label, and an optional character span."
+            ),
+            examples=[{"mentions": [{"text": "IBM", "label": "ORG", "charspan": [0, 3]}]}],
+        ),
+    ] = None
+    keywords: Annotated[
+        Optional[KeywordsMetaField],
+        Field(
+            description=(
+                "Salient terms or short keyphrases that characterise the node content. "
+                "Keywords are more specific than topics and typically correspond to individual words or "
+                "short multi-word expressions found in or closely related to the text. "
+                "Values are order-preserving and deduplicated."
+            ),
+            examples=[{"values": ["transformer", "attention mechanism", "BERT"]}],
+        ),
+    ] = None
+    topics: Annotated[
+        Optional[TopicsMetaField],
+        Field(
+            description=(
+                "Higher-level subject categories or thematic labels inferred for the node content. "
+                "Topics are broader than keywords and describe the domain or theme rather than specific terms "
+                "(e.g., 'machine learning' rather than 'gradient descent'). "
+                "Values are order-preserving and deduplicated."
+            ),
+            examples=[{"values": ["natural language processing", "computer vision"]}],
+        ),
+    ] = None
+
+    def has_content(self) -> bool:
+        """Return True if this metadata contains any meaningful content."""
+        return any(self._value_has_content(value) for value in self.model_dump(exclude_none=True).values())
+
+    @staticmethod
+    def _value_has_content(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, list):
+            return any(BaseMeta._value_has_content(v) for v in value)
+        if isinstance(value, dict):
+            return any(BaseMeta._value_has_content(v) for v in value.values())
+        if isinstance(value, BaseModel):
+            return any(BaseMeta._value_has_content(v) for v in value.model_dump(exclude_none=True).values())
+        return True
 
 
 class DescriptionMetaField(BasePrediction):
@@ -2215,7 +2441,6 @@ class TableItem(FloatingItem):
 
     def export_to_dataframe(self, doc: Optional["DoclingDocument"] = None) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
-
         return self._export_to_dataframe_with_options(doc=doc)
 
     def _export_to_dataframe_with_options(
@@ -2224,7 +2449,6 @@ class TableItem(FloatingItem):
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame with contextual named arguments."""
-
         if doc is None:
             _logger.warning("Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated.")
 
@@ -2648,7 +2872,6 @@ class DoclingDocument(BaseModel):
         # This is optional, e.g. a DoclingDocument could also be entirely
         # generated from synthetic data.
     )
-
     furniture: Annotated[GroupItem, Field(deprecated=True)] = GroupItem(
         name="_root_",
         self_ref="#/furniture",
@@ -5680,11 +5903,16 @@ class DoclingDocument(BaseModel):
         image_dir: Path,
         page_no: Optional[int],
         reference_path: Optional[Path] = None,
+        include_page_images: bool = False,
     ) -> "DoclingDocument":
         """Document with images as refs.
 
         Creates a copy of this document where all picture data is
         saved to image_dir and referenced through file URIs.
+
+        When ``include_page_images`` is True, the page images are saved to
+        image_dir and referenced through file URIs as well (instead of being
+        kept as embedded base64 blobs).
         """
         result: DoclingDocument = copy.deepcopy(self)
 
@@ -5721,6 +5949,31 @@ class DoclingDocument(BaseModel):
                         #    item.image._pil.close()
 
                     img_count += 1
+
+            if include_page_images:
+                for p_no, page in result.pages.items():
+                    if page_no is not None and p_no != page_no:
+                        continue
+                    if page.image is None:
+                        continue
+                    img = page.image.pil_image
+                    if img is None:
+                        continue
+                    hexhash = PictureItem._image_to_hexhash(img)
+                    if hexhash is None:
+                        continue
+
+                    loc_path = image_dir / f"page_{p_no:06}_{hexhash}.png"
+                    img.save(loc_path)
+                    if reference_path is not None:
+                        obj_path = relative_path(
+                            reference_path.resolve(),
+                            loc_path.resolve(),
+                        )
+                    else:
+                        obj_path = loc_path
+
+                    page.image.uri = Path(obj_path)
 
         return result
 
@@ -5783,7 +6036,13 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir,
+            image_mode,
+            page_no=None,
+            reference_path=reference_path,
+            include_page_images=True,
+        )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         with open(filename, "w", encoding="utf-8") as fw:
@@ -5822,7 +6081,13 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir,
+            image_mode,
+            page_no=None,
+            reference_path=reference_path,
+            include_page_images=True,
+        )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         with open(filename, "w", encoding="utf-8") as fw:
@@ -6072,7 +6337,7 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,
         traverse_pictures: bool = False,
     ) -> str:
-        """Export to plain text.
+        r"""Export to plain text.
 
         Produces clean plain text without any Markdown decoration. Heading
         markers (``#``), bold/italic markers, and hyperlink syntax are all
@@ -6198,12 +6463,18 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode,
         page_no: Optional[int],
         reference_path: Optional[Path] = None,
+        include_page_images: bool = False,
     ):
         new_doc = None
         if image_mode == ImageRefMode.PLACEHOLDER:
             new_doc = self
         elif image_mode == ImageRefMode.REFERENCED:
-            new_doc = self._with_pictures_refs(image_dir=artifacts_dir, page_no=page_no, reference_path=reference_path)
+            new_doc = self._with_pictures_refs(
+                image_dir=artifacts_dir,
+                page_no=page_no,
+                reference_path=reference_path,
+                include_page_images=include_page_images,
+            )
         elif image_mode == ImageRefMode.EMBEDDED:
             new_doc = self._with_embedded_pictures()
         else:
@@ -6283,7 +6554,6 @@ class DoclingDocument(BaseModel):
         Returns:
             A string representation of the Docling document in WebVTT format.
         """
-
         from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 
         my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
@@ -7009,12 +7279,12 @@ class DoclingDocument(BaseModel):
     def export_to_doclang(
         self,
     ) -> str:
-        """Export to Doclang."""
-        from docling_core.experimental.doclang import DoclangDocSerializer, DoclangParams
+        """Export to DocLang."""
+        from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
-        serializer = DoclangDocSerializer(
+        serializer = DocLangDocSerializer(
             doc=self,
-            params=DoclangParams(),
+            params=DocLangParams(),
         )
         return serializer.serialize().text
 
@@ -7022,7 +7292,7 @@ class DoclingDocument(BaseModel):
         self,
         filename: Union[str, Path],
     ) -> None:
-        """Save the document as Doclang."""
+        """Save the document as DocLang."""
         out = self.export_to_doclang()
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(f"{out}\n")
@@ -7246,7 +7516,6 @@ class DoclingDocument(BaseModel):
     @model_validator(mode="after")
     def validate_document(self) -> Self:
         """validate_document."""
-
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)

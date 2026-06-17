@@ -1,10 +1,10 @@
-<doclang version="1.0.0">
+<doclang>
   <field_region>
     <location value="48"/>
     <location value="12"/>
     <location value="477"/>
     <location value="484"/>
-    <heading level="1">
+    <heading level="2">
       <location value="142"/>
       <location value="12"/>
       <location value="304"/>
@@ -19,7 +19,7 @@
         <location value="22"/>
         International application No
       </key>
-      <value class="read_only">
+      <value>
         <location value="339"/>
         <location value="27"/>
         <location value="420"/>
@@ -27,7 +27,7 @@
         PCT/US2020/024355
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="53"/>
       <location value="37"/>
       <location value="179"/>
@@ -97,7 +97,7 @@
       <location value="69"/>
       According to International Patent Classification (IPC) or to both national classification and IPC
     </text>
-    <heading level="2">
+    <heading level="3">
       <location value="54"/>
       <location value="73"/>
       <location value="118"/>
@@ -152,35 +152,33 @@
       <location value="141"/>
       EPO-Internal , WPI Data
     </text>
-    <heading level="2">
+    <heading level="3">
       <location value="54"/>
       <location value="168"/>
       <location value="195"/>
       <location value="171"/>
       C. DOCUMENTS CONSIDERED TO BE RELEVANT
     </heading>
-    <floating_group class="table">
-      <otsl>
-        <location value="48"/>
-        <location value="172"/>
-        <location value="477"/>
-        <location value="342"/>
-        <ched/>
-        Category*
-        <ched/>
-        Citation of document, with indication, where appropriate, of the relevant passages
-        <ched/>
-        Relevant to claim No.
-        <nl/>
-        <fcel/>
-        x
-        <fcel/>
-        US 2019/026000 A1 (LIPMAN KEITH [US]) 24 January 2019 (2019-01-24) paragraph [0249] - paragraph [0250]; figures 1,2,28-30 paragraph [0038] ------
-        <fcel/>
-        1-15
-        <nl/>
-      </otsl>
-    </floating_group>
+    <table>
+      <location value="48"/>
+      <location value="172"/>
+      <location value="477"/>
+      <location value="342"/>
+      <ched/>
+      Category*
+      <ched/>
+      Citation of document, with indication, where appropriate, of the relevant passages
+      <ched/>
+      Relevant to claim No.
+      <nl/>
+      <fcel/>
+      x
+      <fcel/>
+      US 2019/026000 A1 (LIPMAN KEITH [US]) 24 January 2019 (2019-01-24) paragraph [0249] - paragraph [0250]; figures 1,2,28-30 paragraph [0038] ------
+      <fcel/>
+      1-15
+      <nl/>
+    </table>
     <text>
       <location value="52"/>
       <location value="345"/>
@@ -234,7 +232,7 @@
         <location value="432"/>
         Date of the actual completion of the international search
       </key>
-      <value class="read_only">
+      <value>
         <location value="80"/>
         <location value="442"/>
         <location value="141"/>
@@ -250,7 +248,7 @@
         <location value="459"/>
         Name and mailing address of the ISA/
       </key>
-      <value class="read_only">
+      <value>
         <location value="97"/>
         <location value="461"/>
         <location value="224"/>
@@ -266,7 +264,7 @@
         <location value="469"/>
         NL-
       </key>
-      <value class="read_only">
+      <value>
         <location value="111"/>
         <location value="465"/>
         <location value="157"/>
@@ -282,7 +280,7 @@
         <location value="473"/>
         Tel.
       </key>
-      <value class="read_only">
+      <value>
         <location value="109"/>
         <location value="470"/>
         <location value="160"/>
@@ -298,7 +296,7 @@
         <location value="478"/>
         Fax:
       </key>
-      <value class="read_only">
+      <value>
         <location value="110"/>
         <location value="474"/>
         <location value="160"/>
@@ -346,7 +344,7 @@
         <location value="433"/>
         Date of mailing of the international search report
       </key>
-      <value class="read_only">
+      <value>
         <location value="296"/>
         <location value="442"/>
         <location value="348"/>
@@ -362,7 +360,7 @@
         <location value="458"/>
         Authorized officer
       </key>
-      <value class="read_only">
+      <value>
         <location value="297"/>
         <location value="471"/>
         <location value="374"/>
@@ -372,19 +370,19 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="49"/>
     <location value="486"/>
     <location value="156"/>
     <location value="489"/>
-    <layer class="furniture"/>
     Form PCT/ISA/210 (second sheet) (April 2005)
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="30"/>
     <location value="471"/>
     <location value="34"/>
     <location value="476"/>
-    <layer class="furniture"/>
     2
   </text>
 </doclang>

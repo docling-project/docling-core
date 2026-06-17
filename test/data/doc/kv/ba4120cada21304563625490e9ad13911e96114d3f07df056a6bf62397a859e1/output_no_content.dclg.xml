@@ -1,19 +1,19 @@
-<doclang version="1.0.0">
+<doclang>
   <text>
+    <layer value="furniture"/>
     <location value="30"/>
     <location value="23"/>
     <location value="186"/>
     <location value="29"/>
-    <layer class="furniture"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="317"/>
     <location value="25"/>
     <location value="479"/>
     <location value="30"/>
-    <layer class="furniture"/>
   </text>
-  <heading level="1">
+  <heading level="2">
     <location value="30"/>
     <location value="35"/>
     <location value="332"/>
@@ -31,7 +31,7 @@
     <location value="472"/>
     <location value="52"/>
     <field_item>
-      <value class="read_only">
+      <value>
         <location value="383"/>
         <location value="39"/>
         <location value="471"/>
@@ -45,23 +45,22 @@
     <location value="54"/>
     <location value="483"/>
     <location value="476"/>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="33"/>
-            <location value="55"/>
-            <location value="87"/>
-            <location value="61"/>
-          </key>
-          <value class="read_only">
-            <location value="66"/>
-            <location value="62"/>
-            <location value="86"/>
-            <location value="68"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="33"/>
+          <location value="55"/>
+          <location value="87"/>
+          <location value="61"/>
+        </key>
+        <value>
+          <location value="66"/>
+          <location value="62"/>
+          <location value="86"/>
+          <location value="68"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -70,7 +69,7 @@
         <location value="165"/>
         <location value="60"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="157"/>
         <location value="62"/>
         <location value="163"/>
@@ -84,7 +83,7 @@
         <location value="202"/>
         <location value="61"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="220"/>
         <location value="62"/>
         <location value="240"/>
@@ -112,7 +111,7 @@
         <location value="151"/>
         <location value="92"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="117"/>
         <location value="92"/>
         <location value="173"/>
@@ -126,7 +125,7 @@
         <location value="67"/>
         <location value="108"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="110"/>
         <location value="108"/>
         <location value="157"/>
@@ -140,7 +139,7 @@
         <location value="235"/>
         <location value="107"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="222"/>
         <location value="106"/>
         <location value="232"/>
@@ -154,66 +153,63 @@
         <location value="270"/>
         <location value="107"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="262"/>
         <location value="106"/>
         <location value="285"/>
         <location value="113"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="321"/>
-            <location value="56"/>
-            <location value="473"/>
-            <location value="63"/>
-          </key>
-          <value class="read_only">
-            <location value="340"/>
-            <location value="66"/>
-            <location value="452"/>
-            <location value="73"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="321"/>
+          <location value="56"/>
+          <location value="473"/>
+          <location value="63"/>
+        </key>
+        <value>
+          <location value="340"/>
+          <location value="66"/>
+          <location value="452"/>
+          <location value="73"/>
+        </value>
+      </field_item>
     </list>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="322"/>
-            <location value="102"/>
-            <location value="446"/>
-            <location value="108"/>
-          </key>
-          <value class="fillable">
-            <location value="319"/>
-            <location value="108"/>
-            <location value="482"/>
-            <location value="117"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="322"/>
+          <location value="102"/>
+          <location value="446"/>
+          <location value="108"/>
+        </key>
+        <value class="fillable">
+          <location value="319"/>
+          <location value="108"/>
+          <location value="482"/>
+          <location value="117"/>
+        </value>
+      </field_item>
     </list>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="35"/>
-            <location value="119"/>
-            <location value="128"/>
-            <location value="125"/>
-          </key>
-          <value class="read_only">
-            <location value="47"/>
-            <location value="125"/>
-            <location value="169"/>
-            <location value="151"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="35"/>
+          <location value="119"/>
+          <location value="128"/>
+          <location value="125"/>
+        </key>
+        <value>
+          <location value="47"/>
+          <location value="125"/>
+          <location value="169"/>
+          <location value="151"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -222,14 +218,14 @@
         <location value="169"/>
         <location value="151"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="189"/>
         <location value="123"/>
         <location value="227"/>
         <location value="133"/>
         <checkbox class="selected"/>
       </value>
-      <value class="read_only">
+      <value>
         <location value="190"/>
         <location value="139"/>
         <location value="235"/>
@@ -237,50 +233,48 @@
         <checkbox class="unselected"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="282"/>
-            <location value="119"/>
-            <location value="429"/>
-            <location value="125"/>
-          </key>
-          <value class="read_only">
-            <location value="293"/>
-            <location value="131"/>
-            <location value="466"/>
-            <location value="146"/>
-            <checkbox class="unselected"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="282"/>
+          <location value="119"/>
+          <location value="429"/>
+          <location value="125"/>
+        </key>
+        <value>
+          <location value="293"/>
+          <location value="131"/>
+          <location value="466"/>
+          <location value="146"/>
+          <checkbox class="unselected"/>
+        </value>
+      </field_item>
     </list>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="36"/>
-            <location value="157"/>
-            <location value="153"/>
-            <location value="163"/>
-          </key>
-          <value class="read_only">
-            <location value="38"/>
-            <location value="162"/>
-            <location value="86"/>
-            <location value="172"/>
-            <checkbox class="selected"/>
-          </value>
-          <value class="read_only">
-            <location value="39"/>
-            <location value="178"/>
-            <location value="125"/>
-            <location value="188"/>
-            <checkbox class="unselected"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="36"/>
+          <location value="157"/>
+          <location value="153"/>
+          <location value="163"/>
+        </key>
+        <value>
+          <location value="38"/>
+          <location value="162"/>
+          <location value="86"/>
+          <location value="172"/>
+          <checkbox class="selected"/>
+        </value>
+        <value>
+          <location value="39"/>
+          <location value="178"/>
+          <location value="125"/>
+          <location value="188"/>
+          <checkbox class="unselected"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -289,7 +283,7 @@
         <location value="86"/>
         <location value="172"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="39"/>
         <location value="194"/>
         <location value="141"/>
@@ -311,38 +305,37 @@
         <location value="203"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="283"/>
-            <location value="157"/>
-            <location value="443"/>
-            <location value="164"/>
-          </key>
-          <value class="read_only">
-            <location value="285"/>
-            <location value="163"/>
-            <location value="341"/>
-            <location value="172"/>
-            <checkbox class="selected"/>
-          </value>
-          <value class="read_only">
-            <location value="286"/>
-            <location value="178"/>
-            <location value="355"/>
-            <location value="188"/>
-            <checkbox class="unselected"/>
-          </value>
-          <value class="read_only">
-            <location value="285"/>
-            <location value="193"/>
-            <location value="375"/>
-            <location value="204"/>
-            <checkbox class="unselected"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="283"/>
+          <location value="157"/>
+          <location value="443"/>
+          <location value="164"/>
+        </key>
+        <value>
+          <location value="285"/>
+          <location value="163"/>
+          <location value="341"/>
+          <location value="172"/>
+          <checkbox class="selected"/>
+        </value>
+        <value>
+          <location value="286"/>
+          <location value="178"/>
+          <location value="355"/>
+          <location value="188"/>
+          <checkbox class="unselected"/>
+        </value>
+        <value>
+          <location value="285"/>
+          <location value="193"/>
+          <location value="375"/>
+          <location value="204"/>
+          <checkbox class="unselected"/>
+        </value>
+      </field_item>
     </list>
     <text>
       <location value="400"/>
@@ -350,110 +343,105 @@
       <location value="471"/>
       <location value="197"/>
     </text>
-    <list ordered="false">
-      <list_text>
+    <list>
+      <ldiv/>
+      <text>
         <location value="35"/>
         <location value="211"/>
         <location value="481"/>
         <location value="218"/>
-      </list_text>
-      <list ordered="false">
-        <list_text>
-          <field_item>
-            <key>
-              <location value="49"/>
-              <location value="227"/>
-              <location value="295"/>
-              <location value="234"/>
-            </key>
-            <value class="read_only">
-              <location value="302"/>
-              <location value="228"/>
-              <location value="312"/>
-              <location value="233"/>
-            </value>
-          </field_item>
-        </list_text>
-        <list_text>
-          <field_item>
-            <key>
-              <location value="49"/>
-              <location value="236"/>
-              <location value="302"/>
-              <location value="249"/>
-            </key>
-            <value class="read_only">
-              <location value="302"/>
-              <location value="243"/>
-              <location value="312"/>
-              <location value="248"/>
-            </value>
-          </field_item>
-        </list_text>
-        <list_text>
-          <field_item>
-            <key>
-              <location value="49"/>
-              <location value="250"/>
-              <location value="295"/>
-              <location value="257"/>
-            </key>
-            <value class="read_only">
-              <location value="302"/>
-              <location value="251"/>
-              <location value="312"/>
-              <location value="256"/>
-            </value>
-          </field_item>
-        </list_text>
-        <list_text>
-          <field_item>
-            <key>
-              <location value="49"/>
-              <location value="257"/>
-              <location value="295"/>
-              <location value="264"/>
-            </key>
-            <value class="read_only">
-              <location value="302"/>
-              <location value="259"/>
-              <location value="312"/>
-              <location value="264"/>
-            </value>
-          </field_item>
-        </list_text>
-        <list_text>
-          <field_item>
-            <key>
-              <location value="49"/>
-              <location value="274"/>
-              <location value="295"/>
-              <location value="280"/>
-            </key>
-            <value class="read_only">
-              <location value="301"/>
-              <location value="274"/>
-              <location value="312"/>
-              <location value="280"/>
-            </value>
-          </field_item>
-        </list_text>
-        <list_text>
-          <field_item>
-            <key>
-              <location value="49"/>
-              <location value="289"/>
-              <location value="380"/>
-              <location value="295"/>
-            </key>
-            <value class="read_only">
-              <location value="388"/>
-              <location value="289"/>
-              <location value="397"/>
-              <location value="295"/>
-            </value>
-          </field_item>
-        </list_text>
+      </text>
+      <list>
+        <ldiv/>
+        <field_item>
+          <key>
+            <location value="49"/>
+            <location value="227"/>
+            <location value="295"/>
+            <location value="234"/>
+          </key>
+          <value>
+            <location value="302"/>
+            <location value="228"/>
+            <location value="312"/>
+            <location value="233"/>
+          </value>
+        </field_item>
+        <ldiv/>
+        <field_item>
+          <key>
+            <location value="49"/>
+            <location value="236"/>
+            <location value="302"/>
+            <location value="249"/>
+          </key>
+          <value>
+            <location value="302"/>
+            <location value="243"/>
+            <location value="312"/>
+            <location value="248"/>
+          </value>
+        </field_item>
+        <ldiv/>
+        <field_item>
+          <key>
+            <location value="49"/>
+            <location value="250"/>
+            <location value="295"/>
+            <location value="257"/>
+          </key>
+          <value>
+            <location value="302"/>
+            <location value="251"/>
+            <location value="312"/>
+            <location value="256"/>
+          </value>
+        </field_item>
+        <ldiv/>
+        <field_item>
+          <key>
+            <location value="49"/>
+            <location value="257"/>
+            <location value="295"/>
+            <location value="264"/>
+          </key>
+          <value>
+            <location value="302"/>
+            <location value="259"/>
+            <location value="312"/>
+            <location value="264"/>
+          </value>
+        </field_item>
+        <ldiv/>
+        <field_item>
+          <key>
+            <location value="49"/>
+            <location value="274"/>
+            <location value="295"/>
+            <location value="280"/>
+          </key>
+          <value>
+            <location value="301"/>
+            <location value="274"/>
+            <location value="312"/>
+            <location value="280"/>
+          </value>
+        </field_item>
+        <ldiv/>
+        <field_item>
+          <key>
+            <location value="49"/>
+            <location value="289"/>
+            <location value="380"/>
+            <location value="295"/>
+          </key>
+          <value>
+            <location value="388"/>
+            <location value="289"/>
+            <location value="397"/>
+            <location value="295"/>
+          </value>
+        </field_item>
       </list>
     </list>
     <field_item>
@@ -477,7 +465,7 @@
         <location value="343"/>
         <location value="233"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="348"/>
         <location value="227"/>
         <location value="382"/>
@@ -491,7 +479,7 @@
         <location value="382"/>
         <location value="233"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="227"/>
         <location value="397"/>
@@ -519,7 +507,7 @@
         <location value="471"/>
         <location value="233"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="227"/>
         <location value="481"/>
@@ -547,7 +535,7 @@
         <location value="344"/>
         <location value="249"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="348"/>
         <location value="243"/>
         <location value="382"/>
@@ -561,7 +549,7 @@
         <location value="382"/>
         <location value="249"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="243"/>
         <location value="397"/>
@@ -589,7 +577,7 @@
         <location value="471"/>
         <location value="249"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="242"/>
         <location value="481"/>
@@ -617,7 +605,7 @@
         <location value="343"/>
         <location value="256"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="348"/>
         <location value="250"/>
         <location value="379"/>
@@ -631,7 +619,7 @@
         <location value="379"/>
         <location value="256"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="250"/>
         <location value="397"/>
@@ -659,7 +647,7 @@
         <location value="471"/>
         <location value="257"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="250"/>
         <location value="481"/>
@@ -687,7 +675,7 @@
         <location value="343"/>
         <location value="264"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="347"/>
         <location value="259"/>
         <location value="382"/>
@@ -701,7 +689,7 @@
         <location value="382"/>
         <location value="264"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="258"/>
         <location value="397"/>
@@ -729,7 +717,7 @@
         <location value="470"/>
         <location value="264"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="258"/>
         <location value="481"/>
@@ -757,7 +745,7 @@
         <location value="332"/>
         <location value="280"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="387"/>
         <location value="274"/>
         <location value="397"/>
@@ -771,7 +759,7 @@
         <location value="397"/>
         <location value="280"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="441"/>
         <location value="270"/>
         <location value="462"/>
@@ -785,7 +773,7 @@
         <location value="462"/>
         <location value="277"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="274"/>
         <location value="481"/>
@@ -799,7 +787,7 @@
         <location value="397"/>
         <location value="295"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="442"/>
         <location value="285"/>
         <location value="463"/>
@@ -813,30 +801,29 @@
         <location value="463"/>
         <location value="292"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="289"/>
         <location value="481"/>
         <location value="295"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="36"/>
-            <location value="305"/>
-            <location value="358"/>
-            <location value="310"/>
-          </key>
-          <value class="read_only">
-            <location value="368"/>
-            <location value="305"/>
-            <location value="378"/>
-            <location value="311"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="36"/>
+          <location value="305"/>
+          <location value="358"/>
+          <location value="310"/>
+        </key>
+        <value>
+          <location value="368"/>
+          <location value="305"/>
+          <location value="378"/>
+          <location value="311"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -845,7 +832,7 @@
         <location value="378"/>
         <location value="311"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="444"/>
         <location value="302"/>
         <location value="458"/>
@@ -859,30 +846,29 @@
         <location value="458"/>
         <location value="308"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="305"/>
         <location value="481"/>
         <location value="310"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="37"/>
-            <location value="321"/>
-            <location value="358"/>
-            <location value="326"/>
-          </key>
-          <value class="read_only">
-            <location value="368"/>
-            <location value="320"/>
-            <location value="378"/>
-            <location value="326"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="37"/>
+          <location value="321"/>
+          <location value="358"/>
+          <location value="326"/>
+        </key>
+        <value>
+          <location value="368"/>
+          <location value="320"/>
+          <location value="378"/>
+          <location value="326"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -891,7 +877,7 @@
         <location value="378"/>
         <location value="326"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="442"/>
         <location value="318"/>
         <location value="463"/>
@@ -905,30 +891,29 @@
         <location value="463"/>
         <location value="324"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="320"/>
         <location value="481"/>
         <location value="326"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="35"/>
-            <location value="335"/>
-            <location value="358"/>
-            <location value="343"/>
-          </key>
-          <value class="read_only">
-            <location value="368"/>
-            <location value="336"/>
-            <location value="378"/>
-            <location value="341"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="35"/>
+          <location value="335"/>
+          <location value="358"/>
+          <location value="343"/>
+        </key>
+        <value>
+          <location value="368"/>
+          <location value="336"/>
+          <location value="378"/>
+          <location value="341"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -937,7 +922,7 @@
         <location value="378"/>
         <location value="341"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="444"/>
         <location value="330"/>
         <location value="464"/>
@@ -951,30 +936,29 @@
         <location value="464"/>
         <location value="337"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="336"/>
         <location value="481"/>
         <location value="341"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="35"/>
-            <location value="351"/>
-            <location value="358"/>
-            <location value="358"/>
-          </key>
-          <value class="read_only">
-            <location value="368"/>
-            <location value="351"/>
-            <location value="378"/>
-            <location value="357"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="35"/>
+          <location value="351"/>
+          <location value="358"/>
+          <location value="358"/>
+        </key>
+        <value>
+          <location value="368"/>
+          <location value="351"/>
+          <location value="378"/>
+          <location value="357"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -983,7 +967,7 @@
         <location value="378"/>
         <location value="357"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="445"/>
         <location value="349"/>
         <location value="465"/>
@@ -997,30 +981,29 @@
         <location value="465"/>
         <location value="356"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="351"/>
         <location value="481"/>
         <location value="357"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="36"/>
-            <location value="367"/>
-            <location value="359"/>
-            <location value="373"/>
-          </key>
-          <value class="read_only">
-            <location value="368"/>
-            <location value="367"/>
-            <location value="378"/>
-            <location value="372"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="36"/>
+          <location value="367"/>
+          <location value="359"/>
+          <location value="373"/>
+        </key>
+        <value>
+          <location value="368"/>
+          <location value="367"/>
+          <location value="378"/>
+          <location value="372"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -1043,30 +1026,29 @@
         <location value="470"/>
         <location value="373"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="366"/>
         <location value="481"/>
         <location value="372"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="35"/>
-            <location value="382"/>
-            <location value="358"/>
-            <location value="389"/>
-          </key>
-          <value class="read_only">
-            <location value="368"/>
-            <location value="382"/>
-            <location value="378"/>
-            <location value="388"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="35"/>
+          <location value="382"/>
+          <location value="358"/>
+          <location value="389"/>
+        </key>
+        <value>
+          <location value="368"/>
+          <location value="382"/>
+          <location value="378"/>
+          <location value="388"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -1075,7 +1057,7 @@
         <location value="378"/>
         <location value="388"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="440"/>
         <location value="378"/>
         <location value="460"/>
@@ -1089,30 +1071,29 @@
         <location value="460"/>
         <location value="384"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="382"/>
         <location value="481"/>
         <location value="388"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="36"/>
-            <location value="398"/>
-            <location value="357"/>
-            <location value="405"/>
-          </key>
-          <value class="read_only">
-            <location value="368"/>
-            <location value="398"/>
-            <location value="378"/>
-            <location value="404"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="36"/>
+          <location value="398"/>
+          <location value="357"/>
+          <location value="405"/>
+        </key>
+        <value>
+          <location value="368"/>
+          <location value="398"/>
+          <location value="378"/>
+          <location value="404"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -1135,30 +1116,29 @@
         <location value="470"/>
         <location value="404"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="398"/>
         <location value="481"/>
         <location value="404"/>
       </value>
     </field_item>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="35"/>
-            <location value="414"/>
-            <location value="358"/>
-            <location value="420"/>
-          </key>
-          <value class="read_only">
-            <location value="368"/>
-            <location value="414"/>
-            <location value="378"/>
-            <location value="419"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="35"/>
+          <location value="414"/>
+          <location value="358"/>
+          <location value="420"/>
+        </key>
+        <value>
+          <location value="368"/>
+          <location value="414"/>
+          <location value="378"/>
+          <location value="419"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -1181,80 +1161,77 @@
         <location value="471"/>
         <location value="420"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="413"/>
         <location value="481"/>
         <location value="419"/>
       </value>
     </field_item>
-    <heading level="2">
+    <heading level="3">
       <location value="29"/>
       <location value="420"/>
       <location value="137"/>
       <location value="426"/>
     </heading>
-    <heading level="3">
+    <heading level="4">
       <location value="290"/>
       <location value="421"/>
       <location value="319"/>
       <location value="426"/>
     </heading>
-    <heading level="3">
+    <heading level="4">
       <location value="419"/>
       <location value="421"/>
       <location value="443"/>
       <location value="426"/>
     </heading>
-    <list ordered="false">
-      <list_text>
-        <field_item>
-          <key>
-            <location value="37"/>
-            <location value="431"/>
-            <location value="232"/>
-            <location value="444"/>
-          </key>
-          <value class="read_only">
-            <location value="237"/>
-            <location value="437"/>
-            <location value="251"/>
-            <location value="442"/>
-          </value>
-        </field_item>
-      </list_text>
-      <list_text>
-        <field_item>
-          <key>
-            <location value="36"/>
-            <location value="446"/>
-            <location value="232"/>
-            <location value="459"/>
-          </key>
-          <value class="read_only">
-            <location value="237"/>
-            <location value="452"/>
-            <location value="251"/>
-            <location value="458"/>
-          </value>
-        </field_item>
-      </list_text>
-      <list_text>
-        <field_item>
-          <key>
-            <location value="35"/>
-            <location value="462"/>
-            <location value="358"/>
-            <location value="475"/>
-          </key>
-          <value class="read_only">
-            <location value="367"/>
-            <location value="467"/>
-            <location value="378"/>
-            <location value="474"/>
-          </value>
-        </field_item>
-      </list_text>
+    <list>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="37"/>
+          <location value="431"/>
+          <location value="232"/>
+          <location value="444"/>
+        </key>
+        <value>
+          <location value="237"/>
+          <location value="437"/>
+          <location value="251"/>
+          <location value="442"/>
+        </value>
+      </field_item>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="36"/>
+          <location value="446"/>
+          <location value="232"/>
+          <location value="459"/>
+        </key>
+        <value>
+          <location value="237"/>
+          <location value="452"/>
+          <location value="251"/>
+          <location value="458"/>
+        </value>
+      </field_item>
+      <ldiv/>
+      <field_item>
+        <key>
+          <location value="35"/>
+          <location value="462"/>
+          <location value="358"/>
+          <location value="475"/>
+        </key>
+        <value>
+          <location value="367"/>
+          <location value="467"/>
+          <location value="378"/>
+          <location value="474"/>
+        </value>
+      </field_item>
     </list>
     <field_item>
       <key>
@@ -1263,7 +1240,7 @@
         <location value="251"/>
         <location value="442"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="297"/>
         <location value="432"/>
         <location value="311"/>
@@ -1277,7 +1254,7 @@
         <location value="311"/>
         <location value="439"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="345"/>
         <location value="437"/>
         <location value="354"/>
@@ -1291,7 +1268,7 @@
         <location value="354"/>
         <location value="442"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="363"/>
         <location value="436"/>
         <location value="378"/>
@@ -1305,7 +1282,7 @@
         <location value="378"/>
         <location value="442"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="438"/>
         <location value="433"/>
         <location value="453"/>
@@ -1319,7 +1296,7 @@
         <location value="453"/>
         <location value="439"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="436"/>
         <location value="481"/>
@@ -1333,7 +1310,7 @@
         <location value="251"/>
         <location value="458"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="300"/>
         <location value="449"/>
         <location value="314"/>
@@ -1347,7 +1324,7 @@
         <location value="314"/>
         <location value="455"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="345"/>
         <location value="452"/>
         <location value="354"/>
@@ -1361,7 +1338,7 @@
         <location value="354"/>
         <location value="458"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="363"/>
         <location value="452"/>
         <location value="378"/>
@@ -1375,7 +1352,7 @@
         <location value="378"/>
         <location value="458"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="440"/>
         <location value="449"/>
         <location value="455"/>
@@ -1389,7 +1366,7 @@
         <location value="455"/>
         <location value="455"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="472"/>
         <location value="452"/>
         <location value="481"/>
@@ -1417,7 +1394,7 @@
         <location value="471"/>
         <location value="474"/>
       </key>
-      <value class="read_only">
+      <value>
         <location value="471"/>
         <location value="467"/>
         <location value="481"/>
@@ -1426,17 +1403,17 @@
     </field_item>
   </field_region>
   <text>
+    <layer value="furniture"/>
     <location value="30"/>
     <location value="483"/>
     <location value="162"/>
     <location value="491"/>
-    <layer class="furniture"/>
   </text>
   <text>
+    <layer value="furniture"/>
     <location value="187"/>
     <location value="484"/>
     <location value="483"/>
     <location value="491"/>
-    <layer class="furniture"/>
   </text>
 </doclang>

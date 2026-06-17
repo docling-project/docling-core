@@ -1,8 +1,7 @@
-<doclang version="1.0.0">
-  <list ordered="false">
-    <list_text>
-      foo
-      <bold>bar</bold>
-    </list_text>
+<doclang>
+  <list>
+    <ldiv/>
+    foo
+    <bold>bar</bold>
   </list>
 </doclang>

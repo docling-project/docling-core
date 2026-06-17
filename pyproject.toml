@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.74.0"  # DO NOT EDIT, updated automatically
+version = "2.82.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -50,6 +50,7 @@ dependencies = [
     'typer (>=0.12.5,<0.25.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
     "defusedxml (>=0.7.1, <0.8.0)",
+    "pydantic-settings>=2.14.0",
 ]
 
 [project.urls]
@@ -63,6 +64,7 @@ changelog = "https://github.com/docling-project/docling-core/blob/main/CHANGELOG
 # generate_jsonschema = "docling_core.utils.generate_jsonschema:main"  # use python -m docling_core.utils.generate_jsonschema
 # generate_docs = "docling_core.utils.generate_docs:main"  # use python -m docling_core.utils.generate_docs
 docling-view = "docling_core.cli.view:app"
+docling-serialize = "docling_core.cli.serialize:app"
 
 [project.optional-dependencies]
 chunking = [
@@ -75,7 +77,9 @@ chunking = [
     'tree-sitter-typescript >=0.23.2',
 
     # specific:
-    'transformers (>=4.34.0,<6.0.0)',
+    # temporary solution until huggingface/transformers#46159 is resolved
+    'transformers (>=4.34.0,<5.9.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform == "darwin"',
+    'transformers (>=4.34.0,<6.0.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform != "darwin"',
 ]
 chunking-openai = [
     # common:
@@ -97,27 +101,21 @@ examples = [
 
 [dependency-groups]
 dev = [
-    "pre-commit~=3.7",
-    "mypy~=1.6",
-    "black~=26.3.1",
-    "isort~=5.10",
-    "autoflake~=2.0",
-    "flake8~=7.1",
-    "pycodestyle~=2.10",
-    "flake8-docstrings~=1.6",
-    "pep8-naming~=0.13",
+    "pre-commit~=4.6.0",
+    "mypy~=2.1.0",
     "jsondiff~=2.0",
     "types-setuptools~=70.3",
     "pandas-stubs~=2.1",
     "ipykernel~=6.29",
     "coverage~=7.6",
-    "pytest~=8.3",
+    "pytest~=9.0.3",
     "pytest-cov>=6.1.1",
-    "python-semantic-release~=7.32",
+    "python-semantic-release~=7.34.6",
     'tree-sitter-java-orchard (>=0.3.0,<1.0.0); python_version >= "3.10"',
     "ruff>=0.14.11",
     "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
     "opencv-python-headless>=4.6.0.66,<5.0.0.0",
+    "doclang>=0.6,<0.7",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
@@ -149,13 +147,14 @@ skip-magic-trailing-comma = false
 [tool.ruff.lint]
 select = [
   "C",     # flake8-comprehensions
+  # "D",     # flake8-docstrings
+  "Q",     # flake8-quotes
   "C9",    # mccabe
-  "E",     # pycodestyle errors (default)
-  "F",     # pyflakes (default)
+  "E",     # pycodestyle errors
+  "F",     # pyflakes
   "I",     # isort
   "PD",    # pandas-vet
   "PIE",   # pie
-  "Q",     # flake8-quotes
   "RUF",   # Enable all ruff-specific checks
   "S307",  # eval
   "W",     # pycodestyle warnings
@@ -188,7 +187,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
-"test/*.py" = ["ASYNC"]         # Disable ASYNC check for tests
+"test/*.py" = ["ASYNC"] # Disable ASYNC check for tests
 "*.ipynb" = ["I"]  # Disable import sorting for notebooks
 
 [tool.ruff.lint.mccabe]
@@ -217,6 +216,7 @@ exclude = "(^|/)test/data/.*"
 
 [[tool.mypy.overrides]]
 module = [
+    "doclang.*",
     "jsondiff.*",
     "jsonref.*",
     "jsonschema.*",

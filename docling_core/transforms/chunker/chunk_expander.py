@@ -35,7 +35,6 @@ class TreeChunkExpander(BaseChunkExpander):
         Returns:
             List of top-level DocItems in document order, or None if no items found.
         """
-
         items: dict[str, DocItem] = {}
         ref_items: list[str] = [item.self_ref for item in meta.doc_items]
         for item in ref_items:
@@ -138,7 +137,6 @@ class PageChunkExpander(BaseChunkExpander):
         Note:
             It is recommended to use the same serializer as used for the original document.
         """
-
         if not isinstance(chunk, DocChunk):
             return chunk
 

@@ -368,19 +368,16 @@ class WebVTTDocSerializer(DocSerializer):
     @override
     def serialize_bold(self, text: str, **kwargs) -> str:
         """Apply WebVTT-specific bold serialization."""
-
         return self.serialize_cue_span(text=text, tag="b")
 
     @override
     def serialize_italic(self, text: str, **kwargs) -> str:
         """Apply WebVTT-specific italic serialization."""
-
         return self.serialize_cue_span(text=text, tag="i")
 
     @override
     def serialize_underline(self, text: str, **kwargs) -> str:
         """Apply WebVTT-specific underline serialization."""
-
         return self.serialize_cue_span(text=text, tag="u")
 
     def serialize_cue_span(

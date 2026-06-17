@@ -48,7 +48,6 @@ def test_document():
 
 def test_table_export_to_tokens():
     """Test the Table Tokens export."""
-
     for filename in glob.glob("test/data/legacy_doc/doc-*.json"):
         with open(filename, encoding="utf-8") as file_obj:
             file_json = file_obj.read()
@@ -69,7 +68,7 @@ def test_table_export_to_tokens():
                         with open(fname, "w", encoding="utf-8") as gold_obj:
                             gold_obj.write(out)
 
-                    with open(fname, "r", encoding="utf-8") as gold_obj:
+                    with open(fname, encoding="utf-8") as gold_obj:
                         gold_data = gold_obj.read()
 
                     assert out == gold_data
@@ -89,7 +88,7 @@ def test_table_export_to_tokens():
                         with open(fname, "w", encoding="utf-8") as gold_obj:
                             gold_obj.write(out)
 
-                    with open(fname, "r", encoding="utf-8") as gold_obj:
+                    with open(fname, encoding="utf-8") as gold_obj:
                         gold_data = gold_obj.read()
 
                     assert out == gold_data
@@ -128,7 +127,7 @@ def test_document_export_to_tokens():
         with open("test/data/legacy_doc/doc-export.dt.txt", "w", encoding="utf-8") as gold_obj:
             gold_obj.write(xml)
 
-    with open("test/data/legacy_doc/doc-export.dt.txt", "r", encoding="utf-8") as gold_obj:
+    with open("test/data/legacy_doc/doc-export.dt.txt", encoding="utf-8") as gold_obj:
         gold_data = gold_obj.read().strip()
 
     assert xml == gold_data

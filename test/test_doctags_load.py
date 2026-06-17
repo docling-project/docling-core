@@ -15,7 +15,7 @@ def verify(exp_file: Path, actual: dict):
             json.dump(actual, f, indent=2)
             f.write("\n")
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = json.load(f)
 
         # we removed image URIs in both dicts for lossy comparison

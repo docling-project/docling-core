@@ -1,91 +1,129 @@
-<doclang version="1.0.0">
-  <list ordered="false">
-    <list_text></list_text>
+<doclang>
+  <list>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
   </list>
-  <title></title>
+  <heading></heading>
   <text></text>
   <text></text>
-  <heading level="1"></heading>
+  <heading level="2"></heading>
   <text></text>
-  <list ordered="false">
-    <list_text></list_text>
-    <list_text></list_text>
-    <list_text></list_text>
-    <list ordered="true">
-      <list_text></list_text>
-      <list_text></list_text>
-      <list_text></list_text>
-      <list ordered="true">
-        <list_text></list_text>
+  <list>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
+    <list class="ordered">
+      <ldiv/>
+      <ldiv/>
+      <ldiv/>
+      <text></text>
+      <list class="ordered">
+        <ldiv/>
       </list>
     </list>
-    <list_text></list_text>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
   </list>
-  <floating_group class="table"></floating_group>
-  <floating_group class="picture"></floating_group>
-  <floating_group class="picture">
-    <picture>
-      <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg==</uri>
-    </picture>
-  </floating_group>
-  <list ordered="false">
-    <list_text></list_text>
+  <table></table>
+  <picture></picture>
+  <picture>
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
+  </picture>
+  <list>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
   </list>
-  <list ordered="false">
-    <list_text></list_text>
-    <list_text></list_text>
+  <list>
+    <ldiv>
+      <marker>*</marker>
+    </ldiv>
+    <ldiv/>
   </list>
-  <list ordered="false">
-    <list_text></list_text>
-    <list_text></list_text>
-    <list ordered="false">
-      <list_text></list_text>
-      <list_text></list_text>
-      <list_text></list_text>
+  <list>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <ldiv>
+      <marker>■</marker>
+    </ldiv>
+    <text></text>
+    <list>
+      <ldiv>
+        <marker>□</marker>
+      </ldiv>
+      <ldiv>
+        <marker>□</marker>
+      </ldiv>
+      <ldiv>
+        <marker>□</marker>
+      </ldiv>
     </list>
   </list>
-  <code class="Python"></code>
+  <code>
+    <label value="Python"/>
+  </code>
   <formula></formula>
   <text></text>
-  <code class="Python"></code>
+  <code>
+    <label value="Python"/>
+  </code>
   <text></text>
   <formula></formula>
   <text></text>
-  <list ordered="true">
-    <list_text></list_text>
-    <list_text></list_text>
-    <list_text></list_text>
-    <list ordered="true">
-      <list_text></list_text>
-      <list_text></list_text>
-      <list ordered="true">
-        <list_text></list_text>
-        <list_text></list_text>
+  <list class="ordered">
+    <ldiv>
+      <marker>(i)</marker>
+    </ldiv>
+    <ldiv>
+      <marker>(ii)</marker>
+    </ldiv>
+    <ldiv>
+      <marker>(iii)</marker>
+    </ldiv>
+    <text></text>
+    <list class="ordered">
+      <ldiv/>
+      <ldiv>
+        <marker>42.</marker>
+      </ldiv>
+      <text></text>
+      <list class="ordered">
+        <ldiv/>
+        <ldiv/>
       </list>
-      <list_text></list_text>
+      <ldiv/>
     </list>
-    <list_text></list_text>
+    <ldiv>
+      <marker>(iv)</marker>
+    </ldiv>
   </list>
-  <list ordered="false">
-    <list_text></list_text>
+  <list>
+    <ldiv/>
   </list>
   <text></text>
-  <floating_group class="picture">
-    <picture>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-    </picture>
-  </floating_group>
-  <floating_group class="picture">
-    <picture>
-      <location value="5"/>
-      <location value="492"/>
-      <location value="15"/>
-      <location value="502"/>
-    </picture>
-  </floating_group>
+  <picture>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+  </picture>
+  <picture>
+    <label value="pie_chart"/>
+    <location value="5"/>
+    <location value="492"/>
+    <location value="15"/>
+    <location value="502"/>
+  </picture>
   <code></code>
   <code>
     <location value="5"/>

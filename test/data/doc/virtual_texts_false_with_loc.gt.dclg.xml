@@ -1,0 +1,44 @@
+<doclang>
+  <list>
+    <ldiv/>
+    <text>
+      <location value="51"/>
+      <location value="384"/>
+      <location value="154"/>
+      <location value="410"/>
+      Regular item
+    </text>
+    <ldiv/>
+    <code>
+      <label value="Python"/>
+<![CDATA[print('hello')]]>    </code>
+    <ldiv/>
+    <text>
+      <location value="51"/>
+      <location value="333"/>
+      <location value="154"/>
+      <location value="358"/>
+      Another item
+    </text>
+  </list>
+  <table>
+    <location value="10"/>
+    <location value="102"/>
+    <location value="461"/>
+    <location value="307"/>
+    <fcel/>
+    <location value="51"/>
+    <location value="333"/>
+    <location value="154"/>
+    <location value="358"/>
+    <text>Cell 1</text>
+    <fcel/>
+    <text>Cell 2</text>
+    <nl/>
+    <fcel/>
+    <text>Cell 3</text>
+    <fcel/>
+    <formula>E=mc^2</formula>
+    <nl/>
+  </table>
+</doclang>

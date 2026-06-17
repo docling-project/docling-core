@@ -1,0 +1,8 @@
+<doclang>
+  <list>
+    <ldiv>
+      <marker>•</marker>
+    </ldiv>
+    <code><![CDATA[print('hello')]]></code>
+  </list>
+</doclang>

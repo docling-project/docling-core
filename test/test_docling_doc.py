@@ -1,8 +1,11 @@
+import base64
+import itertools
 import os
 import re
 import warnings
 from collections import deque
 from copy import deepcopy
+from io import BytesIO
 from pathlib import Path
 from typing import Optional, Union
 from unittest.mock import Mock
@@ -36,6 +39,7 @@ from docling_core.types.doc import (
     KeyValueItem,
     ListItem,
     NodeItem,
+    Orientation,
     PictureItem,
     ProvenanceItem,
     RefItem,
@@ -48,9 +52,16 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from docling_core.types.doc.document import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
-from docling_core.types.doc.document import CURRENT_VERSION, PageItem
+from docling_core.types.doc.document import (
+    CURRENT_VERSION,
+    FieldHeadingItem,
+    FieldItem,
+    FieldRegionItem,
+    FieldValueItem,
+    PageItem,
+)
 from docling_core.types.doc.webvtt import WebVTTFile
+from docling_core.utils.settings import settings
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -795,7 +806,148 @@ def test_image_ref():
     }
     image = ImageRef.model_validate(data_path)
     assert isinstance(image.uri, Path)
-    assert image.uri.name == "image.png"
+
+
+def test_image_ref_blocks_file_scheme():
+    """Test that file:// URI scheme is blocked."""
+    fig_image = PILImage.new(mode="RGB", size=(2, 2), color=(0, 0, 0))
+    image_ref = ImageRef.from_pil(image=fig_image, dpi=72)
+
+    image_ref.uri = AnyUrl("file:///tmp/test.png")
+
+    with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
+        _ = image_ref.pil_image
+
+
+def test_image_ref_blocks_oversized_base64():
+    """Test that oversized base64 data URIs are blocked."""
+    import base64
+
+    large_bytes = b"X" * (28 * 1024 * 1024)
+    large_data = base64.b64encode(large_bytes).decode("ascii")
+    data_uri = f"data:image/png;base64,{large_data}"
+
+    image_ref = ImageRef(dpi=72, mimetype="image/png", size=Size(width=100, height=100), uri=AnyUrl(data_uri))
+
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        _ = image_ref.pil_image
+
+
+def test_image_ref_accepts_valid_base64():
+    """Test that valid base64 data URIs within size limit work correctly."""
+    import base64
+    from io import BytesIO
+
+    fig_image = PILImage.new(mode="RGB", size=(1, 1), color=(255, 0, 0))
+
+    # Convert to base64 data URI
+    buffer = BytesIO()
+    fig_image.save(buffer, format="PNG")
+    img_bytes = buffer.getvalue()
+    img_base64 = base64.b64encode(img_bytes).decode("ascii")
+    data_uri = f"data:image/png;base64,{img_base64}"
+
+    # Create ImageRef with data URI
+    image_ref = ImageRef(dpi=72, mimetype="image/png", size=Size(width=1, height=1), uri=AnyUrl(data_uri))
+
+    # Should successfully decode the image
+    decoded_image = image_ref.pil_image
+    assert isinstance(decoded_image, PILImage.Image)
+    assert decoded_image.size == (1, 1)
+    assert decoded_image.mode == "RGB"
+
+
+def test_file_uri_allowed_with_env_var():
+    """Test that file:// URIs work when enabled via settings."""
+    test_img_path = Path("/tmp/test_docling_env.png")
+    img = PILImage.new("RGB", (100, 100), color="red")
+    img.save(test_img_path)
+
+    orig_allow_image_file_uri = settings.allow_image_file_uri
+    try:
+        settings.allow_image_file_uri = True
+
+        image_ref = ImageRef(
+            dpi=72,
+            mimetype="image/png",
+            size=Size(width=100, height=100),
+            uri=AnyUrl(f"file://{test_img_path}"),
+        )
+
+        pil_img = image_ref.pil_image
+        assert pil_img is not None
+        assert pil_img.size == (100, 100)
+        assert pil_img.mode == "RGB"
+    finally:
+        test_img_path.unlink(missing_ok=True)
+        settings.allow_image_file_uri = orig_allow_image_file_uri
+
+
+def test_file_uri_blocked_by_default():
+    """Test that file:// URIs are blocked by default."""
+    image_ref = ImageRef(
+        dpi=72,
+        mimetype="image/png",
+        size=Size(width=100, height=100),
+        uri=AnyUrl("file:///tmp/test.png"),
+    )
+
+    with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
+        _ = image_ref.pil_image
+
+
+def test_max_decoded_size_custom():
+    """Test that oversized images are rejected based on custom limit."""
+    orig_max_image_decoded_size = settings.max_image_decoded_size
+    try:
+        settings.max_image_decoded_size = 100  # 100 bytes limit
+
+        # Create image that will exceed 100 bytes when base64 decoded
+        # A 50x50 RGB image is 50*50*3 = 7500 bytes uncompressed
+        img = PILImage.new("RGB", (50, 50), color="green")
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        img_bytes = buffer.getvalue()
+
+        # Verify the decoded size will exceed our limit
+        assert len(img_bytes) > 100, f"Test image is only {len(img_bytes)} bytes, need > 100"
+
+        encoded = base64.b64encode(img_bytes).decode("utf-8")
+        data_uri = f"data:image/png;base64,{encoded}"
+
+        image_ref = ImageRef(
+            dpi=72,
+            mimetype="image/png",
+            size=Size(width=50, height=50),
+            uri=AnyUrl(data_uri),
+        )
+
+        with pytest.raises(ValueError, match="Decoded image exceeds size limit"):
+            _ = image_ref.pil_image
+    finally:
+        settings.max_image_decoded_size = orig_max_image_decoded_size
+
+
+def test_max_decoded_size_default():
+    """Test that small images work with default 20MB limit."""
+    img = PILImage.new("RGB", (100, 100), color="blue")
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    img_bytes = buffer.getvalue()
+
+    encoded = base64.b64encode(img_bytes).decode("utf-8")
+    data_uri = f"data:image/png;base64,{encoded}"
+
+    image_ref = ImageRef(
+        dpi=72,
+        mimetype="image/png",
+        size=Size(width=100, height=100),
+        uri=AnyUrl(data_uri),
+    )
+
+    pil_img = image_ref.pil_image
+    assert pil_img is not None
+    assert pil_img.size == (100, 100)
 
 
 def test_upgrade_content_layer_from_1_0_0() -> None:
@@ -1550,6 +1702,7 @@ def test_misplaced_list_items():
         exp_doc = DoclingDocument.load_from_yaml(exp_file)
         assert doc == exp_doc
 
+
 def test_moving_within_same_parent():
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TEXT, text="bar")
@@ -1664,12 +1817,10 @@ def test_concatenate_shifts_graph_cell_pages_for_keyvalue_and_form():
     assert len(merged.form_items) == 2
 
     kv_item_pages = [
-        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov})
-        for item in merged.key_value_items
+        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov}) for item in merged.key_value_items
     ]
     form_item_pages = [
-        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov})
-        for item in merged.form_items
+        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov}) for item in merged.form_items
     ]
 
     assert kv_item_pages == [[1], [2]]
@@ -1904,6 +2055,7 @@ def test_invalid_rich_table_doc():
     with pytest.raises(ValueError):
         DoclingDocument.validate_document(doc)
 
+
 def test_invalid_single_linked_rich_table_doc():
     doc = DoclingDocument(name="")
     table_item = doc.add_table(data=TableData(num_rows=2, num_cols=2))
@@ -1933,7 +2085,7 @@ def test_invalid_single_linked_rich_table_doc():
             doc.add_table_cell(table_item=table_item, cell=table_cell)
 
     # delete child reference from table item
-    del(table_item.children[0])
+    del table_item.children[0]
 
     # ensure validate_document() raises:
     with pytest.raises(ValueError):
@@ -2136,6 +2288,7 @@ def test_validate_dupl_refs():
         error_str = str(valid_err_info.value)
         assert "Duplicate ref" in error_str
 
+
 def test_docitem_comments_field():
     """Test that DocItem has a comments field that can hold RefItem references."""
     doc = DoclingDocument(name="test_comments")
@@ -2231,3 +2384,260 @@ def test_docitem_comments_delete_updates_refs():
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
+
+
+def test_table_data_vertical_bounding_boxes():
+    """Vertical table: rows are vertical stripes, columns are horizontal stripes.
+
+    When `horizontal=False` and `minimal=False`, rows should share a common
+    vertical (t/b) extent and columns should share a common horizontal (l/r) extent.
+    """
+    # 2 rows x 3 cols vertical table (logical rows run top-to-bottom on page).
+    # Row 0 cells sit on the page-left (l=0..10), row 1 on the page-right (l=10..20).
+    # Col 0 cells sit at the page-top, col 2 at the page-bottom.
+    cells = [
+        TableCell(
+            text="r0c0",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=2, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c0",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            bbox=BoundingBox(l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r0c1",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            bbox=BoundingBox(l=0, t=10, r=10, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c1",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=10, r=18, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r0c2",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
+            bbox=BoundingBox(l=0, t=20, r=10, b=28, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c2",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
+            bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+    ]
+    table = TableData(num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90)
+
+    # Minimal mode — sanity-check the per-row/col enclosing bbox.
+    rows_min = table.get_row_bounding_boxes(minimal=True)
+    assert rows_min[0].l == 0 and rows_min[0].r == 10
+    assert rows_min[0].t == 2 and rows_min[0].b == 28
+    assert rows_min[1].l == 10 and rows_min[1].r == 20
+    assert rows_min[1].t == 0 and rows_min[1].b == 30
+
+    cols_min = table.get_column_bounding_boxes(minimal=True)
+    assert cols_min[0].t == 0 and cols_min[0].b == 10
+    assert cols_min[1].t == 10 and cols_min[1].b == 20
+    assert cols_min[2].t == 20 and cols_min[2].b == 30
+
+    # Non-minimal + vertical: rows share t/b, columns share l/r.
+    rows = table.get_row_bounding_boxes(minimal=False)
+    assert rows[0].t == 0 and rows[0].b == 30
+    assert rows[1].t == 0 and rows[1].b == 30
+    # Per-row l/r extents must remain distinct (rows are vertical stripes).
+    assert rows[0].l == 0 and rows[0].r == 10
+    assert rows[1].l == 10 and rows[1].r == 20
+
+    cols = table.get_column_bounding_boxes(minimal=False)
+    for c in cols.values():
+        assert c.l == 0 and c.r == 20
+    # Per-col t/b extents must remain distinct (cols are horizontal stripes).
+    assert (cols[0].t, cols[0].b) == (0, 10)
+    assert (cols[1].t, cols[1].b) == (10, 20)
+    assert (cols[2].t, cols[2].b) == (20, 30)
+
+    # Sanity: with ROT_0 orientation the equalized axes flip back.
+    table.orientation = Orientation.ROT_0
+    rows_h = table.get_row_bounding_boxes(minimal=False)
+    for r in rows_h.values():
+        assert r.l == 0 and r.r == 20
+    cols_h = table.get_column_bounding_boxes(minimal=False)
+    for c in cols_h.values():
+        assert c.t == 0 and c.b == 30
+
+
+def test_table_data_vertical_bounding_boxes_with_spans():
+    """Vertical table with spanning cells.
+
+    In a vertical table, a col_span=2 cell occupies two consecutive horizontal
+    column stripes on the page, so it extends across two t/b ranges. Its presence
+    must extend the spanned columns along l/r (the column's natural axis), NOT
+    along t/b — otherwise column N's bbox bleeds into column N+1.
+
+    Symmetric for row_span=2: extends along t/b, not l/r.
+    """
+    # Layout (TOPLEFT, 2 rows x 3 cols, vertical):
+    #   row 0 cells live in l=0..10, row 1 cells in l=10..20
+    #   col 0 stripe is at t=0..10, col 1 at t=10..20, col 2 at t=20..30
+    # Cell (r0, c1+c2) is a col_span=2 cell in row 0 spanning cols 1 and 2:
+    # it lives at l=0..10 (row 0) and t=10..30 (both col 1 and col 2 stripes).
+    # Cell (r0+r1, c0) is a row_span=2 cell in col 0 spanning rows 0 and 1:
+    # it lives at t=0..10 (col 0) and l=0..20 (both row 0 and row 1 stripes).
+    cells = [
+        TableCell(  # row_span=2 in col 0
+            text="r0+r1,c0",
+            start_row_offset_idx=0,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r0c1+c2",  # col_span=2 in row 0
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=3,
+            bbox=BoundingBox(l=0, t=10, r=10, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c1",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=10, r=20, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c2",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
+            bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+    ]
+    table = TableData(num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90)
+
+    # COLUMNS — col_span=2 cell must NOT stretch col 1 / col 2 along t/b.
+    cols = table.get_column_bounding_boxes(minimal=True)
+    # col 1 stripe on page is t=10..20; the col_span cell adds l-extent only.
+    assert (cols[1].t, cols[1].b) == (10, 20)
+    assert cols[1].l == 0 and cols[1].r == 20
+    # col 2 stripe on page is t=20..30; col_span cell again adds only l-extent.
+    assert (cols[2].t, cols[2].b) == (20, 30)
+    assert cols[2].l == 0 and cols[2].r == 20
+
+    # ROWS — row_span=2 cell must NOT stretch row 0 / row 1 along l/r.
+    rows = table.get_row_bounding_boxes(minimal=True)
+    # row 0 stripe on page is l=0..10; the row_span cell adds t-extent only.
+    assert (rows[0].l, rows[0].r) == (0, 10)
+    assert rows[0].t == 0 and rows[0].b == 30
+    # row 1 stripe on page is l=10..20; row_span cell again adds only t-extent.
+    assert (rows[1].l, rows[1].r) == (10, 20)
+    assert rows[1].t == 0 and rows[1].b == 30
+
+    # Non-overlap property: row bboxes (and col bboxes) must be pairwise
+    # disjoint when cell bboxes are sane and separated.
+    for a, b in itertools.combinations(rows.values(), 2):
+        assert a.intersection_area_with(b) == 0
+    for a, b in itertools.combinations(cols.values(), 2):
+        assert a.intersection_area_with(b) == 0
+    # Same check in minimal=False mode.
+    rows_nm = table.get_row_bounding_boxes(minimal=False)
+    cols_nm = table.get_column_bounding_boxes(minimal=False)
+    for a, b in itertools.combinations(rows_nm.values(), 2):
+        assert a.intersection_area_with(b) == 0
+    for a, b in itertools.combinations(cols_nm.values(), 2):
+        assert a.intersection_area_with(b) == 0
+
+
+def test_table_data_horizontal_bounding_boxes_with_spans_no_overlap():
+    """Horizontal table with spanning cells: row/col bboxes must not overlap."""
+    # 3 rows x 3 cols horizontal table with one col_span=2 and one row_span=2 cell.
+    cells = [
+        TableCell(
+            text="r0c0",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(  # col_span=2
+            text="r0c1+c2",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=3,
+            bbox=BoundingBox(l=10, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(  # row_span=2
+            text="r1+r2,c0",
+            start_row_offset_idx=1,
+            end_row_offset_idx=3,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            bbox=BoundingBox(l=0, t=10, r=10, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c1",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=10, r=20, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r1c2",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
+            bbox=BoundingBox(l=20, t=10, r=30, b=20, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r2c1",
+            start_row_offset_idx=2,
+            end_row_offset_idx=3,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+        TableCell(
+            text="r2c2",
+            start_row_offset_idx=2,
+            end_row_offset_idx=3,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
+            bbox=BoundingBox(l=20, t=20, r=30, b=30, coord_origin=CoordOrigin.TOPLEFT),
+        ),
+    ]
+    table = TableData(num_rows=3, num_cols=3, table_cells=cells)
+
+    for minimal in (True, False):
+        rows = table.get_row_bounding_boxes(minimal=minimal)
+        cols = table.get_column_bounding_boxes(minimal=minimal)
+        for a, b in itertools.combinations(rows.values(), 2):
+            assert a.intersection_area_with(b) == 0, f"row overlap (minimal={minimal})"
+        for a, b in itertools.combinations(cols.values(), 2):
+            assert a.intersection_area_with(b) == 0, f"col overlap (minimal={minimal})"

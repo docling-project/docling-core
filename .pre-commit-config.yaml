@@ -1,16 +1,18 @@
 fail_fast: true
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.5
+    rev: v0.15.17
     hooks:
+      - id: ruff-check
+        name: "Ruff linter"
+        args: [--exit-non-zero-on-fix, --fix, --config=pyproject.toml]
+        files: '^(docling_core|test|docs/examples|examples).*\.(py|ipynb)$'
+        pass_filenames: false
       - id: ruff-format
         name: "Ruff formatter"
         args: [--config=pyproject.toml]
-        files: '^(docling_core|tests|docs/examples).*\.(py|ipynb)$'
-      - id: ruff
-        name: "Ruff linter"
-        args: [--exit-non-zero-on-fix, --fix, --config=pyproject.toml]
-        files: '^(docling_core|tests|docs/examples).*\.(py|ipynb)$'
+        files: '^(docling_core|test|docs/examples|examples).*\.(py|ipynb)$'
+        pass_filenames: false
   - repo: local
     hooks:
       - id: mypy
@@ -36,6 +38,10 @@ repos:
         language: system
         files: '\.py$'
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.7.8
+    rev: 0.11.21
     hooks:
       - id: uv-lock
+        name: "uv lockfile"
+        entry: uv lock
+        pass_filenames: false
+        language: system

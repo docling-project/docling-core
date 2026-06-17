@@ -123,7 +123,6 @@ def test_file_info_object():
 
 def test_collection_info():
     """Validate data with CollectionInfo model."""
-
     # Test 1
     gold_dict = {
         "name": "patent USPTO",

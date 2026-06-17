@@ -13,7 +13,97 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "A condensed natural-language summary of the content rooted at this node.",
+          "examples": [
+            {
+              "text": "A short company/location statement."
+            }
+          ]
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The detected human language of the node content, expressed as a BCP 47 code.",
+          "examples": [
+            {
+              "code": "en"
+            }
+          ]
+        },
+        "entities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EntitiesMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Named entities extracted from the node text (persons, organisations, locations, etc.). Each mention carries the entity text, an optional type label, and an optional character span.",
+          "examples": [
+            {
+              "mentions": [
+                {
+                  "charspan": [
+                    0,
+                    3
+                  ],
+                  "label": "ORG",
+                  "text": "IBM"
+                }
+              ]
+            }
+          ]
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Salient terms or short keyphrases that characterise the node content. Keywords are more specific than topics and typically correspond to individual words or short multi-word expressions found in or closely related to the text. Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "transformer",
+                "attention mechanism",
+                "BERT"
+              ]
+            }
+          ]
+        },
+        "topics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Higher-level subject categories or thematic labels inferred for the node content. Topics are broader than keywords and describe the domain or theme rather than specific terms (e.g., 'machine learning' rather than 'gradient descent'). Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "natural language processing",
+                "computer vision"
+              ]
+            }
+          ]
         }
       },
       "title": "BaseMeta",
@@ -615,6 +705,126 @@
       "title": "DocumentOrigin",
       "type": "object"
     },
+    "EntitiesMetaField": {
+      "additionalProperties": true,
+      "description": "Container for extracted entity mentions.",
+      "properties": {
+        "mentions": {
+          "items": {
+            "$ref": "#/$defs/EntityMention"
+          },
+          "minItems": 1,
+          "title": "Mentions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "mentions"
+      ],
+      "title": "EntitiesMetaField",
+      "type": "object"
+    },
+    "EntityMention": {
+      "additionalProperties": true,
+      "description": "Entity mention extracted from text.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "text": {
+          "description": "Normalized text of the entity mention.",
+          "title": "Text",
+          "type": "string"
+        },
+        "orig": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact source text extracted from the original charspan, analogous to TextItem.orig. This may differ from 'text' when the mention has been normalized.",
+          "title": "Orig"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Entity type or category.",
+          "title": "Label"
+        },
+        "charspan": {
+          "anyOf": [
+            {
+              "description": "Character span (0-indexed)",
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Character span (0-indexed) of the entity mention in the source text.",
+          "title": "Charspan"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "EntityMention",
+      "type": "object"
+    },
     "FieldHeadingItem": {
       "additionalProperties": false,
       "properties": {
@@ -1119,7 +1329,97 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "A condensed natural-language summary of the content rooted at this node.",
+          "examples": [
+            {
+              "text": "A short company/location statement."
+            }
+          ]
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The detected human language of the node content, expressed as a BCP 47 code.",
+          "examples": [
+            {
+              "code": "en"
+            }
+          ]
+        },
+        "entities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EntitiesMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Named entities extracted from the node text (persons, organisations, locations, etc.). Each mention carries the entity text, an optional type label, and an optional character span.",
+          "examples": [
+            {
+              "mentions": [
+                {
+                  "charspan": [
+                    0,
+                    3
+                  ],
+                  "label": "ORG",
+                  "text": "IBM"
+                }
+              ]
+            }
+          ]
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Salient terms or short keyphrases that characterise the node content. Keywords are more specific than topics and typically correspond to individual words or short multi-word expressions found in or closely related to the text. Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "transformer",
+                "attention mechanism",
+                "BERT"
+              ]
+            }
+          ]
+        },
+        "topics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Higher-level subject categories or thematic labels inferred for the node content. Topics are broader than keywords and describe the domain or theme rather than specific terms (e.g., 'machine learning' rather than 'gradient descent'). Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "natural language processing",
+                "computer vision"
+              ]
+            }
+          ]
         },
         "description": {
           "anyOf": [
@@ -1622,6 +1922,198 @@
       "title": "GroupLabel",
       "type": "string"
     },
+    "HumanLanguageLabel": {
+      "description": "Two-letter human language primary subtags using BCP-47 values.",
+      "enum": [
+        "aa",
+        "ab",
+        "ae",
+        "af",
+        "ak",
+        "am",
+        "an",
+        "ar",
+        "as",
+        "av",
+        "ay",
+        "az",
+        "ba",
+        "be",
+        "bg",
+        "bh",
+        "bi",
+        "bm",
+        "bn",
+        "bo",
+        "br",
+        "bs",
+        "ca",
+        "ce",
+        "ch",
+        "co",
+        "cr",
+        "cs",
+        "cu",
+        "cv",
+        "cy",
+        "da",
+        "de",
+        "dv",
+        "dz",
+        "ee",
+        "el",
+        "en",
+        "eo",
+        "es",
+        "et",
+        "eu",
+        "fa",
+        "ff",
+        "fi",
+        "fj",
+        "fo",
+        "fr",
+        "fy",
+        "ga",
+        "gd",
+        "gl",
+        "gn",
+        "gu",
+        "gv",
+        "ha",
+        "he",
+        "hi",
+        "ho",
+        "hr",
+        "ht",
+        "hu",
+        "hy",
+        "hz",
+        "ia",
+        "id",
+        "ie",
+        "ig",
+        "ii",
+        "ik",
+        "io",
+        "is",
+        "it",
+        "iu",
+        "ja",
+        "jv",
+        "ka",
+        "kg",
+        "ki",
+        "kj",
+        "kk",
+        "kl",
+        "km",
+        "kn",
+        "ko",
+        "kr",
+        "ks",
+        "ku",
+        "kv",
+        "kw",
+        "ky",
+        "la",
+        "lb",
+        "lg",
+        "li",
+        "ln",
+        "lo",
+        "lt",
+        "lu",
+        "lv",
+        "mg",
+        "mh",
+        "mi",
+        "mk",
+        "ml",
+        "mn",
+        "mr",
+        "ms",
+        "mt",
+        "my",
+        "na",
+        "nb",
+        "nd",
+        "ne",
+        "ng",
+        "nl",
+        "nn",
+        "no",
+        "nr",
+        "nv",
+        "ny",
+        "oc",
+        "oj",
+        "om",
+        "or",
+        "os",
+        "pa",
+        "pi",
+        "pl",
+        "ps",
+        "pt",
+        "qu",
+        "rm",
+        "rn",
+        "ro",
+        "ru",
+        "rw",
+        "sa",
+        "sc",
+        "sd",
+        "se",
+        "sg",
+        "sh",
+        "si",
+        "sk",
+        "sl",
+        "sm",
+        "sn",
+        "so",
+        "sq",
+        "sr",
+        "ss",
+        "st",
+        "su",
+        "sv",
+        "sw",
+        "ta",
+        "te",
+        "tg",
+        "th",
+        "ti",
+        "tk",
+        "tl",
+        "tn",
+        "to",
+        "tr",
+        "ts",
+        "tt",
+        "tw",
+        "ty",
+        "ug",
+        "uk",
+        "ur",
+        "uz",
+        "ve",
+        "vi",
+        "vo",
+        "wa",
+        "wo",
+        "xh",
+        "yi",
+        "yo",
+        "za",
+        "zh",
+        "zu"
+      ],
+      "title": "HumanLanguageLabel",
+      "type": "string"
+    },
     "ImageRef": {
       "description": "ImageRef.",
       "properties": {
@@ -1849,6 +2341,75 @@
         "graph"
       ],
       "title": "KeyValueItem",
+      "type": "object"
+    },
+    "KeywordsMetaField": {
+      "additionalProperties": true,
+      "description": "Container for a list of unique keywords / keyphrases.",
+      "properties": {
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "values"
+      ],
+      "title": "KeywordsMetaField",
+      "type": "object"
+    },
+    "LanguageMetaField": {
+      "additionalProperties": true,
+      "description": "Detected human language.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "code": {
+          "$ref": "#/$defs/HumanLanguageLabel"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "LanguageMetaField",
       "type": "object"
     },
     "ListGroup": {
@@ -2123,6 +2684,17 @@
       ],
       "title": "MoleculeMetaField",
       "type": "object"
+    },
+    "Orientation": {
+      "description": "Counter-clockwise rotation of a table on the page, in degrees.\n\nFollows the convention used by PIL/Pillow's ``Image.rotate``: positive\nangles rotate the table counter-clockwise. ``ROT_0`` / ``ROT_180`` keep\nrows running horizontally on the page; ``ROT_90`` / ``ROT_270`` turn\nrows into vertical stripes.",
+      "enum": [
+        "rot_0",
+        "rot_90",
+        "rot_180",
+        "rot_270"
+      ],
+      "title": "Orientation",
+      "type": "string"
     },
     "PageItem": {
       "description": "PageItem.",
@@ -2539,7 +3111,97 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "A condensed natural-language summary of the content rooted at this node.",
+          "examples": [
+            {
+              "text": "A short company/location statement."
+            }
+          ]
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The detected human language of the node content, expressed as a BCP 47 code.",
+          "examples": [
+            {
+              "code": "en"
+            }
+          ]
+        },
+        "entities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EntitiesMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Named entities extracted from the node text (persons, organisations, locations, etc.). Each mention carries the entity text, an optional type label, and an optional character span.",
+          "examples": [
+            {
+              "mentions": [
+                {
+                  "charspan": [
+                    0,
+                    3
+                  ],
+                  "label": "ORG",
+                  "text": "IBM"
+                }
+              ]
+            }
+          ]
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeywordsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Salient terms or short keyphrases that characterise the node content. Keywords are more specific than topics and typically correspond to individual words or short multi-word expressions found in or closely related to the text. Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "transformer",
+                "attention mechanism",
+                "BERT"
+              ]
+            }
+          ]
+        },
+        "topics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicsMetaField"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Higher-level subject categories or thematic labels inferred for the node content. Topics are broader than keywords and describe the domain or theme rather than specific terms (e.g., 'machine learning' rather than 'gradient descent'). Values are order-preserving and deduplicated.",
+          "examples": [
+            {
+              "values": [
+                "natural language processing",
+                "computer vision"
+              ]
+            }
+          ]
         },
         "description": {
           "anyOf": [
@@ -3227,6 +3889,10 @@
           "default": 0,
           "title": "Num Cols",
           "type": "integer"
+        },
+        "orientation": {
+          "$ref": "#/$defs/Orientation",
+          "default": "rot_0"
         }
       },
       "title": "TableData",
@@ -3722,6 +4388,26 @@
         "text"
       ],
       "title": "TitleItem",
+      "type": "object"
+    },
+    "TopicsMetaField": {
+      "additionalProperties": true,
+      "description": "Container for a list of unique topics / subjects.",
+      "properties": {
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "values"
+      ],
+      "title": "TopicsMetaField",
       "type": "object"
     },
     "TrackSource": {

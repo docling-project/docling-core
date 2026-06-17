@@ -1,0 +1,26 @@
+<doclang>
+  <table>
+    <ched/>
+    Header 1
+    <ched/>
+    Header 2
+    <nl/>
+    <fcel/>
+    Data 1
+    <fcel/>
+    Data 2
+    <nl/>
+  </table>
+  <index>
+    <fcel/>
+    Index 1
+    <fcel/>
+    Page 1
+    <nl/>
+    <fcel/>
+    Index 2
+    <fcel/>
+    Page 2
+    <nl/>
+  </index>
+</doclang>

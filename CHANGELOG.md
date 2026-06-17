@@ -1,3 +1,89 @@
+## [v2.82.0](https://github.com/docling-project/docling-core/releases/tag/v2.82.0) - 2026-06-12
+
+### Feature
+
+* **doclang:** Align with DocLang v0.6, add field region deser. ([#636](https://github.com/docling-project/docling-core/issues/636)) ([`0b76905`](https://github.com/docling-project/docling-core/commit/0b7690509e6e01f4aa342300919e53a115531b51))
+
+## [v2.81.0](https://github.com/docling-project/docling-core/releases/tag/v2.81.0) - 2026-06-10
+
+### Feature
+
+* Make HTTP downloads respect file-size limits and abort early ([#635](https://github.com/docling-project/docling-core/issues/635)) ([`d585a13`](https://github.com/docling-project/docling-core/commit/d585a1377528105b28a0072a587accc27406195f))
+
+### Fix
+
+* Externalize page images in REFERENCED mode for JSON/YAML export ([#634](https://github.com/docling-project/docling-core/issues/634)) ([`7b47b5a`](https://github.com/docling-project/docling-core/commit/7b47b5a50605789d7bfdd72b548cd0d14ea37531))
+
+## [v2.80.0](https://github.com/docling-project/docling-core/releases/tag/v2.80.0) - 2026-06-09
+
+### Feature
+
+* **doclang:** Promote serializer and deserializer ([#633](https://github.com/docling-project/docling-core/issues/633)) ([`5d740c2`](https://github.com/docling-project/docling-core/commit/5d740c260ad680d05596bd6f9dfe4eeb73d408e0))
+
+## [v2.79.0](https://github.com/docling-project/docling-core/releases/tag/v2.79.0) - 2026-06-05
+
+### Feature
+
+* **meta:** Add keywords and topics metadata fields ([#617](https://github.com/docling-project/docling-core/issues/617)) ([`129507e`](https://github.com/docling-project/docling-core/commit/129507ebd2c5f5f68364e6fa6caecca936e2cbf3))
+
+## [v2.78.1](https://github.com/docling-project/docling-core/releases/tag/v2.78.1) - 2026-06-04
+
+### Fix
+
+* Pin transformers<5.9.0 to solve MPS issue ([#625](https://github.com/docling-project/docling-core/issues/625)) ([`d441e6e`](https://github.com/docling-project/docling-core/commit/d441e6ece33f1534c207fca19aa519f370c68d40))
+* Reject unsupported URL schemes ([#604](https://github.com/docling-project/docling-core/issues/604)) ([`701c0ce`](https://github.com/docling-project/docling-core/commit/701c0ce5d14e57c19e030aff8fb1d335bf2431a7))
+
+## [v2.78.0](https://github.com/docling-project/docling-core/releases/tag/v2.78.0) - 2026-05-29
+
+### Feature
+
+* Support vertical orientation in TableData row/column bounding boxes ([#622](https://github.com/docling-project/docling-core/issues/622)) ([`c1c9ea8`](https://github.com/docling-project/docling-core/commit/c1c9ea80a58feea6c11378d9c54ea02479da0c78))
+
+### Fix
+
+* **html-serializer:** Emit XHTML-compatible metadata attributes ([#613](https://github.com/docling-project/docling-core/issues/613)) ([`b20b567`](https://github.com/docling-project/docling-core/commit/b20b5677c06ea8cd5b025737e4621f92c6c6c020))
+* **chunking:** Handle empty TripletTableSerializer output without consuming children ([#596](https://github.com/docling-project/docling-core/issues/596)) ([`507df71`](https://github.com/docling-project/docling-core/commit/507df717c1e63e54de693cc164a2ae051e00e7f6))
+
+## [v2.77.1](https://github.com/docling-project/docling-core/releases/tag/v2.77.1) - 2026-05-26
+
+### Fix
+
+* Render RichTableCell descendants inside the cell ([#621](https://github.com/docling-project/docling-core/issues/621)) ([`01f8d03`](https://github.com/docling-project/docling-core/commit/01f8d03cda09ccb5ea0ba2c8c65cffd1858bdada))
+
+## [v2.77.0](https://github.com/docling-project/docling-core/releases/tag/v2.77.0) - 2026-05-19
+
+### Feature
+
+* Extending BaseMeta with language and entities for docling-agent ([#611](https://github.com/docling-project/docling-core/issues/611)) ([`9187158`](https://github.com/docling-project/docling-core/commit/9187158ef81fc4ae8e38c02e8466c78ad03dfd31))
+
+## [v2.76.0](https://github.com/docling-project/docling-core/releases/tag/v2.76.0) - 2026-05-18
+
+### Feature
+
+* Updated the table visualization ([#615](https://github.com/docling-project/docling-core/issues/615)) ([`b6c3d6f`](https://github.com/docling-project/docling-core/commit/b6c3d6fb1463df7d9d353028ea36d669fff1293e))
+
+## [v2.75.0](https://github.com/docling-project/docling-core/releases/tag/v2.75.0) - 2026-05-12
+
+### Feature
+
+* Updated the HTML serialization ([#609](https://github.com/docling-project/docling-core/issues/609)) ([`014948b`](https://github.com/docling-project/docling-core/commit/014948b0e86b34af36843479773ab2d7718bf7df))
+
+### Fix
+
+* **DocLang:** Fix chemistry serialization. ([#607](https://github.com/docling-project/docling-core/issues/607)) ([`48c5b97`](https://github.com/docling-project/docling-core/commit/48c5b97593defb632405b8351b1ba73dc5b057b6))
+
+### Documentation
+
+* **security:** Document security processes ([#606](https://github.com/docling-project/docling-core/issues/606)) ([`6a6512e`](https://github.com/docling-project/docling-core/commit/6a6512ebe48e88974117dcecbb29d41b66b9f8d0))
+
+## [v2.74.1](https://github.com/docling-project/docling-core/releases/tag/v2.74.1) - 2026-04-22
+
+### Fix
+
+* Refine ImageRef URI handling ([#595](https://github.com/docling-project/docling-core/issues/595)) ([`2087d0f`](https://github.com/docling-project/docling-core/commit/2087d0f362619be71df50ad4bf3d0a975e15108b))
+* **doclang:** Default DoclangDeserializer to page 1 ([#590](https://github.com/docling-project/docling-core/issues/590)) ([`048f172`](https://github.com/docling-project/docling-core/commit/048f1720f6b7cbe939974918c93c44d0bebd6f4b))
+* Refine remote filename handling ([#591](https://github.com/docling-project/docling-core/issues/591)) ([`473fbac`](https://github.com/docling-project/docling-core/commit/473fbacfb938eaad4ff2136ff3860043473e3595))
+
 ## [v2.74.0](https://github.com/docling-project/docling-core/releases/tag/v2.74.0) - 2026-04-17
 
 ### Feature

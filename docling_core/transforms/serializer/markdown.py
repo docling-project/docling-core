@@ -51,6 +51,7 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    KeywordsMetaField,
     ListGroup,
     ListItem,
     MoleculeMetaField,
@@ -67,6 +68,7 @@ from docling_core.types.doc.document import (
     TabularChartMetaField,
     TextItem,
     TitleItem,
+    TopicsMetaField,
 )
 
 _logger = logging.getLogger(__name__)
@@ -364,6 +366,8 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
+            elif isinstance(field_val, KeywordsMetaField | TopicsMetaField):
+                txt = ", ".join(field_val.values)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
             elif isinstance(field_val, PictureClassificationMetaField):
@@ -439,7 +443,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
             A tuple of (header_lines, body_lines) where header_lines contains
             the header row and separator row, and body_lines contains the data rows.
         """
-
         lines = [line for line in table_text.splitlines(True) if line.strip()]
 
         if len(lines) < 2:

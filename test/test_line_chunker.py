@@ -71,7 +71,6 @@ def test_chunk_text_long_prefix_warning(default_tokenizer):
 
 def test_chunk_text_single_long_line(default_tokenizer):
     """Test chunking when a single line exceeds max_tokens."""
-
     chunker = LineBasedTokenChunker(
         tokenizer=default_tokenizer,
     )
@@ -190,14 +189,15 @@ def test_chunk_text_with_prefix_and_long_lines(default_tokenizer):
         assert token_count <= MAX_TOKENS
 
 
-
 def test_chunk_document(default_tokenizer):
     """Test the chunk() method with a DoclingDocument."""
     # Create a simple DoclingDocument
     doc = DLDocument(name="test_doc")
-    paragraphs = ["This is the first paragraph with some content.",
-    "This is the second paragraph with more content",
-    "This is the third paragraph with even more content."]
+    paragraphs = [
+        "This is the first paragraph with some content.",
+        "This is the second paragraph with more content",
+        "This is the third paragraph with even more content.",
+    ]
 
     # Add some text items to the document
     for t in paragraphs:
@@ -225,7 +225,7 @@ def test_chunk_document(default_tokenizer):
         token_count = chunker.tokenizer.count_tokens(chunk.text)
         assert token_count <= MAX_TOKENS
 
-     # Verify each paragraph resides fully in a chunk
+    # Verify each paragraph resides fully in a chunk
     for t in paragraphs:
         assert any(t in c.text for c in chunks)
 
@@ -257,10 +257,7 @@ def test_chunk_document_with_long_content(default_tokenizer):
     long_text = "This is a sentence with multiple words. " * 50
     doc.add_text(label=DocItemLabel.PARAGRAPH, text=long_text)
 
-    chunker = LineBasedTokenChunker(
-        tokenizer=default_tokenizer,
-        prefix=prefix
-    )
+    chunker = LineBasedTokenChunker(tokenizer=default_tokenizer, prefix=prefix)
 
     # Chunk the document
     chunks = list(chunker.chunk(doc))
@@ -276,8 +273,7 @@ def test_chunk_document_with_long_content(default_tokenizer):
 
 
 def test_infinite_loop_regression_long_unbreakable_token(default_tokenizer):
-    """
-    Regression test for infinite loop bug when processing text with a long
+    """Regression test for infinite loop bug when processing text with a long
     unbreakable token sequence preceded by a space.
 
     This test reproduces the issue where LineBasedTokenChunker.chunk_text()
@@ -307,8 +303,7 @@ def test_infinite_loop_regression_long_unbreakable_token(default_tokenizer):
 
 
 def test_split_by_token_limit_leading_space_regression(default_tokenizer):
-    """
-    Test that split_by_token_limit handles text with leading space correctly.
+    """Test that split_by_token_limit handles text with leading space correctly.
 
     Previously, when text started with a space followed by unbreakable content,
     the word boundary snap-back could produce an empty head, causing infinite loops.
@@ -338,8 +333,7 @@ def test_split_by_token_limit_leading_space_regression(default_tokenizer):
 
 
 def test_character_level_fallback_on_zero_available(default_tokenizer):
-    """
-    Test that chunk_text uses character-level fallback when available space is 0.
+    """Test that chunk_text uses character-level fallback when available space is 0.
 
     This test demonstrates a real scenario where the fallback is needed:
     1. Current chunk is exactly at max_tokens (available = 0)
@@ -362,8 +356,7 @@ def test_character_level_fallback_on_zero_available(default_tokenizer):
     # Verify second line is indeed > max_tokens
     second_line_tokens = chunker.tokenizer.count_tokens(second_line)
     assert second_line_tokens > MAX_TOKENS, (
-        f"Second line must exceed max_tokens for test to work: "
-        f"{second_line_tokens} <= {MAX_TOKENS}"
+        f"Second line must exceed max_tokens for test to work: {second_line_tokens} <= {MAX_TOKENS}"
     )
 
     lines = [first_line, second_line]
@@ -397,7 +390,7 @@ def test_omit_prefix_on_overflow_false(default_tokenizer):
 
     # Create a line that fits without prefix but not with prefix
     # prefix_len is around 2 tokens, create a line that's just 1 token short
-    line = "word " * (MAX_TOKENS - 1) 
+    line = "word " * (MAX_TOKENS - 1)
     line_tokens = chunker.tokenizer.count_tokens(line)
 
     # Verify test setup: line should fit alone but not with prefix
@@ -571,7 +564,9 @@ def test_omit_prefix_on_overflow_with_line_splitting(default_tokenizer):
     # At least the overflow chunks (after the first) should not have prefix
     if len(chunks) > 1:
         for i in range(1, len(chunks)):
-            assert not chunks[i].startswith(prefix), f"Overflow chunk {i} should NOT have prefix with omit_prefix_on_overflow=True"
+            assert not chunks[i].startswith(prefix), (
+                f"Overflow chunk {i} should NOT have prefix with omit_prefix_on_overflow=True"
+            )
 
 
 def test_omit_prefix_on_overflow_false_with_line_splitting(default_tokenizer):
@@ -603,6 +598,7 @@ def test_omit_prefix_on_overflow_false_with_line_splitting(default_tokenizer):
 
         # All chunks should have the prefix when omit_prefix_on_overflow=False
         assert chunk.startswith(prefix), f"Chunk {i} should have prefix with omit_prefix_on_overflow=False"
+
 
 def test_omit_prefix_on_overflow_warning(default_tokenizer):
     """Test that a warning is issued once when prefix is actually omitted."""
@@ -648,6 +644,7 @@ def test_omit_prefix_on_overflow_no_warning_when_not_omitted(default_tokenizer):
 
     # Should NOT warn since prefix is never omitted
     import warnings as warnings_module
+
     with warnings_module.catch_warnings(record=True) as warning_list:
         warnings_module.simplefilter("always")
         lines = [small_line, small_line, small_line]
@@ -698,9 +695,7 @@ def test_omit_prefix_on_overflow_warning_on_split_line(default_tokenizer):
 
 
 def test_omit_prefix_on_overflow_all_lines_overflow(default_tokenizer):
-    """
-    Test edge case where omit_prefix_on_overflow=True and ALL lines overflow with prefix.
-    """
+    """Test edge case where omit_prefix_on_overflow=True and ALL lines overflow with prefix."""
     prefix = "HEADER: Column1 | Column2 | Column3\n"
 
     chunker = LineBasedTokenChunker(
@@ -747,4 +742,3 @@ def test_omit_prefix_on_overflow_all_lines_overflow(default_tokenizer):
     for line in lines:
         line_found = any(line.strip() in chunk for chunk in chunks)
         assert line_found, f"Line content should be preserved: {line.strip()}"
-

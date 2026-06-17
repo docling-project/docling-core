@@ -1,4 +1,4 @@
-<doclang version="1.0.0">
+<doclang>
   <text>
     <location value="5"/>
     <location value="492"/>
@@ -8,12 +8,12 @@
     <bold>Two</bold>
 Three
   </text>
-  <list ordered="false">
-    <list_text>Item 1</list_text>
-    <list_text>
-      Four
-      <bold>Five</bold>
+  <list>
+    <ldiv/>
+    Item 1
+    <ldiv/>
+    Four
+    <bold>Five</bold>
 Six
-    </list_text>
   </list>
 </doclang>

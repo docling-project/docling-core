@@ -1,31 +1,38 @@
-<doclang version="1.0.0">
+<doclang>
   <text>Simple text</text>
   <text>
     <content>Here a code snippet: </content>
-    <code class="Python">help()</code>
+    <code>
+      <label value="Python"/>
+      help()
+    </code>
     <content> (to be shown)</content>
   </text>
-  <list ordered="false">
-    <list_text>foo</list_text>
-    <list_text>bar</list_text>
-    <list_text>
-      <content>Here a formula: </content>
-      <formula>
-        <content>E=mc^2 </content>
-      </formula>
+  <list>
+    <ldiv/>
+    foo
+    <ldiv/>
+    bar
+    <ldiv/>
+    <content>Here a formula: </content>
+    <formula>
+      <content>E=mc^2 </content>
+    </formula>
 in line
-    </list_text>
-    <list_text>
-      <content>Here a </content>
-      <bold>bold</bold>
-      <content> text</content>
-    </list_text>
-    <list_text>will contain sublist</list_text>
-    <list ordered="false">
-      <list_text>sublist item 1</list_text>
-      <list_text>sublist item 2</list_text>
+    <ldiv/>
+    <content>Here a </content>
+    <bold>bold</bold>
+    <content> text</content>
+    <ldiv/>
+    <text>will contain sublist</text>
+    <list>
+      <ldiv/>
+      sublist item 1
+      <ldiv/>
+      sublist item 2
     </list>
-    <list_text>
+    <ldiv/>
+    <text>
       <location value="5"/>
       <location value="492"/>
       <location value="15"/>
@@ -35,11 +42,14 @@ in line
         <bold>both bold and italicized</bold>
       </italic>
       <content> text and a sublist:</content>
-    </list_text>
-    <list ordered="false">
-      <list_text>sublist item a</list_text>
-      <list_text>sublist item b</list_text>
+    </text>
+    <list>
+      <ldiv/>
+      sublist item a
+      <ldiv/>
+      sublist item b
     </list>
-    <list_text>final element</list_text>
+    <ldiv/>
+    final element
   </list>
 </doclang>

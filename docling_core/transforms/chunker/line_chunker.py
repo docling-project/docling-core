@@ -287,27 +287,19 @@ class LineBasedTokenChunker(BaseChunker):
         token_limit: int,
         prefer_word_boundary: bool = True,
     ) -> tuple[str, str]:
-        """
-        Split `text` into (head, tail) where `head` has at most `token_limit` tokens,
+        """Split `text` into (head, tail) where `head` has at most `token_limit` tokens,
         and `tail` is the remainder. Uses binary search on character indices to minimize
         calls to `count_tokens`.
 
-        Parameters
-        ----------
-        text : str
-            Input string to split.
-        token_limit: int
-            Maximum number of tokens allowed in the head.
-        prefer_word_boundary : bool
-            If True, try to end the head on a whitespace boundary (without violating
-            the token limit). If no boundary exists in range, fall back to the
-            exact max index found by search.
+        Args:
+            text: Input string to split.
+            token_limit: Maximum number of tokens allowed in the head.
+            prefer_word_boundary: If True, try to end the head on a whitespace boundary (without violating
+                the token limit). If no boundary exists in range, fall back to the
+                exact max index found by search.
 
-        Returns
-        -------
-        (head, tail) : tuple[str, str]
-            `head` contains at most `token_limit` tokens, `tail` is the remaining suffix.
-            If `token_limit <= 0`, returns ("", text).
+        Returns:
+           (head, tail) where `head` contains at most `token_limit` tokens, `tail` is the remaining suffix. If `token_limit <= 0`, returns ("", text).
         """
         if token_limit <= 0 or not text:
             return "", text
