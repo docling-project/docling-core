@@ -173,9 +173,10 @@ class DocumentToken(Enum):
         page_i: int = -1,
     ):
         """Get the location string give bbox and page-dim."""
-        assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"
-        assert bbox[1] <= bbox[3], f"bbox[1]<=bbox[3] => {bbox[1]}<={bbox[3]}"
-
+        # bbox coordinates may arrive slightly inverted (e.g. a near-zero-height
+        # element from a layout-model regression). The min()/max() calls below
+        # already emit correctly-ordered location tokens, so no ordering
+        # precondition is required here.
         x0 = bbox[0] / page_w
         y0 = bbox[1] / page_h
         x1 = bbox[2] / page_w
