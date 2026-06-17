@@ -3947,6 +3947,21 @@ class DoclingDocument(BaseModel):
                     else:
                         resume_node = None
 
+                # Skip items that are descendants of FloatingItem containers (tables, pictures, key-values, forms)
+                # These have structural parent-child relationships that must be preserved:
+                if item.parent:
+                    curr = item
+                    is_floating_descendant = False
+                    while curr.parent is not None:
+                        parent = curr.parent.resolve(doc=self)
+                        if isinstance(parent, FloatingItem):
+                            is_floating_descendant = True
+                            break
+                        curr = parent
+
+                    if is_floating_descendant:
+                        continue
+
                 # determine which section root this item should belong to
                 introduced_level = self._get_heading_level(node=item)
                 target_root_level = -1
