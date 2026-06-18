@@ -1,3 +1,20 @@
+## [v2.83.0](https://github.com/docling-project/docling-core/releases/tag/v2.83.0) - 2026-06-18
+
+### Feature
+
+* **doclang:** Default `include_version` to `True` ([#642](https://github.com/docling-project/docling-core/issues/642)) ([`34bd98e`](https://github.com/docling-project/docling-core/commit/34bd98eb3d70c1ac1918e8a17e7829a80f0740b4))
+
+### Fix
+
+* Handle page-less documents in table doctags export ([#632](https://github.com/docling-project/docling-core/issues/632)) ([`8ad52a3`](https://github.com/docling-project/docling-core/commit/8ad52a3596fccd2b23deece0fffbbbdb7b41ae77))
+* Clamp provenance bboxes and DocLang locations to valid page bounds ([#643](https://github.com/docling-project/docling-core/issues/643)) ([`9dddcf7`](https://github.com/docling-project/docling-core/commit/9dddcf7137eed76fc677903919ec5cfea2dfe7a5))
+* Collapse consecutive names in concatenate output ([#645](https://github.com/docling-project/docling-core/issues/645)) ([`6fd2c1a`](https://github.com/docling-project/docling-core/commit/6fd2c1a2477a3494c90eb3fbd4aa52cba65ce6c5))
+* **doctags:** Stop extract_inner_text deleting text between < and > ([#627](https://github.com/docling-project/docling-core/issues/627)) ([`7e4a272`](https://github.com/docling-project/docling-core/commit/7e4a2729e37e68306d136f527b4cb82476f5d95a))
+
+### Performance
+
+* Use OpenCV over PIL for PNG encoding in `ImageRef.from_pil` ([#562](https://github.com/docling-project/docling-core/issues/562)) ([`ab3666c`](https://github.com/docling-project/docling-core/commit/ab3666c081c7ae91bcf274400030a47703889bdc))
+
 ## [v2.82.0](https://github.com/docling-project/docling-core/releases/tag/v2.82.0) - 2026-06-12
 
 ### Feature
