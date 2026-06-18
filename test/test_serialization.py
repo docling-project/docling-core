@@ -24,8 +24,8 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument
-from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc import DoclingDocument, PageMeta
+from docling_core.types.doc.base import ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
@@ -72,6 +72,48 @@ def verify(exp_file: Path, actual: str):
 # ===============================
 # Markdown tests
 # ===============================
+
+
+def test_page_item_meta_round_trips_in_exported_document():
+    doc = DoclingDocument(name="page meta")
+    page_meta = PageMeta(
+        summary=SummaryMetaField(
+            text="Summary of page 1",
+            created_by="page-summary-model",
+        ),
+    )
+    page_meta.set_custom_field(
+        namespace="research",
+        name="source_scope",
+        value={"source_type": "10-K", "valid_as_of": "2026-06-18"},
+    )
+
+    doc.add_page(
+        page_no=1,
+        size=Size(width=612, height=792),
+        meta=page_meta,
+    )
+
+    exported = doc.export_to_dict()
+    assert exported["pages"]["1"]["meta"]["summary"] == {
+        "text": "Summary of page 1",
+        "created_by": "page-summary-model",
+    }
+    assert exported["pages"]["1"]["meta"]["research__source_scope"] == {
+        "source_type": "10-K",
+        "valid_as_of": "2026-06-18",
+    }
+
+    loaded = DoclingDocument.model_validate(exported)
+    assert loaded.pages[1].meta is not None
+    assert loaded.pages[1].meta.summary is not None
+    assert loaded.pages[1].meta.summary.text == "Summary of page 1"
+    assert loaded.pages[1].meta.get_custom_part() == {
+        "research__source_scope": {
+            "source_type": "10-K",
+            "valid_as_of": "2026-06-18",
+        },
+    }
 
 
 def test_md_cross_page_list_page_break():
