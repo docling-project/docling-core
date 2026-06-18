@@ -2925,6 +2925,142 @@ class DoclingDocument(BaseModel):
 
         return dumped
 
+    @staticmethod
+    def _clamp_location_coordinate(
+        *,
+        value: float,
+        lo: float,
+        hi: float,
+        tolerance: float,
+        page_no: int,
+        bbox_label: str,
+        coord_name: str,
+    ) -> float:
+        clamped = min(max(value, lo), hi)
+        if clamped != value and abs(value - clamped) > tolerance:
+            if value < lo:
+                warnings.warn(
+                    f"{bbox_label} coordinate {coord_name} on page {page_no} is outside page bounds: "
+                    f"{value=} < {lo=}; clamping to {lo}",
+                    stacklevel=3,
+                )
+            else:
+                warnings.warn(
+                    f"{bbox_label} coordinate {coord_name} on page {page_no} is outside page bounds: "
+                    f"{value=} > {hi=}; clamping to {hi}",
+                    stacklevel=3,
+                )
+        return clamped
+
+    @classmethod
+    def _clamp_bbox_to_page(
+        cls,
+        *,
+        bbox: BoundingBox,
+        page_size: Size,
+        page_no: int,
+        bbox_label: str,
+    ) -> BoundingBox:
+        page_width = page_size.width
+        page_height = page_size.height
+
+        tolerance_factor = 1e-2
+
+        return bbox.model_copy(
+            update={
+                "l": cls._clamp_location_coordinate(
+                    value=bbox.l,
+                    lo=0.0,
+                    hi=page_width,
+                    tolerance=page_width * tolerance_factor,
+                    page_no=page_no,
+                    bbox_label=bbox_label,
+                    coord_name="l",
+                ),
+                "r": cls._clamp_location_coordinate(
+                    value=bbox.r,
+                    lo=0.0,
+                    hi=page_width,
+                    tolerance=page_width * tolerance_factor,
+                    page_no=page_no,
+                    bbox_label=bbox_label,
+                    coord_name="r",
+                ),
+                "t": cls._clamp_location_coordinate(
+                    value=bbox.t,
+                    lo=0.0,
+                    hi=page_height,
+                    tolerance=page_height * tolerance_factor,
+                    page_no=page_no,
+                    bbox_label=bbox_label,
+                    coord_name="t",
+                ),
+                "b": cls._clamp_location_coordinate(
+                    value=bbox.b,
+                    lo=0.0,
+                    hi=page_height,
+                    tolerance=page_height * tolerance_factor,
+                    page_no=page_no,
+                    bbox_label=bbox_label,
+                    coord_name="b",
+                ),
+            }
+        )
+
+    @classmethod
+    def _clamp_provenance_bbox_to_page(cls, *, prov: ProvenanceItem, page_size: Size) -> None:
+        prov.bbox = cls._clamp_bbox_to_page(
+            bbox=prov.bbox,
+            page_size=page_size,
+            page_no=prov.page_no,
+            bbox_label="Provenance bbox",
+        )
+
+    def _clamp_provenance_bboxes_to_pages(self) -> None:
+        def clamp_prov(prov: ProvenanceItem) -> None:
+            page = self.pages.get(prov.page_no)
+            if page is not None:
+                self._clamp_provenance_bbox_to_page(prov=prov, page_size=page.size)
+
+        def clamp_table_cell_bboxes(table: TableItem) -> None:
+            page_nos = {prov.page_no for prov in table.prov}
+            if len(page_nos) != 1:
+                return
+            page_no = next(iter(page_nos))
+            page = self.pages.get(page_no)
+            if page is None:
+                return
+
+            for cell in table.data.table_cells:
+                if cell.bbox is not None:
+                    cell.bbox = self._clamp_bbox_to_page(
+                        bbox=cell.bbox,
+                        page_size=page.size,
+                        page_no=page_no,
+                        bbox_label="Table cell bbox",
+                    )
+
+        item_lists: tuple[Iterable[NodeItem], ...] = (
+            self.texts,
+            self.pictures,
+            self.tables,
+            self.key_value_items,
+            self.form_items,
+            self.field_regions,
+            self.field_items,
+        )
+        for item_list in item_lists:
+            for item in item_list:
+                if isinstance(item, DocItem):
+                    for prov in item.prov:
+                        clamp_prov(prov)
+                if isinstance(item, TableItem):
+                    clamp_table_cell_bboxes(item)
+                if isinstance(item, KeyValueItem | FormItem):
+                    for cell in item.graph.cells:
+                        if cell.prov is not None:
+                            clamp_prov(cell.prov)
+
     @model_validator(mode="before")
     @classmethod
     def transform_to_content_layer(cls, data: Any) -> Any:
@@ -7538,6 +7674,8 @@ class DoclingDocument(BaseModel):
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             self.validate_tree(self.body, raise_on_error=True)
             self.validate_tree(self.furniture, raise_on_error=True)
+
+        self._clamp_provenance_bboxes_to_pages()
 
         return self
 

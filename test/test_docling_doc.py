@@ -2656,3 +2656,117 @@ def test_table_data_horizontal_bounding_boxes_with_spans_no_overlap():
             assert a.intersection_area_with(b) == 0, f"row overlap (minimal={minimal})"
         for a, b in itertools.combinations(cols.values(), 2):
             assert a.intersection_area_with(b) == 0, f"col overlap (minimal={minimal})"
+
+
+def _validate_doc(doc: DoclingDocument) -> DoclingDocument:
+    return DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+
+def test_document_validation_clamps_provenance_bbox_without_warning_within_tolerance() -> None:
+    doc = DoclingDocument(name="test")
+    doc.add_page(page_no=1, size=Size(width=100.0, height=200.0))
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Hello",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox(l=-1.0, t=0.0, r=101.0, b=201.0, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 5),
+        ),
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        validated = _validate_doc(doc)
+
+    bbox = validated.texts[0].prov[0].bbox
+    assert (bbox.l, bbox.t, bbox.r, bbox.b) == (0.0, 0.0, 100.0, 200.0)
+    assert not [warning for warning in caught if "outside page bounds" in str(warning.message)]
+
+
+def test_document_validation_warns_when_provenance_bbox_exceeds_tolerance() -> None:
+    doc = DoclingDocument(name="test")
+    doc.add_page(page_no=1, size=Size(width=100.0, height=200.0))
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Hello",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox(l=-1.1, t=0.0, r=100.0, b=202.1, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 5),
+        ),
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        validated = _validate_doc(doc)
+
+    bbox = validated.texts[0].prov[0].bbox
+    assert (bbox.l, bbox.t, bbox.r, bbox.b) == (0.0, 0.0, 100.0, 200.0)
+
+    messages = [str(warning.message) for warning in caught]
+    assert any("coordinate l on page 1 is outside page bounds" in message for message in messages)
+    assert any("coordinate b on page 1 is outside page bounds" in message for message in messages)
+
+
+def test_document_validation_clamps_graph_cell_provenance_bbox() -> None:
+    doc = DoclingDocument(name="test")
+    doc.add_page(page_no=1, size=Size(width=100.0, height=200.0))
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=0,
+                    text="Key",
+                    orig="Key",
+                    prov=ProvenanceItem(
+                        page_no=1,
+                        bbox=BoundingBox(l=0.0, t=-0.5, r=10.0, b=10.0, coord_origin=CoordOrigin.TOPLEFT),
+                        charspan=(0, 3),
+                    ),
+                )
+            ]
+        )
+    )
+
+    validated = _validate_doc(doc)
+    prov = validated.key_value_items[0].graph.cells[0].prov
+    assert prov and prov.bbox.t == 0.0
+
+
+def test_document_validation_clamps_table_cell_bbox() -> None:
+    doc = DoclingDocument(name="test")
+    doc.add_page(page_no=1, size=Size(width=100.0, height=200.0))
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    text="cell",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    bbox=BoundingBox(l=-1.1, t=0.0, r=101.1, b=10.0, coord_origin=CoordOrigin.TOPLEFT),
+                )
+            ],
+        ),
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox(l=0.0, t=0.0, r=100.0, b=10.0, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 4),
+        ),
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        validated = _validate_doc(doc)
+
+    bbox = validated.tables[0].data.table_cells[0].bbox
+    assert bbox and (bbox.l, bbox.t, bbox.r, bbox.b) == (0.0, 0.0, 100.0, 10.0)
+
+    messages = [str(warning.message) for warning in caught]
+    assert any("Table cell bbox coordinate l on page 1 is outside page bounds" in message for message in messages)
+    assert any("Table cell bbox coordinate r on page 1 is outside page bounds" in message for message in messages)

@@ -40,7 +40,6 @@ from docling_core.transforms.serializer._doclang_utils import (
     _picture_classification_label_from_doclang,
     _picture_classification_label_to_doclang,
     _provenance_with_charspan,
-    _quantize_to_resolution,
     _thread_table_merge_offset,
     _wrap,
     _wrap_field_kv_markup_if_needed,

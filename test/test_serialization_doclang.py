@@ -1,11 +1,17 @@
 """Unit tests for Doclang create_closing_token helper."""
 
+import warnings
 from itertools import chain
 from pathlib import Path
 from typing import Optional
 
+import pytest
 from pydantic import AnyUrl
 
+from docling_core.transforms.serializer._doclang_utils import (
+    _create_location_tokens_for_bbox,
+    _quantize_to_resolution,
+)
 from docling_core.transforms.serializer.doclang import (
     ContentType,
     DocLangDocSerializer,
@@ -780,6 +786,36 @@ def test_def_prov_512():
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/simple_prov_res_512.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
+
+
+def test_quantize_clamp_upper_edge_without_warning() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        out = _quantize_to_resolution(512, resolution=512)
+
+    assert out == 511
+    assert not w
+
+
+def test_quantize_clamp_warns_when_genuinely_out_of_range() -> None:
+    with pytest.warns(UserWarning, match=r"greater than 511"):
+        out = _quantize_to_resolution(518, resolution=512)
+
+    assert out == 511
+
+
+def test_location_tokens_tolerates_exact_right_edge() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        _create_location_tokens_for_bbox(
+            bbox=(0.0, 0.0, 100.0, 10.0),
+            page_w=100.0,
+            page_h=100.0,
+            xres=512,
+            yres=512,
+        )
+
+    assert not w
 
 
 def test_def_prov_256():
