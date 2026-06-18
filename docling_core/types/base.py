@@ -151,7 +151,6 @@ class FileInfoObject(AliasModel):
 class CollectionTypeEnum(str, Enum):
     """Enumeration of valid Docling collection types."""
 
-    generic = "Generic"
     document = "Document"
     record = "Record"
 
