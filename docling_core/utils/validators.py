@@ -1,64 +1,12 @@
 """Module for custom type validators."""
 
-import json
-import logging
 from collections.abc import Hashable
 from datetime import datetime
-from importlib import resources
 from typing import TypeVar
 
-import jsonschema
 from pydantic_core import PydanticCustomError
 
-logger = logging.getLogger("docling-core")
-
 T = TypeVar("T", bound=Hashable)
-
-
-def validate_schema(file_: dict, schema: dict) -> tuple[bool, str]:
-    """Check wheter the workflow is properly formatted JSON and contains valid keys.
-
-    Where possible, this also checks a few basic dependencies between properties, but
-    this functionality is limited.
-    """
-    try:
-        jsonschema.validate(file_, schema)
-        return (True, "All good!")
-
-    except jsonschema.ValidationError as err:
-        return (False, err.message)
-
-
-def validate_raw_schema(file_: dict) -> tuple[bool, str]:
-    """Validate a RAW file."""
-    logger.debug("validate RAW schema ... ")
-
-    schema_txt = resources.files("docling_core").joinpath("resources/schemas/legacy_doc/RAW.json").read_text("utf-8")
-    schema = json.loads(schema_txt)
-
-    return validate_schema(file_, schema)
-
-
-def validate_ann_schema(file_: dict) -> tuple[bool, str]:
-    """Validate an annotated (ANN) file."""
-    logger.debug("validate ANN schema ... ")
-
-    schema_txt = resources.files("docling_core").joinpath("resources/schemas/legacy_doc/ANN.json").read_text("utf-8")
-    schema = json.loads(schema_txt)
-
-    return validate_schema(file_, schema)
-
-
-def validate_ocr_schema(file_: dict) -> tuple[bool, str]:
-    """Validate an OCR file."""
-    logger.debug("validate OCR schema ... ")
-
-    schema_txt = (
-        resources.files("docling_core").joinpath("resources/schemas/legacy_doc/OCR-output.json").read_text("utf-8")
-    )
-    schema = json.loads(schema_txt)
-
-    return validate_schema(file_, schema)
 
 
 def validate_unique_list(v: list[T]) -> list[T]:
