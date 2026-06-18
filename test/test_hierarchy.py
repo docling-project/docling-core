@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 from docling_core.types.doc import DocItemLabel, DoclingDocument, RichTableCell, TableData
@@ -136,12 +137,12 @@ def test_hierarchize_preserves_floating_item_descendants(simple_doc: DoclingDocu
     "json_file",
     list(Path("test/data/doc").glob("*.json")),
 )
-def test_hierarchize_with_real_documents(json_file: Path) -> None:
+def test_hierarchize_all_docs(json_file: Path) -> None:
     """Test _hierarchize with real documents to ensure it preserves structural integrity."""
     try:
         doc = DoclingDocument.model_validate_json(json_file.read_text(encoding="utf-8"))
-    except Exception as e:
-        pytest.skip(f"Could not load {json_file.name}: {e}")
+    except ValidationError:
+        pytest.skip(f"Invalid doc {json_file.name}")
 
     # Call _hierarchize
     doc._hierarchize()
