@@ -1827,6 +1827,21 @@ def test_concatenate_shifts_graph_cell_pages_for_keyvalue_and_form():
     assert form_item_pages == [[1], [2]]
 
 
+def test_concatenate_squeezes_successive_duplicate_names():
+    def _make_doc(name: str) -> DoclingDocument:
+        doc = DoclingDocument(name=name)
+        doc.add_page(page_no=1, size=Size(width=100, height=100))
+        return doc
+
+    assert DoclingDocument.concatenate([_make_doc("a"), _make_doc("a"), _make_doc("a")]).name == "a"
+    assert (
+        DoclingDocument.concatenate(
+            [_make_doc("a"), _make_doc("a"), _make_doc("b"), _make_doc("b"), _make_doc("b"), _make_doc("a")]
+        ).name
+        == "a + b + a"
+    )
+
+
 def test_export_markdown_compact_tables():
     """Test compact_tables parameter for markdown export."""
     doc = DoclingDocument(name="Compact Table Test")
