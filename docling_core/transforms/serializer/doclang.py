@@ -262,7 +262,7 @@ class DocLangParams(CommonParams):
     content_wrapping_mode: Annotated[WrapMode, _advanced_field()] = WrapMode.AUTO
     image_mode: Annotated[ImageRefMode, _advanced_field()] = ImageRefMode.PLACEHOLDER
     include_namespace: Annotated[bool, _advanced_field()] = False
-    include_version: Annotated[bool, _advanced_field()] = False
+    include_version: Annotated[bool, _advanced_field()] = True
     use_virtual_text: Annotated[
         bool,
         _advanced_field(detail="When True, the <text> wrapper is omitted whenever allowed."),

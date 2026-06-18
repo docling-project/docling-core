@@ -163,7 +163,7 @@ def add_list_section(doc: DoclingDocument):
 
 
 def serialize_doclang(doc: DoclingDocument, params: Optional[DocLangParams] = None) -> str:
-    ser = DocLangDocSerializer(doc=doc, params=params or DocLangParams())
+    ser = DocLangDocSerializer(doc=doc, params=params or DocLangParams(include_version=False))
     text = ser.serialize().text
     if not GEN_TEST_DATA:
         validate_dclg_xml(text)
@@ -176,7 +176,7 @@ def test_list_items_not_double_wrapped_when_no_content():
     doc.add_list_item("Item A", parent=lst)
     doc.add_list_item("Item B", parent=lst)
 
-    txt = serialize_doclang(doc, params=DocLangParams(content_types=set()))
+    txt = serialize_doclang(doc, params=DocLangParams(include_version=False, content_types=set()))
     exp_txt = """
 <doclang>
   <list>
@@ -193,7 +193,7 @@ def test_doclang():
     doc = DoclingDocument.load_from_json(src)
 
     # Human readable, indented and with content
-    params = DocLangParams()
+    params = DocLangParams(include_version=False)
 
     ser = DocLangDocSerializer(doc=doc, params=params)
     actual = ser.serialize().text
@@ -204,6 +204,7 @@ def test_doclang():
     ser = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             content_types={ContentType.TABLE},
         ),
     )
@@ -215,6 +216,7 @@ def test_doclang():
     ser = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             pretty_indentation=None,
             content_types={ContentType.TABLE},
         ),
@@ -230,7 +232,7 @@ def test_doclang_meta():
 
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(image_mode=ImageRefMode.EMBEDDED),
+        params=DocLangParams(include_version=False, image_mode=ImageRefMode.EMBEDDED),
     )
     actual = ser.serialize().text
     verify_doclang(exp_file=src.with_suffix(".gt.dclg.xml"), actual=actual)
@@ -242,7 +244,7 @@ def test_doclang_crop_embedded():
 
     serializer = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(image_mode=ImageRefMode.EMBEDDED),
+        params=DocLangParams(include_version=False, image_mode=ImageRefMode.EMBEDDED),
     )
     actual = serializer.serialize().text
 
@@ -274,7 +276,7 @@ def test_doclang_crop_placeholder():
 
     serializer = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(image_mode=ImageRefMode.PLACEHOLDER),
+        params=DocLangParams(include_version=False, image_mode=ImageRefMode.PLACEHOLDER),
     )
     actual = serializer.serialize().text
     exp_file = src.parent / f"{src.stem}_cropped_placeholder.dclg.xml"
@@ -322,6 +324,7 @@ def test_cdata_always(sample_doc: DoclingDocument):
     serializer = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             escape_mode=EscapeMode.ALWAYS,
             image_mode=ImageRefMode.EMBEDDED,
         ),
@@ -339,6 +342,7 @@ def test_cdata_when_needed(sample_doc: DoclingDocument):
     serializer = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             escape_mode=EscapeMode.AUTO,
             image_mode=ImageRefMode.EMBEDDED,
         ),
@@ -355,7 +359,7 @@ def test_strikethrough_formatting():
     formatting = Formatting(strikethrough=True)
     doc.add_text(label=DocItemLabel.TEXT, text="Strike text", formatting=formatting)
 
-    result = serialize_doclang(doc, params=DocLangParams(add_location=False))
+    result = serialize_doclang(doc, params=DocLangParams(include_version=False, add_location=False))
     assert "<strikethrough>Strike text</strikethrough>" in result
 
 
@@ -365,7 +369,7 @@ def test_subscript_formatting():
     formatting = Formatting(script=Script.SUB)
     doc.add_text(label=DocItemLabel.TEXT, text="H2O", formatting=formatting)
 
-    result = serialize_doclang(doc, params=DocLangParams(add_location=False))
+    result = serialize_doclang(doc, params=DocLangParams(include_version=False, add_location=False))
     assert "<subscript>H2O</subscript>" in result
 
 
@@ -375,7 +379,7 @@ def test_superscript_formatting():
     formatting = Formatting(script=Script.SUPER)
     doc.add_text(label=DocItemLabel.TEXT, text="x^2", formatting=formatting)
 
-    result = serialize_doclang(doc, params=DocLangParams(add_location=False))
+    result = serialize_doclang(doc, params=DocLangParams(include_version=False, add_location=False))
     assert "<superscript>x^2</superscript>" in result
 
 
@@ -385,7 +389,7 @@ def test_combined_formatting():
     formatting = Formatting(bold=True, italic=True)
     doc.add_text(label=DocItemLabel.TEXT, text="Bold and italic", formatting=formatting)
 
-    result = serialize_doclang(doc, params=DocLangParams(add_location=False))
+    result = serialize_doclang(doc, params=DocLangParams(include_version=False, add_location=False))
     # When both bold and italic are applied, they should be nested
     assert "<bold>" in result
     assert "<italic>" in result
@@ -435,7 +439,7 @@ def _create_content_filtering_doc(inp_doc: DoclingDocument):
 
 
 def test_handwritten_text_label(doc_with_handwritten: DoclingDocument):
-    result = doc_with_handwritten.export_to_doclang()
+    result = serialize_doclang(doc_with_handwritten)
     exp_file = Path("./test/data/doc/handwritten_text.gt.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=result)
 
@@ -445,6 +449,7 @@ def test_content_allow_all_types(sample_doc: DoclingDocument):
     serializer = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             content_types=set(ContentType),
             image_mode=ImageRefMode.EMBEDDED,
         ),
@@ -460,6 +465,7 @@ def test_content_allow_no_types(sample_doc: DoclingDocument):
     serializer = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             content_types=set(),
             image_mode=ImageRefMode.EMBEDDED,
         ),
@@ -474,6 +480,7 @@ def test_content_allow_specific_types(sample_doc: DoclingDocument):
     serializer = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             content_types={
                 ContentType.PICTURE,
                 ContentType.TABLE,
@@ -498,6 +505,7 @@ def test_content_block_specific_types(sample_doc: DoclingDocument):
     serializer = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             content_types={ct for ct in ContentType if ct not in blocked_types},
             image_mode=ImageRefMode.EMBEDDED,
         ),
@@ -542,7 +550,7 @@ def test_inline_group():
 
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(),
+        params=DocLangParams(include_version=False),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
@@ -564,7 +572,7 @@ def test_mini_inline():
     )
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(),
+        params=DocLangParams(include_version=False),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
@@ -592,7 +600,7 @@ def test_picture_body_children_inline_group_and_formula():
     doc = _doc_picture_body_inline_and_formula()
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(),
+        params=DocLangParams(include_version=False),
     )
     ser_txt = ser.serialize().text
     exp_file = Path("./test/data/doc/picture_body_children.gt.dclg.xml")
@@ -627,6 +635,7 @@ def test_content_wrapping_mode_when_needed():
     ser = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             content_wrapping_mode=WrapMode.AUTO,
         ),
     )
@@ -641,6 +650,7 @@ def test_content_wrapping_mode_always():
     ser = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             content_wrapping_mode=WrapMode.ALWAYS,
         ),
     )
@@ -655,9 +665,7 @@ def test_default_mode():
     add_texts_section(doc)
     add_list_section(doc)
 
-    ser = DocLangDocSerializer(doc=doc)
-    ser_res = ser.serialize()
-    ser_txt = ser_res.text
+    ser_txt = serialize_doclang(doc)
     exp_file = Path("./test/data/doc/default_mode.gt.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -680,12 +688,37 @@ Caption""",
         ),
     )
     doc.add_code(text="0 == 0")
+
+    table_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 60, 90, 90), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 0),
+    )
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2), prov=table_prov)
+    for i, row in enumerate((("A", "B"), ("C", "D"))):
+        for j, text in enumerate(row):
+            doc.add_table_cell(
+                table_item=table,
+                cell=TableCell(
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                    text=text,
+                    bbox=BoundingBox.from_tuple(
+                        (10 + j * 40, 70 - i * 8, 45 + j * 40, 78 - i * 8),
+                        origin=CoordOrigin.BOTTOMLEFT,
+                    ),
+                ),
+            )
+
     ser = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            add_table_cell_location=True,
             pretty_indentation=None,
-            escape_mode=EscapeMode.ALWAYS,
-            content_wrapping_mode=WrapMode.ALWAYS,
+            escape_mode=EscapeMode.ALWAYS,  # decide between ALWAYS and AUTO
+            content_wrapping_mode=WrapMode.ALWAYS,  # decide between ALWAYS and AUTO
             traverse_pictures=True,
             include_namespace=False,
             include_version=False,
@@ -703,7 +736,7 @@ Caption""",
 def test_rich_cells(rich_table_doc):
     ser = DocLangDocSerializer(
         doc=rich_table_doc,
-        params=DocLangParams(),
+        params=DocLangParams(include_version=False),
     )
     ser_res = ser.serialize()
     ser_txt = ser_res.text
@@ -728,9 +761,7 @@ def test_checkboxes():
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.CHECKBOX_UNSELECTED, text="TODO")
     doc.add_text(label=DocItemLabel.CHECKBOX_SELECTED, text="DONE")
-    ser = DocLangDocSerializer(doc=doc)
-    ser_res = ser.serialize()
-    ser_txt = ser_res.text
+    ser_txt = serialize_doclang(doc)
     exp_file = Path("./test/data/doc/checkboxes.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -740,6 +771,7 @@ def test_def_prov_512():
     ser = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             xsize=512,
             ysize=512,
         ),
@@ -755,6 +787,7 @@ def test_def_prov_256():
     ser = DocLangDocSerializer(
         doc=doc,
         params=DocLangParams(
+            include_version=False,
             xsize=256,
             ysize=256,
         ),
@@ -767,9 +800,7 @@ def test_def_prov_256():
 
 def test_chart():
     doc = DoclingDocument.load_from_json("./test/data/doc/barchart.json")
-    ser = DocLangDocSerializer(
-        doc=doc,
-    )
+    ser = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False))
     ser_res = ser.serialize()
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/barchart.out.dclg.xml")
@@ -856,7 +887,7 @@ def test_kv():
     exp_json = Path("./test/data/doc/kv.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser_txt = doc.export_to_doclang()
+    ser_txt = serialize_doclang(doc)
     exp_file = Path("./test/data/doc/kv.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -935,7 +966,7 @@ def test_kv_invoice():
 
     serializer = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(image_mode=ImageRefMode.PLACEHOLDER),
+        params=DocLangParams(include_version=False, image_mode=ImageRefMode.PLACEHOLDER),
     )
     ser_txt = serializer.serialize().text
     exp_file = Path("./test/data/doc/kv_invoice.out.dclg.xml")
@@ -943,7 +974,7 @@ def test_kv_invoice():
 
     serializer = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(image_mode=ImageRefMode.EMBEDDED),
+        params=DocLangParams(include_version=False, image_mode=ImageRefMode.EMBEDDED),
     )
     ser_txt = serializer.serialize().text
     exp_file = Path("./test/data/doc/kv_invoice_embedded.out.dclg.xml")
@@ -985,7 +1016,7 @@ def test_kv_advanced_inline():
     exp_json = Path("./test/data/doc/kv_advanced_inline.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser_txt = doc.export_to_doclang()
+    ser_txt = serialize_doclang(doc)
     exp_file = Path("./test/data/doc/kv_advanced_inline.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -1024,7 +1055,7 @@ def test_kv_nested():
     exp_json = Path("./test/data/doc/kv_nested.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser_txt = doc.export_to_doclang()
+    ser_txt = serialize_doclang(doc)
     exp_file = Path("./test/data/doc/kv_nested.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -1079,7 +1110,7 @@ def test_kv_form_with_table():
     exp_json = Path("./test/data/doc/kv_form_with_table.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser_txt = doc.export_to_doclang()
+    ser_txt = serialize_doclang(doc)
 
     exp_file = Path("./test/data/doc/kv_form_with_table.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
@@ -1207,7 +1238,7 @@ def test_kv_migration_self_contained_scenario():
     exp_json = Path("./test/data/doc/kv_post_migration.out.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    ser_txt = doc.export_to_doclang()
+    ser_txt = serialize_doclang(doc)
     exp_file = Path("./test/data/doc/kv_migration.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -1236,13 +1267,14 @@ def test_kv_migration_annot_scenario():
         doc._migrate_to_field_regions()
         exp_json = subdir / "output.json"
         _verify_doc(doc=doc, exp_json=exp_json)
-        ser_txt = doc.export_to_doclang()
+        ser_txt = serialize_doclang(doc)
         exp_file = subdir / "output.dclg.xml"
         verify_doclang(exp_file=exp_file, actual=ser_txt)
 
         ser = DocLangDocSerializer(
             doc=doc,
             params=DocLangParams(
+                include_version=False,
                 add_content=False,
             ),
         )
@@ -1266,6 +1298,7 @@ def test_kv_migration_annot_scenario():
 # ===============================
 
 _SUPPRESS_PARAMS = DocLangParams(
+    include_version=False,
     suppress_empty_elements=True,
     add_location=False,
     content_types=set(),  # no content → forces items empty
@@ -1290,6 +1323,7 @@ def test_empty_text_item_preserved_by_default():
     doc.add_text(label=DocItemLabel.TEXT, text="")
 
     default_params = DocLangParams(
+        include_version=False,
         add_location=False,
         content_types=set(),
     )
@@ -1332,6 +1366,7 @@ def test_empty_picture_preserved_by_default():
     doc.add_picture()
 
     default_params = DocLangParams(
+        include_version=False,
         add_location=False,
         content_types=set(),
     )
@@ -1357,6 +1392,7 @@ def test_empty_table_preserved_by_default():
     doc.add_table(data=TableData())
 
     default_params = DocLangParams(
+        include_version=False,
         add_location=False,
         content_types=set(),
     )
@@ -1427,6 +1463,7 @@ def test_suppress_list_keeps_nonempty_items():
     doc.add_list_item(text="", parent=lst)
 
     params = DocLangParams(
+        include_version=False,
         suppress_empty_elements=True,
         add_location=False,
     )
@@ -1449,6 +1486,7 @@ def test_suppress_mixed_content():
     doc.add_code(text="")  # suppressed
 
     params = DocLangParams(
+        include_version=False,
         suppress_empty_elements=True,
         add_location=False,
     )
@@ -1468,6 +1506,7 @@ def test_suppress_does_not_affect_nonempty():
     doc.add_heading(text="World", level=1)
 
     params = DocLangParams(
+        include_version=False,
         suppress_empty_elements=True,
         add_location=False,
     )
@@ -1517,6 +1556,7 @@ def test_suppress_empty_picture_with_nonempty_caption():
     doc.add_picture(caption=cap)
 
     params = DocLangParams(
+        include_version=False,
         suppress_empty_elements=True,
         add_location=False,
     )
@@ -1529,7 +1569,7 @@ def test_suppress_empty_picture_with_nonempty_caption():
 
 def test_layer_when_needed_mode(doc_with_layers):
     """Test AUTO mode omits default layer, includes non-default."""
-    params = DocLangParams(layer_mode=LayerMode.AUTO)
+    params = DocLangParams(include_version=False, layer_mode=LayerMode.AUTO)
     ser = DocLangDocSerializer(doc=doc_with_layers, params=params)
     ser_txt = ser.serialize().text
 
@@ -1539,7 +1579,7 @@ def test_layer_when_needed_mode(doc_with_layers):
 
 def test_layer_always_mode(doc_with_layers):
     """Test ALWAYS mode includes layer element for all items."""
-    params = DocLangParams(layer_mode=LayerMode.ALWAYS)
+    params = DocLangParams(include_version=False, layer_mode=LayerMode.ALWAYS)
     ser = DocLangDocSerializer(doc=doc_with_layers, params=params)
     ser_txt = ser.serialize().text
 
@@ -1551,6 +1591,7 @@ def test_layer_filter_body_only(doc_with_layers):
     """Test that layers parameter filters content to only show specified layers."""
     # Serialize with only body layer
     params = DocLangParams(
+        include_version=False,
         layers={ContentLayer.BODY},
     )
     ser = DocLangDocSerializer(doc=doc_with_layers, params=params)
@@ -1582,7 +1623,7 @@ def _doc_with_labeled_code_and_pictures() -> DoclingDocument:
 def test_label_mode_when_needed():
     result = serialize_doclang(
         _doc_with_labeled_code_and_pictures(),
-        params=DocLangParams(label_mode=LabelMode.AUTO, add_location=False),
+        params=DocLangParams(include_version=False, label_mode=LabelMode.AUTO, add_location=False),
     )
     assert result.count('<label value="Python"/>') == 1
     assert result.count('<label value="other"/>') == 1
@@ -1592,7 +1633,7 @@ def test_label_mode_when_needed():
 def test_label_mode_always():
     result = serialize_doclang(
         _doc_with_labeled_code_and_pictures(),
-        params=DocLangParams(label_mode=LabelMode.ALWAYS, add_location=False),
+        params=DocLangParams(include_version=False, label_mode=LabelMode.ALWAYS, add_location=False),
     )
     assert result.count('<label value="Python"/>') == 1
     assert result.count('<label value="other"/>') == 1
@@ -1604,7 +1645,7 @@ def test_label_mode_always_empty_code_emits_undefined_by_default():
     doc.add_code(text="")
     result = serialize_doclang(
         doc,
-        params=DocLangParams(label_mode=LabelMode.ALWAYS, add_location=False),
+        params=DocLangParams(include_version=False, label_mode=LabelMode.ALWAYS, add_location=False),
     )
     assert '<label value="undefined"/>' in result
     assert '<label value="other"/>' not in result
@@ -1616,6 +1657,7 @@ def test_interpret_code_unknown_as_other_true():
     result = serialize_doclang(
         doc,
         params=DocLangParams(
+            include_version=False,
             interpret_code_unknown_as_other=True,
             label_mode=LabelMode.AUTO,
             add_location=False,
@@ -1631,6 +1673,7 @@ def test_interpret_code_unknown_as_other_false():
     result = serialize_doclang(
         doc,
         params=DocLangParams(
+            include_version=False,
             interpret_code_unknown_as_other=False,
             label_mode=LabelMode.ALWAYS,
             add_location=False,
@@ -1646,6 +1689,7 @@ def test_label_mode_when_needed_suppresses_empty_unknown_code():
     result = serialize_doclang(
         doc,
         params=DocLangParams(
+            include_version=False,
             label_mode=LabelMode.AUTO,
             suppress_empty_elements=True,
             add_location=False,
@@ -1689,7 +1733,7 @@ from docling_core.transforms.serializer.doclang import (
     # NOTE: this particular case seems bit brittle as to how it's preserved by XML tooling
     doc.add_text(label=DocItemLabel.TEXT, text="\n")
 
-    ser_txt = doc.export_to_doclang()
+    ser_txt = serialize_doclang(doc)
     exp_file = Path("./test/data/doc/newline_to_br.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -1703,7 +1747,7 @@ def test_list_item_with_code_child():
     li = doc.add_list_item(text="", parent=lst, marker="•")
     doc.add_code(text="print('hello')", parent=li)
 
-    ser_txt = doc.export_to_doclang()
+    ser_txt = serialize_doclang(doc)
     exp_file = Path("./test/data/doc/list_item_with_code.gt.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -1728,7 +1772,7 @@ def test_list_item_with_code_child_and_bbox():
 
     serializer = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(add_location=True, xsize=256, ysize=256),
+        params=DocLangParams(include_version=False, add_location=True, xsize=256, ysize=256),
     )
     ser_txt = serializer.serialize().text
     exp_file = Path("./test/data/doc/list_item_with_code_and_bbox.gt.dclg.xml")
@@ -1826,6 +1870,7 @@ def test_virtual_text_true_no_location():
     doc = _create_virtual_text_test_doc(add_location=False)
 
     params = DocLangParams(
+        include_version=False,
         add_location=False,
     )
     serializer = DocLangDocSerializer(doc=doc, params=params)
@@ -1840,6 +1885,7 @@ def test_virtual_text_true_with_location():
     doc = _create_virtual_text_test_doc(add_location=True)
 
     params = DocLangParams(
+        include_version=False,
         add_location=True,
         add_table_cell_location=True,
     )
@@ -1855,6 +1901,7 @@ def test_virtual_text_false_no_location():
     doc = _create_virtual_text_test_doc(add_location=False)
 
     params = DocLangParams(
+        include_version=False,
         use_virtual_text=False,
         add_location=False,
     )
@@ -1870,6 +1917,7 @@ def test_virtual_text_false_with_location():
     doc = _create_virtual_text_test_doc(add_location=True)
 
     params = DocLangParams(
+        include_version=False,
         use_virtual_text=False,
         add_location=True,
         add_table_cell_location=True,
@@ -1916,7 +1964,7 @@ def _doc_field_region_flat_key_value() -> DoclingDocument:
 def test_field_region_flat_key_value_wraps_field_item():
     """Key/value directly under field_region are auto-wrapped in field_item."""
     doc = _doc_field_region_flat_key_value()
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(
         exp_file=Path("./test/data/doc/field_region_flat_key_value.gt.dclg.xml"),
         actual=ser_txt,
@@ -1935,7 +1983,7 @@ def _doc_field_region_value_only() -> DoclingDocument:
 def test_field_region_value_only_wraps_field_item():
     """Value directly under field_region is auto-wrapped in field_item."""
     doc = _doc_field_region_value_only()
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(
         exp_file=Path("./test/data/doc/field_region_value_only.gt.dclg.xml"),
         actual=ser_txt,
@@ -1955,7 +2003,7 @@ def _doc_field_item_outside_field_region() -> DoclingDocument:
 def test_field_item_without_region_wraps_field_region():
     """Orphan field_item is auto-wrapped in <field_region>."""
     doc = _doc_field_item_outside_field_region()
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(
         exp_file=Path("./test/data/doc/field_item_outside_field_region.gt.dclg.xml"),
         actual=ser_txt,
@@ -1981,7 +2029,7 @@ def _doc_text_with_hyperlink() -> DoclingDocument:
 def test_text_with_hyperlink():
     r"""Text with hyperlink emits <href uri=\"...\"/> in element head."""
     doc = _doc_text_with_hyperlink()
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(
         exp_file=Path("./test/data/doc/text_with_hyperlink.gt.dclg.xml"),
         actual=ser_txt,
@@ -2006,7 +2054,7 @@ def test_element_head_href_before_layer():
     ser_txt = (
         DocLangDocSerializer(
             doc=doc,
-            params=DocLangParams(add_location=False, layer_mode=LayerMode.AUTO),
+            params=DocLangParams(include_version=False, add_location=False, layer_mode=LayerMode.AUTO),
         )
         .serialize()
         .text
@@ -2059,7 +2107,7 @@ def test_multi_prov_text_emits_thread():
     doc = _doc_multi_prov_text()
     _verify_doc(doc=doc, exp_json=data_dir / "input.json")
 
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
     if not GEN_TEST_DATA:
         assert ser_txt.count("<thread thread_id=") == 2
@@ -2094,7 +2142,7 @@ def test_thread_ids_unique_across_fragmented_components():
         ),
     )
 
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     assert ser_txt.count('thread_id="1"') == 2  # cross-page paragraph fragments
     assert ser_txt.count('thread_id="2"') == 2  # cross-page list fragments
     assert 'thread_id="3"' not in ser_txt
@@ -2136,7 +2184,7 @@ def test_cross_page_paragraph_emits_thread_and_page_break():
     doc = _doc_cross_page_paragraph()
     _verify_doc(doc=doc, exp_json=data_dir / "input.json")
 
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
     if not GEN_TEST_DATA:
         assert ser_txt.count("<thread thread_id=") == 2
@@ -2181,7 +2229,7 @@ def test_cross_page_list_emits_thread_and_page_break():
     doc = _doc_cross_page_list()
     _verify_doc(doc=doc, exp_json=data_dir / "input.json")
 
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
     if not GEN_TEST_DATA:
         assert ser_txt.count("<thread thread_id=") == 2
@@ -2250,7 +2298,7 @@ def test_cross_page_table_emits_thread_and_page_break():
     doc = _doc_cross_page_table()
     _verify_doc(doc=doc, exp_json=data_dir / "input.json")
 
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
     if not GEN_TEST_DATA:
         assert ser_txt.count("<thread thread_id=") == 2
@@ -2265,7 +2313,7 @@ def test_cross_column_list_same_page():
     doc = _doc_cross_column_list()
     _verify_doc(doc=doc, exp_json=data_dir / "input.json")
 
-    ser_txt = DocLangDocSerializer(doc=doc).serialize().text
+    ser_txt = serialize_doclang(doc)
     verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
     if not GEN_TEST_DATA:
         assert ser_txt.count("<list") == 1
@@ -2292,7 +2340,7 @@ def test_rtl_text_formatting():
     ser_txt = (
         DocLangDocSerializer(
             doc=doc,
-            params=DocLangParams(add_location=False),
+            params=DocLangParams(include_version=False, add_location=False),
         )
         .serialize()
         .text
@@ -2331,7 +2379,7 @@ def test_table_xcel_span():
     ser_txt = (
         DocLangDocSerializer(
             doc=doc,
-            params=DocLangParams(add_location=False, add_table_cell_location=False),
+            params=DocLangParams(include_version=False, add_location=False, add_table_cell_location=False),
         )
         .serialize()
         .text
@@ -2407,7 +2455,7 @@ def test_table_corn_header():
     ser_txt = (
         DocLangDocSerializer(
             doc=doc,
-            params=DocLangParams(add_location=False, add_table_cell_location=False),
+            params=DocLangParams(include_version=False, add_location=False, add_table_cell_location=False),
         )
         .serialize()
         .text

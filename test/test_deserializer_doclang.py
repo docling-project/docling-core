@@ -55,7 +55,7 @@ DO_PRINT: bool = False
 def _serialize(doc: DoclingDocument) -> str:
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(),
+        params=DocLangParams(include_version=False),
     )
     text = ser.serialize().text
     if not GEN_TEST_DATA:
@@ -113,7 +113,7 @@ class _VirtualTextMixedBboxFactory:
 def _serialize_virtual_text_mixed(doc: DoclingDocument, *, add_location: bool = True) -> str:
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(add_table_cell_location=True, add_location=add_location),
+        params=DocLangParams(include_version=False, add_table_cell_location=True, add_location=add_location),
     )
     text = ser.serialize().text
     if not GEN_TEST_DATA:
@@ -134,6 +134,26 @@ def test_roundtrip_text():
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
+
+
+def test_deserialize_include_namespace_and_version():
+    """Deserialize DocLang XML with namespace and version, then roundtrip."""
+    exp_file = Path("./test/data/doc/deserialize_include_namespace_and_version.gt.dclg.xml")
+    xml = exp_file.read_text(encoding="utf-8")
+
+    doc = _deserialize(xml)
+    assert len(doc.texts) == 1
+    assert doc.texts[0].text == "Hello world"
+
+    reserialized = (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(include_namespace=True, include_version=True),
+        )
+        .serialize()
+        .text
+    )
+    verify_doclang(exp_file=exp_file, actual=reserialized)
 
 
 def test_roundtrip_title():
@@ -276,7 +296,7 @@ def test_code_language_linguist_mapping(docling_lang, linguist_label, roundtrip_
     doc = DoclingDocument(name="t")
     doc.add_code(text="snippet", code_language=docling_lang)
 
-    xml = DocLangDocSerializer(doc=doc, params=DocLangParams()).serialize().text
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False)).serialize().text
     assert f'<label value="{linguist_label}"/>' in xml
 
     doc2 = _deserialize(xml)
@@ -289,7 +309,7 @@ def test_roundtrip_code_unknown_as_other_when_enabled():
     xml = (
         DocLangDocSerializer(
             doc=doc,
-            params=DocLangParams(interpret_code_unknown_as_other=True),
+            params=DocLangParams(include_version=False, interpret_code_unknown_as_other=True),
         )
         .serialize()
         .text
@@ -326,7 +346,7 @@ def test_roundtrip_picture_other_and_unknown_labels():
     xml_always = (
         DocLangDocSerializer(
             doc=doc,
-            params=DocLangParams(label_mode=LabelMode.ALWAYS, add_location=False),
+            params=DocLangParams(include_version=False, label_mode=LabelMode.ALWAYS, add_location=False),
         )
         .serialize()
         .text
@@ -1882,7 +1902,7 @@ def _kv_annot_fixture_dirs() -> list[Path]:
 
 
 def _serialize_kv_annot_fixture(doc: DoclingDocument) -> str:
-    text = DocLangDocSerializer(doc=doc, params=DocLangParams()).serialize().text
+    text = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False)).serialize().text
     if not GEN_TEST_DATA:
         assert_valid_dclg_xml(text)
     return text
@@ -1918,9 +1938,9 @@ def test_kv_annot_doclang_roundtrip(fixture_dir: Path):
 def _serialize_field_region_fixture(doc: DoclingDocument, *, fixture_dir: str) -> str:
     """Serialize a field-region fixture doc (invoice uses placeholder pictures)."""
     params = (
-        DocLangParams(image_mode=ImageRefMode.PLACEHOLDER)
+        DocLangParams(include_version=False, image_mode=ImageRefMode.PLACEHOLDER)
         if fixture_dir == "field_region_kv_invoice"
-        else DocLangParams()
+        else DocLangParams(include_version=False)
     )
     text = DocLangDocSerializer(doc=doc, params=params).serialize().text
     if not GEN_TEST_DATA:
@@ -2004,7 +2024,7 @@ def test_roundtrip_with_layers():
 
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(layer_mode=LayerMode.ALWAYS),
+        params=DocLangParams(include_version=False, layer_mode=LayerMode.ALWAYS),
     )
     dt = ser.serialize().text
 
@@ -2020,6 +2040,7 @@ def test_roundtrip_with_layers():
 
 
 def test_roundtrip_with_newlines():
+    """Test that newlines in <content> survive deserialization and reserialization."""
     doclang_str = """
 <doclang>
   <text>
@@ -2034,8 +2055,8 @@ bar</content>
 </doclang>"""
 
     doc = _deserialize(doclang_str)
-
-    doc.export_to_doclang()
+    dt2 = _serialize(doc)
+    assert dt2.strip() == doclang_str.strip()
 
 
 def test_roundtrip_document_index_table():
