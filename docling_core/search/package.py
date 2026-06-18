@@ -2,16 +2,11 @@
 
 import importlib.metadata
 import re
-from typing import Annotated, Final
+from typing import Annotated
 
 from pydantic import BaseModel, StrictStr, StringConstraints
 
-VERSION_PATTERN: Final = (
-    r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
-    r"(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
-    r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+"
-    r"(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
-)
+from docling_core.types.base import VERSION_PATTERN
 
 
 class Package(BaseModel, extra="forbid"):

@@ -49,8 +49,7 @@ from pydantic import (
 from tabulate import _column_type, tabulate
 from typing_extensions import Self, deprecated, override
 
-from docling_core.search.package import VERSION_PATTERN
-from docling_core.types.base import _JSON_POINTER_REGEX, UniqueList
+from docling_core.types.base import VERSION_PATTERN, _JSON_POINTER_REGEX, UniqueList
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
     CoordOrigin,
