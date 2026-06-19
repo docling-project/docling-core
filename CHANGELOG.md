@@ -1,3 +1,9 @@
+## [v2.83.1](https://github.com/docling-project/docling-core/releases/tag/v2.83.1) - 2026-06-19
+
+### Fix
+
+* Add legacy stubs to unbreak old docling version imports ([#649](https://github.com/docling-project/docling-core/issues/649)) ([`246f131`](https://github.com/docling-project/docling-core/commit/246f131aff7254026072c49e1a3ad48c367900eb))
+
 ## [v2.83.0](https://github.com/docling-project/docling-core/releases/tag/v2.83.0) - 2026-06-18
 
 ### Feature
