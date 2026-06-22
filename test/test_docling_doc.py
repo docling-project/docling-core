@@ -1,5 +1,5 @@
-import itertools
 import base64
+import itertools
 import os
 import re
 import warnings
@@ -40,6 +40,7 @@ from docling_core.types.doc import (
     ListItem,
     NodeItem,
     Orientation,
+    PageItem,
     PictureItem,
     ProvenanceItem,
     RefItem,
@@ -58,7 +59,6 @@ from docling_core.types.doc.document import (
     FieldItem,
     FieldRegionItem,
     FieldValueItem,
-    PageItem,
 )
 from docling_core.types.doc.webvtt import WebVTTFile
 from docling_core.utils.settings import settings
@@ -824,19 +824,13 @@ def test_image_ref_blocks_oversized_base64():
     import base64
 
     large_bytes = b"X" * (28 * 1024 * 1024)
-    large_data = base64.b64encode(large_bytes).decode('ascii')
+    large_data = base64.b64encode(large_bytes).decode("ascii")
     data_uri = f"data:image/png;base64,{large_data}"
 
-    image_ref = ImageRef(
-        dpi=72,
-        mimetype="image/png",
-        size=Size(width=100, height=100),
-        uri=AnyUrl(data_uri)
-    )
+    image_ref = ImageRef(dpi=72, mimetype="image/png", size=Size(width=100, height=100), uri=AnyUrl(data_uri))
 
     with pytest.raises(ValueError, match="exceeds size limit"):
         _ = image_ref.pil_image
-
 
 
 def test_image_ref_accepts_valid_base64():
@@ -850,16 +844,11 @@ def test_image_ref_accepts_valid_base64():
     buffer = BytesIO()
     fig_image.save(buffer, format="PNG")
     img_bytes = buffer.getvalue()
-    img_base64 = base64.b64encode(img_bytes).decode('ascii')
+    img_base64 = base64.b64encode(img_bytes).decode("ascii")
     data_uri = f"data:image/png;base64,{img_base64}"
 
     # Create ImageRef with data URI
-    image_ref = ImageRef(
-        dpi=72,
-        mimetype="image/png",
-        size=Size(width=1, height=1),
-        uri=AnyUrl(data_uri)
-    )
+    image_ref = ImageRef(dpi=72, mimetype="image/png", size=Size(width=1, height=1), uri=AnyUrl(data_uri))
 
     # Should successfully decode the image
     decoded_image = image_ref.pil_image
@@ -937,6 +926,7 @@ def test_max_decoded_size_custom():
             _ = image_ref.pil_image
     finally:
         settings.max_image_decoded_size = orig_max_image_decoded_size
+
 
 def test_max_decoded_size_default():
     """Test that small images work with default 20MB limit."""
@@ -1712,6 +1702,7 @@ def test_misplaced_list_items():
         exp_doc = DoclingDocument.load_from_yaml(exp_file)
         assert doc == exp_doc
 
+
 def test_moving_within_same_parent():
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TEXT, text="bar")
@@ -1826,12 +1817,10 @@ def test_concatenate_shifts_graph_cell_pages_for_keyvalue_and_form():
     assert len(merged.form_items) == 2
 
     kv_item_pages = [
-        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov})
-        for item in merged.key_value_items
+        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov}) for item in merged.key_value_items
     ]
     form_item_pages = [
-        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov})
-        for item in merged.form_items
+        sorted({cell.prov.page_no for cell in item.graph.cells if cell.prov}) for item in merged.form_items
     ]
 
     assert kv_item_pages == [[1], [2]]
@@ -2066,6 +2055,7 @@ def test_invalid_rich_table_doc():
     with pytest.raises(ValueError):
         DoclingDocument.validate_document(doc)
 
+
 def test_invalid_single_linked_rich_table_doc():
     doc = DoclingDocument(name="")
     table_item = doc.add_table(data=TableData(num_rows=2, num_cols=2))
@@ -2095,7 +2085,7 @@ def test_invalid_single_linked_rich_table_doc():
             doc.add_table_cell(table_item=table_item, cell=table_cell)
 
     # delete child reference from table item
-    del(table_item.children[0])
+    del table_item.children[0]
 
     # ensure validate_document() raises:
     with pytest.raises(ValueError):
@@ -2172,6 +2162,53 @@ def test_rich_table_item_insertion_normalization():
         doc.save_as_yaml(exp_file)
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
     assert doc == exp_doc
+
+
+def test_table_item_get_cell_image():
+    page_image = PILImage.new("RGB", (100, 100), "white")
+
+    doc = DoclingDocument(name="test_doc")
+    doc.pages[1] = PageItem(
+        page_no=1,
+        size=Size(width=100, height=100),
+        image=ImageRef.from_pil(image=page_image, dpi=72),
+    )
+    cell_bbox = BoundingBox(
+        l=10,
+        t=40,
+        r=40,
+        b=10,
+        coord_origin=CoordOrigin.BOTTOMLEFT,
+    )
+    cell = TableCell(
+        bbox=cell_bbox,
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        text="cell",
+    )
+
+    table = TableItem(
+        self_ref="#/tables/0",
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[cell],
+        ),
+        prov=[
+            ProvenanceItem(
+                page_no=1,
+                bbox=cell_bbox,
+                charspan=(0, 0),
+            )
+        ],
+    )
+
+    cell_image = table.get_cell_image(doc=doc, cell=cell)
+
+    assert cell_image is not None
+    assert cell_image.size == (30, 30)
 
 
 def test_filter_pages():
@@ -2298,6 +2335,7 @@ def test_validate_dupl_refs():
         error_str = str(valid_err_info.value)
         assert "Duplicate ref" in error_str
 
+
 def test_docitem_comments_field():
     """Test that DocItem has a comments field that can hold RefItem references."""
     doc = DoclingDocument(name="test_comments")
@@ -2407,44 +2445,54 @@ def test_table_data_vertical_bounding_boxes():
     cells = [
         TableCell(
             text="r0c0",
-            start_row_offset_idx=0, end_row_offset_idx=1,
-            start_col_offset_idx=0, end_col_offset_idx=1,
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
             bbox=BoundingBox(l=0, t=2, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r1c0",
-            start_row_offset_idx=1, end_row_offset_idx=2,
-            start_col_offset_idx=0, end_col_offset_idx=1,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
             bbox=BoundingBox(l=10, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r0c1",
-            start_row_offset_idx=0, end_row_offset_idx=1,
-            start_col_offset_idx=1, end_col_offset_idx=2,
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
             bbox=BoundingBox(l=0, t=10, r=10, b=20, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r1c1",
-            start_row_offset_idx=1, end_row_offset_idx=2,
-            start_col_offset_idx=1, end_col_offset_idx=2,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
             bbox=BoundingBox(l=10, t=10, r=18, b=20, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r0c2",
-            start_row_offset_idx=0, end_row_offset_idx=1,
-            start_col_offset_idx=2, end_col_offset_idx=3,
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
             bbox=BoundingBox(l=0, t=20, r=10, b=28, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r1c2",
-            start_row_offset_idx=1, end_row_offset_idx=2,
-            start_col_offset_idx=2, end_col_offset_idx=3,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
             bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
         ),
     ]
-    table = TableData(
-        num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90
-    )
+    table = TableData(num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90)
 
     # Minimal mode — sanity-check the per-row/col enclosing bbox.
     rows_min = table.get_row_bounding_boxes(minimal=True)
@@ -2504,32 +2552,38 @@ def test_table_data_vertical_bounding_boxes_with_spans():
     cells = [
         TableCell(  # row_span=2 in col 0
             text="r0+r1,c0",
-            start_row_offset_idx=0, end_row_offset_idx=2,
-            start_col_offset_idx=0, end_col_offset_idx=1,
+            start_row_offset_idx=0,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
             bbox=BoundingBox(l=0, t=0, r=20, b=10, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r0c1+c2",  # col_span=2 in row 0
-            start_row_offset_idx=0, end_row_offset_idx=1,
-            start_col_offset_idx=1, end_col_offset_idx=3,
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=3,
             bbox=BoundingBox(l=0, t=10, r=10, b=30, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r1c1",
-            start_row_offset_idx=1, end_row_offset_idx=2,
-            start_col_offset_idx=1, end_col_offset_idx=2,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
             bbox=BoundingBox(l=10, t=10, r=20, b=20, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r1c2",
-            start_row_offset_idx=1, end_row_offset_idx=2,
-            start_col_offset_idx=2, end_col_offset_idx=3,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
             bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
         ),
     ]
-    table = TableData(
-        num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90
-    )
+    table = TableData(num_rows=2, num_cols=3, table_cells=cells, orientation=Orientation.ROT_90)
 
     # COLUMNS — col_span=2 cell must NOT stretch col 1 / col 2 along t/b.
     cols = table.get_column_bounding_boxes(minimal=True)
@@ -2570,44 +2624,58 @@ def test_table_data_horizontal_bounding_boxes_with_spans_no_overlap():
     cells = [
         TableCell(
             text="r0c0",
-            start_row_offset_idx=0, end_row_offset_idx=1,
-            start_col_offset_idx=0, end_col_offset_idx=1,
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
             bbox=BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(  # col_span=2
             text="r0c1+c2",
-            start_row_offset_idx=0, end_row_offset_idx=1,
-            start_col_offset_idx=1, end_col_offset_idx=3,
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=3,
             bbox=BoundingBox(l=10, t=0, r=30, b=10, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(  # row_span=2
             text="r1+r2,c0",
-            start_row_offset_idx=1, end_row_offset_idx=3,
-            start_col_offset_idx=0, end_col_offset_idx=1,
+            start_row_offset_idx=1,
+            end_row_offset_idx=3,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
             bbox=BoundingBox(l=0, t=10, r=10, b=30, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r1c1",
-            start_row_offset_idx=1, end_row_offset_idx=2,
-            start_col_offset_idx=1, end_col_offset_idx=2,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
             bbox=BoundingBox(l=10, t=10, r=20, b=20, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r1c2",
-            start_row_offset_idx=1, end_row_offset_idx=2,
-            start_col_offset_idx=2, end_col_offset_idx=3,
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
             bbox=BoundingBox(l=20, t=10, r=30, b=20, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r2c1",
-            start_row_offset_idx=2, end_row_offset_idx=3,
-            start_col_offset_idx=1, end_col_offset_idx=2,
+            start_row_offset_idx=2,
+            end_row_offset_idx=3,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
             bbox=BoundingBox(l=10, t=20, r=20, b=30, coord_origin=CoordOrigin.TOPLEFT),
         ),
         TableCell(
             text="r2c2",
-            start_row_offset_idx=2, end_row_offset_idx=3,
-            start_col_offset_idx=2, end_col_offset_idx=3,
+            start_row_offset_idx=2,
+            end_row_offset_idx=3,
+            start_col_offset_idx=2,
+            end_col_offset_idx=3,
             bbox=BoundingBox(l=20, t=20, r=30, b=30, coord_origin=CoordOrigin.TOPLEFT),
         ),
     ]
