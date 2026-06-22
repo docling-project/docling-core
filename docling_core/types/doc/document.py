@@ -2422,6 +2422,38 @@ class TableItem(FloatingItem):
 
         return self._export_to_dataframe_with_options(doc=doc)
 
+    def get_cell_image(
+    self,
+    doc: "DoclingDocument",
+    cell: TableCell,
+    prov_index: int = 0,
+) -> Optional[PILImage.Image]:
+        """Returns the image crop of a table cell."""
+        if cell.bbox is None:
+            return None
+
+        if not self.prov or prov_index >= len(self.prov):
+            return None
+
+        prov = self.prov[prov_index]
+        if not isinstance(prov, ProvenanceItem):
+            return None
+
+        page = doc.pages.get(prov.page_no)
+        if page is None or page.size is None or page.image is None:
+            return None
+
+        page_image = page.image.pil_image
+        if not page_image:
+            return None
+
+        crop_bbox = (
+            cell.bbox.to_top_left_origin(page_height=page.size.height)
+            .scale_to_size(old_size=page.size, new_size=page.image.size)
+        )
+
+        return page_image.crop(crop_bbox.as_tuple())
+
     def _export_to_dataframe_with_options(
         self,
         doc: Optional["DoclingDocument"] = None,

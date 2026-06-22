@@ -1,5 +1,5 @@
-import itertools
 import base64
+import itertools
 import os
 import re
 import warnings
@@ -40,6 +40,7 @@ from docling_core.types.doc import (
     ListItem,
     NodeItem,
     Orientation,
+    PageItem,
     PictureItem,
     ProvenanceItem,
     RefItem,
@@ -58,7 +59,6 @@ from docling_core.types.doc.document import (
     FieldItem,
     FieldRegionItem,
     FieldValueItem,
-    PageItem,
 )
 from docling_core.types.doc.webvtt import WebVTTFile
 from docling_core.utils.settings import settings
@@ -824,7 +824,7 @@ def test_image_ref_blocks_oversized_base64():
     import base64
 
     large_bytes = b"X" * (28 * 1024 * 1024)
-    large_data = base64.b64encode(large_bytes).decode('ascii')
+    large_data = base64.b64encode(large_bytes).decode("ascii")
     data_uri = f"data:image/png;base64,{large_data}"
 
     image_ref = ImageRef(
@@ -850,7 +850,7 @@ def test_image_ref_accepts_valid_base64():
     buffer = BytesIO()
     fig_image.save(buffer, format="PNG")
     img_bytes = buffer.getvalue()
-    img_base64 = base64.b64encode(img_bytes).decode('ascii')
+    img_base64 = base64.b64encode(img_bytes).decode("ascii")
     data_uri = f"data:image/png;base64,{img_base64}"
 
     # Create ImageRef with data URI
@@ -2172,6 +2172,52 @@ def test_rich_table_item_insertion_normalization():
         doc.save_as_yaml(exp_file)
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
     assert doc == exp_doc
+
+def test_table_item_get_cell_image():
+    page_image = PILImage.new("RGB", (100, 100), "white")
+
+    doc = DoclingDocument(name="test_doc")
+    doc.pages[1] = PageItem(
+        page_no=1,
+        size=Size(width=100, height=100),
+        image=ImageRef.from_pil(image=page_image, dpi=72),
+    )
+    cell_bbox = BoundingBox(
+    l=10,
+    t=40,
+    r=40,
+    b=10,
+    coord_origin=CoordOrigin.BOTTOMLEFT,
+    )
+    cell = TableCell(
+    bbox=cell_bbox,
+    start_row_offset_idx=0,
+    end_row_offset_idx=1,
+    start_col_offset_idx=0,
+    end_col_offset_idx=1,
+    text="cell",
+    )
+
+    table = TableItem(
+    self_ref="#/tables/0",
+    data=TableData(
+        num_rows=1,
+        num_cols=1,
+        table_cells=[cell],
+    ),
+    prov=[
+        ProvenanceItem(
+            page_no=1,
+            bbox=cell_bbox,
+            charspan=(0, 0),
+        )
+    ],
+    )
+
+    cell_image = table.get_cell_image(doc=doc, cell=cell)
+
+    assert cell_image is not None
+    assert cell_image.size == (30, 30)
 
 
 def test_filter_pages():
