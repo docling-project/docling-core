@@ -117,6 +117,7 @@ class TableVisualizer(BaseVisualizer):
         page_height: float,
         scale_x: float,
         scale_y: float,
+        doc: Optional[DoclingDocument] = None,
     ):
         """Draw individual table rows."""
         # Create transparent overlay for proper alpha compositing
@@ -124,7 +125,7 @@ class TableVisualizer(BaseVisualizer):
         overlay_draw = ImageDraw.Draw(overlay)
         main_draw = ImageDraw.Draw(page_image)
 
-        rows = table.data.get_row_bounding_boxes(minimal=self.params.minimal_row_bboxes)
+        rows = table.data.get_row_bounding_boxes(minimal=self.params.minimal_row_bboxes, doc=doc)
 
         for rid, bbox in rows.items():
             tl_bbox = bbox.to_top_left_origin(page_height=page_height)
@@ -152,6 +153,7 @@ class TableVisualizer(BaseVisualizer):
         page_height: float,
         scale_x: float,
         scale_y: float,
+        doc: Optional[DoclingDocument] = None,
     ):
         """Draw individual table columns."""
         # Create transparent overlay for proper alpha compositing
@@ -159,7 +161,7 @@ class TableVisualizer(BaseVisualizer):
         overlay_draw = ImageDraw.Draw(overlay)
         main_draw = ImageDraw.Draw(page_image)
 
-        cols = table.data.get_column_bounding_boxes(minimal=self.params.minimal_col_bboxes)
+        cols = table.data.get_column_bounding_boxes(minimal=self.params.minimal_col_bboxes, doc=doc)
 
         for cid, bbox in cols.items():
             tl_bbox = bbox.to_top_left_origin(page_height=page_height)
@@ -233,6 +235,7 @@ class TableVisualizer(BaseVisualizer):
                             page_image=image,
                             scale_x=image.width / doc.pages[page_nr].size.width,
                             scale_y=image.height / doc.pages[page_nr].size.height,
+                            doc=doc,
                         )
 
                     if self.params.show_cols:
@@ -242,6 +245,7 @@ class TableVisualizer(BaseVisualizer):
                             page_image=image,
                             scale_x=image.width / doc.pages[page_nr].size.width,
                             scale_y=image.height / doc.pages[page_nr].size.height,
+                            doc=doc,
                         )
 
                 else:

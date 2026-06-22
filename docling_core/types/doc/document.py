@@ -369,6 +369,9 @@ class TableCell(BaseModel):
     def _get_text(self, doc: Optional["DoclingDocument"] = None, **kwargs: Any) -> str:
         return self.text
 
+    def _get_bbox(self, doc: Optional["DoclingDocument"] = None, **kwargs: Any) -> Optional[BoundingBox]:
+        return self.bbox
+
 
 class RichTableCell(TableCell):
     """RichTableCell."""
@@ -385,6 +388,37 @@ class RichTableCell(TableCell):
             return ser_res.text
         else:
             return "<!-- rich cell -->"
+
+    @override
+    def _get_bbox(self, doc: Optional["DoclingDocument"] = None, **kwargs: Any) -> Optional[BoundingBox]:
+        # An explicit cell bbox always wins.
+        if self.bbox is not None:
+            return self.bbox
+
+        # Otherwise derive the bbox from the referenced item: take the union of
+        # the provenance bounding boxes of the referenced item and all of its
+        # descendants.
+        if doc is None:
+            return None
+
+        item = self.ref.resolve(doc=doc)
+        if not isinstance(item, NodeItem):
+            return None
+
+        bboxes: list[BoundingBox] = []
+        for node, _ in doc.iterate_items(
+            root=item,
+            with_groups=True,
+            traverse_pictures=True,
+            included_content_layers=set(ContentLayer),
+        ):
+            if isinstance(node, DocItem):
+                bboxes.extend(prov.bbox for prov in node.prov)
+
+        if not bboxes:
+            return None
+
+        return BoundingBox.enclosing_bbox(bboxes)
 
 
 AnyTableCell = Annotated[
@@ -598,7 +632,9 @@ class TableData(BaseModel):  # TBD
         """
         self.insert_row(row_index=self.num_rows - 1, row=row, after=True)
 
-    def get_row_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
+    def get_row_bounding_boxes(
+        self, *, minimal: bool = True, doc: Optional["DoclingDocument"] = None
+    ) -> dict[int, BoundingBox]:
         """Get the bounding box for each row in the table.
 
         Layout follows the table's ``orientation`` field: ``ROT_0`` / ``ROT_180``
@@ -612,16 +648,18 @@ class TableData(BaseModel):  # TBD
                 row based on its cells. If False, all rows will have a uniform
                 extent perpendicular to the row direction (l/r for ROT_0/ROT_180,
                 t/b for ROT_90/ROT_270).
+            doc: Optional document used to resolve the bounding box of cells that
+                do not carry an explicit ``bbox`` (e.g. ``RichTableCell``), by
+                taking the union of the referenced item's provenance boxes.
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping row indices to their
             bounding boxes. Only rows with cells that have bounding boxes are included.
         """
         horizontal = self.orientation in (Orientation.ROT_0, Orientation.ROT_180)
-        coords = []
-        for cell in self.table_cells:
-            if cell.bbox is not None:
-                coords.append(cell.bbox.coord_origin)
+        # Resolve each cell's bbox once (RichTableCell may need to traverse `doc`).
+        cell_bboxes: list[Optional[BoundingBox]] = [cell._get_bbox(doc=doc) for cell in self.table_cells]
+        coords = [bbox.coord_origin for bbox in cell_bboxes if bbox is not None]
 
         if len(set(coords)) > 1:
             raise ValueError(
@@ -635,13 +673,13 @@ class TableData(BaseModel):  # TBD
             row_cells_with_bbox: dict[int, list[BoundingBox]] = {}
 
             # Collect all cells in this row that have bounding boxes
-            for cell in self.table_cells:
-                if cell.bbox is not None and cell.start_row_offset_idx <= row_idx < cell.end_row_offset_idx:
+            for cell, cell_bbox in zip(self.table_cells, cell_bboxes):
+                if cell_bbox is not None and cell.start_row_offset_idx <= row_idx < cell.end_row_offset_idx:
                     row_span = cell.end_row_offset_idx - cell.start_row_offset_idx
                     if row_span in row_cells_with_bbox:
-                        row_cells_with_bbox[row_span].append(cell.bbox)
+                        row_cells_with_bbox[row_span].append(cell_bbox)
                     else:
-                        row_cells_with_bbox[row_span] = [cell.bbox]
+                        row_cells_with_bbox[row_span] = [cell_bbox]
 
             # Calculate the enclosing bounding box for this row
             if len(row_cells_with_bbox) > 0:
@@ -690,7 +728,9 @@ class TableData(BaseModel):  # TBD
 
         return row_bboxes
 
-    def get_column_bounding_boxes(self, *, minimal: bool = True) -> dict[int, BoundingBox]:
+    def get_column_bounding_boxes(
+        self, *, minimal: bool = True, doc: Optional["DoclingDocument"] = None
+    ) -> dict[int, BoundingBox]:
         """Get the bounding box for each column in the table.
 
         Layout follows the table's ``orientation`` field: ``ROT_0`` / ``ROT_180``
@@ -704,16 +744,18 @@ class TableData(BaseModel):  # TBD
                 column based on its cells. If False, all columns will have a
                 uniform extent perpendicular to the column direction (t/b for
                 ROT_0/ROT_180, l/r for ROT_90/ROT_270).
+            doc: Optional document used to resolve the bounding box of cells that
+                do not carry an explicit ``bbox`` (e.g. ``RichTableCell``), by
+                taking the union of the referenced item's provenance boxes.
 
         Returns:
             dict[int, BoundingBox]: A dictionary mapping column indices to their
             bounding boxes. Only columns with cells that have bounding boxes are included.
         """
         horizontal = self.orientation in (Orientation.ROT_0, Orientation.ROT_180)
-        coords = []
-        for cell in self.table_cells:
-            if cell.bbox is not None:
-                coords.append(cell.bbox.coord_origin)
+        # Resolve each cell's bbox once (RichTableCell may need to traverse `doc`).
+        cell_bboxes: list[Optional[BoundingBox]] = [cell._get_bbox(doc=doc) for cell in self.table_cells]
+        coords = [bbox.coord_origin for bbox in cell_bboxes if bbox is not None]
 
         if len(set(coords)) > 1:
             raise ValueError(
@@ -727,13 +769,13 @@ class TableData(BaseModel):  # TBD
             col_cells_with_bbox: dict[int, list[BoundingBox]] = {}
 
             # Collect all cells in this row that have bounding boxes
-            for cell in self.table_cells:
-                if cell.bbox is not None and cell.start_col_offset_idx <= col_idx < cell.end_col_offset_idx:
+            for cell, cell_bbox in zip(self.table_cells, cell_bboxes):
+                if cell_bbox is not None and cell.start_col_offset_idx <= col_idx < cell.end_col_offset_idx:
                     col_span = cell.end_col_offset_idx - cell.start_col_offset_idx
                     if col_span in col_cells_with_bbox:
-                        col_cells_with_bbox[col_span].append(cell.bbox)
+                        col_cells_with_bbox[col_span].append(cell_bbox)
                     else:
-                        col_cells_with_bbox[col_span] = [cell.bbox]
+                        col_cells_with_bbox[col_span] = [cell_bbox]
 
             # Calculate the enclosing bounding box for this row
             if len(col_cells_with_bbox) > 0:

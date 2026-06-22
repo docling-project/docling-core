@@ -2658,6 +2658,85 @@ def test_table_data_horizontal_bounding_boxes_with_spans_no_overlap():
             assert a.intersection_area_with(b) == 0, f"col overlap (minimal={minimal})"
 
 
+def test_table_data_bounding_boxes_with_rich_table_cell():
+    """RichTableCell without an own bbox contributes its referenced extent.
+
+    A ``RichTableCell`` has an optional ``bbox``. When it is ``None`` but its
+    ``ref`` resolves to an item whose descendants carry provenance bboxes, the
+    row/column boxes must enclose that referenced extent -- but only when a
+    ``doc`` is supplied so the ref can be resolved.
+    """
+    doc = DoclingDocument(name="rich-table")
+    doc.add_page(page_no=1, size=Size(width=200.0, height=200.0))
+
+    # Group with two text items carrying prov bboxes; the rich cell refs the group.
+    grp = doc.add_group(name="cellgrp")
+    t1 = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="a",
+        parent=grp,
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox(l=10, t=190, r=40, b=170, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 1),
+        ),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="b",
+        parent=grp,
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox(l=50, t=180, r=90, b=160, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 1),
+        ),
+    )
+
+    rich = RichTableCell(
+        ref=grp.get_ref(),
+        text="",
+        bbox=None,
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+    )
+    plain = TableCell(
+        text="x",
+        bbox=BoundingBox(l=100, t=190, r=150, b=160, coord_origin=CoordOrigin.BOTTOMLEFT),
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=1,
+        end_col_offset_idx=2,
+    )
+    table = TableData(num_rows=1, num_cols=2, table_cells=[rich, plain])
+
+    # _get_bbox: no doc -> own (None) bbox; with doc -> union of referenced prov.
+    assert rich._get_bbox() is None
+    assert plain._get_bbox() == plain.bbox
+    rich_bbox = rich._get_bbox(doc=doc)
+    assert rich_bbox is not None
+    assert (rich_bbox.l, rich_bbox.r, rich_bbox.t, rich_bbox.b) == (10, 90, 190, 160)
+
+    # Without doc the rich cell is skipped: row 0 only covers the plain cell.
+    rows_no_doc = table.get_row_bounding_boxes()
+    assert (rows_no_doc[0].l, rows_no_doc[0].r) == (100, 150)
+    # Column 0 (rich-only) has no resolvable bbox without a doc.
+    assert 0 not in table.get_column_bounding_boxes()
+
+    # With doc the rich cell's referenced extent is included.
+    rows = table.get_row_bounding_boxes(doc=doc)
+    assert (rows[0].l, rows[0].r) == (10, 150)
+    cols = table.get_column_bounding_boxes(doc=doc)
+    assert (cols[0].l, cols[0].r) == (10, 90)
+    assert (cols[1].l, cols[1].r) == (100, 150)
+
+    # An explicit bbox on the rich cell wins over the referenced extent.
+    rich.bbox = BoundingBox(l=5, t=195, r=95, b=155, coord_origin=CoordOrigin.BOTTOMLEFT)
+    assert rich._get_bbox(doc=doc) == rich.bbox
+    assert t1.parent is not None  # sanity: ref tree wired up
+
+
 def _validate_doc(doc: DoclingDocument) -> DoclingDocument:
     return DoclingDocument.model_validate(doc.model_dump(mode="json"))
 
