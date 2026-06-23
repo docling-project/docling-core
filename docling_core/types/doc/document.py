@@ -91,7 +91,6 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.PARAGRAPH,
     DocItemLabel.TABLE,
     DocItemLabel.PICTURE,
-    DocItemLabel.CHART,
     DocItemLabel.FORMULA,
     DocItemLabel.CHECKBOX_UNSELECTED,
     DocItemLabel.CHECKBOX_SELECTED,
