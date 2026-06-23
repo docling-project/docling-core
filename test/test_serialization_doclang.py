@@ -1508,6 +1508,25 @@ def test_suppress_content_filtered_picture_shell():
     assert "Body paragraph" in result
 
 
+def test_suppress_unclassified_picture_with_always_label_mode():
+    """Unclassified pictures are omitted for OCR-only even with ``label_mode=ALWAYS``."""
+    doc = DoclingDocument(name="ocr_with_icon_shell")
+    doc.add_picture()
+    doc.add_text(label=DocItemLabel.TEXT, text="Visible body text")
+
+    params = DocLangParams(
+        include_version=False,
+        suppress_empty_elements=True,
+        add_location=False,
+        label_mode=LabelMode.ALWAYS,
+        content_types={ContentType.TEXT_OTHER, ContentType.REF_CAPTION, ContentType.REF_FOOTNOTE},
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<picture" not in result
+    assert "<label" not in result
+    assert "Visible body text" in result
+
+
 def test_suppress_picture_on_layout_only():
     """Layout-only serialization must not emit picture tags (only text/table boxes)."""
     doc = DoclingDocument(name="layout_only_with_picture")
