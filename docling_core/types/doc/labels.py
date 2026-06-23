@@ -7,7 +7,7 @@ class DocItemLabel(str, Enum):
     """DocItemLabel."""
 
     CAPTION = "caption"
-    CHART = "chart"
+    CHART = "chart"  # this is deprecated, use the `PICTURE` and set add a meta classification label `other_chart`
     FOOTNOTE = "footnote"
     FORMULA = "formula"
     LIST_ITEM = "list_item"
@@ -110,7 +110,7 @@ class PictureClassificationLabel(str, Enum):
 
     # Current v2 model labels (DocumentFigureClassifier-v2.0)
 
-    # Charts
+    # Charts: A chart is defined as a picture representing quantitative data, that can be represented in a table.
     BAR_CHART = "bar_chart"
     BOX_PLOT = "box_plot"
     FLOW_CHART = "flow_chart"
@@ -118,6 +118,7 @@ class PictureClassificationLabel(str, Enum):
     PIE_CHART = "pie_chart"
     SCATTER_PLOT = "scatter_plot"
     TABLE = "table"
+    OTHER_CHART = "other_chart"  # if it is not any of the specific charts above.
 
     # Images
     FULL_PAGE_IMAGE = "full_page_image"
