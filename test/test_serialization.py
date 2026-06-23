@@ -41,14 +41,12 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-
 from docling_core.types.doc import DoclingDocument
 from docling_core.types.doc.base import BoundingBox, ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
     DescriptionAnnotation,
-    DoclingDocument,
     EntitiesMetaField,
     EntityMention,
     Formatting,
@@ -1231,9 +1229,7 @@ def test_html_inline_group_no_spaces():
     )
 
     # This should serialize as <strong>Project</strong>ing without space
-    ser = HTMLDocSerializer(
-        doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False)
-    )
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
     actual = ser.serialize().text
 
     body_content = _extract_body_content(actual)
@@ -1283,9 +1279,7 @@ def test_html_inline_group_mixed_formatting_mid_word():
         ),
     )
 
-    ser = HTMLDocSerializer(
-        doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False)
-    )
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
     actual = ser.serialize().text
 
     body_content = _extract_body_content(actual)
@@ -1309,9 +1303,7 @@ def test_html_inline_group_single_part():
     doc, group = _make_inline_doc()
     _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Single")
 
-    ser = HTMLDocSerializer(
-        doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False)
-    )
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
     actual = ser.serialize().text
 
     body_content = _extract_body_content(actual)
@@ -1647,18 +1639,17 @@ def test_classify_inline_boundary_cases(case_id: str):
         )
         assert _classify_text_boundary(prev_item=prev_item, item=curr_item) == InlineBoundary.UNKNOWN
 
-    assert _inline_boundary(doc, group, **{k: v for k, v in case.items() if k != "expected" and k != "text_boundary_unknown"}) == expected
+    assert (
+        _inline_boundary(
+            doc, group, **{k: v for k, v in case.items() if k != "expected" and k != "text_boundary_unknown"}
+        )
+        == expected
+    )
 
 
 def test_classify_inline_boundary_without_items():
-    assert (
-        _classify_inline_boundary(prev_text="foo ", prev_item=None, text="bar", item=None)
-        == InlineBoundary.JOIN
-    )
-    assert (
-        _classify_inline_boundary(prev_text="foo", prev_item=None, text="bar", item=None)
-        == InlineBoundary.SPACE
-    )
+    assert _classify_inline_boundary(prev_text="foo ", prev_item=None, text="bar", item=None) == InlineBoundary.JOIN
+    assert _classify_inline_boundary(prev_text="foo", prev_item=None, text="bar", item=None) == InlineBoundary.SPACE
 
 
 _JOIN_INLINE_CASES: dict[str, dict] = {
@@ -1773,9 +1764,7 @@ def test_common_inline_helper_flags():
     doc, group = _make_inline_doc()
     plain = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="plain")
     bold = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
-    linked = _add_inline_text(
-        doc, group, label=DocItemLabel.TEXT, text="link", hyperlink="https://example.com"
-    )
+    linked = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="link", hyperlink="https://example.com")
     code = doc.add_code(text="print()", parent=group)
     formula = doc.add_formula(text="E=mc^2", parent=group)
 
