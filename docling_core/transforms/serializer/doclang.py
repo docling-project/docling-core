@@ -237,6 +237,10 @@ class DocLangParams(CommonParams):
         _advanced_field(detail="Types of content to serialize (only relevant if add_content is True)."),
     ] = _DEFAULT_CONTENT_TYPES
     layer_mode: Annotated[LayerMode, _advanced_field()] = LayerMode.AUTO
+    emit_picture_layer: Annotated[
+        bool,
+        _advanced_field(detail="Whether to emit `<layer .../>` in picture element heads."),
+    ] = True
     # DocLang formatting
     pretty_indentation: Annotated[
         str | None,
@@ -247,8 +251,11 @@ class DocLangParams(CommonParams):
         bool,
         _advanced_field(
             detail=(
-                "When True, text items that produce no content (no text, no location) are "
-                "completely omitted rather than emitting an empty open/close tag pair."
+                "When True, elements that produce no serialized body content are completely "
+                "omitted rather than emitting an empty open/close tag pair or a head-only "
+                "shell (e.g. layer/thread/location metadata without text). When "
+                "``content_types`` excludes an item's body type, head-only shells are "
+                "suppressed as well."
             ),
         ),
     ] = False
@@ -283,12 +290,23 @@ class DocLangParams(CommonParams):
     ] = False
 
 
+def _text_item_content_type_active(item: TextItem, params: DocLangParams) -> bool:
+    """Return whether the item's primary text content type is enabled in ``params``."""
+    if isinstance(item, CodeItem):
+        return ContentType.TEXT_CODE in params.content_types
+    if isinstance(item, FormulaItem):
+        return ContentType.TEXT_FORMULA in params.content_types
+    return ContentType.TEXT_OTHER in params.content_types
+
+
 def _create_layer_token(
     *,
     item: NodeItem,
     params: DocLangParams,
 ) -> str:
     """Create `<layer value="..."/>` in element head."""
+    if isinstance(item, PictureItem) and not params.emit_picture_layer:
+        return ""
     if params.layer_mode == LayerMode.ALWAYS or (
         params.layer_mode == LayerMode.AUTO and item.content_layer != ContentLayer.BODY
     ):
@@ -1230,6 +1248,22 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             if text_part:
                 parts.append(text_part)
 
+        # Under content_types filtering, an item whose body type is off would emit a
+        # head-only shell (label/thread/layer tokens, no text): omit it. A code block
+        # still carrying caption/footnote satellites is kept for them.
+        if (
+            params.suppress_empty_elements
+            and not _text_item_content_type_active(item, params)
+            and not text_part
+            and not (
+                include_caption_head
+                and isinstance(item, FloatingItem)
+                and not is_inline_scope
+                and (item.captions or item.footnotes)
+            )
+        ):
+            return create_ser_result(text="", span_source=item)
+
         text_res = "".join(parts)
 
         # Special handling for ListItems with suppress_empty_elements
@@ -1415,6 +1449,8 @@ class DocLangPictureSerializer(BasePictureSerializer):
             raw_label=_picture_classification_label_value(item),
             params=params,
         )
+        # ``<picture>`` in the task prompt enables classification labels only.
+        label_for_head = picture_label if any_match else None
         custom_head = ""
         if any_match and item.meta:
             meta_kwargs = dict(**kwargs)
@@ -1465,7 +1501,7 @@ class DocLangPictureSerializer(BasePictureSerializer):
             item=item,
             doc=doc,
             params=params,
-            label_value=picture_label,
+            label_value=label_for_head,
             caption_text=caption_head or None,
             custom_text=custom_head or None,
             include_item_meta_head=any_match,
@@ -1481,6 +1517,18 @@ class DocLangPictureSerializer(BasePictureSerializer):
             item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
         )
         res_parts.extend(before + after)
+
+        if (
+            not any_match
+            and not picture_body_parts
+            and not (before or after)
+            and not (
+                params.add_location
+                and item.prov
+                and params.content_types
+            )
+        ):
+            return create_ser_result()
 
         if not inner and not (before or after):
             if params.suppress_empty_elements:
@@ -1721,6 +1769,13 @@ class DocLangTableSerializer(BaseTableSerializer):
             )
             res_parts.extend(before + after)
 
+        if (
+            params.suppress_empty_elements
+            and ContentType.TABLE not in params.content_types
+            and not inner_parts
+            and not (before or after)
+        ):
+            return create_ser_result()
         if not (head or inner_parts) and not (before or after):
             if params.suppress_empty_elements:
                 return create_ser_result()
