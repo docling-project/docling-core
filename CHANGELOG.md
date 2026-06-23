@@ -1,3 +1,9 @@
+## [v2.84.0](https://github.com/docling-project/docling-core/releases/tag/v2.84.0) - 2026-06-23
+
+### Feature
+
+* Enable OpenDocument formats in DoclingDocument and allow the serialization of charts ([#654](https://github.com/docling-project/docling-core/issues/654)) ([`dc0fc7d`](https://github.com/docling-project/docling-core/commit/dc0fc7d020c1ed57c17300771e3f36bb8aa6fcb2))
+
 ## [v2.83.1](https://github.com/docling-project/docling-core/releases/tag/v2.83.1) - 2026-06-19
 
 ### Fix

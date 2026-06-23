@@ -992,7 +992,7 @@ wheels = [
 
 [[package]]
 name = "docling-core"
-version = "2.83.1"
+version = "2.84.0"
 source = { editable = "." }
 dependencies = [
     { name = "defusedxml" },
