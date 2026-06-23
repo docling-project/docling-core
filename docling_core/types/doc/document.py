@@ -358,10 +358,8 @@ class TableCell(BaseModel):
             if not len(text):
                 text_cells = data.pop("text_cell_bboxes", None)
                 if text_cells:
-                    for el in text_cells:
-                        text += el["token"] + " "
+                    text = " ".join(el["token"] for el in text_cells)
 
-                text = text.strip()
             data["text"] = text
 
         return data
