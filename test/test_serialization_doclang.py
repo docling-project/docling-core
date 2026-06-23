@@ -1396,6 +1396,238 @@ def test_suppress_empty_picture():
     assert "<picture" not in result
 
 
+def test_suppress_content_filtered_text_shells():
+    """Head-only text shells are omitted when ``content_types`` excludes body text."""
+    doc = DoclingDocument(name="picture_only_page")
+    doc.add_page(page_no=1, size=Size(width=820, height=500), image=None)
+
+    doc.add_text(
+        label=DocItemLabel.PAGE_HEADER,
+        text="Header title",
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    pic = doc.add_picture()
+    pic.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    label=PictureClassificationLabel.LOGO,
+                    confidence=0.9,
+                )
+            ]
+        )
+    )
+
+    doc.add_text(label=DocItemLabel.TEXT, text="Body paragraph")
+
+    part1 = "Footer line one "
+    part2 = "continues"
+    footer_text = part1 + part2
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 450, 400, 480), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, len(part1)),
+    )
+    footer = doc.add_text(label=DocItemLabel.TEXT, text=footer_text, prov=prov)
+    footer.orig = footer_text
+    footer.prov.append(
+        ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((420, 450, 810, 480), origin=CoordOrigin.TOPLEFT),
+            charspan=(len(part1), len(footer_text)),
+        )
+    )
+
+    params = DocLangParams(
+        include_version=False,
+        suppress_empty_elements=True,
+        add_location=False,
+        content_types={ContentType.PICTURE},
+    )
+    result = serialize_doclang(doc, params=params)
+
+    assert "<page_header" not in result
+    assert "<text" not in result
+    assert "Header title" not in result
+    assert "Body paragraph" not in result
+    assert "Footer line" not in result
+    assert "<thread" not in result
+    assert "<picture" in result
+    assert 'value="logo"' in result
+
+
+def test_suppress_content_filtered_table_shell():
+    """Table head-only shells are omitted when ``content_types`` excludes table body."""
+    doc = DoclingDocument(name="picture_only_with_table")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 90, 90), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+    doc.add_table(data=TableData(), prov=prov)
+
+    params = DocLangParams(
+        include_version=False,
+        suppress_empty_elements=True,
+        add_location=True,
+        content_types={ContentType.PICTURE},
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<table" not in result
+    assert "<otsl" not in result
+
+
+def test_suppress_content_filtered_picture_shell():
+    """Picture shells are omitted when ``content_types`` excludes picture body."""
+    doc = DoclingDocument(name="ocr_only_with_picture")
+    doc.add_page(page_no=1, size=Size(width=820, height=500), image=None)
+    pic = doc.add_picture()
+    pic.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    label=PictureClassificationLabel.LOGO,
+                    confidence=0.9,
+                )
+            ]
+        )
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Body paragraph")
+
+    params = DocLangParams(
+        include_version=False,
+        suppress_empty_elements=True,
+        add_location=False,
+        label_mode=LabelMode.ALWAYS,
+        content_types={ContentType.TEXT_OTHER},
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<picture" not in result
+    assert "Body paragraph" in result
+
+
+def test_suppress_picture_on_layout_only():
+    """Layout-only serialization must not emit picture tags (only text/table boxes)."""
+    doc = DoclingDocument(name="layout_only_with_picture")
+    doc.add_page(page_no=1, size=Size(width=820, height=500), image=None)
+    pic_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 200, 200), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+    pic = doc.add_picture(prov=pic_prov)
+    pic.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    label=PictureClassificationLabel.LOGO,
+                    confidence=0.9,
+                )
+            ]
+        )
+    )
+    text_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 300, 400, 320), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 4),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Body", prov=text_prov)
+
+    params = DocLangParams(
+        include_version=False,
+        suppress_empty_elements=False,
+        add_location=True,
+        content_types=set(),
+        label_mode=LabelMode.ALWAYS,
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<picture" not in result
+    assert "<location" in result
+
+
+def test_picture_layout_boxes_without_classification():
+    """Layout + content tasks may emit picture boxes; labels require picture task."""
+    doc = DoclingDocument(name="layout_ocr_with_picture")
+    doc.add_page(page_no=1, size=Size(width=820, height=500), image=None)
+    pic_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 200, 200), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+    pic = doc.add_picture(prov=pic_prov)
+    pic.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    label=PictureClassificationLabel.LOGO,
+                    confidence=0.9,
+                )
+            ]
+        )
+    )
+    text_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 300, 400, 320), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 4),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Body", prov=text_prov)
+
+    params = DocLangParams(
+        include_version=False,
+        suppress_empty_elements=False,
+        add_location=True,
+        content_types={ContentType.TEXT_OTHER},
+        label_mode=LabelMode.ALWAYS,
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<picture" in result
+    assert "<label" not in result
+    assert "<location" in result
+    assert "Body" in result
+
+
+def test_picture_layer_can_be_disabled():
+    """Picture classification can be emitted without picture content-layer metadata."""
+    doc = DoclingDocument(name="picture_without_layer")
+    doc.add_page(page_no=1, size=Size(width=820, height=500), image=None)
+    pic = doc.add_picture()
+    pic.content_layer = ContentLayer.BACKGROUND
+    pic.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(
+                    label=PictureClassificationLabel.LOGO,
+                    confidence=0.9,
+                )
+            ]
+        )
+    )
+
+    default_result = serialize_doclang(
+        doc,
+        params=DocLangParams(
+            include_version=False,
+            content_types={ContentType.PICTURE},
+            label_mode=LabelMode.ALWAYS,
+        ),
+    )
+    assert '<layer value="background"/>' in default_result
+
+    no_layer_result = serialize_doclang(
+        doc,
+        params=DocLangParams(
+            include_version=False,
+            content_types={ContentType.PICTURE},
+            label_mode=LabelMode.ALWAYS,
+            emit_picture_layer=False,
+        ),
+    )
+    assert '<label value="logo"/>' in no_layer_result
+    assert "<layer" not in no_layer_result
+
+
 def test_empty_picture_preserved_by_default():
     """Without suppress_empty_elements the empty picture is preserved."""
     doc = DoclingDocument(name="test")
