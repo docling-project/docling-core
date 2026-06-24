@@ -1458,7 +1458,7 @@ def test_suppress_content_filtered_text_shells():
 
 
 def test_suppress_content_filtered_table_shell():
-    """Table head-only shells are omitted when ``content_types`` excludes table body."""
+    """Table head-only shells are omitted on a picture-only prompt (no layout boxes)."""
     doc = DoclingDocument(name="picture_only_with_table")
     doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
     prov = ProvenanceItem(
@@ -1471,11 +1471,34 @@ def test_suppress_content_filtered_table_shell():
     params = DocLangParams(
         include_version=False,
         suppress_empty_elements=True,
-        add_location=True,
+        add_location=False,
         content_types={ContentType.PICTURE},
     )
     result = serialize_doclang(doc, params=params)
     assert "<table" not in result
+    assert "<otsl" not in result
+
+
+def test_table_box_kept_on_layout_with_suppression():
+    """A content-filtered table keeps its layout box when ``add_location`` is set."""
+    doc = DoclingDocument(name="layout_table_box")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 90, 90), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+    doc.add_table(data=TableData(), prov=prov)
+
+    params = DocLangParams(
+        include_version=False,
+        suppress_empty_elements=True,
+        add_location=True,
+        content_types=set(),
+    )
+    result = serialize_doclang(doc, params=params)
+    assert "<table" in result
+    assert "<location" in result
     assert "<otsl" not in result
 
 
@@ -1527,8 +1550,8 @@ def test_suppress_unclassified_picture_with_always_label_mode():
     assert "Visible body text" in result
 
 
-def test_suppress_picture_on_layout_only():
-    """Layout-only serialization must not emit picture tags (only text/table boxes)."""
+def test_picture_box_on_layout_only_without_label():
+    """Layout-only (suppression on) keeps picture boxes but drops the classification label."""
     doc = DoclingDocument(name="layout_only_with_picture")
     doc.add_page(page_no=1, size=Size(width=820, height=500), image=None)
     pic_prov = ProvenanceItem(
@@ -1556,13 +1579,14 @@ def test_suppress_picture_on_layout_only():
 
     params = DocLangParams(
         include_version=False,
-        suppress_empty_elements=False,
+        suppress_empty_elements=True,
         add_location=True,
         content_types=set(),
         label_mode=LabelMode.ALWAYS,
     )
     result = serialize_doclang(doc, params=params)
-    assert "<picture" not in result
+    assert "<picture" in result
+    assert "<label" not in result
     assert "<location" in result
 
 
@@ -1595,7 +1619,7 @@ def test_picture_layout_boxes_without_classification():
 
     params = DocLangParams(
         include_version=False,
-        suppress_empty_elements=False,
+        suppress_empty_elements=True,
         add_location=True,
         content_types={ContentType.TEXT_OTHER},
         label_mode=LabelMode.ALWAYS,
