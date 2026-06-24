@@ -21,9 +21,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer._doclang_utils import (
     _DOCLANG_LABEL_UNDEFINED,
-    _DOCLANG_META_TAG_DESCRIPTION,
     _DOCLANG_META_TAG_SMILES,
-    _DOCLANG_META_TAG_SUMMARY,
     _DOCLANG_VERSION,
     DOCLANG_DFLT_RESOLUTION,
     DOCLANG_NAMESPACE,
@@ -73,7 +71,6 @@ from docling_core.types.doc import (
     BoundingBox,
     CodeItem,
     ContentLayer,
-    DescriptionMetaField,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -94,7 +91,6 @@ from docling_core.types.doc import (
     Script,
     SectionHeaderItem,
     Size,
-    SummaryMetaField,
     TableCell,
     TableData,
     TableItem,
@@ -324,6 +320,12 @@ def _text_item_hyperlink_uri(item: DocItem) -> Optional[str]:
     return None
 
 
+def _meta_field_serialization_allowed(name: str, params: DocLangParams) -> bool:
+    return (params.allowed_meta_names is None or name in params.allowed_meta_names) and (
+        name not in params.blocked_meta_names
+    )
+
+
 def _element_head_prefix(
     *,
     item: DocItem,
@@ -333,9 +335,10 @@ def _element_head_prefix(
     caption_text: Optional[str] = None,
     custom_text: Optional[str] = None,
     include_href: bool = True,
+    include_item_meta_head: bool = True,
     thread_id: Optional[str] = None,
 ) -> str:
-    """Emit element-head property elements in XSD order (label → thread → href → layer → location → caption → custom)."""
+    """Emit element-head property elements in XSD order (label → thread → href → layer → location → caption → description → summary → custom)."""
     parts: list[str] = []
     if label_value:
         parts.append(_create_label_token(value=label_value))
@@ -350,6 +353,26 @@ def _element_head_prefix(
             parts.append(loc)
     if caption_text:
         parts.append(caption_text)
+    if include_item_meta_head:
+        if (
+            isinstance(item, FloatingItem)
+            and item.meta
+            and item.meta.description
+            and _meta_field_serialization_allowed(MetaFieldName.DESCRIPTION, params)
+        ):
+            parts.append(
+                _wrap(
+                    text=_escape_text(item.meta.description.text, params),
+                    wrap_tag=DocLangToken.DESCRIPTION.value,
+                )
+            )
+        if item.meta and item.meta.summary and _meta_field_serialization_allowed(MetaFieldName.SUMMARY, params):
+            parts.append(
+                _wrap(
+                    text=_escape_text(item.meta.summary.text, params),
+                    wrap_tag=DocLangToken.SUMMARY.value,
+                )
+            )
     if custom_text:
         parts.append(custom_text)
     return "".join(parts)
@@ -1038,10 +1061,9 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
 
     def _serialize_meta_field(self, meta: BaseMeta, name: str, params: DocLangParams) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
-            if name == MetaFieldName.SUMMARY and isinstance(field_val, SummaryMetaField):
-                txt = _wrap(text=_escape_text(field_val.text, params), wrap_tag=_DOCLANG_META_TAG_SUMMARY)
-            elif name == MetaFieldName.DESCRIPTION and isinstance(field_val, DescriptionMetaField):
-                txt = _wrap(text=_escape_text(field_val.text, params), wrap_tag=_DOCLANG_META_TAG_DESCRIPTION)
+            if name in {MetaFieldName.SUMMARY, MetaFieldName.DESCRIPTION}:
+                # Emitted as native element-head ``<summary>`` / ``<description>``.
+                return None
             elif name == MetaFieldName.CLASSIFICATION:
                 # Picture classification is emitted as <label value="..."/> in element head.
                 return None
@@ -1197,6 +1219,7 @@ class DocLangPictureSerializer(BasePictureSerializer):
             label_value=picture_label,
             caption_text=caption_head or None,
             custom_text=custom_head or None,
+            include_item_meta_head=any_match,
         )
         inner = head + "".join(picture_body_parts)
         picture_open = f"<{DocLangToken.PICTURE.value}"

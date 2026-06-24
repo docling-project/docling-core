@@ -1533,9 +1533,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         )
 
     def _apply_custom_meta_from_element(self, *, item: NodeItem, el: Element) -> None:
-        """Restore item meta from ``<custom>`` children in the element head."""
+        """Restore item meta from element-head property elements."""
         head_nodes, _ = self._split_element_children_head_body(el)
-        self._apply_custom_meta_from_head_nodes(item=item, head_nodes=head_nodes)
+        self._apply_meta_from_head_nodes(item=item, head_nodes=head_nodes)
 
     def _ensure_item_meta(self, item: DocItem) -> BaseMeta:
         """Return ``item.meta``, creating the appropriate meta model when absent."""
@@ -1578,16 +1578,25 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             namespace, name = parsed
             meta.set_custom_field(namespace=namespace, name=name, value=value)
 
-    def _apply_custom_meta_from_head_nodes(self, *, item: NodeItem, head_nodes: Sequence[Node]) -> None:
-        """Restore item meta from ``<custom>`` children in the element head."""
+    def _apply_meta_from_head_nodes(self, *, item: NodeItem, head_nodes: Sequence[Node]) -> None:
+        """Restore item meta from element-head property elements."""
         if not isinstance(item, DocItem):
             return
         for node in head_nodes:
-            if not isinstance(node, Element) or node.tagName != DocLangToken.CUSTOM.value:
+            if not isinstance(node, Element):
                 continue
-            for child in node.childNodes:
-                if isinstance(child, Element):
-                    self._apply_custom_meta_field_element(item=item, field_el=child)
+            tag = node.tagName
+            if tag == DocLangToken.DESCRIPTION.value:
+                if isinstance(item, FloatingItem) and (text := self._get_text(node).strip()):
+                    meta = cast(FloatingMeta, self._ensure_item_meta(item))
+                    meta.description = DescriptionMetaField(text=text)
+            elif tag == DocLangToken.SUMMARY.value:
+                if text := self._get_text(node).strip():
+                    self._ensure_item_meta(item).summary = SummaryMetaField(text=text)
+            elif tag == DocLangToken.CUSTOM.value:
+                for child in node.childNodes:
+                    if isinstance(child, Element):
+                        self._apply_custom_meta_field_element(item=item, field_el=child)
 
     # ------------- Helpers -------------
     def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> Optional[TextItem]:
