@@ -17,7 +17,7 @@ from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DoclingDocument as DLDocument
-from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.document import ContentLayer, DoclingDocument
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
@@ -251,6 +251,47 @@ def test_contextualize_altered_delim():
     assert_or_generate_json_ground_truth(
         act_data,
         EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_multiple_content_layers(doc_with_layers: DoclingDocument):
+    """Test that hybrid chunking can include multiple content layers in the output."""
+
+    default_chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+    )
+    default_text = "\n".join(chunk.text for chunk in default_chunker.chunk(dl_doc=doc_with_layers))
+
+    assert "Main body content" in default_text
+    assert "Page Header" not in default_text
+    assert "Page Footer" not in default_text
+
+    class MultiLayerSerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            params = MarkdownParams(layers={ContentLayer.BODY, ContentLayer.FURNITURE})
+            return ChunkingDocSerializer(doc=doc, params=params)
+
+    multilayer_chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        serializer_provider=MultiLayerSerializerProvider(),
+    )
+    multilayer_chunks = list(multilayer_chunker.chunk(dl_doc=doc_with_layers))
+    multilayer_text = "\n".join(chunk.text for chunk in multilayer_chunks)
+
+    assert "Main body content" in multilayer_text
+    assert "Page Header" in multilayer_text
+    assert "Page Footer" in multilayer_text
+
+    act_data = dict(root=[DocChunk.model_validate(chunk).export_json_dict() for chunk in multilayer_chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        "test/data/chunker/2i_out_chunks_multilayer.json",
     )
 
 
