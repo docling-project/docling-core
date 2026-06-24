@@ -239,7 +239,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
         """Serializes the passed item."""
         params = DocTagsParams(**kwargs)
         res_parts: list[SerializationResult] = []
-        is_chart = False
+        is_chart = item.label == DocItemLabel.CHART
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
