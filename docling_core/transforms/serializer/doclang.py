@@ -1261,6 +1261,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 and not is_inline_scope
                 and (item.captions or item.footnotes)
             )
+            and not (params.add_location and item.prov)
         ):
             return create_ser_result(text="", span_source=item)
 
@@ -1449,8 +1450,13 @@ class DocLangPictureSerializer(BasePictureSerializer):
             raw_label=_picture_classification_label_value(item),
             params=params,
         )
-        # ``<picture>`` in the task prompt enables classification labels only.
-        label_for_head = picture_label if any_match else None
+        # Under content-filtered suppression (opt-in via ``suppress_empty_elements``),
+        # the classification label is emitted only when picture/chart/chemistry content
+        # is requested. Default behavior keeps the resolved label unchanged.
+        if params.suppress_empty_elements and not any_match:
+            label_for_head = None
+        else:
+            label_for_head = picture_label
         custom_head = ""
         if any_match and item.meta:
             meta_kwargs = dict(**kwargs)
@@ -1519,14 +1525,11 @@ class DocLangPictureSerializer(BasePictureSerializer):
         res_parts.extend(before + after)
 
         if (
-            not any_match
+            params.suppress_empty_elements
+            and not any_match
             and not picture_body_parts
             and not (before or after)
-            and not (
-                params.add_location
-                and item.prov
-                and params.content_types
-            )
+            and not (params.add_location and item.prov)
         ):
             return create_ser_result()
 
@@ -1774,6 +1777,7 @@ class DocLangTableSerializer(BaseTableSerializer):
             and ContentType.TABLE not in params.content_types
             and not inner_parts
             and not (before or after)
+            and not (params.add_location and item.prov)
         ):
             return create_ser_result()
         if not (head or inner_parts) and not (before or after):
