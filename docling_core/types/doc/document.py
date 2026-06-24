@@ -324,6 +324,17 @@ class PictureScatterChartData(PictureChartData):
     y_axis_label: str
     points: list[ChartPoint]
 
+@dataclass(slots=True)
+class FastTableCell:
+    text: str
+    row_span: int
+    col_span: int
+    start_row_offset_idx: int
+    end_row_offset_idx: int
+    start_col_offset_idx: int
+    end_col_offset_idx: int
+    column_header: bool = False
+    row_header: bool = False
 
 class TableCell(BaseModel):
     """TableCell."""
@@ -386,7 +397,7 @@ class RichTableCell(TableCell):
 
 
 AnyTableCell = Annotated[
-    Union[RichTableCell, TableCell],
+    Union[RichTableCell, TableCell, FastTableCell],
     Field(union_mode="left_to_right"),
 ]
 
