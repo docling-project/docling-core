@@ -978,16 +978,16 @@ wheels = [
 
 [[package]]
 name = "doclang"
-version = "0.6.0"
+version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "lxml" },
     { name = "saxonche" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/84/9e/5d2752f782b08bbb1ef30fadf01f0c9b522b8411403c01e7d66d968ca196/doclang-0.6.0.tar.gz", hash = "sha256:e786df5bfb3059283a50c6727d0f63cb44ad9b25b5dff6ab426f56183f65ef45", size = 25142, upload-time = "2026-06-10T14:51:05.734Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7f/a5/78f6b240f8348340d6e8c25b434ab08d26676472f0dfaeaf325330c09a1c/doclang-0.7.0.tar.gz", hash = "sha256:58c8fcc49d8700cf7a8eb3f256ac4fe47c4fb34f423f8afda50184dc178832a5", size = 28677, upload-time = "2026-06-24T15:43:05.808Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/fc/58a52c4d3fa9272eee80c36822af865e154629d25d4553559185e21e8209/doclang-0.6.0-py3-none-any.whl", hash = "sha256:5955427e4c3d3fdd49c787d6818ed5ff6a105ff273dceec06515b670732f536b", size = 24745, upload-time = "2026-06-10T14:51:04.749Z" },
+    { url = "https://files.pythonhosted.org/packages/39/0f/d39a33521fd7cd357c2a6b0851db1db4c6d9926f3cb156b00e36adc51faa/doclang-0.7.0-py3-none-any.whl", hash = "sha256:14e61b14c94e717e1d742839e647aa04337d99174cb3f86c16382493c1a33bf2", size = 28782, upload-time = "2026-06-24T15:43:04.892Z" },
 ]
 
 [[package]]
@@ -996,6 +996,7 @@ version = "2.84.0"
 source = { editable = "." }
 dependencies = [
     { name = "defusedxml" },
+    { name = "doclang" },
     { name = "jsonref" },
     { name = "jsonschema" },
     { name = "latex2mathml" },
@@ -1043,7 +1044,6 @@ constraints = [
 ]
 dev = [
     { name = "coverage" },
-    { name = "doclang" },
     { name = "ipykernel" },
     { name = "jsondiff" },
     { name = "mypy" },
@@ -1063,6 +1063,7 @@ dev = [
 requires-dist = [
     { name = "datasets", marker = "extra == 'examples'", specifier = ">=4.0.0" },
     { name = "defusedxml", specifier = ">=0.7.1,<0.8.0" },
+    { name = "doclang", specifier = ">=0.7,<0.8" },
     { name = "jsonref", specifier = ">=1.1.0,<2.0.0" },
     { name = "jsonschema", specifier = ">=4.16.0,<5.0.0" },
     { name = "latex2mathml", specifier = ">=3.77.0,<4.0.0" },
@@ -1101,7 +1102,6 @@ constraints = [
 ]
 dev = [
     { name = "coverage", specifier = "~=7.6" },
-    { name = "doclang", specifier = ">=0.6,<0.7" },
     { name = "ipykernel", specifier = "~=6.29" },
     { name = "jsondiff", specifier = "~=2.0" },
     { name = "mypy", specifier = "~=2.1.0" },

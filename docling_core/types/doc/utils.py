@@ -3,7 +3,9 @@
 import html
 import itertools
 import re
+import shutil
 import unicodedata
+import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -51,6 +53,44 @@ def relative_path(src: Path, target: Path) -> Path:
 
     # Combine and return the result
     return Path(*up_segments, *down_segments)
+
+
+def validate_archive_relative_path(path: str, *, label: str = "archive") -> None:
+    """Validate a relative path inside a DocLang archive package."""
+    if not path or path.startswith("/") or "\\" in path:
+        raise ValueError(f"Invalid {label} path: {path!r}")
+    parts = Path(path).parts
+    if ".." in parts or path in {".", ".."}:
+        raise ValueError(f"Invalid {label} path: {path!r}")
+
+
+def resolve_archive_path(archive_root: Path, relative_path: str) -> Path:
+    """Resolve a package-relative URI/path and ensure it stays inside ``archive_root``."""
+    validate_archive_relative_path(relative_path)
+    root = archive_root.resolve()
+    resolved = (root / relative_path).resolve()
+    if not resolved.is_relative_to(root):
+        raise ValueError(f"Invalid archive path: {relative_path!r}")
+    return resolved
+
+
+def safe_extract_zip_archive(archive: Path, destination: Path) -> None:
+    """Extract a DocLang ``.dclx`` archive without zip-slip path traversal."""
+    archive = archive.resolve()
+    destination = destination.resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(archive) as zf:
+        for member in zf.namelist():
+            if member.endswith("/"):
+                continue
+            validate_archive_relative_path(member, label="archive member")
+            target = (destination / member).resolve()
+            if not target.is_relative_to(destination):
+                raise ValueError(f"Unsafe archive member path: {member!r}")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with zf.open(member) as src, open(target, "wb") as dst:
+                shutil.copyfileobj(src, dst)
 
 
 def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: Optional[dict] = None) -> str:
