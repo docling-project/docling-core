@@ -576,7 +576,8 @@
         "furniture",
         "background",
         "invisible",
-        "notes"
+        "notes",
+        "sheet"
       ],
       "title": "ContentLayer",
       "type": "string"
