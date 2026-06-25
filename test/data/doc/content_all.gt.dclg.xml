@@ -188,10 +188,8 @@ hyperlink
     <location value="15"/>
     <location value="502"/>
     <caption>Picture Caption</caption>
-    <custom>
-      <docling__summary>Picture Summary</docling__summary>
-      <docling__description>Picture Description</docling__description>
-    </custom>
+    <description>Picture Description</description>
+    <summary>Picture Summary</summary>
   </picture>
   <picture class="chart">
     <label value="pie_chart"/>
@@ -200,10 +198,8 @@ hyperlink
     <location value="15"/>
     <location value="502"/>
     <caption>Picture Caption</caption>
-    <custom>
-      <docling__summary>Picture Summary</docling__summary>
-      <docling__description>Picture Description</docling__description>
-    </custom>
+    <description>Picture Description</description>
+    <summary>Picture Summary</summary>
     <tabular>
       <fcel/>
       Foo

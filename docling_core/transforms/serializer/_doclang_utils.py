@@ -291,6 +291,8 @@ class DocLangToken(str, Enum):
     HEADING = "heading"
     TEXT = "text"
     CAPTION = "caption"
+    DESCRIPTION = "description"
+    SUMMARY = "summary"
     FOOTNOTE = "footnote"
     PAGE_HEADER = "page_header"
     PAGE_FOOTER = "page_footer"
@@ -1035,6 +1037,8 @@ _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
         DocLangToken.HREF.value,
         DocLangToken.LOCATION.value,
         DocLangToken.CAPTION.value,
+        DocLangToken.DESCRIPTION.value,
+        DocLangToken.SUMMARY.value,
         DocLangToken.CUSTOM.value,
         DocLangToken.THREAD.value,
         DocLangToken.XREF.value,
