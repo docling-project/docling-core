@@ -22,6 +22,7 @@ from docling_core.transforms.serializer.doclang import (
     WrapMode,
 )
 from docling_core.types.doc import (
+    BaseMeta,
     BoundingBox,
     CodeLanguageLabel,
     CoordOrigin,
@@ -296,8 +297,11 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
     doc.add_text(label=DocItemLabel.TEXT, text="Some 'single' quotes")
     doc.add_text(label=DocItemLabel.TEXT, text='Some "double" quotes')
     text_item = doc.add_text(label=DocItemLabel.TEXT, text="An ampersand: &")
-    text_item.meta = PictureMeta(
+    text_item.meta = BaseMeta(
         summary=SummaryMetaField(text="Summary with <tags> & ampersands"),
+    )
+    pic = doc.add_picture()
+    pic.meta = PictureMeta(
         description=DescriptionMetaField(text="Description content"),
     )
     doc.add_code(text="0 == 0")

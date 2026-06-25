@@ -21,7 +21,7 @@ from docling_core.types.doc.document import FieldItem, FieldRegionItem
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-_DOCLANG_VERSION: Final = "0.6"
+_DOCLANG_VERSION: Final = "0.7"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()
@@ -291,6 +291,8 @@ class DocLangToken(str, Enum):
     HEADING = "heading"
     TEXT = "text"
     CAPTION = "caption"
+    DESCRIPTION = "description"
+    SUMMARY = "summary"
     FOOTNOTE = "footnote"
     PAGE_HEADER = "page_header"
     PAGE_FOOTER = "page_footer"
@@ -1035,6 +1037,8 @@ _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
         DocLangToken.HREF.value,
         DocLangToken.LOCATION.value,
         DocLangToken.CAPTION.value,
+        DocLangToken.DESCRIPTION.value,
+        DocLangToken.SUMMARY.value,
         DocLangToken.CUSTOM.value,
         DocLangToken.THREAD.value,
         DocLangToken.XREF.value,

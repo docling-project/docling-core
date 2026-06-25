@@ -5,11 +5,13 @@ Aligned to the DocLang specification version ``_DOCLANG_VERSION``.
 
 from collections.abc import Callable, Sequence
 from itertools import groupby
+from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, cast
 from xml.dom.minidom import Element, Node, Text
 
 from defusedxml.minidom import parseString
-from pydantic import BaseModel, PrivateAttr
+from PIL import Image as PILImage
+from pydantic import AnyUrl, BaseModel, PrivateAttr
 from typing_extensions import override
 
 from docling_core.transforms.deserializer.base import BaseDocDeserializer
@@ -76,6 +78,7 @@ from docling_core.types.doc.document import (
     FieldRegionItem,
     FieldValueItem,
     FormulaItem,
+    ImageRef,
     RichTableCell,
     TitleItem,
 )
@@ -83,6 +86,7 @@ from docling_core.types.doc.document import (
     GroupItem as GroupItemType,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel, GroupLabel
+from docling_core.types.doc.utils import resolve_archive_path
 
 __all__ = ["DocLangDocDeserializer"]
 
@@ -94,6 +98,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     _page_no: int = PrivateAttr(default=1)
     _default_resolution: int = PrivateAttr(default=DOCLANG_DFLT_RESOLUTION)
     _thread_registry: dict[tuple[str, str], NodeItem] = PrivateAttr(default_factory=dict)
+    _media_root: Optional[Path] = PrivateAttr(default=None)
 
     def _thread_registry_key(self, *, thread_id: str, host: str) -> tuple[str, str]:
         return (thread_id, host)
@@ -105,11 +110,15 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         Args:
             text: DocLang XML string to parse.
             page_no: Starting page number (default 1), passed via ``kwargs``.
+            media_root: Optional archive root for resolving relative ``<src uri="..."/>``
+                paths from a DocLang archive package.
 
         Returns:
             A populated `DoclingDocument` parsed from the input.
         """
         page_no: int = kwargs.get("page_no", 1)
+        media_root = kwargs.get("media_root")
+        self._media_root = Path(media_root).resolve() if media_root is not None else None
         try:
             root_node = parseString(text).documentElement
         except Exception as e:
@@ -1462,7 +1471,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 idx += 1
                 continue
             if node.tagName == DocLangToken.SRC.value:
-                # image URI restoration is not implemented yet
+                if self._media_root is not None:
+                    uri = node.getAttribute(DocLangAttributeKey.URI.value)
+                    if uri:
+                        pic.image = self._image_ref_from_archive_uri(uri)
                 idx += 1
                 continue
             if node.tagName == DocLangToken.TABULAR.value:
@@ -1480,10 +1492,50 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             if isinstance(node, Element):
                 self._dispatch_element(doc=doc, el=node, parent=pic)
 
+    def _image_ref_from_archive_uri(self, uri: str) -> ImageRef:
+        """Restore a picture ``<src uri=\"...\"/>`` from a DocLang archive package."""
+        import mimetypes
+
+        if self._media_root is None:
+            raise ValueError("Archive media root is not set")
+
+        uri = uri.strip()
+        if not uri:
+            raise ValueError("Empty image URI in archive markup")
+
+        if uri.startswith("data:"):
+            embedded = ImageRef(
+                mimetype="image/png",
+                dpi=72,
+                size=Size(width=1, height=1),
+                uri=AnyUrl(uri),
+            )
+            pil = embedded.pil_image
+            if pil is None:
+                raise ValueError("Could not decode embedded archive image URI")
+            return ImageRef.from_pil(pil, dpi=embedded.dpi)
+
+        if "://" in uri:
+            raise ValueError(f"Unsupported archive image URI scheme: {uri!r}")
+
+        resolved = resolve_archive_path(self._media_root, uri)
+        if not resolved.is_file():
+            raise ValueError(f"Archive asset not found: {uri!r}")
+
+        with PILImage.open(resolved) as pil:
+            pil_copy = pil.copy()
+        mimetype = mimetypes.guess_type(resolved.name)[0] or "image/png"
+        return ImageRef(
+            mimetype=mimetype,
+            dpi=72,
+            size=Size(width=pil_copy.width, height=pil_copy.height),
+            uri=resolved,
+        )
+
     def _apply_custom_meta_from_element(self, *, item: NodeItem, el: Element) -> None:
-        """Restore item meta from ``<custom>`` children in the element head."""
+        """Restore item meta from element-head property elements."""
         head_nodes, _ = self._split_element_children_head_body(el)
-        self._apply_custom_meta_from_head_nodes(item=item, head_nodes=head_nodes)
+        self._apply_meta_from_head_nodes(item=item, head_nodes=head_nodes)
 
     def _ensure_item_meta(self, item: DocItem) -> BaseMeta:
         """Return ``item.meta``, creating the appropriate meta model when absent."""
@@ -1526,16 +1578,25 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             namespace, name = parsed
             meta.set_custom_field(namespace=namespace, name=name, value=value)
 
-    def _apply_custom_meta_from_head_nodes(self, *, item: NodeItem, head_nodes: Sequence[Node]) -> None:
-        """Restore item meta from ``<custom>`` children in the element head."""
+    def _apply_meta_from_head_nodes(self, *, item: NodeItem, head_nodes: Sequence[Node]) -> None:
+        """Restore item meta from element-head property elements."""
         if not isinstance(item, DocItem):
             return
         for node in head_nodes:
-            if not isinstance(node, Element) or node.tagName != DocLangToken.CUSTOM.value:
+            if not isinstance(node, Element):
                 continue
-            for child in node.childNodes:
-                if isinstance(child, Element):
-                    self._apply_custom_meta_field_element(item=item, field_el=child)
+            tag = node.tagName
+            if tag == DocLangToken.DESCRIPTION.value:
+                if isinstance(item, FloatingItem) and (text := self._get_text(node).strip()):
+                    meta = cast(FloatingMeta, self._ensure_item_meta(item))
+                    meta.description = DescriptionMetaField(text=text)
+            elif tag == DocLangToken.SUMMARY.value:
+                if text := self._get_text(node).strip():
+                    self._ensure_item_meta(item).summary = SummaryMetaField(text=text)
+            elif tag == DocLangToken.CUSTOM.value:
+                for child in node.childNodes:
+                    if isinstance(child, Element):
+                        self._apply_custom_meta_field_element(item=item, field_el=child)
 
     # ------------- Helpers -------------
     def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> Optional[TextItem]:
