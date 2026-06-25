@@ -22,6 +22,9 @@ from docling_core.transforms.serializer.markdown import (
     OrigListItemMarkerMode,
     _cell_content_has_table,
 )
+from docling_core.transforms.serializer.markdown_excel import (
+    MsExcelMarkdownDocSerializer,
+)
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc import DoclingDocument
@@ -29,6 +32,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
+    ContentLayer,
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
@@ -43,7 +47,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, GroupLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -1103,3 +1107,31 @@ def test_html_meta_emits_xhtml_compatible_attributes():
     assert 'data-meta-name="entities"' in html_out
     # Output must be parseable by a strict XML parser.
     ET.fromstring(html_out)
+
+
+def _build_two_sheet_doc() -> DoclingDocument:
+    doc = DoclingDocument(name="workbook")
+    for sheet_name in ("Sales", "Costs"):
+        sheet = doc.add_group(
+            label=GroupLabel.SHEET,
+            name=sheet_name,
+            content_layer=ContentLayer.SHEET,
+        )
+        doc.add_text(label=DocItemLabel.TEXT, text=f"Data from {sheet_name}", parent=sheet)
+    return doc
+
+
+def test_sheet_html_section_wrapping():
+    """HTMLFallbackSerializer wraps ContentLayer.SHEET groups in <section>."""
+    doc = _build_two_sheet_doc()
+    html = HTMLDocSerializer(doc=doc).serialize().text
+    assert '<section data-page-name="Sales">' in html
+    assert '<section data-page-name="Costs">' in html
+
+
+def test_sheet_markdown_heading():
+    """MsExcelMarkdownFallbackSerializer emits ## headings for sheet groups."""
+    doc = _build_two_sheet_doc()
+    md = MsExcelMarkdownDocSerializer(doc=doc).serialize().text
+    assert "## Sales" in md
+    assert "## Costs" in md
