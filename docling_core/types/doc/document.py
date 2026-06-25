@@ -1403,9 +1403,10 @@ class ContentLayer(str, Enum):
     BACKGROUND = "background"  # eg watermarks
     INVISIBLE = "invisible"  # hidden or invisible text
     NOTES = "notes"  # author/speaker notes, corrections, etc
+    SHEET = "sheet"  # spreadsheet worksheet content (Excel sheets)
 
 
-DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY}
+DEFAULT_CONTENT_LAYERS = {ContentLayer.BODY, ContentLayer.SHEET}
 
 
 class _ExtraAllowingModel(BaseModel):

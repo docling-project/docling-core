@@ -147,7 +147,7 @@ class OrigListItemMarkerMode(str, Enum):
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
-    layers: set[ContentLayer] = {ContentLayer.BODY}
+    layers: set[ContentLayer] = {ContentLayer.BODY, ContentLayer.SHEET}
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
     image_placeholder: str = "<!-- image -->"
     enable_chart_tables: bool = True

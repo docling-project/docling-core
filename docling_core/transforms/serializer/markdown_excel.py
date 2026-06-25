@@ -14,17 +14,20 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownFallbackSerializer,
 )
-from docling_core.types.doc.document import DoclingDocument, GroupItem, NodeItem
-from docling_core.types.doc.labels import GroupLabel
+from docling_core.types.doc.document import (
+    ContentLayer,
+    DoclingDocument,
+    GroupItem,
+    NodeItem,
+)
 
 
 class MsExcelMarkdownFallbackSerializer(MarkdownFallbackSerializer):
-    """Fallback serializer that renders ``GroupLabel.SHEET`` groups as headings.
+    """Fallback serializer that renders sheet groups as Markdown headings.
 
-    When a ``GroupItem`` with ``label=GroupLabel.SHEET`` is encountered the
-    group's ``name`` is emitted as a level-2 Markdown heading (``##``) before
-    the group's children, matching the visual structure of the original
-    workbook where each worksheet has a name.
+    When a ``GroupItem`` with ``content_layer=ContentLayer.SHEET`` is encountered
+    the group's ``name`` is emitted as a level-2 Markdown heading (``##``) before
+    the group's children, matching the visual structure of the original workbook.
     """
 
     @override
@@ -36,7 +39,7 @@ class MsExcelMarkdownFallbackSerializer(MarkdownFallbackSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
-        if isinstance(item, GroupItem) and item.label == GroupLabel.SHEET:
+        if isinstance(item, GroupItem) and item.content_layer == ContentLayer.SHEET:
             parts = doc_serializer.get_parts(item=item, **kwargs)
             content = "\n\n".join(p.text for p in parts if p.text)
             heading = f"## {item.name}"
@@ -49,7 +52,7 @@ class MsExcelMarkdownDocSerializer(MarkdownDocSerializer):
     r"""``MarkdownDocSerializer`` variant for Excel-sourced ``DoclingDocument``\\s.
 
     Swap in :class:`MsExcelMarkdownFallbackSerializer` so that worksheet
-    groups (``GroupLabel.SHEET``) are rendered with their name as a Markdown
+    groups (``ContentLayer.SHEET``) are rendered with their name as a Markdown
     heading without requiring heading nodes to be injected into the document
     model by the backend.
 

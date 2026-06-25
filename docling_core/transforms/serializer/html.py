@@ -102,7 +102,7 @@ class HTMLParams(CommonParams):
     """HTML-specific serialization parameters."""
 
     # Default layers to use for HTML export
-    layers: set[ContentLayer] = {ContentLayer.BODY}
+    layers: set[ContentLayer] = {ContentLayer.BODY, ContentLayer.SHEET}
 
     # How to handle images
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
@@ -917,6 +917,8 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         if isinstance(item, GroupItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n".join([p.text for p in parts if p.text])
+            if item.content_layer == ContentLayer.SHEET and item.name:
+                text_res = f'<section data-page-name="{item.name}">\n{text_res}\n</section>'
             return create_ser_result(text=text_res, span_source=parts)
         else:
             return create_ser_result(
