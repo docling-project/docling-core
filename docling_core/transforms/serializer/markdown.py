@@ -190,30 +190,32 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     """Markdown-specific text item serializer."""
 
     @staticmethod
-    def _validate_and_format_footnote(text: str, inline: bool = False) -> str:
-        """Validate and format footnote text for markdown output.
+    def _validate_and_format_footnote(text: str) -> tuple[str, str]:
+        """Validate and format footnote text for Markdown output.
 
         Args:
-            text: The footnote text to format. For markdown format, should be
-                "identifier definition" where identifier is the footnote ID.
-            inline: If True, renders as inline text. If False, renders as
-                markdown footnote definition.
+            text: The footnote text to format. Should be structured as
+                ``"identifier definition"`` where ``identifier`` is the
+                footnote ID and ``definition`` is the footnote body, e.g.
+                ``"1 My footnote text."``.
 
         Returns:
-            Formatted footnote string. For inline mode: "(Footnote: text)".
-            For markdown mode: "[^identifier]: definition" or "[^identifier]:"
-            if no definition provided.
+            A tuple of ``(identifier, definition)`` where ``identifier`` is
+            the validated footnote label (e.g. ``"1"``) and ``definition`` is
+            the full Markdown footnote definition string of the form
+            ``"[^identifier]: definition"``, or ``"[^identifier]:"`` if no
+            body is provided.
 
         Raises:
-            ValueError: If text is empty, or if identifier contains invalid
-                characters (whitespace, newlines, or markdown special characters
-                like '[', ']', ':') in markdown mode.
+            ValueError: If ``text`` is empty, if the identifier is empty, if
+                the identifier contains whitespace or newline characters, or if
+                the identifier contains Markdown special characters
+                (``[``, ``]``, ``:``) that would break footnote syntax.
         """
-
-        # Validate input
         if not text or not text.strip():
             raise ValueError("Footnote cannot be empty")
 
+        # Split on the first literal space: "1 My text." → ["1", "My text."]
         parts = text.split(" ", 1)
         identifier = parts[0]
 
@@ -221,18 +223,18 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         if not identifier.strip():
             raise ValueError("Footnote identifier cannot be empty")
 
-        # Check for whitespace and newline characters
+        # Whitespace in the identifier would produce an invalid [^id] label
         if any(char in identifier for char in {"\t", " ", "\n", "\r"}):
             raise ValueError(f"Footnote identifier '{identifier}' contains invalid characters")
 
-        # Check for markdown special characters that would break footnote syntax
+        # These characters would break the Markdown footnote syntax
         if any(char in identifier for char in {"[", "]", ":"}):
             raise ValueError(f"Footnote identifier '{identifier}' contains invalid markdown characters")
 
-        if len(parts) == 2:
-            return f"[^{identifier}]: {parts[1]}"
-        else:
-            return f"[^{identifier}]:"
+        definition = f"[^{identifier}]: {parts[1]}" if len(parts) == 2 else f"[^{identifier}]:"
+
+        # Return as tuple
+        return identifier, definition
 
     @override
     def serialize(
@@ -269,7 +271,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
             text = f"- [ ] {text}"
         if item.label == DocItemLabel.FOOTNOTE:
-            text = self._validate_and_format_footnote(text)
+            return create_ser_result(text="", span_source=res_parts)
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
@@ -936,11 +938,14 @@ class MarkdownDocSerializer(DocSerializer):
                     self._logger.warning(
                         f"Footnote reference {footnote.cref} resolved to {type(resolved).__name__} instead of TextItem"
                     )
-                elif isinstance(resolved, TextItem):
-                    formatted_text = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
-                    results.append(create_ser_result(text=formatted_text, span_source=resolved))
+                else:
+                    # Retrieve footnote id and definition parsed as a tuple
+                    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
+                    anchor_ref = f"[^{identifier}]"
+                    combined = f"{anchor_ref}\n\n{definition}"
+                    results.append(create_ser_result(text=combined, span_source=resolved))
 
-            text_res = "\n".join([r.text for r in results])
+            text_res = "\n\n".join([r.text for r in results])
         else:
             text_res = ""
 

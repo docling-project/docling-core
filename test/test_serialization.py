@@ -627,6 +627,79 @@ def test_md_footnotes_yaml():
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".yaml.md"), actual=actual)
 
+
+def test_md_anchored_footnote_example():
+    """Test that footnotes owned by FloatingItems (table, picture) render with
+    inline anchors and definitions. If there is no anchor, do not render.
+    """
+
+    src = Path("./test/data/doc/footnote_with_anchor_example.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / "footnote_with_anchor_example.gt.md", actual=actual)
+
+    # Anchored footnotes: both inline anchor and full definition must be present
+    assert "[^1]\n\n[^1]: Revenue figures are in USD and exclude tax." in actual
+    assert "[^2]\n\n[^2]: Figures are unaudited estimates." in actual
+    assert "[^3]\n\n[^3]: Diagram reproduced with permission from the original authors." in actual
+
+    # Unanchored footnote must be completely absent
+    assert "[^4]" not in actual
+    assert "This footnote has no anchor" not in actual
+
+
+def test_md_unanchored_footnote_is_skipped():
+    """A FOOTNOTE TextItem not linked to any FloatingItem must produce no output."""
+    doc = DoclingDocument(name="test_unanchored_footnote")
+
+    doc.add_text(label=DocItemLabel.TEXT, text="Some paragraph text.")
+
+    doc.add_text(label=DocItemLabel.FOOTNOTE, text="1 This footnote has no anchor.")
+
+    ser = MarkdownDocSerializer(doc=doc, params=MarkdownParams())
+    actual = ser.serialize().text
+
+    assert "Some paragraph text." in actual
+    assert "[^1]" not in actual
+
+
+def test_md_footnote_validation():
+    from docling_core.transforms.serializer.markdown import MarkdownTextSerializer
+
+    with pytest.raises(ValueError, match="Footnote cannot be empty"):
+        MarkdownTextSerializer._validate_and_format_footnote("")
+
+    with pytest.raises(ValueError, match="Footnote cannot be empty"):
+        MarkdownTextSerializer._validate_and_format_footnote(" ")
+
+    with pytest.raises(ValueError, match="Footnote identifier cannot be empty"):
+        MarkdownTextSerializer._validate_and_format_footnote(" Example")
+
+    with pytest.raises(ValueError, match="contains invalid characters"):
+        MarkdownTextSerializer._validate_and_format_footnote("\t1 Example")
+
+    with pytest.raises(ValueError, match="contains invalid markdown characters"):
+        MarkdownTextSerializer._validate_and_format_footnote("[1] Example")
+
+    # Test valid footnote text returns (identifier, definition)
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("1 Example footnote")
+    assert identifier == "1"
+    assert definition == "[^1]: Example footnote"
+
+    # Test footnote with only an (identifier)
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("table")
+    assert identifier == "table"
+    assert definition == "[^table]:"
+
+
 def test_md_footnotes_json():
     src = Path("./test/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
@@ -649,7 +722,7 @@ def test_md_table_with_footnotes():
 
     table = doc.add_table(data=td)
 
-    footnote1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="table footnote")
+    footnote1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="1 table footnote explanation")
 
     table.footnotes.append(footnote1.get_ref())
 
@@ -664,26 +737,9 @@ def test_md_table_with_footnotes():
 
     assert "| Header 1" in actual
     assert "| Data 1" in actual
-    assert "[^table]:" in actual and "footnote" in actual
 
-def test_md_footnote_validation():
-    from docling_core.transforms.serializer.markdown import MarkdownTextSerializer
-
-    # Test empty footnote raises error
-    with pytest.raises(ValueError, match="Footnote cannot be empty"):
-        MarkdownTextSerializer._validate_and_format_footnote("")
-
-    # Test space raises error
-    with pytest.raises(ValueError, match="Footnote cannot be empty"):
-        MarkdownTextSerializer._validate_and_format_footnote(" ")
-
-    # Test identifier with tab character
-    with pytest.raises(ValueError, match="contains invalid characters"):
-        MarkdownTextSerializer._validate_and_format_footnote("id\t")
-
-    # Test identifier without definition is valid
-    result = MarkdownTextSerializer._validate_and_format_footnote("id")
-    assert result == "[^id]:"
+    assert "[^1]" in actual
+    assert "[^1]: table footnote explanation" in actual
 
 # ===============================
 # HTML tests
