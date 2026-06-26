@@ -159,6 +159,28 @@ def test_md_cross_page_list_page_break_non_empty():
     verify(exp_file=src.parent / f"{src.stem}_pb_non_empty.gt.md", actual=actual)
 
 
+def test_md_cross_page_list_page_break_page_number_placeholder():
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+            page_break_placeholder="<!-- page {page_no} from {prev_page} to {next_page} -->",
+            labels=_DEFAULT_LABELS - {DocItemLabel.PICTURE},
+        ),
+    )
+    actual = ser.serialize().text
+
+    assert "<!-- page 2 from 1 to 2 -->" in actual
+    assert "<!-- page 3 from 2 to 3 -->" in actual
+    assert "{page_no}" not in actual
+    assert "{prev_page}" not in actual
+    assert "{next_page}" not in actual
+
+
 def test_md_cross_page_list_page_break_p2():
     src = Path("./test/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
