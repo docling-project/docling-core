@@ -43,8 +43,9 @@ class PlainTextDocSerializer(MarkdownDocSerializer):
     """Document serializer that produces clean plain text.
 
     Strips all Markdown decoration — heading markers, bold/italic/strikethrough
-    markers, and hyperlink syntax — while keeping list bullets (``-``), ordered
-    list numbers, and table-cell separators (``|``) intact.
+    markers, sub/superscript tags, and hyperlink syntax — while keeping list
+    bullets (``-``), ordered list numbers, and table-cell separators (``|``)
+    intact.
     """
 
     text_serializer: BaseTextSerializer = PlainTextTextSerializer()
@@ -63,6 +64,16 @@ class PlainTextDocSerializer(MarkdownDocSerializer):
     @override
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
         """Apply plain-text strikethrough serialization."""
+        return text
+
+    @override
+    def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Apply plain-text subscript serialization."""
+        return text
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Apply plain-text superscript serialization."""
         return text
 
     @override
