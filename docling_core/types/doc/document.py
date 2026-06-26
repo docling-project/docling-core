@@ -2492,19 +2492,39 @@ class TableItem(FloatingItem):
             else:
                 break
 
-        # Create the column names from all col_headers
+        # Create the column names from all col_headers. A spanning header
+        # cell appears at every grid position it covers; emit its text only
+        # at the cell's origin (start_row_offset_idx, start_col_offset_idx)
+        # so a colspan=N header is not concatenated N times into N columns.
         columns: Optional[list[str]] = None
         if num_headers > 0:
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(self.data.grid[i]):
+                    if (
+                        i != cell.start_row_offset_idx
+                        or j != cell.start_col_offset_idx
+                    ):
+                        continue
                     col_name = cell._get_text(doc=doc, **kwargs)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
-        # Create table data
-        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in self.data.grid[num_headers:]]
+        # Create table data — emit cell text only at its origin position;
+        # spanned positions render empty so spanning cells are not duplicated.
+        table_data = [
+            [
+                cell._get_text(doc=doc, **kwargs)
+                if (
+                    (num_headers + i) == cell.start_row_offset_idx
+                    and j == cell.start_col_offset_idx
+                )
+                else ""
+                for j, cell in enumerate(row)
+            ]
+            for i, row in enumerate(self.data.grid[num_headers:])
+        ]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)
@@ -2527,9 +2547,18 @@ class TableItem(FloatingItem):
             )
 
             table = []
-            for row in self.data.grid:
+            for r, row in enumerate(self.data.grid):
                 tmp = []
-                for col in row:
+                for c, col in enumerate(row):
+                    # Spanning cells appear at every grid position they
+                    # cover; emit text only at the cell's origin so a
+                    # colspan/rowspan cell isn't duplicated in the output.
+                    if (
+                        r != col.start_row_offset_idx
+                        or c != col.start_col_offset_idx
+                    ):
+                        tmp.append("")
+                        continue
                     # make sure that md tables are not broken
                     # due to newline chars in the text
                     text = col._get_text(doc=doc)
