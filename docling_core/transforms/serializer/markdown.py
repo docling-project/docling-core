@@ -926,9 +926,9 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
-        results: list[SerializationResult] = []
 
         if DocItemLabel.FOOTNOTE in params.labels:
+            results: list[SerializationResult] = []
             for footnote in item.footnotes:
                 resolved = footnote.resolve(self.doc)
                 if resolved is None:
