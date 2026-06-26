@@ -8,8 +8,8 @@ from typing import Annotated, ClassVar, Final, Literal, Optional
 
 from pydantic import Field, StringConstraints, field_validator
 
-from docling_core.search.package import VERSION_PATTERN
 from docling_core.transforms.chunker import BaseChunk, BaseMeta
+from docling_core.types.base import VERSION_PATTERN
 from docling_core.types.doc.document import DocItem, DocumentOrigin
 
 _VERSION: Final = "1.0.0"

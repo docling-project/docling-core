@@ -73,7 +73,7 @@ Affiliation 2</content>
   </picture>
   <picture>
     <caption>This is the caption of figure 2.</caption>
-    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAdElEQVRoBdXBAQEAAABAIP6ftkPJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMwFULoAQbykEYoAAAAASUVORK5CYII="/>
   </picture>
   <list>
     <ldiv>
@@ -189,11 +189,11 @@ hyperlink
   <text><![CDATA[Some 'single' quotes]]></text>
   <text><![CDATA[Some "double" quotes]]></text>
   <text>
-    <custom>
-      <docling__summary><![CDATA[Summary with <tags> & ampersands]]></docling__summary>
-      <docling__description>Description content</docling__description>
-    </custom>
+    <summary><![CDATA[Summary with <tags> & ampersands]]></summary>
 <![CDATA[An ampersand: &]]>  </text>
+  <picture>
+    <description>Description content</description>
+  </picture>
   <code>0 == 0</code>
   <code>
     <content> 1 leading space, 4 trailing    </content>

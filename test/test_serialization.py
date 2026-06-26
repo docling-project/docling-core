@@ -470,7 +470,6 @@ def test_md_nested_rich_table_no_hang():
 
 def test_md_compact_table():
     """Test compact table format removes padding and uses minimal separators."""
-
     # Test the _compact_table method directly
     padded_table = """| item   | qty   | description           |
 | ------ | ----: | :-------------------: |

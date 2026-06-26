@@ -78,8 +78,8 @@ def sample_doc():
     doc = DoclingDocument(name="test_doc")
 
     # Add pages
-    page1 = doc.add_page(size=Size(width=612, height=792), page_no=1)
-    page2 = doc.add_page(size=Size(width=612, height=792), page_no=2)
+    doc.add_page(size=Size(width=612, height=792), page_no=1)
+    doc.add_page(size=Size(width=612, height=792), page_no=2)
 
     # Section 1 on page 1 (explicitly set page_no in prov)
     doc.add_heading(
@@ -271,7 +271,6 @@ class TestTreeChunkExpander:
 
     def test_expand_basic(self, sample_doc, sample_serializer, sample_chunks, tree_expander):
         """Test basic expansion to full items."""
-
         for chunk in sample_chunks:
             if not isinstance(chunk, DocChunk):
                 continue
@@ -286,9 +285,7 @@ class TestTreeChunkExpander:
 
             # Expanded chunk text should contain original chunk text (or be a superset)
             assert check_lines_equal_in_order(chunk.text, expanded.text), (
-                f"Expanded chunk should contain original chunk text. "
-                f"original: {chunk.text} "
-                f"expanded: {expanded.text}"
+                f"Expanded chunk should contain original chunk text. original: {chunk.text} expanded: {expanded.text}"
             )
             assert expanded.meta.origin == chunk.meta.origin, "Origin should be preserved"
 
@@ -318,7 +315,6 @@ class TestPageChunkExpander:
 
     def test_expand_basic(self, sample_doc, sample_chunks, sample_serializer, page_expander):
         """Test that page expansion includes all page content."""
-
         for chunk in sample_chunks:
             if not isinstance(chunk, DocChunk):
                 continue
@@ -366,4 +362,3 @@ class TestPageChunkExpander:
 
             # Should return original chunk when no pages
             assert result == chunk, "Should return original chunk when document has no pages"
-

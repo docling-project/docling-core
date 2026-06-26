@@ -12,6 +12,13 @@
     <location value="26"/>
     <location value="167"/>
     <location value="57"/>
+    <text>
+      <location value="126"/>
+      <location value="28"/>
+      <location value="163"/>
+      <location value="54"/>
+      Europäisches Patentamt European Patent Office Office européenne des brevets
+    </text>
   </picture>
   <picture>
     <label value="bar_code"/>

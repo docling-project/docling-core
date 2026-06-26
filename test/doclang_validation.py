@@ -10,7 +10,8 @@ from typing import Union
 import pytest
 
 try:
-    from doclang import ValidationError, validate as doclang_validate
+    from doclang import ValidationError
+    from doclang import validate as doclang_validate
 except ImportError:
     doclang_validate = None  # type: ignore[assignment,misc]
     ValidationError = Exception  # type: ignore[misc,assignment]
@@ -31,6 +32,7 @@ xfail_invalid_dclg_xml = pytest.mark.xfail(
     raises=ValidationError,
     strict=False,
 )
+
 
 def assert_valid_dclg_xml(
     xml_text: str,

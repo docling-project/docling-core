@@ -9,6 +9,7 @@ import mimetypes
 import os
 import re
 import sys
+import tempfile
 import typing
 import warnings
 from collections.abc import Iterable, Sequence
@@ -26,6 +27,7 @@ from typing import (
 )
 from urllib.parse import unquote
 
+import numpy as np
 import pandas as pd
 import yaml
 from PIL import Image as PILImage
@@ -48,8 +50,7 @@ from pydantic import (
 from tabulate import _column_type, tabulate
 from typing_extensions import Self, deprecated, override
 
-from docling_core.search.package import VERSION_PATTERN
-from docling_core.types.base import _JSON_POINTER_REGEX, UniqueList
+from docling_core.types.base import _JSON_POINTER_REGEX, VERSION_PATTERN, UniqueList
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
     CoordOrigin,
@@ -67,8 +68,21 @@ from docling_core.types.doc.labels import (
     PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
-from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
+from docling_core.types.doc.utils import (
+    parse_otsl_table_content,
+    relative_path,
+    resolve_archive_path,
+    safe_extract_zip_archive,
+    validate_archive_relative_path,
+)
 from docling_core.utils.settings import settings
+
+try:
+    import cv2
+
+    CV2_INSTALLED = True
+except ImportError:
+    CV2_INSTALLED = False
 
 _logger = logging.getLogger(__name__)
 
@@ -351,10 +365,8 @@ class TableCell(BaseModel):
             if not len(text):
                 text_cells = data.pop("text_cell_bboxes", None)
                 if text_cells:
-                    for el in text_cells:
-                        text += el["token"] + " "
+                    text = " ".join(el["token"] for el in text_cells)
 
-                text = text.strip()
             data["text"] = text
 
         return data
@@ -414,7 +426,7 @@ class TableData(BaseModel):  # TBD
     def grid(
         self,
     ) -> list[list[TableCell]]:
-        """grid."""
+        """Grid."""
         # Initialise empty table data grid (only empty cells)
         table_data = [
             [
@@ -1068,6 +1080,9 @@ class DocumentOrigin(BaseModel):
         "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.oasis.opendocument.text",
+        "application/vnd.oasis.opendocument.spreadsheet",
+        "application/vnd.oasis.opendocument.presentation",
         "text/asciidoc",
         "text/markdown",
         "text/csv",
@@ -1189,12 +1204,39 @@ class ImageRef(BaseModel):
             raise ValueError(f"'{v}' is not a valid MIME type")
         return v
 
-    @classmethod
-    def from_pil(cls, image: PILImage.Image, dpi: int) -> Self:
-        """Construct ImageRef from a PIL Image."""
+    @staticmethod
+    def _to_img_str_cv2(image: PILImage.Image) -> str:
+        arr = np.ascontiguousarray(np.asarray(image))
+
+        if image.mode == "RGB":
+            encoded = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+        elif image.mode == "RGBA":
+            encoded = cv2.cvtColor(arr, cv2.COLOR_RGBA2BGRA)
+        elif image.mode == "L":
+            encoded = arr
+        else:
+            return ImageRef._to_img_str_pil(image)
+
+        ok, buffered = cv2.imencode(".png", encoded)
+        if not ok:
+            return ImageRef._to_img_str_pil(image)
+
+        return base64.b64encode(buffered.tobytes()).decode("utf-8")
+
+    @staticmethod
+    def _to_img_str_pil(image: PILImage.Image) -> str:
         buffered = BytesIO()
         image.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return img_str
+
+    @classmethod
+    def from_pil(cls, image: PILImage.Image, dpi: int) -> Self:
+        """Construct ImageRef from a PIL Image."""
+        if CV2_INSTALLED:
+            img_str = cls._to_img_str_cv2(image)
+        else:
+            img_str = cls._to_img_str_pil(image)
         img_uri = f"data:image/png;base64,{img_str}"
         return cls(
             mimetype="image/png",
@@ -2419,7 +2461,6 @@ class TableItem(FloatingItem):
 
     def export_to_dataframe(self, doc: Optional["DoclingDocument"] = None) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame."""
-
         return self._export_to_dataframe_with_options(doc=doc)
 
     def _export_to_dataframe_with_options(
@@ -2428,7 +2469,6 @@ class TableItem(FloatingItem):
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Export the table as a Pandas DataFrame with contextual named arguments."""
-
         if doc is None:
             _logger.warning("Usage of TableItem.export_to_dataframe() without `doc` argument is deprecated.")
 
@@ -2590,10 +2630,11 @@ class TableItem(FloatingItem):
                     cell.start_col_offset_idx,
                 )
 
-                if len(doc.pages.keys()):
-                    page_w, page_h = doc.pages[page_no].size.as_tuple()
+                has_page_info = page_no in doc.pages
+
                 cell_loc = ""
-                if cell.bbox is not None:
+                if cell.bbox is not None and has_page_info:
+                    page_w, page_h = doc.pages[page_no].size.as_tuple()
                     cell_loc = DocumentToken.get_location(
                         bbox=cell.bbox.to_bottom_left_origin(page_h).as_tuple(),
                         page_w=page_w,
@@ -2891,6 +2932,142 @@ class DoclingDocument(BaseModel):
                 del dumped[field]
 
         return dumped
+
+    @staticmethod
+    def _clamp_location_coordinate(
+        *,
+        value: float,
+        lo: float,
+        hi: float,
+        tolerance: float,
+        page_no: int,
+        bbox_label: str,
+        coord_name: str,
+    ) -> float:
+        clamped = min(max(value, lo), hi)
+        if clamped != value and abs(value - clamped) > tolerance:
+            if value < lo:
+                warnings.warn(
+                    f"{bbox_label} coordinate {coord_name} on page {page_no} is outside page bounds: "
+                    f"{value=} < {lo=}; clamping to {lo}",
+                    stacklevel=3,
+                )
+            else:
+                warnings.warn(
+                    f"{bbox_label} coordinate {coord_name} on page {page_no} is outside page bounds: "
+                    f"{value=} > {hi=}; clamping to {hi}",
+                    stacklevel=3,
+                )
+        return clamped
+
+    @classmethod
+    def _clamp_bbox_to_page(
+        cls,
+        *,
+        bbox: BoundingBox,
+        page_size: Size,
+        page_no: int,
+        bbox_label: str,
+    ) -> BoundingBox:
+        page_width = page_size.width
+        page_height = page_size.height
+
+        tolerance_factor = 1e-2
+
+        return bbox.model_copy(
+            update={
+                "l": cls._clamp_location_coordinate(
+                    value=bbox.l,
+                    lo=0.0,
+                    hi=page_width,
+                    tolerance=page_width * tolerance_factor,
+                    page_no=page_no,
+                    bbox_label=bbox_label,
+                    coord_name="l",
+                ),
+                "r": cls._clamp_location_coordinate(
+                    value=bbox.r,
+                    lo=0.0,
+                    hi=page_width,
+                    tolerance=page_width * tolerance_factor,
+                    page_no=page_no,
+                    bbox_label=bbox_label,
+                    coord_name="r",
+                ),
+                "t": cls._clamp_location_coordinate(
+                    value=bbox.t,
+                    lo=0.0,
+                    hi=page_height,
+                    tolerance=page_height * tolerance_factor,
+                    page_no=page_no,
+                    bbox_label=bbox_label,
+                    coord_name="t",
+                ),
+                "b": cls._clamp_location_coordinate(
+                    value=bbox.b,
+                    lo=0.0,
+                    hi=page_height,
+                    tolerance=page_height * tolerance_factor,
+                    page_no=page_no,
+                    bbox_label=bbox_label,
+                    coord_name="b",
+                ),
+            }
+        )
+
+    @classmethod
+    def _clamp_provenance_bbox_to_page(cls, *, prov: ProvenanceItem, page_size: Size) -> None:
+        prov.bbox = cls._clamp_bbox_to_page(
+            bbox=prov.bbox,
+            page_size=page_size,
+            page_no=prov.page_no,
+            bbox_label="Provenance bbox",
+        )
+
+    def _clamp_provenance_bboxes_to_pages(self) -> None:
+        def clamp_prov(prov: ProvenanceItem) -> None:
+            page = self.pages.get(prov.page_no)
+            if page is not None:
+                self._clamp_provenance_bbox_to_page(prov=prov, page_size=page.size)
+
+        def clamp_table_cell_bboxes(table: TableItem) -> None:
+            page_nos = {prov.page_no for prov in table.prov}
+            if len(page_nos) != 1:
+                return
+            page_no = next(iter(page_nos))
+            page = self.pages.get(page_no)
+            if page is None:
+                return
+
+            for cell in table.data.table_cells:
+                if cell.bbox is not None:
+                    cell.bbox = self._clamp_bbox_to_page(
+                        bbox=cell.bbox,
+                        page_size=page.size,
+                        page_no=page_no,
+                        bbox_label="Table cell bbox",
+                    )
+
+        item_lists: tuple[Iterable[NodeItem], ...] = (
+            self.texts,
+            self.pictures,
+            self.tables,
+            self.key_value_items,
+            self.form_items,
+            self.field_regions,
+            self.field_items,
+        )
+        for item_list in item_lists:
+            for item in item_list:
+                if isinstance(item, DocItem):
+                    for prov in item.prov:
+                        clamp_prov(prov)
+                if isinstance(item, TableItem):
+                    clamp_table_cell_bboxes(item)
+                if isinstance(item, KeyValueItem | FormItem):
+                    for cell in item.graph.cells:
+                        if cell.prov is not None:
+                            clamp_prov(cell.prov)
 
     @model_validator(mode="before")
     @classmethod
@@ -3776,6 +3953,21 @@ class DoclingDocument(BaseModel):
                         continue
                     else:
                         resume_node = None
+
+                # Skip items that are descendants of FloatingItem containers (tables, pictures, key-values, forms)
+                # These have structural parent-child relationships that must be preserved:
+                if item.parent:
+                    curr = item
+                    is_floating_descendant = False
+                    while curr.parent is not None:
+                        parent = curr.parent.resolve(doc=self)
+                        if isinstance(parent, FloatingItem):
+                            is_floating_descendant = True
+                            break
+                        curr = parent
+
+                    if is_floating_descendant:
+                        continue
 
                 # determine which section root this item should belong to
                 introduced_level = self._get_heading_level(node=item)
@@ -5883,11 +6075,16 @@ class DoclingDocument(BaseModel):
         image_dir: Path,
         page_no: Optional[int],
         reference_path: Optional[Path] = None,
+        include_page_images: bool = False,
     ) -> "DoclingDocument":
         """Document with images as refs.
 
         Creates a copy of this document where all picture data is
         saved to image_dir and referenced through file URIs.
+
+        When ``include_page_images`` is True, the page images are saved to
+        image_dir and referenced through file URIs as well (instead of being
+        kept as embedded base64 blobs).
         """
         result: DoclingDocument = copy.deepcopy(self)
 
@@ -5917,6 +6114,7 @@ class DoclingDocument(BaseModel):
                             if item.image is None:
                                 scale = img.size[0] / item.prov[0].bbox.width
                                 item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
+                                item.image.uri = Path(obj_path)
                             elif item.image is not None:
                                 item.image.uri = Path(obj_path)
 
@@ -5924,6 +6122,31 @@ class DoclingDocument(BaseModel):
                         #    item.image._pil.close()
 
                     img_count += 1
+
+            if include_page_images:
+                for p_no, page in result.pages.items():
+                    if page_no is not None and p_no != page_no:
+                        continue
+                    if page.image is None:
+                        continue
+                    img = page.image.pil_image
+                    if img is None:
+                        continue
+                    hexhash = PictureItem._image_to_hexhash(img)
+                    if hexhash is None:
+                        continue
+
+                    loc_path = image_dir / f"page_{p_no:06}_{hexhash}.png"
+                    img.save(loc_path)
+                    if reference_path is not None:
+                        obj_path = relative_path(
+                            reference_path.resolve(),
+                            loc_path.resolve(),
+                        )
+                    else:
+                        obj_path = loc_path
+
+                    page.image.uri = Path(obj_path)
 
         return result
 
@@ -5986,7 +6209,13 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir,
+            image_mode,
+            page_no=None,
+            reference_path=reference_path,
+            include_page_images=True,
+        )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         with open(filename, "w", encoding="utf-8") as fw:
@@ -6025,7 +6254,13 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             os.makedirs(artifacts_dir, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir,
+            image_mode,
+            page_no=None,
+            reference_path=reference_path,
+            include_page_images=True,
+        )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         with open(filename, "w", encoding="utf-8") as fw:
@@ -6275,7 +6510,7 @@ class DoclingDocument(BaseModel):
         page_break_placeholder: Optional[str] = None,
         traverse_pictures: bool = False,
     ) -> str:
-        """Export to plain text.
+        r"""Export to plain text.
 
         Produces clean plain text without any Markdown decoration. Heading
         markers (``#``), bold/italic markers, and hyperlink syntax are all
@@ -6401,12 +6636,18 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode,
         page_no: Optional[int],
         reference_path: Optional[Path] = None,
+        include_page_images: bool = False,
     ):
         new_doc = None
         if image_mode == ImageRefMode.PLACEHOLDER:
             new_doc = self
         elif image_mode == ImageRefMode.REFERENCED:
-            new_doc = self._with_pictures_refs(image_dir=artifacts_dir, page_no=page_no, reference_path=reference_path)
+            new_doc = self._with_pictures_refs(
+                image_dir=artifacts_dir,
+                page_no=page_no,
+                reference_path=reference_path,
+                include_page_images=include_page_images,
+            )
         elif image_mode == ImageRefMode.EMBEDDED:
             new_doc = self._with_embedded_pictures()
         else:
@@ -6486,7 +6727,6 @@ class DoclingDocument(BaseModel):
         Returns:
             A string representation of the Docling document in WebVTT format.
         """
-
         from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 
         my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
@@ -6576,7 +6816,11 @@ class DoclingDocument(BaseModel):
 
         def extract_inner_text(text_chunk: str) -> str:
             """Strip all <...> tags (except <_..._>) to get the raw text content."""
-            return re.sub(r"<(?!_.*?_>).*?>", "", text_chunk, flags=re.DOTALL).strip()
+            # The tag name must start with a letter or "/", and the match must
+            # not cross a ">" boundary. This avoids deleting spans of plain text
+            # that merely contain "<" followed by a later ">" (e.g. statistical
+            # notation like "P < 0.05 ... P > 0.05"). See #618.
+            return re.sub(r"<(?!_.*?_>)[a-zA-Z/][^>]*>", "", text_chunk).strip()
 
         def extract_caption(
             text_chunk: str,
@@ -7230,6 +7474,146 @@ class DoclingDocument(BaseModel):
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(f"{out}\n")
 
+    def save_as_doclang_archive(
+        self,
+        filename: Union[str, Path],
+        *,
+        artifacts_dir: Optional[Path] = None,
+        validate: bool = False,
+    ) -> None:
+        """Save the document as a DocLang OPC archive (``.dclx``).
+
+        Picture and page images are always stored outside the markup, under
+        ``assets/`` and ``pages/`` in the archive respectively.
+        """
+        from doclang import pack
+
+        from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
+
+        if isinstance(filename, str):
+            filename = Path(filename)
+
+        def _write_archive(staging_root: Path) -> None:
+            assets_dir = staging_root / "assets"
+            pages_dir = staging_root / "pages"
+
+            doc = self._make_copy_with_refmode(
+                artifacts_dir=assets_dir,
+                image_mode=ImageRefMode.REFERENCED,
+                page_no=None,
+                reference_path=staging_root,
+            )
+
+            serializer = DocLangDocSerializer(
+                doc=doc,
+                params=DocLangParams(image_mode=ImageRefMode.REFERENCED),
+            )
+            document_path = staging_root / "document.dclg.xml"
+            document_path.write_text(f"{serializer.serialize().text}\n", encoding="utf-8")
+
+            pack_kwargs: dict[str, Any] = {
+                "document": document_path,
+                "output": filename,
+                "validate": validate,
+            }
+
+            pages: dict[int, Path] = {}
+            for p_no, page in self.pages.items():
+                if page.image is None:
+                    continue
+                img = page.image.pil_image
+                if img is None:
+                    continue
+                page_path = pages_dir / f"{p_no}.png"
+                page_path.parent.mkdir(parents=True, exist_ok=True)
+                img.save(page_path)
+                pages[p_no] = page_path
+            if pages:
+                pack_kwargs["pages"] = pages
+
+            if assets_dir.is_dir() and any(assets_dir.iterdir()):
+                pack_kwargs["assets"] = assets_dir
+
+            pack(**pack_kwargs)
+
+        if artifacts_dir is None:
+            with tempfile.TemporaryDirectory() as staging_name:
+                _write_archive(Path(staging_name))
+        else:
+            artifacts_dir.mkdir(parents=True, exist_ok=True)
+            _write_archive(artifacts_dir)
+
+    @classmethod
+    def load_from_doclang_archive(
+        cls,
+        filename: Union[str, Path],
+        *,
+        artifacts_dir: Optional[Path] = None,
+        validate: bool = False,
+    ) -> "DoclingDocument":
+        """Load a DoclingDocument from a DocLang OPC archive (``.dclx``).
+
+        The archive is extracted to ``artifacts_dir`` (default: ``<name>_artifacts`` next
+        to the ``.dclx`` file). Relative ``<src uri=\"...\"/>`` paths and optional
+        ``pages/`` images are resolved inside that directory.
+        """
+        from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
+
+        if isinstance(filename, str):
+            filename = Path(filename)
+
+        artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
+        safe_extract_zip_archive(filename, artifacts_dir)
+
+        document_xml = artifacts_dir / "document.xml"
+        if not document_xml.is_file():
+            raise ValueError(f"DocLang archive missing document.xml: {filename}")
+
+        if validate:
+            from doclang.validation import validate as doclang_validate
+
+            doclang_validate(document_xml)
+
+        doc = DocLangDocDeserializer().deserialize_str(
+            document_xml.read_text(encoding="utf-8"),
+            media_root=artifacts_dir,
+        )
+        doc.name = filename.stem
+        cls._restore_doclang_archive_page_images(doc=doc, archive_root=artifacts_dir)
+        return doc
+
+    @staticmethod
+    def _restore_doclang_archive_page_images(*, doc: "DoclingDocument", archive_root: Path) -> None:
+        pages_dir = archive_root / "pages"
+        if not pages_dir.is_dir():
+            return
+
+        archive_root = archive_root.resolve()
+        for page_file in sorted(pages_dir.iterdir()):
+            if not page_file.is_file():
+                continue
+
+            archive_rel = f"pages/{page_file.name}"
+            validate_archive_relative_path(archive_rel, label="page image")
+            resolved = resolve_archive_path(archive_root, archive_rel)
+            stem = page_file.stem
+            if not stem.isdigit():
+                continue
+
+            page_no = int(stem)
+            if page_no not in doc.pages:
+                continue
+
+            with PILImage.open(resolved) as pil:
+                pil_copy = pil.copy()
+            mimetype = mimetypes.guess_type(page_file.name)[0] or "image/png"
+            doc.pages[page_no].image = ImageRef(
+                mimetype=mimetype,
+                dpi=72,
+                size=Size(width=pil_copy.width, height=pil_copy.height),
+                uri=resolved,
+            )
+
     def _export_to_indented_text(
         self,
         indent="  ",
@@ -7449,12 +7833,13 @@ class DoclingDocument(BaseModel):
     @model_validator(mode="after")
     def validate_document(self) -> Self:
         """validate_document."""
-
         with warnings.catch_warnings():
             # ignore warning from deprecated furniture
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             self.validate_tree(self.body, raise_on_error=True)
             self.validate_tree(self.furniture, raise_on_error=True)
+
+        self._clamp_provenance_bboxes_to_pages()
 
         return self
 
@@ -7659,7 +8044,13 @@ class DoclingDocument(BaseModel):
                 self._max_page = new_max_page
 
         def get_name(self) -> str:
-            return " + ".join(self._names)
+            if not self._names:
+                return ""
+            squeezed: list[str] = [self._names[0]]
+            for name in self._names[1:]:
+                if name != squeezed[-1]:
+                    squeezed.append(name)
+            return " + ".join(squeezed)
 
     def _update_from_index(self, doc_index: "_DocIndex") -> None:
         if doc_index._body is not None:
@@ -7695,7 +8086,7 @@ class DoclingDocument(BaseModel):
         for doc in docs:
             doc_index.index(doc=doc)
 
-        res_doc = DoclingDocument(name=" + ".join([doc.name for doc in docs]))
+        res_doc = DoclingDocument(name=doc_index.get_name())
         res_doc._update_from_index(doc_index)
         return res_doc
 

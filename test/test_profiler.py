@@ -376,11 +376,7 @@ def test_profile_sample_document(sample_doc):
     # Verify computed fields
     assert stats.total_items > 0
     assert stats.total_items == (
-        stats.num_texts
-        + stats.num_tables
-        + stats.num_pictures
-        + stats.num_key_value_items
-        + stats.num_form_items
+        stats.num_texts + stats.num_tables + stats.num_pictures + stats.num_key_value_items + stats.num_form_items
     )
 
     # sample_doc has no pages, so avg_items_per_page should be 0

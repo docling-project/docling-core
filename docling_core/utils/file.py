@@ -17,6 +17,21 @@ from docling_core.types.io import DocumentStream
 
 _MAX_REDIRECTS = 5
 
+# Chunk size for streaming remote downloads. Sized for document payloads (PDFs
+# and similar), which are either small or in the multi-megabyte range, so a
+# large chunk keeps the read loop short without wasting memory.
+_DOWNLOAD_CHUNK_SIZE = 512 * 1024
+
+
+class FileSizeLimitExceededError(ValueError):
+    """Raised when a remote file exceeds the configured download size limit."""
+
+    def __init__(self, filename: str, size: int, limit: int):
+        self.filename = filename
+        self.size = size
+        self.limit = limit
+        super().__init__(f"Remote file exceeds the maximum allowed size ({size} > {limit} bytes).")
+
 
 def _is_safe_url(url: str) -> bool:
     """Return whether a URL resolves to a globally routable address."""
@@ -96,17 +111,23 @@ def resolve_remote_filename(
 
 
 def resolve_source_to_stream(
-    source: Union[Path, AnyHttpUrl, str], headers: Optional[dict[str, str]] = None
+    source: Union[Path, AnyHttpUrl, str],
+    headers: Optional[dict[str, str]] = None,
+    max_file_size: Optional[int] = None,
 ) -> DocumentStream:
     """Resolves the source (URL, path) of a file to a binary stream.
 
     Args:
-        source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
-        headers (Optional[dict[str, str]]): Optional set of headers to use for fetching
-            the remote URL.
+        source: The file input source. Can be a path or URL.
+        headers: Optional set of headers to use for fetching the remote URL.
+        max_file_size: Optional maximum size, in bytes, for a remote download.
+            When set, the download is rejected upfront if the declared
+            ``Content-Length`` exceeds it, and aborted while streaming as soon as
+            the received bytes exceed it.
 
     Raises:
         ValueError: If source is of unexpected type.
+        FileSizeLimitExceededError: If a remote download exceeds ``max_file_size``.
 
     Returns:
         DocumentStream: The resolved file loaded as a stream.
@@ -150,9 +171,6 @@ def resolve_source_to_stream(
 
             http_url = TypeAdapter(AnyHttpUrl).validate_python(url_str)
 
-        session = requests.Session()
-        session.max_redirects = _MAX_REDIRECTS
-
         def _check_redirect_safety(response, *args, **kwargs):
             """Validate each redirect target before following it."""
             if response.is_redirect or response.is_permanent_redirect:
@@ -166,21 +184,54 @@ def resolve_source_to_stream(
                     if not _is_safe_url(redirect_url):
                         raise ValueError(f"Redirect target is not allowed: {redirect_url}")
 
-        session.hooks["response"].append(_check_redirect_safety)
+        # Use context managers so the session and the streamed response are
+        # always released, including on the size-limit abort paths below where
+        # the response body is left unconsumed.
+        with requests.Session() as session:
+            session.max_redirects = _MAX_REDIRECTS
+            session.hooks["response"].append(_check_redirect_safety)
 
-        res = session.get(
-            url_str,
-            stream=True,
-            headers=req_headers,
-            allow_redirects=True,
-        )
-        res.raise_for_status()
+            with session.get(
+                url_str,
+                stream=True,
+                headers=req_headers,
+                allow_redirects=True,
+            ) as res:
+                res.raise_for_status()
 
-        response_headers = dict(res.headers)
-        fname = resolve_remote_filename(http_url=http_url, response_headers=response_headers)
+                response_headers = dict(res.headers)
+                fname = resolve_remote_filename(http_url=http_url, response_headers=response_headers)
 
-        stream = BytesIO(res.content)
-        doc_stream = DocumentStream(name=fname, stream=stream)
+                if max_file_size is not None:
+                    content_length = res.headers.get("Content-Length")
+                    if content_length is not None:
+                        try:
+                            content_length_value = int(content_length)
+                        except ValueError:
+                            content_length_value = None
+
+                        if content_length_value is not None and content_length_value > max_file_size:
+                            raise FileSizeLimitExceededError(
+                                filename=fname,
+                                size=content_length_value,
+                                limit=max_file_size,
+                            )
+
+                stream = BytesIO()
+                downloaded = 0
+                for chunk in res.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
+                    if not chunk:
+                        continue
+                    downloaded += len(chunk)
+                    if max_file_size is not None and downloaded > max_file_size:
+                        raise FileSizeLimitExceededError(
+                            filename=fname,
+                            size=downloaded,
+                            limit=max_file_size,
+                        )
+                    stream.write(chunk)
+                stream.seek(0)
+                doc_stream = DocumentStream(name=fname, stream=stream)
     except ValidationError:
         if isinstance(source, str) and "://" in source:
             scheme = source.split("://", 1)[0].lower()

@@ -60,7 +60,7 @@
   </picture>
   <picture>
     <caption>This is the caption of figure 2.</caption>
-    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAIklEQVR4nO3BAQ0AAADCoPdPbQ8HFAAAAAAAAAAAAAAA8G4wQAABiwCo9wAAAABJRU5ErkJggg=="/>
+    <src uri="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAdElEQVRoBdXBAQEAAABAIP6ftkPJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMzJnMwFULoAQbykEYoAAAAASUVORK5CYII="/>
   </picture>
   <list>
     <ldiv>
@@ -141,10 +141,8 @@
     <location value="15"/>
     <location value="502"/>
     <caption>Picture Caption</caption>
-    <custom>
-      <docling__summary>Picture Summary</docling__summary>
-      <docling__description>Picture Description</docling__description>
-    </custom>
+    <description>Picture Description</description>
+    <summary>Picture Summary</summary>
   </picture>
   <picture>
     <label value="pie_chart"/>
@@ -153,10 +151,8 @@
     <location value="15"/>
     <location value="502"/>
     <caption>Picture Caption</caption>
-    <custom>
-      <docling__summary>Picture Summary</docling__summary>
-      <docling__description>Picture Description</docling__description>
-    </custom>
+    <description>Picture Description</description>
+    <summary>Picture Summary</summary>
   </picture>
   <code>0 == 0</code>
   <code>

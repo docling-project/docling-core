@@ -15,7 +15,7 @@ def verify(exp_file: Path, actual: dict):
             json.dump(actual, f, indent=2)
             f.write("\n")
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = json.load(f)
 
         # we removed image URIs in both dicts for lossy comparison
@@ -137,6 +137,19 @@ def test_doctags_picture_provenances_and_captions():
     for picture in doc.pictures:
         assert len(picture.prov) > 0
         assert len(picture.captions) > 0
+
+
+def test_doctags_load_preserves_angle_brackets_in_text():
+    # Regression for #618: text nodes containing a "<" followed by a later ">"
+    # (e.g. statistical notation like "P < 0.05 ... P > 0.05") had the whole
+    # span between the two characters silently deleted by extract_inner_text.
+    original = "We found (r = -0.36, P < 0.05), but not (r = -0.08, P > 0.05), lending support."
+    doctags = f"<doctag><text><loc_10><loc_10><loc_400><loc_20>{original}</text></doctag>"
+
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
+    doc = DoclingDocument.load_from_doctags(doctags_doc)
+
+    assert [t.text for t in doc.texts] == [original]
 
 
 def test_doctags_inline():

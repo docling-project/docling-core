@@ -23,7 +23,7 @@ def verify_or_update(exp_file: Path, actual: str):
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(f"{actual}\n")
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = f.read().rstrip()
         assert expected == actual
 
@@ -63,7 +63,7 @@ def test_dummy_doc():
     src = Path("test/data/doc/dummy_doc.yaml")
 
     # Read YAML file of manual reference doc
-    with open(src, "r", encoding="utf-8") as fp:
+    with open(src, encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
 
     doc = DoclingDocument.model_validate(dict_from_yaml)

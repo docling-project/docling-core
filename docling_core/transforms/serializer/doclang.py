@@ -21,6 +21,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer._doclang_utils import (
     _DOCLANG_LABEL_UNDEFINED,
+    _DOCLANG_META_TAG_SMILES,
     _DOCLANG_VERSION,
     DOCLANG_DFLT_RESOLUTION,
     DOCLANG_NAMESPACE,
@@ -37,7 +38,6 @@ from docling_core.transforms.serializer._doclang_utils import (
     _picture_classification_label_from_doclang,
     _picture_classification_label_to_doclang,
     _provenance_with_charspan,
-    _quantize_to_resolution,
     _thread_table_merge_offset,
     _wrap,
     _wrap_field_kv_markup_if_needed,
@@ -71,7 +71,6 @@ from docling_core.types.doc import (
     BoundingBox,
     CodeItem,
     ContentLayer,
-    DescriptionMetaField,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -92,7 +91,6 @@ from docling_core.types.doc import (
     Script,
     SectionHeaderItem,
     Size,
-    SummaryMetaField,
     TableCell,
     TableData,
     TableItem,
@@ -259,7 +257,7 @@ class DocLangParams(CommonParams):
     content_wrapping_mode: Annotated[WrapMode, _advanced_field()] = WrapMode.AUTO
     image_mode: Annotated[ImageRefMode, _advanced_field()] = ImageRefMode.PLACEHOLDER
     include_namespace: Annotated[bool, _advanced_field()] = False
-    include_version: Annotated[bool, _advanced_field()] = False
+    include_version: Annotated[bool, _advanced_field()] = True
     use_virtual_text: Annotated[
         bool,
         _advanced_field(detail="When True, the <text> wrapper is omitted whenever allowed."),
@@ -299,7 +297,7 @@ def _create_label_token(*, value: str) -> str:
 
 
 def _create_src_token(*, uri: str) -> str:
-    """Emit `<src uri="..."/>` for picture body (v0.5)."""
+    """Emit `<src uri="..."/>` in the picture-specific body sequence (v0.6)."""
     safe = uri.replace("&", "&amp;").replace('"', "&quot;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.SRC,
@@ -322,6 +320,12 @@ def _text_item_hyperlink_uri(item: DocItem) -> Optional[str]:
     return None
 
 
+def _meta_field_serialization_allowed(name: str, params: DocLangParams) -> bool:
+    return (params.allowed_meta_names is None or name in params.allowed_meta_names) and (
+        name not in params.blocked_meta_names
+    )
+
+
 def _element_head_prefix(
     *,
     item: DocItem,
@@ -331,9 +335,10 @@ def _element_head_prefix(
     caption_text: Optional[str] = None,
     custom_text: Optional[str] = None,
     include_href: bool = True,
+    include_item_meta_head: bool = True,
     thread_id: Optional[str] = None,
 ) -> str:
-    """Emit element-head property elements in XSD order (label → thread → href → layer → location → caption → custom)."""
+    """Emit element-head property elements in XSD order (label → thread → href → layer → location → caption → description → summary → custom)."""
     parts: list[str] = []
     if label_value:
         parts.append(_create_label_token(value=label_value))
@@ -348,6 +353,26 @@ def _element_head_prefix(
             parts.append(loc)
     if caption_text:
         parts.append(caption_text)
+    if include_item_meta_head:
+        if (
+            isinstance(item, FloatingItem)
+            and item.meta
+            and item.meta.description
+            and _meta_field_serialization_allowed(MetaFieldName.DESCRIPTION, params)
+        ):
+            parts.append(
+                _wrap(
+                    text=_escape_text(item.meta.description.text, params),
+                    wrap_tag=DocLangToken.DESCRIPTION.value,
+                )
+            )
+        if item.meta and item.meta.summary and _meta_field_serialization_allowed(MetaFieldName.SUMMARY, params):
+            parts.append(
+                _wrap(
+                    text=_escape_text(item.meta.summary.text, params),
+                    wrap_tag=DocLangToken.SUMMARY.value,
+                )
+            )
     if custom_text:
         parts.append(custom_text)
     return "".join(parts)
@@ -1036,18 +1061,14 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
 
     def _serialize_meta_field(self, meta: BaseMeta, name: str, params: DocLangParams) -> Optional[str]:
         if (field_val := getattr(meta, name)) is not None:
-            if name == MetaFieldName.SUMMARY and isinstance(field_val, SummaryMetaField):
-                escaped_text = _escape_text(field_val.text, params)
-                txt = f"<docling__summary>{escaped_text}</docling__summary>"
-            elif name == MetaFieldName.DESCRIPTION and isinstance(field_val, DescriptionMetaField):
-                escaped_text = _escape_text(field_val.text, params)
-                txt = f"<docling__description>{escaped_text}</docling__description>"
+            if name in {MetaFieldName.SUMMARY, MetaFieldName.DESCRIPTION}:
+                # Emitted as native element-head ``<summary>`` / ``<description>``.
+                return None
             elif name == MetaFieldName.CLASSIFICATION:
                 # Picture classification is emitted as <label value="..."/> in element head.
                 return None
             elif name == MetaFieldName.MOLECULE and isinstance(field_val, MoleculeMetaField):
-                escaped_smi = _escape_text(field_val.smi, params)
-                txt = f"<docling__smiles>{escaped_smi}</docling__smiles>"
+                txt = _wrap(text=_escape_text(field_val.smi, params), wrap_tag=_DOCLANG_META_TAG_SMILES)
             elif name == MetaFieldName.TABULAR_CHART and isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
                 return None
@@ -1058,6 +1079,32 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
                 txt = _wrap(text=escaped_text, wrap_tag=name)
             return txt
         return None
+
+
+def _append_picture_body_children(
+    *,
+    item: PictureItem,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    picture_body_parts: list[str],
+    **kwargs: Any,
+) -> None:
+    """Serialize ``PictureItem`` children into the picture body (after the preamble)."""
+    visited: set[str] = kwargs.get("visited") or set()
+    visited.add(item.self_ref)
+    caption_refs = {c.cref for c in item.captions}
+    footnote_refs = {f.cref for f in item.footnotes}
+    for child_ref in item.children:
+        if child_ref.cref in caption_refs or child_ref.cref in footnote_refs:
+            continue
+        if child_ref.cref in doc_serializer.get_excluded_refs(**kwargs):
+            continue
+        child_res = doc_serializer.serialize(
+            item=child_ref.resolve(doc),
+            **{**kwargs, "visited": visited},
+        )
+        if child_res.text:
+            picture_body_parts.append(child_res.text)
 
 
 class DocLangPictureSerializer(BasePictureSerializer):
@@ -1105,7 +1152,8 @@ class DocLangPictureSerializer(BasePictureSerializer):
         if caption_head:
             res_parts.append(create_ser_result(text=caption_head))
 
-        body_parts: list[str] = []
+        picture_body_parts: list[str] = []
+        tabular_body = ""
         is_chart = self._picture_is_chart(item)
         is_chem = self._picture_is_chem(item)
         has_picture_ct = ContentType.PICTURE in params.content_types
@@ -1143,7 +1191,7 @@ class DocLangPictureSerializer(BasePictureSerializer):
                         params=params_chart,
                         **kwargs,
                     )
-                    body_parts.append(_wrap(text=otsl_content, wrap_tag=DocLangToken.TABLE.value))
+                    tabular_body = _wrap(text=otsl_content, wrap_tag=DocLangToken.TABULAR.value)
 
         uri: Optional[str] = None
         if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
@@ -1151,8 +1199,18 @@ class DocLangPictureSerializer(BasePictureSerializer):
         elif params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
             imgb64 = item._image_to_base64(img)
             uri = f"data:image/png;base64,{imgb64}"
+        # v0.6 picture body: preamble (<src>, <tabular>), then semantic children.
         if uri:
-            body_parts.append(_create_src_token(uri=uri))
+            picture_body_parts.append(_create_src_token(uri=uri))
+        if tabular_body:
+            picture_body_parts.append(tabular_body)
+        _append_picture_body_children(
+            item=item,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            picture_body_parts=picture_body_parts,
+            **kwargs,
+        )
 
         head = _element_head_prefix(
             item=item,
@@ -1161,10 +1219,11 @@ class DocLangPictureSerializer(BasePictureSerializer):
             label_value=picture_label,
             caption_text=caption_head or None,
             custom_text=custom_head or None,
+            include_item_meta_head=any_match,
         )
-        inner = head + "".join(body_parts)
+        inner = head + "".join(picture_body_parts)
         picture_open = f"<{DocLangToken.PICTURE.value}"
-        if body_parts and any(p.startswith(f"<{DocLangToken.TABLE.value}") for p in body_parts):
+        if tabular_body:
             picture_open += f' {DocLangAttributeKey.CLASS.value}="chart"'
         picture_open += ">"
         picture_text = f"{picture_open}{inner}</{DocLangToken.PICTURE.value}>"
@@ -1705,7 +1764,7 @@ class DocLangDocSerializer(DocSerializer):
         hyperlink: Union[AnyUrl, Path],
         **kwargs: Any,
     ) -> str:
-        """Hyperlinks are emitted as ``<href uri=\"...\"/>`` in element head, not inline."""
+        r"""Hyperlinks are emitted as ``<href uri=\"...\"/>`` in element head, not inline."""
         return text
 
     text_serializer: BaseTextSerializer = DocLangTextSerializer()
@@ -1816,7 +1875,6 @@ class DocLangDocSerializer(DocSerializer):
 
     def _serialize_body(self, **kwargs) -> SerializationResult:
         """Serialize the document body."""
-
         self._suppressed_page_breaks = set()
         self._next_thread_id = 1
         self._thread_id_by_ref = {}

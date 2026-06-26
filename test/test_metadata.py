@@ -168,7 +168,7 @@ def test_md_ser_marked(doc_with_group_with_metadata: DoclingDocument):
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(actual)
     else:
-        with open(exp_file, "r", encoding="utf-8") as f:
+        with open(exp_file, encoding="utf-8") as f:
             expected = f.read()
         assert actual == expected
 

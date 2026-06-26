@@ -204,8 +204,9 @@ def display_statistics_summary(stats: CollectionStats):
     print(f"  Range: {stats.min_pages} - {stats.max_pages}")
     print(f"  Median (d5): {stats.deciles_pages[4]:.1f}")
     print(f"  Mean: {stats.mean_pages:.2f}")
-    print(f"  Deciles: d1={stats.deciles_pages[0]:.1f}, "
-          f"d5={stats.deciles_pages[4]:.1f}, d9={stats.deciles_pages[8]:.1f}")
+    print(
+        f"  Deciles: d1={stats.deciles_pages[0]:.1f}, d5={stats.deciles_pages[4]:.1f}, d9={stats.deciles_pages[8]:.1f}"
+    )
 
     print("\nTables:")
     print(f"  Range: {stats.min_tables} - {stats.max_tables}")
@@ -253,5 +254,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nError: {e}")
         import traceback
-        traceback.print_exc()
 
+        traceback.print_exc()

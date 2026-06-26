@@ -13,7 +13,7 @@
     <location value="38"/>
     <location value="401"/>
     <location value="152"/>
-    <table>
+    <tabular>
       <fcel/>
       Number of impellers
       <fcel/>
@@ -63,6 +63,6 @@
       <fcel/>
       0.24
       <nl/>
-    </table>
+    </tabular>
   </picture>
 </doclang>

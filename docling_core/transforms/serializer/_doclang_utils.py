@@ -21,7 +21,7 @@ from docling_core.types.doc.document import FieldItem, FieldRegionItem
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-_DOCLANG_VERSION: Final = "0.5"
+_DOCLANG_VERSION: Final = "0.7"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()
@@ -127,20 +127,20 @@ def _xml_error_context(
     return "\n".join(out)
 
 
-def _quantize_to_resolution(value: float, resolution: int) -> int:
-    """Quantize normalized value in [0,1) to [0,resolution)."""
-    n = round(resolution * value)
-    if n < 0:
-        warnings.warn(f"Normalized {value=} less than 0; returning 0", stacklevel=2)
+def _quantize_to_resolution(value: int, resolution: int) -> int:
+    """Clamp discrete location value to ``[0, resolution)``."""
+    if value < 0:
+        warnings.warn(f"Location {value=} less than 0; returning 0", stacklevel=2)
         return 0
-    elif n >= resolution:
+    if value == resolution:
+        return resolution - 1
+    if value > resolution:
         warnings.warn(
-            f"Normalized {value=} greater or equal to 1; returning {resolution-1=}",
+            f"Location {value=} greater than {resolution - 1}; returning {resolution - 1=}",
             stacklevel=2,
         )
         return resolution - 1
-    else:
-        return n
+    return value
 
 
 def _create_location_tokens_for_bbox(
@@ -152,15 +152,15 @@ def _create_location_tokens_for_bbox(
     yres: int,
 ) -> str:
     """Create four `<location .../>` tokens for x0,y0,x1,y1 given a bbox."""
-    x0 = bbox[0] / page_w
-    y0 = bbox[1] / page_h
-    x1 = bbox[2] / page_w
-    y1 = bbox[3] / page_h
+    x0 = min(bbox[0], bbox[2]) / page_w
+    y0 = min(bbox[1], bbox[3]) / page_h
+    x1 = max(bbox[0], bbox[2]) / page_w
+    y1 = max(bbox[1], bbox[3]) / page_h
 
-    x0v = _quantize_to_resolution(min(x0, x1), xres)
-    y0v = _quantize_to_resolution(min(y0, y1), yres)
-    x1v = _quantize_to_resolution(max(x0, x1), xres)
-    y1v = _quantize_to_resolution(max(y0, y1), yres)
+    x0v = _quantize_to_resolution(round(xres * x0), xres)
+    y0v = _quantize_to_resolution(round(yres * y0), yres)
+    x1v = _quantize_to_resolution(round(xres * x1), xres)
+    y1v = _quantize_to_resolution(round(yres * y1), yres)
 
     return (
         DocLangVocabulary._create_location_token(value=x0v, resolution=xres)
@@ -184,7 +184,15 @@ def _create_location_tokens_for_item(
     for prov in item.prov:
         page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
         bbox = prov.bbox.to_top_left_origin(page_h).as_tuple()
-        out.append(_create_location_tokens_for_bbox(bbox=bbox, page_w=page_w, page_h=page_h, xres=xres, yres=yres))
+        out.append(
+            _create_location_tokens_for_bbox(
+                bbox=bbox,
+                page_w=page_w,
+                page_h=page_h,
+                xres=xres,
+                yres=yres,
+            )
+        )
 
     # Multi-provenance items emit one location set per fragment
     if len(out) > 1:
@@ -283,6 +291,8 @@ class DocLangToken(str, Enum):
     HEADING = "heading"
     TEXT = "text"
     CAPTION = "caption"
+    DESCRIPTION = "description"
+    SUMMARY = "summary"
     FOOTNOTE = "footnote"
     PAGE_HEADER = "page_header"
     PAGE_FOOTER = "page_footer"
@@ -292,6 +302,7 @@ class DocLangToken(str, Enum):
     LDIV = "ldiv"
     CHECKBOX = "checkbox"
     TABLE = "table"
+    TABULAR = "tabular"
     FIELD_REGION = "field_region"
     FIELD_ITEM = "field_item"
     FIELD_KEY = "key"
@@ -517,6 +528,7 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.CHECKBOX: DocLangCategory.SEMANTIC,
         DocLangToken.LIST: DocLangCategory.SEMANTIC,
         DocLangToken.TABLE: DocLangCategory.SEMANTIC,
+        DocLangToken.TABULAR: DocLangCategory.SEMANTIC,
         # Grouping
         DocLangToken.GROUP: DocLangCategory.GROUPING,
         # Formatting
@@ -1010,6 +1022,12 @@ def _code_language_label_from_doclang(label_val: str) -> CodeLanguageLabel:
     return _LINGUIST_TO_CODE_LANGUAGE.get(label_val, CodeLanguageLabel.UNKNOWN)
 
 
+# DocLang custom-vocabulary tags for standard Docling meta fields (``namespace__field``).
+_DOCLANG_META_NAMESPACE: Final = "docling"
+_DOCLANG_META_TAG_SUMMARY: Final = f"{_DOCLANG_META_NAMESPACE}__summary"
+_DOCLANG_META_TAG_DESCRIPTION: Final = f"{_DOCLANG_META_NAMESPACE}__description"
+_DOCLANG_META_TAG_SMILES: Final = f"{_DOCLANG_META_NAMESPACE}__smiles"
+
 # Tokens allowed in an element head (before body content). Mirrors
 # ``_element_head_prefix`` serialization order plus continuation/temporal tokens.
 _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
@@ -1019,6 +1037,8 @@ _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
         DocLangToken.HREF.value,
         DocLangToken.LOCATION.value,
         DocLangToken.CAPTION.value,
+        DocLangToken.DESCRIPTION.value,
+        DocLangToken.SUMMARY.value,
         DocLangToken.CUSTOM.value,
         DocLangToken.THREAD.value,
         DocLangToken.XREF.value,
