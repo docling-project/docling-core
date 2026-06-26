@@ -10,9 +10,6 @@ Table 1: Quarterly revenue by region.
 |----------|--------------|--------------|
 | North    | 1.2M         | 1.4M         |
 | South    | 0.9M         | 1.1M         |
-|          |              |              |
-|          |              |              |
-|          |              |              |
 
 [^1]
 
