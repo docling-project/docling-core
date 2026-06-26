@@ -1686,6 +1686,10 @@ class FloatingMeta(BaseMeta):
     description: Optional[DescriptionMetaField] = None
 
 
+class PageMeta(BaseMeta):
+    """Metadata model for pages."""
+
+
 class CodeMetaField(BasePrediction):
     """Code representation for the respective item."""
 
@@ -2878,6 +2882,7 @@ class PageItem(BaseModel):
     # only referencing items on the page
     size: Size
     image: Optional[ImageRef] = None
+    meta: Optional[PageMeta] = None
     page_no: int
 
 
@@ -7703,14 +7708,22 @@ class DoclingDocument(BaseModel):
 
         return "\n".join(result)
 
-    def add_page(self, page_no: int, size: Size, image: Optional[ImageRef] = None) -> PageItem:
+    def add_page(
+        self,
+        page_no: int,
+        size: Size,
+        image: Optional[ImageRef] = None,
+        meta: Optional[PageMeta] = None,
+    ) -> PageItem:
         """add_page.
 
         :param page_no: int:
         :param size: Size:
+        :param image: Optional[ImageRef]:
+        :param meta: Optional[PageMeta]:
 
         """
-        pitem = PageItem(page_no=page_no, size=size, image=image)
+        pitem = PageItem(page_no=page_no, size=size, image=image, meta=meta)
 
         self.pages[page_no] = pitem
         return pitem
