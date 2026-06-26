@@ -493,7 +493,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
             A tuple of (header_lines, body_lines) where header_lines contains
             the header row and separator row, and body_lines contains the data rows.
         """
-
         lines = [line for line in table_text.splitlines(True) if line.strip()]
 
         if len(lines) < 2:

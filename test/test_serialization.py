@@ -562,7 +562,6 @@ def test_md_numeric_precision_preserved():
 
 def test_md_traverse_pictures():
     """Test traverse_pictures parameter to include text inside PictureItems."""
-
     doc = DoclingDocument(name="Test Document")
     doc.add_text(label=DocItemLabel.PARAGRAPH, text="Text before picture")
     picture = doc.add_picture()
@@ -612,6 +611,7 @@ def test_md_traverse_pictures():
     assert "Text after picture" in result_with_traverse
     assert "Text inside picture" in result_with_traverse
     assert "<!-- image -->" in result_with_traverse
+
 
 def test_md_footnotes_yaml():
     src = Path("./test/data/doc/2206.01062.yaml")
@@ -713,6 +713,7 @@ def test_md_footnotes_json():
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
 
+
 def test_md_table_with_footnotes():
     doc = DoclingDocument(name="test_table_footnotes")
 
@@ -741,6 +742,7 @@ def test_md_table_with_footnotes():
     assert "[^1]" in actual
     assert "[^1]: table footnote explanation" in actual
 
+
 # ===============================
 # HTML tests
 # ===============================
@@ -748,7 +750,6 @@ def test_md_table_with_footnotes():
 
 def test_html_table_serializer_get_header_and_body_lines():
     """Test HTMLTableSerializer.get_header_and_body_lines() method."""
-
     serializer = HTMLTableSerializer()
 
     # Test 1: Valid HTML with headers and data
@@ -1089,18 +1090,10 @@ def test_html_rich_cell_textitem_ref_subtree_inside_and_not_outside():
     inside_table = body[:table_end]
     after_table = body[table_end:]
 
-    assert "CELL-TEXT" in inside_table, (
-        f"RichTableCell ref content missing from the table:\n{body}"
-    )
-    assert "DEEP-LEAK" in inside_table, (
-        f"RichTableCell ref descendant missing from the table:\n{body}"
-    )
-    assert "CELL-TEXT" not in after_table, (
-        f"RichTableCell ref content leaked outside the table:\n{body}"
-    )
-    assert "DEEP-LEAK" not in after_table, (
-        f"RichTableCell ref descendant leaked outside the table:\n{body}"
-    )
+    assert "CELL-TEXT" in inside_table, f"RichTableCell ref content missing from the table:\n{body}"
+    assert "DEEP-LEAK" in inside_table, f"RichTableCell ref descendant missing from the table:\n{body}"
+    assert "CELL-TEXT" not in after_table, f"RichTableCell ref content leaked outside the table:\n{body}"
+    assert "DEEP-LEAK" not in after_table, f"RichTableCell ref descendant leaked outside the table:\n{body}"
 
 
 def test_html_textitem_with_children_at_document_level():
@@ -1117,15 +1110,9 @@ def test_html_textitem_with_children_at_document_level():
     out = HTMLDocSerializer(doc=doc).serialize().text
     body = out[out.find("<body>") : out.find("</body>") + len("</body>")]
 
-    assert body.count("PARENT-TEXT") == 1, (
-        f"PARENT-TEXT should appear exactly once:\n{body}"
-    )
-    assert body.count("CHILD-TEXT") == 1, (
-        f"CHILD-TEXT should appear exactly once:\n{body}"
-    )
-    assert body.find("PARENT-TEXT") < body.find("CHILD-TEXT"), (
-        f"PARENT-TEXT should appear before CHILD-TEXT:\n{body}"
-    )
+    assert body.count("PARENT-TEXT") == 1, f"PARENT-TEXT should appear exactly once:\n{body}"
+    assert body.count("CHILD-TEXT") == 1, f"CHILD-TEXT should appear exactly once:\n{body}"
+    assert body.find("PARENT-TEXT") < body.find("CHILD-TEXT"), f"PARENT-TEXT should appear before CHILD-TEXT:\n{body}"
 
 
 def test_html_inline_and_formatting():
@@ -1184,7 +1171,6 @@ def test_webvtt_params():
 
 def test_html_meta_emits_xhtml_compatible_attributes():
     """Test that metadata attributes are name=value pairs."""
-
     doc = DoclingDocument(name="x")
 
     plain = TableCell(
@@ -1214,7 +1200,9 @@ def test_html_meta_emits_xhtml_compatible_attributes():
         )
     ]
 
-    text = doc.add_text(label=DocItemLabel.TEXT, text="Output of HTML serializer must be parseable by a strict XML parser")
+    text = doc.add_text(
+        label=DocItemLabel.TEXT, text="Output of HTML serializer must be parseable by a strict XML parser"
+    )
     text.meta = BaseMeta(
         summary=SummaryMetaField(text="XHTML-compliant"),
         language=LanguageMetaField(code="en"),
@@ -1229,7 +1217,7 @@ def test_html_meta_emits_xhtml_compatible_attributes():
                     text="XML parser",
                     label="software",
                     charspan=CharSpan((56, 66)),
-                )
+                ),
             ]
         ),
     )
