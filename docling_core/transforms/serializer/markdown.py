@@ -938,17 +938,18 @@ class MarkdownDocSerializer(DocSerializer):
                         f"Footnote reference {footnote.cref} resolved to {type(resolved).__name__} instead of TextItem"
                     )
                 else:
-                    # Retrieve footnote id and definition parsed as a tuple
-                    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
+                    footnote_tuple: tuple[str, str] = MarkdownTextSerializer._validate_and_format_footnote(
+                        resolved.text
+                    )
+                    identifier, definition = footnote_tuple
                     anchor_ref = f"[^{identifier}]"
                     combined = f"{anchor_ref}\n\n{definition}"
                     results.append(create_ser_result(text=combined, span_source=resolved))
 
             text_res = "\n\n".join([r.text for r in results])
-        else:
-            text_res = ""
+            return create_ser_result(text=text_res, span_source=results)
 
-        return create_ser_result(text=text_res, span_source=results)
+        return create_ser_result(text="", span_source=[])
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any):
