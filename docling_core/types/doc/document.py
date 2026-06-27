@@ -6116,7 +6116,9 @@ class DoclingDocument(BaseModel):
                                 item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
                                 item.image.uri = Path(obj_path)
                             elif item.image is not None:
-                                item.image.uri = Path(obj_path)
+                                item.image.uri = Path(
+                                    obj_path
+                                ).as_posix()  # force Unix style, even under Windows for correct html and markdown path
 
                         # if item.image._pil is not None:
                         #    item.image._pil.close()
