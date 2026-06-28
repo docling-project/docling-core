@@ -1,85 +1,137 @@
 """Package for models defined by the Document type."""
 
-from .base import BoundingBox, CoordOrigin, ImageRefMode, Size
-from .document import (
-    AnyTableCell,
+from docling_core.types.doc.base import (
+    BoundingBox,
+    CoordOrigin,
+    ImageRefMode,
+    PydanticSerCtxKey,
+    Size,
+)
+from docling_core.types.doc.common.annotations import (
     BaseAnnotation,
+    DescriptionAnnotation,
+    MiscAnnotation,
+)
+from docling_core.types.doc.common.content_layer import ContentLayer
+from docling_core.types.doc.common.formatting import (
+    Formatting,
+    Script,
+)
+from docling_core.types.doc.common.meta import (
     BaseMeta,
     BasePrediction,
+    CodeMetaField,
+    DescriptionMetaField,
+    EntitiesMetaField,
+    EntityMention,
+    FloatingMeta,
+    KeywordsMetaField,
+    LanguageMetaField,
+    MetaFieldName,
+    MetaUtils,
+    MoleculeMetaField,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureMeta,
+    SummaryMetaField,
+    TabularChartMetaField,
+    TopicsMetaField,
+)
+from docling_core.types.doc.common.origin import (
+    BaseSource,
+    DocumentOrigin,
+    SourceType,
+    TrackSource,
+)
+from docling_core.types.doc.common.page_item import PageItem
+from docling_core.types.doc.common.reference import (
+    FineRef,
+    ImageRef,
+    ProvenanceItem,
+    RefItem,
+)
+from docling_core.types.doc.common.scalars import (
+    CharSpan,
+    LevelNumber,
+    Uint64,
+)
+from docling_core.types.doc.doctags import (
+    DocTagsDocument,
+    DocTagsPage,
+)
+from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.items.code import CodeItem
+from docling_core.types.doc.items.content import ContentItem
+from docling_core.types.doc.items.form import (
+    FieldHeadingItem,
+    FieldItem,
+    FieldRegionItem,
+    FieldValueItem,
+)
+from docling_core.types.doc.items.group import (
+    GroupItem,
+    InlineGroup,
+    ListGroup,
+    OrderedList,
+    UnorderedList,
+)
+from docling_core.types.doc.items.key_value import (
+    FormItem,
+    GraphCell,
+    GraphData,
+    GraphLink,
+    KeyValueItem,
+)
+from docling_core.types.doc.items.node import (
+    DocItem,
+    FloatingItem,
+    NodeItem,
+)
+from docling_core.types.doc.items.picture.charts import (
     ChartBar,
     ChartLine,
     ChartPoint,
     ChartSlice,
     ChartStackedBar,
-    CodeItem,
-    ContentLayer,
-    DescriptionAnnotation,
-    DescriptionMetaField,
-    DocItem,
-    DoclingDocument,
-    DocTagsDocument,
-    DocTagsPage,
-    DocumentOrigin,
-    EntitiesMetaField,
-    EntityMention,
-    FloatingItem,
-    FloatingMeta,
-    Formatting,
-    FormItem,
-    FormulaItem,
-    GraphCell,
-    GraphData,
-    GraphLink,
-    GroupItem,
-    ImageRef,
-    InlineGroup,
-    KeyValueItem,
-    KeywordsMetaField,
-    LanguageMetaField,
-    ListGroup,
-    ListItem,
-    MetaFieldName,
-    MetaUtils,
-    MiscAnnotation,
-    MoleculeMetaField,
-    NodeItem,
-    OrderedList,
-    Orientation,
-    PageItem,
     PictureBarChartData,
     PictureChartData,
-    PictureClassificationClass,
-    PictureClassificationData,
-    PictureClassificationMetaField,
-    PictureClassificationPrediction,
-    PictureDataType,
-    PictureItem,
     PictureLineChartData,
-    PictureMeta,
-    PictureMoleculeData,
     PicturePieChartData,
     PictureScatterChartData,
     PictureStackedBarChartData,
     PictureTabularChartData,
-    ProvenanceItem,
-    RefItem,
-    RichTableCell,
-    Script,
-    SectionHeaderItem,
-    SourceType,
-    SummaryMetaField,
+)
+from docling_core.types.doc.items.picture.classification import (
+    PictureClassificationClass,
+    PictureClassificationData,
+)
+from docling_core.types.doc.items.picture.molecule import PictureMoleculeData
+from docling_core.types.doc.items.picture.picture import (
+    BasePictureData,
+    PictureDataType,
+    PictureDescriptionData,
+    PictureItem,
+    PictureMiscData,
+)
+from docling_core.types.doc.items.table.table import (
     TableAnnotationType,
+    TableItem,
+)
+from docling_core.types.doc.items.table.table_data import (
+    AnyTableCell,
+    Orientation,
+    RichTableCell,
     TableCell,
     TableData,
-    TableItem,
-    TabularChartMetaField,
+)
+from docling_core.types.doc.items.text import (
+    FormulaItem,
+    ListItem,
+    SectionHeaderItem,
     TextItem,
     TitleItem,
-    TopicsMetaField,
-    TrackSource,
-    UnorderedList,
 )
-from .labels import (
+from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
     GraphCellLabel,
@@ -89,16 +141,56 @@ from .labels import (
     PictureClassificationLabel,
     TableCellLabel,
 )
-from .page import (
+from docling_core.types.doc.page import (
+    BitmapResource,
     BoundingRectangle,
+    ColorChannelValue,
     ColorMixin,
     ColorRGBA,
     Coord2D,
     OrderedElement,
+    PageGeometry,
+    PageNumber,
+    ParsedPdfDocument,
     PdfCellRenderingMode,
+    PdfHyperlink,
+    PdfLine,
+    PdfMetaData,
     PdfPageBoundaryType,
+    PdfPageGeometry,
+    PdfShape,
+    PdfTableOfContents,
+    PdfTextCell,
+    PdfWidget,
+    SegmentedPage,
+    SegmentedPdfPage,
     TextCell,
     TextCellUnit,
     TextDirection,
 )
-from .tokens import DocumentToken, TableToken
+from docling_core.types.doc.tokens import (
+    DocumentToken,
+    TableToken,
+)
+from docling_core.types.doc.webvtt import (
+    WebVTTCueBlock,
+    WebVTTCueBoldSpan,
+    WebVTTCueClassSpan,
+    WebVTTCueComponent,
+    WebVTTCueComponentBase,
+    WebVTTCueComponentWithTerminator,
+    WebVTTCueIdentifier,
+    WebVTTCueInternalText,
+    WebVTTCueItalicSpan,
+    WebVTTCueLanguageSpan,
+    WebVTTCueLanguageSpanStartTag,
+    WebVTTCueSpanStartTag,
+    WebVTTCueSpanStartTagAnnotated,
+    WebVTTCueTextSpan,
+    WebVTTCueTimings,
+    WebVTTCueUnderlineSpan,
+    WebVTTCueVoiceSpan,
+    WebVTTFile,
+    WebVTTLineTerminator,
+    WebVTTTimestamp,
+)
