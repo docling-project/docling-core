@@ -16,6 +16,7 @@ from docling_core.transforms.serializer.html import (
     HTMLTableSerializer,
 )
 from docling_core.transforms.serializer.markdown import (
+    FurnitureMode,
     MarkdownDocSerializer,
     MarkdownParams,
     MarkdownTableSerializer,
@@ -29,6 +30,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
+    ContentLayer,
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
@@ -610,6 +612,44 @@ def test_md_traverse_pictures():
     assert "Text after picture" in result_with_traverse
     assert "Text inside picture" in result_with_traverse
     assert "<!-- image -->" in result_with_traverse
+
+
+def test_md_furniture_modes():
+    """Test that furniture_mode correctly filters and deduplicates headers/footers."""
+    doc = DoclingDocument(name="Furniture Test")
+
+    # 1. Add standard body text
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text="Main body paragraph text.")
+
+    # 2. Add headers/footers and tag them as FURNITURE layer items
+    h1 = doc.add_text(label=DocItemLabel.TEXT, text="Document Header Title")
+    h1.content_layer = ContentLayer.FURNITURE
+
+    h2 = doc.add_text(label=DocItemLabel.TEXT, text="Document Header Title")  # Duplicate text
+    h2.content_layer = ContentLayer.FURNITURE
+
+    h3 = doc.add_text(label=DocItemLabel.TEXT, text="Different Footer Notice")
+    h3.content_layer = ContentLayer.FURNITURE
+
+    # Test Mode 1: NONE (Default) -> Should completely drop furniture items
+    ser_none = MarkdownDocSerializer(doc=doc, params=MarkdownParams(furniture_mode=FurnitureMode.NONE))
+    text_none = ser_none.serialize().text
+    assert "Main body paragraph text." in text_none
+    assert "Document Header Title" not in text_none
+
+    # Test Mode 2: ALL -> Should render every furniture item, including duplicates
+    ser_all = MarkdownDocSerializer(doc=doc, params=MarkdownParams(furniture_mode=FurnitureMode.ALL))
+    text_all = ser_all.serialize().text
+    assert "Main body paragraph text." in text_all
+    assert text_all.count("Document Header Title") == 2
+    assert "Different Footer Notice" in text_all
+
+    # Test Mode 3: DISTINCT -> Should render unique text items exactly once
+    ser_distinct = MarkdownDocSerializer(doc=doc, params=MarkdownParams(furniture_mode=FurnitureMode.DISTINCT))
+    text_distinct = ser_distinct.serialize().text
+    assert "Main body paragraph text." in text_distinct
+    assert text_distinct.count("Document Header Title") == 1
+    assert "Different Footer Notice" in text_distinct
 
 
 # ===============================
