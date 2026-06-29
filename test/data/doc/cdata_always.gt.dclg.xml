@@ -182,11 +182,11 @@ Affiliation 2]]></content>
   <text><![CDATA[Some 'single' quotes]]></text>
   <text><![CDATA[Some "double" quotes]]></text>
   <text>
-    <custom>
-      <docling__summary><![CDATA[Summary with <tags> & ampersands]]></docling__summary>
-      <docling__description><![CDATA[Description content]]></docling__description>
-    </custom>
+    <summary><![CDATA[Summary with <tags> & ampersands]]></summary>
 <![CDATA[An ampersand: &]]>  </text>
+  <picture>
+    <description><![CDATA[Description content]]></description>
+  </picture>
   <code><![CDATA[0 == 0]]></code>
   <code>
     <content><![CDATA[ 1 leading space, 4 trailing    ]]></content>

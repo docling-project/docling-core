@@ -9,6 +9,7 @@ import mimetypes
 import os
 import re
 import sys
+import tempfile
 import typing
 import warnings
 from collections.abc import Iterable, Sequence
@@ -67,7 +68,13 @@ from docling_core.types.doc.labels import (
     PictureClassificationLabel,
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
-from docling_core.types.doc.utils import parse_otsl_table_content, relative_path
+from docling_core.types.doc.utils import (
+    parse_otsl_table_content,
+    relative_path,
+    resolve_archive_path,
+    safe_extract_zip_archive,
+    validate_archive_relative_path,
+)
 from docling_core.utils.settings import settings
 
 try:
@@ -358,10 +365,8 @@ class TableCell(BaseModel):
             if not len(text):
                 text_cells = data.pop("text_cell_bboxes", None)
                 if text_cells:
-                    for el in text_cells:
-                        text += el["token"] + " "
+                    text = " ".join(el["token"] for el in text_cells)
 
-                text = text.strip()
             data["text"] = text
 
         return data
@@ -1075,6 +1080,9 @@ class DocumentOrigin(BaseModel):
         "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.oasis.opendocument.text",
+        "application/vnd.oasis.opendocument.spreadsheet",
+        "application/vnd.oasis.opendocument.presentation",
         "text/asciidoc",
         "text/markdown",
         "text/csv",
@@ -3946,6 +3954,21 @@ class DoclingDocument(BaseModel):
                     else:
                         resume_node = None
 
+                # Skip items that are descendants of FloatingItem containers (tables, pictures, key-values, forms)
+                # These have structural parent-child relationships that must be preserved:
+                if item.parent:
+                    curr = item
+                    is_floating_descendant = False
+                    while curr.parent is not None:
+                        parent = curr.parent.resolve(doc=self)
+                        if isinstance(parent, FloatingItem):
+                            is_floating_descendant = True
+                            break
+                        curr = parent
+
+                    if is_floating_descendant:
+                        continue
+
                 # determine which section root this item should belong to
                 introduced_level = self._get_heading_level(node=item)
                 target_root_level = -1
@@ -6091,6 +6114,7 @@ class DoclingDocument(BaseModel):
                             if item.image is None:
                                 scale = img.size[0] / item.prov[0].bbox.width
                                 item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
+                                item.image.uri = Path(obj_path)
                             elif item.image is not None:
                                 item.image.uri = Path(obj_path)
 
@@ -7449,6 +7473,146 @@ class DoclingDocument(BaseModel):
         out = self.export_to_doclang()
         with open(filename, "w", encoding="utf-8") as fw:
             fw.write(f"{out}\n")
+
+    def save_as_doclang_archive(
+        self,
+        filename: Union[str, Path],
+        *,
+        artifacts_dir: Optional[Path] = None,
+        validate: bool = False,
+    ) -> None:
+        """Save the document as a DocLang OPC archive (``.dclx``).
+
+        Picture and page images are always stored outside the markup, under
+        ``assets/`` and ``pages/`` in the archive respectively.
+        """
+        from doclang import pack
+
+        from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
+
+        if isinstance(filename, str):
+            filename = Path(filename)
+
+        def _write_archive(staging_root: Path) -> None:
+            assets_dir = staging_root / "assets"
+            pages_dir = staging_root / "pages"
+
+            doc = self._make_copy_with_refmode(
+                artifacts_dir=assets_dir,
+                image_mode=ImageRefMode.REFERENCED,
+                page_no=None,
+                reference_path=staging_root,
+            )
+
+            serializer = DocLangDocSerializer(
+                doc=doc,
+                params=DocLangParams(image_mode=ImageRefMode.REFERENCED),
+            )
+            document_path = staging_root / "document.dclg.xml"
+            document_path.write_text(f"{serializer.serialize().text}\n", encoding="utf-8")
+
+            pack_kwargs: dict[str, Any] = {
+                "document": document_path,
+                "output": filename,
+                "validate": validate,
+            }
+
+            pages: dict[int, Path] = {}
+            for p_no, page in self.pages.items():
+                if page.image is None:
+                    continue
+                img = page.image.pil_image
+                if img is None:
+                    continue
+                page_path = pages_dir / f"{p_no}.png"
+                page_path.parent.mkdir(parents=True, exist_ok=True)
+                img.save(page_path)
+                pages[p_no] = page_path
+            if pages:
+                pack_kwargs["pages"] = pages
+
+            if assets_dir.is_dir() and any(assets_dir.iterdir()):
+                pack_kwargs["assets"] = assets_dir
+
+            pack(**pack_kwargs)
+
+        if artifacts_dir is None:
+            with tempfile.TemporaryDirectory() as staging_name:
+                _write_archive(Path(staging_name))
+        else:
+            artifacts_dir.mkdir(parents=True, exist_ok=True)
+            _write_archive(artifacts_dir)
+
+    @classmethod
+    def load_from_doclang_archive(
+        cls,
+        filename: Union[str, Path],
+        *,
+        artifacts_dir: Optional[Path] = None,
+        validate: bool = False,
+    ) -> "DoclingDocument":
+        """Load a DoclingDocument from a DocLang OPC archive (``.dclx``).
+
+        The archive is extracted to ``artifacts_dir`` (default: ``<name>_artifacts`` next
+        to the ``.dclx`` file). Relative ``<src uri=\"...\"/>`` paths and optional
+        ``pages/`` images are resolved inside that directory.
+        """
+        from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
+
+        if isinstance(filename, str):
+            filename = Path(filename)
+
+        artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
+        safe_extract_zip_archive(filename, artifacts_dir)
+
+        document_xml = artifacts_dir / "document.xml"
+        if not document_xml.is_file():
+            raise ValueError(f"DocLang archive missing document.xml: {filename}")
+
+        if validate:
+            from doclang.validation import validate as doclang_validate
+
+            doclang_validate(document_xml)
+
+        doc = DocLangDocDeserializer().deserialize_str(
+            document_xml.read_text(encoding="utf-8"),
+            media_root=artifacts_dir,
+        )
+        doc.name = filename.stem
+        cls._restore_doclang_archive_page_images(doc=doc, archive_root=artifacts_dir)
+        return doc
+
+    @staticmethod
+    def _restore_doclang_archive_page_images(*, doc: "DoclingDocument", archive_root: Path) -> None:
+        pages_dir = archive_root / "pages"
+        if not pages_dir.is_dir():
+            return
+
+        archive_root = archive_root.resolve()
+        for page_file in sorted(pages_dir.iterdir()):
+            if not page_file.is_file():
+                continue
+
+            archive_rel = f"pages/{page_file.name}"
+            validate_archive_relative_path(archive_rel, label="page image")
+            resolved = resolve_archive_path(archive_root, archive_rel)
+            stem = page_file.stem
+            if not stem.isdigit():
+                continue
+
+            page_no = int(stem)
+            if page_no not in doc.pages:
+                continue
+
+            with PILImage.open(resolved) as pil:
+                pil_copy = pil.copy()
+            mimetype = mimetypes.guess_type(page_file.name)[0] or "image/png"
+            doc.pages[page_no].image = ImageRef(
+                mimetype=mimetype,
+                dpi=72,
+                size=Size(width=pil_copy.width, height=pil_copy.height),
+                uri=resolved,
+            )
 
     def _export_to_indented_text(
         self,
