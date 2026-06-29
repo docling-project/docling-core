@@ -742,6 +742,25 @@ def test_md_table_with_footnotes():
     assert "[^1]: table footnote explanation" in actual
 
 
+def test_md_footnote_long_paragraph():
+    """Footnotes on a table following a long paragraph appear immediately after
+    the table, before the subsequent paragraph."""
+    src = Path("./test/data/doc/footnote_long_paragraph.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(doc=doc, params=MarkdownParams())
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
+
+    # Long paragraph precedes the table
+    assert "The data presented in Table 1 summarises" in actual
+    # Footnotes appear after the table, before the closing paragraph
+    table_end = actual.index("| Japan")
+    footnote_pos = actual.index("[^1]")
+    closing_para = actual.index("These figures confirm")
+    assert table_end < footnote_pos < closing_para
+
+
 # ===============================
 # HTML tests
 # ===============================
