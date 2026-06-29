@@ -987,7 +987,7 @@ class MarkdownDocSerializer(DocSerializer):
             if self.params.furniture_mode == FurnitureMode.DISTINCT:
                 # Initialize the tracking set on the serializer instance if it doesn't exist
                 if not hasattr(self, "_seen_furniture"):
-                    self._seen_furniture = set()
+                    self._seen_furniture: set[str] = set()
 
                 # Extract text for comparison (fallback to ref if no text exists)
                 item_text = getattr(item, "text", None)
