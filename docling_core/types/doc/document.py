@@ -91,6 +91,15 @@ LevelNumber = typing.Annotated[int, Field(ge=1, le=100)]
 CharSpan = Annotated[tuple[int, int], Field(description="Character span (0-indexed)")]
 CURRENT_VERSION: Final = "1.10.0"
 
+_DOCTAGS_BBOX_MIN_DIMENSION: Final = 1 / 500
+"""Minimum bounding box dimension threshold for DocTags import.
+
+This constant represents the minimum width or height (as a fraction of the image
+dimensions) that a bounding box must have to be considered valid during DocTags
+import. The value `1/500 = 0.002 = 0.2%` means that any bounding box with width or
+height less than 0.2% of the image width or height will be discarded.
+"""
+
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
     DocItemLabel.DOCUMENT_INDEX,
@@ -6811,6 +6820,9 @@ class DoclingDocument(BaseModel):
                 coords = coords[:4]
             if len(coords) == 4:
                 l, t, r, b = map(float, coords)
+                # Ignore bounding boxes with width or height of < 0.2% of the image width or height.
+                if r - l < _DOCTAGS_BBOX_MIN_DIMENSION or b - t < _DOCTAGS_BBOX_MIN_DIMENSION:
+                    return None
                 return BoundingBox(l=l / 500, t=t / 500, r=r / 500, b=b / 500)
             return None
 
