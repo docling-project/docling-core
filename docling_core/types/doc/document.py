@@ -1074,22 +1074,23 @@ class DocumentOrigin(BaseModel):
     )
 
     _extra_mimetypes: typing.ClassVar[list[str]] = [
+        "application/vnd.box.boxnote",
+        "application/vnd.oasis.opendocument.presentation",
+        "application/vnd.oasis.opendocument.spreadsheet",
+        "application/vnd.oasis.opendocument.text",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+        "application/vnd.openxmlformats-officedocument.presentationml.template",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-        "application/vnd.openxmlformats-officedocument.presentationml.template",
-        "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.oasis.opendocument.text",
-        "application/vnd.oasis.opendocument.spreadsheet",
-        "application/vnd.oasis.opendocument.presentation",
-        "text/asciidoc",
-        "text/markdown",
-        "text/csv",
-        "text/vtt",
-        "audio/x-wav",
-        "audio/wav",
         "audio/mp3",
+        "audio/wav",
+        "audio/x-wav",
+        "text/asciidoc",
+        "text/csv",
+        "text/markdown",
+        "text/vtt",
     ]
 
     @field_validator("binary_hash", mode="before")
