@@ -120,6 +120,7 @@ dev = [
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
     'pandas (>=2.1.4,<4.0.0); python_version >= "3.11"',
+    'numpy (<2.5.0)',   # numpy 2.5.0+ stubs use PEP 695 syntax, incompatible with mypy python_version < 3.12
 ]
 
 [tool.uv]
