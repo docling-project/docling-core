@@ -6124,7 +6124,7 @@ class DoclingDocument(BaseModel):
                             # For remote paths, store as string URI; for local, store as Path
                             # Pydantic coerces str to AnyUrl at runtime
                             item.image.uri = obj_path  # type: ignore[assignment]
-                        elif item.image is not None:
+                        else:
                             item.image.uri = obj_path  # type: ignore[assignment]
 
                     # if item.image._pil is not None:
@@ -6132,30 +6132,38 @@ class DoclingDocument(BaseModel):
 
                 img_count += 1
 
-            if include_page_images:
-                for p_no, page in result.pages.items():
-                    if page_no is not None and p_no != page_no:
-                        continue
-                    if page.image is None:
-                        continue
-                    img = page.image.pil_image
-                    if img is None:
-                        continue
-                    hexhash = PictureItem._image_to_hexhash(img)
-                    if hexhash is None:
-                        continue
+        if include_page_images:
+            for p_no, page in result.pages.items():
+                if page_no is not None and p_no != page_no:
+                    continue
+                if page.image is None:
+                    continue
+                img = page.image.pil_image
+                if img is None:
+                    continue
+                hexhash = PictureItem._image_to_hexhash(img)
+                if hexhash is None:
+                    continue
 
-                    loc_path = image_dir / f"page_{p_no:06}_{hexhash}.png"
-                    img.save(loc_path)
-                    if reference_path is not None:
-                        obj_path = relative_path(
-                            reference_path.resolve(),
-                            loc_path.resolve(),
-                        )
-                    else:
-                        obj_path = loc_path
+                loc_path = image_dir / f"page_{p_no:06}_{hexhash}.png"
 
-                    page.image.uri = Path(obj_path)
+                # Use BytesIO + write_bytes for UPath compatibility
+                buf = BytesIO()
+                img.save(buf, format="PNG")
+                loc_path.write_bytes(buf.getvalue())
+
+                page_obj_path: Union[AnyUrl, Path]
+                if is_remote_path(loc_path) or is_remote_path(reference_path):
+                    page_obj_path = AnyUrl(str(loc_path))
+                elif reference_path is not None:
+                    page_obj_path = relative_path(
+                        reference_path.resolve(),
+                        loc_path.resolve(),
+                    )
+                else:
+                    page_obj_path = loc_path
+
+                page.image.uri = page_obj_path  # type: ignore[assignment]
 
         return result
 
@@ -6619,12 +6627,27 @@ class DoclingDocument(BaseModel):
         filename.write_text(html_out, encoding="utf-8")
 
     def _get_output_paths(
-        self, filename: Union[str, Path], artifacts_dir: Optional[Path] = None
+        self,
+        filename: Path,
+        artifacts_dir: Optional[Path] = None,
     ) -> tuple[Path, Optional[Path]]:
-        if isinstance(filename, str):
-            filename = Path(filename)
+        """Resolve output and artifacts directory paths from the given filename.
+
+        Both ``Path`` and ``UPath`` objects are accepted since ``UPath`` is ``Path``-compatible for local paths, and remote ``UPath`` objects implement the same interface used here (``with_suffix``, ``with_name``,
+        ``is_absolute``, ``parent``, ``/``).
+
+        Args:
+            filename: Destination file path.
+            artifacts_dir: Optional explicit artifacts directory. When ``None``, a sibling
+                directory named ``<stem>_artifacts`` is derived from ``filename``.
+
+        Returns:
+            A tuple of ``(artifacts_dir, reference_path)`` where ``reference_path`` is
+            the parent of ``filename`` when ``artifacts_dir`` is relative, or ``None``
+            when it is absolute.
+        """
         if artifacts_dir is None:
-            # Remove the extension and add '_pictures'
+            # Remove the extension and add '_artifacts'
             artifacts_dir = filename.with_suffix("")
             artifacts_dir = artifacts_dir.with_name(artifacts_dir.name + "_artifacts")
         if artifacts_dir.is_absolute():

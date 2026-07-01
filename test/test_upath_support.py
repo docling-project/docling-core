@@ -4,9 +4,13 @@ import uuid
 from pathlib import Path
 
 import pytest
+from PIL import Image as PILImage
+from pydantic import AnyUrl
 from upath import UPath
 
 from docling_core.types.doc import DoclingDocument, ImageRefMode
+from docling_core.types.doc.base import Size
+from docling_core.types.doc.document import ImageRef
 from docling_core.types.doc.utils import is_remote_path, relative_path
 
 
@@ -141,3 +145,38 @@ def test_upath_integration(sample_doc, memory_base):
     loaded_empty = DoclingDocument.load_from_json(empty_path)
     assert loaded_empty.name == "Empty"
     assert len(loaded_empty.texts) == 0
+
+
+def test_upath_include_page_images(memory_base):
+    """Test _with_pictures_refs() with include_page_images=True on a remote path.
+
+    Ensures that page images are saved via BytesIO (UPath-compatible) and that
+    page.image.uri is stored as an AnyUrl, not a Path, for remote storage.
+    """
+    page_img = PILImage.new("RGB", (64, 64), "blue")
+    image_ref = ImageRef.from_pil(image=page_img, dpi=72)
+
+    doc = DoclingDocument(name="PageImageDoc")
+    doc.add_page(page_no=1, size=Size(width=64, height=64), image=image_ref)
+
+    image_dir = memory_base / "page_images"
+
+    result = doc._with_pictures_refs(
+        image_dir=image_dir,
+        page_no=None,
+        include_page_images=True,
+    )
+
+    # The image directory must have been created and contain the page image file
+    assert image_dir.exists()
+    saved_files = list(image_dir.iterdir())
+    assert len(saved_files) == 1, "Expected exactly one page image to be saved"
+    assert saved_files[0].name.endswith(".png")
+
+    # For a remote path the URI must be an AnyUrl, not a plain Path or UPath,
+    # so that the document remains JSON-serialisable
+    page = result.pages[1]
+    assert page.image is not None
+    assert page.image.uri is not None
+    assert isinstance(page.image.uri, AnyUrl), f"Expected AnyUrl for remote page image URI, got {type(page.image.uri)}"
+    assert not is_remote_path(page.image.uri)

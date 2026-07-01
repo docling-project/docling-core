@@ -28,9 +28,7 @@ def is_remote_path(p: Any) -> bool:
     """
     # UPath objects have a 'protocol' attribute
     protocol = getattr(p, "protocol", None)
-    if protocol is not None and protocol not in ("file", ""):
-        return True
-    return False
+    return protocol is not None and protocol not in ("file", "")
 
 
 def relative_path(src: str | Path, target: str | Path) -> Path:
@@ -48,7 +46,7 @@ def relative_path(src: str | Path, target: str | Path) -> Path:
 
     Note:
         For remote paths (UPath with non-file protocols), this function cannot
-        compute relative paths. Use is_remote_path() to check before calling.
+            compute relative paths. Use is_remote_path() to check before calling.
     """
     # Convert to Path only if string, otherwise keep original type
     if isinstance(src, str):
