@@ -6070,6 +6070,39 @@ class DoclingDocument(BaseModel):
 
         return result
 
+    @staticmethod
+    def _save_image_and_resolve_uri(
+        img: PILImage.Image,
+        loc_path: Path,
+        reference_path: Optional[Path],
+    ) -> Union[AnyUrl, Path]:
+        """Save *img* to *loc_path* and return the URI to store on the ImageRef.
+
+        Uses a BytesIO intermediate buffer so that the write is compatible with
+        UPath remote backends (PIL cannot write directly to non-local paths).
+        For remote paths the URI is returned as an absolute AnyUrl string; for
+        local paths it is returned relative to *reference_path* when available,
+        or as the absolute *loc_path* when *reference_path* is None.
+
+        Args:
+            img: The PIL image to save.
+            loc_path: Destination path (local or remote UPath).
+            reference_path: Base path used to compute a relative URI for local
+                storage. Pass ``None`` to store the absolute path instead.
+
+        Returns:
+            An AnyUrl for remote paths, or a Path (relative or absolute) for local paths.
+        """
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        loc_path.write_bytes(buf.getvalue())
+
+        if is_remote_path(loc_path) or is_remote_path(reference_path):
+            return AnyUrl(str(loc_path))
+        if reference_path is not None:
+            return relative_path(reference_path.resolve(), loc_path.resolve())
+        return loc_path
+
     def _with_pictures_refs(
         self,
         image_dir: Path,
@@ -6088,48 +6121,21 @@ class DoclingDocument(BaseModel):
         """
         result: DoclingDocument = copy.deepcopy(self)
 
-        img_count = 0
         image_dir.mkdir(parents=True, exist_ok=True)
 
+        img_count = 0
         for item, _ in result.iterate_items(page_no=page_no, with_groups=False):
             if isinstance(item, PictureItem):
                 img = item.get_image(doc=self)
                 if img is not None:
                     hexhash = PictureItem._image_to_hexhash(img)
-
-                    # loc_path = image_dir / f"image_{img_count:06}.png"
                     if hexhash is not None:
                         loc_path = image_dir / f"image_{img_count:06}_{hexhash}.png"
-
-                        # Use BytesIO + write_bytes for UPath compatibility
-                        buf = BytesIO()
-                        img.save(buf, format="PNG")
-                        loc_path.write_bytes(buf.getvalue())
-
-                        # For remote paths, use absolute URI string; for local, compute relative
-                        obj_path: Union[AnyUrl, Path]
-                        if is_remote_path(loc_path) or is_remote_path(reference_path):
-                            obj_path = AnyUrl(str(loc_path))
-                        elif reference_path is not None:
-                            obj_path = relative_path(
-                                reference_path.resolve(),
-                                loc_path.resolve(),
-                            )
-                        else:
-                            obj_path = loc_path
-
+                        obj_path = self._save_image_and_resolve_uri(img, loc_path, reference_path)
                         if item.image is None:
                             scale = img.size[0] / item.prov[0].bbox.width
                             item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
-                            # For remote paths, store as string URI; for local, store as Path
-                            # Pydantic coerces str to AnyUrl at runtime
-                            item.image.uri = obj_path  # type: ignore[assignment]
-                        else:
-                            item.image.uri = obj_path  # type: ignore[assignment]
-
-                    # if item.image._pil is not None:
-                    #    item.image._pil.close()
-
+                        item.image.uri = obj_path  # type: ignore[assignment]
                 img_count += 1
 
         if include_page_images:
@@ -6144,26 +6150,8 @@ class DoclingDocument(BaseModel):
                 hexhash = PictureItem._image_to_hexhash(img)
                 if hexhash is None:
                     continue
-
                 loc_path = image_dir / f"page_{p_no:06}_{hexhash}.png"
-
-                # Use BytesIO + write_bytes for UPath compatibility
-                buf = BytesIO()
-                img.save(buf, format="PNG")
-                loc_path.write_bytes(buf.getvalue())
-
-                page_obj_path: Union[AnyUrl, Path]
-                if is_remote_path(loc_path) or is_remote_path(reference_path):
-                    page_obj_path = AnyUrl(str(loc_path))
-                elif reference_path is not None:
-                    page_obj_path = relative_path(
-                        reference_path.resolve(),
-                        loc_path.resolve(),
-                    )
-                else:
-                    page_obj_path = loc_path
-
-                page.image.uri = page_obj_path  # type: ignore[assignment]
+                page.image.uri = self._save_image_and_resolve_uri(img, loc_path, reference_path)  # type: ignore[assignment]
 
         return result
 
