@@ -32,6 +32,9 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    GraphCell,
+    GraphData,
+    GraphLink,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -43,7 +46,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, GraphCellLabel, GraphLinkLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -1103,3 +1106,46 @@ def test_html_meta_emits_xhtml_compatible_attributes():
     assert 'data-meta-name="entities"' in html_out
     # Output must be parseable by a strict XML parser.
     ET.fromstring(html_out)
+
+
+def test_markdown_key_value_serializer():
+    """Test that key-value items are rendered as a Markdown table."""
+    doc = DoclingDocument(name="x")
+
+    graph = GraphData(
+        cells=[
+            GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Name", orig="Name"),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=1, text="Alice", orig="Alice"),
+            GraphCell(label=GraphCellLabel.KEY, cell_id=2, text="Tags", orig="Tags"),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=3, text="a|b", orig="a|b"),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=4, text="c\nd", orig="c\nd"),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=5, text="Orphan", orig="Orphan"),
+        ],
+        links=[
+            GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=1),
+            GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=2, target_cell_id=3),
+            GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=2, target_cell_id=4),
+        ],
+    )
+    doc.add_key_values(graph=graph)
+
+    text = MarkdownDocSerializer(doc=doc).serialize().text
+
+    assert "<!-- missing-key-value-item -->" not in text
+    lines = text.splitlines()
+    assert "| Key | Value |" in lines
+    assert "| --- | --- |" in lines
+    assert "| Name | Alice |" in lines
+    assert "| Tags | a\\|b; c d |" in lines
+    assert "|  | Orphan |" in lines
+
+
+def test_markdown_key_value_serializer_empty_graph_omitted():
+    """Test that a key-value item with no cells produces no output."""
+    doc = DoclingDocument(name="x")
+    doc.add_key_values(graph=GraphData())
+
+    text = MarkdownDocSerializer(doc=doc).serialize().text
+
+    assert "<!-- missing-key-value-item -->" not in text
+    assert "Key" not in text

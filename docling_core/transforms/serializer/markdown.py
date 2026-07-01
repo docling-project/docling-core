@@ -70,6 +70,7 @@ from docling_core.types.doc.document import (
     TitleItem,
     TopicsMetaField,
 )
+from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
 
 _logger = logging.getLogger(__name__)
 
@@ -698,15 +699,42 @@ class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serializes the passed item."""
-        # TODO add actual implementation
-        if item.self_ref not in doc_serializer.get_excluded_refs():
-            return create_ser_result(
-                text="<!-- missing-key-value-item -->",
-                span_source=item,
-            )
-        else:
+        """Serializes the passed item as a Markdown table of key/value pairs."""
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return create_ser_result()
+
+        cells_by_id = {cell.cell_id: cell for cell in item.graph.cells}
+        value_ids_by_key_id: dict[int, list[int]] = {}
+        for link in item.graph.links:
+            if link.label != GraphLinkLabel.TO_VALUE:
+                continue
+            value_ids_by_key_id.setdefault(link.source_cell_id, []).append(link.target_cell_id)
+
+        rows: list[tuple[str, str]] = []
+        linked_value_ids: set[int] = set()
+        for cell in item.graph.cells:
+            if cell.label != GraphCellLabel.KEY:
+                continue
+            value_ids = value_ids_by_key_id.get(cell.cell_id, [])
+            linked_value_ids.update(value_ids)
+            values = [cells_by_id[vid].text for vid in value_ids if vid in cells_by_id]
+            rows.append((cell.text, "; ".join(values)))
+
+        # Include values that aren't linked to any key (orphan values).
+        for cell in item.graph.cells:
+            if cell.label == GraphCellLabel.VALUE and cell.cell_id not in linked_value_ids:
+                rows.append(("", cell.text))
+
+        if not rows:
+            return create_ser_result()
+
+        def esc(text: str) -> str:
+            return text.replace("|", "\\|").replace("\n", " ")
+
+        lines = ["| Key | Value |", "| --- | --- |"]
+        lines.extend(f"| {esc(key)} | {esc(value)} |" for key, value in rows)
+
+        return create_ser_result(text="\n".join(lines), span_source=item)
 
 
 class MarkdownFormSerializer(BaseFormSerializer):

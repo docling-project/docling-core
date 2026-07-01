@@ -57,7 +57,9 @@ Here a formula block:
 
 $$E=mc^2$$
 
-<!-- missing-key-value-item -->
+| Key | Value |
+| --- | --- |
+| number | 1 |
 
 <!-- missing-form-item -->
 
