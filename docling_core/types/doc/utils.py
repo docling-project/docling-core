@@ -7,7 +7,7 @@ import shutil
 import unicodedata
 import zipfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any
 
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 
@@ -15,21 +15,53 @@ if TYPE_CHECKING:
     from docling_core.types.doc.document import TableCell, TableData
 
 
-def relative_path(src: Path, target: Path) -> Path:
+def is_remote_path(p: Any) -> bool:
+    """Check if a path is a remote/cloud path (e.g., S3, GCS, Azure).
+
+    Works with UPath objects from universal-pathlib. Local paths return False.
+
+    Args:
+        p: A path object (Path, UPath, or similar)
+
+    Returns:
+        bool: True if the path is a remote/cloud path, False otherwise.
+    """
+    # UPath objects have a 'protocol' attribute
+    protocol = getattr(p, "protocol", None)
+    return protocol is not None and protocol not in ("file", "")
+
+
+def relative_path(src: str | Path, target: str | Path) -> Path:
     """Compute the relative path from `src` to `target`.
 
     Args:
-        src (str | Path): The source directory or file path (must be absolute).
-        target (str | Path): The target directory or file path (must be absolute).
+        src: The source directory or file path (must be absolute).
+        target: The target directory or file path (must be absolute).
 
     Returns:
         Path: The relative path from `src` to `target`.
 
     Raises:
         ValueError: If either `src` or `target` is not an absolute path.
+
+    Note:
+        For remote paths (UPath with non-file protocols), this function cannot
+            compute relative paths. Use is_remote_path() to check before calling.
     """
-    src = Path(src).resolve()
-    target = Path(target).resolve()
+    # Convert to Path only if string, otherwise keep original type
+    if isinstance(src, str):
+        src = Path(src)
+    if isinstance(target, str):
+        target = Path(target)
+
+    try:
+        src = src.resolve()
+        target = target.resolve()
+    except (AttributeError, NotImplementedError, OSError) as e:
+        raise ValueError(
+            f"Cannot resolve paths. This function only supports local filesystem paths. "
+            f"Remote paths should use absolute URIs. Error: {e}"
+        ) from e
 
     # Ensure both paths are absolute
     if not src.is_absolute():
@@ -93,7 +125,7 @@ def safe_extract_zip_archive(archive: Path, destination: Path) -> None:
                 shutil.copyfileobj(src, dst)
 
 
-def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: Optional[dict] = None) -> str:
+def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: dict | None = None) -> str:
     """Form the HTML element with tag, text, and optional dir attribute."""
     my_attrs = attrs or {}
     if (dir := my_attrs.get("dir")) is not None and dir != "ltr":
