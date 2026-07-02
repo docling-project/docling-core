@@ -255,7 +255,7 @@ class HybridChunker(BaseChunker):
             line_chunker = LineBasedTokenChunker(
                 tokenizer=self.tokenizer,
                 max_tokens=available_length,
-                prefix="\n".join(header_lines),
+                prefix="\n".join(header_lines) + "\n",
                 omit_prefix_on_overflow=self.omit_header_on_overflow,
                 serializer_provider=self.serializer_provider,
             )

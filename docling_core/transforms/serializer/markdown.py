@@ -430,6 +430,8 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
 class MarkdownTableSerializer(BaseTableSerializer):
     """Markdown-specific table item serializer."""
 
+    _SEP_RE: re.Pattern[str] = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+
     @override
     def get_header_and_body_lines(
         self,
@@ -443,20 +445,26 @@ class MarkdownTableSerializer(BaseTableSerializer):
             A tuple of (header_lines, body_lines) where header_lines contains
             the header row and separator row, and body_lines contains the data rows.
         """
-        lines = [line for line in table_text.splitlines(True) if line.strip()]
+        all_non_empty: list[str] = []
+        separator_idx = -1
 
-        if len(lines) < 2:
-            # Not enough lines for a proper markdown table (need at least header + separator)
-            return [], lines
+        for line in table_text.splitlines(True):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            idx = len(all_non_empty)
+            all_non_empty.append(line)
+            if separator_idx == -1 and idx >= 1 and self._SEP_RE.match(stripped):
+                separator_idx = idx
 
-        # In markdown tables:
-        # Line 0: Header row
-        # Line 1: Separator row (with dashes)
-        # Lines 2+: Body rows
-        header_lines = lines[:2]
-        body_lines = lines[2:]
+        if separator_idx == -1:
+            return [], all_non_empty
 
-        return header_lines, body_lines
+        body_start = separator_idx + 1
+        return (
+            [line.rstrip() for line in all_non_empty[:body_start]],
+            all_non_empty[body_start:],
+        )
 
     @staticmethod
     def _compact_table(table_text: str) -> str:
