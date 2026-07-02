@@ -1,3 +1,23 @@
+## [v2.85.0](https://github.com/docling-project/docling-core/releases/tag/v2.85.0) - 2026-06-25
+
+### Feature
+
+* **doclang:** Add support for .dclx archive, `<description>`, `<summary>` ([#658](https://github.com/docling-project/docling-core/issues/658)) ([`3704874`](https://github.com/docling-project/docling-core/commit/37048743121078e86614feef5fdaf5de6d2557c0))
+
+### Fix
+
+* **document:** Preserve FloatingItem descendants in _hierarchize() ([#646](https://github.com/docling-project/docling-core/issues/646)) ([`ecb3e84`](https://github.com/docling-project/docling-core/commit/ecb3e84220c3d7a7626c809bac5d32be5b9701fb))
+
+### Performance
+
+* String join instead of concatenation ([#655](https://github.com/docling-project/docling-core/issues/655)) ([`9ba55c2`](https://github.com/docling-project/docling-core/commit/9ba55c24565d7b93920d90c5744c0cc60b69e839))
+
+## [v2.84.0](https://github.com/docling-project/docling-core/releases/tag/v2.84.0) - 2026-06-23
+
+### Feature
+
+* Enable OpenDocument formats in DoclingDocument and allow the serialization of charts ([#654](https://github.com/docling-project/docling-core/issues/654)) ([`dc0fc7d`](https://github.com/docling-project/docling-core/commit/dc0fc7d020c1ed57c17300771e3f36bb8aa6fcb2))
+
 ## [v2.83.1](https://github.com/docling-project/docling-core/releases/tag/v2.83.1) - 2026-06-19
 
 ### Fix

@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.83.1"  # DO NOT EDIT, updated automatically
+version = "2.85.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -52,6 +52,7 @@ dependencies = [
     "defusedxml (>=0.7.1, <0.8.0)",
     "protobuf>=4.25.0",
     "pydantic-settings>=2.14.0",
+    "doclang>=0.7,<0.8",
 ]
 
 [project.urls]
@@ -116,7 +117,7 @@ dev = [
     "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
     "grpcio-tools>=1.80.0",
     "opencv-python-headless>=4.6.0.66,<5.0.0.0",
-    "doclang>=0.6,<0.7",
+    "universal-pathlib>=0.3.10",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',

@@ -1993,8 +1993,8 @@ def test_picture_molecule_meta_roundtrip():
 
     dt = _serialize(doc)
     verify(serialized_dclg, dt)
-    assert f"<docling__summary>{_PICTURE_META_SUMMARY}</docling__summary>" in dt
-    assert f"<docling__description>{_PICTURE_META_DESCRIPTION}</docling__description>" in dt
+    assert f"<summary>{_PICTURE_META_SUMMARY}</summary>" in dt
+    assert f"<description>{_PICTURE_META_DESCRIPTION}</description>" in dt
     assert f"<docling__smiles>{_EXAMPLE_MOLECULE_SMILES}</docling__smiles>" in dt
     assert f"<my_corp__note>{_PICTURE_META_CUSTOM_VALUE}</my_corp__note>" in dt
     assert 'class="chart"' in dt
