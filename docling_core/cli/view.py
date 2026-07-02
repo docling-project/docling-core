@@ -69,8 +69,7 @@ def view(
         image_mode=ImageRefMode.EMBEDDED,
         split_page_view=split_view,
     )
-    with open(target_path, "w", encoding="utf-8") as f:
-        f.write(html_output)
+    target_path.write_text(html_output, encoding="utf-8")
     webbrowser.open(url=f"file://{target_path.absolute().resolve()}")
 
 
