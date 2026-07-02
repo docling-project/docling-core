@@ -4,6 +4,11 @@ from docling_core.types.doc import (
     DocItemLabel,
     DocumentOrigin,
     PageItem,
+    PictureClassificationLabel,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureItem,
+    PictureMeta,
     Size,
 )
 from docling_core.proto import docling_document_to_proto
@@ -201,3 +206,37 @@ def test_language_meta_field_has_code_raw_fallback():
     code_field = descriptor.fields_by_name["code"]
     assert code_field.enum_type.name == "HumanLanguageLabel"
     assert "code_raw" in descriptor.fields_by_name
+
+
+def test_picture_classification_other_chart_roundtrip():
+    """OTHER_CHART survives proto conversion as its raw string value.
+
+    ``PictureClassificationPrediction.class_name`` is a string field in the
+    proto (not an enum), so newly added PictureClassificationLabel values such
+    as ``other_chart`` flow through conversion without proto changes.
+    """
+    doc = DoclingDocument(name="chart_doc")
+    doc.pictures = [
+        PictureItem(
+            self_ref="#/pictures/0",
+            label=DocItemLabel.PICTURE,
+            meta=PictureMeta(
+                classification=PictureClassificationMetaField(
+                    predictions=[
+                        PictureClassificationPrediction(
+                            class_name=PictureClassificationLabel.OTHER_CHART.value,
+                            confidence=0.91,
+                            created_by="figure-classifier-v2",
+                        )
+                    ]
+                )
+            ),
+        )
+    ]
+
+    proto = docling_document_to_proto(doc)
+    assert len(proto.pictures) == 1
+    pred = proto.pictures[0].meta.classification.predictions[0]
+    assert pred.class_name == "other_chart"
+    assert pred.confidence == pytest.approx(0.91)
+    assert pred.created_by == "figure-classifier-v2"
