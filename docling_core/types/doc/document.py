@@ -1978,6 +1978,7 @@ class TextItem(DocItem):
 
     formatting: Optional[Formatting] = None
     hyperlink: Optional[Union[AnyUrl, Path]] = Field(union_mode="left_to_right", default=None)
+    change_type: Optional[typing.Literal["inserted", "deleted"]] = None
 
     @deprecated("Use export_to_doctags() instead.")
     def export_to_document_tokens(self, *args, **kwargs):
@@ -4211,6 +4212,7 @@ class DoclingDocument(BaseModel):
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         *,
         source: Optional[SourceType] = None,
+        change_type: Optional[typing.Literal["inserted", "deleted"]] = None,
         **kwargs: Any,
     ):
         """add_text.
@@ -4318,6 +4320,7 @@ class DoclingDocument(BaseModel):
                 parent=parent.get_ref(),
                 formatting=formatting,
                 hyperlink=hyperlink,
+                change_type=change_type,
             )
             if prov:
                 text_item.prov.append(prov)
