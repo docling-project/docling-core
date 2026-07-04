@@ -2,10 +2,12 @@
 
 import warnings
 from collections.abc import Iterable, Iterator
+from enum import Enum
 from functools import cached_property
 from typing import Any, Optional, Union, cast
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from typing_extensions import override
 
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
@@ -15,6 +17,11 @@ from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 from docling_core.transforms.serializer.base import BaseDocSerializer
+from docling_core.transforms.serializer.markdown import (
+    MarkdownParams,
+    MarkdownTableSerializer,
+)
+from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
 
 try:
@@ -41,6 +48,13 @@ from docling_core.transforms.serializer.base import (
 from docling_core.types import DoclingDocument
 
 
+class TableSerializationFormat(str, Enum):
+    """Serialization format for table chunks."""
+
+    TRIPLET = "triplet"
+    MARKDOWN = "markdown"
+
+
 class HybridChunker(BaseChunker):
     r"""Chunker doing tokenization-aware refinements on top of document layout chunking.
 
@@ -49,6 +63,11 @@ class HybridChunker(BaseChunker):
             respective pretrained model
         max_tokens: The maximum number of tokens per chunk. If not set, limit is
             resolved from the tokenizer
+        table_serialization: Format for table chunk text. "triplet" (default) produces
+            'row, column = value' flat text; "markdown" produces pipe-table format
+            preserving column structure.
+        compact_tables: When True and table_serialization="markdown", removes column
+            padding for minimal whitespace. Reduces token count for large tables.
         repeat_table_headers: Whether to repeat a table header if the table is chunked
         merge_peers: Whether to merge undersized chunks sharing same relevant metadata
         always_emit_headings: Whether to emit headings even for empty sections
@@ -59,11 +78,13 @@ class HybridChunker(BaseChunker):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     tokenizer: BaseTokenizer = Field(default_factory=get_default_tokenizer)
+    table_serialization: TableSerializationFormat = TableSerializationFormat.TRIPLET
+    compact_tables: bool = False
     repeat_table_header: bool = True
     merge_peers: bool = True
     omit_header_on_overflow: bool = False
 
-    serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
+    serializer_provider: BaseSerializerProvider = Field(default_factory=ChunkingSerializerProvider)
     always_emit_headings: bool = False
 
     @model_validator(mode="before")
@@ -97,6 +118,29 @@ class HybridChunker(BaseChunker):
                     if max_tokens is not None:
                         kwargs["max_tokens"] = max_tokens
                     data["tokenizer"] = HuggingFaceTokenizer(**kwargs)
+
+            # Resolve serializer_provider from table_serialization if not explicitly set
+            if "serializer_provider" not in data or data["serializer_provider"] is None:
+                table_ser = data.get("table_serialization", TableSerializationFormat.TRIPLET)
+                if table_ser == TableSerializationFormat.MARKDOWN or table_ser == "markdown":
+                    compact = data.get("compact_tables", False)
+
+                    class _MarkdownChunkingSerializerProvider(ChunkingSerializerProvider):
+                        @override
+                        def get_serializer(self, doc: DoclingDocument) -> BaseDocSerializer:
+                            return ChunkingDocSerializer(
+                                doc=doc,
+                                table_serializer=MarkdownTableSerializer(),
+                                params=MarkdownParams(
+                                    image_mode=ImageRefMode.PLACEHOLDER,
+                                    image_placeholder="",
+                                    escape_underscores=False,
+                                    escape_html=False,
+                                    compact_tables=compact,
+                                ),
+                            )
+
+                    data["serializer_provider"] = _MarkdownChunkingSerializerProvider()
         return data
 
     @property

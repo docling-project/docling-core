@@ -14,6 +14,6 @@ from docling_core.transforms.chunker.code_chunking.standard_code_chunking_strate
 )
 from docling_core.transforms.chunker.doc_chunk import DocChunk, DocMeta
 from docling_core.transforms.chunker.hierarchical_chunker import HierarchicalChunker
-from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
+from docling_core.transforms.chunker.hybrid_chunker import HybridChunker, TableSerializationFormat
 from docling_core.transforms.chunker.page_chunker import PageChunker
 from docling_core.types.doc.labels import CodeLanguageLabel

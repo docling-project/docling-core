@@ -286,6 +286,32 @@ def test_chunk_custom_serializer():
     )
 
 
+def test_chunk_table_serialization_markdown():
+    """Test that table_serialization='markdown' produces same output as custom serializer."""
+    EXPECTED_OUT_FILE = "test/data/chunker/2e_out_chunks.json"
+
+    with open(INPUT_FILE, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DLDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+        table_serialization="markdown",
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
 def test_chunk_openai():
     EXPECTED_OUT_FILE = "test/data/chunker/2f_out_chunks.json"
 
