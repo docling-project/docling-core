@@ -1,3 +1,9 @@
+## [v2.86.0](https://github.com/docling-project/docling-core/releases/tag/v2.86.0) - 2026-07-03
+
+### Feature
+
+* Add fsspec support ([#444](https://github.com/docling-project/docling-core/issues/444)) ([`be42fce`](https://github.com/docling-project/docling-core/commit/be42fcea2e664cac6c029a5917c6caebf064b91b))
+
 ## [v2.85.0](https://github.com/docling-project/docling-core/releases/tag/v2.85.0) - 2026-06-25
 
 ### Feature
