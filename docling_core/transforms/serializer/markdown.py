@@ -576,6 +576,10 @@ class MarkdownTableSerializer(BaseTableSerializer):
             if table_text:
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                res_parts.append(ftn_res)
+
         text_res = "\n\n".join([r.text for r in res_parts])
 
         return create_ser_result(text=text_res, span_source=res_parts)

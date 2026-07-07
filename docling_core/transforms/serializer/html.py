@@ -443,6 +443,11 @@ class HTMLTableSerializer(BaseTableSerializer):
         text_res = "".join([r.text for r in res_parts])
         text_res = f"<table>{text_res}</table>" if text_res else ""
 
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            text_res = f"{text_res}{ftn_res.text}" if text_res else ftn_res.text
+            res_parts.append(ftn_res)
+
         return create_ser_result(text=text_res, span_source=res_parts)
 
     @override
@@ -1274,6 +1279,33 @@ class HTMLDocSerializer(DocSerializer):
         text_res = params.caption_delim.join([r.text for r in results])
         if text_res:
             text_res = f"<{tag}>{text_res}</{tag}>"
+        return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        excluded_refs = self.get_excluded_refs(**kwargs)
+
+        if DocItemLabel.FOOTNOTE in params.labels:
+            for ftn in item.footnotes:
+                if isinstance(it := ftn.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
+                    text_ftn = it.text
+                    text_dir = get_text_direction(text_ftn)
+                    dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
+                    results.append(
+                        create_ser_result(
+                            text=(f'<div class="footnote"{dir_str}>{html.escape(text_ftn)}</div>'),
+                            span_source=it,
+                        )
+                    )
+
+        text_res = params.caption_delim.join([r.text for r in results])
         return create_ser_result(text=text_res, span_source=results)
 
     def _generate_head(self) -> str:
