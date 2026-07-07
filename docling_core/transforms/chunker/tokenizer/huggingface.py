@@ -88,6 +88,6 @@ class HuggingFaceTokenizer(BaseTokenizer):
         return self.tokenizer
 
 
-def get_default_tokenizer():
+def get_default_tokenizer() -> HuggingFaceTokenizer:
     """Get default tokenizer instance."""
     return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")

@@ -44,11 +44,13 @@ _SEMCHUNK_INSTALL_HINT = (
 
 
 def _get_default_tokenizer():
-    from docling_core.transforms.chunker.tokenizer.huggingface import (
-        HuggingFaceTokenizer,
-    )
+    """Get default tokenizer instance.
 
-    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    Defer import to avoid pulling in transformers at module import time.
+    """
+    from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
+
+    return get_default_tokenizer()
 
 
 class HybridChunker(BaseChunker):
