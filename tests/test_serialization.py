@@ -2417,3 +2417,36 @@ def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expecte
     doc.add_text(label=DocItemLabel.TEXT, text="see", parent=group)
     doc.add_code(text=code, parent=group)
     assert doc.export_to_markdown() == f"see {expected}"
+
+
+def test_table_footnotes_serialized_to_markdown_and_html():
+    """Regression test for #496: table footnotes must not be dropped by the
+    Markdown and HTML serializers (they are delegated to the parent TableItem)."""
+    doc = DoclingDocument(name="t")
+
+    td = TableData(num_rows=0, num_cols=2)
+    td.add_row(["Header 1", "Header 2"])
+    td.add_row(["Data 1", "Data 2"])
+    table = doc.add_table(data=td)
+
+    fn1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="First footnote.")
+    fn2 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Second footnote.")
+    table.footnotes.append(fn1.get_ref())
+    table.footnotes.append(fn2.get_ref())
+
+    # footnotes are stored on the table in the document model ...
+    assert [fn.resolve(doc).text for fn in table.footnotes] == [
+        "First footnote.",
+        "Second footnote.",
+    ]
+
+    # ... and must survive Markdown serialization
+    md_out = doc.export_to_markdown()
+    assert "First footnote." in md_out
+    assert "Second footnote." in md_out
+
+    # ... and HTML serialization (as escaped footnote divs after the table)
+    html_out = doc.export_to_html()
+    assert "First footnote." in html_out
+    assert "Second footnote." in html_out
+    assert '<div class="footnote">First footnote.</div>' in html_out
