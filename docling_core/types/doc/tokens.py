@@ -302,7 +302,7 @@ class DocumentToken(str, Enum):
         ysize: int = 500,  # TODO review
         self_closing: bool = False,
     ):
-        """Get the location string give bbox and page-dim."""
+        """Get the location string given bbox and page-dim."""
         # Normalize potentially inverted coordinates instead of asserting on
         # them. Near-degenerate elements (e.g. a thin rule whose layout-model
         # regression produced a slightly inverted bbox) can arrive with
