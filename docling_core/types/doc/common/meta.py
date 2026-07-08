@@ -1,7 +1,7 @@
 """Metadata models attached to document nodes."""
 
 from enum import Enum
-from typing import Annotated, Any, Final, Optional
+from typing import Annotated, Any, Final, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -10,6 +10,7 @@ from pydantic import (
     Field,
     FieldSerializationInfo,
     field_serializer,
+    field_validator,
     model_validator,
 )
 from typing_extensions import Self
@@ -159,10 +160,161 @@ class EntityMention(BasePrediction):
     ] = None
 
 
-class EntitiesMetaField(_ExtraAllowingModel):
-    """Container for extracted entity mentions."""
+DataPointPrecision = Literal["exact", "approximate", "lower_bound", "upper_bound", "range_low", "range_high"]
+"""Valid values for DataPointMention.precision."""
 
-    mentions: Annotated[list[EntityMention], Field(min_length=1)]
+DataPointDirection = Literal["increase", "decrease", "neutral"]
+"""Valid values for DataPointMention.direction."""
+
+DataPointScale = Literal[
+    "hundred",
+    "thousand",
+    "k",
+    "million",
+    "m",
+    "billion",
+    "b",
+    "bn",
+    "trillion",
+    "t",
+    "quadrillion",
+]
+"""Valid values for DataPointMention.scale. Each value maps to a known numeric multiplier."""
+
+
+class DataPointMention(EntityMention):
+    """A quantitative data point mentioned in text, extending EntityMention with a numeric breakdown.
+
+    Inherited fields: text (normalised form), orig (source text), label (category),
+    charspan, confidence, created_by.
+    """
+
+    value: Annotated[
+        Optional[float],
+        Field(
+            description="Numeric value as written, before scale application. E.g. 4.0 for '$4B'.",
+            examples=[4.0, 30.0, 3.0],
+        ),
+    ] = None
+
+    unit: Annotated[
+        Optional[str],
+        Field(
+            description="Dimensional unit, e.g. 'USD', '°C', '%'. ISO 4217 recommended for currencies.",
+            examples=["USD", "°C", "%"],
+        ),
+    ] = None
+
+    scale: Annotated[
+        Optional[DataPointScale],
+        Field(
+            description="Magnitude multiplier from the source text, e.g. 'billion', 'million', 'k'.",
+            examples=["billion", "million", "k"],
+        ),
+    ] = None
+
+    normalized_value: Annotated[
+        Optional[float],
+        Field(
+            description="value * scale_factor in base units, e.g. 4e9 for '$4B'. Derived convenience field.",
+            examples=[4_000_000_000.0, 30.0],
+        ),
+    ] = None
+
+    range_end: Annotated[
+        Optional[float],
+        Field(
+            description=(
+                "Upper bound when the data point expresses a range, e.g. 20.0 for 'between 10 and 20°C'. "
+                "Use with precision='range_low'; value holds the lower bound."
+            ),
+            examples=[20.0],
+        ),
+    ] = None
+
+    display_dp: Annotated[
+        Optional[int],
+        Field(
+            ge=0,
+            description=(
+                "Decimal places as written in the source: 0 for '3%', 1 for '3.0%', 2 for '3.00%'. "
+                "None when not determinable."
+            ),
+            examples=[0, 1, 2],
+        ),
+    ] = None
+
+    precision: Annotated[
+        Optional[DataPointPrecision],
+        Field(
+            description=(
+                "Author's epistemic qualification: 'exact', 'approximate', "
+                "'lower_bound', 'upper_bound', 'range_low', 'range_high'."
+            ),
+            examples=["approximate", "lower_bound"],
+        ),
+    ] = None
+
+    direction: Annotated[
+        Optional[DataPointDirection],
+        Field(
+            description=(
+                "Direction of change for delta/growth values: 'increase', 'decrease', 'neutral'. "
+                "E.g. 'revenue grew 3%' → 'increase'."
+            ),
+            examples=["increase", "decrease"],
+        ),
+    ] = None
+
+    @field_validator("range_end", mode="after")
+    @classmethod
+    def _validate_range_end(cls, v: Optional[float], info: Any) -> Optional[float]:
+        if v is not None and info.data.get("value") is None:
+            raise ValueError("range_end requires value to be set")
+        return v
+
+    @property
+    def scale_factor(self) -> Optional[float]:
+        """Numeric multiplier for scale, or None if absent or unrecognised."""
+        if self.scale is None:
+            return None
+        _SCALE_MAP: dict[str, float] = {
+            "hundred": 1e2,
+            "thousand": 1e3,
+            "k": 1e3,
+            "million": 1e6,
+            "m": 1e6,
+            "billion": 1e9,
+            "b": 1e9,
+            "bn": 1e9,
+            "trillion": 1e12,
+            "t": 1e12,
+            "quadrillion": 1e15,
+        }
+        return _SCALE_MAP.get(self.scale)
+
+    def compute_normalized_value(self) -> Optional[float]:
+        """Return value * scale_factor without caching.
+
+        Returns None when value is absent or scale is present but unrecognised.
+        Use this to derive or refresh normalized_value after construction.
+        """
+        if self.value is None:
+            return None
+        factor = self.scale_factor
+        if factor is None and self.scale is not None:
+            return None
+        return self.value * (factor if factor is not None else 1.0)
+
+
+class EntitiesMetaField(_ExtraAllowingModel):
+    """Container for extracted entity mentions.
+
+    The mentions list accepts both plain EntityMention objects and the richer
+    DataPointMention subclass; use isinstance(m, DataPointMention) to filter.
+    """
+
+    mentions: Annotated[list[Union[DataPointMention, EntityMention]], Field(min_length=1)]
 
 
 class KeywordsMetaField(_ExtraAllowingModel):
