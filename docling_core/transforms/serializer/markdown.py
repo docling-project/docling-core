@@ -443,18 +443,21 @@ class MarkdownTableSerializer(BaseTableSerializer):
             A tuple of (header_lines, body_lines) where header_lines contains
             the header row and separator row, and body_lines contains the data rows.
         """
-        lines = [line for line in table_text.splitlines(True) if line.strip()]
+        all_lines = table_text.splitlines(True)
 
-        if len(lines) < 2:
-            # Not enough lines for a proper markdown table (need at least header + separator)
-            return [], lines
+        # Find the first table row (lines starting with '|'), skipping any caption
+        # or blank lines that the serializer may prepend to the table text.
+        first_pipe = next((i for i, l in enumerate(all_lines) if l.startswith("|")), None)
+
+        if first_pipe is None or first_pipe + 1 >= len(all_lines):
+            # No table rows at all, or only one row — cannot split header from body.
+            return [], all_lines
 
         # In markdown tables:
-        # Line 0: Header row
-        # Line 1: Separator row (with dashes)
-        # Lines 2+: Body rows
-        header_lines = lines[:2]
-        body_lines = lines[2:]
+        # header_lines — the header row and separator row (the two pipe rows to repeat)
+        # body_lines   — data rows only (preamble lines before the table are excluded here)
+        header_lines = all_lines[first_pipe : first_pipe + 2]
+        body_lines = all_lines[first_pipe + 2 :]
 
         return header_lines, body_lines
 

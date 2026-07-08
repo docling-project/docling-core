@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 
 import pytest
@@ -17,7 +18,8 @@ from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DoclingDocument as DLDocument
-from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc import TableData
+from docling_core.types.doc.document import DoclingDocument, TableCell
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
@@ -506,6 +508,85 @@ def test_chunk_with_repeat_table_header():
     ]
 
     assert_or_generate_json_ground_truth(chunks_data, EXPECTED_OUT_FILE)
+
+
+def test_repeat_table_header_produces_valid_markdown_in_all_chunks():
+    """Regression test: each chunk of a split table must be valid Markdown.
+
+    When a table is split across multiple chunks with repeat_table_header=True,
+    the separator row (| - | - |) must appear on the line immediately following
+    the header row in every chunk — not separated by a blank line.  A blank line
+    between them breaks Markdown rendering.
+
+    This specifically guards against the bug where ``"\\n".join(header_lines)``
+    inserted an extra newline between lines that already carried their own ``\\n``
+    terminators, producing ``| header |\\n\\n| - | - |`` instead of the correct
+    ``| header |\\n| - | - |``.
+    """
+    # Build a table large enough to be split at max_tokens=64.
+    # 10 rows of ~6 tokens each comfortably exceed that budget.
+    doc = DoclingDocument(name="split_table")
+    num_cols = 3
+    num_rows = 10
+    cells = []
+    for col in range(num_cols):
+        cells.append(
+            TableCell(
+                text=f"Col{col}",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=col,
+                end_col_offset_idx=col + 1,
+                column_header=True,
+            )
+        )
+    for row in range(1, num_rows + 1):
+        for col in range(num_cols):
+            cells.append(
+                TableCell(
+                    text=f"r{row}c{col}",
+                    row_span=1,
+                    col_span=1,
+                    start_row_offset_idx=row,
+                    end_row_offset_idx=row + 1,
+                    start_col_offset_idx=col,
+                    end_col_offset_idx=col + 1,
+                    column_header=False,
+                )
+            )
+    doc.add_table(data=TableData(num_rows=num_rows + 1, num_cols=num_cols, table_cells=cells))
+
+    class MarkdownSerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            return ChunkingDocSerializer(doc=doc, table_serializer=MarkdownTableSerializer())
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        repeat_table_header=True,
+        serializer_provider=MarkdownSerializerProvider(),
+    )
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    # The table must have been split — otherwise the test is vacuous.
+    assert len(chunks) > 1, "Table should be split into multiple chunks at MAX_TOKENS=64"
+
+    sep_re = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+
+    for i, chunk in enumerate(chunks):
+        lines = chunk.text.splitlines()
+        # Find the separator row
+        sep_indices = [j for j, ln in enumerate(lines) if sep_re.match(ln)]
+        assert sep_indices, f"Chunk {i} has no Markdown separator row: {chunk.text!r}"
+        sep_idx = sep_indices[0]
+        assert sep_idx > 0, f"Chunk {i}: separator is on the first line (no header above it)"
+        header_row = lines[sep_idx - 1]
+        assert header_row.startswith("|"), f"Chunk {i}: line before separator is not a table row: {header_row!r}"
+        # The critical assertion: there must be no blank line between header and separator.
+        assert lines[sep_idx - 1] != "", (
+            f"Chunk {i}: blank line between header row and separator row — invalid Markdown table"
+        )
 
 
 def test_chunk_html_table_serializer():

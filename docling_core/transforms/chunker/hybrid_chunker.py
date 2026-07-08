@@ -252,14 +252,27 @@ class HybridChunker(BaseChunker):
                 table_text=doc_chunk.text
             )
 
+            # Any text before the first table row (e.g. a caption) must appear only
+            # in the first chunk, not repeated.  To let LineBasedTokenChunker account
+            # for the preamble's token cost when deciding chunk boundaries, include it
+            # in the prefix for the chunking pass, then strip it from every segment
+            # except the first.
+            table_text_lines = doc_chunk.text.splitlines(True)
+            first_pipe = next((i for i, l in enumerate(table_text_lines) if l.startswith("|")), 0)
+            preamble = "".join(table_text_lines[:first_pipe])
+            table_prefix = "".join(header_lines)
+            full_prefix = preamble + table_prefix
+
             line_chunker = LineBasedTokenChunker(
                 tokenizer=self.tokenizer,
-                max_tokens=available_length,
-                prefix="\n".join(header_lines),
+                prefix=full_prefix,
                 omit_prefix_on_overflow=self.omit_header_on_overflow,
                 serializer_provider=self.serializer_provider,
             )
             segments = line_chunker.chunk_text(lines=body_lines)
+            # Strip the preamble from all segments after the first — it must not repeat.
+            if preamble:
+                segments = segments[:1] + [s[len(preamble) :] for s in segments[1:]]
         else:
             sem_chunker = semchunk.chunkerify(self.tokenizer.get_tokenizer(), chunk_size=available_length)
             sem_segments = sem_chunker(doc_chunk.text)
