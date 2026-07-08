@@ -241,6 +241,32 @@ class HybridChunker(BaseChunker):
             return chunks
 
     def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
+        """Split a single doc chunk into a list of text segments.
+
+        Two strategies are applied depending on the chunk's content:
+
+        - Table with header repetition: when ``repeat_table_header`` is
+          enabled and the chunk contains exactly one ``TableItem``, the table is
+          split line-by-line via ``LineBasedTokenChunker``.  The header rows are
+          used as a prefix so they are reproduced at the top of every segment.
+          Any preamble text that precedes the first table row (e.g. a caption) is
+          included in the prefix to account for its token cost, but is stripped
+          from all segments after the first so it does not repeat.
+
+        - Semantic splitting: for all other chunks, ``semchunk`` splits the
+          text at natural semantic boundaries up to ``available_length`` tokens.
+
+        Args:
+            doc_chunk: The chunk to segment.
+            available_length: Maximum token budget for the semantic-splitting
+                path (ignored for the table path, which uses ``self.tokenizer``
+                and ``self.max_tokens`` internally).
+            doc_serializer: Serializer for the current document; must be a
+                ``ChunkingDocSerializer`` for the table path to activate.
+
+        Returns:
+            A list of text segments derived from ``doc_chunk.text``.
+        """
         segments = []
         if (
             self.repeat_table_header
@@ -252,11 +278,6 @@ class HybridChunker(BaseChunker):
                 table_text=doc_chunk.text
             )
 
-            # Any text before the first table row (e.g. a caption) must appear only
-            # in the first chunk, not repeated.  To let LineBasedTokenChunker account
-            # for the preamble's token cost when deciding chunk boundaries, include it
-            # in the prefix for the chunking pass, then strip it from every segment
-            # except the first.
             table_text_lines = doc_chunk.text.splitlines(True)
             first_pipe = next((i for i, l in enumerate(table_text_lines) if l.startswith("|")), 0)
             preamble = "".join(table_text_lines[:first_pipe])
@@ -270,7 +291,6 @@ class HybridChunker(BaseChunker):
                 serializer_provider=self.serializer_provider,
             )
             segments = line_chunker.chunk_text(lines=body_lines)
-            # Strip the preamble from all segments after the first — it must not repeat.
             if preamble:
                 segments = segments[:1] + [s[len(preamble) :] for s in segments[1:]]
         else:

@@ -437,28 +437,27 @@ class MarkdownTableSerializer(BaseTableSerializer):
         table_text: str,
         **kwargs: Any,
     ) -> tuple[list[str], list[str]]:
-        """Get header lines and body lines from the markdown table.
+        """Split a serialized Markdown table into header and body lines.
+
+        Skips any preamble (captions, blank lines) before the first ``|`` row.
+        Returns ``([], all_lines)`` when the table has fewer than two pipe rows,
+        since a header/separator pair cannot be identified.
+
+        Args:
+            table_text: A serialized Markdown table, possibly preceded by a
+                caption or blank lines.
 
         Returns:
-            A tuple of (header_lines, body_lines) where header_lines contains
-            the header row and separator row, and body_lines contains the data rows.
+            A tuple ``(header_lines, body_lines)`` where ``header_lines`` holds
+            the header row and its separator row, and ``body_lines`` holds the
+            remaining data rows.
         """
         all_lines = table_text.splitlines(True)
-
-        # Find the first table row (lines starting with '|'), skipping any caption
-        # or blank lines that the serializer may prepend to the table text.
         first_pipe = next((i for i, l in enumerate(all_lines) if l.startswith("|")), None)
-
         if first_pipe is None or first_pipe + 1 >= len(all_lines):
-            # No table rows at all, or only one row — cannot split header from body.
             return [], all_lines
-
-        # In markdown tables:
-        # header_lines — the header row and separator row (the two pipe rows to repeat)
-        # body_lines   — data rows only (preamble lines before the table are excluded here)
         header_lines = all_lines[first_pipe : first_pipe + 2]
         body_lines = all_lines[first_pipe + 2 :]
-
         return header_lines, body_lines
 
     @staticmethod
