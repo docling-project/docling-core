@@ -590,6 +590,273 @@
       "title": "CoordOrigin",
       "type": "string"
     },
+    "DataPointMention": {
+      "additionalProperties": true,
+      "description": "A quantitative data point mentioned in text, extending EntityMention with a numeric breakdown.\n\nInherited fields: text (normalised form), orig (source text), label (category),\ncharspan, confidence, created_by.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The confidence of the prediction.",
+          "examples": [
+            0.9,
+            0.42
+          ],
+          "title": "Confidence"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The origin of the prediction.",
+          "examples": [
+            "ibm-granite/granite-docling-258M"
+          ],
+          "title": "Created By"
+        },
+        "text": {
+          "description": "Normalized text of the entity mention.",
+          "title": "Text",
+          "type": "string"
+        },
+        "orig": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact source text extracted from the original charspan, analogous to TextItem.orig. This may differ from 'text' when the mention has been normalized.",
+          "title": "Orig"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Entity type or category.",
+          "title": "Label"
+        },
+        "charspan": {
+          "anyOf": [
+            {
+              "description": "Character span (0-indexed)",
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Character span (0-indexed) of the entity mention in the source text.",
+          "title": "Charspan"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Numeric value as written, before scale application. E.g. 4.0 for '$4B'.",
+          "examples": [
+            4.0,
+            30.0,
+            3.0
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Dimensional unit, e.g. 'USD', '°C', '%'. ISO 4217 recommended for currencies.",
+          "examples": [
+            "USD",
+            "°C",
+            "%"
+          ],
+          "title": "Unit"
+        },
+        "scale": {
+          "anyOf": [
+            {
+              "enum": [
+                "hundred",
+                "thousand",
+                "k",
+                "million",
+                "m",
+                "billion",
+                "b",
+                "bn",
+                "trillion",
+                "t",
+                "quadrillion"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Magnitude multiplier from the source text, e.g. 'billion', 'million', 'k'.",
+          "examples": [
+            "billion",
+            "million",
+            "k"
+          ],
+          "title": "Scale"
+        },
+        "normalized_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "value * scale_factor in base units, e.g. 4e9 for '$4B'. Derived convenience field.",
+          "examples": [
+            4000000000.0,
+            30.0
+          ],
+          "title": "Normalized Value"
+        },
+        "range_end": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Upper bound when the data point expresses a range, e.g. 20.0 for 'between 10 and 20°C'. Use with precision='range_low'; value holds the lower bound.",
+          "examples": [
+            20.0
+          ],
+          "title": "Range End"
+        },
+        "display_dp": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Decimal places as written in the source: 0 for '3%', 1 for '3.0%', 2 for '3.00%'. None when not determinable.",
+          "examples": [
+            0,
+            1,
+            2
+          ],
+          "title": "Display Dp"
+        },
+        "precision": {
+          "anyOf": [
+            {
+              "enum": [
+                "exact",
+                "approximate",
+                "lower_bound",
+                "upper_bound",
+                "range_low",
+                "range_high"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Author's epistemic qualification: 'exact', 'approximate', 'lower_bound', 'upper_bound', 'range_low', 'range_high'.",
+          "examples": [
+            "approximate",
+            "lower_bound"
+          ],
+          "title": "Precision"
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "enum": [
+                "increase",
+                "decrease",
+                "neutral"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Direction of change for delta/growth values: 'increase', 'decrease', 'neutral'. E.g. 'revenue grew 3%' → 'increase'.",
+          "examples": [
+            "increase",
+            "decrease"
+          ],
+          "title": "Direction"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "DataPointMention",
+      "type": "object"
+    },
     "DescriptionAnnotation": {
       "description": "DescriptionAnnotation.",
       "properties": {
@@ -707,11 +974,18 @@
     },
     "EntitiesMetaField": {
       "additionalProperties": true,
-      "description": "Container for extracted entity mentions.",
+      "description": "Container for extracted entity mentions.\n\nThe mentions list accepts both plain EntityMention objects and the richer\nDataPointMention subclass; use isinstance(m, DataPointMention) to filter.",
       "properties": {
         "mentions": {
           "items": {
-            "$ref": "#/$defs/EntityMention"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/DataPointMention"
+              },
+              {
+                "$ref": "#/$defs/EntityMention"
+              }
+            ]
           },
           "minItems": 1,
           "title": "Mentions",
