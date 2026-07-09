@@ -280,15 +280,46 @@ class TextDirection(str, Enum):
 class TextCell(ColorMixin, OrderedElement):
     """Model representing a text cell with positioning and content information."""
 
-    rect: BoundingRectangle
+    rect: Annotated[
+        BoundingRectangle,
+        Field(description="Oriented rectangle enclosing the cell on the page."),
+    ]
 
-    text: str
-    orig: str
+    text: Annotated[str, Field(description="Text content of the cell.")]
+    orig: Annotated[
+        str,
+        Field(
+            description=(
+                "Original, untreated text of the cell as produced by the "
+                "extraction backend, before any downstream normalization "
+                "applied to `text`."
+            )
+        ),
+    ]
 
-    text_direction: TextDirection = TextDirection.LEFT_TO_RIGHT
+    text_direction: Annotated[
+        TextDirection,
+        Field(description="Reading direction of the text within the cell."),
+    ] = TextDirection.LEFT_TO_RIGHT
 
-    confidence: float = 1.0
-    from_ocr: bool
+    confidence: Annotated[
+        float,
+        Field(
+            description=(
+                "Confidence of the text extraction. Cells read directly from "
+                "digital text keep the default of 1.0; OCR backends set the "
+                "recognition score reported by the OCR engine."
+            )
+        ),
+    ] = 1.0
+    from_ocr: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether the cell was produced by OCR rather than extracted from the document's digital text layer."
+            )
+        ),
+    ]
 
     @field_serializer("confidence")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
@@ -535,13 +566,48 @@ class PageGeometry(BaseModel):
 class PdfPageGeometry(PageGeometry):
     """Extended dimensions model specific to PDF pages with boundary types."""
 
-    boundary_type: PdfPageBoundaryType
+    boundary_type: Annotated[
+        PdfPageBoundaryType,
+        Field(
+            description=(
+                "The page boundary that `rect` was derived from. Note that "
+                "`width`, `height` and `origin` are always computed from "
+                "`crop_bbox`, independently of this value."
+            )
+        ),
+    ]
 
-    art_bbox: BoundingBox
-    bleed_bbox: BoundingBox
-    crop_bbox: BoundingBox
-    media_bbox: BoundingBox
-    trim_bbox: BoundingBox
+    art_bbox: Annotated[
+        BoundingBox,
+        Field(description=("PDF ArtBox: the extent of the page's meaningful content as intended by its creator.")),
+    ]
+    bleed_bbox: Annotated[
+        BoundingBox,
+        Field(
+            description=(
+                "PDF BleedBox: the clipping region for production output, "
+                "including any bleed area beyond the trim boundary."
+            )
+        ),
+    ]
+    crop_bbox: Annotated[
+        BoundingBox,
+        Field(
+            description=(
+                "PDF CropBox: the region the page contents are clipped to "
+                "when displayed or printed. This is the box `width`, `height` "
+                "and `origin` are computed from."
+            )
+        ),
+    ]
+    media_bbox: Annotated[
+        BoundingBox,
+        Field(description=("PDF MediaBox: the full extent of the physical medium the page is to be printed on.")),
+    ]
+    trim_bbox: Annotated[
+        BoundingBox,
+        Field(description=("PDF TrimBox: the intended dimensions of the page after trimming.")),
+    ]
 
     @property
     def width(self):
@@ -565,25 +631,76 @@ class PdfPageGeometry(PageGeometry):
 class SegmentedPage(BaseModel):
     """Model representing a segmented page with text cells and resources."""
 
-    dimension: PageGeometry
+    dimension: Annotated[
+        PageGeometry,
+        Field(description="Geometry of the page this segmentation belongs to."),
+    ]
 
-    bitmap_resources: list[BitmapResource] = []
+    bitmap_resources: Annotated[
+        list[BitmapResource],
+        Field(description="Bitmap images embedded in the page."),
+    ] = []
 
-    char_cells: list[TextCell] = []
-    word_cells: list[TextCell] = []
-    textline_cells: list[TextCell] = []
+    char_cells: Annotated[
+        list[TextCell],
+        Field(description="Text cells at character granularity."),
+    ] = []
+    word_cells: Annotated[
+        list[TextCell],
+        Field(description="Text cells at word granularity."),
+    ] = []
+    textline_cells: Annotated[
+        list[TextCell],
+        Field(description="Text cells at text-line granularity."),
+    ] = []
 
     # These flags are set to differentiate if above lists of this SegmentedPage
     # are empty (page had no content) or if they have not been computed (i.e. textline_cells may be present
     # but word_cells are not)
-    has_chars: bool = False
-    has_words: bool = False
-    has_lines: bool = False
+    has_chars: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether `char_cells` has been computed. Distinguishes an "
+                "empty list meaning 'no content' from one meaning "
+                "'not computed'."
+            )
+        ),
+    ] = False
+    has_words: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether `word_cells` has been computed. Distinguishes an "
+                "empty list meaning 'no content' from one meaning "
+                "'not computed'."
+            )
+        ),
+    ] = False
+    has_lines: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether `textline_cells` has been computed. Distinguishes an "
+                "empty list meaning 'no content' from one meaning "
+                "'not computed'."
+            )
+        ),
+    ] = False
 
-    image: Optional[ImageRef] = None
+    image: Annotated[
+        Optional[ImageRef],
+        Field(description="Rendered image of the page, if available."),
+    ] = None
 
-    widgets: list[PdfWidget] = []
-    hyperlinks: list[PdfHyperlink] = []
+    widgets: Annotated[
+        list[PdfWidget],
+        Field(description="Interactive PDF form widgets found on the page."),
+    ] = []
+    hyperlinks: Annotated[
+        list[PdfHyperlink],
+        Field(description="Hyperlink annotations found on the page."),
+    ] = []
 
     @model_validator(mode="after")
     def validate_page(self) -> "SegmentedPage":
