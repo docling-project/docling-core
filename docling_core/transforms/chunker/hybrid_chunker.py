@@ -329,7 +329,6 @@ class HybridChunker(BaseChunker):
         res: Iterable[DocChunk]
         res = self._inner_chunker.chunk(
             dl_doc=dl_doc,
-            doc_serializer=my_doc_ser,
             **kwargs,
         )  # type: ignore
         res = [x for c in res for x in self._split_by_doc_items(c, doc_serializer=my_doc_ser)]
