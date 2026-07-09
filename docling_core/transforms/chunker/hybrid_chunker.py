@@ -15,7 +15,7 @@ from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 from docling_core.transforms.serializer.base import BaseDocSerializer
-from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
+from docling_core.types.doc import SectionHeaderItem, TableItem, TitleItem
 
 try:
     import semchunk

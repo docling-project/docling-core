@@ -33,8 +33,7 @@ from docling_core.transforms.serializer.common import (
     _should_use_legacy_annotations,
     create_ser_result,
 )
-from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import (
+from docling_core.types.doc import (
     BaseMeta,
     CodeItem,
     ContentLayer,
@@ -49,6 +48,7 @@ from docling_core.types.doc.document import (
     FormulaItem,
     GroupItem,
     ImageRef,
+    ImageRefMode,
     InlineGroup,
     KeyValueItem,
     KeywordsMetaField,
