@@ -3444,7 +3444,7 @@
       "type": "object"
     },
     "ProvenanceItem": {
-      "description": "Provenance information for elements extracted from a textual document.\n\nA `ProvenanceItem` object acts as a lightweight pointer back into the original\ndocument for an extracted element. It applies to documents with an explicity\nor implicit layout, such as PDF, HTML, docx, or pptx.",
+      "description": "Provenance information for elements extracted from a textual document.\n\nA `ProvenanceItem` object acts as a lightweight pointer back into the original\ndocument for an extracted element. It applies to documents with an explicit\nor implicit layout, such as PDF, HTML, docx, or pptx.",
       "properties": {
         "page_no": {
           "description": "Page number",

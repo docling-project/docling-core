@@ -17,8 +17,8 @@ from typing_extensions import Self
 from docling_core.types.base import UniqueList
 from docling_core.types.doc.base import PydanticSerCtxKey, round_pydantic_float
 from docling_core.types.doc.common.scalars import CharSpan
-from docling_core.types.doc.items.table.table_data import TableData
 from docling_core.types.doc.labels import CodeLanguageLabel, HumanLanguageLabel
+from docling_core.utils.validators import ensure_unique_list
 
 
 class _ExtraAllowingModel(BaseModel):
@@ -165,22 +165,16 @@ class EntitiesMetaField(_ExtraAllowingModel):
     mentions: Annotated[list[EntityMention], Field(min_length=1)]
 
 
-def _ensure_unique_list(values: Any) -> Any:
-    if not isinstance(values, list):
-        raise ValueError("values must be a list of strings")
-    return list(dict.fromkeys(values))
-
-
 class KeywordsMetaField(_ExtraAllowingModel):
     """Container for a list of unique keywords / keyphrases."""
 
-    values: Annotated[UniqueList[str], BeforeValidator(_ensure_unique_list), Field(min_length=1)]
+    values: Annotated[UniqueList[str], BeforeValidator(ensure_unique_list), Field(min_length=1)]
 
 
 class TopicsMetaField(_ExtraAllowingModel):
     """Container for a list of unique topics / subjects."""
 
-    values: Annotated[UniqueList[str], BeforeValidator(_ensure_unique_list), Field(min_length=1)]
+    values: Annotated[UniqueList[str], BeforeValidator(ensure_unique_list), Field(min_length=1)]
 
 
 class BaseMeta(_ExtraAllowingModel):
@@ -258,41 +252,6 @@ class DescriptionMetaField(BasePrediction):
     text: str
 
 
-class PictureClassificationPrediction(BasePrediction):
-    """Picture classification instance."""
-
-    class_name: str
-
-
-class PictureClassificationMetaField(_ExtraAllowingModel):
-    """Picture classification metadata field."""
-
-    predictions: list[PictureClassificationPrediction] = Field(default_factory=list, min_length=1)
-
-    def get_main_prediction(self) -> PictureClassificationPrediction:
-        """Get prediction with highest confidence (if confidence not available, first is used by convention)."""
-        max_conf_pos: Optional[int] = None
-        max_conf: Optional[float] = None
-        for i, pred in enumerate(self.predictions):
-            if pred.confidence is not None and (max_conf is None or pred.confidence > max_conf):
-                max_conf_pos = i
-                max_conf = pred.confidence
-        return self.predictions[max_conf_pos if max_conf_pos is not None else 0]
-
-
-class MoleculeMetaField(BasePrediction):
-    """Molecule metadata field."""
-
-    smi: str = Field(description="The SMILES representation of the molecule.")
-
-
-class TabularChartMetaField(BasePrediction):
-    """Tabular chart metadata field."""
-
-    title: Optional[str] = None
-    chart_data: TableData
-
-
 class FloatingMeta(BaseMeta):
     """Metadata model for floating."""
 
@@ -304,15 +263,6 @@ class CodeMetaField(BasePrediction):
 
     text: str  # the actual code
     language: Optional[CodeLanguageLabel] = None
-
-
-class PictureMeta(FloatingMeta):
-    """Metadata model for pictures."""
-
-    classification: Optional[PictureClassificationMetaField] = None
-    molecule: Optional[MoleculeMetaField] = None
-    tabular_chart: Optional[TabularChartMetaField] = None
-    code: Optional[CodeMetaField] = None
 
 
 class MetaUtils:

@@ -169,10 +169,20 @@ class ProvenanceItem(BaseModel):
     """Provenance information for elements extracted from a textual document.
 
     A `ProvenanceItem` object acts as a lightweight pointer back into the original
-    document for an extracted element. It applies to documents with an explicity
+    document for an extracted element. It applies to documents with an explicit
     or implicit layout, such as PDF, HTML, docx, or pptx.
     """
 
     page_no: Annotated[int, Field(description="Page number")]
     bbox: Annotated[BoundingBox, Field(description="Bounding box")]
     charspan: CharSpan
+
+
+class PageItem(BaseModel):
+    """PageItem."""
+
+    # A page carries separate root items for furniture and body,
+    # only referencing items on the page
+    size: Size
+    image: Optional[ImageRef] = None
+    page_no: int

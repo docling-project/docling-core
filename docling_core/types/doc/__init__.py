@@ -29,24 +29,16 @@ from docling_core.types.doc.common.meta import (
     LanguageMetaField,
     MetaFieldName,
     MetaUtils,
-    MoleculeMetaField,
-    PictureClassificationMetaField,
-    PictureClassificationPrediction,
-    PictureMeta,
     SummaryMetaField,
-    TabularChartMetaField,
     TopicsMetaField,
 )
 from docling_core.types.doc.common.origin import (
-    BaseSource,
     DocumentOrigin,
-    SourceType,
-    TrackSource,
 )
-from docling_core.types.doc.common.page_item import PageItem
 from docling_core.types.doc.common.reference import (
     FineRef,
     ImageRef,
+    PageItem,
     ProvenanceItem,
     RefItem,
 )
@@ -54,6 +46,11 @@ from docling_core.types.doc.common.scalars import (
     CharSpan,
     LevelNumber,
     Uint64,
+)
+from docling_core.types.doc.common.source import (
+    BaseSource,
+    SourceType,
+    TrackSource,
 )
 from docling_core.types.doc.doctags import (
     DocTagsDocument,
@@ -104,6 +101,13 @@ from docling_core.types.doc.items.picture.charts import (
 from docling_core.types.doc.items.picture.classification import (
     PictureClassificationClass,
     PictureClassificationData,
+)
+from docling_core.types.doc.items.picture.meta import (
+    MoleculeMetaField,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureMeta,
+    TabularChartMetaField,
 )
 from docling_core.types.doc.items.picture.molecule import PictureMoleculeData
 from docling_core.types.doc.items.picture.picture import (

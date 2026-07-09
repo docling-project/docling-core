@@ -217,7 +217,7 @@ class TableItem(FloatingItem):
         # Empty and full cells:
         # "ecel", "fcel"
         #
-        # Cell spans (horisontal, vertical, 2d):
+        # Cell spans (horizontal, vertical, 2d):
         # "lcel", "ucel", "xcel"
         #
         # New line:

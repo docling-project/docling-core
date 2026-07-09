@@ -18,11 +18,6 @@ from docling_core.types.doc.common.annotations import BaseAnnotation, Descriptio
 from docling_core.types.doc.common.meta import (
     DescriptionMetaField,
     MetaUtils,
-    MoleculeMetaField,
-    PictureClassificationMetaField,
-    PictureClassificationPrediction,
-    PictureMeta,
-    TabularChartMetaField,
 )
 from docling_core.types.doc.items.node import FloatingItem
 from docling_core.types.doc.items.picture.charts import (
@@ -34,6 +29,13 @@ from docling_core.types.doc.items.picture.charts import (
     PictureTabularChartData,
 )
 from docling_core.types.doc.items.picture.classification import PictureClassificationData
+from docling_core.types.doc.items.picture.meta import (
+    MoleculeMetaField,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureMeta,
+    TabularChartMetaField,
+)
 from docling_core.types.doc.items.picture.molecule import PictureMoleculeData
 from docling_core.types.doc.labels import DocItemLabel
 

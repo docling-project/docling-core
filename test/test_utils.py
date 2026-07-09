@@ -1,6 +1,7 @@
 """Test the pydantic models in package utils."""
 
 import json
+import socket
 from io import BytesIO
 from pathlib import Path
 
@@ -159,17 +160,9 @@ def test_resolve_source_to_path_url_wout_path(monkeypatch):
     expected_str = "foo"
     expected_bytes = bytes(expected_str, "utf-8")
 
-    def get_dummy_response(*args, **kwargs):
-        r = Response()
-        r.status_code = 200
-        r._content = expected_bytes
-        return r
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
+    monkeypatch.setattr(Session, "get", lambda *args, **kwargs: _closeable_response(content=expected_bytes))
 
-    monkeypatch.setattr("requests.get", get_dummy_response)
-    monkeypatch.setattr(
-        "requests.models.Response.iter_content",
-        lambda *args, **kwargs: [expected_bytes],
-    )
     path = resolve_source_to_path("https://pypi.org")
     with open(path, encoding="utf-8") as f:
         text = f.read()
@@ -180,17 +173,9 @@ def test_resolve_source_to_stream_url_wout_path(monkeypatch):
     expected_str = "foo"
     expected_bytes = bytes(expected_str, "utf-8")
 
-    def get_dummy_response(*args, **kwargs):
-        r = Response()
-        r.status_code = 200
-        r._content = expected_bytes
-        return r
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
+    monkeypatch.setattr(Session, "get", lambda *args, **kwargs: _closeable_response(content=expected_bytes))
 
-    monkeypatch.setattr("requests.get", get_dummy_response)
-    monkeypatch.setattr(
-        "requests.models.Response.iter_content",
-        lambda *args, **kwargs: [expected_bytes],
-    )
     doc_stream = resolve_source_to_stream("https://pypi.org")
     assert doc_stream.name == "file"
 
@@ -217,8 +202,20 @@ def test_sanitize_filename_paths():
     assert _sanitize_filename("..") is None
 
 
-def test_is_safe_url_rejects_private_networks():
+def test_is_safe_url_rejects_private_networks(monkeypatch):
     """Test URL filtering for non-public network ranges."""
+    # Patch DNS resolution so these assertions work without network access.
+    # "localhost" resolves via the system hosts file (no DNS needed), but
+    # hostnames like example.com and github.com require a real DNS query.
+    monkeypatch.setattr(
+        socket,
+        "gethostbyname",
+        lambda host: {
+            "example.com": "93.184.216.34",
+            "github.com": "140.82.121.4",
+        }.get(host, host),
+    )
+
     assert not _is_safe_url("http://10.0.0.1/file")
     assert not _is_safe_url("http://172.16.0.1/file")
     assert not _is_safe_url("http://192.168.1.1/file")
@@ -245,6 +242,7 @@ def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
             headers={"Content-Disposition": 'attachment; filename="../../etc/config.txt"'},
         )
 
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
     monkeypatch.setattr("requests.Session.get", get_response)
 
     doc_stream = resolve_source_to_stream("https://example.com/file")
@@ -281,6 +279,7 @@ def test_resolve_source_to_path_sanitizes_filename(monkeypatch, tmp_path):
             headers={"Content-Disposition": 'attachment; filename="../../../../tmp/output.txt"'},
         )
 
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
     monkeypatch.setattr("requests.Session.get", get_response)
 
     cache_dir = tmp_path / "cache"
@@ -306,14 +305,8 @@ def test_redirect_limit_enforced(monkeypatch):
         session_created.append(self)
 
     monkeypatch.setattr(Session, "__init__", track_session_init)
-
-    def mock_get(*args, **kwargs):
-        r = Response()
-        r.status_code = 200
-        r._content = b"test"
-        return r
-
-    monkeypatch.setattr(Session, "get", mock_get)
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
+    monkeypatch.setattr(Session, "get", lambda *args, **kwargs: _closeable_response(content=b"test"))
 
     try:
         resolve_source_to_stream("https://example.com/file")
@@ -340,6 +333,7 @@ def test_redirect_to_non_public_ip_rejected(monkeypatch):
 
         return r
 
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: url != "http://192.168.1.1/private-file")
     monkeypatch.setattr(Session, "get", mock_get_with_redirect)
 
     with pytest.raises(ValueError, match="Redirect target is not allowed"):
@@ -350,6 +344,7 @@ def test_resolve_source_rejects_large_content_length(monkeypatch):
     def mock_get(self, *args, **kwargs):
         return _closeable_response(content=b"ignored", headers={"Content-Length": "10"})
 
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
     monkeypatch.setattr(Session, "get", mock_get)
 
     with pytest.raises(ValueError, match="maximum allowed size"):
@@ -367,6 +362,7 @@ def test_resolve_source_stops_when_stream_exceeds_limit(monkeypatch):
         r.iter_content = iter_content
         return r
 
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
     monkeypatch.setattr(Session, "get", mock_get)
 
     with pytest.raises(ValueError, match="maximum allowed size"):

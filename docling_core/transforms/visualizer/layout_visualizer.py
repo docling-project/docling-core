@@ -148,7 +148,7 @@ class LayoutVisualizer(BaseVisualizer):
         images: Optional[dict[Optional[int], Image]] = None,
         included_content_layers: Optional[set[ContentLayer]] = None,
     ):
-        """Draw the document clusters and optionaly the reading order."""
+        """Draw the document clusters and optionally the reading order."""
         clusters = []
         my_images: dict[Optional[int], Image] = {}
 

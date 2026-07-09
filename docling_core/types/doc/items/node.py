@@ -10,8 +10,8 @@ from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc.common.annotations import BaseAnnotation
 from docling_core.types.doc.common.content_layer import ContentLayer
 from docling_core.types.doc.common.meta import BaseMeta, FloatingMeta
-from docling_core.types.doc.common.origin import SourceType
 from docling_core.types.doc.common.reference import FineRef, ImageRef, ProvenanceItem, RefItem
+from docling_core.types.doc.common.source import SourceType
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.tokens import DocumentToken
 
