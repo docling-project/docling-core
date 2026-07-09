@@ -46,6 +46,7 @@ from .document import (
     OrderedList,
     Orientation,
     PageItem,
+    PageMeta,
     PictureBarChartData,
     PictureChartData,
     PictureClassificationClass,
