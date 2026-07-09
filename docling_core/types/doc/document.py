@@ -1321,7 +1321,7 @@ class ProvenanceItem(BaseModel):
     """Provenance information for elements extracted from a textual document.
 
     A `ProvenanceItem` object acts as a lightweight pointer back into the original
-    document for an extracted element. It applies to documents with an explicity
+    document for an extracted element. It applies to documents with an explicit
     or implicit layout, such as PDF, HTML, docx, or pptx.
     """
 
@@ -1391,7 +1391,7 @@ Currently supported source types:
 
 Notes:
     - Additional source types may be added to this union in the future to support other content sources.
-    - For documents with an implicit or explicity layout, such as PDF, HTML, docx, pptx, or markdown files, the
+    - For documents with an implicit or explicit layout, such as PDF, HTML, docx, pptx, or markdown files, the
         `ProvenanceItem` should still be used.
 """
 
@@ -2594,7 +2594,7 @@ class TableItem(FloatingItem):
         # Empty and full cells:
         # "ecel", "fcel"
         #
-        # Cell spans (horisontal, vertical, 2d):
+        # Cell spans (horizontal, vertical, 2d):
         # "lcel", "ucel", "xcel"
         #
         # New line:
@@ -6735,7 +6735,7 @@ class DoclingDocument(BaseModel):
         """Serializes the Docling document to WebVTT format.
 
         Args:
-            included_content_layers: The content layers to serializes. If ommitted, the `DEFAULT_CONTENT_LAYERS` will
+            included_content_layers: The content layers to serialize. If omitted, the `DEFAULT_CONTENT_LAYERS` will
                 be serialized.
             omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
             omit_voice_end: If True and cue blocks have a WebVTT cue voice span as the only component, omit the voice
@@ -6769,7 +6769,7 @@ class DoclingDocument(BaseModel):
 
         Args:
             filename: The path to the WebVTT file.
-            included_content_layers: The content layers to serializes. If ommitted, the `DEFAULT_CONTENT_LAYERS` will
+            included_content_layers: The content layers to serialize. If omitted, the `DEFAULT_CONTENT_LAYERS` will
                 be serialized.
             omit_hours_if_zero: If True, omit hours when they are 0 in the timings.
             omit_voice_end: If True and cue blocks have a WebVTT cue voice span as the only component, omit the voice
@@ -7862,7 +7862,7 @@ class DoclingDocument(BaseModel):
     @model_validator(mode="after")
     def validate_misplaced_list_items(self) -> Self:
         """validate_misplaced_list_items."""
-        # find list items without list parent, putting succesive ones together
+        # find list items without list parent, putting successive ones together
         misplaced_list_items: list[list[ListItem]] = []
         prev: Optional[NodeItem] = None
         for item, _ in self.iterate_items(

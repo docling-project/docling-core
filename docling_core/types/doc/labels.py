@@ -24,7 +24,7 @@ class DocItemLabel(str, Enum):
     CHECKBOX_UNSELECTED = "checkbox_unselected"
     FORM = "form"
     KEY_VALUE_REGION = "key_value_region"
-    GRADING_SCALE = "grading_scale"  # for elements in forms, questionaires representing a grading scale
+    GRADING_SCALE = "grading_scale"  # for elements in forms, questionnaires representing a grading scale
     # e.g. [strongly disagree | ... | ... | strongly agree]
     # e.g. ★★☆☆☆
     HANDWRITTEN_TEXT = "handwritten_text"
