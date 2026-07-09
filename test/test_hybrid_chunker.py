@@ -20,7 +20,7 @@ from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument
-from docling_core.types.doc.document import TableCell, TableData
+from docling_core.types.doc.items.table.table_data import TableCell, TableData
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -773,8 +773,8 @@ def test_chunk_raises_on_missing_semchunk(monkeypatch):
     not at import time, so users of chunking-openai or chunking-hf without the
     other extra can still import the module safely.
     """
-    with open(INPUT_FILE, encoding="utf-8") as f:
-        dl_doc = DLDocument.model_validate_json(f.read())
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        dl_doc = DoclingDocument.model_validate_json(f.read())
 
     chunker = HybridChunker(
         tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),

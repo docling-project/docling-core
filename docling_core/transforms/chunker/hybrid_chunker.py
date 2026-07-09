@@ -24,8 +24,7 @@ from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseSerializerProvider,
 )
-from docling_core.types import DoclingDocument
-from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
+from docling_core.types.doc import DoclingDocument, SectionHeaderItem, TableItem, TitleItem
 
 _SEMCHUNK_AVAILABLE: bool = False
 _SEMCHUNK_IMPORT_ERROR: ImportError | None = None
