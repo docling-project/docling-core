@@ -278,9 +278,11 @@ class HybridChunker(BaseChunker):
                 table_text=doc_chunk.text
             )
 
-            table_text_lines = doc_chunk.text.splitlines(True)
-            first_pipe = next((i for i, l in enumerate(table_text_lines) if l.startswith("|")), 0)
-            preamble = "".join(table_text_lines[:first_pipe])
+            if header_lines:
+                header_start = doc_chunk.text.find(header_lines[0])
+                preamble = doc_chunk.text[:header_start] if header_start > 0 else ""
+            else:
+                preamble = ""
             table_prefix = "".join(header_lines)
             full_prefix = preamble + table_prefix
 

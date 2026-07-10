@@ -430,6 +430,9 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
 class MarkdownTableSerializer(BaseTableSerializer):
     """Markdown-specific table item serializer."""
 
+    _SEPARATOR_ROW_RE: re.Pattern = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+    """Matches a Markdown table separator row, e.g. ``| - | :---: | --: |``."""
+
     @override
     def get_header_and_body_lines(
         self,
@@ -439,9 +442,12 @@ class MarkdownTableSerializer(BaseTableSerializer):
     ) -> tuple[list[str], list[str]]:
         """Split a serialized Markdown table into header and body lines.
 
-        Skips any preamble (captions, blank lines) before the first ``|`` row.
-        Returns ``([], all_lines)`` when the table has fewer than two pipe rows,
-        since a header/separator pair cannot be identified.
+        Locates the separator row (``| - | - |``) to identify the boundary
+        between preamble, header, and body.  Any content before the header row
+        — including captions that themselves start with ``|`` — is treated as
+        preamble and excluded from the returned header lines.
+        Returns ``([], all_lines)`` when no separator row can be found or the
+        separator is on the first line (no header row above it).
 
         Args:
             table_text: A serialized Markdown table, possibly preceded by a
@@ -453,11 +459,11 @@ class MarkdownTableSerializer(BaseTableSerializer):
             remaining data rows.
         """
         all_lines = table_text.splitlines(True)
-        first_pipe = next((i for i, l in enumerate(all_lines) if l.startswith("|")), None)
-        if first_pipe is None or first_pipe + 1 >= len(all_lines):
+        sep_idx = next((i for i, l in enumerate(all_lines) if self._SEPARATOR_ROW_RE.match(l.rstrip("\n"))), None)
+        if sep_idx is None or sep_idx == 0:
             return [], all_lines
-        header_lines = all_lines[first_pipe : first_pipe + 2]
-        body_lines = all_lines[first_pipe + 2 :]
+        header_lines = all_lines[sep_idx - 1 : sep_idx + 1]
+        body_lines = all_lines[sep_idx + 1 :]
         return header_lines, body_lines
 
     @staticmethod

@@ -19,6 +19,7 @@ from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument
+from docling_core.types.doc.document import TableCell, TableData
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -585,6 +586,76 @@ def test_repeat_table_header_produces_valid_markdown_in_all_chunks(dl_doc_0, mar
         # The critical assertion: no blank line between header and separator.
         assert lines[sep_idx - 1] != "", (
             f"Chunk {i}: blank line between header row and separator row — invalid Markdown table"
+        )
+
+
+def test_table_caption_not_repeated_in_split_chunks():
+    """Regression test: a caption, even starting with '|', must not be treated as the
+    table header row and must not appear in any chunk after the first."""
+    caption_text = "| Table X: caption starting with pipe |"
+
+    doc = DoclingDocument(name="pipe_caption")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text=caption_text)
+    num_cols, num_rows = 3, 10
+    cells = []
+    for col in range(num_cols):
+        cells.append(
+            TableCell(
+                text=f"Col{col}",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=col,
+                end_col_offset_idx=col + 1,
+                column_header=True,
+            )
+        )
+    for row in range(1, num_rows + 1):
+        for col in range(num_cols):
+            cells.append(
+                TableCell(
+                    text=f"r{row}c{col}",
+                    row_span=1,
+                    col_span=1,
+                    start_row_offset_idx=row,
+                    end_row_offset_idx=row + 1,
+                    start_col_offset_idx=col,
+                    end_col_offset_idx=col + 1,
+                    column_header=False,
+                )
+            )
+    doc.add_table(
+        data=TableData(num_rows=num_rows + 1, num_cols=num_cols, table_cells=cells),
+        caption=caption,
+    )
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1, "Table should be split into multiple chunks"
+
+    # The caption must appear only in the first chunk.
+    assert caption_text in chunks[0].text, f"Caption should appear in the first chunk: {chunks[0].text!r}"
+    for chunk in chunks[1:]:
+        assert caption_text not in chunk.text, (
+            f"Caption starting with '|' was incorrectly repeated in a non-first chunk: {chunk.text!r}"
+        )
+
+    # Every chunk must contain the real table header row, not the caption.
+    sep_re = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+    for i, chunk in enumerate(chunks):
+        lines = chunk.text.splitlines()
+        sep_indices = [j for j, ln in enumerate(lines) if sep_re.match(ln)]
+        assert sep_indices, f"Chunk {i} has no Markdown separator row: {chunk.text!r}"
+        sep_idx = sep_indices[0]
+        assert sep_idx > 0, f"Chunk {i}: separator is on the first line (no header above it)"
+        assert lines[sep_idx - 1].startswith("|"), (
+            f"Chunk {i}: line before separator is not a table row: {lines[sep_idx - 1]!r}"
         )
 
 
