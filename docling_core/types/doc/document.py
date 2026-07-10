@@ -4854,12 +4854,23 @@ class DoclingDocument(BaseModel):
         *,
         artifacts_dir: Optional[Path] = None,
         validate: bool = False,
+        max_member_size: int = 512 * 1024 * 1024,  # 512 MiB
+        max_total_size: int = 2 * 1024 * 1024 * 1024,  # 2 GiB
     ) -> "DoclingDocument":
         """Load a DoclingDocument from a DocLang OPC archive (``.dclx``).
 
         The archive is extracted to ``artifacts_dir`` (default: ``<name>_artifacts`` next
         to the ``.dclx`` file). Relative ``<src uri=\"...\"/>`` paths and optional
         ``pages/`` images are resolved inside that directory.
+
+        Args:
+            filename: Path to the ``.dclx`` archive.
+            artifacts_dir: Optional extraction directory for package members.
+            validate: When True, run DocLang XSD/Schematron validation on ``document.xml``.
+            max_member_size: Maximum uncompressed size in bytes for any single archive member
+                (default: 512 MiB).
+            max_total_size: Maximum cumulative uncompressed size in bytes for all members
+                (default: 2 GiB).
         """
         from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 
@@ -4867,7 +4878,12 @@ class DoclingDocument(BaseModel):
             filename = Path(filename)
 
         artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
-        safe_extract_zip_archive(filename, artifacts_dir)
+        safe_extract_zip_archive(
+            filename,
+            artifacts_dir,
+            max_member_size=max_member_size,
+            max_total_size=max_total_size,
+        )
 
         document_xml = artifacts_dir / "document.xml"
         if not document_xml.is_file():

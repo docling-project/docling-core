@@ -3,11 +3,10 @@
 import html
 import itertools
 import re
-import shutil
 import unicodedata
 import zipfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any
 
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 
@@ -106,23 +105,95 @@ def resolve_archive_path(archive_root: Path, relative_path: str) -> Path:
     return resolved
 
 
-def safe_extract_zip_archive(archive: Path, destination: Path) -> None:
-    """Extract a DocLang ``.dclx`` archive without zip-slip path traversal."""
+def _copy_zip_member_bounded(
+    src: IO[bytes],
+    dst: IO[bytes],
+    *,
+    member: str,
+    max_member_size: int,
+    max_total_size: int,
+    remaining_total: int,
+) -> int:
+    """Copy a zip member while enforcing per-member and remaining total byte caps.
+
+    Counts bytes actually read from the decompressed stream so lying
+    ``ZipInfo.file_size`` headers cannot bypass the budgets.
+    """
+    chunk_size = 64 * 1024
+    written = 0
+    while True:
+        member_room = max_member_size - written
+        total_room = remaining_total - written
+        if member_room <= 0 or total_room <= 0:
+            if src.read(1):
+                if written >= max_member_size:
+                    raise ValueError(f"Archive member exceeds size limit of {max_member_size} bytes: {member!r}")
+                raise ValueError(f"Archive exceeds total uncompressed size limit of {max_total_size} bytes")
+            break
+
+        chunk = src.read(min(chunk_size, member_room, total_room))
+        if not chunk:
+            break
+        dst.write(chunk)
+        written += len(chunk)
+
+    return written
+
+
+def safe_extract_zip_archive(
+    archive: Path,
+    destination: Path,
+    *,
+    max_member_size: int = 512 * 1024 * 1024,  # 512 MiB
+    max_total_size: int = 2 * 1024 * 1024 * 1024,  # 2 GiB
+) -> None:
+    """Extract a DocLang ``.dclx`` archive without zip-slip or zip-bomb abuse.
+
+    Args:
+        archive: Path to the ``.dclx`` zip archive.
+        destination: Directory to extract members into.
+        max_member_size: Maximum uncompressed size in bytes for any single member
+            (default: 512 MiB).
+        max_total_size: Maximum cumulative uncompressed size in bytes for all members
+            (default: 2 GiB).
+    """
+    if max_member_size <= 0:
+        raise ValueError(f"max_member_size must be positive, got {max_member_size}")
+    if max_total_size <= 0:
+        raise ValueError(f"max_total_size must be positive, got {max_total_size}")
+
     archive = archive.resolve()
     destination = destination.resolve()
     destination.mkdir(parents=True, exist_ok=True)
 
+    total_uncompressed = 0
     with zipfile.ZipFile(archive) as zf:
-        for member in zf.namelist():
-            if member.endswith("/"):
+        for info in zf.infolist():
+            member = info.filename
+            if member.endswith("/") or info.is_dir():
                 continue
             validate_archive_relative_path(member, label="archive member")
             target = (destination / member).resolve()
             if not target.is_relative_to(destination):
                 raise ValueError(f"Unsafe archive member path: {member!r}")
+
+            # Cheap reject from declared sizes; actual bytes are still bounded below.
+            if info.file_size > max_member_size:
+                raise ValueError(f"Archive member exceeds size limit of {max_member_size} bytes: {member!r}")
+            if total_uncompressed + info.file_size > max_total_size:
+                raise ValueError(f"Archive exceeds total uncompressed size limit of {max_total_size} bytes")
+
             target.parent.mkdir(parents=True, exist_ok=True)
             with zf.open(member) as src, open(target, "wb") as dst:
-                shutil.copyfileobj(src, dst)
+                written = _copy_zip_member_bounded(
+                    src,
+                    dst,
+                    member=member,
+                    max_member_size=max_member_size,
+                    max_total_size=max_total_size,
+                    remaining_total=max_total_size - total_uncompressed,
+                )
+            total_uncompressed += written
 
 
 def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: dict | None = None) -> str:
