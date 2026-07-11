@@ -1,3 +1,18 @@
+## [v2.87.0](https://github.com/docling-project/docling-core/releases/tag/v2.87.0) - 2026-07-11
+
+### Feature
+
+* Split the monolithic `document.py` into focused modules ([#664](https://github.com/docling-project/docling-core/issues/664)) ([`f8a36e9`](https://github.com/docling-project/docling-core/commit/f8a36e9a106e66ce8efab3d0e51fe9dc82525f9e))
+
+### Fix
+
+* **doclang:** Enforce size limits when extracting .dclx archives ([#682](https://github.com/docling-project/docling-core/issues/682)) ([`994881b`](https://github.com/docling-project/docling-core/commit/994881b8d43b91392faed4e296260ef8e5599cbc))
+* **deps:** Constrain numpy <2.5.0 and add doclang schematron-saxon to dev ([#669](https://github.com/docling-project/docling-core/issues/669)) ([`e71da6b`](https://github.com/docling-project/docling-core/commit/e71da6bf05b7a6564d0f3b5923f991665c64cbb1))
+
+### Documentation
+
+* Fix typos in docstrings and comments ([#677](https://github.com/docling-project/docling-core/issues/677)) ([`500a6e7`](https://github.com/docling-project/docling-core/commit/500a6e7d12e83f01fc278a359bb9e0cec0cd7161))
+
 ## [v2.86.0](https://github.com/docling-project/docling-core/releases/tag/v2.86.0) - 2026-07-03
 
 ### Feature
