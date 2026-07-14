@@ -4875,7 +4875,8 @@ class DoclingDocument(BaseModel):
 
         Notes:
             ``document.xml`` is additionally capped by ``settings.max_doclang_xml_bytes`` before
-            parsing.
+            parsing. Archive ``assets/`` and ``pages/`` images are capped by
+            ``settings.max_image_decoded_size`` before Pillow opens them.
         """
         from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 
@@ -4937,6 +4938,11 @@ class DoclingDocument(BaseModel):
             if page_no not in doc.pages:
                 continue
 
+            _ensure_within_size_limit(
+                resolved,
+                max_size=settings.max_image_decoded_size,
+                label="Archive page image",
+            )
             with PILImage.open(resolved) as pil:
                 pil_copy = pil.copy()
             mimetype = mimetypes.guess_type(page_file.name)[0] or "image/png"

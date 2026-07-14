@@ -950,6 +950,26 @@ def test_max_decoded_size_default():
     assert pil_img.size == (100, 100)
 
 
+def test_image_ref_path_rejects_oversize_file(tmp_path: Path):
+    """Path-based ImageRef must enforce ``max_image_decoded_size`` like data URIs."""
+    oversize = tmp_path / "big.png"
+    oversize.write_bytes(b"\x89PNG\r\n\x1a\n" + (b"\x00" * 256))
+
+    orig_max = settings.max_image_decoded_size
+    try:
+        settings.max_image_decoded_size = 64
+        image_ref = ImageRef(
+            dpi=72,
+            mimetype="image/png",
+            size=Size(width=1, height=1),
+            uri=oversize,
+        )
+        with pytest.raises(ValueError, match="exceeds size limit"):
+            _ = image_ref.pil_image
+    finally:
+        settings.max_image_decoded_size = orig_max
+
+
 def test_upgrade_content_layer_from_1_0_0() -> None:
     doc = DoclingDocument.load_from_json("test/data/doc/2206.01062-1.0.0.json")
 
