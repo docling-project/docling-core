@@ -15,7 +15,7 @@ from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 from docling_core.transforms.serializer.base import BaseDocSerializer
-from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
+from docling_core.types.doc import SectionHeaderItem, TableItem, TitleItem
 
 try:
     import semchunk
@@ -241,6 +241,32 @@ class HybridChunker(BaseChunker):
             return chunks
 
     def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
+        """Split a single doc chunk into a list of text segments.
+
+        Two strategies are applied depending on the chunk's content:
+
+        - Table with header repetition: when ``repeat_table_header`` is
+          enabled and the chunk contains exactly one ``TableItem``, the table is
+          split line-by-line via ``LineBasedTokenChunker``.  The header rows are
+          used as a prefix so they are reproduced at the top of every segment.
+          Any preamble text that precedes the first table row (e.g. a caption) is
+          included in the prefix to account for its token cost, but is stripped
+          from all segments after the first so it does not repeat.
+
+        - Semantic splitting: for all other chunks, ``semchunk`` splits the
+          text at natural semantic boundaries up to ``available_length`` tokens.
+
+        Args:
+            doc_chunk: The chunk to segment.
+            available_length: Maximum token budget for the semantic-splitting
+                path (ignored for the table path, which uses ``self.tokenizer``
+                and ``self.max_tokens`` internally).
+            doc_serializer: Serializer for the current document; must be a
+                ``ChunkingDocSerializer`` for the table path to activate.
+
+        Returns:
+            A list of text segments derived from ``doc_chunk.text``.
+        """
         segments = []
         if (
             self.repeat_table_header
@@ -252,14 +278,23 @@ class HybridChunker(BaseChunker):
                 table_text=doc_chunk.text
             )
 
+            if header_lines:
+                header_start = doc_chunk.text.find(header_lines[0])
+                preamble = doc_chunk.text[:header_start] if header_start > 0 else ""
+            else:
+                preamble = ""
+            table_prefix = "".join(header_lines)
+            full_prefix = preamble + table_prefix
+
             line_chunker = LineBasedTokenChunker(
                 tokenizer=self.tokenizer,
-                max_tokens=available_length,
-                prefix="\n".join(header_lines),
+                prefix=full_prefix,
                 omit_prefix_on_overflow=self.omit_header_on_overflow,
                 serializer_provider=self.serializer_provider,
             )
             segments = line_chunker.chunk_text(lines=body_lines)
+            if preamble:
+                segments = segments[:1] + [s[len(preamble) :] for s in segments[1:]]
         else:
             sem_chunker = semchunk.chunkerify(self.tokenizer.get_tokenizer(), chunk_size=available_length)
             sem_segments = sem_chunker(doc_chunk.text)

@@ -33,8 +33,7 @@ from docling_core.transforms.serializer.common import (
     _should_use_legacy_annotations,
     create_ser_result,
 )
-from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import (
+from docling_core.types.doc import (
     BaseMeta,
     CodeItem,
     ContentLayer,
@@ -49,6 +48,7 @@ from docling_core.types.doc.document import (
     FormulaItem,
     GroupItem,
     ImageRef,
+    ImageRefMode,
     InlineGroup,
     KeyValueItem,
     KeywordsMetaField,
@@ -430,6 +430,9 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
 class MarkdownTableSerializer(BaseTableSerializer):
     """Markdown-specific table item serializer."""
 
+    _SEPARATOR_ROW_RE: re.Pattern = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+    """Matches a Markdown table separator row, e.g. ``| - | :---: | --: |``."""
+
     @override
     def get_header_and_body_lines(
         self,
@@ -437,25 +440,30 @@ class MarkdownTableSerializer(BaseTableSerializer):
         table_text: str,
         **kwargs: Any,
     ) -> tuple[list[str], list[str]]:
-        """Get header lines and body lines from the markdown table.
+        """Split a serialized Markdown table into header and body lines.
+
+        Locates the separator row (``| - | - |``) to identify the boundary
+        between preamble, header, and body.  Any content before the header row
+        — including captions that themselves start with ``|`` — is treated as
+        preamble and excluded from the returned header lines.
+        Returns ``([], all_lines)`` when no separator row can be found or the
+        separator is on the first line (no header row above it).
+
+        Args:
+            table_text: A serialized Markdown table, possibly preceded by a
+                caption or blank lines.
 
         Returns:
-            A tuple of (header_lines, body_lines) where header_lines contains
-            the header row and separator row, and body_lines contains the data rows.
+            A tuple ``(header_lines, body_lines)`` where ``header_lines`` holds
+            the header row and its separator row, and ``body_lines`` holds the
+            remaining data rows.
         """
-        lines = [line for line in table_text.splitlines(True) if line.strip()]
-
-        if len(lines) < 2:
-            # Not enough lines for a proper markdown table (need at least header + separator)
-            return [], lines
-
-        # In markdown tables:
-        # Line 0: Header row
-        # Line 1: Separator row (with dashes)
-        # Lines 2+: Body rows
-        header_lines = lines[:2]
-        body_lines = lines[2:]
-
+        all_lines = table_text.splitlines(True)
+        sep_idx = next((i for i, l in enumerate(all_lines) if self._SEPARATOR_ROW_RE.match(l.rstrip("\n"))), None)
+        if sep_idx is None or sep_idx == 0:
+            return [], all_lines
+        header_lines = all_lines[sep_idx - 1 : sep_idx + 1]
+        body_lines = all_lines[sep_idx + 1 :]
         return header_lines, body_lines
 
     @staticmethod
