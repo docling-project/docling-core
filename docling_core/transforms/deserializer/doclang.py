@@ -87,8 +87,42 @@ from docling_core.types.doc.document import (
 )
 from docling_core.types.doc.labels import CodeLanguageLabel, GroupLabel
 from docling_core.types.doc.utils import resolve_archive_path
+from docling_core.utils.settings import settings
 
 __all__ = ["DocLangDocDeserializer"]
+
+
+def _utf8_byte_length(text: str) -> int:
+    """Return UTF-8 byte length of ``text`` without retaining the encoded buffer."""
+    # encode builds a temporary bytes object; acceptable for a one-shot gate check.
+    return len(text.encode("utf-8"))
+
+
+def _enforce_doclang_dom_budgets(
+    root: Element,
+    *,
+    max_depth: int,
+    max_elements: int,
+) -> None:
+    """Reject deeply nested or extremely large DocLang DOMs (iterative walk)."""
+    if max_depth <= 0:
+        raise ValueError(f"max_doclang_xml_depth must be positive, got {max_depth}")
+    if max_elements <= 0:
+        raise ValueError(f"max_doclang_xml_elements must be positive, got {max_elements}")
+
+    element_count = 0
+    # (node, depth) — depth is 1 for the documentElement
+    stack: list[tuple[Element, int]] = [(root, 1)]
+    while stack:
+        node, depth = stack.pop()
+        element_count += 1
+        if element_count > max_elements:
+            raise ValueError(f"DocLang XML exceeds element count limit of {max_elements}")
+        if depth > max_depth:
+            raise ValueError(f"DocLang XML exceeds nesting depth limit of {max_depth}")
+        for child in node.childNodes:
+            if isinstance(child, Element):
+                stack.append((child, depth + 1))
 
 
 class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
@@ -99,9 +133,35 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     _default_resolution: int = PrivateAttr(default=DOCLANG_DFLT_RESOLUTION)
     _thread_registry: dict[tuple[str, str], NodeItem] = PrivateAttr(default_factory=dict)
     _media_root: Optional[Path] = PrivateAttr(default=None)
+    _max_xml_bytes: int = PrivateAttr(default=settings.max_doclang_xml_bytes)
+    _max_xml_depth: int = PrivateAttr(default=settings.max_doclang_xml_depth)
+    _max_xml_elements: int = PrivateAttr(default=settings.max_doclang_xml_elements)
 
     def _thread_registry_key(self, *, thread_id: str, host: str) -> tuple[str, str]:
         return (thread_id, host)
+
+    def _parse_xml_string(self, text: str) -> Element:
+        """Parse DocLang (or fragment) XML under configured size/depth/element budgets."""
+        if self._max_xml_bytes <= 0:
+            raise ValueError(f"max_doclang_xml_bytes must be positive, got {self._max_xml_bytes}")
+        nbytes = _utf8_byte_length(text)
+        if nbytes > self._max_xml_bytes:
+            raise ValueError(f"DocLang XML exceeds size limit of {self._max_xml_bytes} bytes")
+
+        try:
+            root_node = parseString(text).documentElement
+        except Exception as e:
+            ctx = _xml_error_context(text, e)
+            raise ValueError(f"Invalid DocLang XML: {e}\n--- XML context ---\n{ctx}") from e
+        if root_node is None:
+            raise ValueError("Invalid DocLang XML: missing documentElement")
+        root = cast(Element, root_node)
+        _enforce_doclang_dom_budgets(
+            root,
+            max_depth=self._max_xml_depth,
+            max_elements=self._max_xml_elements,
+        )
+        return root
 
     @override
     def deserialize_str(self, text: str, **kwargs: Any) -> DoclingDocument:
@@ -112,6 +172,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             page_no: Starting page number (default 1), passed via ``kwargs``.
             media_root: Optional archive root for resolving relative ``<src uri="..."/>``
                 paths from a DocLang archive package.
+            max_xml_bytes: Optional override for ``settings.max_doclang_xml_bytes``.
+            max_xml_depth: Optional override for ``settings.max_doclang_xml_depth``.
+            max_xml_elements: Optional override for ``settings.max_doclang_xml_elements``.
 
         Returns:
             A populated `DoclingDocument` parsed from the input.
@@ -119,14 +182,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         page_no: int = kwargs.get("page_no", 1)
         media_root = kwargs.get("media_root")
         self._media_root = Path(media_root).resolve() if media_root is not None else None
-        try:
-            root_node = parseString(text).documentElement
-        except Exception as e:
-            ctx = _xml_error_context(text, e)
-            raise ValueError(f"Invalid DocLang XML: {e}\n--- XML context ---\n{ctx}") from e
-        if root_node is None:
-            raise ValueError("Invalid DocLang XML: missing documentElement")
-        root: Element = cast(Element, root_node)
+        self._max_xml_bytes = int(kwargs.get("max_xml_bytes", settings.max_doclang_xml_bytes))
+        self._max_xml_depth = int(kwargs.get("max_xml_depth", settings.max_doclang_xml_depth))
+        self._max_xml_elements = int(kwargs.get("max_xml_elements", settings.max_doclang_xml_elements))
+
+        root = self._parse_xml_string(text)
         if root.tagName != DocLangToken.DOCUMENT.value:
             candidates = root.getElementsByTagName(DocLangToken.DOCUMENT.value)
             if candidates:
@@ -1704,9 +1764,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         values: list[int] = []
         res_for_group: Optional[int] = None
         for fragment in fragments:
-            frag_dom = parseString(fragment)
-            loc_el = frag_dom.documentElement
-            if loc_el is None or loc_el.tagName != DocLangToken.LOCATION.value:
+            loc_el = self._parse_xml_string(fragment)
+            if loc_el.tagName != DocLangToken.LOCATION.value:
                 return None
             try:
                 v = int(loc_el.getAttribute(DocLangAttributeKey.VALUE.value) or "0")
@@ -1778,10 +1837,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         tokens: list[str] = []
         parts: list[str] = []
 
-        dom = parseString(s)
-        otsl_el = dom.documentElement
-        if otsl_el is None:
-            raise ValueError("No document element found")
+        otsl_el = self._parse_xml_string(s)
 
         otsl_tokens = {
             DocLangToken.FCEL.value,
@@ -1916,10 +1972,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         text_parts: list[str] = []
                         for part in xml_parts:
                             wrapped_xml = f"<root>{part}</root>"
-                            dom = parseString(wrapped_xml)
-                            root_el = dom.documentElement
-                            if root_el is None:
-                                raise ValueError("No document element found")
+                            root_el = self._parse_xml_string(wrapped_xml)
                             for child_node in root_el.childNodes:
                                 if isinstance(child_node, Element):
                                     self._dispatch_element(doc=doc, el=child_node, parent=cell_group)

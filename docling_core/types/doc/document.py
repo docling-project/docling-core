@@ -155,6 +155,7 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import (
+    _ensure_within_size_limit,
     is_remote_path,
     parse_otsl_table_content,
     relative_path,
@@ -4871,6 +4872,10 @@ class DoclingDocument(BaseModel):
                 (default: 512 MiB).
             max_total_size: Maximum cumulative uncompressed size in bytes for all members
                 (default: 2 GiB).
+
+        Notes:
+            ``document.xml`` is additionally capped by ``settings.max_doclang_xml_bytes`` before
+            parsing.
         """
         from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 
@@ -4888,6 +4893,14 @@ class DoclingDocument(BaseModel):
         document_xml = artifacts_dir / "document.xml"
         if not document_xml.is_file():
             raise ValueError(f"DocLang archive missing document.xml: {filename}")
+
+        # Fail closed before reading/parsing: zip member caps are far larger than a
+        # safe DocLang DOM budget.
+        _ensure_within_size_limit(
+            document_xml,
+            max_size=settings.max_doclang_xml_bytes,
+            label="DocLang document.xml",
+        )
 
         if validate:
             from doclang.validation import validate as doclang_validate
