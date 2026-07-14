@@ -2170,3 +2170,40 @@ def test_table_with_class_raises_error():
 
     with pytest.raises(ValueError, match="table element must not have a class attribute"):
         _deserialize(xml_str, validate=False)
+
+
+def test_deserialize_rejects_oversize_xml() -> None:
+    """Huge DocLang markup must fail closed before DOM construction grows unchecked."""
+    xml = "<doclang>" + ("x" * 200) + "</doclang>"
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        DocLangDocDeserializer().deserialize_str(xml, max_xml_bytes=64)
+
+
+def test_deserialize_rejects_over_deep_xml() -> None:
+    """Extreme element nesting must fail closed (defusedxml does not bound depth)."""
+    depth = 20
+    xml = "".join(f"<g{i}>" for i in range(depth)) + "x" + "".join(f"</g{i}>" for i in reversed(range(depth)))
+    xml = f"<doclang>{xml}</doclang>"
+    with pytest.raises(ValueError, match="exceeds nesting depth limit"):
+        DocLangDocDeserializer().deserialize_str(xml, max_xml_depth=8)
+
+
+def test_deserialize_rejects_too_many_elements() -> None:
+    """Element floods must fail closed even when total byte size is modest."""
+    # 30 sibling elements under doclang — over a tight element budget.
+    children = "".join(f"<text>t{i}</text>" for i in range(30))
+    xml = f"<doclang>{children}</doclang>"
+    with pytest.raises(ValueError, match="exceeds element count limit"):
+        DocLangDocDeserializer().deserialize_str(xml, max_xml_elements=10)
+
+
+def test_deserialize_accepts_document_within_budgets() -> None:
+    xml = "<doclang><text>hello</text></doclang>"
+    doc = DocLangDocDeserializer().deserialize_str(
+        xml,
+        max_xml_bytes=1024,
+        max_xml_depth=16,
+        max_xml_elements=100,
+    )
+    assert len(doc.texts) == 1
+    assert doc.texts[0].text == "hello"

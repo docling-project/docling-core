@@ -105,6 +105,19 @@ def resolve_archive_path(archive_root: Path, relative_path: str) -> Path:
     return resolved
 
 
+def _ensure_within_size_limit(path: Path, *, max_size: int, label: str = "file") -> int:
+    """Raise ``ValueError`` if ``path`` is larger than ``max_size`` bytes.
+
+    Returns the file size when within the limit.
+    """
+    if max_size <= 0:
+        raise ValueError(f"max_size must be positive, got {max_size}")
+    size = path.stat().st_size
+    if size > max_size:
+        raise ValueError(f"{label} exceeds size limit of {max_size} bytes: {path}")
+    return size
+
+
 def _copy_zip_member_bounded(
     src: IO[bytes],
     dst: IO[bytes],

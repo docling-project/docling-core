@@ -234,3 +234,22 @@ def test_load_from_doclang_archive_forwards_size_limits(tmp_path: Path) -> None:
             max_member_size=128,
             max_total_size=10 * 1024 * 1024,
         )
+
+
+def test_load_from_doclang_archive_rejects_oversize_document_xml(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``document.xml`` is gated by the DocLang XML budget before parsing."""
+    from docling_core.utils.settings import settings
+
+    archive_path = tmp_path / "big_xml.dclx"
+    # Keep under default zip member caps; still over a tightened XML parse budget.
+    xml = b"<doclang>" + (b"x" * 4096) + b"</doclang>"
+    _write_zip(archive_path, {"document.xml": xml})
+
+    monkeypatch.setattr(settings, "max_doclang_xml_bytes", 1024)
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        DoclingDocument.load_from_doclang_archive(
+            archive_path,
+            artifacts_dir=tmp_path / "artifacts",
+        )
