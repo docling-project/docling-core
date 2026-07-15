@@ -15,6 +15,7 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.types.doc import (
     BaseMeta,
+    DataPointMention,
     DocItem,
     DocItemLabel,
     DoclingDocument,
@@ -379,3 +380,130 @@ def test_keywords_topics_required_values() -> None:
         TopicsMetaField(values=34)
     with pytest.raises(ValidationError, match="valid string"):
         TopicsMetaField(values=[34])
+
+
+# ---------------------------------------------------------------------------
+# DataPointMention tests
+# ---------------------------------------------------------------------------
+
+
+def test_data_point_roundtrip_and_html_rendering() -> None:
+    doc = DoclingDocument(name="data-point-meta")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="IBM revenue was $4B in Q3 2024.")
+    item.meta = BaseMeta(
+        entities=EntitiesMetaField(
+            mentions=[
+                EntityMention(text="IBM", label="ORG", charspan=(0, 3)),
+                DataPointMention(
+                    text="4 billion USD",
+                    orig="$4B",
+                    label="REVENUE",
+                    charspan=(16, 19),
+                    value=4.0,
+                    unit="USD",
+                    scale="billion",
+                    normalized_value=4_000_000_000.0,
+                    display_dp=0,
+                    precision="exact",
+                ),
+            ]
+        )
+    )
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    meta = roundtrip.texts[0].meta
+    assert meta is not None and meta.entities is not None
+    assert meta.has_content()
+
+    plain, dp = meta.entities.mentions
+    # plain EntityMention comes back as DataPointMention (subclass tried first in Union)
+    # but carries no numeric fields
+    assert isinstance(plain, DataPointMention)
+    assert plain.value is None
+
+    assert isinstance(dp, DataPointMention)
+    assert dp.orig == "$4B"
+    assert dp.value == 4.0
+    assert dp.unit == "USD"
+    assert dp.scale == "billion"
+    assert dp.normalized_value == 4_000_000_000.0
+    assert dp.display_dp == 0
+    assert dp.precision == "exact"
+    assert dp.scale_factor == 1e9
+    assert dp.compute_normalized_value() == dp.normalized_value
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert 'data-meta-name="entities"' in html
+    assert "IBM (ORG, [0,3])" in html
+    assert "4 billion USD (REVENUE, [16,19])" in html
+
+
+def test_data_point_range_and_direction() -> None:
+    doc = DoclingDocument(name="range-meta")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="The growth rate is approximately 3.0%.")
+    item.meta = BaseMeta(
+        entities=EntitiesMetaField(
+            mentions=[
+                DataPointMention(
+                    text="3.0%",
+                    orig="3.0%",
+                    label="GROWTH_RATE",
+                    charspan=(32, 36),
+                    value=3.0,
+                    unit="%",
+                    display_dp=1,
+                    precision="approximate",
+                    direction="increase",
+                ),
+                DataPointMention(
+                    text="10 °C",
+                    label="TEMPERATURE",
+                    value=10.0,
+                    unit="°C",
+                    precision="range_low",
+                    range_end=20.0,
+                    display_dp=0,
+                ),
+            ]
+        )
+    )
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    meta = roundtrip.texts[0].meta
+    assert meta is not None and meta.entities is not None
+    mentions = meta.entities.mentions
+
+    growth = mentions[0]
+    assert isinstance(growth, DataPointMention)
+    assert growth.value == 3.0
+    assert growth.display_dp == 1  # "3.0%" — one decimal place
+    assert growth.precision == "approximate"
+    assert growth.direction == "increase"
+
+    temp = mentions[1]
+    assert isinstance(temp, DataPointMention)
+    assert temp.value == 10.0
+    assert temp.range_end == 20.0
+    assert temp.precision == "range_low"
+    assert temp.display_dp == 0  # "10" — no decimal places
+
+
+def test_data_point_numeric_helpers() -> None:
+    # scale_factor maps canonical scale strings to their multipliers
+    assert DataPointMention(text="4B", scale="billion").scale_factor == 1e9
+    assert DataPointMention(text="5k", scale="k").scale_factor == 1e3
+    assert DataPointMention(text="x").scale_factor is None
+
+    # compute_normalized_value applies the scale factor on demand
+    assert DataPointMention(text="4B", value=4.0, scale="billion").compute_normalized_value() == 4_000_000_000.0
+    assert DataPointMention(text="30", value=30.0).compute_normalized_value() == 30.0
+    assert DataPointMention(text="n/a", scale="billion").compute_normalized_value() is None
+
+    # display_dp is independent of the numeric value: "3%" and "3.0%" share value=3.0
+    assert DataPointMention(text="3%", value=3.0, display_dp=0).display_dp == 0
+    assert DataPointMention(text="3.0%", value=3.0, display_dp=1).display_dp == 1
+
+
+def test_data_point_range_end_requires_value() -> None:
+    with pytest.raises(ValidationError, match="range_end requires value"):
+        DataPointMention(text="x", range_end=20.0)
