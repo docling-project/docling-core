@@ -302,14 +302,20 @@ class DocumentToken(str, Enum):
         ysize: int = 500,  # TODO review
         self_closing: bool = False,
     ):
-        """Get the location string give bbox and page-dim."""
-        assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"
-        assert bbox[1] <= bbox[3], f"bbox[1]<=bbox[3] => {bbox[1]}<={bbox[3]}"
+        """Get the location string given bbox and page-dim."""
+        # Normalize potentially inverted coordinates instead of asserting on
+        # them. Near-degenerate elements (e.g. a thin rule whose layout-model
+        # regression produced a slightly inverted bbox) can arrive with
+        # bbox[0] > bbox[2] or bbox[1] > bbox[3]. The min()/max() calls below
+        # already emit correctly-ordered tokens, so sorting here mirrors that
+        # normalization and avoids crashing export_to_doctags on valid output.
+        left, right = sorted((bbox[0], bbox[2]))
+        top, bottom = sorted((bbox[1], bbox[3]))
 
-        x0 = bbox[0] / page_w
-        y0 = bbox[1] / page_h
-        x1 = bbox[2] / page_w
-        y1 = bbox[3] / page_h
+        x0 = left / page_w
+        y0 = top / page_h
+        x1 = right / page_w
+        y1 = bottom / page_h
 
         x0_tok = DocumentToken.get_location_token(val=min(x0, x1), rnorm=xsize, self_closing=self_closing)
         y0_tok = DocumentToken.get_location_token(val=min(y0, y1), rnorm=ysize, self_closing=self_closing)
