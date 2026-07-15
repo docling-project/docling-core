@@ -1,3 +1,11 @@
+## [v2.87.1](https://github.com/docling-project/docling-core/releases/tag/v2.87.1) - 2026-07-15
+
+### Fix
+
+* **doclang:** Enforce image size budgets for archive assets and ImageRef ([#684](https://github.com/docling-project/docling-core/issues/684)) ([`224eeea`](https://github.com/docling-project/docling-core/commit/224eeeab60ca7da9a8febb13e20f3e0f2b70635d))
+* **doclang:** Add deserialize size, depth, and element budgets ([#683](https://github.com/docling-project/docling-core/issues/683)) ([`aee0674`](https://github.com/docling-project/docling-core/commit/aee0674a2891ab737cea32c9d412c9d7dd22ee4a))
+* **chunker:** Preserve table structure across chunks in markdown ([#678](https://github.com/docling-project/docling-core/issues/678)) ([`7775df1`](https://github.com/docling-project/docling-core/commit/7775df117647f2cd5050021791d4cbc7998e39bb))
+
 ## [v2.87.0](https://github.com/docling-project/docling-core/releases/tag/v2.87.0) - 2026-07-11
 
 ### Feature

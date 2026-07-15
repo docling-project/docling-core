@@ -982,7 +982,7 @@ schematron-saxon = [
 
 [[package]]
 name = "docling-core"
-version = "2.87.0"
+version = "2.87.1"
 source = { editable = "." }
 dependencies = [
     { name = "defusedxml" },
