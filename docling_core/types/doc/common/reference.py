@@ -114,7 +114,9 @@ class ImageRef(BaseModel):
                     raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
 
                 self._pil = PILImage.open(BytesIO(decoded_img))
-            # else: Handle http request or other protocols...
+            # else: HTTP(S) and other remote schemes are intentionally not fetched.
+            # If remote fetch is enabled, it must use host allowlists and block
+            # private, link-local, and cloud-metadata addresses (SSRF controls).
         elif isinstance(self.uri, Path):
             _ensure_within_size_limit(
                 self.uri,
