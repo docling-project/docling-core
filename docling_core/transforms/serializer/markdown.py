@@ -560,18 +560,53 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
                 rows.append(rendered_row)
             if len(rows) > 0:
+                # Count leading rows that contain any column_header cell so
+                # multi-line wrapped headers ("Cash per Security" + "($)" on
+                # successive grid rows) collapse into one markdown header
+                # row instead of leaking the continuation into the body.
+                # Mirrors `_export_to_dataframe_with_options` in
+                # docling_core/types/doc/document.py:2219-2245. Falls back to
+                # "first row is header" if upstream did not mark any header
+                # cells, preserving prior behaviour for that case.
+                num_header_rows = 0
+                for grid_row in item.data.grid:
+                    if any(
+                        getattr(cell, "column_header", False) for cell in grid_row
+                    ):
+                        num_header_rows += 1
+                    else:
+                        break
+                if num_header_rows == 0:
+                    num_header_rows = 1
+
+                num_cols = max(len(r) for r in rows)
+                if num_header_rows == 1:
+                    headers = rows[0]
+                else:
+                    # Concatenate header lines per column with a single
+                    # space. Empty cells (spanning siblings, gaps) skipped
+                    # so a colspan=N header isn't doubled.
+                    headers = []
+                    for col_idx in range(num_cols):
+                        parts = [
+                            rows[r][col_idx]
+                            for r in range(min(num_header_rows, len(rows)))
+                            if col_idx < len(rows[r]) and rows[r][col_idx]
+                        ]
+                        headers.append(" ".join(parts))
+                body = rows[num_header_rows:]
+
                 # Always disable numparse to prevent silent precision loss in numeric values
                 # Use tabulate's _column_type to detect numeric columns for right-alignment
                 colalign = []
-                if len(rows) > 1:  # Need at least header + 1 data row
-                    num_cols = len(rows[0])
+                if body:  # Need at least one data row to detect column types
                     for col_idx in range(num_cols):
-                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in rows[1:]]
+                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in body]
                         col_type = _column_type(col_values)
                         colalign.append("right" if col_type in (int, float) else "left")
                 table_text = tabulate(
-                    rows[1:],
-                    headers=rows[0],
+                    body,
+                    headers=headers,
                     tablefmt="github",
                     disable_numparse=True,
                     colalign=tuple(colalign) if colalign else None,
