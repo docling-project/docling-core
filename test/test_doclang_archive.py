@@ -253,3 +253,58 @@ def test_load_from_doclang_archive_rejects_oversize_document_xml(
             archive_path,
             artifacts_dir=tmp_path / "artifacts",
         )
+
+
+def test_load_from_doclang_archive_rejects_oversize_page_image(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Extracted ``pages/`` rasters must respect ``max_image_decoded_size`` before PIL open."""
+    from docling_core.utils.settings import settings
+
+    archive_path = tmp_path / "big_page.dclx"
+    xml = b"""<doclang>
+  <page_break/>
+</doclang>"""
+    # Minimal valid-looking PNG header plus padding past the test budget.
+    oversize = b"\x89PNG\r\n\x1a\n" + (b"\x00" * 256)
+    _write_zip(
+        archive_path,
+        {
+            "document.xml": xml,
+            "pages/1.png": oversize,
+        },
+    )
+
+    monkeypatch.setattr(settings, "max_image_decoded_size", 64)
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        DoclingDocument.load_from_doclang_archive(
+            archive_path,
+            artifacts_dir=tmp_path / "artifacts",
+        )
+
+
+def test_load_from_doclang_archive_rejects_oversize_asset_image(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Extracted ``assets/`` picture sources must respect ``max_image_decoded_size``."""
+    from docling_core.utils.settings import settings
+
+    archive_path = tmp_path / "big_asset.dclx"
+    xml = b"""<doclang>
+  <picture>
+    <src uri="assets/big.png"/>
+  </picture>
+</doclang>"""
+    oversize = b"\x89PNG\r\n\x1a\n" + (b"\x00" * 256)
+    _write_zip(
+        archive_path,
+        {
+            "document.xml": xml,
+            "assets/big.png": oversize,
+        },
+    )
+
+    monkeypatch.setattr(settings, "max_image_decoded_size", 64)
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        DoclingDocument.load_from_doclang_archive(
+            archive_path,
+            artifacts_dir=tmp_path / "artifacts",
+        )

@@ -86,7 +86,7 @@ from docling_core.types.doc.document import (
     GroupItem as GroupItemType,
 )
 from docling_core.types.doc.labels import CodeLanguageLabel, GroupLabel
-from docling_core.types.doc.utils import resolve_archive_path
+from docling_core.types.doc.utils import _ensure_within_size_limit, resolve_archive_path
 from docling_core.utils.settings import settings
 
 __all__ = ["DocLangDocDeserializer"]
@@ -1582,6 +1582,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         if not resolved.is_file():
             raise ValueError(f"Archive asset not found: {uri!r}")
 
+        _ensure_within_size_limit(
+            resolved,
+            max_size=settings.max_image_decoded_size,
+            label="Archive asset image",
+        )
         with PILImage.open(resolved) as pil:
             pil_copy = pil.copy()
         mimetype = mimetypes.guess_type(resolved.name)[0] or "image/png"
