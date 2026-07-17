@@ -434,7 +434,17 @@ def _get_delim(*, params: DocLangParams) -> str:
     return "" if params.pretty_indentation is None else "\n"
 
 
+_XML_10_ILLEGAL_CHARACTER_RE = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\uD800-\uDFFF\uFFFE\uFFFF]")
+
+
+def _replace_xml_illegal_character(match: re.Match[str]) -> str:
+    """Return a visible representation for an XML 1.0-illegal character."""
+    return f"[U+{ord(match.group()):04X}]"
+
+
 def _escape_text(text: str, params: DocLangParams) -> str:
+    """Escape text for DocLang while preserving XML 1.0 validity."""
+    text = _XML_10_ILLEGAL_CHARACTER_RE.sub(_replace_xml_illegal_character, text)
     do_wrap = params.content_wrapping_mode == WrapMode.ALWAYS or (
         params.content_wrapping_mode == WrapMode.AUTO and (text != text.strip() or "\n" in text)
     )
