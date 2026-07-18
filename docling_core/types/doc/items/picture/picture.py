@@ -1,12 +1,10 @@
 """Picture item and its annotation-data union."""
 
-import base64
 import hashlib
 import logging
 import typing
 import warnings
 from collections.abc import Sequence
-from io import BytesIO
 from typing import TYPE_CHECKING, Annotated, Optional, Union
 
 from PIL import Image as PILImage
@@ -142,15 +140,6 @@ class PictureItem(FloatingItem):
                         )
 
             return self
-
-    # Convert the image to Base64
-    def _image_to_base64(self, pil_image, format="PNG"):
-        """Base64 representation of the image."""
-        buffered = BytesIO()
-        pil_image.save(buffered, format=format)  # Save the image to the byte stream
-        img_bytes = buffered.getvalue()  # Get the byte data
-        img_base64 = base64.b64encode(img_bytes).decode("utf-8")  # Encode to Base64 and decode to string
-        return img_base64
 
     @staticmethod
     def _image_to_hexhash(img: Optional[PILImage.Image]) -> Optional[str]:
