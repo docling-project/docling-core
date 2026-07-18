@@ -363,6 +363,27 @@ def test_cdata_when_needed(sample_doc: DoclingDocument):
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
 
+def test_deep_section_header_levels_clamp_instead_of_raising():
+    """Section headers deeper than the heading vocabulary allows clamp to level 6.
+
+    ``SectionHeaderItem.level`` accepts up to 100 and docling's own heading
+    hierarchy inference emits level-6 headings by default, but the serializer
+    shifts by one (level 1 is the title), so level 6 used to overflow the
+    ``heading`` token's [1, 6] range and raise. ``html.py`` already clamps the
+    same ``item.level + 1`` computation.
+    """
+    doc = DoclingDocument(name="test")
+    doc.add_heading(text="Top", level=1)
+    doc.add_heading(text="Deep", level=6)
+    doc.add_heading(text="Deeper", level=42)
+
+    result = serialize_doclang(doc, params=DocLangParams(include_version=False, add_location=False))
+
+    assert '<heading level="2">Top</heading>' in result
+    assert '<heading level="6">Deep</heading>' in result
+    assert '<heading level="6">Deeper</heading>' in result
+
+
 def test_strikethrough_formatting():
     """Test strikethrough formatting serialization."""
     doc = DoclingDocument(name="test")
