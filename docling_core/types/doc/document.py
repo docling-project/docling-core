@@ -3614,6 +3614,8 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         compact_tables: bool = False,
         *,
+        enable_chart_tables: bool = True,
+        traverse_pictures: bool = False,
         mark_meta: bool = False,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
     ):
@@ -3636,6 +3638,7 @@ class DoclingDocument(BaseModel):
             escape_html=escape_html,
             escape_underscores=escaping_underscores,
             image_placeholder=image_placeholder,
+            enable_chart_tables=enable_chart_tables,
             image_mode=image_mode,
             indent=indent,
             text_width=text_width,
@@ -3644,6 +3647,7 @@ class DoclingDocument(BaseModel):
             page_break_placeholder=page_break_placeholder,
             include_annotations=include_annotations,
             compact_tables=compact_tables,
+            traverse_pictures=traverse_pictures,
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
         )
