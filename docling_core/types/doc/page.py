@@ -570,9 +570,9 @@ class PdfPageGeometry(PageGeometry):
         PdfPageBoundaryType,
         Field(
             description=(
-                "The page boundary that `rect` was derived from. Note that "
-                "`width`, `height` and `origin` are always computed from "
-                "`crop_bbox`, independently of this value."
+                "The page boundary that `rect` was derived from. In "
+                "`PdfPageGeometry`, `width`, `height` and `origin` are "
+                "computed from `crop_bbox` regardless of this value."
             )
         ),
     ]
@@ -638,7 +638,7 @@ class SegmentedPage(BaseModel):
 
     bitmap_resources: Annotated[
         list[BitmapResource],
-        Field(description="Bitmap images embedded in the page."),
+        Field(description="Bitmap image resources found on the page."),
     ] = []
 
     char_cells: Annotated[
@@ -661,9 +661,10 @@ class SegmentedPage(BaseModel):
         bool,
         Field(
             description=(
-                "Whether `char_cells` has been computed. Distinguishes an "
-                "empty list meaning 'no content' from one meaning "
-                "'not computed'."
+                "Whether character extraction has been computed. When False, "
+                "`char_cells` being empty means extraction was not attempted; "
+                "when True, `char_cells` being empty means the page had no "
+                "extractable characters."
             )
         ),
     ] = False
@@ -671,9 +672,10 @@ class SegmentedPage(BaseModel):
         bool,
         Field(
             description=(
-                "Whether `word_cells` has been computed. Distinguishes an "
-                "empty list meaning 'no content' from one meaning "
-                "'not computed'."
+                "Whether word extraction has been computed. When False, "
+                "`word_cells` being empty means extraction was not attempted; "
+                "when True, `word_cells` being empty means the page had no "
+                "extractable words."
             )
         ),
     ] = False
@@ -681,9 +683,10 @@ class SegmentedPage(BaseModel):
         bool,
         Field(
             description=(
-                "Whether `textline_cells` has been computed. Distinguishes an "
-                "empty list meaning 'no content' from one meaning "
-                "'not computed'."
+                "Whether text-line extraction has been computed. When False, "
+                "`textline_cells` being empty means extraction was not "
+                "attempted; when True, `textline_cells` being empty means the "
+                "page had no extractable text lines."
             )
         ),
     ] = False
