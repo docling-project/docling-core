@@ -276,9 +276,6 @@ class HybridChunker(BaseChunker):
 
         Args:
             doc_chunk: The chunk to segment.
-            available_length: Maximum token budget for the semantic-splitting
-                path (ignored for the table path, which uses ``self.tokenizer``
-                and ``self.max_tokens`` internally).
             doc_serializer: Serializer for the current document; must be a
                 ``ChunkingDocSerializer`` for the table path to activate.
 
@@ -306,13 +303,14 @@ class HybridChunker(BaseChunker):
 
             line_chunker = LineBasedTokenChunker(
                 tokenizer=self.tokenizer,
+                max_tokens_override=available_length,
                 prefix=full_prefix,
                 omit_prefix_on_overflow=self.omit_header_on_overflow,
                 serializer_provider=self.serializer_provider,
             )
             segments = line_chunker.chunk_text(lines=body_lines)
             if preamble:
-                segments = segments[:1] + [s[len(preamble) :] for s in segments[1:]]
+                segments = segments[:1] + [s[len(preamble) :] if s.startswith(full_prefix) else s for s in segments[1:]]
         else:
             if not _SEMCHUNK_AVAILABLE:
                 raise ImportError(_SEMCHUNK_INSTALL_HINT) from _SEMCHUNK_IMPORT_ERROR
