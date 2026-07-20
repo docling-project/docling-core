@@ -47,6 +47,8 @@ class LineBasedTokenChunker(BaseChunker):
         ),
     ]
 
+    max_tokens_override: Annotated[int | None, Field(default=None, gt=0)]
+
     prefix: Annotated[
         str,
         Field(
@@ -88,6 +90,7 @@ class LineBasedTokenChunker(BaseChunker):
             # Split the prefix into chunks using a temporary chunker with no prefix
             temp_chunker = LineBasedTokenChunker(
                 tokenizer=self.tokenizer,
+                max_tokens_override=self.max_tokens_override,
                 prefix="",
                 omit_prefix_on_overflow=False,
                 serializer_provider=self.serializer_provider,
@@ -113,8 +116,7 @@ class LineBasedTokenChunker(BaseChunker):
 
     @property
     def max_tokens(self) -> int:
-        """Maximum number of tokens allowed in a chunk, as reported by the tokenizer."""
-        return self.tokenizer.get_max_tokens()
+        return self.max_tokens_override or self.tokenizer.get_max_tokens()
 
     def model_post_init(self, __context) -> None:
         # Trigger computation of prefix_chunks to validate prefix length
@@ -190,14 +192,14 @@ class LineBasedTokenChunker(BaseChunker):
                 available = self.max_tokens - current_len
 
                 # If the remaining part fits entirely into current chunk → append and stop
-                if line_tokens <= available:
+                if self.tokenizer.count_tokens(current + remaining) <= self.max_tokens:
                     current += remaining
-                    current_len += line_tokens
+                    current_len = self.tokenizer.count_tokens(current)
                     break
 
                 # Remaining does NOT fit into current chunk.
                 # If it CAN fit into a fresh chunk → flush current and start new one.
-                if line_tokens + self.prefix_len <= self.max_tokens:
+                if self.tokenizer.count_tokens(self.prefix + remaining) <= self.max_tokens:
                     chunks.append(current)
                     # Only add prefix to new chunks if it fits (prefix_len > 0)
                     if self.prefix_len > 0:
@@ -236,8 +238,18 @@ class LineBasedTokenChunker(BaseChunker):
                 # Split off the first segment that fits into current.
                 take, remaining = self.split_by_token_limit(remaining, available)
 
+                while take and self.tokenizer.count_tokens(current + take) > self.max_tokens:
+                    take_limit = self.tokenizer.count_tokens(take) - 1
+                    take, returned = self.split_by_token_limit(take, take_limit)
+                    remaining = returned + remaining
+
                 # Zero-progress detection: if take is empty, force character-level split
                 if not take:
+                    if current:
+                        chunks.append(current)
+                        current = ""
+                        current_len = 0
+                        continue
                     # Fallback: take at least one character to ensure progress
                     if remaining:
                         take = remaining[0]
@@ -247,8 +259,8 @@ class LineBasedTokenChunker(BaseChunker):
                         break
 
                 # Add the taken part
-                current += "\n" + take
-                current_len += self.tokenizer.count_tokens(take)
+                current += take
+                current_len = self.tokenizer.count_tokens(current)
 
                 # flush the current chunk (full)
                 chunks.append(current)

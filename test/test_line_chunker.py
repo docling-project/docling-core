@@ -189,6 +189,24 @@ def test_chunk_text_with_prefix_and_long_lines(default_tokenizer):
         assert token_count <= MAX_TOKENS
 
 
+def test_chunk_text_rechecks_concatenated_token_count(default_tokenizer):
+    chunker = LineBasedTokenChunker(
+        tokenizer=default_tokenizer,
+        max_tokens_override=4,
+        prefix="a",
+    )
+    text = "Column Column"
+
+    assert chunker.tokenizer.count_tokens(chunker.prefix) + chunker.tokenizer.count_tokens(text) <= chunker.max_tokens
+    assert chunker.tokenizer.count_tokens(chunker.prefix + text) > chunker.max_tokens
+
+    chunks = chunker.chunk_text([text])
+
+    assert chunks == ["aColumn", "a Column"]
+    assert all(chunker.tokenizer.count_tokens(chunk) <= chunker.max_tokens for chunk in chunks)
+    assert "".join(chunk.removeprefix(chunker.prefix) for chunk in chunks) == text
+
+
 def test_chunk_document(default_tokenizer):
     """Test the chunk() method with a DoclingDocument."""
     # Create a simple DoclingDocument

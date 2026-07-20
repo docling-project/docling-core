@@ -18,7 +18,7 @@ from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTok
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import DocItemLabel, DoclingDocument
+from docling_core.types.doc import DocItemLabel, DoclingDocument, TableItem
 from docling_core.types.doc.document import TableCell, TableData
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
@@ -56,6 +56,33 @@ class HTMLSerializerProvider(ChunkingSerializerProvider):
             doc=doc,
             table_serializer=HTMLTableSerializer(),
         )
+
+
+def _build_wide_header_table(
+    caption_text: str | None = None,
+) -> tuple[DoclingDocument, TableItem]:
+    doc = DoclingDocument(name="wide_table")
+    doc.add_heading(text="Section heading", level=1)
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text=caption_text) if caption_text is not None else None
+    cells = [
+        TableCell(
+            text=f"Column {col} heading" if row == 0 else f"Value {col}",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + 1,
+            column_header=row == 0,
+        )
+        for row in range(2)
+        for col in range(50)
+    ]
+    table = doc.add_table(
+        data=TableData(num_rows=2, num_cols=50, table_cells=cells),
+        caption=caption,
+    )
+    return doc, table
 
 
 # ---------------------------------------------------------------------------
@@ -742,3 +769,103 @@ def test_html_parser_error_handling(dl_doc_0):
     for chunk in chunks:
         assert isinstance(chunk.text, str), "Chunk text should be a string"
         assert chunk.meta is not None, "Chunk should have metadata"
+
+
+def test_contextualized_markdown_table_chunks_respect_token_limit():
+    max_tokens = 64
+    doc, _ = _build_wide_header_table()
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.encoding_for_model("text-embedding-3-small"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1
+    assert all(tokenizer.count_tokens(chunker.contextualize(chunk)) <= max_tokens for chunk in chunks)
+
+
+@pytest.mark.parametrize(
+    ("max_tokens", "cell_prefix", "heading_text"),
+    [
+        (96, "x", None),
+        (128, "a-b/", "Section heading"),
+    ],
+)
+def test_split_markdown_table_chunks_respect_exact_token_boundaries(
+    max_tokens: int,
+    cell_prefix: str,
+    heading_text: str | None,
+):
+    num_cols = 12
+    num_rows = 3
+    doc = DoclingDocument(name="overflow")
+    if heading_text is not None:
+        doc.add_heading(text=heading_text, level=1)
+    cells = [
+        TableCell(
+            text=f"{cell_prefix}{row}_{col}",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + 1,
+            column_header=row == 0,
+        )
+        for row in range(num_rows)
+        for col in range(num_cols)
+    ]
+    doc.add_table(
+        data=TableData(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            table_cells=cells,
+        )
+    )
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.encoding_for_model("text-embedding-3-small"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+    counts = [tokenizer.count_tokens(chunker.contextualize(chunk)) for chunk in chunks]
+
+    assert max(counts) <= max_tokens
+
+
+def test_split_markdown_table_prefix_preserves_content():
+    doc, table = _build_wide_header_table(caption_text="Wide table caption")
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.encoding_for_model("text-embedding-3-small"),
+        max_tokens=64,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+    serializer = chunker.serializer_provider.get_serializer(doc)
+    expected_text = serializer.serialize(item=table).text
+
+    chunks = [
+        chunk
+        for chunk in chunker.chunk(dl_doc=doc)
+        if any(item.self_ref == table.self_ref for item in chunk.meta.doc_items)
+    ]
+
+    assert len(chunks) > 1
+    assert "".join(chunk.text for chunk in chunks).replace("\n", "") == expected_text.replace("\n", "")
