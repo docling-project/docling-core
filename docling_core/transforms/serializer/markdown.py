@@ -928,6 +928,7 @@ class MarkdownDocSerializer(DocSerializer):
         params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
 
         if DocItemLabel.FOOTNOTE in params.labels:
+            excluded = self.get_excluded_refs(**kwargs)
             results: list[SerializationResult] = []
             for footnote in item.footnotes:
                 resolved = footnote.resolve(self.doc)
@@ -937,14 +938,17 @@ class MarkdownDocSerializer(DocSerializer):
                     self._logger.warning(
                         f"Footnote reference {footnote.cref} resolved to {type(resolved).__name__} instead of TextItem"
                     )
-                else:
-                    footnote_tuple: tuple[str, str] = MarkdownTextSerializer._validate_and_format_footnote(
-                        resolved.text
-                    )
-                    identifier, definition = footnote_tuple
-                    anchor_ref = f"[^{identifier}]"
-                    combined = f"{anchor_ref}\n\n{definition}"
-                    results.append(create_ser_result(text=combined, span_source=resolved))
+                elif resolved.self_ref not in excluded:
+                    parsed: Optional[tuple[str, str]] = None
+                    try:
+                        parsed = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
+                    except ValueError as exc:
+                        self._logger.warning(f"Skipping malformed footnote {footnote.cref}: {exc}")
+                    if parsed is not None:
+                        identifier, definition = parsed
+                        anchor_ref = f"[^{identifier}]"
+                        combined = f"{anchor_ref}\n\n{definition}"
+                        results.append(create_ser_result(text=combined, span_source=resolved))
 
             text_res = "\n\n".join([r.text for r in results])
             return create_ser_result(text=text_res, span_source=results)
