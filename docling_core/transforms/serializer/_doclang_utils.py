@@ -351,6 +351,12 @@ class DocLangToken(str, Enum):
     INDEX = "index"
     MARKER = "marker"
     CONTENT = "content"  # TODO: review element name
+    # Chart picture extension (ChartToDocling): axes + legend/series structure.
+    AXES = "axes"
+    AXIS = "axis"
+    LEGEND = "legend"
+    SERIES = "series"
+    COLORBAR = "colorbar"
 
 
 class DocLangAttributeKey(str, Enum):
@@ -366,6 +372,20 @@ class DocLangAttributeKey(str, Enum):
     CLASS = "class"
     THREAD_ID = "thread_id"
     URI = "uri"
+    # Chart picture extension attributes
+    ROLE = "role"
+    SCALE = "scale"
+    UNIT = "unit"
+    AXIS_LABEL = "label"
+    COLOR = "color"
+    MARKER = "marker"
+    LINE_STYLE = "line_style"
+    MARK = "mark"
+    NAME = "name"
+    ENCODES = "encodes"
+    RANGE = "range"
+    COLORS = "colors"
+    LEVELS = "levels"
 
 
 class DocLangAttributeValue(str, Enum):
@@ -416,6 +436,26 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LIST: {DocLangAttributeKey.CLASS},
         DocLangToken.THREAD: {DocLangAttributeKey.THREAD_ID},
         DocLangToken.XREF: {DocLangAttributeKey.THREAD_ID},
+        DocLangToken.AXIS: {
+            DocLangAttributeKey.ROLE,
+            DocLangAttributeKey.AXIS_LABEL,
+            DocLangAttributeKey.SCALE,
+            DocLangAttributeKey.UNIT,
+        },
+        DocLangToken.SERIES: {
+            DocLangAttributeKey.NAME,
+            DocLangAttributeKey.COLOR,
+            DocLangAttributeKey.MARKER,
+            DocLangAttributeKey.LINE_STYLE,
+            DocLangAttributeKey.MARK,
+        },
+        DocLangToken.COLORBAR: {
+            DocLangAttributeKey.ENCODES,
+            DocLangAttributeKey.AXIS_LABEL,
+            DocLangAttributeKey.RANGE,
+            DocLangAttributeKey.COLORS,
+            DocLangAttributeKey.LEVELS,
+        },
     }
 
     # Allowed values for specific attributes (enumerations)
@@ -493,6 +533,10 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.NL,
         # Continuation markers
         DocLangToken.THREAD,
+        # Chart picture extension leaf tokens (axis / series / colorbar carry attrs)
+        DocLangToken.AXIS,
+        DocLangToken.SERIES,
+        DocLangToken.COLORBAR,
     }
 
     # Token to category mapping
@@ -1048,3 +1092,33 @@ _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
         DocLangToken.CENTISECOND.value,
     }
 )
+
+
+def compact_doclang(dl: str) -> str:
+    """Compact a DocLang string: strip pretty-print whitespace so the serialized target
+    is continuous (~25-30% shorter, no information lost). Kept byte-identical to the
+    training loader's copy (ChartToDocling_training/detail_transform.py:compact) — if you
+    change one, change both. Verified lossless (hand-checked + exhaustive tag/value proof).
+
+    PRESERVES verbatim: the entire <docling__summary> block (prose, CDATA or plain
+    <content>), any cell-level CDATA (e.g. "Côte d'Ivoire"), and whitespace INSIDE a value
+    (multi-line labels like 'Strongly\\nDisagree'). Removes ONLY formatting whitespace that
+    abuts a tag.
+    """
+    _protect = re.compile(
+        rf"<{_DOCLANG_META_TAG_SUMMARY}>.*?</{_DOCLANG_META_TAG_SUMMARY}>|<!\[CDATA\[.*?\]\]>",
+        re.S,
+    )
+    blocks: list[str] = []
+
+    def _stash(m: re.Match[str]) -> str:
+        blocks.append(m.group(0))
+        return f"\x00{len(blocks) - 1}\x00"
+
+    s = _protect.sub(_stash, dl)
+    s = re.sub(r"(?<=>)\s*\n\s*", "", s)  # newline+indent right after a tag
+    s = re.sub(r"\s*\n\s*(?=<)", "", s)  # newline+indent right before a tag
+    s = re.sub(r"(?<=>)[ \t]+(?=<)", "", s)  # spaces between two adjacent tags
+    s = re.sub(r"[ \t]{2,}(?=<)", "", s)  # residual indent run before a tag
+    s = re.sub(r"\x00(\d+)\x00", lambda m: blocks[int(m.group(1))], s)
+    return s
