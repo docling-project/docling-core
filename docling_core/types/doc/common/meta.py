@@ -131,6 +131,15 @@ class MetaFieldName(str, Enum):
     TABULAR_CHART = "tabular_chart"
     """Tabular data extracted from a chart element."""
 
+    CHART_AXES = "chart_axes"
+    """The chart's axes: role, label, unit, scale, categories (ChartToDocling extension)."""
+
+    CHART_SERIES = "chart_series"
+    """The chart's legend entries: name bound to a visual encoding (colour name, marker, line style)."""
+
+    CHART_COLOR_LEGEND = "chart_color_legend"
+    """A continuous colour legend: colour encodes a scalar variable (range / levels / endpoint colours)."""
+
 
 class EntityMention(BasePrediction):
     """Entity mention extracted from text."""
