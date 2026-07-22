@@ -876,6 +876,16 @@ class MarkdownDocSerializer(DocSerializer):
         return f"~~{text}~~"
 
     @override
+    def serialize_subscript(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific subscript serialization."""
+        return f"<sub>{text}</sub>"
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific superscript serialization."""
+        return f"<sup>{text}</sup>"
+
+    @override
     def serialize_hyperlink(
         self,
         text: str,
