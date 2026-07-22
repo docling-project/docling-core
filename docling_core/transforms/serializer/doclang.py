@@ -441,7 +441,9 @@ def _escape_text(text: str, params: DocLangParams) -> str:
     if params.escape_mode == EscapeMode.ALWAYS or (
         params.escape_mode == EscapeMode.AUTO and any(c in text for c in ['"', "'", "&", "<", ">"])
     ):
-        text = f"<![CDATA[{text}]]>"
+        # A CDATA section cannot contain its closing delimiter. Split such text
+        # across adjacent CDATA sections while preserving the exact characters.
+        text = f"<![CDATA[{text.replace(']]>', ']]]]><![CDATA[>')}]]>"
     if do_wrap:
         # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
         text = _wrap(text=text, wrap_tag=DocLangToken.CONTENT.value)

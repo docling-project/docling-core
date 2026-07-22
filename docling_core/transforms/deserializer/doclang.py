@@ -8,6 +8,7 @@ from itertools import groupby
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, cast
 from xml.dom.minidom import Element, Node, Text
+from xml.sax.saxutils import escape
 
 from defusedxml.minidom import parseString
 from PIL import Image as PILImage
@@ -945,7 +946,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         parts: list[str] = []
         for node in nodes:
             if isinstance(node, Text):
-                parts.append(node.data)
+                # DOM parsing resolves entities and CDATA to plain character data.
+                # Escape it before placing the fragment in XML that will be reparsed.
+                parts.append(escape(node.data))
             elif isinstance(node, Element):
                 if node.tagName == DocLangToken.CONTENT.value:
                     parts.append(self._nodes_to_xml(node.childNodes))
