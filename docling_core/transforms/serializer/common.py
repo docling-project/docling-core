@@ -6,6 +6,7 @@ import sys
 import warnings
 from abc import abstractmethod
 from collections.abc import Iterable
+from enum import Enum
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Optional, Union
@@ -36,6 +37,7 @@ from docling_core.transforms.serializer.base import (
     Span,
 )
 from docling_core.types.doc import (
+    CodeItem,
     ContentLayer,
     DescriptionAnnotation,
     DocItem,
@@ -44,6 +46,7 @@ from docling_core.types.doc import (
     FloatingItem,
     Formatting,
     FormItem,
+    FormulaItem,
     InlineGroup,
     KeyValueItem,
     ListGroup,
@@ -64,6 +67,21 @@ _DEFAULT_LAYERS = set(ContentLayer)
 
 
 _logger = logging.getLogger(__name__)
+
+
+class InlineBoundary(str, Enum):
+    """Boundary decision between adjacent inline serialization parts."""
+
+    JOIN = "join"
+    SPACE = "space"
+    UNKNOWN = "unknown"
+
+
+_RIGHT_ATTACHING_CHARS = frozenset({")", "]", "}", ",", ";", ":", ".", "!", "?", "%"})
+_BRACKET_OPENERS = frozenset({"(", "[", "{"})
+_WORD_JOIN_CHARS = frozenset({"-", "/"})
+_QUOTE_CHARS = frozenset({"'", '"', "\u2018", "\u2019", "\u201c", "\u201d"})
+_MARKDOWN_EMPH_CHARS = ("*", "_")
 
 
 class _PageBreakNode(NodeItem):
@@ -182,6 +200,439 @@ def create_ser_result(
         text=text,
         spans=spans,
     )
+
+
+def _join_inline_parts(parts: list[SerializationResult]) -> str:
+    """Join inline serialization parts with context-aware spacing."""
+    valid_parts = [part for part in parts if part.text]
+    joined: list[str] = []
+    prev_text = ""
+    prev_item: Optional[DocItem] = None
+
+    for part in valid_parts:
+        text = part.text
+        item = part.spans[0].item if part.spans else None
+        if (
+            prev_text
+            and _classify_inline_boundary(
+                prev_text=prev_text,
+                prev_item=prev_item,
+                text=text,
+                item=item,
+            )
+            == InlineBoundary.SPACE
+        ):
+            joined.append(" ")
+        joined.append(text)
+
+        prev_text = text
+        prev_item = item
+
+    return "".join(joined)
+
+
+def _classify_inline_boundary(
+    *,
+    prev_text: str,
+    prev_item: Optional[DocItem],
+    text: str,
+    item: Optional[DocItem],
+) -> InlineBoundary:
+    """Classify the boundary between adjacent inline parts."""
+    prev_tail = prev_text[-1]
+    curr_head = text[0]
+
+    if prev_tail.isspace() or curr_head.isspace():
+        return InlineBoundary.JOIN
+
+    if prev_item is None or item is None:
+        return _classify_character_boundary(prev_tail=prev_tail, curr_head=curr_head)
+
+    provenance_boundary = _classify_provenance_boundary(prev_item=prev_item, item=item)
+
+    if isinstance(prev_item, TextItem) and isinstance(item, TextItem):
+        if not _is_semantic_inline_atom(prev_item) and not _is_semantic_inline_atom(item):
+            text_boundary = _classify_text_boundary(prev_item=prev_item, item=item)
+            if _should_text_boundary_override_provenance(
+                prev_item=prev_item,
+                item=item,
+                text_boundary=text_boundary,
+                provenance_boundary=provenance_boundary,
+            ):
+                return text_boundary
+
+    if provenance_boundary != InlineBoundary.UNKNOWN:
+        if provenance_boundary == InlineBoundary.SPACE:
+            return InlineBoundary.SPACE
+        if not _should_provenance_join_override_spacing(
+            prev_item=prev_item,
+            item=item,
+            prev_text=prev_text,
+            text=text,
+        ):
+            return InlineBoundary.SPACE
+
+    prev_raw_text = prev_item.text if isinstance(prev_item, TextItem | CodeItem | FormulaItem) else prev_text
+    curr_raw_text = item.text if isinstance(item, TextItem | CodeItem | FormulaItem) else text
+    prev_raw_tail = prev_raw_text[-1] if prev_raw_text else prev_tail
+    curr_raw_head = curr_raw_text[0] if curr_raw_text else curr_head
+
+    # Keep code, formulas, and linked text visually separated from regular text.
+    if isinstance(prev_item, TextItem) and not _is_semantic_inline_atom(prev_item) and _is_semantic_inline_atom(item):
+        if prev_raw_tail.isalnum() or prev_raw_tail in {":", ";", ",", "&"}:
+            return InlineBoundary.SPACE
+        return _classify_rendered_character_boundary(
+            prev_tail=prev_raw_tail,
+            curr_head=curr_raw_head,
+            prev_text=prev_text,
+        )
+
+    if _is_semantic_inline_atom(prev_item) and isinstance(item, TextItem):
+        if (
+            curr_raw_head.isalnum()
+            or curr_raw_head in {"(", "&", "[", "'"}
+            or (text and text[0] in {"(", "&", "[", "'"})
+        ):
+            return InlineBoundary.SPACE
+        return _classify_rendered_character_boundary(
+            prev_tail=prev_text[-1] if prev_text else prev_raw_tail,
+            curr_head=text[0] if text else curr_raw_head,
+            prev_text=prev_text,
+        )
+
+    return _classify_rendered_character_boundary(
+        prev_tail=prev_raw_tail,
+        curr_head=curr_raw_head,
+        prev_text=prev_text,
+    )
+
+
+def _classify_provenance_boundary(*, prev_item: DocItem, item: DocItem) -> InlineBoundary:
+    """Classify boundary from explicit provenance/original-document signals."""
+    prev_orig = getattr(prev_item, "orig", "")
+    curr_orig = getattr(item, "orig", "")
+
+    if (prev_orig and prev_orig[-1].isspace()) or (curr_orig and curr_orig[0].isspace()):
+        return InlineBoundary.SPACE
+
+    if prev_item.prov and item.prov:
+        prev_prov = prev_item.prov[-1]
+        curr_prov = item.prov[0]
+        if prev_prov.page_no == curr_prov.page_no:
+            gap = curr_prov.charspan[0] - prev_prov.charspan[1]
+            if gap == 0:
+                return InlineBoundary.JOIN
+            if gap > 0:
+                return InlineBoundary.SPACE
+
+    return InlineBoundary.UNKNOWN
+
+
+def _classify_text_boundary(*, prev_item: TextItem, item: TextItem) -> InlineBoundary:
+    """Classify boundary between adjacent text items."""
+    prev_raw_text = prev_item.text
+    curr_raw_text = item.text
+    prev_raw_tail = prev_raw_text[-1]
+    curr_raw_head = curr_raw_text[0]
+
+    prev_is_styled = _is_styled_text(prev_item)
+    curr_is_styled = _is_styled_text(item)
+
+    if curr_raw_text == "&" and prev_raw_tail.isalnum():
+        return InlineBoundary.SPACE
+    if prev_raw_text == "&" and curr_raw_head.isalnum() and curr_is_styled:
+        return InlineBoundary.SPACE
+    if prev_raw_tail in {":", ";", ","} and curr_is_styled:
+        return InlineBoundary.SPACE
+
+    if prev_is_styled and curr_is_styled:
+        return InlineBoundary.SPACE
+
+    prev_has_non_baseline_script = _has_non_baseline_script(prev_item)
+    curr_has_non_baseline_script = _has_non_baseline_script(item)
+
+    if not (prev_raw_tail.isalnum() and curr_raw_head.isalnum()):
+        if prev_has_non_baseline_script and curr_raw_head in {"+", "-", "*", "/"}:
+            return InlineBoundary.SPACE
+        if prev_is_styled and not curr_is_styled and curr_raw_head.isalnum():
+            return InlineBoundary.SPACE
+        if not prev_is_styled and curr_is_styled and prev_raw_tail.isalnum():
+            return InlineBoundary.SPACE
+        return _classify_character_boundary(prev_tail=prev_raw_tail, curr_head=curr_raw_head)
+
+    if prev_has_non_baseline_script or curr_has_non_baseline_script:
+        return InlineBoundary.SPACE
+
+    if len(prev_raw_text) == 1 and prev_is_styled and not curr_is_styled:
+        curr_raw_head = curr_raw_text[0] if curr_raw_text else ""
+        first_token = curr_raw_text.split()[0].lower()
+        if curr_raw_head.islower() and first_token not in _COMMON_SHORT_WORDS:
+            return InlineBoundary.JOIN
+        return InlineBoundary.SPACE
+
+    if prev_is_styled and any(ch.isspace() for ch in prev_raw_text):
+        return InlineBoundary.SPACE
+    if curr_is_styled and any(ch.isspace() for ch in curr_raw_text):
+        return InlineBoundary.SPACE
+
+    if prev_is_styled != curr_is_styled:
+        if curr_is_styled and len(curr_raw_text) == 1:
+            return InlineBoundary.SPACE
+        return _classify_ambiguous_word_boundary(curr_raw_text=curr_raw_text)
+
+    return _classify_character_boundary(prev_tail=prev_raw_tail, curr_head=curr_raw_head)
+
+
+def _is_markdown_syntax_join(
+    *,
+    prev_tail: str,
+    curr_head: str,
+    prev_text: str = "",
+    text: str = "",
+) -> bool:
+    """Return whether adjacent rendered parts should join for markdown syntax cleanup."""
+    if curr_head in _RIGHT_ATTACHING_CHARS:
+        return True
+
+    if prev_tail in _WORD_JOIN_CHARS:
+        return True
+
+    if prev_tail in _BRACKET_OPENERS:
+        return True
+
+    if curr_head in _WORD_JOIN_CHARS:
+        return True
+
+    if prev_tail in _QUOTE_CHARS and curr_head in _QUOTE_CHARS:
+        return True
+
+    if prev_text.endswith(_MARKDOWN_EMPH_CHARS) and curr_head in _RIGHT_ATTACHING_CHARS:
+        return True
+
+    if text.startswith(_MARKDOWN_EMPH_CHARS) and prev_tail.isalnum():
+        return False
+
+    return False
+
+
+def _classify_word_punctuation_boundary(*, prev_tail: str, curr_head: str) -> InlineBoundary:
+    """Classify common word boundaries after punctuation in source text."""
+    if prev_tail in {",", ";", ":"} and curr_head.isalnum():
+        return InlineBoundary.SPACE
+
+    if prev_tail == "." and (curr_head.isalnum() or curr_head == "["):
+        return InlineBoundary.SPACE
+
+    if prev_tail == ")" and curr_head == "[":
+        return InlineBoundary.SPACE
+
+    if curr_head == "&" and prev_tail.isalnum():
+        return InlineBoundary.SPACE
+
+    return InlineBoundary.UNKNOWN
+
+
+def _should_provenance_join_override_spacing(
+    *,
+    prev_item: DocItem,
+    item: DocItem,
+    prev_text: str,
+    text: str,
+) -> bool:
+    """Return whether a provenance join should suppress an otherwise expected space."""
+    if not isinstance(prev_item, TextItem) or not isinstance(item, TextItem):
+        return True
+
+    if _is_markdown_syntax_join(
+        prev_tail=prev_text[-1] if prev_text else "",
+        curr_head=text[0] if text else "",
+        prev_text=prev_text,
+        text=text,
+    ):
+        return True
+
+    if _is_ocr_safe_midword_join(prev_item=prev_item, item=item):
+        return True
+
+    prev_raw_tail = prev_item.text[-1] if prev_item.text else ""
+    curr_raw_head = item.text[0] if item.text else ""
+    if _classify_word_punctuation_boundary(prev_tail=prev_raw_tail, curr_head=curr_raw_head) == InlineBoundary.SPACE:
+        return False
+
+    if prev_text.endswith(_MARKDOWN_EMPH_CHARS) and curr_raw_head in _QUOTE_CHARS:
+        return False
+
+    return True
+
+
+def _classify_rendered_character_boundary(
+    *,
+    prev_tail: str,
+    curr_head: str,
+    prev_text: str,
+) -> InlineBoundary:
+    """Character fallback using rendered text for markdown emphasis spacing."""
+    if prev_text.endswith(_MARKDOWN_EMPH_CHARS) and curr_head in _QUOTE_CHARS:
+        return InlineBoundary.SPACE
+    return _classify_character_boundary(prev_tail=prev_tail, curr_head=curr_head)
+
+
+def _classify_character_boundary(*, prev_tail: str, curr_head: str) -> InlineBoundary:
+    """Classify boundary from adjacent serialized characters when item metadata is inconclusive."""
+    if not prev_tail or not curr_head:
+        return InlineBoundary.UNKNOWN
+
+    word_boundary = _classify_word_punctuation_boundary(prev_tail=prev_tail, curr_head=curr_head)
+    if word_boundary != InlineBoundary.UNKNOWN:
+        return word_boundary
+
+    if prev_tail.isalnum() and curr_head.isalnum():
+        return InlineBoundary.SPACE
+
+    if prev_tail in _WORD_JOIN_CHARS:
+        return InlineBoundary.JOIN
+
+    if curr_head in _RIGHT_ATTACHING_CHARS:
+        return InlineBoundary.JOIN
+
+    if curr_head in _WORD_JOIN_CHARS:
+        return InlineBoundary.JOIN
+
+    if prev_tail in _BRACKET_OPENERS:
+        return InlineBoundary.JOIN
+
+    if prev_tail in _QUOTE_CHARS and curr_head in _QUOTE_CHARS:
+        return InlineBoundary.JOIN
+
+    return InlineBoundary.UNKNOWN
+
+
+def _is_styled_text(item: TextItem) -> bool:
+    """Return whether a TextItem carries visible inline styling or hyperlink."""
+    formatting = item.formatting
+    has_non_default_formatting = bool(
+        formatting
+        and (
+            formatting.bold
+            or formatting.italic
+            or formatting.underline
+            or formatting.strikethrough
+            or formatting.script != Script.BASELINE
+        )
+    )
+    return has_non_default_formatting or bool(item.hyperlink)
+
+
+def _is_semantic_inline_atom(item: Optional[DocItem]) -> bool:
+    """Return whether an inline item should be visually separated from regular text."""
+    if isinstance(item, CodeItem | FormulaItem):
+        return True
+    return isinstance(item, TextItem) and bool(item.hyperlink)
+
+
+def _classify_ambiguous_word_boundary(*, curr_raw_text: str) -> InlineBoundary:
+    """Fallback for synthetic boundaries without source position data.
+
+    Without source whitespace or contiguous char spans, this boundary is inherently
+    ambiguous. Prefer joining short lowercase continuations (e.g. ``Pars`` + ``ing``)
+    and readability otherwise.
+    """
+    if _is_likely_word_suffix(curr_raw_text):
+        return InlineBoundary.JOIN
+    return InlineBoundary.SPACE
+
+
+_COMMON_SHORT_WORDS = frozenset({"a", "an", "and", "at", "in", "is", "it", "on", "or", "the", "to"})
+
+
+def _is_likely_word_suffix(curr_raw_text: str) -> bool:
+    """Return whether adjacent text likely continues the previous token mid-word."""
+    if not (curr_raw_text.isalpha() and curr_raw_text.islower() and len(curr_raw_text) <= 3):
+        return False
+    return curr_raw_text not in _COMMON_SHORT_WORDS
+
+
+def _has_non_baseline_script(item: TextItem) -> bool:
+    """Return whether a TextItem uses subscript or superscript."""
+    formatting = item.formatting
+    return bool(formatting and formatting.script != Script.BASELINE)
+
+
+def _is_ocr_safe_midword_join(*, prev_item: TextItem, item: TextItem) -> bool:
+    """Return whether a join should override provenance spacing for OCR-like splits."""
+    if _has_non_baseline_script(prev_item) or _has_non_baseline_script(item):
+        return False
+
+    prev_raw_text = prev_item.text
+    curr_raw_text = item.text
+    prev_is_styled = _is_styled_text(prev_item)
+    curr_is_styled = _is_styled_text(item)
+
+    if len(prev_raw_text) == 1 and prev_is_styled and not curr_is_styled:
+        curr_raw_head = curr_raw_text[0] if curr_raw_text else ""
+        first_token = curr_raw_text.split()[0].lower()
+        return curr_raw_head.islower() and first_token not in _COMMON_SHORT_WORDS
+
+    return _is_likely_word_suffix(curr_raw_text) and not (
+        _is_semantic_inline_atom(prev_item) or _is_semantic_inline_atom(item)
+    )
+
+
+def _is_false_ocr_word_join(*, prev_item: TextItem, item: TextItem) -> bool:
+    """Return whether spacing should override provenance joins between separate words."""
+    if _has_non_baseline_script(prev_item) or _has_non_baseline_script(item):
+        return False
+
+    prev_raw_text = prev_item.text
+    curr_raw_text = item.text
+    prev_raw_tail = prev_raw_text[-1] if prev_raw_text else ""
+    curr_raw_head = curr_raw_text[0] if curr_raw_text else ""
+    prev_is_styled = _is_styled_text(prev_item)
+    curr_is_styled = _is_styled_text(item)
+
+    if not prev_is_styled and not curr_is_styled:
+        if prev_raw_tail.isalnum() and curr_raw_head.isalnum():
+            return True
+        if (
+            _classify_word_punctuation_boundary(prev_tail=prev_raw_tail, curr_head=curr_raw_head)
+            == InlineBoundary.SPACE
+        ):
+            return True
+        return False
+
+    if prev_is_styled != curr_is_styled:
+        if len(curr_raw_text) > 3:
+            return True
+        if curr_raw_text.lower() in _COMMON_SHORT_WORDS:
+            return True
+
+    return False
+
+
+def _should_text_boundary_override_provenance(
+    *,
+    prev_item: TextItem,
+    item: TextItem,
+    text_boundary: InlineBoundary,
+    provenance_boundary: InlineBoundary,
+) -> bool:
+    """Return whether text heuristics should beat provenance for this inline boundary."""
+    if text_boundary == InlineBoundary.UNKNOWN:
+        return False
+
+    if provenance_boundary == InlineBoundary.UNKNOWN:
+        return True
+
+    if text_boundary == provenance_boundary:
+        return True
+
+    if provenance_boundary == InlineBoundary.SPACE and text_boundary == InlineBoundary.JOIN:
+        return _is_ocr_safe_midword_join(prev_item=prev_item, item=item)
+
+    if provenance_boundary == InlineBoundary.JOIN and text_boundary == InlineBoundary.SPACE:
+        return _is_false_ocr_word_join(prev_item=prev_item, item=item)
+
+    return False
 
 
 class CommonParams(BaseModel):

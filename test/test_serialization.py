@@ -7,7 +7,24 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
-from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.common import (
+    _DEFAULT_LABELS,
+    InlineBoundary,
+    _classify_ambiguous_word_boundary,
+    _classify_character_boundary,
+    _classify_inline_boundary,
+    _classify_provenance_boundary,
+    _classify_text_boundary,
+    _is_false_ocr_word_join,
+    _is_markdown_syntax_join,
+    _is_ocr_safe_midword_join,
+    _is_semantic_inline_atom,
+    _is_styled_text,
+    _join_inline_parts,
+    _should_provenance_join_override_spacing,
+    _should_text_boundary_override_provenance,
+    create_ser_result,
+)
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLMetaSerializer,
@@ -25,19 +42,22 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc import DoclingDocument
-from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.base import BoundingBox, ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    Formatting,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
     PictureMeta,
+    ProvenanceItem,
     RefItem,
     RichTableCell,
+    Script,
     SummaryMetaField,
     TableCell,
     TableData,
@@ -67,6 +87,36 @@ def verify(exp_file: Path, actual: str):
             actual = _normalize_quotes(actual)
 
         assert actual == expected
+
+
+def _make_inline_doc() -> tuple[DoclingDocument, object]:
+    doc = DoclingDocument(name="test")
+    return doc, doc.add_inline_group()
+
+
+def _add_inline_text(
+    doc: DoclingDocument,
+    group,
+    text: str,
+    *,
+    label: DocItemLabel = DocItemLabel.TEXT,
+    **kwargs,
+):
+    return doc.add_text(label=label, parent=group, text=text, **kwargs)
+
+
+def _extract_body_content(html: str) -> str:
+    start = html.find("<body>") + 6
+    end = html.find("</body>")
+    return html[start:end].strip()
+
+
+def _make_prov(start: int, end: int, *, page_no: int = 1) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=page_no,
+        bbox=BoundingBox(l=0.0, t=0.0, r=1.0, b=1.0),
+        charspan=(start, end),
+    )
 
 
 # ===============================
@@ -1103,3 +1153,830 @@ def test_html_meta_emits_xhtml_compatible_attributes():
     assert 'data-meta-name="entities"' in html_out
     # Output must be parseable by a strict XML parser.
     ET.fromstring(html_out)
+
+
+# ===============================
+# Tests for inline group join behavior without spaces
+# ===============================
+
+
+def test_md_inline_group_no_spaces():
+    """Test that inline groups join text parts without spaces for continuous text."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="D",
+        formatting=Formatting(
+            bold=True,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="ocling",
+        formatting=Formatting(
+            bold=False,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+
+    # This should serialize as "**D**ocling" without space
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "**D**ocling"
+    assert actual == expected
+
+
+def test_html_inline_group_no_spaces():
+    """Test that inline groups join text parts without spaces for continuous text."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="Project",
+        formatting=Formatting(
+            bold=True,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="ing",
+        formatting=Formatting(
+            bold=False,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+
+    # This should serialize as <strong>Project</strong>ing without space
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
+    actual = ser.serialize().text
+
+    body_content = _extract_body_content(actual)
+    assert "<strong>Project</strong>ing" in body_content
+
+
+def test_md_inline_group_mixed_formatting_mid_word():
+    """Test inline group with different formatting mid-word."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Pars")
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="ing",
+        formatting=Formatting(
+            bold=False,
+            italic=True,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "Pars*ing*"
+    assert actual == expected
+
+
+def test_html_inline_group_mixed_formatting_mid_word():
+    """Test inline group with different formatting mid-word."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Pars")
+    _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text="ing",
+        formatting=Formatting(
+            bold=False,
+            italic=True,
+            underline=False,
+            strikethrough=False,
+            script="baseline",
+        ),
+    )
+
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
+    actual = ser.serialize().text
+
+    body_content = _extract_body_content(actual)
+    assert "Pars<em>ing</em>" in body_content.replace("\n", " ")
+
+
+def test_md_inline_group_single_part():
+    """Test inline group with single text part (no joining needed)."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Single")
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text.strip()
+
+    expected = "Single"
+    assert actual == expected
+
+
+def test_html_inline_group_single_part():
+    """Test inline group with single text part (no joining needed)."""
+    doc, group = _make_inline_doc()
+    _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="Single")
+
+    ser = HTMLDocSerializer(doc=doc, params=HTMLParams(html_head="<head></head>", prettify=False))
+    actual = ser.serialize().text
+
+    body_content = _extract_body_content(actual)
+    assert "Single" in body_content
+
+
+def test_join_inline_parts_filters_empty_parts_and_inserts_spacing():
+    doc, group = _make_inline_doc()
+    text_item = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="A hyperlink on")
+    code_item = doc.add_code(text="code in a line", parent=group, hyperlink="#link")
+
+    parts = [
+        create_ser_result(text="", span_source=text_item),
+        create_ser_result(text="A hyperlink on", span_source=text_item),
+        create_ser_result(text="[`code in a line`](#link)", span_source=code_item),
+    ]
+
+    assert _join_inline_parts(parts) == "A hyperlink on [`code in a line`](#link)"
+
+
+@pytest.mark.parametrize(
+    ("prev_orig", "curr_orig", "prev_prov", "curr_prov", "expected"),
+    [
+        ("Hello ", "world", None, None, InlineBoundary.SPACE),
+        ("Hello", "world", _make_prov(0, 5), _make_prov(5, 10), InlineBoundary.JOIN),
+        ("Hello", "world", _make_prov(0, 5), _make_prov(6, 11), InlineBoundary.SPACE),
+        ("Hello", "world", _make_prov(0, 5, page_no=1), _make_prov(0, 5, page_no=2), InlineBoundary.UNKNOWN),
+    ],
+)
+def test_classify_source_boundary(prev_orig, curr_orig, prev_prov, curr_prov, expected):
+    doc, group = _make_inline_doc()
+    prev_item = _add_inline_text(
+        doc, group, label=DocItemLabel.TEXT, text=prev_orig.strip(), orig=prev_orig, prov=prev_prov
+    )
+    curr_item = _add_inline_text(
+        doc, group, label=DocItemLabel.TEXT, text=curr_orig.strip(), orig=curr_orig, prov=curr_prov
+    )
+
+    assert _classify_provenance_boundary(prev_item=prev_item, item=curr_item) == expected
+
+
+def _inline_boundary(
+    doc: DoclingDocument,
+    group,
+    *,
+    prev_text: str,
+    curr_text: str,
+    prev_rendered: str | None = None,
+    curr_rendered: str | None = None,
+    prev_formatting: Formatting | None = None,
+    curr_formatting: Formatting | None = None,
+    prev_hyperlink: str | None = None,
+    curr_hyperlink: str | None = None,
+    prev_orig: str | None = None,
+    curr_orig: str | None = None,
+    prev_prov: ProvenanceItem | None = None,
+    curr_prov: ProvenanceItem | None = None,
+) -> InlineBoundary:
+    """Build adjacent inline items and classify their boundary."""
+    prev_item = _add_inline_text(
+        doc,
+        group,
+        text=prev_text,
+        formatting=prev_formatting,
+        hyperlink=prev_hyperlink,
+        orig=prev_orig,
+        prov=prev_prov,
+    )
+    curr_item = _add_inline_text(
+        doc,
+        group,
+        text=curr_text,
+        formatting=curr_formatting,
+        hyperlink=curr_hyperlink,
+        orig=curr_orig,
+        prov=curr_prov,
+    )
+    return _classify_inline_boundary(
+        prev_text=prev_rendered or prev_text,
+        prev_item=prev_item,
+        text=curr_rendered or curr_text,
+        item=curr_item,
+    )
+
+
+def _join_inline_pair(
+    doc: DoclingDocument,
+    group,
+    *,
+    prev_text: str,
+    curr_text: str,
+    prev_rendered: str | None = None,
+    curr_rendered: str | None = None,
+    prev_formatting: Formatting | None = None,
+    curr_formatting: Formatting | None = None,
+    prev_orig: str | None = None,
+    curr_orig: str | None = None,
+    prev_prov: ProvenanceItem | None = None,
+    curr_prov: ProvenanceItem | None = None,
+) -> str:
+    """Join two inline serialization parts with context-aware spacing."""
+    prev_item = _add_inline_text(
+        doc,
+        group,
+        text=prev_text,
+        formatting=prev_formatting,
+        orig=prev_orig,
+        prov=prev_prov,
+    )
+    curr_item = _add_inline_text(
+        doc,
+        group,
+        text=curr_text,
+        formatting=curr_formatting,
+        orig=curr_orig,
+        prov=curr_prov,
+    )
+    return _join_inline_parts(
+        [
+            create_ser_result(text=prev_rendered or prev_text, span_source=prev_item),
+            create_ser_result(text=curr_rendered or curr_text, span_source=curr_item),
+        ]
+    )
+
+
+_INLINE_BOUNDARY_CASES: dict[str, dict] = {
+    "ocr_false_gap_join": {
+        "prev_text": "Pars",
+        "curr_text": "ing",
+        "prev_orig": "Pars",
+        "curr_orig": "ing",
+        "curr_formatting": Formatting(italic=True),
+        "prev_prov": _make_prov(0, 4),
+        "curr_prov": _make_prov(6, 9),
+        "expected": InlineBoundary.JOIN,
+    },
+    "ocr_false_join_space": {
+        "prev_text": "plain",
+        "curr_text": "text",
+        "prev_orig": "plain",
+        "curr_orig": "text",
+        "prev_prov": _make_prov(0, 5),
+        "curr_prov": _make_prov(5, 9),
+        "expected": InlineBoundary.SPACE,
+    },
+    "styled_prefix_join": {
+        "prev_text": "D",
+        "curr_text": "ocling",
+        "prev_orig": "D",
+        "curr_orig": "ocling",
+        "prev_formatting": Formatting(bold=True),
+        "prev_prov": _make_prov(0, 1),
+        "curr_prov": _make_prov(3, 9),
+        "expected": InlineBoundary.JOIN,
+    },
+    "provenance_fallback_space": {
+        "prev_text": "foo@",
+        "curr_text": "#bar",
+        "prev_orig": "foo@ ",
+        "curr_orig": "#bar",
+        "prev_prov": _make_prov(0, 4),
+        "curr_prov": _make_prov(6, 10),
+        "expected": InlineBoundary.SPACE,
+        "text_boundary_unknown": True,
+    },
+    "provenance_spacing_bold_phrase": {
+        "prev_text": "bold (b)",
+        "curr_text": "example",
+        "prev_rendered": "**bold (b)**",
+        "prev_orig": "bold (b) ",
+        "curr_orig": "example",
+        "prev_formatting": Formatting(bold=True),
+        "prev_prov": _make_prov(0, 8),
+        "curr_prov": _make_prov(9, 16),
+        "expected": InlineBoundary.SPACE,
+    },
+    "provenance_spacing_bold_and": {
+        "prev_text": "Bold",
+        "curr_text": "and",
+        "prev_rendered": "**Bold**",
+        "prev_orig": "Bold ",
+        "curr_orig": "and",
+        "prev_formatting": Formatting(bold=True),
+        "prev_prov": _make_prov(0, 4),
+        "curr_prov": _make_prov(5, 8),
+        "expected": InlineBoundary.SPACE,
+    },
+    "provenance_spacing_underline_and": {
+        "prev_text": "underline",
+        "curr_text": "and",
+        "prev_orig": "underline ",
+        "curr_orig": "and",
+        "prev_formatting": Formatting(underline=True),
+        "prev_prov": _make_prov(0, 9),
+        "curr_prov": _make_prov(10, 13),
+        "expected": InlineBoundary.SPACE,
+    },
+    "provenance_spacing_after_comma": {
+        "prev_text": "lake,",
+        "curr_text": "it's",
+        "prev_orig": "lake, ",
+        "curr_orig": "it's",
+        "prev_prov": _make_prov(0, 5),
+        "curr_prov": _make_prov(6, 10),
+        "expected": InlineBoundary.SPACE,
+    },
+    "subscript_spacing_h2": {
+        "prev_text": "H",
+        "curr_text": "2",
+        "prev_orig": "H ",
+        "curr_orig": "2",
+        "curr_formatting": Formatting(script=Script.SUB),
+        "prev_prov": _make_prov(0, 1),
+        "curr_prov": _make_prov(2, 3),
+        "expected": InlineBoundary.SPACE,
+    },
+    "subscript_spacing_o": {
+        "prev_text": "2",
+        "curr_text": "O",
+        "prev_orig": "2",
+        "curr_orig": "O",
+        "prev_formatting": Formatting(script=Script.SUB),
+        "prev_prov": _make_prov(2, 3),
+        "curr_prov": _make_prov(4, 5),
+        "expected": InlineBoundary.SPACE,
+    },
+    "newline_source_spacing_text": {
+        "prev_text": "Text:",
+        "curr_text": "00:16.000 ----> 00:18.000",
+        "prev_orig": "Text:\n",
+        "curr_orig": "00:16.000 ----> 00:18.000",
+        "expected": InlineBoundary.SPACE,
+    },
+    "newline_source_spacing_comma": {
+        "prev_text": "lake,",
+        "curr_text": "it's",
+        "prev_orig": "lake,\n",
+        "curr_orig": "it's",
+        "expected": InlineBoundary.SPACE,
+    },
+    "citation_after_period": {
+        "prev_text": "hen.",
+        "curr_text": "[[ 3 ]]",
+        "expected": InlineBoundary.SPACE,
+    },
+    "glossary_after_emphasis": {
+        "prev_text": "dūce",
+        "curr_text": "'diver'",
+        "prev_rendered": "*dūce*",
+        "prev_formatting": Formatting(italic=True),
+        "expected": InlineBoundary.SPACE,
+    },
+    "markdown_punctuation_after_bold": {
+        "prev_text": "bold (b)",
+        "curr_text": ".",
+        "prev_rendered": "**bold (b)**",
+        "prev_formatting": Formatting(bold=True),
+        "expected": InlineBoundary.JOIN,
+    },
+    "markdown_punctuation_after_link": {
+        "prev_text": "Example",
+        "curr_text": ".",
+        "prev_rendered": "[Example](https://example.com/)",
+        "prev_hyperlink": "https://example.com/",
+        "expected": InlineBoundary.JOIN,
+    },
+    "ampersand_spacing": {
+        "prev_text": "00:18.000",
+        "curr_text": "&",
+        "expected": InlineBoundary.SPACE,
+    },
+    "adjacent_links": {
+        "prev_text": "[[ 3 ]]",
+        "curr_text": "[[ 4 ]]",
+        "prev_rendered": "[[ 3 ]](#cite_note-3)",
+        "prev_hyperlink": "#cite_note-3",
+        "curr_hyperlink": "#cite_note-4",
+        "expected": InlineBoundary.SPACE,
+    },
+    "provenance_join_blocked_by_word_punct": {
+        "prev_text": "hen.",
+        "curr_text": "[[ 3 ]]",
+        "prev_orig": "hen.",
+        "curr_orig": "[[ 3 ]]",
+        "prev_prov": _make_prov(0, 4),
+        "curr_prov": _make_prov(4, 11),
+        "expected": InlineBoundary.SPACE,
+    },
+    "styled_prefix_common_word_space": {
+        "prev_text": "D",
+        "curr_text": "and",
+        "prev_orig": "D",
+        "curr_orig": "and",
+        "prev_formatting": Formatting(bold=True),
+        "prev_prov": _make_prov(0, 1),
+        "curr_prov": _make_prov(3, 6),
+        "expected": InlineBoundary.SPACE,
+    },
+    "provenance_join_blocked_by_emphasis_quote": {
+        "prev_text": "dūce",
+        "curr_text": "'diver'",
+        "prev_rendered": "*dūce*",
+        "prev_formatting": Formatting(italic=True),
+        "prev_orig": "dūce",
+        "curr_orig": "'diver'",
+        "prev_prov": _make_prov(0, 4),
+        "curr_prov": _make_prov(4, 11),
+        "expected": InlineBoundary.SPACE,
+    },
+}
+
+
+@pytest.mark.parametrize("case_id", _INLINE_BOUNDARY_CASES.keys())
+def test_classify_inline_boundary_cases(case_id: str):
+    case = _INLINE_BOUNDARY_CASES[case_id]
+    doc, group = _make_inline_doc()
+    expected = case["expected"]
+
+    if case.get("text_boundary_unknown"):
+        prev_item = _add_inline_text(
+            doc,
+            group,
+            text=case["prev_text"],
+            orig=case.get("prev_orig"),
+            prov=case.get("prev_prov"),
+        )
+        curr_item = _add_inline_text(
+            doc,
+            group,
+            text=case["curr_text"],
+            orig=case.get("curr_orig"),
+            prov=case.get("curr_prov"),
+        )
+        assert _classify_text_boundary(prev_item=prev_item, item=curr_item) == InlineBoundary.UNKNOWN
+
+    assert (
+        _inline_boundary(
+            doc, group, **{k: v for k, v in case.items() if k != "expected" and k != "text_boundary_unknown"}
+        )
+        == expected
+    )
+
+
+def test_classify_inline_boundary_without_items():
+    assert _classify_inline_boundary(prev_text="foo ", prev_item=None, text="bar", item=None) == InlineBoundary.JOIN
+    assert _classify_inline_boundary(prev_text="foo", prev_item=None, text="bar", item=None) == InlineBoundary.SPACE
+
+
+_JOIN_INLINE_CASES: dict[str, dict] = {
+    "provenance_spacing": {
+        "prev_text": "Text:",
+        "curr_text": "00:16.000 ----> 00:18.000",
+        "prev_orig": "Text:\n",
+        "curr_orig": "00:16.000 ----> 00:18.000",
+        "expected": "Text: 00:16.000 ----> 00:18.000",
+    },
+    "punctuation_join": {
+        "prev_text": "hello-",
+        "curr_text": "world",
+        "curr_formatting": Formatting(italic=True),
+        "expected": "hello-world",
+    },
+}
+
+
+@pytest.mark.parametrize("case_id", _JOIN_INLINE_CASES.keys())
+def test_join_inline_parts_spacing_cases(case_id: str):
+    case = _JOIN_INLINE_CASES[case_id]
+    doc, group = _make_inline_doc()
+    expected = case["expected"]
+    join_kwargs = {k: v for k, v in case.items() if k not in {"expected"}}
+    assert _join_inline_pair(doc, group, **join_kwargs) == expected
+
+
+@pytest.mark.parametrize(
+    ("prev_text", "prev_formatting", "prev_hyperlink", "curr_text", "curr_formatting", "curr_hyperlink", "expected"),
+    [
+        ("snippet:", None, None, "bold", Formatting(bold=True), None, InlineBoundary.SPACE),
+        ("D", Formatting(bold=True), None, "ocling", None, None, InlineBoundary.JOIN),
+        ("Pars", None, None, "ing", Formatting(italic=True), None, InlineBoundary.JOIN),
+        ("Foo", None, None, "emphasis", Formatting(italic=True), None, InlineBoundary.SPACE),
+        ("strong emphasis", Formatting(bold=True), None, "tail", None, None, InlineBoundary.SPACE),
+        ("bold", Formatting(bold=True), None, "italic", Formatting(italic=True), None, InlineBoundary.SPACE),
+        ("bold", Formatting(bold=True), None, "&", None, None, InlineBoundary.SPACE),
+        ("hello-", None, None, "world", Formatting(italic=True), None, InlineBoundary.JOIN),
+        ("foo/", None, None, "bar", None, None, InlineBoundary.JOIN),
+        ("word", None, None, ")", None, None, InlineBoundary.JOIN),
+        ("hypotenuse", None, None, "c", Formatting(italic=True), None, InlineBoundary.SPACE),
+        ("plain", None, None, "text", None, None, InlineBoundary.SPACE),
+        ("&", None, None, "word", Formatting(italic=True), None, InlineBoundary.SPACE),
+        ("x", Formatting(script=Script.SUB), None, "+", None, None, InlineBoundary.SPACE),
+        ("foo,", None, None, "b", Formatting(bold=True), None, InlineBoundary.SPACE),
+        ("D", Formatting(bold=True), None, "and", None, None, InlineBoundary.SPACE),
+        ("item)", None, None, "[note", None, None, InlineBoundary.SPACE),
+        ("num", None, None, "&", None, None, InlineBoundary.SPACE),
+        ("'", None, None, "'", None, None, InlineBoundary.JOIN),
+        ("-", None, None, "/", None, None, InlineBoundary.JOIN),
+    ],
+)
+def test_classify_text_boundary(
+    prev_text,
+    prev_formatting,
+    prev_hyperlink,
+    curr_text,
+    curr_formatting,
+    curr_hyperlink,
+    expected,
+):
+    doc, group = _make_inline_doc()
+    prev_item = _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text=prev_text,
+        formatting=prev_formatting,
+        hyperlink=prev_hyperlink,
+    )
+    curr_item = _add_inline_text(
+        doc,
+        group,
+        label=DocItemLabel.TEXT,
+        text=curr_text,
+        formatting=curr_formatting,
+        hyperlink=curr_hyperlink,
+    )
+
+    assert _classify_text_boundary(prev_item=prev_item, item=curr_item) == expected
+
+
+def test_inline_boundary_separates_semantic_atoms_from_text():
+    doc, group = _make_inline_doc()
+    prev_item = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="A hyperlink on")
+    code_item = doc.add_code(text="code in a line", parent=group, hyperlink="#link")
+    formula_item = doc.add_formula(text="E=mc^2", parent=group)
+    next_item = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="(inline)")
+
+    assert (
+        _classify_inline_boundary(
+            prev_text="A hyperlink on",
+            prev_item=prev_item,
+            text="[`code in a line`](#link)",
+            item=code_item,
+        )
+        == InlineBoundary.SPACE
+    )
+    assert (
+        _classify_inline_boundary(
+            prev_text="$E=mc^2$",
+            prev_item=formula_item,
+            text="(inline)",
+            item=next_item,
+        )
+        == InlineBoundary.SPACE
+    )
+
+
+def test_common_inline_helper_flags():
+    doc, group = _make_inline_doc()
+    plain = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="plain")
+    bold = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    linked = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="link", hyperlink="https://example.com")
+    code = doc.add_code(text="print()", parent=group)
+    formula = doc.add_formula(text="E=mc^2", parent=group)
+
+    assert _is_styled_text(plain) is False
+    assert _is_styled_text(bold) is True
+    assert _is_styled_text(linked) is True
+
+    assert _is_semantic_inline_atom(plain) is False
+    assert _is_semantic_inline_atom(linked) is True
+    assert _is_semantic_inline_atom(code) is True
+    assert _is_semantic_inline_atom(formula) is True
+
+
+@pytest.mark.parametrize(
+    ("curr_raw_text", "expected"),
+    [
+        ("ing", InlineBoundary.JOIN),
+        ("emphasis", InlineBoundary.SPACE),
+        ("XYZ", InlineBoundary.SPACE),
+        ("42", InlineBoundary.SPACE),
+    ],
+)
+def test_classify_ambiguous_word_boundary(curr_raw_text, expected):
+    assert _classify_ambiguous_word_boundary(curr_raw_text=curr_raw_text) == expected
+
+
+@pytest.mark.parametrize(
+    ("prev_tail", "curr_head", "prev_text", "text", "expected"),
+    [
+        (".", ")", "", "", True),
+        ("-", "w", "", "", True),
+        ("(", "w", "", "", True),
+        ("w", "/", "", "", True),
+        ("'", "'", "", "", True),
+        ("_", ".", "_", "", True),
+        ("*", ".", "_*", "", True),
+        ("o", "*", "", "*word", False),
+        ("x", "y", "", "", False),
+    ],
+)
+def test_is_markdown_syntax_join(prev_tail, curr_head, prev_text, text, expected):
+    assert (
+        _is_markdown_syntax_join(
+            prev_tail=prev_tail,
+            curr_head=curr_head,
+            prev_text=prev_text,
+            text=text,
+        )
+        == expected
+    )
+
+
+def test_inline_boundary_text_to_code_rendered_fallback():
+    doc, group = _make_inline_doc()
+    prev_item = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="see!")
+    code_item = doc.add_code(text="code", parent=group, hyperlink="#link")
+    assert (
+        _classify_inline_boundary(
+            prev_text="see!",
+            prev_item=prev_item,
+            text="[`code`](#link)",
+            item=code_item,
+        )
+        == InlineBoundary.UNKNOWN
+    )
+
+
+def test_inline_boundary_semantic_to_text_word_join():
+    doc, group = _make_inline_doc()
+    formula_item = doc.add_formula(text="x/y", parent=group)
+    next_item = _add_inline_text(doc, group, label=DocItemLabel.TEXT, text="/more")
+    assert (
+        _classify_inline_boundary(
+            prev_text="$x/y$",
+            prev_item=formula_item,
+            text="/more",
+            item=next_item,
+        )
+        == InlineBoundary.JOIN
+    )
+
+
+def test_inline_boundary_helper_branches():
+    doc, group = _make_inline_doc()
+
+    prev_hen = _add_inline_text(doc, group, text="hen.", orig="hen.")
+    curr_citation = _add_inline_text(doc, group, text="[[ 3 ]]")
+    assert (
+        _should_provenance_join_override_spacing(
+            prev_item=prev_hen,
+            item=curr_citation,
+            prev_text="hen.",
+            text="[[ 3 ]]",
+        )
+        is False
+    )
+
+    prev_emphasis = _add_inline_text(
+        doc,
+        group,
+        text="dūce",
+        formatting=Formatting(italic=True),
+    )
+    curr_gloss = _add_inline_text(doc, group, text="'diver'")
+    assert (
+        _should_provenance_join_override_spacing(
+            prev_item=prev_emphasis,
+            item=curr_gloss,
+            prev_text="*dūce*",
+            text="'diver'",
+        )
+        is False
+    )
+
+    prev_pars = _add_inline_text(doc, group, text="Pars", orig="Pars", prov=_make_prov(0, 4))
+    curr_ing = _add_inline_text(
+        doc,
+        group,
+        text="ing",
+        orig="ing",
+        formatting=Formatting(italic=True),
+        prov=_make_prov(6, 9),
+    )
+    assert _is_ocr_safe_midword_join(prev_item=prev_pars, item=curr_ing) is True
+
+    prev_h = _add_inline_text(doc, group, text="H")
+    curr_sub = _add_inline_text(doc, group, text="2", formatting=Formatting(script=Script.SUB))
+    assert _is_ocr_safe_midword_join(prev_item=prev_h, item=curr_sub) is False
+    assert _is_false_ocr_word_join(prev_item=prev_h, item=curr_sub) is False
+
+    prev_plain = _add_inline_text(doc, group, text="plain")
+    curr_text = _add_inline_text(doc, group, text="text")
+    assert _is_false_ocr_word_join(prev_item=prev_plain, item=curr_text) is True
+
+    prev_lake = _add_inline_text(doc, group, text="lake,")
+    curr_its = _add_inline_text(doc, group, text="it's")
+    assert _is_false_ocr_word_join(prev_item=prev_lake, item=curr_its) is True
+
+    prev_word = _add_inline_text(doc, group, text="foo@")
+    curr_hash = _add_inline_text(doc, group, text="#bar")
+    assert _is_false_ocr_word_join(prev_item=prev_word, item=curr_hash) is False
+
+    prev_bold = _add_inline_text(doc, group, text="bold", formatting=Formatting(bold=True))
+    curr_tail = _add_inline_text(doc, group, text="tails")
+    assert _is_false_ocr_word_join(prev_item=prev_bold, item=curr_tail) is True
+
+    assert (
+        _should_text_boundary_override_provenance(
+            prev_item=prev_word,
+            item=curr_hash,
+            text_boundary=InlineBoundary.SPACE,
+            provenance_boundary=InlineBoundary.JOIN,
+        )
+        is False
+    )
+
+    prev_bold_d = _add_inline_text(doc, group, text="D", formatting=Formatting(bold=True))
+    curr_and = _add_inline_text(doc, group, text="and")
+    assert _is_false_ocr_word_join(prev_item=prev_bold_d, item=curr_and) is True
+
+    prev_bold_d = _add_inline_text(doc, group, text="D", formatting=Formatting(bold=True))
+    curr_x = _add_inline_text(doc, group, text="x", formatting=Formatting(italic=True))
+    assert (
+        _should_text_boundary_override_provenance(
+            prev_item=prev_bold_d,
+            item=curr_x,
+            text_boundary=InlineBoundary.SPACE,
+            provenance_boundary=InlineBoundary.JOIN,
+        )
+        is False
+    )
+
+    prev_bold_phrase = _add_inline_text(
+        doc,
+        group,
+        text="bold (b)",
+        formatting=Formatting(bold=True),
+    )
+    curr_period = _add_inline_text(doc, group, text=".")
+    assert (
+        _should_provenance_join_override_spacing(
+            prev_item=prev_bold_phrase,
+            item=curr_period,
+            prev_text="**bold (b)**",
+            text=".",
+        )
+        is True
+    )
+
+    assert (
+        _should_provenance_join_override_spacing(
+            prev_item=prev_pars,
+            item=curr_ing,
+            prev_text="Pars",
+            text="ing",
+        )
+        is True
+    )
+
+    code_item = doc.add_code(text="code", parent=group)
+    text_item = _add_inline_text(doc, group, text="tail")
+    assert (
+        _should_provenance_join_override_spacing(
+            prev_item=code_item,
+            item=text_item,
+            prev_text="code",
+            text="tail",
+        )
+        is True
+    )
+
+
+def test_classify_character_boundary_empty_inputs():
+    assert _classify_character_boundary(prev_tail="", curr_head="a") == InlineBoundary.UNKNOWN
+    assert _classify_character_boundary(prev_tail="a", curr_head="") == InlineBoundary.UNKNOWN

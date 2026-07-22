@@ -35,6 +35,7 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _get_annotation_text,
+    _join_inline_parts,
     _should_use_legacy_annotations,
     create_ser_result,
 )
@@ -892,7 +893,7 @@ class HTMLInlineSerializer(BaseInlineSerializer):
         )
 
         # Join all parts without separators
-        inline_html = " ".join([p.text for p in parts if p.text])
+        inline_html = _join_inline_parts(parts)
 
         # Wrap in span if needed
         if inline_html:
