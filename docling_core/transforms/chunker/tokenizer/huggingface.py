@@ -10,10 +10,19 @@ from typing_extensions import Self
 
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 
+_TRANSFORMERS_AVAILABLE: bool = False
+_TRANSFORMERS_IMPORT_ERROR: ImportError | None = None
 try:
     from transformers import AutoTokenizer, PreTrainedTokenizerBase
-except ImportError:
-    raise RuntimeError("Module requires 'chunking' extra; to install, run: `pip install 'docling-core[chunking]'`")
+
+    _TRANSFORMERS_AVAILABLE = True
+except ImportError as e:
+    _TRANSFORMERS_IMPORT_ERROR = e
+
+_INSTALL_HINT = (
+    "The 'transformers' package is required by HuggingFaceTokenizer. "
+    "Install it with `pip install 'docling-core[chunking]'`."
+)
 
 
 class HuggingFaceTokenizer(BaseTokenizer):
@@ -21,8 +30,15 @@ class HuggingFaceTokenizer(BaseTokenizer):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tokenizer: PreTrainedTokenizerBase
+    tokenizer: "PreTrainedTokenizerBase"
     max_tokens: int = None  # type: ignore[assignment]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _check_deps(cls, data: Any) -> Any:
+        if not _TRANSFORMERS_AVAILABLE:
+            raise ImportError(_INSTALL_HINT) from _TRANSFORMERS_IMPORT_ERROR
+        return data
 
     @model_validator(mode="after")
     def _patch(self) -> Self:
@@ -58,6 +74,8 @@ class HuggingFaceTokenizer(BaseTokenizer):
         **kwargs,
     ) -> Self:
         """Create tokenizer from model name."""
+        if not _TRANSFORMERS_AVAILABLE:
+            raise ImportError(_INSTALL_HINT) from _TRANSFORMERS_IMPORT_ERROR
         my_kwargs: dict[str, Any] = {
             "tokenizer": AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name, **kwargs),
         }
@@ -70,6 +88,6 @@ class HuggingFaceTokenizer(BaseTokenizer):
         return self.tokenizer
 
 
-def get_default_tokenizer():
+def get_default_tokenizer() -> HuggingFaceTokenizer:
     """Get default tokenizer instance."""
     return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")

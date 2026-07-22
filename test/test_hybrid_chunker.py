@@ -6,6 +6,7 @@ import pytest
 import tiktoken
 from transformers import AutoTokenizer
 
+import docling_core.transforms.chunker.hybrid_chunker as _hybrid_mod
 from docling_core.transforms.chunker.base import BaseChunker
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
@@ -19,7 +20,7 @@ from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument
-from docling_core.types.doc.document import TableCell, TableData
+from docling_core.types.doc.items.table.table_data import TableCell, TableData
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -742,3 +743,45 @@ def test_html_parser_error_handling(dl_doc_0):
     for chunk in chunks:
         assert isinstance(chunk.text, str), "Chunk text should be a string"
         assert chunk.meta is not None, "Chunk should have metadata"
+
+
+@pytest.mark.parametrize(
+    "tokenizer",
+    [
+        pytest.param(
+            lambda: HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+            id="huggingface",
+        ),
+        pytest.param(
+            lambda: OpenAITokenizer(tokenizer=tiktoken.get_encoding("cl100k_base"), max_tokens=MAX_TOKENS),
+            id="openai",
+        ),
+    ],
+)
+def test_chunk_with_tokenizer_backends(sample_doc, tokenizer):
+    """HybridChunker produces chunks with both supported tokenizer backends."""
+    chunker = HybridChunker(tokenizer=tokenizer())
+    chunks = list(chunker.chunk(dl_doc=sample_doc))
+    assert len(chunks) >= 1
+    assert all(isinstance(c.text, str) for c in chunks)
+
+
+def test_chunk_raises_on_missing_semchunk(monkeypatch):
+    """HybridChunker raises ImportError when semchunk is not installed.
+
+    Regression test for lazy-loading: the error must be raised at chunk time,
+    not at import time, so users of chunking-openai or chunking-hf without the
+    other extra can still import the module safely.
+    """
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        dl_doc = DoclingDocument.model_validate_json(f.read())
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+    )
+
+    monkeypatch.setattr(_hybrid_mod, "_SEMCHUNK_AVAILABLE", False)
+    monkeypatch.setattr(_hybrid_mod, "_SEMCHUNK_IMPORT_ERROR", ImportError("semchunk not installed"))
+
+    with pytest.raises(ImportError, match="semchunk"):
+        list(chunker.chunk(dl_doc=dl_doc))
