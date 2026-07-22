@@ -140,6 +140,7 @@ source = { editable = "." }
 dependencies = [
     { name = "doclang" },
     { name = "docling-core" },
+    { name = "typer" },
 ]
 
 [package.dev-dependencies]
@@ -154,6 +155,7 @@ dev = [
 requires-dist = [
     { name = "doclang", editable = "../doclang" },
     { name = "docling-core", editable = "../docling-core" },
+    { name = "typer", specifier = ">=0.15.1,<0.25.0" },
 ]
 
 [package.metadata.requires-dev]

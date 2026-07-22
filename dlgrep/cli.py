@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import re
@@ -10,8 +9,11 @@ import sys
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from types import SimpleNamespace
+from typing import Annotated, Any, Literal
 
+import click
+import typer
 from docling_core.transforms.deserializer import DocLangSourceTarget
 from docling_core.types.doc import (
     SectionHeaderItem,
@@ -23,7 +25,6 @@ from lxml import etree
 from dlgrep import __version__
 from dlgrep.document import DlgrepError, LoadedDocument, Unit, _canonical_xpath, _is_element
 
-COMMANDS = {"inspect", "outline", "select", "show"}
 DEFAULT_LIMIT = 20
 DEFAULT_MAX_CHARS = 2_000
 DEFAULT_MAX_OUTPUT_CHARS = 20_000
@@ -31,124 +32,256 @@ HARD_LIMIT = 10_000
 HARD_MAX_CHARS = 1_000_000
 HARD_MAX_OUTPUT_CHARS = 10_000_000
 
+OutputFormat = Literal["text", "json", "jsonl"]
+ContextScope = Literal["auto", "container", "section", "page", "document"]
 
-class ContextAction(argparse.Action):
-    """Record context flags in command-line order."""
 
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: Any,
-        option_string: str | None = None,
-    ) -> None:
-        events = list(getattr(namespace, self.dest, []) or [])
-        events.append((option_string or "", int(values)))
-        setattr(namespace, self.dest, events)
+class _DefaultCommandGroup(typer.core.TyperGroup):
+    """Route bare grep arguments to the search command."""
+
+    default_command = "search"
+
+    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        if args and args[0] not in self.commands and args[0] not in {"--help", "-h"}:
+            args = [self.default_command, *args]
+        return super().parse_args(ctx, args)
+
+
+app = typer.Typer(
+    name="dlgrep",
+    cls=_DefaultCommandGroup,
+    no_args_is_help=True,
+    add_completion=False,
+    pretty_exceptions_enable=False,
+    context_settings={"help_option_names": ["-h", "--help"]},
+    help="Search semantic units in DocLang documents and return XPath addresses.",
+)
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+def _record_context(ctx: typer.Context, param: click.Parameter, value: int | None) -> int | None:
+    """Record context flags in command-line order, matching grep semantics."""
+    if value is not None and isinstance(param, click.Option):
+        ctx.meta.setdefault("context_events", []).append((param.opts[0], value))
+    return value
+
+
+def _exit(code: int) -> None:
+    if code:
+        raise typer.Exit(code)
+
+
+@app.command()
+def search(
+    ctx: typer.Context,
+    arguments: Annotated[
+        list[str],
+        typer.Argument(..., metavar="PATTERN/INPUT", help="Pattern followed by one or more DocLang inputs."),
+    ],
+    regexp: Annotated[list[str] | None, typer.Option("-e", "--regexp", help="Add a search pattern.")] = None,
+    pattern_files: Annotated[list[str] | None, typer.Option("-f", "--file", help="Read patterns from a file.")] = None,
+    fixed_strings: Annotated[bool, typer.Option("-F", "--fixed-strings", help="Match literal strings.")] = False,
+    ignore_case: Annotated[bool, typer.Option("-i", "--ignore-case", help="Ignore case distinctions.")] = False,
+    word_regexp: Annotated[bool, typer.Option("-w", "--word-regexp", help="Match whole words.")] = False,
+    after_context: Annotated[
+        int | None,
+        typer.Option("-A", "--after-context", min=0, callback=_record_context, help="Show semantic units after a hit."),
+    ] = None,
+    before_context: Annotated[
+        int | None,
+        typer.Option(
+            "-B", "--before-context", min=0, callback=_record_context, help="Show semantic units before a hit."
+        ),
+    ] = None,
+    context: Annotated[
+        int | None,
+        typer.Option("-C", "--context", min=0, callback=_record_context, help="Show semantic units around a hit."),
+    ] = None,
+    context_scope: Annotated[ContextScope, typer.Option(help="Boundary used for semantic context.")] = "document",
+    no_ancestors: Annotated[bool, typer.Option("--no-ancestors", help="Omit heading ancestors from results.")] = False,
+    types: Annotated[list[str] | None, typer.Option("--type", help="Filter semantic unit types.")] = None,
+    class_name: Annotated[str | None, typer.Option("--class", help="Filter Docling item classes.")] = None,
+    layer: Annotated[
+        Literal["body", "furniture", "background", "all"], typer.Option(help="Filter content layers.")
+    ] = "body",
+    page: Annotated[str | None, typer.Option(help="Filter pages, for example 1,3-5.")] = None,
+    within_xpath: Annotated[str | None, typer.Option(help="Search only within an XPath selection.")] = None,
+    section: Annotated[
+        bool, typer.Option("--section", help="Treat --within-xpath headings as section boundaries.")
+    ] = False,
+    view: Annotated[Literal["visible", "metadata", "all"], typer.Option(help="Text projection to search.")] = "visible",
+    offset: Annotated[int, typer.Option(min=0, help="Skip this many matches.")] = 0,
+    limit: Annotated[int | None, typer.Option(min=0, max=HARD_LIMIT, help="Maximum matches to return.")] = None,
+    max_chars: Annotated[int | None, typer.Option(min=0, help="Maximum characters per result.")] = None,
+    max_output_chars: Annotated[int | None, typer.Option(min=0, help="Maximum characters across results.")] = None,
+    all_results: Annotated[bool, typer.Option("--all", help="Use hard limits instead of default limits.")] = False,
+    quiet: Annotated[bool, typer.Option("-q", "--quiet", help="Return only the grep exit status.")] = False,
+    count: Annotated[bool, typer.Option("-c", "--count", help="Print match counts.")] = False,
+    files_with_matches: Annotated[
+        bool, typer.Option("-l", "--files-with-matches", help="Print names of matching inputs.")
+    ] = False,
+    output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
+    validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before searching.")] = False,
+    _version: Annotated[
+        bool,
+        typer.Option("--version", callback=_version_callback, is_eager=True, help="Show the version and exit."),
+    ] = False,
+) -> None:
+    """Search DocLang semantic units; the command name may be omitted."""
+    _exit(
+        _search(
+            SimpleNamespace(
+                arguments=arguments,
+                regexp=regexp or [],
+                file=pattern_files or [],
+                fixed_strings=fixed_strings,
+                ignore_case=ignore_case,
+                word_regexp=word_regexp,
+                context_events=ctx.meta.get("context_events", []),
+                context_scope=context_scope,
+                no_ancestors=no_ancestors,
+                types=types or [],
+                class_name=class_name,
+                layer=layer,
+                page=page,
+                within_xpath=within_xpath,
+                section=section,
+                view=view,
+                offset=offset,
+                limit=limit,
+                max_chars=max_chars,
+                max_output_chars=max_output_chars,
+                all_results=all_results,
+                quiet=quiet,
+                count=count,
+                files_with_matches=files_with_matches,
+                format=output_format,
+                validate=validate,
+            )
+        )
+    )
+
+
+@app.command("inspect", no_args_is_help=True)
+def inspect_command(
+    inputs: Annotated[list[str], typer.Argument(..., metavar="INPUT", help="DocLang inputs to inspect.")],
+    output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
+    validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before inspecting.")] = False,
+) -> None:
+    """Inspect raw and semantic document structure."""
+    _exit(_inspect(SimpleNamespace(inputs=inputs, format=output_format, validate=validate)))
+
+
+@app.command("outline", no_args_is_help=True)
+def outline_command(
+    input_: Annotated[str, typer.Argument(..., metavar="INPUT", help="DocLang input.")],
+    depth: Annotated[int | None, typer.Option(min=0, help="Maximum heading depth.")] = None,
+    output_format: Annotated[Literal["text", "json"], typer.Option("--format", help="Output format.")] = "text",
+    validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before outlining.")] = False,
+) -> None:
+    """Print the semantic heading outline with XPath addresses."""
+    _exit(_outline(SimpleNamespace(input=input_, depth=depth, format=output_format, validate=validate)))
+
+
+@app.command("select", no_args_is_help=True)
+def select_command(
+    input_: Annotated[str, typer.Argument(..., metavar="INPUT", help="DocLang input.")],
+    xpath: Annotated[str, typer.Argument(..., metavar="XPATH", help="XPath expression.")],
+    semantic: Annotated[bool, typer.Option("--semantic", help="Include semantic source bindings.")] = False,
+    limit: Annotated[int | None, typer.Option(min=0, max=HARD_LIMIT, help="Maximum results to return.")] = None,
+    max_chars: Annotated[int | None, typer.Option(min=0, help="Maximum characters per result.")] = None,
+    all_results: Annotated[bool, typer.Option("--all", help="Use hard limits instead of default limits.")] = False,
+    output_format: Annotated[
+        Literal["xml", "text", "json", "jsonl"], typer.Option("--format", help="Output format.")
+    ] = "xml",
+    validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before selecting.")] = False,
+) -> None:
+    """Evaluate an XPath expression against the original DocLang XML."""
+    _exit(
+        _select(
+            SimpleNamespace(
+                input=input_,
+                xpath=xpath,
+                semantic=semantic,
+                limit=limit,
+                max_chars=max_chars,
+                all_results=all_results,
+                format=output_format,
+                validate=validate,
+            )
+        )
+    )
+
+
+@app.command("show", no_args_is_help=True)
+def show_command(
+    ctx: typer.Context,
+    input_: Annotated[str, typer.Argument(..., metavar="INPUT", help="DocLang input.")],
+    xpath: Annotated[str, typer.Argument(..., metavar="XPATH", help="XPath selecting elements.")],
+    raw: Annotated[bool, typer.Option("--raw", help="Return the original XML.")] = False,
+    section: Annotated[bool, typer.Option("--section", help="Return the selected heading section.")] = False,
+    after_context: Annotated[
+        int | None,
+        typer.Option("-A", "--after-context", min=0, callback=_record_context, help="Show semantic units after it."),
+    ] = None,
+    before_context: Annotated[
+        int | None,
+        typer.Option("-B", "--before-context", min=0, callback=_record_context, help="Show semantic units before it."),
+    ] = None,
+    context: Annotated[
+        int | None,
+        typer.Option("-C", "--context", min=0, callback=_record_context, help="Show semantic units around it."),
+    ] = None,
+    context_scope: Annotated[ContextScope, typer.Option(help="Boundary used for semantic context.")] = "document",
+    no_ancestors: Annotated[bool, typer.Option("--no-ancestors", help="Omit heading ancestors from results.")] = False,
+    max_chars: Annotated[int, typer.Option(min=0, help="Maximum characters per result.")] = DEFAULT_MAX_CHARS,
+    output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
+    validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before retrieval.")] = False,
+) -> None:
+    """Retrieve semantic content at one or more XPath addresses."""
+    _exit(
+        _show(
+            SimpleNamespace(
+                input=input_,
+                xpath=xpath,
+                raw=raw,
+                section=section,
+                context_events=ctx.meta.get("context_events", []),
+                context_scope=context_scope,
+                no_ancestors=no_ancestors,
+                max_chars=max_chars,
+                format=output_format,
+                validate=validate,
+            )
+        )
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run dlgrep and return its grep-compatible exit status."""
-    arguments = list(sys.argv[1:] if argv is None else argv)
-    if arguments == ["--version"]:
-        print(__version__)
-        return 0
     try:
-        if arguments and arguments[0] in COMMANDS:
-            command = arguments.pop(0)
-            return {
-                "inspect": _inspect,
-                "outline": _outline,
-                "select": _select,
-                "show": _show,
-            }[command](_command_parser(command).parse_args(arguments))
-        return _search(_search_parser().parse_args(arguments))
+        result = typer.main.get_command(app).main(
+            args=list(argv) if argv is not None else None,
+            prog_name="dlgrep",
+            standalone_mode=False,
+        )
+        return result if isinstance(result, int) else 0
     except DlgrepError as exc:
         print(f"dlgrep: {exc}", file=sys.stderr)
         return 2
+    except click.exceptions.Exit as exc:
+        return exc.exit_code
+    except click.ClickException as exc:
+        exc.show(file=sys.stderr)
+        return exc.exit_code
 
 
-def _search_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="dlgrep",
-        description="Search semantic units in DocLang documents and return XPath addresses.",
-        epilog="Subcommands: inspect, outline, select, show",
-        allow_abbrev=False,
-    )
-    parser.add_argument("-e", "--regexp", action="append", default=[], help="add a search pattern")
-    parser.add_argument("-f", "--file", action="append", default=[], help="read patterns from a file")
-    parser.add_argument("-F", "--fixed-strings", action="store_true")
-    parser.add_argument("-i", "--ignore-case", action="store_true")
-    parser.add_argument("-w", "--word-regexp", action="store_true")
-    _add_context_arguments(parser)
-    parser.add_argument("--type", dest="types", action="append", default=[])
-    parser.add_argument("--class", dest="class_name")
-    parser.add_argument("--layer", choices=["body", "furniture", "background", "all"], default="body")
-    parser.add_argument("--page")
-    parser.add_argument("--within-xpath")
-    parser.add_argument("--section", action="store_true")
-    parser.add_argument("--view", choices=["visible", "metadata", "all"], default="visible")
-    parser.add_argument("--offset", type=int, default=0)
-    parser.add_argument("--limit", type=int)
-    parser.add_argument("--max-chars", type=int)
-    parser.add_argument("--max-output-chars", type=int)
-    parser.add_argument("--all", dest="all_results", action="store_true")
-    summaries = parser.add_mutually_exclusive_group()
-    summaries.add_argument("-q", "--quiet", action="store_true")
-    summaries.add_argument("-c", "--count", action="store_true")
-    summaries.add_argument("-l", "--files-with-matches", action="store_true")
-    parser.add_argument("--format", choices=["text", "json", "jsonl"], default="text")
-    parser.add_argument("--validate", action="store_true")
-    parser.add_argument("arguments", nargs="+", metavar="PATTERN/INPUT")
-    return parser
-
-
-def _command_parser(command: str) -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog=f"dlgrep {command}", allow_abbrev=False)
-    if command == "inspect":
-        parser.add_argument("inputs", nargs="+")
-        parser.add_argument("--format", choices=["text", "json", "jsonl"], default="text")
-        parser.add_argument("--validate", action="store_true")
-    elif command == "outline":
-        parser.add_argument("input")
-        parser.add_argument("--depth", type=int)
-        parser.add_argument("--format", choices=["text", "json"], default="text")
-        parser.add_argument("--validate", action="store_true")
-    elif command == "select":
-        parser.add_argument("input")
-        parser.add_argument("xpath")
-        parser.add_argument("--semantic", action="store_true")
-        parser.add_argument("--limit", type=int)
-        parser.add_argument("--max-chars", type=int)
-        parser.add_argument("--all", dest="all_results", action="store_true")
-        parser.add_argument("--format", choices=["xml", "text", "json", "jsonl"], default="xml")
-        parser.add_argument("--validate", action="store_true")
-    elif command == "show":
-        parser.add_argument("input")
-        parser.add_argument("xpath")
-        parser.add_argument("--raw", action="store_true")
-        parser.add_argument("--section", action="store_true")
-        _add_context_arguments(parser)
-        parser.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
-        parser.add_argument("--format", choices=["text", "json", "jsonl"], default="text")
-        parser.add_argument("--validate", action="store_true")
-    return parser
-
-
-def _add_context_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.set_defaults(context_events=[])
-    parser.add_argument("-A", "--after-context", dest="context_events", action=ContextAction, type=int)
-    parser.add_argument("-B", "--before-context", dest="context_events", action=ContextAction, type=int)
-    parser.add_argument("-C", "--context", dest="context_events", action=ContextAction, type=int)
-    parser.add_argument(
-        "--context-scope",
-        choices=["auto", "container", "section", "page", "document"],
-        default="document",
-    )
-    parser.add_argument("--no-ancestors", action="store_true")
-
-
-def _search(args: argparse.Namespace) -> int:
+def _search(args: SimpleNamespace) -> int:
     patterns, inputs, stdin_bytes = _patterns_and_inputs(args)
     regexes = _compile_patterns(patterns, fixed=args.fixed_strings, ignore_case=args.ignore_case, word=args.word_regexp)
     before, after = _context_counts(args.context_events)
@@ -215,7 +348,7 @@ def _search(args: argparse.Namespace) -> int:
     return 2 if errors else (0 if any_match else 1)
 
 
-def _inspect(args: argparse.Namespace) -> int:
+def _inspect(args: SimpleNamespace) -> int:
     if args.inputs.count("-") > 1:
         raise DlgrepError("standard input may be used only once")
     stdin_bytes = sys.stdin.buffer.read() if "-" in args.inputs else None
@@ -246,7 +379,7 @@ def _inspect(args: argparse.Namespace) -> int:
     return 0
 
 
-def _outline(args: argparse.Namespace) -> int:
+def _outline(args: SimpleNamespace) -> int:
     loaded = _load_command_input(args.input, validate=args.validate)
     records: list[dict[str, Any]] = []
     for item, _ in loaded.document.iterate_items(with_groups=True):
@@ -271,7 +404,7 @@ def _outline(args: argparse.Namespace) -> int:
     return 0
 
 
-def _select(args: argparse.Namespace) -> int:
+def _select(args: SimpleNamespace) -> int:
     if (args.limit is not None and args.limit < 0) or (args.max_chars is not None and args.max_chars < 0):
         raise DlgrepError("limits must be non-negative")
     if args.limit is not None and args.limit > HARD_LIMIT:
@@ -340,7 +473,7 @@ def _select(args: argparse.Namespace) -> int:
     return 0
 
 
-def _show(args: argparse.Namespace) -> int:
+def _show(args: SimpleNamespace) -> int:
     if args.max_chars < 0:
         raise DlgrepError("--max-chars must be non-negative")
     loaded = _load_command_input(args.input, validate=args.validate)
@@ -414,7 +547,7 @@ def _show(args: argparse.Namespace) -> int:
     return 0
 
 
-def _patterns_and_inputs(args: argparse.Namespace) -> tuple[list[str], list[str], bytes | None]:
+def _patterns_and_inputs(args: SimpleNamespace) -> tuple[list[str], list[str], bytes | None]:
     stdin_bytes: bytes | None = None
     patterns = list(args.regexp)
     if args.regexp or args.file:
@@ -474,7 +607,7 @@ def _matches(text: str, regexes: Iterable[re.Pattern[str]]) -> list[dict[str, An
 
 def _filtered_units(
     loaded: LoadedDocument,
-    args: argparse.Namespace,
+    args: SimpleNamespace,
     requested_types: set[str],
     pages: set[int] | None,
 ) -> tuple[list[Unit], list[Unit]]:
@@ -595,7 +728,7 @@ def _context_counts(events: Iterable[tuple[str, int]]) -> tuple[int, int]:
     return before, after
 
 
-def _validate_search_options(args: argparse.Namespace, before: int, after: int) -> None:
+def _validate_search_options(args: SimpleNamespace, before: int, after: int) -> None:
     for name, value in {
         "--offset": args.offset,
         "--limit": args.limit,
@@ -606,6 +739,8 @@ def _validate_search_options(args: argparse.Namespace, before: int, after: int) 
             raise DlgrepError(f"{name} must be non-negative")
     if args.limit is not None and args.limit > HARD_LIMIT:
         raise DlgrepError(f"--limit cannot exceed {HARD_LIMIT}")
+    if sum((args.count, args.files_with_matches, args.quiet)) > 1:
+        raise DlgrepError("choose only one of --count, --files-with-matches, or --quiet")
     if (args.count or args.files_with_matches or args.quiet) and (
         before
         or after

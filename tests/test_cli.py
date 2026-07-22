@@ -31,7 +31,7 @@ def _document(tmp_path: Path) -> Path:
 def test_search_returns_source_identity_and_structural_context(tmp_path: Path, capsys) -> None:
     path = _document(tmp_path)
 
-    assert main(["48\\.2", str(path), "-C", "1", "--format", "json"]) == 0
+    assert main(["48\\.2", str(path), "-C", "1", "-A", "0", "--format", "json"]) == 0
     result = json.loads(capsys.readouterr().out)[0]
 
     assert result["xpath"] == "/d:doclang/d:table[1]/d:fcel[1]"
@@ -39,6 +39,7 @@ def test_search_returns_source_identity_and_structural_context(tmp_path: Path, c
     assert result["context"]["row_headers"] == ["Margin"]
     assert result["context"]["column_headers"] == ["Value"]
     assert result["context"]["before"][0]["xpath"].endswith("/d:rhed[1]")
+    assert result["context"]["after"] == []
 
     assert main(["beta", str(path), "--format", "json"]) == 0
     threaded = json.loads(capsys.readouterr().out)[0]
@@ -92,3 +93,18 @@ def test_archive_input_and_grep_exit_codes(tmp_path: Path, capsys) -> None:
     )
     assert main(["prefixed", str(prefixed), "--format", "json"]) == 0
     assert json.loads(capsys.readouterr().out)[0]["xpath"] == "/d:doclang/d:text[1]"
+
+
+def test_typer_help_version_and_validation(tmp_path: Path, capsys) -> None:
+    path = _document(tmp_path)
+
+    assert main(["--help"]) == 0
+    help_text = capsys.readouterr().out
+    assert "inspect" in help_text
+    assert "search" in help_text
+
+    assert main(["--version"]) == 0
+    assert capsys.readouterr().out.strip() == "0.0.0"
+
+    assert main(["Report", str(path), "--format", "yaml"]) == 2
+    assert "Invalid value" in capsys.readouterr().err
