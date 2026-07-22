@@ -1,0 +1,107 @@
+[project]
+name = "dlgrep"
+version = "0.0.0"  # DO NOT EDIT, updated automatically
+description = "Semantic grep for DocLang documents"
+license = "MIT"
+license-files = ["LICENSE"]
+readme = "README.md"
+authors = [
+    {name="Christoph Auer", email="cau@zurich.ibm.com"},
+]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "doclang>=0.7,<0.8",
+    "docling-core>=2.87.1",
+]
+
+[project.scripts]
+dlgrep = "dlgrep.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy~=2.1.0",
+    "pre-commit~=4.6.0",
+    "pytest~=9.0.3",
+    "ruff>=0.9.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]
+doclang = { path = "../doclang", editable = true }
+docling-core = { path = "../docling-core", editable = true }
+
+[tool.hatch.build.targets.sdist]
+include = ["dlgrep"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+respect-gitignore = true
+
+[tool.ruff.format]
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+select = [
+  "C",     # flake8-comprehensions
+  "C9",    # mccabe
+  "E",     # pycodestyle errors (default)
+  "F",     # pyflakes (default)
+  "I",     # isort
+  "PIE",   # pie
+  "Q",     # flake8-quotes
+  "RUF",   # Enable all ruff-specific checks
+  "S307",  # eval
+  "W",     # pycodestyle warnings
+  "ASYNC", # async
+  "UP",    # pyupgrade
+]
+
+ignore = [
+  "C408",   # Unnecessary `dict()` call (rewrite as a literal)
+  "E501",   # Line too long, handled by ruff formatter
+  "E741",   # Ambiguous variable name: `l`
+  "D107",   # "Missing docstring in __init__",
+  "PL",     # Pylint
+  "RUF005", # Consider ... instead of concatenation
+  "RUF012", # Mutable Class Attributes
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 30
+
+[tool.ruff.lint.isort]
+combine-as-imports = false
+
+[tool.mypy]
+pretty = true
+no_implicit_optional = true
+namespace_packages = true
+show_error_codes = true
+python_version = "3.10"
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["doclang.*", "docling_core.*", "lxml.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "8.2"
+testpaths = ["tests"]
+addopts = "-rA --color=yes --tb=short --maxfail=5"
