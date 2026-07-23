@@ -25,6 +25,7 @@ class DocumentOrigin(BaseModel):
     )
 
     _extra_mimetypes: typing.ClassVar[list[str]] = [
+        "application/epub+zip",
         "application/vnd.box.boxnote",
         "application/vnd.oasis.opendocument.presentation",
         "application/vnd.oasis.opendocument.spreadsheet",
