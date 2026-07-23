@@ -153,7 +153,8 @@ class MarkdownParams(CommonParams):
     enable_chart_tables: bool = True
     indent: int = 4
     wrap_width: Optional[PositiveInt] = None
-    page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
+    # e.g. "<!-- page break -->"; supports {page_no}, {prev_page}, and {next_page}.
+    page_break_placeholder: Optional[str] = None
     escape_underscores: bool = True
     escape_html: bool = True
     mark_meta: bool = Field(default=False, description="Mark meta sections.")
@@ -945,10 +946,30 @@ class MarkdownDocSerializer(DocSerializer):
         text_res = "\n\n".join([p.text for p in parts if p.text])
         if self.requires_page_break():
             page_sep = self.params.page_break_placeholder or ""
-            for full_match, _, _ in self._get_page_breaks(text=text_res):
-                text_res = text_res.replace(full_match, page_sep)
+            for full_match, prev_page, next_page in self._get_page_breaks(text=text_res):
+                text_res = text_res.replace(
+                    full_match,
+                    self._format_page_break_placeholder(
+                        page_sep,
+                        prev_page=prev_page,
+                        next_page=next_page,
+                    ),
+                )
 
         return create_ser_result(text=text_res, span_source=parts)
+
+    @staticmethod
+    def _format_page_break_placeholder(
+        placeholder: str,
+        *,
+        prev_page: int,
+        next_page: int,
+    ) -> str:
+        return (
+            placeholder.replace("{page_no}", str(next_page))
+            .replace("{prev_page}", str(prev_page))
+            .replace("{next_page}", str(next_page))
+        )
 
     @override
     def requires_page_break(self) -> bool:
