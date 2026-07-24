@@ -14,7 +14,14 @@ from typing import Annotated, Any, Literal
 
 import click
 import typer
+from docling_core.experimental.serializer.outline import (
+    OutlineDocSerializer,
+    OutlineFormat,
+    OutlineMode,
+    OutlineParams,
+)
 from docling_core.transforms.deserializer import DocLangSourceTarget
+from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.types.doc import (
     SectionHeaderItem,
     TableItem,
@@ -125,6 +132,7 @@ def search(
     files_with_matches: Annotated[
         bool, typer.Option("-l", "--files-with-matches", help="Print names of matching inputs.")
     ] = False,
+    with_xpath: Annotated[bool, typer.Option("--with-xpath", help="Include XPath labels in text output.")] = False,
     output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
     validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before searching.")] = False,
     _version: Annotated[
@@ -160,6 +168,7 @@ def search(
                 quiet=quiet,
                 count=count,
                 files_with_matches=files_with_matches,
+                with_xpath=with_xpath,
                 format=output_format,
                 validate=validate,
             )
@@ -240,6 +249,7 @@ def show_command(
     context_scope: Annotated[ContextScope, typer.Option(help="Boundary used for semantic context.")] = "document",
     no_ancestors: Annotated[bool, typer.Option("--no-ancestors", help="Omit heading ancestors from results.")] = False,
     max_chars: Annotated[int, typer.Option(min=0, help="Maximum characters per result.")] = DEFAULT_MAX_CHARS,
+    with_xpath: Annotated[bool, typer.Option("--with-xpath", help="Include XPath labels in text output.")] = False,
     output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
     validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before retrieval.")] = False,
 ) -> None:
@@ -255,6 +265,7 @@ def show_command(
                 context_scope=context_scope,
                 no_ancestors=no_ancestors,
                 max_chars=max_chars,
+                with_xpath=with_xpath,
                 format=output_format,
                 validate=validate,
             )
@@ -344,7 +355,7 @@ def _search(args: SimpleNamespace) -> int:
         else (HARD_MAX_OUTPUT_CHARS if args.all_results else DEFAULT_MAX_OUTPUT_CHARS)
     )
     _bound_record_text(records, max_output)
-    _render_records(records, args.format)
+    _render_records(records, args.format, with_xpath=args.with_xpath)
     return 2 if errors else (0 if any_match else 1)
 
 
@@ -370,19 +381,29 @@ def _inspect(args: SimpleNamespace) -> int:
             if index:
                 print("--")
             print(record["document"])
-            print(f"SHA-256: {record['sha256']}")
             print(f"Type: {record['input_type']}")
             print(f"Pages: {record['pages']}")
-            print(f"Headings: {sum(record['headings_by_level'].values())}")
-            print(f"Source bindings: {record['source_map']['bound_xpaths']}")
-            print("Elements: " + ", ".join(f"{key}={value}" for key, value in record["source_counts"].items()))
+            print(f"Semantic units: {record['semantic_units']}")
+            print("Elements: " + ", ".join(f"{key}={value}" for key, value in record["elements"].items()))
+            if record["metadata"]:
+                print("Metadata: " + ", ".join(f"{key}={value}" for key, value in record["metadata"].items()))
     return 0
 
 
 def _outline(args: SimpleNamespace) -> int:
     loaded = _load_command_input(args.input, validate=args.validate)
+    serialized = OutlineDocSerializer(
+        doc=loaded.document,
+        params=OutlineParams(
+            include_non_meta=True,
+            mode=OutlineMode.TABLE_OF_CONTENTS,
+            format=OutlineFormat.JSON,
+        ),
+    ).serialize()
+    items_by_ref = {item.self_ref: item for item, _ in loaded.document.iterate_items(with_groups=True)}
     records: list[dict[str, Any]] = []
-    for item, _ in loaded.document.iterate_items(with_groups=True):
+    for outline_item in json.loads(serialized.text):
+        item = items_by_ref.get(outline_item["ref"])
         if not isinstance(item, (TitleItem, SectionHeaderItem)):
             continue
         heading_depth = len(_heading_ancestors(item, loaded)) + 1
@@ -391,7 +412,14 @@ def _outline(args: SimpleNamespace) -> int:
         target = DocLangSourceTarget(kind="item", item_ref=item.self_ref)
         xpaths = loaded.source_map.xpaths_by_target.get(target, [])
         if xpaths:
-            records.append({"xpath": xpaths[0], "xpaths": xpaths, "depth": heading_depth, "text": item.text})
+            records.append(
+                {
+                    "xpath": xpaths[0],
+                    "xpaths": xpaths,
+                    "depth": heading_depth,
+                    "text": outline_item["title"],
+                }
+            )
     if args.format == "json":
         print(
             json.dumps(
@@ -454,7 +482,8 @@ def _select(args: SimpleNamespace) -> int:
                 if not isinstance(selected_xpath, str):
                     raise DlgrepError("invalid internal XPath result")
                 element = loaded.raw_elements[selected_xpath]
-                print("".join(element.itertext()))
+                text = etree.tostring(element, method="text", encoding="unicode", with_tail=False)
+                print(_truncate(text, max_chars)[0])
             else:
                 print(record["value"])
     elif args.format == "jsonl":
@@ -520,15 +549,18 @@ def _show(args: SimpleNamespace) -> int:
             continue
         text = unit.text
         logical_type = unit.logical_type
+        doc_items: tuple[str, ...] | None = None
         if args.section:
             item = loaded.target_item(target)
             if not isinstance(item, (TitleItem, SectionHeaderItem)):
                 raise DlgrepError("--section requires a heading XPath")
-            text = "\n\n".join(
-                candidate.text
-                for candidate in loaded.context_units
-                if loaded.is_descendant(candidate.item_ref, item.self_ref)
+            serializer = PlainTextDocSerializer(
+                doc=loaded.document,
+                params=PlainTextParams(allowed_meta_names=set(), include_annotations=False),
             )
+            serialized = serializer.serialize_doc(parts=serializer.get_parts(item=item))
+            text = serialized.text
+            doc_items = tuple(dict.fromkeys(span.item.self_ref for span in serialized.spans))
             logical_type = "section"
         before, after = loaded.context_for(unit, before_count, after_count, args.context_scope, loaded.context_units)
         record = _result_record(
@@ -540,10 +572,11 @@ def _show(args: SimpleNamespace) -> int:
             after,
             max_chars=args.max_chars,
             ancestors=not args.no_ancestors,
+            doc_items=doc_items,
         )
         record["logical_type"] = logical_type
         records.append(record)
-    _render_records(records, args.format)
+    _render_records(records, args.format, with_xpath=args.with_xpath)
     return 0
 
 
@@ -689,8 +722,8 @@ def _class_matches(loaded: LoadedDocument, unit: Unit, class_name: str) -> bool:
 def _projected_text(unit: Unit, view: str) -> str:
     if view == "metadata":
         return unit.metadata
-    if view == "all" and unit.metadata:
-        return f"{unit.text}\n{unit.metadata}".strip()
+    if view == "all":
+        return unit.all_text
     return unit.text
 
 
@@ -763,6 +796,7 @@ def _result_record(
     *,
     max_chars: int,
     ancestors: bool,
+    doc_items: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     bounded, truncated = _truncate(text, max_chars)
     context: dict[str, Any] = {
@@ -783,6 +817,7 @@ def _result_record(
         "pages": list(unit.pages),
         "layer": unit.layer,
         "text": bounded,
+        "doc_items": list(doc_items if doc_items is not None else unit.doc_items),
         "matches": matches,
         "context": context,
         "truncated": truncated,
@@ -831,8 +866,7 @@ def _heading_ancestors(item: Any, loaded: LoadedDocument) -> list[Any]:
 def _truncate(text: str, limit: int) -> tuple[str, bool]:
     if len(text) <= limit:
         return text, False
-    marker = "… [truncated]"
-    return text[: max(0, limit - len(marker))] + marker[:limit], True
+    return text[: max(0, limit - 1)] + ("…" if limit else ""), True
 
 
 def _bound_record_text(records: list[dict[str, Any]], limit: int) -> None:
@@ -849,18 +883,25 @@ def _bound_record_text(records: list[dict[str, Any]], limit: int) -> None:
             remaining = 0
 
 
-def _render_records(records: list[dict[str, Any]], output_format: str) -> None:
+def _render_records(records: list[dict[str, Any]], output_format: str, *, with_xpath: bool = False) -> None:
     if output_format == "json":
-        print(json.dumps(records, ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                [_chunk_record(record, index) for index, record in enumerate(records)],
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
     elif output_format == "jsonl":
-        for record in records:
-            print(json.dumps(record, ensure_ascii=False, sort_keys=True))
+        for index, record in enumerate(records):
+            print(json.dumps(_chunk_record(record, index), ensure_ascii=False, sort_keys=True))
     else:
         for index, record in enumerate(records):
             if index:
                 print("--")
             print(record["document"])
-            print(f"XPath: {record['xpath']}")
+            if with_xpath:
+                print(f"XPath: {record['xpath']}")
             print(f"Type: {record['logical_type']}")
             if record.get("page") is not None:
                 print(f"Page: {record['page']}")
@@ -868,11 +909,56 @@ def _render_records(records: list[dict[str, Any]], output_format: str) -> None:
             headings = context_values.get("headings", [])
             if headings:
                 print("Section: " + " > ".join(headings))
-            for context in context_values["before"]:
-                print(f"- {context['xpath']} {context['text']}")
-            print(_highlight(record["text"], record.get("matches", [])))
-            for context in context_values["after"]:
-                print(f"- {context['xpath']} {context['text']}")
+            before = [
+                f"XPath: {context['xpath']}\n{context['text']}" if with_xpath else context["text"]
+                for context in context_values["before"]
+            ]
+            after = [
+                f"XPath: {context['xpath']}\n{context['text']}" if with_xpath else context["text"]
+                for context in context_values["after"]
+            ]
+            print()
+            print("\n----\n".join([*before, _highlight(record["text"], record.get("matches", [])), *after]))
+
+
+def _chunk_record(record: dict[str, Any], index: int) -> dict[str, Any]:
+    context = record.get("context", {})
+    headings = context.get("headings") or None
+    caption = context.get("table_caption")
+    captions = [caption] if caption else None
+    metadata: dict[str, Any] = {
+        "source": record["document"],
+        "xpath": record["xpath"],
+        "logical_type": record["logical_type"],
+    }
+    xpaths = record.get("xpaths", [record["xpath"]])
+    if len(xpaths) > 1:
+        metadata["xpaths"] = xpaths
+    if matches := record.get("matches"):
+        metadata["matches"] = matches
+    structural = {
+        key: value
+        for key, value in context.items()
+        if key not in {"headings", "table_caption"} and value not in (None, [], {}, "")
+    }
+    if structural:
+        metadata["context"] = structural
+    if record["truncated"]:
+        metadata["truncated"] = True
+    raw_text = record["text"]
+    contextualized = "\n".join([*(headings or []), *(captions or []), raw_text])
+    return {
+        "filename": Path(record["document"]).stem if record["document"] != "-" else "stdin",
+        "chunk_index": index,
+        "text": contextualized,
+        "raw_text": raw_text,
+        "num_tokens": None,
+        "headings": headings,
+        "captions": captions,
+        "doc_items": record.get("doc_items", []),
+        "page_numbers": record.get("pages", [record["page"]] if record.get("page") is not None else []),
+        "metadata": metadata,
+    }
 
 
 def _render_summary(counts: list[tuple[str, int]], *, files_only: bool, output_format: str) -> None:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import re
 import tempfile
 import zipfile
 from collections import Counter
@@ -17,12 +18,14 @@ from docling_core.transforms.deserializer import (
     DocLangSourceMap,
     DocLangSourceTarget,
 )
+from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.types.doc import (
     CodeItem,
     ContentLayer,
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    InlineGroup,
     ListGroup,
     ListItem,
     NodeItem,
@@ -37,6 +40,41 @@ from lxml import etree
 
 DOCLANG_NS = "https://www.doclang.ai/ns/v0"
 NS = {"d": DOCLANG_NS}
+SEMANTIC_ELEMENTS = {
+    "caption",
+    "code",
+    "field_heading",
+    "field_item",
+    "field_region",
+    "footnote",
+    "formula",
+    "group",
+    "heading",
+    "hint",
+    "index",
+    "key",
+    "list",
+    "page_footer",
+    "page_header",
+    "picture",
+    "table",
+    "text",
+    "value",
+}
+SEMANTIC_INLINE_TYPES = {
+    "caption": "caption",
+    "code": "code",
+    "field_heading": "field_heading",
+    "formula": "formula",
+    "heading": "heading",
+    "hint": "field_hint",
+    "key": "field_key",
+    "page_footer": "page_footer",
+    "page_header": "page_header",
+    "text": "text",
+    "value": "field_value",
+}
+XPATH_OPERATORS = {"and", "div", "mod", "or"}
 MAX_XML_BYTES = 64 * 1024 * 1024
 MAX_ARCHIVE_MEMBER_BYTES = 512 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
@@ -53,7 +91,9 @@ class Unit:
     target: DocLangSourceTarget
     logical_type: str
     text: str
+    all_text: str
     xpaths: tuple[str, ...]
+    doc_items: tuple[str, ...]
     item_ref: str | None
     page: int | None
     pages: tuple[int, ...]
@@ -175,7 +215,7 @@ class LoadedDocument:
 
     def evaluate_xpath(self, xpath: str) -> Any:
         try:
-            return self.query_root.xpath(xpath, namespaces=NS)
+            return self.query_root.xpath(_normalize_xpath(xpath), namespaces=NS)
         except etree.XPathError as exc:
             raise DlgrepError(f"invalid XPath: {exc}") from exc
 
@@ -232,45 +272,36 @@ class LoadedDocument:
         return scoped[max(0, index - before) : index], scoped[index + 1 : index + 1 + after]
 
     def inventory(self) -> dict[str, Any]:
-        source_counts = Counter(
-            etree.QName(element).localname for element in self.raw_root.iter() if _is_element(element)
+        element_counts = Counter(
+            _local_name(self.raw_elements[xpath])
+            for xpath in self.source_map.targets_by_xpath
+            if _local_name(self.raw_elements[xpath]) in SEMANTIC_ELEMENTS
         )
-        heading_levels = Counter(
-            element.get("level", "1")
+        metadata_counts = Counter(
+            etree.QName(element).localname
             for element in self.raw_root.iter()
-            if _is_element(element) and etree.QName(element).localname == "heading"
+            if _is_element(element) and _is_metadata_element(element)
         )
-        layers = Counter(unit.layer for unit in self.context_units)
-        thread_elements = [element for element in self.raw_root.iter() if _local_name(element) == "thread"]
         return {
             "document": self.name,
             "input_type": self.input_type,
-            "sha256": self.sha256,
-            "namespace": etree.QName(self.raw_root).namespace or "",
-            "version": self.raw_root.get("version"),
             "pages": len(self.document.pages),
-            "page_images": sum(
-                1
-                for name in self.members
-                if name.startswith("pages/") and Path(name).suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
-            ),
-            "archive_assets": sum(1 for name in self.members if name.startswith("assets/") and not name.endswith("/")),
-            "headings_by_level": dict(sorted(heading_levels.items())),
-            "source_counts": dict(sorted(source_counts.items())),
-            "layers": dict(sorted(layers.items())),
-            "threads": len({thread_id for element in thread_elements if (thread_id := element.get("thread_id"))}),
-            "thread_fragments": len(thread_elements),
-            "cross_references": sum(1 for element in self.raw_root.iter() if _local_name(element) == "xref"),
-            "hyperlinks": sum(1 for element in self.raw_root.iter() if _local_name(element) == "href"),
-            "source_map": {
-                "bound_xpaths": len(self.source_map.targets_by_xpath),
-                "semantic_units": len(self.context_units),
-                "unbound_semantic_units": sum(1 for unit in self.context_units if not unit.xpaths),
-            },
+            "semantic_units": len(self.context_units),
+            "elements": dict(sorted(element_counts.items())),
+            "metadata": dict(sorted(metadata_counts.items())),
         }
 
     def _build_units(self) -> None:
         layers = set(ContentLayer)
+        serializer = PlainTextDocSerializer(doc=self.document)
+        visible_serializer = PlainTextDocSerializer(
+            doc=self.document,
+            params=PlainTextParams(allowed_meta_names=set(), include_annotations=False),
+        )
+        metadata_serializer = PlainTextDocSerializer(
+            doc=self.document,
+            params=PlainTextParams(include_non_meta=False),
+        )
         for item, _ in self.document.iterate_items(
             with_groups=True,
             traverse_pictures=True,
@@ -281,21 +312,30 @@ class LoadedDocument:
             target = DocLangSourceTarget(kind="item", item_ref=item.self_ref)
             xpaths = tuple(self.source_map.xpaths_by_target.get(target, ()))
             if xpaths:
+                logical_type = _logical_type(item, _local_name(self.raw_elements[xpaths[0]]))
+                serialized = visible_serializer.serialize(item=item)
+                serialized_all = serializer.serialize(item=item)
+                serialized_metadata = metadata_serializer.serialize(item=item)
                 unit = Unit(
                     target=target,
-                    logical_type=_logical_type(item),
-                    text=_item_text(item, self.document),
+                    logical_type=logical_type,
+                    text=serialized.text,
+                    all_text=serialized_all.text,
                     xpaths=xpaths,
+                    doc_items=tuple(dict.fromkeys(span.item.self_ref for span in serialized_all.spans)),
                     item_ref=item.self_ref,
                     page=_item_page(item) or self.source_pages[xpaths[0]],
                     pages=_unit_pages(item, xpaths, self.source_pages),
                     layer=item.content_layer.value,
                     item=item,
-                    container=not isinstance(item, TextItem),
-                    metadata=_metadata_text(item),
+                    container=not isinstance(item, TextItem)
+                    and not (isinstance(item, InlineGroup) and logical_type != "inline"),
+                    metadata=serialized_metadata.text,
                 )
                 self.units.append(unit)
-                if isinstance(item, TextItem) and not _covered_by_parent(item, self.document):
+                if (isinstance(item, TextItem) and not _covered_by_parent(item, self.document)) or (
+                    isinstance(item, InlineGroup) and logical_type != "inline"
+                ):
                     self.context_units.append(unit)
 
             if isinstance(item, TableItem):
@@ -324,7 +364,9 @@ class LoadedDocument:
                 target=target,
                 logical_type=cell_type,
                 text=cell.text,
+                all_text=cell.text,
                 xpaths=xpaths,
+                doc_items=(container.self_ref,),
                 item_ref=container.self_ref,
                 page=_item_page(container) or pages[0],
                 pages=pages,
@@ -443,7 +485,9 @@ def _unit_pages(item: NodeItem, xpaths: tuple[str, ...], source_pages: dict[str,
     return tuple(dict.fromkeys(pages))
 
 
-def _logical_type(item: NodeItem) -> str:
+def _logical_type(item: NodeItem, source_type: str | None = None) -> str:
+    if isinstance(item, InlineGroup):
+        return SEMANTIC_INLINE_TYPES.get(source_type or "", "inline")
     if isinstance(item, (TitleItem, SectionHeaderItem)):
         return "heading"
     if isinstance(item, ListGroup):
@@ -457,36 +501,10 @@ def _logical_type(item: NodeItem) -> str:
     return item.label.value
 
 
-def _item_text(item: NodeItem, document: DoclingDocument) -> str:
-    if isinstance(item, (TitleItem, SectionHeaderItem, CodeItem)):
-        return item.text
-    if isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_SELECTED:
-        return "[x]"
-    if isinstance(item, TextItem) and item.label == DocItemLabel.CHECKBOX_UNSELECTED:
-        return "[ ]"
-    if isinstance(item, TextItem) and not item.children:
-        return f"{item.marker} {item.text}".strip() if isinstance(item, ListItem) and item.marker else item.text
-    if isinstance(item, TableItem):
-        return "\n".join(cell.text for cell in item.data.table_cells if cell.text)
-
-    parts: list[str] = []
-    if isinstance(item, TextItem) and item.text:
-        parts.append(item.text)
-    for child_ref in item.children:
-        child = child_ref.resolve(document)
-        text = _item_text(child, document)
-        if text:
-            parts.append(text)
-    text = "\n".join(parts)
-    if isinstance(item, ListItem) and item.marker:
-        return f"{item.marker} {text}".strip()
-    return text
-
-
 def _covered_by_parent(item: TextItem, document: DoclingDocument) -> bool:
     parent = item.parent.resolve(document) if item.parent is not None else None
     while parent is not None:
-        if isinstance(parent, (TableItem, ListItem)):
+        if isinstance(parent, (InlineGroup, TableItem, ListItem)):
             return True
         if isinstance(parent, TextItem) and parent.label in {
             DocItemLabel.FIELD_KEY,
@@ -498,19 +516,39 @@ def _covered_by_parent(item: TextItem, document: DoclingDocument) -> bool:
     return False
 
 
-def _metadata_text(item: NodeItem) -> str:
-    if not isinstance(item, DocItem) or item.meta is None:
-        return ""
-    return "\n".join(_strings(item.meta.model_dump(mode="json")))
+def _is_metadata_element(element: etree._Element) -> bool:
+    parent = element.getparent()
+    while parent is not None:
+        if _local_name(parent) in {"custom", "head"}:
+            return _local_name(element) not in {"custom", "head"}
+        parent = parent.getparent()
+    return False
 
 
-def _strings(value: Any) -> Iterable[str]:
-    if isinstance(value, str):
-        if value:
-            yield value
-    elif isinstance(value, dict):
-        for child in value.values():
-            yield from _strings(child)
-    elif isinstance(value, list):
-        for child in value:
-            yield from _strings(child)
+def _normalize_xpath(xpath: str) -> str:
+    """Add the DocLang namespace and optional root to shorthand XPath."""
+
+    def prefix_names(expression: str) -> str:
+        def prefix_axis(match: re.Match[str]) -> str:
+            after = expression[match.end() :].lstrip()
+            return match.group() if after.startswith(("(", ":")) else f"::d:{match.group(1)}"
+
+        expression = re.sub(r"::([A-Za-z_][\w.-]*)", prefix_axis, expression)
+
+        def replace(match: re.Match[str]) -> str:
+            name = match.group()
+            before = expression[: match.start()].rstrip()
+            after = expression[match.end() :].lstrip()
+            if name in XPATH_OPERATORS or before.endswith(("@", "$")) or after.startswith(("(", "::")):
+                return name
+            return f"d:{name}"
+
+        return re.sub(r"(?<![\w:.-])[A-Za-z_][\w.-]*(?![\w:.-])", replace, expression)
+
+    parts = re.split(r"""((?:'[^']*')|(?:"[^"]*"))""", xpath)
+    normalized = "".join(part if index % 2 else prefix_names(part) for index, part in enumerate(parts))
+    return re.sub(
+        r"(^|[(=,\s|])/(?!/|d:doclang(?:\[|/|\s|$))",
+        r"\1/d:doclang/",
+        normalized,
+    )

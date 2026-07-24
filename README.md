@@ -12,11 +12,12 @@
 and returns bounded evidence with reusable XPath addresses.
 
 ```console
-$ dlgrep -F '6 CONCLUSION' paper.dclx --type heading
+$ dlgrep -F '6 CONCLUSION' paper.dclx --type heading --with-xpath
 paper.dclx
 XPath: /d:doclang/d:heading[17]
 Type: heading
 Page: 8
+
 6 CONCLUSION
 ```
 
@@ -71,12 +72,11 @@ Search is the default command, so `dlgrep PATTERN INPUT` and
 ```console
 $ dlgrep inspect paper.dclx
 paper.dclx
-SHA-256: d978bad6cbd391c777685733096c21f9b7640d834d47d37d1c544f9f4c6bb418
 Type: dclx
 Pages: 9
-Headings: 18
-Source bindings: 979
-Elements: caption=9, heading=18, list=5, picture=6, table=5, text=434, ...
+Semantic units: 612
+Elements: caption=9, code=3, formula=4, heading=18, list=5, picture=6, table=5, text=434
+Metadata: author=2, date=1, keywords=1
 ```
 
 ### Navigate the heading hierarchy
@@ -100,26 +100,28 @@ Capture a section heading's XPath, then pass it directly into another search:
 
 ```console
 $ conclusion_xpath=$(dlgrep -F '6 CONCLUSION' paper.dclx \
-    --type heading --format json | jq -r '.[0].xpath')
+    --type heading --format json | jq -r '.[0].metadata.xpath')
 $ echo "$conclusion_xpath"
 /d:doclang/d:heading[17]
 
 $ dlgrep -i 'dataset|performance' paper.dclx \
     --within-xpath "$conclusion_xpath" --section \
-    --type text --limit 3 --max-chars 240
+    --type text --limit 3 --max-chars 240 --with-xpath
 paper.dclx
 XPath: /d:doclang/d:text[64]
 Type: text
 Page: 8
 Section: 6 CONCLUSION
-In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In contrast to many other… [truncated]
+
+In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In contrast to many other…
 --
 paper.dclx
 XPath: /d:doclang/d:text[65]
 Type: text
 Page: 8
 Section: 6 CONCLUSION
-From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline performance of commonl… [truncated]
+
+From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline performance of commonl…
 ```
 
 The same XPath can retrieve the entire section:
@@ -130,27 +132,33 @@ dlgrep show paper.dclx "$conclusion_xpath" --section
 
 ### Inspect element neighbourhood
 
-`-B` and `-A` return addressable semantic elements before and after a hit:
+`-B` and `-A` return addressable semantic elements before and after a hit.
+Text output separates semantic elements with a standalone `----` line:
 
 ```console
 $ dlgrep -F 'reference metrics for human performance' paper.dclx \
     --within-xpath "$conclusion_xpath" --section --type text \
-    -B 1 -A 1 --context-scope section --max-chars 220
+    -B 1 -A 1 --context-scope section --max-chars 220 --with-xpath
 paper.dclx
 XPath: /d:doclang/d:text[65]
 Type: text
 Page: 8
 Section: 6 CONCLUSION
-- /d:doclang/d:text[64] In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In co… [truncated]
-From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline pe… [truncated]
-- /d:doclang/d:text[66] To date, there is still a significant gap between human and ML accuracy on the layout interpretation task, and we hope that this work will inspire the research community to close that gap.
+
+XPath: /d:doclang/d:text[64]
+In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In co…
+----
+From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline pe…
+----
+XPath: /d:doclang/d:text[66]
+To date, there is still a significant gap between human and ML accuracy on the layout interpretation task, and we hope that this work will inspire the research community to close that gap.
 ```
 
 ### Search a table cell with its structural context
 
 ```console
 $ dlgrep -F '2.73 5.39' paper.dclx --format json |
-  jq '.[0] | {xpath, text, page, heading: .context.headings[-1], column: .context.column_headers[0], table: .context.table_caption[0:96]}'
+  jq '.[0] | {xpath: .metadata.xpath, text: .raw_text, page: .page_numbers[0], heading: .headings[-1], column: .metadata.context.column_headers[0], table: .captions[0][0:96]}'
 {
   "xpath": "/d:doclang/d:table[1]/d:fcel[8]",
   "text": "2.73 5.39",
@@ -165,15 +173,20 @@ $ dlgrep -F '2.73 5.39' paper.dclx --format json |
 
 ```console
 $ dlgrep -F 'Third item with numId 2' handbook.dclx \
-    -C 1 --context-scope auto
+    -C 1 --context-scope auto --with-xpath
 handbook.dclx
 XPath: /d:doclang/d:list[7]/d:ldiv[3]
 Type: list_item
 Page: 1
 Section: Test Document > Test 7:
-- /d:doclang/d:list[7]/d:ldiv[2] 2. Second item with numId 2
+
+XPath: /d:doclang/d:list[7]/d:ldiv[2]
+2. Second item with numId 2
+----
 3. Third item with numId 2
-- /d:doclang/d:list[7]/d:ldiv[4] 4. Fourth item with numId 2
+----
+XPath: /d:doclang/d:list[7]/d:ldiv[4]
+4. Fourth item with numId 2
 ```
 
 ### Use dlgrep in shell pipelines
@@ -227,10 +240,14 @@ fi
 | `--within-xpath XPATH` | Restrict search to an XPath selection |
 | `--section` | Expand a selected heading to its section |
 | `--limit N` | Limit the number of results |
+| `--with-xpath` | Include XPath labels in text output |
 | `--format FORMAT` | Emit `text`, `json`, or `jsonl` |
 | `-c`, `-l`, `-q` | Count, list matching files, or run quietly |
 
 Run `dlgrep COMMAND --help` for the complete option set.
+
+XPath input may omit the namespace and document root: `/formula[1]`,
+`/doclang/formula[1]`, and `/d:doclang/d:formula[1]` are equivalent.
 
 ## Exit codes
 
