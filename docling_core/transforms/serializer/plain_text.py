@@ -43,6 +43,7 @@ class PlainTextTextSerializer(MarkdownTextSerializer):
         self,
         text: str,
         item: Union[TitleItem, SectionHeaderItem],
+        in_table_cell: bool = False,
     ) -> str:
         return text
 
