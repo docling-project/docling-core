@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from xml.etree import ElementTree as ET
 
 import pytest
+from PIL import Image
 
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
@@ -32,12 +33,14 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    ImageRef,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
     PictureMeta,
     RefItem,
     RichTableCell,
+    Size,
     SummaryMetaField,
     TableCell,
     TableData,
@@ -350,6 +353,82 @@ def test_md_single_row_table():
     ser = MarkdownDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
+
+
+def test_md_table_with_image_embedded():
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="foo",
+        ),
+    )
+    table.image = ImageRef.from_pil(image=Image.new("RGB", (2, 2)), dpi=72)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(image_mode=ImageRefMode.EMBEDDED),
+    )
+    actual = ser.serialize().text
+    assert "| foo   |" in actual
+    assert "![Image](data:image/png;base64," in actual
+
+
+def test_md_table_with_image_referenced():
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="foo",
+        ),
+    )
+    table.image = ImageRef(
+        mimetype="image/png",
+        dpi=72,
+        size=Size(width=2, height=2),
+        uri="table_0.png",
+    )
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(image_mode=ImageRefMode.REFERENCED),
+    )
+    actual = ser.serialize().text
+    assert actual == "| foo   |\n|-------|\n\n![Image](table_0.png)"
+
+
+def test_md_table_without_image_unaffected_by_image_mode():
+    """A table with no generated image must not gain an image line, even if
+    image_mode is set — this must remain a strict no-op for the common case."""
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="foo",
+        ),
+    )
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(image_mode=ImageRefMode.EMBEDDED),
+    )
+    actual = ser.serialize().text
+    assert actual == "| foo   |\n|-------|"
 
 
 def test_md_pipe_in_table():
