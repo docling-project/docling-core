@@ -34,8 +34,8 @@ build-backend = "hatchling.build"
 package = true
 
 [tool.uv.sources]
-doclang = { path = "../doclang", editable = true }
-docling-core = { path = "../docling-core", editable = true }
+doclang = { git = "https://github.com/doclang-project/doclang.git" }
+docling-core = { git = "git+https://github.com/docling-project/docling-core.git", branch = "cau/dlgrep-support" }
 
 [tool.hatch.build.targets.sdist]
 include = ["dlgrep"]
