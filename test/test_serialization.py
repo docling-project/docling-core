@@ -519,16 +519,15 @@ def test_md_pipe_in_table():
 
 
 def test_md_heading_in_rich_table_cell_renders_as_plain_text():
-    """Regression #2722: headings inside RichTableCell must not emit ``#`` markers.
+    """Test headings inside RichTableCell must not emit `#` markers.
 
     According to the Markdown spec, heading syntax is invalid inside tables.
     A SectionHeaderItem or TitleItem referenced by a RichTableCell must be
-    serialised as plain text, not as ``## Heading``.
+    serialized as plain text, not as `## Heading`.
     """
     doc = DoclingDocument(name="heading_in_table")
     table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
 
-    # Row 0: header row — cells reference a SectionHeaderItem and a TitleItem.
     section_header = doc.add_heading(text="Section Heading", level=1, parent=table)
     title = doc.add_title(text="Document Title", parent=table)
 
@@ -552,8 +551,6 @@ def test_md_heading_in_rich_table_cell_renders_as_plain_text():
             ref=title.get_ref(),
         ),
     )
-
-    # Row 1: plain data row.
     doc.add_table_cell(
         table,
         TableCell(
@@ -576,13 +573,8 @@ def test_md_heading_in_rich_table_cell_renders_as_plain_text():
     )
 
     md = doc.export_to_markdown()
-
-    # The heading text must appear as plain text inside the table.
     assert "Section Heading" in md
     assert "Document Title" in md
-
-    # No ``#`` markers must appear anywhere — the whole document contains only
-    # this table, so any hash marker would be a heading leaking into a cell.
     table_lines = [line for line in md.splitlines() if line.startswith("|")]
     for line in table_lines:
         assert "#" not in line, f"Heading marker leaked into table cell: {line!r}\nFull output:\n{md}"
