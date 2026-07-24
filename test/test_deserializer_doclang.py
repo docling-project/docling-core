@@ -8,6 +8,7 @@ from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.doclang import (
     DocLangDocSerializer,
     DocLangParams,
+    EscapeMode,
     LabelMode,
 )
 from docling_core.types.doc import (
@@ -1819,6 +1820,55 @@ def test_picture_tabular_chart_content_cdata_cells():
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[0][1].text == "Player expenses in million U.S. dollars"
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][0].text == "19/20"
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][1].text == "111"
+
+
+@pytest.mark.parametrize("escape_mode", [EscapeMode.AUTO, EscapeMode.ALWAYS])
+def test_roundtrip_otsl_xml_sensitive_cell_content(escape_mode: EscapeMode):
+    """OTSL cell text remains exact when DOM fragments are reparsed."""
+    cell_texts = [
+        'Parsing (Structure&Semantic) <test> "quoted"',
+        "ampersand & less < greater >",
+        "\"quotes\" and 'apostrophes'",
+        "literal entity-like text: &amp;",
+        "CDATA terminator: ]]>",
+        "multiline code:\nif a < b:\n    return a & b",
+        "Unicode and math: café ∀x ∈ ℝ, x² ≥ 0",  # noqa: RUF001
+    ]
+    doc = DoclingDocument(name="otsl-xml-sensitive")
+    table_data = TableData(num_rows=0, num_cols=1)
+    for text in cell_texts:
+        table_data.add_row([text])
+    doc.add_table(data=table_data)
+
+    serialized = (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(include_version=False, escape_mode=escape_mode),
+        )
+        .serialize()
+        .text
+    )
+    roundtripped = _deserialize(serialized)
+
+    assert [row[0].text for row in roundtripped.tables[0].data.grid] == cell_texts
+
+
+def test_otsl_xml_sensitive_virtual_and_explicit_text_cells():
+    """Both virtual and explicit rich OTSL cell bodies preserve safe text."""
+    doclang = """\
+<doclang>
+  <table>
+    <fcel/><content><![CDATA[virtual & <cell> "quoted" 'apostrophe']]></content>
+    <fcel/><text><content><![CDATA[nested & <cell>]]></content><bold> bold &amp; styled</bold></text>
+    <nl/>
+  </table>
+</doclang>
+"""
+    doc = _deserialize(doclang)
+
+    assert doc.tables[0].data.grid[0][0].text == "virtual & <cell> \"quoted\" 'apostrophe'"
+    assert doc.tables[0].data.grid[0][1].text == "nested & <cell>bold & styled"
+    assert isinstance(doc.tables[0].data.grid[0][1], RichTableCell)
 
 
 def test_picture_body_table_is_semantic_content_not_chart_tabular():
