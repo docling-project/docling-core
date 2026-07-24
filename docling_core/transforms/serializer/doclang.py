@@ -824,7 +824,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, TitleItem):
             wrap_open_token = DocLangVocabulary._create_heading_token(level=1)
         elif isinstance(item, SectionHeaderItem):
-            wrap_open_token = DocLangVocabulary._create_heading_token(level=item.level + 1)
+            # Clamp like the HTML serializer does: SectionHeaderItem.level goes
+            # up to 100 and the +1 shift (level 1 is the title) would otherwise
+            # push legitimate level-6 headings past the heading vocabulary.
+            wrap_open_token = DocLangVocabulary._create_heading_token(level=min(item.level + 1, 6))
         elif isinstance(item, ListItem):
             wrap_open_token, tok = self._determine_list_item_wrapper(
                 item=item, doc=doc, use_virtual_text=params.use_virtual_text
