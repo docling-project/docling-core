@@ -263,13 +263,19 @@ class LoadedDocument:
 
     def context_for(
         self, unit: Unit, before: int, after: int, scope: str, eligible: list[Unit]
-    ) -> tuple[list[Unit], list[Unit]]:
-        scoped = self._scope_units(unit, scope, eligible)
+    ) -> tuple[list[Unit], list[Unit], tuple[str, int, int] | None]:
+        scoped, sequence = self._scope_units(unit, scope, eligible)
         try:
             index = scoped.index(unit)
         except ValueError:
-            return [], []
-        return scoped[max(0, index - before) : index], scoped[index + 1 : index + 1 + after]
+            return [], [], None
+        start = max(0, index - before)
+        end = min(len(scoped), index + 1 + after)
+        return (
+            scoped[start:index],
+            scoped[index + 1 : end],
+            (sequence, start, end - 1),
+        )
 
     def inventory(self) -> dict[str, Any]:
         element_counts = Counter(
@@ -378,11 +384,14 @@ class LoadedDocument:
             self.units.append(unit)
             self.context_units.append(unit)
 
-    def _scope_units(self, unit: Unit, scope: str, eligible: list[Unit]) -> list[Unit]:
+    def _scope_units(self, unit: Unit, scope: str, eligible: list[Unit]) -> tuple[list[Unit], str]:
         if scope == "document":
-            return eligible
+            return eligible, "document"
         if scope == "page":
-            return [candidate for candidate in eligible if set(candidate.pages) & set(unit.pages)]
+            return (
+                [candidate for candidate in eligible if set(candidate.pages) & set(unit.pages)],
+                "page:" + ",".join(map(str, unit.pages)),
+            )
 
         item = unit.item or self.target_item(unit.target)
         if scope == "auto":
@@ -393,15 +402,21 @@ class LoadedDocument:
         if scope == "section":
             heading_ref = self.nearest_heading_ref(unit)
             if heading_ref is None:
-                return eligible
-            return [candidate for candidate in eligible if self.is_descendant(candidate.item_ref, heading_ref)]
+                return eligible, "document"
+            return (
+                [candidate for candidate in eligible if self.is_descendant(candidate.item_ref, heading_ref)],
+                f"section:{heading_ref}",
+            )
         if scope == "container":
             if unit.target.kind == "table_cell":
-                return [
-                    candidate
-                    for candidate in eligible
-                    if candidate.item_ref == unit.item_ref and candidate.target.kind == "table_cell"
-                ]
+                return (
+                    [
+                        candidate
+                        for candidate in eligible
+                        if candidate.item_ref == unit.item_ref and candidate.target.kind == "table_cell"
+                    ],
+                    f"table:{unit.item_ref}",
+                )
             parent_ref = item.parent.cref if item is not None and item.parent is not None else None
             siblings: list[Unit] = []
             for candidate in eligible:
@@ -412,7 +427,7 @@ class LoadedDocument:
                     and candidate_item.parent.cref == parent_ref
                 ):
                     siblings.append(candidate)
-            return siblings
+            return siblings, f"container:{parent_ref}"
         raise DlgrepError(f"unknown context scope: {scope}")
 
 

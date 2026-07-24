@@ -132,7 +132,9 @@ def search(
     files_with_matches: Annotated[
         bool, typer.Option("-l", "--files-with-matches", help="Print names of matching inputs.")
     ] = False,
-    with_xpath: Annotated[bool, typer.Option("--with-xpath", help="Include XPath labels in text output.")] = False,
+    with_xpath: Annotated[
+        bool, typer.Option("-n", "--with-xpath", help="Prefix text output with XPath addresses.")
+    ] = False,
     output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
     validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before searching.")] = False,
     _version: Annotated[
@@ -249,7 +251,9 @@ def show_command(
     context_scope: Annotated[ContextScope, typer.Option(help="Boundary used for semantic context.")] = "document",
     no_ancestors: Annotated[bool, typer.Option("--no-ancestors", help="Omit heading ancestors from results.")] = False,
     max_chars: Annotated[int, typer.Option(min=0, help="Maximum characters per result.")] = DEFAULT_MAX_CHARS,
-    with_xpath: Annotated[bool, typer.Option("--with-xpath", help="Include XPath labels in text output.")] = False,
+    with_xpath: Annotated[
+        bool, typer.Option("-n", "--with-xpath", help="Prefix text output with XPath addresses.")
+    ] = False,
     output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
     validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before retrieval.")] = False,
 ) -> None:
@@ -337,25 +341,37 @@ def _search(args: SimpleNamespace) -> int:
         if args.max_chars is not None
         else (HARD_MAX_CHARS if args.all_results else DEFAULT_MAX_CHARS)
     )
-    records = [
-        _result_record(
-            loaded,
-            unit,
-            text,
-            matches,
-            *loaded.context_for(unit, before, after, args.context_scope, context_units),
-            max_chars=max_chars,
-            ancestors=not args.no_ancestors,
+    records: list[dict[str, Any]] = []
+    for loaded, unit, text, matches, context_units in selected:
+        context_before, context_after, context_group = loaded.context_for(
+            unit, before, after, args.context_scope, context_units
         )
-        for loaded, unit, text, matches, context_units in selected
-    ]
+        records.append(
+            _result_record(
+                loaded,
+                unit,
+                text,
+                matches,
+                context_before,
+                context_after,
+                max_chars=max_chars,
+                ancestors=not args.no_ancestors,
+                context_group=context_group,
+            )
+        )
     max_output = (
         min(args.max_output_chars, HARD_MAX_OUTPUT_CHARS)
         if args.max_output_chars is not None
         else (HARD_MAX_OUTPUT_CHARS if args.all_results else DEFAULT_MAX_OUTPUT_CHARS)
     )
     _bound_record_text(records, max_output)
-    _render_records(records, args.format, with_xpath=args.with_xpath)
+    _render_records(
+        records,
+        args.format,
+        with_xpath=args.with_xpath,
+        with_filename=len(inputs) > 1,
+        context_requested=bool(before or after),
+    )
     return 2 if errors else (0 if any_match else 1)
 
 
@@ -562,7 +578,9 @@ def _show(args: SimpleNamespace) -> int:
             text = serialized.text
             doc_items = tuple(dict.fromkeys(span.item.self_ref for span in serialized.spans))
             logical_type = "section"
-        before, after = loaded.context_for(unit, before_count, after_count, args.context_scope, loaded.context_units)
+        before, after, context_group = loaded.context_for(
+            unit, before_count, after_count, args.context_scope, loaded.context_units
+        )
         record = _result_record(
             loaded,
             unit,
@@ -573,10 +591,16 @@ def _show(args: SimpleNamespace) -> int:
             max_chars=args.max_chars,
             ancestors=not args.no_ancestors,
             doc_items=doc_items,
+            context_group=context_group,
         )
         record["logical_type"] = logical_type
         records.append(record)
-    _render_records(records, args.format, with_xpath=args.with_xpath)
+    _render_records(
+        records,
+        args.format,
+        with_xpath=args.with_xpath,
+        context_requested=bool(before_count or after_count),
+    )
     return 0
 
 
@@ -797,6 +821,7 @@ def _result_record(
     max_chars: int,
     ancestors: bool,
     doc_items: tuple[str, ...] | None = None,
+    context_group: tuple[str, int, int] | None = None,
 ) -> dict[str, Any]:
     bounded, truncated = _truncate(text, max_chars)
     context: dict[str, Any] = {
@@ -821,6 +846,7 @@ def _result_record(
         "matches": matches,
         "context": context,
         "truncated": truncated,
+        "_context_group": context_group,
     }
 
 
@@ -883,7 +909,14 @@ def _bound_record_text(records: list[dict[str, Any]], limit: int) -> None:
             remaining = 0
 
 
-def _render_records(records: list[dict[str, Any]], output_format: str, *, with_xpath: bool = False) -> None:
+def _render_records(
+    records: list[dict[str, Any]],
+    output_format: str,
+    *,
+    with_xpath: bool = False,
+    with_filename: bool = False,
+    context_requested: bool = False,
+) -> None:
     if output_format == "json":
         print(
             json.dumps(
@@ -896,29 +929,46 @@ def _render_records(records: list[dict[str, Any]], output_format: str, *, with_x
         for index, record in enumerate(records):
             print(json.dumps(_chunk_record(record, index), ensure_ascii=False, sort_keys=True))
     else:
-        for index, record in enumerate(records):
-            if index:
-                print("--")
-            print(record["document"])
-            if with_xpath:
-                print(f"XPath: {record['xpath']}")
-            print(f"Type: {record['logical_type']}")
-            if record.get("page") is not None:
-                print(f"Page: {record['page']}")
+        hits = {(record["document"], record["xpath"]): record for record in records}
+        groups: list[dict[str, Any]] = []
+        for record in records:
             context_values = record.get("context", {"before": [], "after": []})
-            headings = context_values.get("headings", [])
-            if headings:
-                print("Section: " + " > ".join(headings))
-            before = [
-                f"XPath: {context['xpath']}\n{context['text']}" if with_xpath else context["text"]
-                for context in context_values["before"]
-            ]
-            after = [
-                f"XPath: {context['xpath']}\n{context['text']}" if with_xpath else context["text"]
-                for context in context_values["after"]
-            ]
-            print()
-            print("\n----\n".join([*before, _highlight(record["text"], record.get("matches", [])), *after]))
+            values = [*context_values["before"], record, *context_values["after"]]
+            sequence, start, end = record.get("_context_group") or ((), -1, -1)
+            if (
+                context_requested
+                and groups
+                and groups[-1]["document"] == record["document"]
+                and sequence
+                and groups[-1]["sequence"] == sequence
+                and start <= groups[-1]["end"] + 1
+            ):
+                known = {value["xpath"] for value in groups[-1]["values"]}
+                groups[-1]["values"].extend(value for value in values if value["xpath"] not in known)
+                groups[-1]["end"] = max(groups[-1]["end"], end)
+            else:
+                groups.append(
+                    {
+                        "document": record["document"],
+                        "sequence": sequence,
+                        "end": end,
+                        "values": values,
+                    }
+                )
+
+        for index, group in enumerate(groups):
+            if index and context_requested:
+                print("--")
+
+            for value in group["values"]:
+                hit = hits.get((group["document"], value["xpath"]))
+                separator = ":" if hit is not None else "-"
+                text = _highlight(hit["text"], hit.get("matches", [])) if hit is not None else value["text"]
+                fields = [group["document"]] if with_filename else []
+                if with_xpath:
+                    fields.append(value["xpath"])
+                prefix = separator.join(fields) + separator if fields else ""
+                print("\n".join(prefix + line for line in text.split("\n")))
 
 
 def _chunk_record(record: dict[str, Any], index: int) -> dict[str, Any]:

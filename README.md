@@ -12,13 +12,8 @@
 and returns bounded evidence with reusable XPath addresses.
 
 ```console
-$ dlgrep -F '6 CONCLUSION' paper.dclx --type heading --with-xpath
-paper.dclx
-XPath: /d:doclang/d:heading[17]
-Type: heading
-Page: 8
-
-6 CONCLUSION
+$ dlgrep -F '6 CONCLUSION' paper.dclx --type heading -n
+/d:doclang/d:heading[17]:6 CONCLUSION
 ```
 
 ## Features
@@ -106,22 +101,9 @@ $ echo "$conclusion_xpath"
 
 $ dlgrep -i 'dataset|performance' paper.dclx \
     --within-xpath "$conclusion_xpath" --section \
-    --type text --limit 3 --max-chars 240 --with-xpath
-paper.dclx
-XPath: /d:doclang/d:text[64]
-Type: text
-Page: 8
-Section: 6 CONCLUSION
-
-In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In contrast to many other…
---
-paper.dclx
-XPath: /d:doclang/d:text[65]
-Type: text
-Page: 8
-Section: 6 CONCLUSION
-
-From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline performance of commonl…
+    --type text --limit 3 --max-chars 240 -n
+/d:doclang/d:text[64]:In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In contrast to many other…
+/d:doclang/d:text[65]:From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline performance of commonl…
 ```
 
 The same XPath can retrieve the entire section:
@@ -133,25 +115,16 @@ dlgrep show paper.dclx "$conclusion_xpath" --section
 ### Inspect element neighbourhood
 
 `-B` and `-A` return addressable semantic elements before and after a hit.
-Text output separates semantic elements with a standalone `----` line:
+Overlapping neighbourhoods are merged; a standalone `--` separates only
+disjoint context groups:
 
 ```console
 $ dlgrep -F 'reference metrics for human performance' paper.dclx \
     --within-xpath "$conclusion_xpath" --section --type text \
-    -B 1 -A 1 --context-scope section --max-chars 220 --with-xpath
-paper.dclx
-XPath: /d:doclang/d:text[65]
-Type: text
-Page: 8
-Section: 6 CONCLUSION
-
-XPath: /d:doclang/d:text[64]
-In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In co…
-----
-From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline pe…
-----
-XPath: /d:doclang/d:text[66]
-To date, there is still a significant gap between human and ML accuracy on the layout interpretation task, and we hope that this work will inspire the research community to close that gap.
+    -B 1 -A 1 --context-scope section --max-chars 220 -n
+/d:doclang/d:text[64]-In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In co…
+/d:doclang/d:text[65]:From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline pe…
+/d:doclang/d:text[66]-To date, there is still a significant gap between human and ML accuracy on the layout interpretation task, and we hope that this work will inspire the research community to close that gap.
 ```
 
 ### Search a table cell with its structural context
@@ -173,20 +146,10 @@ $ dlgrep -F '2.73 5.39' paper.dclx --format json |
 
 ```console
 $ dlgrep -F 'Third item with numId 2' handbook.dclx \
-    -C 1 --context-scope auto --with-xpath
-handbook.dclx
-XPath: /d:doclang/d:list[7]/d:ldiv[3]
-Type: list_item
-Page: 1
-Section: Test Document > Test 7:
-
-XPath: /d:doclang/d:list[7]/d:ldiv[2]
-2. Second item with numId 2
-----
-3. Third item with numId 2
-----
-XPath: /d:doclang/d:list[7]/d:ldiv[4]
-4. Fourth item with numId 2
+    -C 1 --context-scope auto -n
+/d:doclang/d:list[7]/d:ldiv[2]-2. Second item with numId 2
+/d:doclang/d:list[7]/d:ldiv[3]:3. Third item with numId 2
+/d:doclang/d:list[7]/d:ldiv[4]-4. Fourth item with numId 2
 ```
 
 ### Use dlgrep in shell pipelines
@@ -240,7 +203,7 @@ fi
 | `--within-xpath XPATH` | Restrict search to an XPath selection |
 | `--section` | Expand a selected heading to its section |
 | `--limit N` | Limit the number of results |
-| `--with-xpath` | Include XPath labels in text output |
+| `-n`, `--with-xpath` | Prefix text output with XPath addresses |
 | `--format FORMAT` | Emit `text`, `json`, or `jsonl` |
 | `-c`, `-l`, `-q` | Count, list matching files, or run quietly |
 

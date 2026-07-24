@@ -111,7 +111,7 @@ def test_retrieval_commands_share_xpath_addresses(tmp_path: Path, capsys) -> Non
     assert main(["Revenue", str(path), "--within-xpath", "/heading[2]", "--section", "-q"]) == 0
 
 
-def test_text_output_collapses_formatting_and_marks_truncation(tmp_path: Path, capsys) -> None:
+def test_text_output_collapses_formatting_and_marks_truncation(tmp_path: Path, capsys, monkeypatch) -> None:
     path = _document(tmp_path)
 
     assert main(["show", str(path), "/formula[1]", "-B", "1"]) == 0
@@ -122,21 +122,74 @@ def test_text_output_collapses_formatting_and_marks_truncation(tmp_path: Path, c
     assert "/d:" not in output
     assert "<bold>" not in output
     assert "\n- " not in output
-    assert "\n----\n" in output
+    assert "\n--\n" not in output
+    assert "Type:" not in output
+    assert "Page:" not in output
+    assert "Section:" not in output
+    assert str(path) not in output
 
     assert main(["-F", "See this important article for details.", str(path)]) == 0
     output = capsys.readouterr().out
     assert "See this important article for details." in output
     assert "<bold>" not in output
     assert "**" not in output
+    assert "Type:" not in output
+    assert str(path) not in output
+
+    assert main(["-F", "See this important article for details.", str(path), "-n"]) == 0
+    output = capsys.readouterr().out
+    assert "/d:doclang/d:text[4]:See this important article for details." in output
+    assert "XPath:" not in output
 
     assert main(["Revenue", str(path), "--max-chars", "8"]) == 0
     output = capsys.readouterr().out
     assert output.rstrip().endswith("Revenue…")
     assert "[truncated]" not in output
 
-    assert main(["show", str(path), "/formula[1]", "--with-xpath"]) == 0
-    assert "XPath: /d:doclang/d:formula[1]" in capsys.readouterr().out
+    assert main(["show", str(path), "/formula[1]", "-B", "1", "-n"]) == 0
+    output = capsys.readouterr().out
+    assert "/d:doclang/d:code[1]-public  class Main {}" in output
+    assert "/d:doclang/d:formula[1]:$$E = mc^2$$" in output
+    assert "\n--\n" not in output
+    assert "XPath:" not in output
+
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setattr("dlgrep.cli.sys.stdout.isatty", lambda: True)
+    assert main(["Revenue", str(path)]) == 0
+    assert "\033[1;31mRevenue\033[0m grew." in capsys.readouterr().out
+
+
+def test_text_context_merges_overlapping_windows(tmp_path: Path, capsys) -> None:
+    path = tmp_path / "overlap.dclg"
+    path.write_text(
+        """<doclang xmlns="https://www.doclang.ai/ns/v0">
+  <text>Before first</text>
+  <text>Information one</text>
+  <text>Shared context</text>
+  <text>Information two</text>
+  <text>After second</text>
+  <text>Omitted one</text>
+  <text>Omitted two</text>
+  <text>Before third</text>
+  <text>Information three</text>
+  <text>After third</text>
+</doclang>
+""",
+        encoding="utf-8",
+    )
+
+    assert main(["Information", str(path), "-C", "1", "-n"]) == 0
+    output = capsys.readouterr().out
+
+    assert output.count("\n--\n") == 1
+    assert output.count("Shared context") == 1
+    assert "/d:doclang/d:text[2]:Information one" in output
+    assert "/d:doclang/d:text[4]:Information two" in output
+    assert "/d:doclang/d:text[9]:Information three" in output
+    assert "/d:doclang/d:text[2]-" not in output
+    assert "/d:doclang/d:text[4]-" not in output
+    assert "Omitted one" not in output
+    assert "Omitted two" not in output
 
 
 def test_text_views_use_core_serializer_modes_without_trimming(tmp_path: Path, capsys) -> None:
